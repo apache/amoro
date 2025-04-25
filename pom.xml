@@ -71,12 +71,11 @@
     </issueManagement>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.build.outputTimestamp>2024-06-27T08:00:00Z</project.build.outputTimestamp>
-        <java.version>1.8</java.version>
         <root.dir>${project.basedir}</root.dir>
         <jacoco.flink.skip>false</jacoco.flink.skip>
 
@@ -90,7 +89,7 @@
         <maven-scala-plugin.version>4.8.1</maven-scala-plugin.version>
         <maven-antlr4-plugin.version>4.3</maven-antlr4-plugin.version>
         <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
-        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
         <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
         <maven-jacoco-plugin.version>0.8.7</maven-jacoco-plugin.version>
@@ -1256,6 +1255,7 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <configuration>
+                        <source>8</source>
                         <quiet>true</quiet>
                         <doclint>none</doclint>
                         <additionalJOptions>
