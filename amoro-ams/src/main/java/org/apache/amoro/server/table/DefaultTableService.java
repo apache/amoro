@@ -48,7 +48,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -275,18 +274,24 @@ public class DefaultTableService extends PersistentBase implements TableService 
               try {
                 tableIdentifiersFutures.add(
                     CompletableFuture.supplyAsync(
-                        () -> {
-                          try {
-                            return externalCatalog.listTables(database).stream()
-                                .map(TableIdentity::new)
-                                .collect(Collectors.toSet());
-                          } catch (Exception e) {
-                            LOG.error(
-                                "TableExplorer list tables in database {} error", database, e);
-                            return new HashSet<>();
-                          }
-                        },
-                        tableExplorerExecutors));
+                            () -> {
+                              try {
+                                return externalCatalog.listTables(database).stream()
+                                    .map(TableIdentity::new)
+                                    .collect(Collectors.toSet());
+                              } catch (Exception e) {
+                                LOG.error(
+                                    "TableExplorer list tables in database {} error", database, e);
+                                throw new RuntimeException(e);
+                              }
+                            },
+                            tableExplorerExecutors)
+                        .exceptionally(
+                            ex -> {
+                              LOG.error(
+                                  "TableExplorer list tables in database {} error", database, ex);
+                              throw new RuntimeException(ex);
+                            }));
               } catch (RejectedExecutionException e) {
                 LOG.error(
                     "The queue of table explorer is full, please increase the queue size or thread count.");
