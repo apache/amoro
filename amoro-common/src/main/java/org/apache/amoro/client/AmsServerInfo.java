@@ -22,6 +22,7 @@ import java.util.Objects;
 
 public class AmsServerInfo {
   private String host;
+  private Integer restBindPort;
   private Integer thriftBindPort;
 
   public String getHost() {
@@ -40,21 +41,28 @@ public class AmsServerInfo {
     this.thriftBindPort = thriftBindPort;
   }
 
+  public Integer getRestBindPort() {
+    return restBindPort;
+  }
+
+  public void setRestBindPort(Integer restBindPort) {
+    this.restBindPort = restBindPort;
+  }
+
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
     AmsServerInfo that = (AmsServerInfo) o;
-    return Objects.equals(host, that.host) && Objects.equals(thriftBindPort, that.thriftBindPort);
+    return Objects.equals(host, that.host)
+        && Objects.equals(restBindPort, that.restBindPort)
+        && Objects.equals(thriftBindPort, that.thriftBindPort);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(host, thriftBindPort);
+    return Objects.hash(host, thriftBindPort, restBindPort);
   }
 
   @Override
