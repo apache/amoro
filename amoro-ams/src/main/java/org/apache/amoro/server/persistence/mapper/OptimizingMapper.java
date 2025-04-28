@@ -54,8 +54,8 @@ public interface OptimizingMapper {
 
   /** OptimizingProcess operation below */
   @Delete(
-      "DELETE FROM table_optimizing_process WHERE table_id = #{tableId} and process_id < #{time}")
-  void deleteOptimizingProcessBefore(@Param("tableId") long tableId, @Param("time") long time);
+      "DELETE FROM table_optimizing_process WHERE  process_id < #{time} limit 100")
+  void deleteOptimizingProcessBefore(@Param("time") long time);
 
   @Insert(
       "INSERT INTO table_optimizing_process(table_id, catalog_name, db_name, table_name ,process_id,"
@@ -256,8 +256,8 @@ public interface OptimizingMapper {
   void updateTaskRuntime(
       @Param("taskRuntime") TaskRuntime<? extends StagedTaskDescriptor<?, ?, ?>> taskRuntime);
 
-  @Delete("DELETE FROM task_runtime WHERE table_id = #{tableId} AND process_id < #{time}")
-  void deleteTaskRuntimesBefore(@Param("tableId") long tableId, @Param("time") long time);
+  @Delete("DELETE FROM task_runtime  process_id < #{time} limit 100")
+  void deleteTaskRuntimesBefore(@Param("time") long time);
 
   /** Optimizing rewrite input and output operations below */
   @Update(
@@ -309,6 +309,6 @@ public interface OptimizingMapper {
           + " #{taskQuota.failReason, jdbcType=VARCHAR})")
   void insertTaskQuota(@Param("taskQuota") TaskRuntime.TaskQuota taskQuota);
 
-  @Delete("DELETE FROM optimizing_task_quota WHERE table_id = #{table_id} AND process_id < #{time}")
-  void deleteOptimizingQuotaBefore(@Param("table_id") long tableId, @Param("time") long timestamp);
+  @Delete("DELETE FROM optimizing_task_quota WHERE  process_id < #{time} limit 100")
+  void deleteOptimizingQuotaBefore(@Param("time") long timestamp);
 }
