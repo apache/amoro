@@ -41,45 +41,24 @@ public class TimerTaskManager {
 
     public void addTask(String taskId, Runnable task,long period) {
         if (taskMap.containsKey(taskId)) {
-            System.out.println("Task with ID " + taskId + " already exists. Replacing the old task.");
-            cancelTask(taskId); // 先取消旧任务
+            cancelTask(taskId);
         }
-        // 使用线程池执行定时任务
         executorService.scheduleAtFixedRate(task, delay, period, TimeUnit.MILLISECONDS);
         taskMap.put(taskId, task);
-        System.out.println("Task with ID " + taskId + " added.");
     }
 
 
     public void cancelTask(String taskId) {
         Runnable task = taskMap.get(taskId);
         if (task != null) {
-            // 取消任务
-            // 注意：这里我们没有直接取消任务，因为 ScheduledExecutorService 并不直接支持取消某个任务
-            // 但我们可以在管理中移除它（通常我们会通过任务标识符管理任务）
-            taskMap.remove(taskId);  // 从任务列表中移除
+            taskMap.remove(taskId);
         }
     }
 
-    /**
-     * 更新一个已经存在的定时任务
-     * @param taskId 任务标识
-     * @param newTask 要执行的新 Runnable 任务
-     * @param period 任务执行的间隔时间
-     */
-    public void updateTask(String taskId, Runnable newTask, long period) {
-        cancelTask(taskId);  // 先取消旧任务
-        addTask(taskId, newTask, period);  // 添加新任务
-    }
-
-    public Map<String, Runnable> getAllTasks() {
-        return taskMap;
-    }
 
     public void stopAllTasks() {
         executorService.shutdown();
         taskMap.clear();
-        System.out.println("All tasks have been stopped.");
     }
 
     public void startTimer() {
