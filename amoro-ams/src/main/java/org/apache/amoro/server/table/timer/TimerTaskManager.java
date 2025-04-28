@@ -23,9 +23,7 @@ public class TimerTaskManager {
 
     private static final TimerTaskManager instance = new TimerTaskManager();
 
-    // 创建一个ScheduledExecutorService线程池，用于管理定时任务
     private ScheduledExecutorService executorService;
-    // 用于存储定时任务的 Map（可以根据任务名称或者其他标识符来存储）
     private Map<String, Runnable> taskMap;
 
     private static final int delay = 60 * 1000 ;
@@ -38,19 +36,13 @@ public class TimerTaskManager {
 
 
     private TimerTaskManager() {
-        // 初始化线程池，这里使用一个核心线程数为 1 的线程池
         this.executorService = Executors.newScheduledThreadPool(1);
         this.taskMap = new ConcurrentHashMap<>();
     }
     public static TimerTaskManager getInstance() {
         return instance;
     }
-    /**
-     * 添加一个定时任务
-     * @param taskId 任务标识
-     * @param task 要执行的 Runnable 任务
-     * @param period 任务执行的间隔时间
-     */
+
     public void addTask(String taskId, Runnable task,long period) {
         if (taskMap.containsKey(taskId)) {
             System.out.println("Task with ID " + taskId + " already exists. Replacing the old task.");
@@ -62,10 +54,7 @@ public class TimerTaskManager {
         System.out.println("Task with ID " + taskId + " added.");
     }
 
-    /**
-     * 取消一个定时任务
-     * @param taskId 任务标识
-     */
+
     public void cancelTask(String taskId) {
         Runnable task = taskMap.get(taskId);
         if (task != null) {
@@ -87,19 +76,13 @@ public class TimerTaskManager {
         addTask(taskId, newTask, period);  // 添加新任务
     }
 
-    /**
-     * 获取当前所有的定时任务
-     */
     public Map<String, Runnable> getAllTasks() {
         return taskMap;
     }
 
-    /**
-     * 停止所有定时任务，并关闭线程池
-     */
     public void stopAllTasks() {
-        executorService.shutdown();  // 停止线程池
-        taskMap.clear();  // 清空任务列表
+        executorService.shutdown();
+        taskMap.clear();
         System.out.println("All tasks have been stopped.");
     }
 

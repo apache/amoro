@@ -200,6 +200,7 @@ public class AmoroServiceContainer {
   }
 
   public void dispose() {
+    TimerTaskManager.getInstance().stopAllTasks();
     if (tableManagementServer != null && tableManagementServer.isServing()) {
       LOG.info("Stopping table management server...");
       tableManagementServer.stop();
