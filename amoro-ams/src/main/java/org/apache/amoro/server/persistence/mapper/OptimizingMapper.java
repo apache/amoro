@@ -53,8 +53,7 @@ import java.util.Map;
 public interface OptimizingMapper {
 
   /** OptimizingProcess operation below */
-  @Delete(
-      "DELETE FROM table_optimizing_process WHERE  process_id < #{time} limit 100")
+  @Delete("DELETE FROM table_optimizing_process WHERE  process_id < #{time} limit 100")
   void deleteOptimizingProcessBefore(@Param("time") long time);
 
   @Insert(

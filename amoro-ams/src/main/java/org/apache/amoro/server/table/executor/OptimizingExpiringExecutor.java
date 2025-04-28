@@ -20,8 +20,6 @@ package org.apache.amoro.server.table.executor;
 
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
-import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,16 +30,16 @@ public class OptimizingExpiringExecutor {
   private final long keepTime;
   private final long interval;
 
-
   public OptimizingExpiringExecutor(int keepDays, int intervalHours) {
     this.keepTime = keepDays * 24 * 60 * 60 * 1000L;
     this.interval = intervalHours * 60 * 60 * 1000L;
   }
 
-  public long getInterval()  {
+  public long getInterval() {
     return interval;
   }
-  public long getKeepTime()  {
+
+  public long getKeepTime() {
     return keepTime;
   }
 
@@ -49,8 +47,7 @@ public class OptimizingExpiringExecutor {
     try {
       persistency.doExpiring();
     } catch (Throwable throwable) {
-      LOG.error(
-          "Expiring  failed.", throwable);
+      LOG.error("Expiring  failed.", throwable);
     }
   }
 
@@ -61,18 +58,12 @@ public class OptimizingExpiringExecutor {
           () ->
               doAs(
                   OptimizingMapper.class,
-                  mapper ->
-                      mapper.deleteOptimizingProcessBefore(expireTime)),
+                  mapper -> mapper.deleteOptimizingProcessBefore(expireTime)),
+          () -> doAs(OptimizingMapper.class, mapper -> mapper.deleteTaskRuntimesBefore(expireTime)),
           () ->
               doAs(
                   OptimizingMapper.class,
-                  mapper ->
-                      mapper.deleteTaskRuntimesBefore(expireTime)),
-          () ->
-              doAs(
-                  OptimizingMapper.class,
-                  mapper ->
-                      mapper.deleteOptimizingQuotaBefore(expireTime)));
+                  mapper -> mapper.deleteOptimizingQuotaBefore(expireTime)));
     }
   }
 }

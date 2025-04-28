@@ -31,7 +31,7 @@ public class AsyncTableExecutors {
   private DanglingDeleteFilesCleaningExecutor danglingDeleteFilesCleaningExecutor;
   private BlockerExpiringExecutor blockerExpiringExecutor;
   private OptimizingCommitExecutor optimizingCommitExecutor;
-  //private OptimizingExpiringExecutor optimizingExpiringExecutor;
+  // private OptimizingExpiringExecutor optimizingExpiringExecutor;
   private HiveCommitSyncExecutor hiveCommitSyncExecutor;
   private TagsAutoCreatingExecutor tagsAutoCreatingExecutor;
   private DataExpiringExecutor dataExpiringExecutor;
@@ -62,11 +62,12 @@ public class AsyncTableExecutors {
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
             tableService, conf.getInteger(AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
-//    this.optimizingExpiringExecutor =
-//        new OptimizingExpiringExecutor(
-//            tableService,
-//            conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_DAYS),
-//            conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL_HOURS));
+    //    this.optimizingExpiringExecutor =
+    //        new OptimizingExpiringExecutor(
+    //            tableService,
+    //            conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_DAYS),
+    //
+    // conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL_HOURS));
     this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableService);
     if (conf.getBoolean(AmoroManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
       this.hiveCommitSyncExecutor =
@@ -119,9 +120,9 @@ public class AsyncTableExecutors {
     return optimizingCommitExecutor;
   }
 
-//  public OptimizingExpiringExecutor getOptimizingExpiringExecutor() {
-//    return optimizingExpiringExecutor;
-//  }
+  //  public OptimizingExpiringExecutor getOptimizingExpiringExecutor() {
+  //    return optimizingExpiringExecutor;
+  //  }
 
   public HiveCommitSyncExecutor getHiveCommitSyncExecutor() {
     return hiveCommitSyncExecutor;
