@@ -274,17 +274,10 @@ public class DefaultTableService extends PersistentBase implements TableService 
               try {
                 tableIdentifiersFutures.add(
                     CompletableFuture.supplyAsync(
-                            () -> {
-                              try {
-                                return externalCatalog.listTables(database).stream()
+                            () ->
+                                externalCatalog.listTables(database).stream()
                                     .map(TableIdentity::new)
-                                    .collect(Collectors.toSet());
-                              } catch (Exception e) {
-                                LOG.error(
-                                    "TableExplorer list tables in database {} error", database, e);
-                                throw new RuntimeException(e);
-                              }
-                            },
+                                    .collect(Collectors.toSet()),
                             tableExplorerExecutors)
                         .exceptionally(
                             ex -> {
