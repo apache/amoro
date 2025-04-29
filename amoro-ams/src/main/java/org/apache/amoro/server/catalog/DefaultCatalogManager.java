@@ -28,6 +28,7 @@ import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.cache.CacheBuilder;
 import org.apache.amoro.shade.guava32.com.google.common.cache.CacheLoader;
 import org.apache.amoro.shade.guava32.com.google.common.cache.LoadingCache;
@@ -122,6 +123,11 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
             n -> CatalogBuilder.buildServerCatalog(catalogMeta.get(), serverConfiguration));
     serverCatalog.reload(catalogMeta.get());
     return serverCatalog;
+  }
+
+  @VisibleForTesting
+  public void setServerCatalog(ServerCatalog catalog) {
+    serverCatalogMap.put(catalog.name(), catalog);
   }
 
   @Override
