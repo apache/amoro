@@ -75,3 +75,6 @@ update resource_group set properties = JSON_SET(properties, '$."flink-conf.taskm
 -- update resource memory unit
 update resource set properties = JSON_SET(properties, '$."flink-conf.jobmanager.memory.process.size"', CONCAT(JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.jobmanager.memory.process.size"')), 'MB')) WHERE JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.jobmanager.memory.process.size"')) REGEXP '^[0-9]+$';
 update resource set properties = JSON_SET(properties, '$."flink-conf.taskmanager.memory.process.size"', CONCAT(JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.taskmanager.memory.process.size"')), 'MB')) WHERE JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.taskmanager.memory.process.size"')) REGEXP '^[0-9]+$';
+
+-- Update the precision from s level to ms.
+ ALTER TABLE `table_runtime` MODIFY COLUMN `optimizing_status_start_time` TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Table optimize status start time';

@@ -183,7 +183,7 @@ CREATE TABLE table_runtime
     last_minor_optimizing_time TIMESTAMP,
     last_full_optimizing_time TIMESTAMP,
     optimizing_status_code INT DEFAULT 700,
-    optimizing_status_start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    optimizing_status_start_time TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3),
     optimizing_process_id BIGINT NOT NULL,
     optimizer_group VARCHAR(64) NOT NULL,
     table_config TEXT,
