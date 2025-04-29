@@ -173,7 +173,6 @@ public class AmoroServiceContainer {
     addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getDanglingDeleteFilesCleaningExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
-    // addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
