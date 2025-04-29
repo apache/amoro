@@ -255,7 +255,7 @@ public interface OptimizingMapper {
   void updateTaskRuntime(
       @Param("taskRuntime") TaskRuntime<? extends StagedTaskDescriptor<?, ?, ?>> taskRuntime);
 
-  @Delete("DELETE FROM task_runtime  process_id < #{time} limit 100")
+  @Delete("DELETE FROM task_runtime where process_id < #{time} limit 100")
   void deleteTaskRuntimesBefore(@Param("time") long time);
 
   /** Optimizing rewrite input and output operations below */
