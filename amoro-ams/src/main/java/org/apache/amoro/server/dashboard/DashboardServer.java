@@ -99,17 +99,20 @@ public class DashboardServer {
   private final String basicAuthPassword;
   private final UserInfoManager userInfoManager;
   private final PermissionManager permissionManager;
+
   public DashboardServer(
-          Configurations serviceConfig,
-          CatalogManager catalogManager,
-          TableManager tableManager,
-          OptimizerManager optimizerManager,
-          DefaultOptimizingService optimizingService,
-          TerminalManager terminalManager, UserInfoManager userInfoManager, PermissionManager permissionManager) {
+      Configurations serviceConfig,
+      CatalogManager catalogManager,
+      TableManager tableManager,
+      OptimizerManager optimizerManager,
+      DefaultOptimizingService optimizingService,
+      TerminalManager terminalManager,
+      UserInfoManager userInfoManager,
+      PermissionManager permissionManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController();
-    this.loginController = new LoginController(serviceConfig,userInfoManager);
+    this.loginController = new LoginController(serviceConfig, userInfoManager);
     // TODO: remove table service from OptimizerGroupController
     this.optimizerGroupController =
         new OptimizerGroupController(tableManager, optimizingService, optimizerManager);
@@ -394,26 +397,26 @@ public class DashboardServer {
       if (null == ctx.sessionAttribute("user")) {
         throw new ForbiddenException("User session attribute is missed for url: " + uriPath);
       }
-      //TODO : check permission
-        SessionInfo user = ctx.sessionAttribute("user");
+      // TODO : check permission
+      SessionInfo user = ctx.sessionAttribute("user");
       String method = ctx.method();
       String path = ctx.path();
-      if (!permissionManager.accessible(user.getUserName(),path,method)){
-          throw new AccessDeniedException("unable to access url: " + uriPath);
+      if (!permissionManager.accessible(user.getUserName(), path, method)) {
+        throw new AccessDeniedException("unable to access url: " + uriPath);
       }
       return;
     }
     if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
       BasicAuthCredentials cred = ctx.basicAuthCredentials();
-        if (!userInfoManager.isValidate(cred.component1(), cred.component2())) {
-            throw new SignatureCheckException(
-                    "Failed to authenticate via basic authentication for url:" + uriPath);
-        }
-//      if (!(basicAuthUser.equals(cred.component1())
-//          && basicAuthPassword.equals(cred.component2()))) {
-//        throw new SignatureCheckException(
-//            "Failed to authenticate via basic authentication for url:" + uriPath);
-//      }
+      if (!userInfoManager.isValidate(cred.component1(), cred.component2())) {
+        throw new SignatureCheckException(
+            "Failed to authenticate via basic authentication for url:" + uriPath);
+      }
+      //      if (!(basicAuthUser.equals(cred.component1())
+      //          && basicAuthPassword.equals(cred.component2()))) {
+      //        throw new SignatureCheckException(
+      //            "Failed to authenticate via basic authentication for url:" + uriPath);
+      //      }
     } else {
       checkApiToken(
           ctx.url(), ctx.queryParam("apiKey"), ctx.queryParam("signature"), ctx.queryParamMap());
@@ -431,14 +434,14 @@ public class DashboardServer {
     } else if (e instanceof SignatureCheckException) {
       ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature check failed", ""));
     } else if (e instanceof AccessDeniedException) {
-        if (!ctx.req.getRequestURI().startsWith("/api/ams")) {
-            ctx.html(getIndexFileContent());
-        } else {
-            ctx.status(HttpCode.FORBIDDEN);
-            ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Access Denied", ""));
-            return;
-        }
-    }else {
+      if (!ctx.req.getRequestURI().startsWith("/api/ams")) {
+        ctx.html(getIndexFileContent());
+      } else {
+        ctx.status(HttpCode.FORBIDDEN);
+        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Access Denied", ""));
+        return;
+      }
+    } else {
       ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
     }
     LOG.error("An error occurred while processing the url:{}", ctx.url(), e);

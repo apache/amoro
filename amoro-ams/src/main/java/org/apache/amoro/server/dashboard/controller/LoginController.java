@@ -25,7 +25,6 @@ import org.apache.amoro.server.dashboard.model.SessionInfo;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.permission.UserInfoManager;
 
-import java.io.Serializable;
 import java.util.Map;
 
 /** The controller that handles login requests. */
@@ -34,7 +33,8 @@ public class LoginController {
   private final String adminUser;
   private final String adminPassword;
   private final UserInfoManager userInfoManager;
-  public LoginController(Configurations serviceConfig,UserInfoManager userInfoManager) {
+
+  public LoginController(Configurations serviceConfig, UserInfoManager userInfoManager) {
     adminUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
     adminPassword = serviceConfig.get(AmoroManagementConf.ADMIN_PASSWORD);
     this.userInfoManager = userInfoManager;
@@ -65,5 +65,4 @@ public class LoginController {
     ctx.removeCookie("JSESSIONID");
     ctx.json(OkResponse.ok());
   }
-
 }

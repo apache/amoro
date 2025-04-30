@@ -44,7 +44,7 @@ public class SessionInfo {
     this.sessionId = sessionId;
   }
 
-  public SessionInfo(String userName,String loginTime) {
+  public SessionInfo(String userName, String loginTime) {
     this.userName = userName;
     this.loginTime = loginTime;
   }

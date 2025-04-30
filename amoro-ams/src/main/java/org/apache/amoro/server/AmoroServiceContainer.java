@@ -113,6 +113,7 @@ public class AmoroServiceContainer {
   private AmsServiceMetrics amsServiceMetrics;
   private UserInfoManager userInfoManager;
   private PermissionManager permissionManager;
+
   public AmoroServiceContainer() throws Exception {
     initConfig();
     haContainer = new HighAvailabilityContainer(serviceConfig);
@@ -267,7 +268,8 @@ public class AmoroServiceContainer {
             optimizerManager,
             optimizingService,
             terminalManager,
-             userInfoManager, permissionManager);
+            userInfoManager,
+            permissionManager);
     RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
 
     httpServer =
