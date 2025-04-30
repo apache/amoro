@@ -321,13 +321,19 @@ public class IcebergTableMaintainer implements TableMaintainer {
     // so acquire in advance
     // to prevent repeated acquisition
     Set<String> validFiles = orphanFileCleanNeedToExcludeFiles();
-    LOG.info("Starting cleaning orphan content files for table {}", table.name());
+    LOG.info(
+        "Starting cleaning orphan content files for table {} before {}",
+        table.name(),
+        Instant.ofEpochMilli(lastTime));
     clearInternalTableContentsFiles(lastTime, validFiles, orphanFilesCleaningMetrics);
   }
 
   protected void cleanMetadata(
       long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
-    LOG.info("Starting cleaning metadata files for table {}", table.name());
+    LOG.info(
+        "Starting cleaning metadata files for table {} before {}",
+        table.name(),
+        Instant.ofEpochMilli(lastTime));
     clearInternalTableMetadata(lastTime, orphanFilesCleaningMetrics);
   }
 
