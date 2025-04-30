@@ -51,6 +51,8 @@ import org.apache.amoro.server.dashboard.controller.TerminalController;
 import org.apache.amoro.server.dashboard.controller.VersionController;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.ParamSignatureCalculator;
+import org.apache.amoro.server.permission.PermissionManager;
+import org.apache.amoro.server.permission.UserInfoManager;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.terminal.TerminalManager;
@@ -93,18 +95,19 @@ public class DashboardServer {
   private final String authType;
   private final String basicAuthUser;
   private final String basicAuthPassword;
-
+  private final UserInfoManager userInfoManager;
+  private final PermissionManager permissionManager;
   public DashboardServer(
-      Configurations serviceConfig,
-      CatalogManager catalogManager,
-      TableManager tableManager,
-      OptimizerManager optimizerManager,
-      DefaultOptimizingService optimizingService,
-      TerminalManager terminalManager) {
+          Configurations serviceConfig,
+          CatalogManager catalogManager,
+          TableManager tableManager,
+          OptimizerManager optimizerManager,
+          DefaultOptimizingService optimizingService,
+          TerminalManager terminalManager, UserInfoManager userInfoManager, PermissionManager permissionManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController();
-    this.loginController = new LoginController(serviceConfig);
+    this.loginController = new LoginController(serviceConfig,userInfoManager);
     // TODO: remove table service from OptimizerGroupController
     this.optimizerGroupController =
         new OptimizerGroupController(tableManager, optimizingService, optimizerManager);
@@ -124,6 +127,8 @@ public class DashboardServer {
     this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
     this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
     this.basicAuthPassword = serviceConfig.get(AmoroManagementConf.ADMIN_PASSWORD);
+    this.userInfoManager = userInfoManager;
+    this.permissionManager = permissionManager;
   }
 
   private volatile String indexHtml = null;
@@ -387,15 +392,22 @@ public class DashboardServer {
       if (null == ctx.sessionAttribute("user")) {
         throw new ForbiddenException("User session attribute is missed for url: " + uriPath);
       }
+      //TODO : check permission
+
       return;
     }
     if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
       BasicAuthCredentials cred = ctx.basicAuthCredentials();
-      if (!(basicAuthUser.equals(cred.component1())
-          && basicAuthPassword.equals(cred.component2()))) {
-        throw new SignatureCheckException(
-            "Failed to authenticate via basic authentication for url:" + uriPath);
-      }
+      //TODO :check user info
+        if (!userInfoManager.isValidate(cred.component1(), cred.component2())) {
+            throw new SignatureCheckException(
+                    "Failed to authenticate via basic authentication for url:" + uriPath);
+        }
+//      if (!(basicAuthUser.equals(cred.component1())
+//          && basicAuthPassword.equals(cred.component2()))) {
+//        throw new SignatureCheckException(
+//            "Failed to authenticate via basic authentication for url:" + uriPath);
+//      }
     } else {
       checkApiToken(
           ctx.url(), ctx.queryParam("apiKey"), ctx.queryParam("signature"), ctx.queryParamMap());

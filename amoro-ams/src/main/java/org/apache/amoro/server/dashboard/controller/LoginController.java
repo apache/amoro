@@ -22,6 +22,7 @@ import io.javalin.http.Context;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.dashboard.response.OkResponse;
+import org.apache.amoro.server.permission.UserInfoManager;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -31,10 +32,11 @@ public class LoginController {
 
   private final String adminUser;
   private final String adminPassword;
-
-  public LoginController(Configurations serviceConfig) {
+  private final UserInfoManager userInfoManager;
+  public LoginController(Configurations serviceConfig,UserInfoManager userInfoManager) {
     adminUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
     adminPassword = serviceConfig.get(AmoroManagementConf.ADMIN_PASSWORD);
+    this.userInfoManager = userInfoManager;
   }
 
   /** Get current user. */
@@ -49,8 +51,8 @@ public class LoginController {
     Map<String, String> bodyParams = ctx.bodyAsClass(Map.class);
     String user = bodyParams.get("user");
     String pwd = bodyParams.get("password");
-    if (adminUser.equals(user) && (adminPassword.equals(pwd))) {
-      ctx.sessionAttribute("user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
+    if (userInfoManager.isValidate(user, pwd)) {
+      ctx.sessionAttribute("user", new SessionInfo(user, System.currentTimeMillis() + ""));
       ctx.json(OkResponse.of("success"));
     } else {
       throw new RuntimeException("bad user " + user + " or password!");

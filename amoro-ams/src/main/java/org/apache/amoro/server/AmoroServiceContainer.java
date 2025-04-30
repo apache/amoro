@@ -38,6 +38,8 @@ import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.permission.PermissionManager;
+import org.apache.amoro.server.permission.UserInfoManager;
 import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
@@ -109,7 +111,8 @@ public class AmoroServiceContainer {
   private TServer optimizingServiceServer;
   private Javalin httpServer;
   private AmsServiceMetrics amsServiceMetrics;
-
+  private UserInfoManager userInfoManager;
+  private PermissionManager permissionManager;
   public AmoroServiceContainer() throws Exception {
     initConfig();
     haContainer = new HighAvailabilityContainer(serviceConfig);
@@ -163,7 +166,8 @@ public class AmoroServiceContainer {
 
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
-
+    userInfoManager = new UserInfoManager();
+    permissionManager = new PermissionManager();
     LOG.info("Setting up AMS table executors...");
     AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
     addHandlerChain(optimizingService.getTableRuntimeHandler());
@@ -262,7 +266,8 @@ public class AmoroServiceContainer {
             tableManager,
             optimizerManager,
             optimizingService,
-            terminalManager);
+            terminalManager,
+             userInfoManager, permissionManager);
     RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
 
     httpServer =
