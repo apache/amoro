@@ -72,7 +72,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -325,7 +324,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     LOG.info(
         "Starting cleaning orphan content files for table {} before {}",
         table.name(),
-        new Timestamp(lastTime));
+        Instant.ofEpochMilli(lastTime));
     clearInternalTableContentsFiles(lastTime, validFiles, orphanFilesCleaningMetrics);
   }
 
@@ -334,7 +333,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     LOG.info(
         "Starting cleaning metadata files for table {} before {}",
         table.name(),
-        new Timestamp(lastTime));
+        Instant.ofEpochMilli(lastTime));
     clearInternalTableMetadata(lastTime, orphanFilesCleaningMetrics);
   }
 
