@@ -49,6 +49,7 @@ import org.apache.amoro.server.dashboard.controller.SettingController;
 import org.apache.amoro.server.dashboard.controller.TableController;
 import org.apache.amoro.server.dashboard.controller.TerminalController;
 import org.apache.amoro.server.dashboard.controller.VersionController;
+import org.apache.amoro.server.dashboard.model.SessionInfo;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.ParamSignatureCalculator;
 import org.apache.amoro.server.permission.PermissionManager;
@@ -393,12 +394,14 @@ public class DashboardServer {
         throw new ForbiddenException("User session attribute is missed for url: " + uriPath);
       }
       //TODO : check permission
-
+        SessionInfo user = ctx.sessionAttribute("user");
+      String method = ctx.method();
+      String path = ctx.path();
+      permissionManager.accessible(user.getUserName(),path,method);
       return;
     }
     if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
       BasicAuthCredentials cred = ctx.basicAuthCredentials();
-      //TODO :check user info
         if (!userInfoManager.isValidate(cred.component1(), cred.component2())) {
             throw new SignatureCheckException(
                     "Failed to authenticate via basic authentication for url:" + uriPath);

@@ -21,6 +21,7 @@ package org.apache.amoro.server.dashboard.controller;
 import io.javalin.http.Context;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.dashboard.model.SessionInfo;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.permission.UserInfoManager;
 
@@ -65,29 +66,4 @@ public class LoginController {
     ctx.json(OkResponse.ok());
   }
 
-  static class SessionInfo implements Serializable {
-    String userName;
-    String loginTime;
-
-    public SessionInfo(String username, String loginTime) {
-      this.userName = username;
-      this.loginTime = loginTime;
-    }
-
-    public String getUserName() {
-      return userName;
-    }
-
-    public void setUserName(String userName) {
-      this.userName = userName;
-    }
-
-    public String getLoginTime() {
-      return loginTime;
-    }
-
-    public void setLoginTime(String loginTime) {
-      this.loginTime = loginTime;
-    }
-  }
 }

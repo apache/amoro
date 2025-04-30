@@ -20,9 +20,33 @@ package org.apache.amoro.server.dashboard.model;
 
 public class SessionInfo {
   private String sessionId;
+  String userName;
+
+  public String getLoginTime() {
+    return loginTime;
+  }
+
+  public void setLoginTime(String loginTime) {
+    this.loginTime = loginTime;
+  }
+
+  public String getUserName() {
+    return userName;
+  }
+
+  public void setUserName(String userName) {
+    this.userName = userName;
+  }
+
+  String loginTime;
 
   public SessionInfo(String sessionId) {
     this.sessionId = sessionId;
+  }
+
+  public SessionInfo(String userName,String loginTime) {
+    this.userName = userName;
+    this.loginTime = loginTime;
   }
 
   public SessionInfo() {}
