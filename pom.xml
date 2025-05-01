@@ -1166,6 +1166,8 @@
                             <exclude>**/Chart.lock</exclude>
                             <!-- artifacts created during release process -->
                             <exclude>release/**</exclude>
+                            <exclude>**/*.conf</exclude>
+                            <exclude>**/*.csv</exclude>
                         </excludes>
                     </configuration>
                     <executions>
