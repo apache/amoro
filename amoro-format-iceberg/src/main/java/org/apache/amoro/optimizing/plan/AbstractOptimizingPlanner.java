@@ -36,9 +36,9 @@ import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -151,27 +151,33 @@ public abstract class AbstractOptimizingPlanner extends AbstractOptimizingEvalua
       return cacheAndReturnTasks(Collections.emptyList());
     }
 
-    List<PartitionEvaluator> evaluators = new ArrayList<>(needOptimizingPlanMap.values());
+    LinkedList<PartitionEvaluator> evaluators = new LinkedList<>(needOptimizingPlanMap.values());
     // prioritize partitions with high cost to avoid starvation
     evaluators.sort(Comparator.comparing(PartitionEvaluator::getWeight, Comparator.reverseOrder()));
 
     double maxInputSize = maxInputSizePerThread * availableCore;
     actualPartitionPlans = Lists.newArrayList();
     long actualInputSize = 0;
-    for (PartitionEvaluator evaluator : evaluators) {
-      actualPartitionPlans.add((AbstractPartitionPlan) evaluator);
-      actualInputSize += evaluator.getCost();
-      if (actualInputSize > maxInputSize) {
-        break;
+    List<RewriteStageTask> plannedTasks = Lists.newArrayList();
+
+    while (plannedTasks.isEmpty() && !evaluators.isEmpty()) {
+      for (PartitionEvaluator evaluator = evaluators.poll();
+          evaluator != null;
+          evaluator = evaluators.poll()) {
+        actualPartitionPlans.add((AbstractPartitionPlan) evaluator);
+        actualInputSize += evaluator.getCost();
+        if (actualInputSize > maxInputSize) {
+          break;
+        }
+      }
+
+      double avgThreadCost = actualInputSize / availableCore;
+      for (AbstractPartitionPlan partitionPlan : actualPartitionPlans) {
+        plannedTasks.addAll(partitionPlan.splitTasks((int) (actualInputSize / avgThreadCost)));
       }
     }
 
-    double avgThreadCost = actualInputSize / availableCore;
-    List<RewriteStageTask> tasks = Lists.newArrayList();
-    for (AbstractPartitionPlan partitionPlan : actualPartitionPlans) {
-      tasks.addAll(partitionPlan.splitTasks((int) (actualInputSize / avgThreadCost)));
-    }
-    if (!tasks.isEmpty()) {
+    if (!plannedTasks.isEmpty()) {
       if (actualPartitionPlans.stream()
           .anyMatch(plan -> plan.getOptimizingType() == OptimizingType.FULL)) {
         optimizingType = OptimizingType.FULL;
@@ -187,12 +193,12 @@ public abstract class AbstractOptimizingPlanner extends AbstractOptimizingEvalua
         "{} finish plan, type = {}, get {} tasks, cost {} ns, {} ms maxInputSize {} actualInputSize {}",
         identifier,
         getOptimizingType(),
-        tasks.size(),
+        plannedTasks.size(),
         endTime - startTime,
         (endTime - startTime) / 1_000_000,
         maxInputSize,
         actualInputSize);
-    return cacheAndReturnTasks(tasks);
+    return cacheAndReturnTasks(plannedTasks);
   }
 
   private List<RewriteStageTask> cacheAndReturnTasks(List<RewriteStageTask> tasks) {
