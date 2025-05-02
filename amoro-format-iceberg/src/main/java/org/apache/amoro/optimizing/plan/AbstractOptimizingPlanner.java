@@ -158,18 +158,22 @@ public abstract class AbstractOptimizingPlanner extends AbstractOptimizingEvalua
     double maxInputSize = maxInputSizePerThread * availableCore;
     actualPartitionPlans = Lists.newArrayList();
     long actualInputSize = 0;
+    double avgThreadCost = actualInputSize / availableCore;
+    List<RewriteStageTask> tasks = Lists.newArrayList();
+
     for (PartitionEvaluator evaluator : evaluators) {
-      actualPartitionPlans.add((AbstractPartitionPlan) evaluator);
-      actualInputSize += evaluator.getCost();
+      AbstractPartitionPlan actualPartitionPlan = (AbstractPartitionPlan) evaluator;
+      List<RewriteStageTask> splitTasks =
+          actualPartitionPlan.splitTasks((int) (actualInputSize / avgThreadCost));
+
+      if (!splitTasks.isEmpty()) {
+        actualPartitionPlans.add(actualPartitionPlan);
+        tasks.addAll(splitTasks);
+        actualInputSize += evaluator.getCost();
+      }
       if (actualInputSize > maxInputSize) {
         break;
       }
-    }
-
-    double avgThreadCost = actualInputSize / availableCore;
-    List<RewriteStageTask> tasks = Lists.newArrayList();
-    for (AbstractPartitionPlan partitionPlan : actualPartitionPlans) {
-      tasks.addAll(partitionPlan.splitTasks((int) (actualInputSize / avgThreadCost)));
     }
     if (!tasks.isEmpty()) {
       if (actualPartitionPlans.stream()
