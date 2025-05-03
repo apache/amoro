@@ -1,0 +1,4 @@
+p, admin, /*, GET|POST|DELETE|PUT
+p, read_only, /*, GET
+g, admin, admin
+g, user, read_only
