@@ -19,7 +19,6 @@
 package org.apache.amoro.server.permission;
 
 import org.apache.amoro.server.Environments;
-import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
