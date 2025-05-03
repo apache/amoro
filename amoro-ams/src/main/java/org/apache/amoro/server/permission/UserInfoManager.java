@@ -19,13 +19,18 @@
 package org.apache.amoro.server.permission;
 
 import org.apache.amoro.server.Environments;
+import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Map;
 
 public class UserInfoManager {
+
+  public static final Logger LOG = LoggerFactory.getLogger(UserInfoManager.class);
 
   private final Map<String, String> users = Maps.newHashMap();
 
@@ -54,6 +59,7 @@ public class UserInfoManager {
                 }
               });
     } catch (Exception e) {
+      LOG.error("load userInfo file error", e);
       throw new RuntimeException("load userInfo file error", e);
     }
   }
