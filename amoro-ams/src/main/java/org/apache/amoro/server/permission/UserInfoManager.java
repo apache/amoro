@@ -47,7 +47,12 @@ public class UserInfoManager {
 
   private void loadUserInfoFileToMap(String filePath) {
     try {
-      FileUtils.readLines(new File(filePath), "UTF-8")
+      File file = new File(filePath);
+      if (!file.exists()) {
+        LOG.warn("userInfo file not exist, please check your config");
+        return;
+      }
+      FileUtils.readLines(file, "UTF-8")
           .forEach(
               line -> {
                 String[] parts = line.split(",");
