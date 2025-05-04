@@ -20,14 +20,28 @@ package org.apache.amoro.server.permission;
 
 import org.apache.amoro.server.Environments;
 import org.casbin.jcasbin.main.Enforcer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
 
 public class PermissionManager {
+
+  public static final Logger LOG = LoggerFactory.getLogger(UserInfoManager.class);
+
   private final Enforcer enforcer;
 
   public PermissionManager() {
     String modelPath = Environments.getConfigPath() + "/rbac_model.conf";
-    String policyFile = Environments.getConfigPath() + "/policy.csv";
-    enforcer = new Enforcer(modelPath, policyFile);
+    String policyPath = Environments.getConfigPath() + "/policy.csv";
+    File modelFile = new File(modelPath);
+    File policyFile = new File(policyPath);
+    if (!modelFile.exists() || !policyFile.exists()) {
+      enforcer = new Enforcer();
+      LOG.warn("model or policy file not exist, please check your config");
+      return;
+    }
+    enforcer = new Enforcer(modelPath, policyPath);
   }
 
   public boolean accessible(String user, String url, String method) {
