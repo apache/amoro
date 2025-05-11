@@ -57,6 +57,19 @@ public interface OptimizingMapper {
       "DELETE FROM table_optimizing_process WHERE table_id = #{tableId} and process_id < #{time}")
   void deleteOptimizingProcessBefore(@Param("tableId") long tableId, @Param("time") long time);
 
+  @Delete(
+      "<script>"
+          + "DELETE FROM table_optimizing_process "
+          + "<if test='validTableIds.size() > 0'>"
+          + "WHERE table_id NOT IN"
+          + "<foreach item='item' index='index' collection='validTableIds' open='(' separator=',' close=')'>"
+          + "#{item}"
+          + "</foreach>"
+          + "</if>"
+          + "</script>")
+  void deleteAllOptimizingProcessExcludingValidTableIds(
+      @Param("validTableIds") List<Long> validTableIds);
+
   @Insert(
       "INSERT INTO table_optimizing_process(table_id, catalog_name, db_name, table_name ,process_id,"
           + " target_snapshot_id, target_change_snapshot_id, status, optimizing_type, plan_time, summary, from_sequence,"
@@ -259,6 +272,19 @@ public interface OptimizingMapper {
   @Delete("DELETE FROM task_runtime WHERE table_id = #{tableId} AND process_id < #{time}")
   void deleteTaskRuntimesBefore(@Param("tableId") long tableId, @Param("time") long time);
 
+  @Delete(
+      "<script>"
+          + "DELETE FROM task_runtime "
+          + "<if test='validTableIds.size() > 0'>"
+          + "WHERE table_id NOT IN"
+          + "<foreach item='item' index='index' collection='validTableIds' open='(' separator=',' close=')'>"
+          + "#{item}"
+          + "</foreach>"
+          + "</if>"
+          + "</script>")
+  void deleteAllTaskRuntimesExcludingValidTableIds(
+      @Param("validTableIds") List<Long> validTableIds);
+
   /** Optimizing rewrite input and output operations below */
   @Update(
       "UPDATE table_optimizing_process SET rewrite_input = #{input, jdbcType=BLOB,"
@@ -311,4 +337,17 @@ public interface OptimizingMapper {
 
   @Delete("DELETE FROM optimizing_task_quota WHERE table_id = #{table_id} AND process_id < #{time}")
   void deleteOptimizingQuotaBefore(@Param("table_id") long tableId, @Param("time") long timestamp);
+
+  @Delete(
+      "<script>"
+          + "DELETE FROM optimizing_task_quota "
+          + "<if test='validTableIds.size() > 0'>"
+          + "WHERE table_id NOT IN"
+          + "<foreach item='item' index='index' collection='validTableIds' open='(' separator=',' close=')'>"
+          + "#{item}"
+          + "</foreach>"
+          + "</if>"
+          + "</script>")
+  void deleteAllOptimizingQuotaExcludingValidTableIds(
+      @Param("validTableIds") List<Long> validTableIds);
 }
