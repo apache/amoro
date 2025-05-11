@@ -498,4 +498,28 @@ public interface TableMetaMapper {
       @Param("fuzzyDbName") String fuzzyDbName,
       @Param("fuzzyTableName") String fuzzyTableName,
       @Param("statusCodeFilter") List<Integer> statusCodeFilter);
+
+  @Select(
+      "SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, a.current_snapshot_id, a"
+          + ".current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId,"
+          + " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time,"
+          + " a.optimizing_status_code, a.optimizing_status_start_time, a.optimizing_process_id,"
+          + " a.optimizer_group, a.table_config, a.pending_input, a.table_summary, b.optimizing_type, b.target_snapshot_id,"
+          + " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a"
+          + " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id"
+          + " WHERE a.table_id not in (SELECT i.table_id FROM table_identifier i)")
+  @ResultMap("tableRuntimeMeta")
+  List<TableRuntimeMeta> selectOrphanTableRuntimes();
+
+  @Select(
+      "SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier i"
+          + " WHERE i.table_id not in (SELECT table_id FROM table_runtime)")
+  @Results({
+    @Result(property = "id", column = "table_id"),
+    @Result(property = "tableName", column = "table_name"),
+    @Result(property = "database", column = "db_name"),
+    @Result(property = "catalog", column = "catalog_name"),
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
+  })
+  List<ServerTableIdentifier> selectOrphanTableIdentifiers();
 }
