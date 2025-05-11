@@ -23,6 +23,7 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.exception.ObjectNotExistsException;
@@ -35,6 +36,7 @@ import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
@@ -146,7 +148,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
   @Override
   public void initialize() {
     checkNotStarted();
-
+    // Clear orphan tableRuntime and tableIdentifier data with orphaned tableIds.
+    clearOrphanTables();
+    // Initialize valid table runtime objects
     List<TableRuntimeMeta> tableRuntimeMetaList =
         getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
     List<DefaultTableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
@@ -507,6 +511,107 @@ public class DefaultTableService extends PersistentBase implements TableService 
       tableRuntimeMap.putIfAbsent(tableIdentifier.getId(), existedTableRuntime);
       throw t;
     }
+  }
+
+  /**
+   * Clear orphan tableRuntime/tableIdentifier/optimizingProcess information.
+   *
+   * <p>This method identifies and removes tableRuntime/tableIdentifier metadata that is no longer
+   * associated with any valid tableIdentifier/tableRuntime.
+   */
+  @VisibleForTesting
+  public void clearOrphanTables() {
+    // Retrieve all orphan table runtimes
+    List<TableRuntimeMeta> orphanTableRuntimes =
+        getAs(TableMetaMapper.class, TableMetaMapper::selectOrphanTableRuntimes);
+    LOG.info("Find {} orphan table runtimes", orphanTableRuntimes.size());
+    orphanTableRuntimes.forEach(
+        orphanTableRuntime -> {
+          // Since the table format information in the tableIdentifier of these tableRuntimes has
+          // been lost, here we set the format to “Iceberg” by default. It will only trigger the
+          // method TableRuntimeHandlerImpl#fireTableRemoved, and calling it before the handler is
+          // initialized will have no effect.
+          orphanTableRuntime.setFormat(TableFormat.ICEBERG);
+          removeExistingTableRuntime(orphanTableRuntime);
+        });
+
+    // Retrieve all orphan table identifiers
+    List<ServerTableIdentifier> orphanTableIdentifiers =
+        getAs(TableMetaMapper.class, TableMetaMapper::selectOrphanTableIdentifiers);
+    LOG.info(
+        "Find {} orphan table identifiers: {}",
+        orphanTableIdentifiers.size(),
+        orphanTableIdentifiers);
+    orphanTableIdentifiers.forEach(
+        orphanTableIdentifier ->
+            doAs(
+                TableMetaMapper.class,
+                mapper ->
+                    mapper.deleteTableIdByName(
+                        orphanTableIdentifier.getCatalog(),
+                        orphanTableIdentifier.getDatabase(),
+                        orphanTableIdentifier.getTableName())));
+
+    // Load valid table runtime metadata, where all tableRuntimes share a tableId with one of the
+    // tableIdentifier's
+    List<TableRuntimeMeta> tableRuntimeMetaList =
+        getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
+    List<Long> validTableIds =
+        tableRuntimeMetaList.stream()
+            .map(TableRuntimeMeta::getTableId)
+            .collect(Collectors.toList());
+    // Clear optimizing information for tables that are not valid
+    clearTableOptimizingInformationExcludingValidTables(validTableIds);
+  }
+
+  @VisibleForTesting
+  public void removeExistingTableRuntime(TableRuntimeMeta tableRuntimeMeta) {
+    if (tableRuntimeMeta != null) {
+      LOG.info(
+          "Remove existing TableRuntimeMeta for table {}.",
+          new TableIdentifier(
+              tableRuntimeMeta.getCatalogName(),
+              tableRuntimeMeta.getDbName(),
+              tableRuntimeMeta.getTableName()));
+      TableRuntime existedTableRuntime =
+          Optional.ofNullable(tableRuntimeMap.remove(tableRuntimeMeta.getTableId()))
+              .orElseGet(() -> new TableRuntime(tableRuntimeMeta, this));
+      if (headHandler != null) {
+        headHandler.fireTableRemoved(existedTableRuntime);
+      }
+      existedTableRuntime.dispose();
+    }
+  }
+
+  /**
+   * Clear optimizing information for invalid tableIds. This method is primarily used during the
+   * initialization of DefaultTableService to clean up historical optimization process information
+   * for tables, excluding the valid tables currently in use.
+   *
+   * <p>The purpose is to ensure that only information relevant to existing valid tables is
+   * retained, while unnecessary or outdated information is cleared.</>
+   *
+   * @param validTableIds A list containing the IDs of the valid tables that should not be cleared.
+   */
+  @VisibleForTesting
+  public void clearTableOptimizingInformationExcludingValidTables(List<Long> validTableIds) {
+    LOG.info(
+        "Expiring all optimizing process information for tables excluding {} valid table(s): {}.",
+        validTableIds.size(),
+        validTableIds);
+    doAsTransaction(
+        () ->
+            doAs(
+                OptimizingMapper.class,
+                mapper -> mapper.deleteAllOptimizingProcessExcludingValidTableIds(validTableIds)),
+        () ->
+            doAs(
+                OptimizingMapper.class,
+                mapper -> mapper.deleteAllTaskRuntimesExcludingValidTableIds(validTableIds)),
+        () ->
+            doAs(
+                OptimizingMapper.class,
+                mapper -> mapper.deleteAllOptimizingQuotaExcludingValidTableIds(validTableIds)));
   }
 
   private static class TableIdentity {
