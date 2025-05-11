@@ -113,6 +113,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
                     "Error occurred while removing tableRuntime of table {}",
                     identifier.getId(),
                     e);
+                throw e;
               }
             });
   }
@@ -482,6 +483,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
                               tableIdentifier.getId()); // remove only after successful operation
                         } catch (Exception e) {
                           LOG.error("Error occurred while disposing table {}", tableIdentifier, e);
+                          throw e;
                         }
                       }),
           () ->
