@@ -30,10 +30,10 @@ import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.zookeeper3.org.apache.curator.shaded.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,12 +45,9 @@ public class DefaultTableRuntime extends StatedPersistentBase implements Support
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultTableRuntime.class);
 
-  private final Lock processLock = new ReentrantLock();
   private final ServerTableIdentifier tableIdentifier;
   private final DefaultOptimizingState optimizingState;
-  private final Map<Action, ProcessFactory<? extends TableProcessState>> processFactoryMap =
-      new HashMap<>();
-  private final Map<Long, AmoroProcess<? extends TableProcessState>> processMap = new HashMap<>();
+  private final Map<Action, TableProcessContainer> processContainerMap = Maps.newConcurrentMap();
 
   public DefaultTableRuntime(
       ServerTableIdentifier tableIdentifier,
@@ -94,48 +91,35 @@ public class DefaultTableRuntime extends StatedPersistentBase implements Support
 
   @Override
   public AmoroProcess<? extends TableProcessState> trigger(Action action) {
-    processLock.lock();
-    try {
-      AmoroProcess<? extends TableProcessState> process =
-          Optional.ofNullable(processFactoryMap.get(action))
-              .map(factory -> factory.create(this, action))
-              // Define a related exception
-              .orElseThrow(
-                  () -> new IllegalArgumentException("No ProcessFactory for action " + action));
-      processMap.put(process.getId(), process);
-      process.getCompleteFuture().whenCompleted(() -> processMap.remove(process.getId()));
-      return process;
-    } finally {
-      processLock.unlock();
-    }
+    return Optional.ofNullable(processContainerMap.get(action))
+        .map(container -> container.trigger(action))
+        // Define a related exception
+        .orElseThrow(() -> new IllegalArgumentException("No ProcessFactory for action " + action));
   }
 
   @Override
   public void install(Action action, ProcessFactory<? extends TableProcessState> processFactory) {
-    processLock.lock();
-    try {
-      if (processFactoryMap.containsKey(action)) {
-        throw new IllegalStateException("ProcessFactory for action " + action + " already exists");
-      }
-      processFactoryMap.put(action, processFactory);
-    } finally {
-      processLock.unlock();
+    if (processContainerMap.putIfAbsent(action, new TableProcessContainer(processFactory))
+        == null) {
+      throw new IllegalStateException("ProcessFactory for action " + action + " already exists");
     }
   }
 
   @Override
   public boolean enabled(Action action) {
-    return processFactoryMap.get(action) != null;
+    return processContainerMap.get(action) != null;
   }
 
   @Override
   public List<TableProcessState> getProcessStates() {
-    processLock.lock();
-    try {
-      return processMap.values().stream().map(AmoroProcess::getState).collect(Collectors.toList());
-    } finally {
-      processLock.unlock();
-    }
+    return processContainerMap.values().stream()
+        .flatMap(container -> container.getProcessStates().stream())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<TableProcessState> getProcessStates(Action action) {
+    return processContainerMap.get(action).getProcessStates();
   }
 
   @Override
@@ -146,5 +130,33 @@ public class DefaultTableRuntime extends StatedPersistentBase implements Support
   @Override
   public TableConfiguration getTableConfiguration() {
     return optimizingState.getTableConfiguration();
+  }
+
+  private class TableProcessContainer {
+    private final Lock processLock = new ReentrantLock();
+    private final ProcessFactory<? extends TableProcessState> processFactory;
+    private final Map<Long, AmoroProcess<? extends TableProcessState>> processMap =
+        Maps.newConcurrentMap();
+
+    TableProcessContainer(ProcessFactory<? extends TableProcessState> processFactory) {
+      this.processFactory = processFactory;
+    }
+
+    public AmoroProcess<? extends TableProcessState> trigger(Action action) {
+      processLock.lock();
+      try {
+        AmoroProcess<? extends TableProcessState> process =
+            processFactory.create(DefaultTableRuntime.this, action);
+        process.getCompleteFuture().whenCompleted(() -> processMap.remove(process.getId()));
+        processMap.put(process.getId(), process);
+        return process;
+      } finally {
+        processLock.unlock();
+      }
+    }
+
+    public List<TableProcessState> getProcessStates() {
+      return processMap.values().stream().map(AmoroProcess::getState).collect(Collectors.toList());
+    }
   }
 }

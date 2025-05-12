@@ -40,6 +40,14 @@ public interface TableRuntime {
   List<? extends TableProcessState> getProcessStates();
 
   /**
+   * Get the list of process states. which belong to all running table processes. There could be
+   * more than one external process states depending on scheduler implementation.
+   *
+   * @return the list of arbitrary process states
+   */
+  List<? extends TableProcessState> getProcessStates(Action action);
+
+  /**
    * Get the table identifier containing server side id and table format.
    *
    * @return the table identifier
