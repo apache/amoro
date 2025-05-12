@@ -200,6 +200,12 @@ public class DefaultTableService extends PersistentBase implements TableService 
     return tableRuntimeMap.get(tableId);
   }
 
+  @VisibleForTesting
+  public void setRuntime(DefaultTableRuntime tableRuntime) {
+    checkStarted();
+    tableRuntimeMap.put(tableRuntime.getTableIdentifier().getId(), tableRuntime);
+  }
+
   @Override
   public boolean contains(Long tableId) {
     checkStarted();
@@ -469,6 +475,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
     }
   }
 
+  @VisibleForTesting
   private void disposeTable(ServerTableIdentifier tableIdentifier) {
     DefaultTableRuntime existedTableRuntime = tableRuntimeMap.get(tableIdentifier.getId());
     try {
