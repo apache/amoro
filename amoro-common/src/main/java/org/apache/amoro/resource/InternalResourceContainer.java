@@ -19,9 +19,11 @@
 package org.apache.amoro.resource;
 
 /**
- * Interface of internal resource container. For InternalResourceContainer, resources are managed by
- * AMS. Resources are decoupled from processes. For ExternalResourceContainer, resources are managed
- * outside, and each single resource belonged to a process.
+ * The interface of internal resource container For {@link InternalResourceContainer}, resources are
+ * managed by AMS, and resources are decoupled from processes, which means one process could run any
+ * number of resources and a resource could run any number of processes. For {@link
+ * ExternalResourceContainer} resources are managed outside(by some JobManager or application
+ * master), resources and processes are one-to-one mapping.
  */
 public interface InternalResourceContainer extends ResourceContainer {
 
