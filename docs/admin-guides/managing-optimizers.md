@@ -338,10 +338,7 @@ You can submit optimizer in your own Flink task development platform or local Fl
  ${AMORO_HOME}/plugin/optimizer/flink/optimizer-job.jar \
  -a thrift://127.0.0.1:1261 \
  -g flinkGroup \
- -p 1 \
- -eds \
- -dsp /tmp \
- -msz 512
+ -p 1
 ```
 The description of the relevant parameters is shown in the following table:
 
@@ -368,10 +365,7 @@ Or you can submit optimizer in your own Spark task development platform or local
  ${AMORO_HOME}/plugin/optimizer/spark/optimizer-job.jar \
  -a thrift://127.0.0.1:1261 \
  -g sparkGroup \
- -p 1 \
- -eds \
- -dsp /tmp \
- -msz 512
+ -p 1
 ```
 The description of the relevant parameters is shown in the following table:
 
