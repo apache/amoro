@@ -22,28 +22,19 @@ import static org.apache.amoro.metrics.MetricDefine.defineCounter;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.metrics.Counter;
-import org.apache.amoro.metrics.Metric;
 import org.apache.amoro.metrics.MetricDefine;
-import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.server.metrics.MetricRegistry;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
-
-import java.util.List;
 
 /** Table Orphan Files Cleaning metrics. */
-public class TableOrphanFilesCleaningMetrics {
-
+public class TableOrphanFilesCleaningMetrics extends AbstractTableMetrics {
   private final Counter orphanDataFilesCount = new Counter();
   private final Counter expectedOrphanDataFilesCount = new Counter();
 
   private final Counter orphanMetadataFilesCount = new Counter();
   private final Counter expectedOrphanMetadataFilesCount = new Counter();
 
-  private final ServerTableIdentifier identifier;
-
   public TableOrphanFilesCleaningMetrics(ServerTableIdentifier identifier) {
-    this.identifier = identifier;
+    super(identifier);
   }
 
   public static final MetricDefine TABLE_ORPHAN_CONTENT_FILE_CLEANING_COUNT =
@@ -72,25 +63,8 @@ public class TableOrphanFilesCleaningMetrics {
           .withTags("catalog", "database", "table")
           .build();
 
-  private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
-  private MetricRegistry globalRegistry;
-
-  private void registerMetric(MetricRegistry registry, MetricDefine define, Metric metric) {
-    MetricKey key =
-        registry.register(
-            define,
-            ImmutableMap.of(
-                "catalog",
-                identifier.getCatalog(),
-                "database",
-                identifier.getDatabase(),
-                "table",
-                identifier.getTableName()),
-            metric);
-    registeredMetricKeys.add(key);
-  }
-
-  public void register(MetricRegistry registry) {
+  @Override
+  public void registerMetrics(MetricRegistry registry) {
     if (globalRegistry == null) {
       registerMetric(registry, TABLE_ORPHAN_CONTENT_FILE_CLEANING_COUNT, orphanDataFilesCount);
       registerMetric(registry, TABLE_ORPHAN_METADATA_FILE_CLEANING_COUNT, orphanMetadataFilesCount);
@@ -114,13 +88,5 @@ public class TableOrphanFilesCleaningMetrics {
   public void completeOrphanMetadataFiles(int expected, int cleaned) {
     expectedOrphanMetadataFilesCount.inc(expected);
     orphanMetadataFilesCount.inc(cleaned);
-  }
-
-  public void unregister() {
-    if (globalRegistry != null) {
-      registeredMetricKeys.forEach(globalRegistry::unregister);
-      registeredMetricKeys.clear();
-      globalRegistry = null;
-    }
   }
 }
