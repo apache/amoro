@@ -51,6 +51,7 @@ import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.executor.AsyncTableExecutors;
+import org.apache.amoro.server.table.timer.TimerTaskManager;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.server.utils.ThriftServiceProxy;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
@@ -172,12 +173,13 @@ public class AmoroServiceContainer {
     addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getDanglingDeleteFilesCleaningExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
     addHandlerChain(AsyncTableExecutors.getInstance().getTagsAutoCreatingExecutor());
     tableService.initialize();
+    TimerTaskManager.getInstance().setUp(serviceConfig);
+    TimerTaskManager.getInstance().startTimer();
     LOG.info("AMS table service have been initialized");
     tableManager.setTableService(tableService);
     terminalManager = new TerminalManager(serviceConfig, catalogManager);
@@ -197,6 +199,7 @@ public class AmoroServiceContainer {
   }
 
   public void dispose() {
+    TimerTaskManager.getInstance().stopAllTasks();
     if (tableManagementServer != null && tableManagementServer.isServing()) {
       LOG.info("Stopping table management server...");
       tableManagementServer.stop();
