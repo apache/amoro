@@ -74,20 +74,7 @@ or build the `amoro-spark-optimizer` image by:
 ```
 
 ## Get Helm Charts
-
-You can obtain the latest official release chart by adding the official Helm repository.
-
-```shell
-$ helm repo add amoro https://netease.github.io/amoro/charts
-$ helm search repo amoro 
-NAME           CHART VERSION    APP VERSION        DESCRIPTION           
-amoro/amoro    0.1.0            0.7.0              A Helm chart for Amoro 
-
-$ helm pull amoro/amoro 
-$ tar zxvf amoro-*.tgz
-```
-
-Alternatively, you can find the latest charts directly from the Github source code.
+You can find the latest charts directly from the Github source code.
 
 ```shell
 $ git clone https://github.com/apache/amoro.git

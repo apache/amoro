@@ -2,10 +2,10 @@
 title: "Flink CDC Ingestion"
 url: flink-cdc-ingestion
 aliases:
-  - "flink/cdc"
+  - "flink/cdc-ingestion"
 menu:
     main:
-        parent: User Guides
+        parent: Flink
         weight: 400
 ---
 <!--

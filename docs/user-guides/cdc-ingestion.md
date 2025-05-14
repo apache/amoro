@@ -39,9 +39,9 @@ tool for real time data and batch data. Flink CDC brings the
 simplicity and elegance of data integration via YAML to describe the data movement and transformation.
 
 Amoro provides the relevant code case reference how to complete cdc data to different lakehouse table format, see 
-[**flink-cdc-ingestion**](../engines/flink/flink-cdc-ingestion.md) doc
+[**flink-cdc-ingestion**](../flink-cdc-ingestion) doc
 
-At the same time, we provide [**Mixed-Iceberg**](../formats/mixed-iceberg.md)  format, which you can understand as 
+At the same time, we provide [**Mixed-Iceberg**](../iceberg-format)  format, which you can understand as 
 **STREAMING** For iceberg, which will enhance your real-time processing scene for you
 
 ## Debezium
