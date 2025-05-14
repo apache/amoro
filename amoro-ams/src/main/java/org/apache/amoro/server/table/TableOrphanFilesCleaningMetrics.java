@@ -26,7 +26,7 @@ import org.apache.amoro.metrics.MetricDefine;
 import org.apache.amoro.server.metrics.MetricRegistry;
 
 /** Table Orphan Files Cleaning metrics. */
-public class TableOrphanFilesCleaningMetrics extends TableMetrics {
+public class TableOrphanFilesCleaningMetrics extends AbstractTableMetrics {
   private final Counter orphanDataFilesCount = new Counter();
   private final Counter expectedOrphanDataFilesCount = new Counter();
 

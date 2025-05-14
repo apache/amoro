@@ -28,12 +28,12 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 
 import java.util.List;
 
-public abstract class TableMetrics {
+public abstract class AbstractTableMetrics {
   protected final ServerTableIdentifier identifier;
   protected final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   protected MetricRegistry globalRegistry;
 
-  protected TableMetrics(ServerTableIdentifier identifier) {
+  protected AbstractTableMetrics(ServerTableIdentifier identifier) {
     this.identifier = identifier;
   }
 

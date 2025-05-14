@@ -30,7 +30,7 @@ import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 
 /** Table Summary metrics. */
-public class TableSummaryMetrics extends TableMetrics {
+public class TableSummaryMetrics extends AbstractTableMetrics {
 
   // table summary files number metrics
   public static final MetricDefine TABLE_SUMMARY_TOTAL_FILES =

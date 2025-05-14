@@ -35,7 +35,7 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 
 /** Table self optimizing metrics */
-public class TableOptimizingMetrics extends TableMetrics {
+public class TableOptimizingMetrics extends AbstractTableMetrics {
   /** Table is no need optimizing. */
   public static final String STATUS_IDLE = "idle";
 
