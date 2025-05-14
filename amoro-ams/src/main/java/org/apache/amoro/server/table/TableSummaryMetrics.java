@@ -22,20 +22,15 @@ import static org.apache.amoro.metrics.MetricDefine.defineGauge;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.metrics.Gauge;
-import org.apache.amoro.metrics.Metric;
 import org.apache.amoro.metrics.MetricDefine;
-import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.server.metrics.MetricRegistry;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
 
-import java.util.List;
-
 /** Table Summary metrics. */
-public class TableSummaryMetrics {
+public class TableSummaryMetrics extends AbstractTableMetrics {
 
   // table summary files number metrics
   public static final MetricDefine TABLE_SUMMARY_TOTAL_FILES =
@@ -132,34 +127,17 @@ public class TableSummaryMetrics {
           .withTags("catalog", "database", "table")
           .build();
 
-  private final ServerTableIdentifier identifier;
-  private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   private AbstractOptimizingEvaluator.PendingInput tableSummary =
       new AbstractOptimizingEvaluator.PendingInput();
-  private MetricRegistry globalRegistry;
 
   private long snapshots = 0L;
 
   public TableSummaryMetrics(ServerTableIdentifier identifier) {
-    this.identifier = identifier;
+    super(identifier);
   }
 
-  private void registerMetric(MetricRegistry registry, MetricDefine define, Metric metric) {
-    MetricKey key =
-        registry.register(
-            define,
-            ImmutableMap.of(
-                "catalog",
-                identifier.getCatalog(),
-                "database",
-                identifier.getDatabase(),
-                "table",
-                identifier.getTableName()),
-            metric);
-    registeredMetricKeys.add(key);
-  }
-
-  public void register(MetricRegistry registry) {
+  @Override
+  public void registerMetrics(MetricRegistry registry) {
     if (globalRegistry == null) {
       // register files number metrics
       registerMetric(
@@ -229,14 +207,6 @@ public class TableSummaryMetrics {
       registerMetric(registry, TABLE_SUMMARY_SNAPSHOTS, (Gauge<Long>) () -> snapshots);
 
       globalRegistry = registry;
-    }
-  }
-
-  public void unregister() {
-    if (globalRegistry != null) {
-      registeredMetricKeys.forEach(globalRegistry::unregister);
-      registeredMetricKeys.clear();
-      globalRegistry = null;
     }
   }
 
