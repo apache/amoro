@@ -24,24 +24,18 @@ import static org.apache.amoro.metrics.MetricDefine.defineGauge;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.metrics.Counter;
 import org.apache.amoro.metrics.Gauge;
-import org.apache.amoro.metrics.Metric;
 import org.apache.amoro.metrics.MetricDefine;
-import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer;
-import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.primitives.Longs;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 
-import java.util.List;
-
 /** Table self optimizing metrics */
-public class TableOptimizingMetrics {
+public class TableOptimizingMetrics extends AbstractTableMetrics {
   /** Table is no need optimizing. */
   public static final String STATUS_IDLE = "idle";
 
@@ -208,36 +202,18 @@ public class TableOptimizingMetrics {
   private final Counter fullTotalCount = new Counter();
   private final Counter fullFailedCount = new Counter();
 
-  private final ServerTableIdentifier identifier;
-
   private OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   private long statusSetTimestamp = System.currentTimeMillis();
   private long lastMinorTime, lastMajorTime, lastFullTime;
   private long lastNonMaintainedTime = AmoroServiceConstants.INVALID_TIME;
   private long lastOptimizingTime = AmoroServiceConstants.INVALID_TIME;
-  private final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
-  private MetricRegistry globalRegistry;
 
   public TableOptimizingMetrics(ServerTableIdentifier identifier) {
-    this.identifier = identifier;
+    super(identifier);
   }
 
-  private void registerMetric(MetricRegistry registry, MetricDefine define, Metric metric) {
-    MetricKey key =
-        registry.register(
-            define,
-            ImmutableMap.of(
-                "catalog",
-                identifier.getCatalog(),
-                "database",
-                identifier.getDatabase(),
-                "table",
-                identifier.getTableName()),
-            metric);
-    registeredMetricKeys.add(key);
-  }
-
-  public void register(MetricRegistry registry) {
+  @Override
+  public void registerMetrics(MetricRegistry registry) {
     if (globalRegistry == null) {
       // register status duration metrics
       registerMetric(
@@ -298,14 +274,6 @@ public class TableOptimizingMetrics {
       registerMetric(registry, TABLE_OPTIMIZING_LAG_DURATION, new OptimizingLagDurationGauge());
 
       globalRegistry = registry;
-    }
-  }
-
-  public void unregister() {
-    if (globalRegistry != null) {
-      registeredMetricKeys.forEach(globalRegistry::unregister);
-      registeredMetricKeys.clear();
-      globalRegistry = null;
     }
   }
 
