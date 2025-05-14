@@ -13,9 +13,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
--- If you have any changes to the AMS database, please record them in this file.
--- We will confirm the corresponding version of these upgrade scripts when releasing.
-
 -- NEW SCHEMA CHANGE FOR CAS BASE BLOCKER
 TRUNCATE TABLE `table_blocker`;
 ALTER TABLE `table_blocker` DROP INDEX `table_index`;
