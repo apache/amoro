@@ -32,6 +32,9 @@
   <a href="https://github.com/apache/amoro/actions/workflows/trino-ci.yml">
     <img src="https://github.com/apache/amoro/actions/workflows/trino-ci.yml/badge.svg" />
   </a>
+  <a href="https://deepwiki.com/apache/amoro">
+    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+  </a>
 </p>
 
 Apache Amoro (incubating) is a Lakehouse management system built on open data lake formats.
