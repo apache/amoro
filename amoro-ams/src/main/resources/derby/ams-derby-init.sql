@@ -140,7 +140,7 @@ CREATE TABLE table_optimizing_process (
     summary             CLOB(64m),
     from_sequence       CLOB(64m),
     to_sequence         CLOB(64m),
-    CONSTRAINT table_optimizing_process_pk PRIMARY KEY (process_id)
+    CONSTRAINT table_optimizing_process_pk PRIMARY KEY (process_id, table_id)
 );
 
 CREATE TABLE task_runtime (
@@ -160,7 +160,7 @@ CREATE TABLE task_runtime (
     rewrite_output  BLOB,
     metrics_summary CLOB,
     properties      CLOB,
-    CONSTRAINT task_runtime_pk PRIMARY KEY (process_id, task_id)
+    CONSTRAINT task_runtime_pk PRIMARY KEY (process_id, task_id, table_id)
 );
 
 CREATE TABLE optimizing_task_quota (
@@ -171,7 +171,7 @@ CREATE TABLE optimizing_task_quota (
     start_time      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     end_time        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fail_reason     VARCHAR(4096),
-    CONSTRAINT optimizing_task_quota_pk PRIMARY KEY (process_id, task_id, retry_num)
+    CONSTRAINT optimizing_task_quota_pk PRIMARY KEY (process_id, task_id, retry_num, table_id)
 );
 
 CREATE TABLE api_tokens (

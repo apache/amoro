@@ -75,3 +75,32 @@ update resource_group set properties = JSON_SET(properties, '$."flink-conf.taskm
 -- update resource memory unit
 update resource set properties = JSON_SET(properties, '$."flink-conf.jobmanager.memory.process.size"', CONCAT(JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.jobmanager.memory.process.size"')), 'MB')) WHERE JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.jobmanager.memory.process.size"')) REGEXP '^[0-9]+$';
 update resource set properties = JSON_SET(properties, '$."flink-conf.taskmanager.memory.process.size"', CONCAT(JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.taskmanager.memory.process.size"')), 'MB')) WHERE JSON_UNQUOTE(JSON_EXTRACT(properties, '$."flink-conf.taskmanager.memory.process.size"')) REGEXP '^[0-9]+$';
+
+-- Add the new primary key including table_id for table_optimizing_process
+DROP TABLE IF EXISTS `table_optimizing_process_backup`;
+RENAME TABLE `table_optimizing_process` TO `table_optimizing_process_backup`;
+CREATE TABLE `table_optimizing_process` LIKE `table_optimizing_process_backup`;
+ALTER TABLE `table_optimizing_process` DROP PRIMARY KEY,
+  ADD PRIMARY KEY (`process_id`, `table_id`);
+INSERT INTO `table_optimizing_process` SELECT * FROM `table_optimizing_process_backup`;
+
+-- Add the new primary key including table_id for task_runtime
+DROP TABLE IF EXISTS `task_runtime_backup`;
+RENAME TABLE `task_runtime` TO `task_runtime_backup`;
+CREATE TABLE `task_runtime` LIKE `task_runtime_backup`;
+ALTER TABLE `task_runtime` DROP PRIMARY KEY,
+    ADD PRIMARY KEY (`process_id`, `task_id`, `table_id`);
+INSERT INTO `task_runtime` SELECT * FROM `task_runtime_backup`;
+
+-- Add the new primary key including table_id for optimizing_task_quota
+DROP TABLE IF EXISTS `optimizing_task_quota_backup`;
+RENAME TABLE `optimizing_task_quota` TO `optimizing_task_quota_backup`;
+CREATE TABLE `optimizing_task_quota` LIKE `optimizing_task_quota_backup`;
+ALTER TABLE `optimizing_task_quota` DROP PRIMARY KEY,
+    ADD PRIMARY KEY (`process_id`, `task_id`, `retry_num`, `table_id`);
+INSERT INTO `optimizing_task_quota` SELECT * FROM `optimizing_task_quota_backup`;
+
+-- Drop the old tables after validation
+-- DROP TABLE table_optimizing_process_backup;
+-- DROP TABLE task_runtime_backup;
+-- DROP TABLE optimizing_task_quota_backup;
