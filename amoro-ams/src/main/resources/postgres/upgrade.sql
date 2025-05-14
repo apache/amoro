@@ -120,3 +120,8 @@ SET properties = jsonb_set(
         ('"' || (properties::jsonb->>'flink-conf.taskmanager.memory.process.size') || 'MB"')::jsonb
     )
 WHERE (properties::jsonb->>'flink-conf.taskmanager.memory.process.size') ~ '^[0-9]+$';
+
+-- Update the precision from s level to ms.
+ALTER TABLE table_runtime
+    ALTER COLUMN optimizing_status_start_time TYPE TIMESTAMP(3),
+    ALTER COLUMN optimizing_status_start_time SET DEFAULT CURRENT_TIMESTAMP(3);
