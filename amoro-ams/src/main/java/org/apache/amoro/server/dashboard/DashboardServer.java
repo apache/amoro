@@ -32,6 +32,7 @@ import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.http.staticfiles.StaticFileConfig;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.exception.AccessDeniedException;
 import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
@@ -49,8 +50,11 @@ import org.apache.amoro.server.dashboard.controller.SettingController;
 import org.apache.amoro.server.dashboard.controller.TableController;
 import org.apache.amoro.server.dashboard.controller.TerminalController;
 import org.apache.amoro.server.dashboard.controller.VersionController;
+import org.apache.amoro.server.dashboard.model.SessionInfo;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.ParamSignatureCalculator;
+import org.apache.amoro.server.permission.PermissionManager;
+import org.apache.amoro.server.permission.UserInfoManager;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.terminal.TerminalManager;
@@ -93,6 +97,8 @@ public class DashboardServer {
   private final String authType;
   private final String basicAuthUser;
   private final String basicAuthPassword;
+  private final UserInfoManager userInfoManager;
+  private final PermissionManager permissionManager;
 
   public DashboardServer(
       Configurations serviceConfig,
@@ -100,11 +106,13 @@ public class DashboardServer {
       TableManager tableManager,
       OptimizerManager optimizerManager,
       DefaultOptimizingService optimizingService,
-      TerminalManager terminalManager) {
+      TerminalManager terminalManager,
+      UserInfoManager userInfoManager,
+      PermissionManager permissionManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController();
-    this.loginController = new LoginController(serviceConfig);
+    this.loginController = new LoginController(serviceConfig, userInfoManager);
     // TODO: remove table service from OptimizerGroupController
     this.optimizerGroupController =
         new OptimizerGroupController(tableManager, optimizingService, optimizerManager);
@@ -124,6 +132,8 @@ public class DashboardServer {
     this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
     this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
     this.basicAuthPassword = serviceConfig.get(AmoroManagementConf.ADMIN_PASSWORD);
+    this.userInfoManager = userInfoManager;
+    this.permissionManager = permissionManager;
   }
 
   private volatile String indexHtml = null;
@@ -387,15 +397,26 @@ public class DashboardServer {
       if (null == ctx.sessionAttribute("user")) {
         throw new ForbiddenException("User session attribute is missed for url: " + uriPath);
       }
+      // TODO : check permission
+      SessionInfo user = ctx.sessionAttribute("user");
+      String method = ctx.method();
+      String path = ctx.path();
+      if (!permissionManager.accessible(user.getUserName(), path, method)) {
+        throw new AccessDeniedException("unable to access url: " + uriPath);
+      }
       return;
     }
     if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
       BasicAuthCredentials cred = ctx.basicAuthCredentials();
-      if (!(basicAuthUser.equals(cred.component1())
-          && basicAuthPassword.equals(cred.component2()))) {
+      if (!userInfoManager.isValidate(cred.component1(), cred.component2())) {
         throw new SignatureCheckException(
             "Failed to authenticate via basic authentication for url:" + uriPath);
       }
+      //      if (!(basicAuthUser.equals(cred.component1())
+      //          && basicAuthPassword.equals(cred.component2()))) {
+      //        throw new SignatureCheckException(
+      //            "Failed to authenticate via basic authentication for url:" + uriPath);
+      //      }
     } else {
       checkApiToken(
           ctx.url(), ctx.queryParam("apiKey"), ctx.queryParam("signature"), ctx.queryParamMap());
@@ -412,6 +433,14 @@ public class DashboardServer {
       }
     } else if (e instanceof SignatureCheckException) {
       ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature check failed", ""));
+    } else if (e instanceof AccessDeniedException) {
+      if (!ctx.req.getRequestURI().startsWith("/api/ams")) {
+        ctx.html(getIndexFileContent());
+      } else {
+        ctx.status(HttpCode.FORBIDDEN);
+        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Access Denied", ""));
+        return;
+      }
     } else {
       ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
     }
