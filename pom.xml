@@ -1368,7 +1368,7 @@
             <id>hadoop2</id>
             <properties>
                 <guava.version>14.0.1</guava.version>
-                <hive.version>2.3.9</hive.version>
+                <hive.version>2.3.8</hive.version>
                 <hadoop.version>2.10.2</hadoop.version>
                 <terminal.spark.version>3.3.3</terminal.spark.version>
                 <terminal.spark.major.version>3.3</terminal.spark.major.version>
