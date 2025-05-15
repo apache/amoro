@@ -21,14 +21,14 @@ package org.apache.amoro.server.scheduler.inline;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
-import org.apache.amoro.server.scheduler.TimelyTableScheduler;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Service for expiring tables periodically. */
-public class SnapshotsExpiringExecutor extends TimelyTableScheduler {
+public class SnapshotsExpiringExecutor extends PeriodicTableScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(SnapshotsExpiringExecutor.class);
 
   private static final long INTERVAL = 60 * 60 * 1000L; // 1 hour

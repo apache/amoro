@@ -42,7 +42,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-public class DefaultTableRuntime extends StatedPersistentBase implements TableRuntime, SupportsProcessPlugins {
+public class DefaultTableRuntime extends StatedPersistentBase
+    implements TableRuntime, SupportsProcessPlugins {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultTableRuntime.class);
 
@@ -101,7 +102,7 @@ public class DefaultTableRuntime extends StatedPersistentBase implements TableRu
   @Override
   public void install(Action action, ProcessFactory<? extends TableProcessState> processFactory) {
     if (processContainerMap.putIfAbsent(action, new TableProcessContainer(processFactory))
-        == null) {
+        != null) {
       throw new IllegalStateException("ProcessFactory for action " + action + " already exists");
     }
   }

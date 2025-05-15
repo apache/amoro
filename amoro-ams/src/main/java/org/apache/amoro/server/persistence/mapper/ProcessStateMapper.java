@@ -77,7 +77,7 @@ public interface ProcessStateMapper {
       })
   TableProcessState getProcessStateById(@Param("processId") long processId);
 
-  /** 根据 table_id 查询 TableProcessState */
+  /** Query TableProcessState by table_id */
   @Select(
       "SELECT process_id, action, table_id, retry_num, status, start_time, end_time, fail_reason, summary "
           + "FROM table_process_state "

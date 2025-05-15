@@ -23,7 +23,7 @@ import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
-import org.apache.amoro.server.scheduler.TimelyTableScheduler;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
@@ -31,7 +31,7 @@ import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.MixedTable;
 
 /** Executor that refreshes table runtimes and evaluates optimizing status periodically. */
-public class TableRuntimeRefreshExecutor extends TimelyTableScheduler {
+public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
 
   // 1 minutes
   private final long interval;

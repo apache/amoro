@@ -20,11 +20,11 @@ package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
-import org.apache.amoro.server.scheduler.TimelyTableScheduler;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 
-public class BlockerExpiringExecutor extends TimelyTableScheduler {
+public class BlockerExpiringExecutor extends PeriodicTableScheduler {
 
   private final Persistency persistency = new Persistency();
 

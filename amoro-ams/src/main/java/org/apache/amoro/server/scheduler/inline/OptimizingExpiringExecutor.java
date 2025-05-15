@@ -20,13 +20,13 @@ package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
-import org.apache.amoro.server.scheduler.TimelyTableScheduler;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class OptimizingExpiringExecutor extends TimelyTableScheduler {
+public class OptimizingExpiringExecutor extends PeriodicTableScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingExpiringExecutor.class);
 
   private final Persistency persistency = new Persistency();

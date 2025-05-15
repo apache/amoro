@@ -41,7 +41,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public abstract class TimelyTableScheduler extends RuntimeHandlerChain {
+public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
 
   protected final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -53,7 +53,7 @@ public abstract class TimelyTableScheduler extends RuntimeHandlerChain {
   private final ScheduledExecutorService executor;
   private final TableService tableService;
 
-  protected TimelyTableScheduler(Action action, TableService tableService, int poolSize) {
+  protected PeriodicTableScheduler(Action action, TableService tableService, int poolSize) {
     this.action = action;
     this.tableService = tableService;
     this.executor =
@@ -65,7 +65,7 @@ public abstract class TimelyTableScheduler extends RuntimeHandlerChain {
                 .build());
   }
 
-  protected TimelyTableScheduler(TableService tableService, int poolSize) {
+  protected PeriodicTableScheduler(TableService tableService, int poolSize) {
     this.action = IcebergActions.SYSTEM;
     this.tableService = tableService;
     this.executor =

@@ -37,13 +37,13 @@ import org.apache.amoro.server.table.TableService;
 
 import java.util.List;
 
-public abstract class TimelyExternalScheduler extends TimelyTableScheduler {
+public abstract class PeriodicExternalScheduler extends PeriodicTableScheduler {
 
   private final ExternalResourceContainer resourceContainer;
   private final ResourceManager resourceManager;
   private final ProcessFactory<? extends TableProcessState> processFactory;
 
-  public TimelyExternalScheduler(
+  public PeriodicExternalScheduler(
       ResourceManager resourceManager,
       ExternalResourceContainer resourceContainer,
       Action action,
@@ -129,7 +129,7 @@ public abstract class TimelyExternalScheduler extends TimelyTableScheduler {
     ExternalTableProcess(TableRuntime tableRuntime) {
       super(
           new TableProcessState(
-              TimelyExternalScheduler.this.getAction(), tableRuntime.getTableIdentifier()),
+              PeriodicExternalScheduler.this.getAction(), tableRuntime.getTableIdentifier()),
           tableRuntime);
     }
 

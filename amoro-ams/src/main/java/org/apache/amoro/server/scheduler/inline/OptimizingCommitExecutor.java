@@ -20,13 +20,13 @@ package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.scheduler.TimelyTableScheduler;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 
 import java.util.Optional;
 
-public class OptimizingCommitExecutor extends TimelyTableScheduler {
+public class OptimizingCommitExecutor extends PeriodicTableScheduler {
 
   private static final long INTERVAL = 60 * 1000L; // 1min
 

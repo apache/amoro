@@ -22,14 +22,14 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
 import org.apache.amoro.hive.utils.TableTypeUtil;
-import org.apache.amoro.server.scheduler.TimelyTableScheduler;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.table.MixedTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HiveCommitSyncExecutor extends TimelyTableScheduler {
+public class HiveCommitSyncExecutor extends PeriodicTableScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(HiveCommitSyncExecutor.class);
 
   // 10 minutes
