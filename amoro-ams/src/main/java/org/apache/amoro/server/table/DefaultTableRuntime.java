@@ -21,6 +21,7 @@ package org.apache.amoro.server.table;
 import org.apache.amoro.Action;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.SupportsProcessPlugins;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.process.AmoroProcess;
 import org.apache.amoro.process.ProcessFactory;
@@ -41,7 +42,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-public class DefaultTableRuntime extends StatedPersistentBase implements SupportsProcessPlugins {
+public class DefaultTableRuntime extends StatedPersistentBase implements TableRuntime, SupportsProcessPlugins {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultTableRuntime.class);
 

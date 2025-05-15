@@ -62,11 +62,6 @@ public abstract class TimelyExternalScheduler extends TimelyTableScheduler {
   }
 
   @Override
-  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
-    return 0;
-  }
-
-  @Override
   protected boolean enabled(DefaultTableRuntime tableRuntime) {
     return tableRuntime.enabled(getAction());
   }

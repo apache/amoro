@@ -22,7 +22,7 @@ import org.apache.amoro.process.AmoroProcess;
 import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.process.TableProcessState;
 
-public interface SupportsProcessPlugins extends TableRuntime {
+public interface SupportsProcessPlugins {
 
   /**
    * Trigger a table process on an action.
