@@ -65,7 +65,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class DefaultOptimizingState extends StatedPersistentBase implements ProcessState {
 
-  private static final Logger LOG = LoggerFactory.getLogger(DefaultTableRuntime.class);
+  private static final Logger LOG = LoggerFactory.getLogger(DefaultOptimizingState.class);
 
   private final Lock tableLock = new ReentrantLock();
   private final TableRuntimeHandler tableHandler;
