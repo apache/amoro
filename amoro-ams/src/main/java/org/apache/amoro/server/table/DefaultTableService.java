@@ -70,7 +70,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
   private final long externalCatalogRefreshingInterval;
 
-  private final Map<Long, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
+  private final Map<Long, DefaultTableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
 
   private final ScheduledExecutorService tableExplorerScheduler =
       Executors.newSingleThreadScheduledExecutor(
@@ -128,14 +128,16 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   @Override
-  public void handleTableChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+  public void handleTableChanged(
+      DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus) {
     if (headHandler != null) {
       headHandler.fireStatusChanged(tableRuntime, originalStatus);
     }
   }
 
   @Override
-  public void handleTableChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public void handleTableChanged(
+      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
     if (headHandler != null) {
       headHandler.fireConfigChanged(tableRuntime, originalConfig);
     }
@@ -147,10 +149,10 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
     List<TableRuntimeMeta> tableRuntimeMetaList =
         getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
-    List<TableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
+    List<DefaultTableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
     tableRuntimeMetaList.forEach(
         tableRuntimeMeta -> {
-          TableRuntime tableRuntime = new TableRuntime(tableRuntimeMeta, this);
+          DefaultTableRuntime tableRuntime = new DefaultTableRuntime(tableRuntimeMeta, this);
           tableRuntimeMap.put(tableRuntimeMeta.getTableId(), tableRuntime);
           tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
           tableRuntimes.add(tableRuntime);
@@ -182,9 +184,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
     initialized.complete(true);
   }
 
-  private TableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
+  private DefaultTableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
     Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier cannot be null");
-    TableRuntime tableRuntime = getRuntime(tableIdentifier.getId());
+    DefaultTableRuntime tableRuntime = getRuntime(tableIdentifier.getId());
     if (tableRuntime == null) {
       throw new ObjectNotExistsException(tableIdentifier);
     }
@@ -192,7 +194,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   @Override
-  public TableRuntime getRuntime(Long tableId) {
+  public DefaultTableRuntime getRuntime(Long tableId) {
     checkStarted();
     return tableRuntimeMap.get(tableId);
   }
@@ -253,7 +255,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
         catalogManager.listCatalogMetas().stream()
             .map(CatalogMeta::getCatalogName)
             .collect(Collectors.toSet());
-    for (TableRuntime tableRuntime : tableRuntimeMap.values()) {
+    for (DefaultTableRuntime tableRuntime : tableRuntimeMap.values()) {
       if (!catalogNames.contains(tableRuntime.getTableIdentifier().getCatalog())) {
         disposeTable(tableRuntime.getTableIdentifier());
       }
@@ -446,7 +448,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
         return false;
       }
     }
-    TableRuntime tableRuntime = new TableRuntime(serverTableIdentifier, this, table.properties());
+    DefaultTableRuntime tableRuntime =
+        new DefaultTableRuntime(serverTableIdentifier, this, table.properties());
     tableRuntimeMap.put(serverTableIdentifier.getId(), tableRuntime);
     tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
     if (headHandler != null) {
@@ -466,7 +469,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   private void disposeTable(ServerTableIdentifier tableIdentifier) {
-    TableRuntime existedTableRuntime = tableRuntimeMap.get(tableIdentifier.getId());
+    DefaultTableRuntime existedTableRuntime = tableRuntimeMap.get(tableIdentifier.getId());
     try {
       doAsTransaction(
           () ->

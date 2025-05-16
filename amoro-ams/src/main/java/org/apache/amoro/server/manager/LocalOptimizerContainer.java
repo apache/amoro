@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
-public class LocalOptimizerContainer extends AbstractResourceContainer {
+public class LocalOptimizerContainer extends AbstractOptimizerContainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(LocalOptimizerContainer.class);
 
@@ -65,7 +65,7 @@ public class LocalOptimizerContainer extends AbstractResourceContainer {
   }
 
   @Override
-  public void releaseOptimizer(Resource resource) {
+  public void releaseResource(Resource resource) {
     long jobId = Long.parseLong(resource.getRequiredProperty(Resource.PROPERTY_JOB_ID));
 
     String os = System.getProperty("os.name").toLowerCase();

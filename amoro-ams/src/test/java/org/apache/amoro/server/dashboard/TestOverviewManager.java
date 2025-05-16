@@ -31,9 +31,9 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.server.dashboard.model.OverviewTopTableItem;
+import org.apache.amoro.server.scheduler.inline.TableRuntimeRefreshExecutor;
 import org.apache.amoro.server.table.AMSTableTestBase;
-import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.executor.TableRuntimeRefreshExecutor;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
@@ -91,8 +91,8 @@ public class TestOverviewManager extends AMSTableTestBase {
             .asUnkeyedTable();
     appendData(table, 1);
     appendData(table, 2);
-    TableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
-    runtime.refresh(tableService().loadTable(serverTableIdentifier()));
+    DefaultTableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
+    runtime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
   }
 
   private void appendData(UnkeyedTable table, int id) {

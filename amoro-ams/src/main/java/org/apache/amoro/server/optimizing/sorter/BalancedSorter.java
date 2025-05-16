@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing.sorter;
 
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 
 import java.util.Comparator;
 
@@ -32,18 +32,21 @@ public class BalancedSorter implements SorterFactory {
   }
 
   @Override
-  public Comparator<TableRuntime> createComparator() {
-    return new Comparator<TableRuntime>() {
+  public Comparator<DefaultTableRuntime> createComparator() {
+    return new Comparator<DefaultTableRuntime>() {
       @Override
-      public int compare(TableRuntime one, TableRuntime another) {
+      public int compare(DefaultTableRuntime one, DefaultTableRuntime another) {
         return Long.compare(
             Math.max(
-                one.getLastFullOptimizingTime(),
-                Math.max(one.getLastMinorOptimizingTime(), one.getLastMajorOptimizingTime())),
-            Math.max(
-                another.getLastFullOptimizingTime(),
+                one.getOptimizingState().getLastFullOptimizingTime(),
                 Math.max(
-                    another.getLastMinorOptimizingTime(), another.getLastMajorOptimizingTime())));
+                    one.getOptimizingState().getLastMinorOptimizingTime(),
+                    one.getOptimizingState().getLastMajorOptimizingTime())),
+            Math.max(
+                another.getOptimizingState().getLastFullOptimizingTime(),
+                Math.max(
+                    another.getOptimizingState().getLastMinorOptimizingTime(),
+                    another.getOptimizingState().getLastMajorOptimizingTime())));
       }
     };
   }

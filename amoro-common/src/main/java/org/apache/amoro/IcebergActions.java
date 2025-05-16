@@ -16,16 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro;
 
-import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.server.optimizing.OptimizingStatus;
+public class IcebergActions {
 
-public interface TableRuntimeHandler {
+  private static final TableFormat[] DEFAULT_FORMATS =
+      new TableFormat[] {TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE};
 
-  void addHandlerChain(RuntimeHandlerChain handler);
-
-  void handleTableChanged(DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus);
-
-  void handleTableChanged(DefaultTableRuntime tableRuntime, TableConfiguration originalConfig);
+  public static final Action SYSTEM = new Action(DEFAULT_FORMATS, 0, "system");
+  public static final Action REWRITE = new Action(DEFAULT_FORMATS, 10, "rewrite");
+  public static final Action DELETE_ORPHANS = new Action(DEFAULT_FORMATS, 2, "delete-orphans");
+  public static final Action SYNC_HIVE = new Action(DEFAULT_FORMATS, 3, "sync-hive");
+  public static final Action EXPIRE_DATA = new Action(DEFAULT_FORMATS, 1, "expire-data");
 }

@@ -47,7 +47,7 @@ import org.apache.amoro.metrics.MetricDefine;
 import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
-import org.apache.amoro.server.table.executor.TableRuntimeRefreshExecutor;
+import org.apache.amoro.server.scheduler.inline.TableRuntimeRefreshExecutor;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
@@ -105,8 +105,8 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
             .asUnkeyedTable();
     appendData(table);
     appendPosDelete(table);
-    TableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
-    runtime.refresh(tableService().loadTable(serverTableIdentifier()));
+    DefaultTableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
+    runtime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
   }
 
   private void appendData(UnkeyedTable table) {

@@ -31,8 +31,9 @@ import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
 import org.apache.amoro.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
+import org.apache.amoro.server.table.DefaultOptimizingState;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
-import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -66,7 +67,7 @@ import java.util.stream.Collectors;
 
 public abstract class MixedTablePlanTestBase extends TableTestBase {
 
-  protected TableRuntime tableRuntime;
+  protected DefaultTableRuntime tableRuntime;
 
   public MixedTablePlanTestBase(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -75,13 +76,15 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   @Before
   public void mock() {
-    tableRuntime = Mockito.mock(TableRuntime.class);
+    tableRuntime = Mockito.mock(DefaultTableRuntime.class);
     ServerTableIdentifier id = ServerTableIdentifier.of(getMixedTable().id(), getTestFormat());
     id.setId(0L);
+    DefaultOptimizingState optimizingState = Mockito.mock(DefaultOptimizingState.class);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(id);
-    Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> getConfig());
-    Mockito.when(tableRuntime.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
-    Mockito.when(tableRuntime.getCurrentChangeSnapshotId())
+    Mockito.when(tableRuntime.getOptimizingState()).thenReturn(optimizingState);
+    Mockito.when(optimizingState.getOptimizingConfig()).thenAnswer(f -> getConfig());
+    Mockito.when(optimizingState.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
+    Mockito.when(optimizingState.getCurrentChangeSnapshotId())
         .thenAnswer(f -> getCurrentChangeSnapshotId());
   }
 
@@ -555,7 +558,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     }
   }
 
-  protected TableRuntime getTableRuntime() {
+  protected DefaultTableRuntime getTableRuntime() {
     return tableRuntime;
   }
 

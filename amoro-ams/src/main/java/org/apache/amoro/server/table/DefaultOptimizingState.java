@@ -18,16 +18,19 @@
 
 package org.apache.amoro.server.table;
 
+import org.apache.amoro.Action;
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.IcebergActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.StateField;
-import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
+import org.apache.amoro.process.ProcessState;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
@@ -60,23 +63,21 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class TableRuntime extends StatedPersistentBase {
+public class DefaultOptimizingState extends StatedPersistentBase implements ProcessState {
 
-  private static final Logger LOG = LoggerFactory.getLogger(TableRuntime.class);
+  private static final Logger LOG = LoggerFactory.getLogger(DefaultOptimizingState.class);
+
   private final Lock tableLock = new ReentrantLock();
   private final TableRuntimeHandler tableHandler;
   private final ServerTableIdentifier tableIdentifier;
-  private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
-
   // for unKeyedTable or base table
   @StateField private volatile long currentSnapshotId = Constants.INVALID_SNAPSHOT_ID;
+  private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
   @StateField private volatile long lastOptimizedSnapshotId = Constants.INVALID_SNAPSHOT_ID;
-
   @StateField private volatile long lastOptimizedChangeSnapshotId = Constants.INVALID_SNAPSHOT_ID;
   // for change table
   @StateField private volatile long currentChangeSnapshotId = Constants.INVALID_SNAPSHOT_ID;
-
   @StateField private volatile OptimizingStatus optimizingStatus = OptimizingStatus.IDLE;
   @StateField private volatile long currentStatusStartTime = System.currentTimeMillis();
   @StateField private volatile long lastMajorOptimizingTime;
@@ -97,15 +98,17 @@ public class TableRuntime extends StatedPersistentBase {
   private Map<String, Long> fromSequence;
   private Map<String, Long> toSequence;
   private OptimizingType optimizingType;
+  private DefaultTableRuntime tableRuntime;
 
-  public TableRuntime(
-      ServerTableIdentifier tableIdentifier,
+  public DefaultOptimizingState(
+      DefaultTableRuntime tableRuntime,
       TableRuntimeHandler tableHandler,
       Map<String, String> properties) {
-    Preconditions.checkNotNull(tableIdentifier, "ServerTableIdentifier must not be null.");
+    Preconditions.checkNotNull(tableRuntime, "ServerTableIdentifier must not be null.");
     Preconditions.checkNotNull(tableHandler, "TableRuntimeHandler must not be null.");
+    this.tableRuntime = tableRuntime;
     this.tableHandler = tableHandler;
-    this.tableIdentifier = tableIdentifier;
+    this.tableIdentifier = tableRuntime.getTableIdentifier();
     this.tableConfiguration = TableConfigurations.parseTableConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
@@ -114,10 +117,14 @@ public class TableRuntime extends StatedPersistentBase {
     tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
   }
 
-  public TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
+  public DefaultOptimizingState(
+      DefaultTableRuntime tableRuntime,
+      TableRuntimeMeta tableRuntimeMeta,
+      TableRuntimeHandler tableHandler) {
     Preconditions.checkNotNull(tableRuntimeMeta, "TableRuntimeMeta must not be null.");
     Preconditions.checkNotNull(tableHandler, "TableRuntimeHandler must not be null.");
 
+    this.tableRuntime = tableRuntime;
     this.tableHandler = tableHandler;
     this.tableIdentifier =
         ServerTableIdentifier.of(
@@ -196,7 +203,7 @@ public class TableRuntime extends StatedPersistentBase {
           OptimizingStatus originalStatus = optimizingStatus;
           updateOptimizingStatus(OptimizingStatus.PLANNING);
           persistUpdatingRuntime();
-          tableHandler.handleTableChanged(this, originalStatus);
+          tableHandler.handleTableChanged(tableRuntime, originalStatus);
         });
   }
 
@@ -207,14 +214,14 @@ public class TableRuntime extends StatedPersistentBase {
             OptimizingStatus originalStatus = optimizingStatus;
             updateOptimizingStatus(OptimizingStatus.PENDING);
             persistUpdatingRuntime();
-            tableHandler.handleTableChanged(this, originalStatus);
+            tableHandler.handleTableChanged(tableRuntime, originalStatus);
           });
     } catch (Exception e) {
       OptimizingStatus originalStatus = optimizingStatus;
       updateOptimizingStatus(OptimizingStatus.PENDING);
       LOG.warn(
           "Persistent database failed, only the optimizing state in the memory was changed.", e);
-      tableHandler.handleTableChanged(this, originalStatus);
+      tableHandler.handleTableChanged(tableRuntime, originalStatus);
     }
   }
 
@@ -228,7 +235,7 @@ public class TableRuntime extends StatedPersistentBase {
               OptimizingStatus.ofOptimizingType(optimizingProcess.getOptimizingType()));
           this.pendingInput = null;
           persistUpdatingRuntime();
-          tableHandler.handleTableChanged(this, originalStatus);
+          tableHandler.handleTableChanged(tableRuntime, originalStatus);
         });
   }
 
@@ -238,7 +245,7 @@ public class TableRuntime extends StatedPersistentBase {
           OptimizingStatus originalStatus = optimizingStatus;
           updateOptimizingStatus(OptimizingStatus.COMMITTING);
           persistUpdatingRuntime();
-          tableHandler.handleTableChanged(this, originalStatus);
+          tableHandler.handleTableChanged(tableRuntime, originalStatus);
         });
   }
 
@@ -253,12 +260,12 @@ public class TableRuntime extends StatedPersistentBase {
                 "{} status changed from idle to pending with pendingInput {}",
                 tableIdentifier,
                 pendingInput);
-            tableHandler.handleTableChanged(this, OptimizingStatus.IDLE);
+            tableHandler.handleTableChanged(tableRuntime, OptimizingStatus.IDLE);
           }
         });
   }
 
-  public TableRuntime refresh(AmoroTable<?> table) {
+  public DefaultTableRuntime refresh(AmoroTable<?> table) {
     return invokeConsistency(
         () -> {
           TableConfiguration configuration = tableConfiguration;
@@ -267,9 +274,9 @@ public class TableRuntime extends StatedPersistentBase {
             persistUpdatingRuntime();
           }
           if (configChanged) {
-            tableHandler.handleTableChanged(this, configuration);
+            tableHandler.handleTableChanged(tableRuntime, configuration);
           }
-          return this;
+          return tableRuntime;
         });
   }
 
@@ -296,7 +303,7 @@ public class TableRuntime extends StatedPersistentBase {
             lastOptimizedSnapshotId = currentSnapshotId;
             lastOptimizedChangeSnapshotId = currentChangeSnapshotId;
             persistUpdatingRuntime();
-            tableHandler.handleTableChanged(this, optimizingStatus);
+            tableHandler.handleTableChanged(tableRuntime, optimizingStatus);
           }
         });
   }
@@ -350,7 +357,7 @@ public class TableRuntime extends StatedPersistentBase {
           updateOptimizingStatus(OptimizingStatus.IDLE);
           optimizingProcess = null;
           persistUpdatingRuntime();
-          tableHandler.handleTableChanged(this, originalStatus);
+          tableHandler.handleTableChanged(tableRuntime, originalStatus);
         });
   }
 
@@ -464,10 +471,6 @@ public class TableRuntime extends StatedPersistentBase {
 
   public ServerTableIdentifier getTableIdentifier() {
     return tableIdentifier;
-  }
-
-  public TableFormat getFormat() {
-    return tableIdentifier.getFormat();
   }
 
   public OptimizingStatus getOptimizingStatus() {
@@ -656,5 +659,45 @@ public class TableRuntime extends StatedPersistentBase {
     } finally {
       tableLock.unlock();
     }
+  }
+
+  @Override
+  public long getId() {
+    return optimizingProcess.getProcessId();
+  }
+
+  @Override
+  public String getName() {
+    return optimizingType.name();
+  }
+
+  @Override
+  public long getStartTime() {
+    return optimizingProcess.getPlanTime();
+  }
+
+  @Override
+  public Action getAction() {
+    return IcebergActions.REWRITE;
+  }
+
+  @Override
+  public ProcessStatus getStatus() {
+    return optimizingProcess.getStatus();
+  }
+
+  @Override
+  public Map<String, String> getSummary() {
+    return null;
+  }
+
+  @Override
+  public String getFailedReason() {
+    return null;
+  }
+
+  @Override
+  public long getQuotaRuntime() {
+    return getQuotaTime();
   }
 }

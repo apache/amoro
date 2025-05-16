@@ -16,14 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.executor;
+package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 
-public class BlockerExpiringExecutor extends BaseTableExecutor {
+public class BlockerExpiringExecutor extends PeriodicTableScheduler {
 
   private final Persistency persistency = new Persistency();
 
@@ -34,17 +35,17 @@ public class BlockerExpiringExecutor extends BaseTableExecutor {
   }
 
   @Override
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
+  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
     return INTERVAL;
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
+  protected boolean enabled(DefaultTableRuntime tableRuntime) {
     return true;
   }
 
   @Override
-  protected void execute(TableRuntime tableRuntime) {
+  protected void execute(DefaultTableRuntime tableRuntime) {
     try {
       persistency.doExpiring(tableRuntime);
     } catch (Throwable t) {
@@ -54,7 +55,7 @@ public class BlockerExpiringExecutor extends BaseTableExecutor {
 
   private static class Persistency extends PersistentBase {
 
-    public void doExpiring(TableRuntime tableRuntime) {
+    public void doExpiring(DefaultTableRuntime tableRuntime) {
       String catalog = tableRuntime.getTableIdentifier().getCatalog();
       String database = tableRuntime.getTableIdentifier().getDatabase();
       String table = tableRuntime.getTableIdentifier().getTableName();
