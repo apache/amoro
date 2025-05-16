@@ -18,9 +18,10 @@
 
 package org.apache.amoro;
 
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+
 import java.util.Arrays;
 import java.util.Objects;
-import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
 public final class Action {
 
