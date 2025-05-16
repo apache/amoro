@@ -20,30 +20,29 @@ package org.apache.amoro;
 
 import java.util.Arrays;
 import java.util.Objects;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
 public final class Action {
+
+  private static final int MAX_NAME_LENGTH = 16;
 
   /** supported table formats of this action */
   private final TableFormat[] formats;
 
-  private String name;
+  private final String name;
   /**
    * the weight number of this action, the bigger the weight number, the higher positions of
    * schedulers or front pages
    */
   private final int weight;
 
-  /** description of this action, will be shown in front pages */
-  private final String desc;
-
-  public Action(TableFormat[] formats, int weight, String desc) {
+  public Action(TableFormat[] formats, int weight, String name) {
+    Preconditions.checkArgument(
+        name.length() <= MAX_NAME_LENGTH,
+        "Action name length should be less than " + MAX_NAME_LENGTH);
     this.formats = formats;
-    this.desc = desc;
+    this.name = name;
     this.weight = weight;
-  }
-
-  public String getDesc() {
-    return desc;
   }
 
   public int getWeight() {

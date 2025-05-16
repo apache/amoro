@@ -182,7 +182,7 @@ CREATE TABLE `task_runtime`
 CREATE TABLE `table_process_state`
 (
     `process_id`                    bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
-    `action`                        varchar(10) NOT NULL COMMENT 'process action',
+    `action`                        varchar(16) NOT NULL COMMENT 'process action',
     `table_id`                      bigint(20) NOT NULL,
     `retry_num`                     int(11) DEFAULT NULL COMMENT 'Retry times',
     `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
