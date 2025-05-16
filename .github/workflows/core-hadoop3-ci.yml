@@ -40,10 +40,10 @@ jobs:
         jdk: [ 1.8, 11, 17 ]
     name: Build Amoro with JDK ${{ matrix.jdk }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@master
 
       - name: Set up JDK ${{ matrix.jdk }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.jdk }}
           distribution: 'temurin'
