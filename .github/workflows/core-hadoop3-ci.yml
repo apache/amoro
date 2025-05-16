@@ -53,7 +53,10 @@ jobs:
         run: mvn validate
 
       - name: Build all modules with Maven
-        run: mvn clean install -Djacoco.flink.skip=true -B -ntp -Djava.version=${{ matrix.jdk.maven }}
+        run: |
+          EXTRA_JAVA_TEST_ARGS=$(./mvnw help:evaluate -Dexpression=extraJavaTestArgs -q -DforceStdout)
+          export MAVEN_OPTS="$MAVEN_OPTS $EXTRA_JAVA_TEST_ARGS"
+          mvn clean install -Djacoco.flink.skip=true -B -ntp -Djava.version=${{ matrix.jdk.maven }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
