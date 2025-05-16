@@ -151,7 +151,7 @@ public class AmsEnvironment {
 
     stopOptimizer();
     if (this.serviceContainer != null) {
-      this.serviceContainer.dispose();
+      this.serviceContainer.disposeAllService();
     }
     testHMS.stop();
     MoreFiles.deleteRecursively(Paths.get(rootPath), RecursiveDeleteOption.ALLOW_INSECURE);
@@ -315,7 +315,7 @@ public class AmsEnvironment {
             AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT, optimizingServiceBindPort);
         serviceConfig.set(
             AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, Duration.ofMillis(1000L));
-        serviceContainer.startService();
+        serviceContainer.startOptimizingService();
         LOG.info("Started test AMS.");
         break;
       } catch (TTransportException e) {
