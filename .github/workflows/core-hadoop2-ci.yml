@@ -34,15 +34,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        jdk: [ 1.8, 11, 17 ]
-    name: Build Amoro with JDK ${{ matrix.jdk }}
+        jdk: [ { setup: '8', maven: '1.8' }, { setup: '11', maven: '11' }, { setup: '17', maven: '17' } ]
+    name: Build Amoro with JDK ${{ matrix.jdk.setup }}
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
 
-      - name: Set up JDK ${{ matrix.jdk }}
-        uses: actions/setup-java@v4
+      - name: Set up JDK ${{ matrix.jdk.setup }}
+        uses: actions/setup-java@v3
         with:
-          java-version: ${{ matrix.jdk }}
+          java-version: ${{ matrix.jdk.setup }}
           distribution: 'temurin'
           cache: maven
 
@@ -50,7 +50,7 @@ jobs:
         run: mvn validate
 
       - name: Build all modules with Maven
-        run: mvn clean install -Djacoco.flink.skip=true -B -ntp -Phadoop2 -Djava.version=${{ matrix.jdk }}
+        run: mvn clean install -Djacoco.flink.skip=true -B -ntp -Phadoop2 -Djava.version=${{ matrix.jdk.maven }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
