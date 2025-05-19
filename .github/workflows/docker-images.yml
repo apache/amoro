@@ -86,7 +86,7 @@ jobs:
           echo "MVN_HADOOP=-Phadoop2" >> $GITHUB_ENV
 
       - name: Build dist module with Maven
-        run: mvn clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp
+        run: mvn clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats
 
       - name: Build and Push Amoro Docker Image
         uses: docker/build-push-action@v4
