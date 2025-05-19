@@ -233,7 +233,7 @@ CREATE TABLE table_optimizing_process
     summary TEXT,
     from_sequence TEXT,
     to_sequence TEXT,
-    PRIMARY KEY (process_id, table_id)
+    PRIMARY KEY (process_id)
 );
 CREATE INDEX process_index ON table_optimizing_process (table_id, plan_time);
 
@@ -273,7 +273,7 @@ CREATE TABLE task_runtime
     rewrite_output BYTEA,
     metrics_summary TEXT,
     properties TEXT,
-    PRIMARY KEY (process_id, task_id, table_id)
+    PRIMARY KEY (process_id, task_id)
 );
 CREATE INDEX task_runtime_index ON table_optimizing_process (table_id, process_id);
 
@@ -304,7 +304,7 @@ CREATE TABLE optimizing_task_quota
     start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fail_reason VARCHAR(4096),
-    PRIMARY KEY (process_id, task_id, retry_num, table_id)
+    PRIMARY KEY (process_id, task_id, retry_num)
 );
 CREATE INDEX quota_index ON table_optimizing_process (table_id);
 
