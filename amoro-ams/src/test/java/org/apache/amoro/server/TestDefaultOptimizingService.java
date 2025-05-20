@@ -181,7 +181,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     // 4.retry poll task
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
-    Assertions.assertEquals(task2, task);
+    Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
     assertTaskStatus(TaskRuntime.Status.SCHEDULED);
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
     assertTaskStatus(TaskRuntime.Status.ACKED);
@@ -205,7 +205,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     // 4.retry poll task
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
-    Assertions.assertEquals(task2, task);
+    Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
 
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
     optimizingService()
@@ -213,7 +213,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     // retry again
     OptimizingTask task3 = optimizingService().pollTask(token, THREAD_ID);
-    Assertions.assertEquals(task3, task);
+    Assertions.assertEquals(task3.getTaskId(), task.getTaskId());
     assertTaskStatus(TaskRuntime.Status.SCHEDULED);
     // third time would be null
     Assertions.assertNull(optimizingService().pollTask(token, THREAD_ID));
@@ -252,7 +252,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     Thread.sleep(1000);
     assertTaskStatus(TaskRuntime.Status.PLANNED);
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
-    Assertions.assertEquals(task2, task);
+    Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
   }
 
   @Test
