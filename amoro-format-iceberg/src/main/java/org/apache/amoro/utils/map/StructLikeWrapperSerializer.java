@@ -51,7 +51,7 @@ public class StructLikeWrapperSerializer implements ResourceSerde<StructLikeWrap
       return null;
     }
     StructLikeCopy structLike = SerializationUtil.kryoDeserialize(bytes);
-    return new DeserializedResource<>(structLikeWrapper.copyFor(structLike), false);
+    return new DeserializedResource<>(structLikeWrapper.copyFor(structLike));
   }
 
   public static class StructLikeCopy implements StructLike {

@@ -28,7 +28,7 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 
-public class KryoSerialize<R> implements ResourceSerde<R> {
+public class KryoSerializer<R> implements ResourceSerde<R> {
 
   private static final ThreadLocal<KryoSerializerInstance> KRYO_SERIALIZER =
       ThreadLocal.withInitial(KryoSerializerInstance::new);
@@ -45,7 +45,7 @@ public class KryoSerialize<R> implements ResourceSerde<R> {
       throw new NullPointerException("The bytes[] Input must not be null");
     }
     R deserialize = (R) KRYO_SERIALIZER.get().deserialize(input);
-    return new DeserializedResource<>(deserialize, false);
+    return new DeserializedResource<>(deserialize);
   }
 
   private static class KryoSerializerInstance implements Serializable {

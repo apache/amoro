@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-public class SimpleSerialize<R> implements ResourceSerde<R> {
+public class SimpleSerializer<R> implements ResourceSerde<R> {
 
   @Override
   public byte[] serializeResource(R resource) {
@@ -47,7 +47,7 @@ public class SimpleSerialize<R> implements ResourceSerde<R> {
     }
     try (ByteArrayInputStream bis = new ByteArrayInputStream(input)) {
       try (ObjectInputStream ois = new ObjectInputStream(bis)) {
-        return new DeserializedResource<>((R) ois.readObject(), false);
+        return new DeserializedResource<>((R) ois.readObject());
       }
     } catch (IOException | ClassNotFoundException e) {
       throw new IllegalArgumentException("deserialization error ", e);

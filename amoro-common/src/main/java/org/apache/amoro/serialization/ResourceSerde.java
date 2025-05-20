@@ -42,19 +42,13 @@ public interface ResourceSerde<R> {
 
   final class DeserializedResource<R> {
     private final R resource;
-    private final boolean modifiedDuringDeserialization;
 
-    public DeserializedResource(R resource, boolean modifiedDuringDeserialization) {
+    public DeserializedResource(R resource) {
       this.resource = resource;
-      this.modifiedDuringDeserialization = modifiedDuringDeserialization;
     }
 
     public R getResource() {
       return resource;
-    }
-
-    public boolean isModifiedDuringDeserialization() {
-      return modifiedDuringDeserialization;
     }
   }
 }

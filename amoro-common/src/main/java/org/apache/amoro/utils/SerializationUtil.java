@@ -19,17 +19,17 @@
 package org.apache.amoro.utils;
 
 import org.apache.amoro.serialization.JavaSerializer;
-import org.apache.amoro.serialization.KryoSerialize;
+import org.apache.amoro.serialization.KryoSerializer;
 import org.apache.amoro.serialization.ResourceSerde;
-import org.apache.amoro.serialization.SimpleSerialize;
+import org.apache.amoro.serialization.SimpleSerializer;
 
 import java.nio.ByteBuffer;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class SerializationUtil {
 
-  private static final KryoSerialize kryoSerialize = new KryoSerialize();
-  private static final SimpleSerialize simpleSerialize = new SimpleSerialize();
+  private static final KryoSerializer kryoSerialize = new KryoSerializer();
+  private static final SimpleSerializer simpleSerialize = new SimpleSerializer();
 
   public static ByteBuffer simpleSerialize(Object obj) {
     return ByteBuffer.wrap(simpleSerialize.serializeResource(obj));

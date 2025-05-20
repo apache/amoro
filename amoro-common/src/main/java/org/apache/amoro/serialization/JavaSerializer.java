@@ -29,7 +29,7 @@ import java.io.Serializable;
  */
 public class JavaSerializer<R extends Serializable> implements ResourceSerde<R> {
 
-  private static final KryoSerialize kryoSerialize = new KryoSerialize<>();
+  private static final KryoSerializer kryoSerialize = new KryoSerializer<>();
 
   public static final JavaSerializer INSTANT = new JavaSerializer<>();
 
@@ -44,7 +44,7 @@ public class JavaSerializer<R extends Serializable> implements ResourceSerde<R> 
   @SuppressWarnings("unchecked")
   public DeserializedResource<R> deserializeResource(byte[] input) {
     if (input == null) {
-      return new DeserializedResource<>(null, false);
+      return new DeserializedResource<>(null);
     }
     return kryoSerialize.deserializeResource(input);
   }
