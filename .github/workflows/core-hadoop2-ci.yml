@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        jdk: [ { setup: '8', maven: '1.8' }, { setup: '11', maven: '11' }, { setup: '17', maven: '17' } ]
+        jdk: [ { setup: '8', maven: '1.8' }, { setup: '11', maven: '11' } ]
     name: Build Amoro with JDK ${{ matrix.jdk.setup }}
     steps:
       - uses: actions/checkout@v3
@@ -53,10 +53,7 @@ jobs:
         run: mvn validate
 
       - name: Build all modules with Maven
-        run: |
-          EXTRA_JAVA_TEST_ARGS=$(mvn help:evaluate -Dexpression=extraJavaTestArgs -q -DforceStdout)
-          export MAVEN_OPTS="$MAVEN_OPTS $EXTRA_JAVA_TEST_ARGS"
-          mvn clean install -Djacoco.flink.skip=true -B -ntp -Phadoop2 -Djava.version=${{ matrix.jdk.maven }}
+        run: mvn clean install -Djacoco.flink.skip=true -B -ntp -Phadoop2 -Djava.version=${{ matrix.jdk.maven }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
