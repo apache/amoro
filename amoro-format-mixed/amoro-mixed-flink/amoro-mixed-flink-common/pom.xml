@@ -427,7 +427,7 @@
                             <value>org.apache.amoro.listener.AmoroRunListener</value>
                         </property>
                     </properties>
-                    <argLine>-verbose:class ${extraJavaTestArgs}</argLine>
+                    <argLine>-verbose:class</argLine>
                 </configuration>
             </plugin>
             <plugin>

@@ -182,6 +182,12 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     // 4.retry poll task
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    Assertions.assertNotEquals(task2.getTaskInput(), task.getTaskInput());
+    TableOptimizing.OptimizingInput input =
+        SerializationUtil.simpleDeserialize(task.getTaskInput());
+    TableOptimizing.OptimizingInput input2 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input2.toString(), input.toString());
     assertTaskStatus(TaskRuntime.Status.SCHEDULED);
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
     assertTaskStatus(TaskRuntime.Status.ACKED);
@@ -206,6 +212,12 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     // 4.retry poll task
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    Assertions.assertNotEquals(task2.getTaskInput(), task.getTaskInput());
+    TableOptimizing.OptimizingInput input =
+        SerializationUtil.simpleDeserialize(task.getTaskInput());
+    TableOptimizing.OptimizingInput input2 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input2.toString(), input.toString());
 
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
     optimizingService()
@@ -214,6 +226,10 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     // retry again
     OptimizingTask task3 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertEquals(task3.getTaskId(), task.getTaskId());
+    Assertions.assertNotEquals(task2.getTaskInput(), task.getTaskInput());
+    TableOptimizing.OptimizingInput input3 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input3.toString(), input.toString());
     assertTaskStatus(TaskRuntime.Status.SCHEDULED);
     // third time would be null
     Assertions.assertNull(optimizingService().pollTask(token, THREAD_ID));
@@ -253,6 +269,11 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     assertTaskStatus(TaskRuntime.Status.PLANNED);
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    TableOptimizing.OptimizingInput input =
+        SerializationUtil.simpleDeserialize(task.getTaskInput());
+    TableOptimizing.OptimizingInput input2 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input2.toString(), input.toString());
   }
 
   @Test
@@ -267,6 +288,11 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task2);
     Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    TableOptimizing.OptimizingInput input =
+        SerializationUtil.simpleDeserialize(task.getTaskInput());
+    TableOptimizing.OptimizingInput input2 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input2.toString(), input.toString());
   }
 
   @Test
@@ -348,6 +374,11 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    TableOptimizing.OptimizingInput input =
+        SerializationUtil.simpleDeserialize(task.getTaskInput());
+    TableOptimizing.OptimizingInput input2 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input2.toString(), input.toString());
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
     optimizingService()
         .completeTask(token, buildOptimizingTaskFailResult(task.getTaskId(), "error"));
@@ -357,6 +388,9 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     OptimizingTask task3 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertEquals(task3.getTaskId(), task.getTaskId());
+    TableOptimizing.OptimizingInput input3 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input3.toString(), input.toString());
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
     optimizingService()
         .completeTask(token, buildOptimizingTaskFailResult(task.getTaskId(), "error"));
