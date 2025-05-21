@@ -62,7 +62,7 @@ public class TestKeyedTable extends TableTestBaseWithInitDataForTrino {
         .matches(
             "VALUES "
                 + "('id', NULL, NULL, 0e0, NULL, '1', '4'), "
-                + "('name$name', 429e0, NULL, 0e0, NULL, NULL, NULL), "
+                + "('name$name', 461e0, NULL, 0e0, NULL, NULL, NULL), "
                 + "('op_time', NULL, NULL, 0e0, NULL, '2022-01-01 12:00:00.000000', '2022-01-04 12:00:00.000000'), "
                 + "(NULL, NULL, NULL, NULL, 4e0, NULL, NULL)");
   }

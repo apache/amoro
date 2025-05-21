@@ -250,6 +250,10 @@
                     <groupId>org.apache.parquet</groupId>
                     <artifactId>parquet-column</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.parquet</groupId>
+                    <artifactId>parquet-hadoop</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
