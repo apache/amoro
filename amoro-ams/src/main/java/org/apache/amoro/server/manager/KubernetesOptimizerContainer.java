@@ -56,7 +56,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /** Kubernetes Optimizer Container with Standalone Optimizer */
-public class KubernetesOptimizerContainer extends AbstractResourceContainer {
+public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(KubernetesOptimizerContainer.class);
 
@@ -348,7 +348,7 @@ public class KubernetesOptimizerContainer extends AbstractResourceContainer {
   }
 
   @Override
-  public void releaseOptimizer(Resource resource) {
+  public void releaseResource(Resource resource) {
     String resourceId = resource.getResourceId();
     LOG.info("release Kubernetes Optimizer Container {}", resourceId);
     String namespace = resource.getProperties().get(NAMESPACE);

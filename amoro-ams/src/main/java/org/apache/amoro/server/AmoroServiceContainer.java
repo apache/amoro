@@ -43,14 +43,14 @@ import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.DefaultOptimizerManager;
+import org.apache.amoro.server.resource.InternalContainers;
 import org.apache.amoro.server.resource.OptimizerManager;
-import org.apache.amoro.server.resource.ResourceContainers;
+import org.apache.amoro.server.scheduler.inline.InlineTableExecutors;
 import org.apache.amoro.server.table.DefaultTableManager;
 import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableService;
-import org.apache.amoro.server.table.executor.AsyncTableExecutors;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.server.utils.ThriftServiceProxy;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
@@ -165,18 +165,18 @@ public class AmoroServiceContainer {
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
 
     LOG.info("Setting up AMS table executors...");
-    AsyncTableExecutors.getInstance().setup(tableService, serviceConfig);
+    InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
     addHandlerChain(optimizingService.getTableRuntimeHandler());
-    addHandlerChain(AsyncTableExecutors.getInstance().getDataExpiringExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getSnapshotsExpiringExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getDanglingDeleteFilesCleaningExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingCommitExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getOptimizingExpiringExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getBlockerExpiringExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getHiveCommitSyncExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getTableRefreshingExecutor());
-    addHandlerChain(AsyncTableExecutors.getInstance().getTagsAutoCreatingExecutor());
+    addHandlerChain(InlineTableExecutors.getInstance().getDataExpiringExecutor());
+    addHandlerChain(InlineTableExecutors.getInstance().getSnapshotsExpiringExecutor());
+    addHandlerChain(InlineTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
+    addHandlerChain(InlineTableExecutors.getInstance().getDanglingDeleteFilesCleaningExecutor());
+    addHandlerChain(InlineTableExecutors.getInstance().getOptimizingCommitExecutor());
+    addHandlerChain(InlineTableExecutors.getInstance().getOptimizingExpiringExecutor());
+    addHandlerChain(InlineTableExecutors.getInstance().getBlockerExpiringExecutor());
+    addHandlerChain(InlineTableExecutors.getInstance().getHiveCommitSyncExecutor());
+    addHandlerChain(InlineTableExecutors.getInstance().getTableRefreshingExecutor());
+    addHandlerChain(InlineTableExecutors.getInstance().getTagsAutoCreatingExecutor());
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
     tableManager.setTableService(tableService);
@@ -528,7 +528,7 @@ public class AmoroServiceContainer {
           containerList.add(container);
         }
       }
-      ResourceContainers.init(containerList);
+      InternalContainers.init(containerList);
     }
   }
 

@@ -16,33 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.resource;
 
-import org.apache.amoro.AmoroTable;
-import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.server.catalog.InternalCatalog;
+import org.apache.amoro.process.AmoroProcess;
+import org.apache.amoro.process.TableProcessState;
 
-public interface TableService extends TableRuntimeHandler {
-
-  void initialize();
-
-  void dispose();
-
-  void onTableCreated(InternalCatalog catalog, ServerTableIdentifier identifier);
-
-  void onTableDropped(InternalCatalog catalog, ServerTableIdentifier identifier);
-
-  DefaultTableRuntime getRuntime(Long tableId);
-
-  default boolean contains(Long tableId) {
-    return getRuntime(tableId) != null;
-  }
+/**
+ * ExternalResourceContainer is the key interface for the AMS framework to interact with the
+ * external resource. Typically, it is used to submit and release resource on YARN/K8S.
+ */
+public interface ExternalResourceContainer extends ResourceContainer {
 
   /**
-   * load a table via server catalog.
+   * Submit a process and get the related resource, when the process is completed, the resource will
+   * be automatically released.
    *
-   * @param identifier managed table identifier
-   * @return managed table.
+   * @param process
+   * @return the resource
    */
-  AmoroTable<?> loadTable(ServerTableIdentifier identifier);
+  Resource submit(AmoroProcess<? extends TableProcessState> process);
+
+  /**
+   * Release a resource by resource id manually, usually means a killing operation
+   *
+   * @param resourceId
+   */
+  void release(String resourceId);
 }

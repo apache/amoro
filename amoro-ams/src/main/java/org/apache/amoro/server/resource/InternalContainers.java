@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.resource;
 
-import org.apache.amoro.resource.ResourceContainer;
+import org.apache.amoro.resource.InternalResourceContainer;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
@@ -27,15 +27,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class ResourceContainers {
-  public static final String EXTERNAL_CONTAINER_NAME = "external";
+public class InternalContainers {
+  public static final String UNMANAGED_CONTAINER_NAME = "unmanaged";
   private static final Map<String, ContainerWrapper> globalContainers = Maps.newHashMap();
   private static volatile boolean isInitialized = false;
 
   static {
-    ContainerMetadata metadata = new ContainerMetadata(EXTERNAL_CONTAINER_NAME, "");
+    ContainerMetadata metadata = new ContainerMetadata(UNMANAGED_CONTAINER_NAME, "");
     ContainerWrapper externalContainer = new ContainerWrapper(metadata, null);
-    globalContainers.put(EXTERNAL_CONTAINER_NAME, externalContainer);
+    globalContainers.put(UNMANAGED_CONTAINER_NAME, externalContainer);
   }
 
   public static void init(List<ContainerMetadata> containerList) {
@@ -46,7 +46,7 @@ public class ResourceContainers {
     isInitialized = true;
   }
 
-  public static ResourceContainer get(String name) {
+  public static InternalResourceContainer get(String name) {
     checkInitialized();
     return Optional.ofNullable(globalContainers.get(name))
         .map(ContainerWrapper::getContainer)
@@ -70,7 +70,7 @@ public class ResourceContainers {
   }
 
   private static class ContainerWrapper {
-    private final ResourceContainer container;
+    private final InternalResourceContainer container;
     private final ContainerMetadata metadata;
 
     public ContainerWrapper(ContainerMetadata metadata) {
@@ -78,12 +78,12 @@ public class ResourceContainers {
       this.container = loadResourceContainer(metadata.getImplClass());
     }
 
-    ContainerWrapper(ContainerMetadata metadata, ResourceContainer container) {
+    ContainerWrapper(ContainerMetadata metadata, InternalResourceContainer container) {
       this.metadata = metadata;
       this.container = container;
     }
 
-    public ResourceContainer getContainer() {
+    public InternalResourceContainer getContainer() {
       return container;
     }
 
@@ -91,10 +91,11 @@ public class ResourceContainers {
       return metadata;
     }
 
-    private ResourceContainer loadResourceContainer(String implClass) {
+    private InternalResourceContainer loadResourceContainer(String implClass) {
       try {
         Class<?> clazz = Class.forName(implClass);
-        ResourceContainer resourceContainer = (ResourceContainer) clazz.newInstance();
+        InternalResourceContainer resourceContainer =
+            (InternalResourceContainer) clazz.newInstance();
         resourceContainer.init(metadata.getName(), metadata.getProperties());
         return resourceContainer;
       } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {

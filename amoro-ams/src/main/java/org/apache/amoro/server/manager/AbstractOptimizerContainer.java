@@ -19,8 +19,8 @@
 package org.apache.amoro.server.manager;
 
 import org.apache.amoro.OptimizerProperties;
+import org.apache.amoro.resource.InternalResourceContainer;
 import org.apache.amoro.resource.Resource;
-import org.apache.amoro.resource.ResourceContainer;
 import org.apache.amoro.resource.ResourceStatus;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public abstract class AbstractResourceContainer implements ResourceContainer {
+public abstract class AbstractOptimizerContainer implements InternalResourceContainer {
   private String containerName;
   private Map<String, String> containerProperties;
 

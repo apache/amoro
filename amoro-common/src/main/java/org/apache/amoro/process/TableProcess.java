@@ -31,35 +31,10 @@ public abstract class TableProcess<T extends TableProcessState> implements Amoro
   protected final TableRuntime tableRuntime;
   private final SimpleFuture submitFuture = new SimpleFuture();
   private final SimpleFuture completeFuture = new SimpleFuture();
-  private volatile ProcessStatus status = ProcessStatus.RUNNING;
-  private volatile String failedReason;
 
   protected TableProcess(T state, TableRuntime tableRuntime) {
     this.state = state;
     this.tableRuntime = tableRuntime;
-    this.completeFuture.whenCompleted(
-        () -> {
-          if (status == ProcessStatus.FAILED) {
-            state.setFailedReason(failedReason);
-          } else {
-            state.setStatus(status);
-          }
-        });
-  }
-
-  protected void completeSubmitting() {
-    submitFuture.complete();
-  }
-
-  protected void complete() {
-    status = ProcessStatus.SUCCESS;
-    completeFuture.complete();
-  }
-
-  protected void complete(String errorMessage) {
-    status = ProcessStatus.FAILED;
-    failedReason = errorMessage;
-    completeFuture.complete();
   }
 
   public TableRuntime getTableRuntime() {
@@ -72,15 +47,8 @@ public abstract class TableProcess<T extends TableProcessState> implements Amoro
   }
 
   @Override
-  public void close() {
-    closeInternal();
-    status = ProcessStatus.CLOSED;
-    completeFuture.complete();
-  }
-
-  @Override
   public ProcessStatus getStatus() {
-    return status;
+    return state.getStatus();
   }
 
   protected abstract void closeInternal();

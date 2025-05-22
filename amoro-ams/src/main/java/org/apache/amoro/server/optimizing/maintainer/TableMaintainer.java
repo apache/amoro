@@ -20,7 +20,7 @@ package org.apache.amoro.server.optimizing.maintainer;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.Table;
 
@@ -34,10 +34,10 @@ import org.apache.iceberg.Table;
 public interface TableMaintainer {
 
   /** Clean table orphan files. Includes: data files, metadata files. */
-  void cleanOrphanFiles(TableRuntime tableRuntime);
+  void cleanOrphanFiles(DefaultTableRuntime tableRuntime);
 
   /** Clean table dangling delete files. */
-  default void cleanDanglingDeleteFiles(TableRuntime tableRuntime) {
+  default void cleanDanglingDeleteFiles(DefaultTableRuntime tableRuntime) {
     // DO nothing by default
   }
 
@@ -45,7 +45,7 @@ public interface TableMaintainer {
    * Expire snapshots. The optimizing based on the snapshot that the current table relies on will
    * not expire according to TableRuntime.
    */
-  void expireSnapshots(TableRuntime tableRuntime);
+  void expireSnapshots(DefaultTableRuntime tableRuntime);
 
   /**
    * Expire historical data based on the expiration field, and data that exceeds the retention
@@ -53,10 +53,10 @@ public interface TableMaintainer {
    *
    * @param tableRuntime TableRuntime
    */
-  void expireData(TableRuntime tableRuntime);
+  void expireData(DefaultTableRuntime tableRuntime);
 
   /** Auto create tags for table. */
-  void autoCreateTags(TableRuntime tableRuntime);
+  void autoCreateTags(DefaultTableRuntime tableRuntime);
 
   static TableMaintainer ofTable(AmoroTable<?> amoroTable) {
     TableFormat format = amoroTable.format();
