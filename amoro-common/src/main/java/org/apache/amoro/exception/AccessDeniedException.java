@@ -16,46 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.dashboard.model;
+package org.apache.amoro.exception;
 
-public class SessionInfo {
-  private String sessionId;
-  String userName;
+public class AccessDeniedException extends AmoroRuntimeException {
+  public AccessDeniedException() {}
 
-  public String getLoginTime() {
-    return loginTime;
-  }
-
-  public void setLoginTime(String loginTime) {
-    this.loginTime = loginTime;
-  }
-
-  public String getUserName() {
-    return userName;
-  }
-
-  public void setUserName(String userName) {
-    this.userName = userName;
-  }
-
-  String loginTime;
-
-  public SessionInfo(String sessionId) {
-    this.sessionId = sessionId;
-  }
-
-  public SessionInfo(String userName, String loginTime) {
-    this.userName = userName;
-    this.loginTime = loginTime;
-  }
-
-  public SessionInfo() {}
-
-  public String getSessionId() {
-    return sessionId;
-  }
-
-  public void setSessionId(String sessionId) {
-    this.sessionId = sessionId;
+  public AccessDeniedException(String message) {
+    super(message);
   }
 }

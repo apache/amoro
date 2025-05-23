@@ -436,7 +436,10 @@
             <version>1.19.6</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.casbin</groupId>
+            <artifactId>jcasbin</artifactId>
+        </dependency>
 
     </dependencies>
 
