@@ -239,12 +239,14 @@ public class OptimizingQueue extends PersistentBase {
 
   private void triggerAsyncPlanning(
       TableRuntime tableRuntime, Set<ServerTableIdentifier> skipTables, long startTime) {
+    long planTime = System.currentTimeMillis();
     LOG.info(
-        "Trigger planning table {} by policy {}",
+        "Trigger planning table {} by policy {} at {}",
         tableRuntime.getTableIdentifier(),
-        scheduler.name());
+        scheduler.name(),
+        planTime);
     planningTables.add(tableRuntime.getTableIdentifier());
-    CompletableFuture.supplyAsync(() -> planInternal(tableRuntime), planExecutor)
+    CompletableFuture.supplyAsync(() -> planInternal(tableRuntime, planTime), planExecutor)
         .whenComplete(
             (process, throwable) -> {
               if (throwable != null) {
@@ -284,7 +286,7 @@ public class OptimizingQueue extends PersistentBase {
             });
   }
 
-  private TableOptimizingProcess planInternal(TableRuntime tableRuntime) {
+  private TableOptimizingProcess planInternal(TableRuntime tableRuntime, long planTime) {
     tableRuntime.beginPlanning();
     try {
       ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
@@ -294,7 +296,8 @@ public class OptimizingQueue extends PersistentBase {
               tableRuntime.refresh(table),
               (MixedTable) table.originalTable(),
               getAvailableCore(),
-              maxInputSizePerThread());
+              maxInputSizePerThread(),
+              planTime);
       if (planner.isNecessary()) {
         return new TableOptimizingProcess(planner, tableRuntime);
       } else {
