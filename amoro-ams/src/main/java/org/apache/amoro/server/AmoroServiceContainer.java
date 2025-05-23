@@ -123,23 +123,34 @@ public class AmoroServiceContainer {
               new Thread(
                   () -> {
                     LOG.info("AMS service is shutting down...");
-                    service.dispose();
+                    service.disposeAllService();
                     LOG.info("AMS service has been shut down");
                   }));
+      service.startNoHighAvailableService();
       while (true) {
         try {
           service.waitLeaderShip();
-          service.startService();
+          service.startOptimizingService();
           service.waitFollowerShip();
+          // become follower, dispose optimizingService stop
+          service.stopOptimizingService();
         } catch (Exception e) {
           LOG.error("AMS start error", e);
         } finally {
-          service.dispose();
+          service.disposeAllService();
         }
       }
     } catch (Throwable t) {
       LOG.error("AMS encountered an unknown exception, will exist", t);
       System.exit(1);
+    }
+  }
+
+  private void stopOptimizingService() {
+    if (optimizingService != null) {
+      LOG.info("AMS Become follower and Stopping optimizing service...");
+      optimizingService.dispose();
+      optimizingService = null;
     }
   }
 
@@ -151,14 +162,21 @@ public class AmoroServiceContainer {
     haContainer.waitFollowerShip();
   }
 
-  public void startService() throws Exception {
+  public void startNoHighAvailableService() throws Exception {
     EventsManager.getInstance();
     MetricManager.getInstance();
 
     catalogManager = new DefaultCatalogManager(serviceConfig);
     tableManager = new DefaultTableManager(serviceConfig, catalogManager);
     optimizerManager = new DefaultOptimizerManager(serviceConfig, catalogManager);
+    terminalManager = new TerminalManager(serviceConfig, catalogManager);
 
+    initHttpService();
+    startHttpService();
+    registerAmsServiceMetric();
+  }
+
+  public void startOptimizingService() throws Exception {
     tableService = new DefaultTableService(serviceConfig, catalogManager);
 
     optimizingService =
@@ -180,14 +198,9 @@ public class AmoroServiceContainer {
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
     tableManager.setTableService(tableService);
-    terminalManager = new TerminalManager(serviceConfig, catalogManager);
 
     initThriftService();
     startThriftService();
-
-    initHttpService();
-    startHttpService();
-    registerAmsServiceMetric();
   }
 
   private void addHandlerChain(RuntimeHandlerChain chain) {
@@ -196,7 +209,7 @@ public class AmoroServiceContainer {
     }
   }
 
-  public void dispose() {
+  public void disposeAllService() {
     if (tableManagementServer != null && tableManagementServer.isServing()) {
       LOG.info("Stopping table management server...");
       tableManagementServer.stop();
