@@ -126,7 +126,7 @@ public class AmoroServiceContainer {
                     service.disposeAllService();
                     LOG.info("AMS service has been shut down");
                   }));
-      service.startNoHighAvailableService();
+      service.startRestServices();
       while (true) {
         try {
           service.waitLeaderShip();
@@ -162,7 +162,7 @@ public class AmoroServiceContainer {
     haContainer.waitFollowerShip();
   }
 
-  public void startNoHighAvailableService() throws Exception {
+  public void startRestServices() throws Exception {
     EventsManager.getInstance();
     MetricManager.getInstance();
 
