@@ -118,7 +118,7 @@
         <curator.version>5.7.0</curator.version>
         <mockito.version>4.11.0</mockito.version>
         <parquet-jackson.version>1.13.1</parquet-jackson.version>
-        <parquet-avro.version>1.15.1</parquet-avro.version>
+        <parquet-avro.version>1.15.2</parquet-avro.version>
         <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
         <orc-core.version>1.8.3</orc-core.version>
         <awssdk.version>2.24.12</awssdk.version>
