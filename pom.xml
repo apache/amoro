@@ -71,6 +71,11 @@
     </issueManagement>
 
     <properties>
+        <java.source.version>11</java.source.version>
+        <java.target.version>11</java.target.version>
+        <maven.compiler.source>${java.source.version}</maven.compiler.source>
+        <maven.compiler.target>${java.target.version}</maven.compiler.target>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.build.outputTimestamp>2024-06-27T08:00:00Z</project.build.outputTimestamp>
         <root.dir>${project.basedir}</root.dir>
@@ -1388,8 +1393,8 @@
         <profile>
             <id>java8</id>
             <properties>
-                <maven.compiler.source>8</maven.compiler.source>
-                <maven.compiler.target>8</maven.compiler.target>
+                <java.target.version>8</java.target.version>
+                <java.source.version>8</java.source.version>
             </properties>
         </profile>
         <profile>
@@ -1398,7 +1403,7 @@
                 <jdk>[11,)</jdk>
             </activation>
             <properties>
-                <maven.compiler.release>11</maven.compiler.release>
+                <java.target.version>11</java.target.version>
             </properties>
         </profile>
     </profiles>
