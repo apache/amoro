@@ -53,7 +53,7 @@ jobs:
         run: mvn validate
 
       - name: Build all modules with Maven
-        run: mvn clean install -Djacoco.flink.skip=true -B -ntp -Phadoop2
+        run: mvn clean install -Djacoco.flink.skip=true -B -ntp -Phadoop2 -Pjava${{ matrix.jdk }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

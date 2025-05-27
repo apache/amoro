@@ -71,9 +71,6 @@
     </issueManagement>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.build.outputTimestamp>2024-06-27T08:00:00Z</project.build.outputTimestamp>
         <root.dir>${project.basedir}</root.dir>
@@ -1385,6 +1382,23 @@
             <id>aliyun-oss-sdk</id>
             <properties>
                 <aliyun-sdk-dependency-scope>compile</aliyun-sdk-dependency-scope>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>java8</id>
+            <properties>
+                <maven.compiler.source>8</maven.compiler.source>
+                <maven.compiler.target>8</maven.compiler.target>
+            </properties>
+        </profile>
+        <profile>
+            <id>java11</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
+            <properties>
+                <maven.compiler.release>11</maven.compiler.release>
             </properties>
         </profile>
     </profiles>
