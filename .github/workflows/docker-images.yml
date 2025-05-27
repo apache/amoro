@@ -162,7 +162,7 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp -Djava.version=${{ matrix.jdk }}
+        run: mvn clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
 
       - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4
