@@ -16,16 +16,27 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.process;
 
-import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.server.optimizing.OptimizingStatus;
+/**
+ * ManagedProcess is the interface for AMS modules to manage process.
+ *
+ * @param <T>
+ */
+public interface ManagedProcess<T extends ProcessState> extends AmoroProcess<T> {
 
-public interface TableRuntimeHandler {
+  /** Submit this process to ResourceContainer. */
+  void submit();
 
-  void addHandlerChain(RuntimeHandlerChain handler);
+  /** Mark this process as completed, trigger callbacks */
+  void complete();
 
-  void handleTableChanged(DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus);
+  /** Mark this process as failed, trigger callbacks */
+  void complete(String failedReason);
 
-  void handleTableChanged(DefaultTableRuntime tableRuntime, TableConfiguration originalConfig);
+  /** Reset process status and re-submit it */
+  void retry();
+
+  /** Kill this process */
+  void kill();
 }

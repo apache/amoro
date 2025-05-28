@@ -145,7 +145,7 @@ public class OptimizerGroupMetrics {
         (Gauge<Long>)
             () ->
                 optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
-                    .filter(t -> t.getOptimizingStatus().equals(PLANNING))
+                    .filter(t -> t.getOptimizingState().getOptimizingStatus().equals(PLANNING))
                     .count());
     registerMetric(
         registry,
@@ -153,7 +153,7 @@ public class OptimizerGroupMetrics {
         (Gauge<Long>)
             () ->
                 optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
-                    .filter(t -> t.getOptimizingStatus().equals(PENDING))
+                    .filter(t -> t.getOptimizingState().getOptimizingStatus().equals(PENDING))
                     .count());
     registerMetric(
         registry,
@@ -161,7 +161,7 @@ public class OptimizerGroupMetrics {
         (Gauge<Long>)
             () ->
                 optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
-                    .filter(t -> t.getOptimizingStatus().isProcessing())
+                    .filter(t -> t.getOptimizingState().getOptimizingStatus().isProcessing())
                     .count());
     registerMetric(
         registry,
@@ -169,7 +169,7 @@ public class OptimizerGroupMetrics {
         (Gauge<Long>)
             () ->
                 optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
-                    .filter(t -> t.getOptimizingStatus().equals(IDLE))
+                    .filter(t -> t.getOptimizingState().getOptimizingStatus().equals(IDLE))
                     .count());
     registerMetric(
         registry,
@@ -177,7 +177,7 @@ public class OptimizerGroupMetrics {
         (Gauge<Long>)
             () ->
                 optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
-                    .filter(t -> t.getOptimizingStatus().equals(COMMITTING))
+                    .filter(t -> t.getOptimizingState().getOptimizingStatus().equals(COMMITTING))
                     .count());
 
     registerMetric(

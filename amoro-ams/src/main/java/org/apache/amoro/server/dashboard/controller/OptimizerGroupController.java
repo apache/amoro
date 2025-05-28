@@ -30,9 +30,9 @@ import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.resource.ContainerMetadata;
+import org.apache.amoro.server.resource.InternalContainers;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerManager;
-import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.commons.lang3.StringUtils;
@@ -159,7 +159,7 @@ public class OptimizerGroupController {
         optimizerManager.listResourceGroups().stream()
             .filter(
                 resourceGroup ->
-                    !ResourceContainers.EXTERNAL_CONTAINER_NAME.equals(
+                    !InternalContainers.UNMANAGED_CONTAINER_NAME.equals(
                         resourceGroup.getContainer()))
             .map(
                 e -> {
@@ -209,7 +209,7 @@ public class OptimizerGroupController {
             "The resource ID %s has not been indexed" + " to any optimizer.", resourceId));
     Resource resource = optimizerManager.getResource(resourceId);
     resource.getProperties().putAll(optimizerInstances.get(0).getProperties());
-    ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
+    InternalContainers.get(resource.getContainerName()).releaseResource(resource);
     optimizerManager.deleteResource(resourceId);
     optimizerManager.deleteOptimizer(resource.getGroupName(), resourceId);
     ctx.json(OkResponse.of("Success to release optimizer"));
@@ -228,7 +228,7 @@ public class OptimizerGroupController {
             .setProperties(resourceGroup.getProperties())
             .setThreadCount(parallelism)
             .build();
-    ResourceContainers.get(resource.getContainerName()).requestResource(resource);
+    InternalContainers.get(resource.getContainerName()).requestResource(resource);
     optimizerManager.createResource(resource);
     ctx.json(OkResponse.of("success to scaleOut optimizer"));
   }
@@ -303,7 +303,7 @@ public class OptimizerGroupController {
   public void getContainers(Context ctx) {
     ctx.json(
         OkResponse.of(
-            ResourceContainers.getMetadataList().stream()
+            InternalContainers.getMetadataList().stream()
                 .map(ContainerMetadata::getName)
                 .collect(Collectors.toList())));
   }

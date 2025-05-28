@@ -31,8 +31,8 @@ import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.catalog.ServerCatalog;
+import org.apache.amoro.server.resource.InternalContainers;
 import org.apache.amoro.server.resource.OptimizerManager;
-import org.apache.amoro.server.resource.ResourceContainers;
 import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.io.MoreFiles;
@@ -310,7 +310,7 @@ public class AmsEnvironment {
         .listOptimizers()
         .forEach(
             resource -> {
-              ResourceContainers.get(resource.getContainerName()).releaseOptimizer(resource);
+              InternalContainers.get(resource.getContainerName()).releaseResource(resource);
             });
   }
 
