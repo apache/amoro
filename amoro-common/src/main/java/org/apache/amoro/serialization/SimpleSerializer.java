@@ -41,13 +41,13 @@ public class SimpleSerializer<R> implements ResourceSerde<R> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public DeserializedResource<R> deserializeResource(byte[] input) {
+  public R deserializeResource(byte[] input) {
     if (input == null) {
       return null;
     }
     try (ByteArrayInputStream bis = new ByteArrayInputStream(input)) {
       try (ObjectInputStream ois = new ObjectInputStream(bis)) {
-        return new DeserializedResource<>((R) ois.readObject());
+        return (R) ois.readObject();
       }
     } catch (IOException | ClassNotFoundException e) {
       throw new IllegalArgumentException("deserialization error ", e);

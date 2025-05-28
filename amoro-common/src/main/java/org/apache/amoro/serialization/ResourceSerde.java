@@ -38,17 +38,5 @@ public interface ResourceSerde<R> {
    * @param input bytes
    * @return output deserialize obj
    */
-  DeserializedResource<R> deserializeResource(byte[] input);
-
-  final class DeserializedResource<R> {
-    private final R resource;
-
-    public DeserializedResource(R resource) {
-      this.resource = resource;
-    }
-
-    public R getResource() {
-      return resource;
-    }
-  }
+  R deserializeResource(byte[] input);
 }

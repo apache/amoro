@@ -36,7 +36,7 @@ public class SerializationUtil {
   }
 
   public static <R> R simpleDeserialize(byte[] bytes) {
-    return (R) simpleSerialize.deserializeResource(bytes).getResource();
+    return (R) simpleSerialize.deserializeResource(bytes);
   }
 
   public static byte[] kryoSerialize(final Object obj) {
@@ -52,6 +52,6 @@ public class SerializationUtil {
     if (objectData == null) {
       throw new NullPointerException("The byte[] must not be null");
     }
-    return (R) kryoSerialize.deserializeResource(objectData).getResource();
+    return (R) kryoSerialize.deserializeResource(objectData);
   }
 }

@@ -27,6 +27,7 @@ import java.io.Serializable;
  *
  * @param <R>
  */
+@SuppressWarnings("rawtypes")
 public class JavaSerializer<R extends Serializable> implements ResourceSerde<R> {
 
   private static final KryoSerializer kryoSerialize = new KryoSerializer<>();
@@ -42,10 +43,10 @@ public class JavaSerializer<R extends Serializable> implements ResourceSerde<R> 
 
   @Override
   @SuppressWarnings("unchecked")
-  public DeserializedResource<R> deserializeResource(byte[] input) {
+  public R deserializeResource(byte[] input) {
     if (input == null) {
-      return new DeserializedResource<>(null);
+      return null;
     }
-    return kryoSerialize.deserializeResource(input);
+    return (R) kryoSerialize.deserializeResource(input);
   }
 }

@@ -40,12 +40,11 @@ public class KryoSerializer<R> implements ResourceSerde<R> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public DeserializedResource<R> deserializeResource(byte[] input) {
+  public R deserializeResource(byte[] input) {
     if (input == null) {
       throw new NullPointerException("The bytes[] Input must not be null");
     }
-    R deserialize = (R) KRYO_SERIALIZER.get().deserialize(input);
-    return new DeserializedResource<>(deserialize);
+    return (R) KRYO_SERIALIZER.get().deserialize(input);
   }
 
   private static class KryoSerializerInstance implements Serializable {

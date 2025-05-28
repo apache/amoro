@@ -173,9 +173,8 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
     }
 
     public T get(K key) {
-      return valueSerializer
-          .deserializeResource(rocksDB.get(columnFamily, keySerializer.serializeResource(key)))
-          .getResource();
+      return valueSerializer.deserializeResource(
+          rocksDB.get(columnFamily, keySerializer.serializeResource(key)));
     }
 
     public void put(K key, T value) {
