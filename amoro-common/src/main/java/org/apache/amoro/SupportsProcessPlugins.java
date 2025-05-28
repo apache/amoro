@@ -16,16 +16,35 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro;
 
-import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.process.AmoroProcess;
+import org.apache.amoro.process.ProcessFactory;
+import org.apache.amoro.process.TableProcessState;
 
-public interface TableRuntimeHandler {
+public interface SupportsProcessPlugins {
 
-  void addHandlerChain(RuntimeHandlerChain handler);
+  /**
+   * Trigger a table process on an action.
+   *
+   * @param action
+   * @return created table process
+   */
+  AmoroProcess<? extends TableProcessState> trigger(Action action);
 
-  void handleTableChanged(DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus);
+  /**
+   * Install a process factory for an action.
+   *
+   * @param action action type
+   * @param processFactory process factory
+   */
+  void install(Action action, ProcessFactory<? extends TableProcessState> processFactory);
 
-  void handleTableChanged(DefaultTableRuntime tableRuntime, TableConfiguration originalConfig);
+  /**
+   * Check if an action is enabled.
+   *
+   * @param action
+   * @return true if the action is enabled
+   */
+  boolean enabled(Action action);
 }

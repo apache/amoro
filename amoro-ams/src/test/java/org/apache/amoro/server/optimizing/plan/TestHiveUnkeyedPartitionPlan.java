@@ -85,12 +85,12 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
     return new MixedHivePartitionPlan(
         getTableRuntime().getTableIdentifier(),
         getMixedTable(),
-        getTableRuntime().getOptimizingConfig(),
+        getTableRuntime().getOptimizingState().getOptimizingConfig(),
         getPartition(),
         hiveLocation,
         System.currentTimeMillis(),
-        getTableRuntime().getLastMinorOptimizingTime(),
-        getTableRuntime().getLastFullOptimizingTime());
+        getTableRuntime().getOptimizingState().getLastMinorOptimizingTime(),
+        getTableRuntime().getOptimizingState().getLastFullOptimizingTime());
   }
 
   @Test

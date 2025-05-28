@@ -34,7 +34,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class TestTableRuntimeManager extends AMSTableTestBase {
+public class TestDefaultTableRuntimeManager extends AMSTableTestBase {
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
@@ -48,7 +48,7 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
     };
   }
 
-  public TestTableRuntimeManager(
+  public TestDefaultTableRuntimeManager(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper, true);
   }
@@ -71,7 +71,7 @@ public class TestTableRuntimeManager extends AMSTableTestBase {
 
   @Test
   public void testTableRuntime() {
-    TableRuntime tableRuntime = tableService().getRuntime(serverTableIdentifier().getId());
+    DefaultTableRuntime tableRuntime = tableService().getRuntime(serverTableIdentifier().getId());
     validateTableRuntime(tableRuntime);
   }
 }

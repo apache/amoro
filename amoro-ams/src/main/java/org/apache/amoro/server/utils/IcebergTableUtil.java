@@ -33,7 +33,8 @@ import org.apache.amoro.optimizing.plan.IcebergOptimizingPlanner;
 import org.apache.amoro.optimizing.plan.MixedIcebergOptimizingEvaluator;
 import org.apache.amoro.optimizing.plan.MixedIcebergOptimizingPlanner;
 import org.apache.amoro.scan.TableEntriesScan;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.table.DefaultOptimizingState;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.base.Predicate;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
@@ -88,12 +89,13 @@ public class IcebergTableUtil {
     }
   }
 
-  public static TableSnapshot getSnapshot(MixedTable mixedTable, TableRuntime tableRuntime) {
+  public static TableSnapshot getSnapshot(MixedTable mixedTable, DefaultTableRuntime tableRuntime) {
     if (mixedTable.isUnkeyedTable()) {
-      return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
+      return new BasicTableSnapshot(tableRuntime.getOptimizingState().getCurrentSnapshotId());
     } else {
       return new KeyedTableSnapshot(
-          tableRuntime.getCurrentSnapshotId(), tableRuntime.getCurrentChangeSnapshotId());
+          tableRuntime.getOptimizingState().getCurrentSnapshotId(),
+          tableRuntime.getOptimizingState().getCurrentChangeSnapshotId());
     }
   }
 
@@ -219,14 +221,15 @@ public class IcebergTableUtil {
   }
 
   public static AbstractOptimizingEvaluator createOptimizingEvaluator(
-      TableRuntime tableRuntime,
+      DefaultTableRuntime tableRuntime,
       MixedTable table,
       TableSnapshot snapshot,
       int maxPendingPartitions) {
     ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
-    OptimizingConfig config = tableRuntime.getOptimizingConfig();
-    long lastMinor = tableRuntime.getLastMinorOptimizingTime();
-    long lastFull = tableRuntime.getLastFullOptimizingTime();
+    DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
+    OptimizingConfig config = optimizingState.getOptimizingConfig();
+    long lastMinor = optimizingState.getLastMinorOptimizingTime();
+    long lastFull = optimizingState.getLastFullOptimizingTime();
     if (TableFormat.ICEBERG.equals(table.format())) {
       return new IcebergOptimizerEvaluator(
           identifier, config, table, snapshot, maxPendingPartitions, lastMinor, lastFull);
@@ -241,20 +244,22 @@ public class IcebergTableUtil {
   }
 
   public static AbstractOptimizingEvaluator createOptimizingEvaluator(
-      TableRuntime tableRuntime, MixedTable table, int maxPendingPartitions) {
+      DefaultTableRuntime tableRuntime, MixedTable table, int maxPendingPartitions) {
     TableSnapshot snapshot = IcebergTableUtil.getSnapshot(table, tableRuntime);
     return createOptimizingEvaluator(tableRuntime, table, snapshot, maxPendingPartitions);
   }
 
   public static AbstractOptimizingPlanner createOptimizingPlanner(
-      TableRuntime tableRuntime,
+      DefaultTableRuntime tableRuntime,
       MixedTable table,
       double availableCore,
       long maxInputSizePerThread) {
+    DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
     Expression partitionFilter =
-        tableRuntime.getPendingInput() == null
+        optimizingState.getPendingInput() == null
             ? Expressions.alwaysTrue()
-            : tableRuntime.getPendingInput().getPartitions().entrySet().stream()
+            : tableRuntime.getOptimizingState().getPendingInput().getPartitions().entrySet()
+                .stream()
                 .map(
                     entry ->
                         ExpressionUtil.convertPartitionDataToDataFilter(
@@ -262,11 +267,11 @@ public class IcebergTableUtil {
                 .reduce(Expressions::or)
                 .orElse(Expressions.alwaysTrue());
     long planTime = System.currentTimeMillis();
-    long processId = Math.max(tableRuntime.getNewestProcessId() + 1, planTime);
+    long processId = Math.max(optimizingState.getNewestProcessId() + 1, planTime);
     ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
-    OptimizingConfig config = tableRuntime.getOptimizingConfig();
-    long lastMinor = tableRuntime.getLastMinorOptimizingTime();
-    long lastFull = tableRuntime.getLastFullOptimizingTime();
+    OptimizingConfig config = optimizingState.getOptimizingConfig();
+    long lastMinor = optimizingState.getLastMinorOptimizingTime();
+    long lastFull = optimizingState.getLastFullOptimizingTime();
     TableSnapshot snapshot = IcebergTableUtil.getSnapshot(table, tableRuntime);
     if (TableFormat.ICEBERG.equals(table.format())) {
       return new IcebergOptimizingPlanner(

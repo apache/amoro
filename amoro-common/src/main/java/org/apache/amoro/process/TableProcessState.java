@@ -30,6 +30,7 @@ public class TableProcessState implements ProcessState {
   @StateField private volatile long id;
   private final Action action;
   private final ServerTableIdentifier tableIdentifier;
+  @StateField private int retryNumber;
   @StateField private long startTime;
   @StateField private long endTime = -1L;
   @StateField private ProcessStatus status = ProcessStatus.SUBMITTED;
@@ -53,7 +54,7 @@ public class TableProcessState implements ProcessState {
   }
 
   public String getName() {
-    return action.getDesc();
+    return action.getName();
   }
 
   public Action getAction() {
@@ -106,7 +107,7 @@ public class TableProcessState implements ProcessState {
   protected void setStatus(ProcessStatus status) {
     if (status == ProcessStatus.SUCCESS
         || status == ProcessStatus.FAILED
-        || status == ProcessStatus.CLOSED) {
+        || status == ProcessStatus.KILLED) {
       endTime = System.currentTimeMillis();
     } else if (this.status != ProcessStatus.SUBMITTED && status == ProcessStatus.SUBMITTED) {
       endTime = -1L;
@@ -120,17 +121,42 @@ public class TableProcessState implements ProcessState {
     return failedReason;
   }
 
-  protected void setFailedReason(String failedReason) {
-    this.status = ProcessStatus.FAILED;
-    this.failedReason = failedReason;
-    this.endTime = System.currentTimeMillis();
-  }
-
   public ProcessStage getStage() {
     return status.toStage();
   }
 
   protected void setId(long processId) {
     this.id = processId;
+  }
+
+  public void setSubmitted() {
+    this.status = ProcessStatus.SUBMITTED;
+    this.startTime = System.currentTimeMillis();
+  }
+
+  public void addRetryNumber() {
+    this.retryNumber += 1;
+    this.status = ProcessStatus.PENDING;
+    this.failedReason = null;
+  }
+
+  public void setCompleted() {
+    this.status = ProcessStatus.SUCCESS;
+    this.endTime = System.currentTimeMillis();
+  }
+
+  public void setKilled() {
+    this.status = ProcessStatus.KILLED;
+    this.endTime = System.currentTimeMillis();
+  }
+
+  public void setCompleted(String failedReason) {
+    this.status = ProcessStatus.FAILED;
+    this.failedReason = failedReason;
+    this.endTime = System.currentTimeMillis();
+  }
+
+  public int getRetryNumber() {
+    return retryNumber;
   }
 }
