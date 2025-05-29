@@ -179,6 +179,21 @@ CREATE TABLE `task_runtime`
     KEY  `table_index` (`table_id`, `process_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';
 
+CREATE TABLE `table_process_state`
+(
+    `process_id`                    bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
+    `action`                        varchar(16) NOT NULL COMMENT 'process action',
+    `table_id`                      bigint(20) NOT NULL,
+    `retry_num`                     int(11) DEFAULT NULL COMMENT 'Retry times',
+    `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
+    `start_time`                    timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
+    `end_time`                      timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
+    `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
+    `summary`                       mediumtext COMMENT 'state summary, usually a map',
+    PRIMARY KEY (`process_id`),
+    KEY  `table_index` (`table_id`, `plan_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
+
 CREATE TABLE `optimizing_task_quota`
 (
     `process_id`                bigint(20) NOT NULL COMMENT 'Optimize type: Major, Minor, FullMajor',

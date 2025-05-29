@@ -18,24 +18,26 @@
 
 package org.apache.amoro.resource;
 
-import java.util.Map;
-
-public interface ResourceContainer {
-
-  String name();
-
-  /**
-   * Initialize the container
-   *
-   * @param containerProperties container properties
-   */
-  void init(String name, Map<String, String> containerProperties);
+/**
+ * The interface of internal resource container For {@link InternalResourceContainer}, resources are
+ * managed by AMS, and resources are decoupled from processes, which means one process could run any
+ * number of resources and a resource could run any number of processes. For {@link
+ * ExternalResourceContainer} resources are managed outside(by some JobManager or application
+ * master), resources and processes are one-to-one mapping.
+ */
+public interface InternalResourceContainer extends ResourceContainer {
 
   /**
-   * Get resource status
+   * Start a new optimizer.
    *
-   * @param resourceId
-   * @return resource status
+   * @param resource resource information to start the optimizer
    */
-  ResourceStatus getStatus(String resourceId);
+  void requestResource(Resource resource);
+
+  /**
+   * Release a optimizer
+   *
+   * @param resource resource information to release the optimizer
+   */
+  void releaseResource(Resource resource);
 }

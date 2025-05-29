@@ -44,7 +44,7 @@ import org.junit.runners.Parameterized;
 import java.util.List;
 
 @RunWith(Parameterized.class)
-public class TestTableRuntimeHandler extends AMSTableTestBase {
+public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
 
   private DefaultTableService tableService;
 
@@ -60,7 +60,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     };
   }
 
-  public TestTableRuntimeHandler(
+  public TestDefaultTableRuntimeHandler(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper, false);
   }
@@ -101,6 +101,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     mixedTable.updateProperties().set(TableProperties.ENABLE_ORPHAN_CLEAN, "true").commit();
     tableService()
         .getRuntime(createTableId.getId())
+        .getOptimizingState()
         .refresh(tableService.loadTable(serverTableIdentifier()));
     Assert.assertEquals(1, handler.getConfigChangedTables().size());
     validateTableRuntime(handler.getConfigChangedTables().get(0).first());
@@ -132,38 +133,39 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
 
   static class TestHandler extends RuntimeHandlerChain {
 
-    private final List<TableRuntime> initTables = Lists.newArrayList();
-    private final List<Pair<TableRuntime, OptimizingStatus>> statusChangedTables =
+    private final List<DefaultTableRuntime> initTables = Lists.newArrayList();
+    private final List<Pair<DefaultTableRuntime, OptimizingStatus>> statusChangedTables =
         Lists.newArrayList();
-    private final List<Pair<TableRuntime, TableConfiguration>> configChangedTables =
+    private final List<Pair<DefaultTableRuntime, TableConfiguration>> configChangedTables =
         Lists.newArrayList();
-    private final List<Pair<MixedTable, TableRuntime>> addedTables = Lists.newArrayList();
-    private final List<TableRuntime> removedTables = Lists.newArrayList();
+    private final List<Pair<MixedTable, DefaultTableRuntime>> addedTables = Lists.newArrayList();
+    private final List<DefaultTableRuntime> removedTables = Lists.newArrayList();
     private boolean disposed = false;
 
     @Override
-    protected void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+    protected void handleStatusChanged(
+        DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus) {
       statusChangedTables.add(Pair.of(tableRuntime, originalStatus));
     }
 
     @Override
     protected void handleConfigChanged(
-        TableRuntime tableRuntime, TableConfiguration originalConfig) {
+        DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
       configChangedTables.add(Pair.of(tableRuntime, originalConfig));
     }
 
     @Override
-    protected void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
+    protected void handleTableAdded(AmoroTable<?> table, DefaultTableRuntime tableRuntime) {
       addedTables.add(Pair.of((MixedTable) table.originalTable(), tableRuntime));
     }
 
     @Override
-    protected void handleTableRemoved(TableRuntime tableRuntime) {
+    protected void handleTableRemoved(DefaultTableRuntime tableRuntime) {
       removedTables.add(tableRuntime);
     }
 
     @Override
-    protected void initHandler(List<TableRuntime> tableRuntimeList) {
+    protected void initHandler(List<DefaultTableRuntime> tableRuntimeList) {
       initTables.addAll(tableRuntimeList);
     }
 
@@ -172,23 +174,23 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
       disposed = true;
     }
 
-    public List<TableRuntime> getInitTables() {
+    public List<DefaultTableRuntime> getInitTables() {
       return initTables;
     }
 
-    public List<Pair<TableRuntime, OptimizingStatus>> getStatusChangedTables() {
+    public List<Pair<DefaultTableRuntime, OptimizingStatus>> getStatusChangedTables() {
       return statusChangedTables;
     }
 
-    public List<Pair<TableRuntime, TableConfiguration>> getConfigChangedTables() {
+    public List<Pair<DefaultTableRuntime, TableConfiguration>> getConfigChangedTables() {
       return configChangedTables;
     }
 
-    public List<Pair<MixedTable, TableRuntime>> getAddedTables() {
+    public List<Pair<MixedTable, DefaultTableRuntime>> getAddedTables() {
       return addedTables;
     }
 
-    public List<TableRuntime> getRemovedTables() {
+    public List<DefaultTableRuntime> getRemovedTables() {
       return removedTables;
     }
 

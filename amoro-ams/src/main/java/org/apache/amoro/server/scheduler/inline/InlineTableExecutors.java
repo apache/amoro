@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.executor;
+package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.table.TableService;
 
-public class AsyncTableExecutors {
+public class InlineTableExecutors {
 
-  private static final AsyncTableExecutors instance = new AsyncTableExecutors();
+  private static final InlineTableExecutors instance = new InlineTableExecutors();
   private SnapshotsExpiringExecutor snapshotsExpiringExecutor;
   private TableRuntimeRefreshExecutor tableRefreshingExecutor;
   private OrphanFilesCleaningExecutor orphanFilesCleaningExecutor;
@@ -36,7 +36,7 @@ public class AsyncTableExecutors {
   private TagsAutoCreatingExecutor tagsAutoCreatingExecutor;
   private DataExpiringExecutor dataExpiringExecutor;
 
-  public static AsyncTableExecutors getInstance() {
+  public static InlineTableExecutors getInstance() {
     return instance;
   }
 

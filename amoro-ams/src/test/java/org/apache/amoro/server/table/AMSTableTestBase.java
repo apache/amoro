@@ -300,7 +300,7 @@ public class AMSTableTestBase extends AMSServiceTestBase {
         tableTestHelper().primaryKeySpec().primaryKeyExisted(), mixedTable.isKeyedTable());
   }
 
-  protected void validateTableRuntime(TableRuntime tableRuntime) {
+  protected void validateTableRuntime(DefaultTableRuntime tableRuntime) {
     Assert.assertEquals(serverTableIdentifier(), tableRuntime.getTableIdentifier());
   }
 }

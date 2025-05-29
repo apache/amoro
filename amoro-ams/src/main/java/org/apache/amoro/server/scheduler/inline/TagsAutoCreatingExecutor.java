@@ -16,51 +16,54 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.executor;
+package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
+/** Service for automatically creating tags for table periodically. */
+public class TagsAutoCreatingExecutor extends PeriodicTableScheduler {
+  private static final Logger LOG = LoggerFactory.getLogger(TagsAutoCreatingExecutor.class);
 
-public class OrphanFilesCleaningExecutor extends BaseTableExecutor {
-  private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleaningExecutor.class);
-  private final Duration interval;
+  private final long interval;
 
-  public OrphanFilesCleaningExecutor(TableService tableService, int poolSize, Duration interval) {
+  protected TagsAutoCreatingExecutor(TableService tableService, int poolSize, long interval) {
     super(tableService, poolSize);
     this.interval = interval;
   }
 
   @Override
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return interval.toMillis();
+  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+    return interval;
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getTableConfiguration().isCleanOrphanEnabled();
+  protected boolean enabled(DefaultTableRuntime tableRuntime) {
+    return tableRuntime.getTableConfiguration().getTagConfiguration().isAutoCreateTag()
+        && tableRuntime.getFormat() == TableFormat.ICEBERG;
   }
 
   @Override
-  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
-    scheduleIfNecessary(tableRuntime, getStartDelay());
-  }
-
-  @Override
-  public void execute(TableRuntime tableRuntime) {
+  protected void execute(DefaultTableRuntime tableRuntime) {
     try {
-      LOG.info("{} start cleaning orphan files", tableRuntime.getTableIdentifier());
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
       TableMaintainer tableMaintainer = TableMaintainer.ofTable(amoroTable);
-      tableMaintainer.cleanOrphanFiles(tableRuntime);
+      tableMaintainer.autoCreateTags(tableRuntime);
     } catch (Throwable t) {
-      LOG.error("{} failed to clean orphan file", tableRuntime.getTableIdentifier(), t);
+      LOG.error("Failed to create tags on {}", tableRuntime.getTableIdentifier(), t);
     }
+  }
+
+  @Override
+  public void handleConfigChanged(
+      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
+    scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 }

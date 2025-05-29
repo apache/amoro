@@ -51,8 +51,8 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void initialize(List<TableRuntime> tableRuntimes) {
-    List<TableRuntime> supportedtableRuntimeList =
+  public final void initialize(List<DefaultTableRuntime> tableRuntimes) {
+    List<DefaultTableRuntime> supportedtableRuntimeList =
         tableRuntimes.stream()
             .filter(runtime -> formatSupported(runtime.getFormat()))
             .collect(Collectors.toList());
@@ -63,7 +63,8 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void fireStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+  public final void fireStatusChanged(
+      DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus) {
     if (!initialized) {
       return;
     }
@@ -76,7 +77,7 @@ public abstract class RuntimeHandlerChain {
   }
 
   public final void fireConfigChanged(
-      TableRuntime tableRuntime, TableConfiguration originalConfig) {
+      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
     if (!initialized) {
       return;
     }
@@ -89,7 +90,7 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void fireTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
+  public final void fireTableAdded(AmoroTable<?> table, DefaultTableRuntime tableRuntime) {
     if (!initialized) {
       return;
     }
@@ -102,7 +103,7 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void fireTableRemoved(TableRuntime tableRuntime) {
+  public final void fireTableRemoved(DefaultTableRuntime tableRuntime) {
     if (!initialized) {
       return;
     }
@@ -137,16 +138,16 @@ public abstract class RuntimeHandlerChain {
   }
 
   protected abstract void handleStatusChanged(
-      TableRuntime tableRuntime, OptimizingStatus originalStatus);
+      DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus);
 
   protected abstract void handleConfigChanged(
-      TableRuntime tableRuntime, TableConfiguration originalConfig);
+      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig);
 
-  protected abstract void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime);
+  protected abstract void handleTableAdded(AmoroTable<?> table, DefaultTableRuntime tableRuntime);
 
-  protected abstract void handleTableRemoved(TableRuntime tableRuntime);
+  protected abstract void handleTableRemoved(DefaultTableRuntime tableRuntime);
 
-  protected abstract void initHandler(List<TableRuntime> tableRuntimeList);
+  protected abstract void initHandler(List<DefaultTableRuntime> tableRuntimeList);
 
   protected abstract void doDispose();
 }
