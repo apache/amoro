@@ -16,14 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.executor;
+package org.apache.amoro.server.scheduler;
 
+import org.apache.amoro.Action;
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.IcebergActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
-import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
@@ -39,18 +41,32 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public abstract class BaseTableExecutor extends RuntimeHandlerChain {
+public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
 
   protected final Logger logger = LoggerFactory.getLogger(getClass());
 
   private static final long START_DELAY = 10 * 1000L;
 
+  protected final Set<ServerTableIdentifier> scheduledTables =
+      Collections.synchronizedSet(new HashSet<>());
+  private final Action action;
   private final ScheduledExecutorService executor;
   private final TableService tableService;
-  private final Set<ServerTableIdentifier> scheduledTables =
-      Collections.synchronizedSet(new HashSet<>());
 
-  protected BaseTableExecutor(TableService tableService, int poolSize) {
+  protected PeriodicTableScheduler(Action action, TableService tableService, int poolSize) {
+    this.action = action;
+    this.tableService = tableService;
+    this.executor =
+        Executors.newScheduledThreadPool(
+            poolSize,
+            new ThreadFactoryBuilder()
+                .setDaemon(false)
+                .setNameFormat("async-" + getThreadName() + "-%d")
+                .build());
+  }
+
+  protected PeriodicTableScheduler(TableService tableService, int poolSize) {
+    this.action = IcebergActions.SYSTEM;
     this.tableService = tableService;
     this.executor =
         Executors.newScheduledThreadPool(
@@ -62,7 +78,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   }
 
   @Override
-  protected void initHandler(List<TableRuntime> tableRuntimeList) {
+  protected void initHandler(List<DefaultTableRuntime> tableRuntimeList) {
     tableRuntimeList.stream()
         .filter(this::enabled)
         .forEach(
@@ -76,7 +92,7 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
     logger.info("Table executor {} initialized", getClass().getSimpleName());
   }
 
-  private void executeTask(TableRuntime tableRuntime) {
+  private void executeTask(DefaultTableRuntime tableRuntime) {
     try {
       if (isExecutable(tableRuntime)) {
         execute(tableRuntime);
@@ -87,7 +103,8 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
     }
   }
 
-  protected final void scheduleIfNecessary(TableRuntime tableRuntime, long millisecondsTime) {
+  protected final void scheduleIfNecessary(
+      DefaultTableRuntime tableRuntime, long millisecondsTime) {
     if (isExecutable(tableRuntime)) {
       if (scheduledTables.add(tableRuntime.getTableIdentifier())) {
         executor.schedule(() -> executeTask(tableRuntime), millisecondsTime, TimeUnit.MILLISECONDS);
@@ -95,37 +112,39 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
     }
   }
 
-  protected abstract long getNextExecutingTime(TableRuntime tableRuntime);
+  protected abstract long getNextExecutingTime(DefaultTableRuntime tableRuntime);
 
-  protected abstract boolean enabled(TableRuntime tableRuntime);
+  protected abstract boolean enabled(DefaultTableRuntime tableRuntime);
 
-  protected abstract void execute(TableRuntime tableRuntime);
+  protected abstract void execute(DefaultTableRuntime tableRuntime);
 
   protected String getThreadName() {
     return String.join("-", StringUtils.splitByCharacterTypeCamelCase(getClass().getSimpleName()))
         .toLowerCase(Locale.ROOT);
   }
 
-  private boolean isExecutable(TableRuntime tableRuntime) {
+  private boolean isExecutable(DefaultTableRuntime tableRuntime) {
     return tableService.contains(tableRuntime.getTableIdentifier().getId())
         && enabled(tableRuntime);
   }
 
   @Override
-  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public void handleConfigChanged(
+      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
     // DO nothing by default
   }
 
   @Override
-  public void handleTableRemoved(TableRuntime tableRuntime) {
+  public void handleTableRemoved(DefaultTableRuntime tableRuntime) {
     // DO nothing, handling would be canceled when calling executeTable
   }
 
   @Override
-  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {}
+  public void handleStatusChanged(
+      DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus) {}
 
   @Override
-  public void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
+  public void handleTableAdded(AmoroTable<?> table, DefaultTableRuntime tableRuntime) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 
@@ -139,7 +158,11 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
     return START_DELAY;
   }
 
-  protected AmoroTable<?> loadTable(TableRuntime tableRuntime) {
+  protected AmoroTable<?> loadTable(DefaultTableRuntime tableRuntime) {
     return tableService.loadTable(tableRuntime.getTableIdentifier());
+  }
+
+  public Action getAction() {
+    return action;
   }
 }

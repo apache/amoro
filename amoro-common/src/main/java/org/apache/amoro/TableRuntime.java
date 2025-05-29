@@ -19,7 +19,6 @@
 package org.apache.amoro;
 
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.process.OptimizingState;
 import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.process.TableProcessState;
 
@@ -33,22 +32,20 @@ import java.util.List;
 public interface TableRuntime {
 
   /**
-   * Get the list of optimizing process states. Normally, the list contains one default optimizing
-   * state at least. There could be more than one states if multiple optimizing processes are
-   * running.
-   *
-   * @return the list of optimizing process states
-   */
-  List<OptimizingState> getOptimizingStates();
-
-  /**
-   * Get the list of arbitrary process states. One arbitrary state belongs to one arbitrary process
-   * related to one {@link Action#ARBITRARY_ACTIONS}. There could be more than one arbitrary states
-   * depending on scheduler implementation.
+   * Get the list of process states. which belong to all running table processes. There could be
+   * more than one external process states depending on scheduler implementation.
    *
    * @return the list of arbitrary process states
    */
-  List<TableProcessState> getArbitraryStates();
+  List<? extends TableProcessState> getProcessStates();
+
+  /**
+   * Get the list of process states. which belong to all running table processes. There could be
+   * more than one external process states depending on scheduler implementation.
+   *
+   * @return the list of arbitrary process states
+   */
+  List<? extends TableProcessState> getProcessStates(Action action);
 
   /**
    * Get the table identifier containing server side id and table format.
@@ -63,4 +60,9 @@ public interface TableRuntime {
    * @return the table configuration
    */
   TableConfiguration getTableConfiguration();
+
+  /** Get table format */
+  default TableFormat getFormat() {
+    return getTableIdentifier().getFormat();
+  }
 }

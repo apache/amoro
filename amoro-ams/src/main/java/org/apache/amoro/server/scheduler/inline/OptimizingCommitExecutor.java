@@ -16,16 +16,17 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.executor;
+package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 
 import java.util.Optional;
 
-public class OptimizingCommitExecutor extends BaseTableExecutor {
+public class OptimizingCommitExecutor extends PeriodicTableScheduler {
 
   private static final long INTERVAL = 60 * 1000L; // 1min
 
@@ -34,18 +35,18 @@ public class OptimizingCommitExecutor extends BaseTableExecutor {
   }
 
   @Override
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
+  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
     return INTERVAL;
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getOptimizingStatus() == OptimizingStatus.COMMITTING;
+  protected boolean enabled(DefaultTableRuntime tableRuntime) {
+    return tableRuntime.getOptimizingState().getOptimizingStatus() == OptimizingStatus.COMMITTING;
   }
 
   @Override
-  protected void execute(TableRuntime tableRuntime) {
-    Optional.ofNullable(tableRuntime.getOptimizingProcess())
+  protected void execute(DefaultTableRuntime tableRuntime) {
+    Optional.ofNullable(tableRuntime.getOptimizingState().getOptimizingProcess())
         .orElseThrow(
             () ->
                 new IllegalStateException(
@@ -54,12 +55,13 @@ public class OptimizingCommitExecutor extends BaseTableExecutor {
   }
 
   @Override
-  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+  public void handleStatusChanged(
+      DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 
   @Override
-  public void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {}
+  public void handleTableAdded(AmoroTable<?> table, DefaultTableRuntime tableRuntime) {}
 
   protected long getStartDelay() {
     return 0;

@@ -47,8 +47,8 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
-import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -136,17 +136,19 @@ public class DefaultOptimizingService extends StatedPersistentBase
     return tableHandlerChain;
   }
 
-  private void loadOptimizingQueues(List<TableRuntime> tableRuntimeMetaList) {
+  private void loadOptimizingQueues(List<DefaultTableRuntime> tableRuntimeList) {
     List<ResourceGroup> optimizerGroups =
         getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
     List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
-    Map<String, List<TableRuntime>> groupToTableRuntimes =
-        tableRuntimeMetaList.stream()
-            .collect(Collectors.groupingBy(TableRuntime::getOptimizerGroup));
+    Map<String, List<DefaultTableRuntime>> groupToTableRuntimes =
+        tableRuntimeList.stream()
+            .collect(
+                Collectors.groupingBy(
+                    tableRuntime -> tableRuntime.getOptimizingState().getOptimizerGroup()));
     optimizerGroups.forEach(
         group -> {
           String groupName = group.getName();
-          List<TableRuntime> tableRuntimes = groupToTableRuntimes.remove(groupName);
+          List<DefaultTableRuntime> tableRuntimes = groupToTableRuntimes.remove(groupName);
           OptimizingQueue optimizingQueue =
               new OptimizingQueue(
                   catalogManager,
@@ -283,11 +285,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
       return false;
     }
     long tableId = processMeta.getTableId();
-    TableRuntime tableRuntime = tableService.getRuntime(tableId);
+    DefaultTableRuntime tableRuntime = tableService.getRuntime(tableId);
     if (tableRuntime == null) {
       return false;
     }
-    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    OptimizingProcess process = tableRuntime.getOptimizingState().getOptimizingProcess();
     if (process == null || process.getProcessId() != processId) {
       return false;
     }
@@ -372,37 +374,39 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private class TableRuntimeHandlerImpl extends RuntimeHandlerChain {
 
     @Override
-    public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-      if (!tableRuntime.getOptimizingStatus().isProcessing()) {
-        getOptionalQueueByGroup(tableRuntime.getOptimizerGroup())
+    public void handleStatusChanged(
+        DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus) {
+      if (!tableRuntime.getOptimizingState().getOptimizingStatus().isProcessing()) {
+        getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
             .ifPresent(q -> q.refreshTable(tableRuntime));
       }
     }
 
     @Override
-    public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+    public void handleConfigChanged(
+        DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
       String originalGroup = originalConfig.getOptimizingConfig().getOptimizerGroup();
-      if (!tableRuntime.getOptimizerGroup().equals(originalGroup)) {
+      if (!tableRuntime.getOptimizingState().getOptimizerGroup().equals(originalGroup)) {
         getOptionalQueueByGroup(originalGroup).ifPresent(q -> q.releaseTable(tableRuntime));
       }
-      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup())
+      getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
           .ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
     @Override
-    public void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
-      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup())
+    public void handleTableAdded(AmoroTable<?> table, DefaultTableRuntime tableRuntime) {
+      getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
           .ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
     @Override
-    public void handleTableRemoved(TableRuntime tableRuntime) {
-      getOptionalQueueByGroup(tableRuntime.getOptimizerGroup())
+    public void handleTableRemoved(DefaultTableRuntime tableRuntime) {
+      getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
           .ifPresent(queue -> queue.releaseTable(tableRuntime));
     }
 
     @Override
-    protected void initHandler(List<TableRuntime> tableRuntimeList) {
+    protected void initHandler(List<DefaultTableRuntime> tableRuntimeList) {
       LOG.info("OptimizerManagementService begin initializing");
       loadOptimizingQueues(tableRuntimeList);
       optimizerKeeper.start();

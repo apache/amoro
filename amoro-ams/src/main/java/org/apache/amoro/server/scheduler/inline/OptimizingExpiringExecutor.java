@@ -16,16 +16,17 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.executor;
+package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class OptimizingExpiringExecutor extends BaseTableExecutor {
+public class OptimizingExpiringExecutor extends PeriodicTableScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingExpiringExecutor.class);
 
   private final Persistency persistency = new Persistency();
@@ -39,17 +40,17 @@ public class OptimizingExpiringExecutor extends BaseTableExecutor {
   }
 
   @Override
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
+  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
     return interval;
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
+  protected boolean enabled(DefaultTableRuntime tableRuntime) {
     return true;
   }
 
   @Override
-  protected void execute(TableRuntime tableRuntime) {
+  protected void execute(DefaultTableRuntime tableRuntime) {
     try {
       persistency.doExpiring(tableRuntime);
     } catch (Throwable throwable) {
@@ -59,7 +60,7 @@ public class OptimizingExpiringExecutor extends BaseTableExecutor {
   }
 
   private class Persistency extends PersistentBase {
-    public void doExpiring(TableRuntime tableRuntime) {
+    public void doExpiring(DefaultTableRuntime tableRuntime) {
       long expireTime = System.currentTimeMillis() - keepTime;
       doAsTransaction(
           () ->
