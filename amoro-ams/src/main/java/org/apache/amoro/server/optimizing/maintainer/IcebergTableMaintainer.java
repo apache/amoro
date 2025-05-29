@@ -27,9 +27,10 @@ import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;
+import org.apache.amoro.server.table.DefaultOptimizingState;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
-import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
@@ -123,10 +124,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void cleanOrphanFiles(TableRuntime tableRuntime) {
+  public void cleanOrphanFiles(DefaultTableRuntime tableRuntime) {
     TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
     TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
-        tableRuntime.getOrphanFilesCleaningMetrics();
+        tableRuntime.getOptimizingState().getOrphanFilesCleaningMetrics();
 
     if (!tableConfiguration.isCleanOrphanEnabled()) {
       return;
@@ -144,7 +145,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void cleanDanglingDeleteFiles(TableRuntime tableRuntime) {
+  public void cleanDanglingDeleteFiles(DefaultTableRuntime tableRuntime) {
     TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
 
     if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
@@ -168,7 +169,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireSnapshots(TableRuntime tableRuntime) {
+  public void expireSnapshots(DefaultTableRuntime tableRuntime) {
     if (!expireSnapshotEnabled(tableRuntime)) {
       return;
     }
@@ -177,7 +178,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         tableRuntime.getTableConfiguration().getSnapshotMinCount());
   }
 
-  protected boolean expireSnapshotEnabled(TableRuntime tableRuntime) {
+  protected boolean expireSnapshotEnabled(DefaultTableRuntime tableRuntime) {
     TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
     return tableConfiguration.isExpireSnapshotEnabled();
   }
@@ -245,7 +246,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireData(TableRuntime tableRuntime) {
+  public void expireData(DefaultTableRuntime tableRuntime) {
     try {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
@@ -309,7 +310,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void autoCreateTags(TableRuntime tableRuntime) {
+  public void autoCreateTags(DefaultTableRuntime tableRuntime) {
     new AutoCreateIcebergTagAction(
             table, tableRuntime.getTableConfiguration().getTagConfiguration(), LocalDateTime.now())
         .execute();
@@ -349,7 +350,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
                 table.name()));
   }
 
-  protected long mustOlderThan(TableRuntime tableRuntime, long now) {
+  protected long mustOlderThan(DefaultTableRuntime tableRuntime, long now) {
     return min(
         // The snapshots keep time
         now - snapshotsKeepTime(tableRuntime),
@@ -361,7 +362,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         fetchLatestFlinkCommittedSnapshotTime(table));
   }
 
-  protected long snapshotsKeepTime(TableRuntime tableRuntime) {
+  protected long snapshotsKeepTime(DefaultTableRuntime tableRuntime) {
     return tableRuntime.getTableConfiguration().getSnapshotTTLMinutes() * 60 * 1000;
   }
 
@@ -511,9 +512,11 @@ public class IcebergTableMaintainer implements TableMaintainer {
    * @return time of snapshot for optimizing process planned based, return Long.MAX_VALUE if no
    *     optimizing process exists
    */
-  public static long fetchOptimizingPlanSnapshotTime(Table table, TableRuntime tableRuntime) {
-    if (tableRuntime.getOptimizingStatus().isProcessing()) {
-      long fromSnapshotId = tableRuntime.getOptimizingProcess().getTargetSnapshotId();
+  public static long fetchOptimizingPlanSnapshotTime(
+      Table table, DefaultTableRuntime tableRuntime) {
+    DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
+    if (optimizingState.getOptimizingStatus().isProcessing()) {
+      long fromSnapshotId = optimizingState.getOptimizingProcess().getTargetSnapshotId();
 
       for (Snapshot snapshot : table.snapshots()) {
         if (snapshot.snapshotId() == fromSnapshotId) {

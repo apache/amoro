@@ -52,8 +52,8 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.AMSTableTestBase;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
-import org.apache.amoro.server.table.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
@@ -106,7 +106,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     return new ResourceGroup.Builder("test", "local").build();
   }
 
-  protected OptimizingQueue buildOptimizingGroupService(TableRuntime tableRuntime) {
+  protected OptimizingQueue buildOptimizingGroupService(DefaultTableRuntime tableRuntime) {
     return new OptimizingQueue(
         CATALOG_MANAGER,
         testResourceGroup(),
@@ -128,7 +128,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testPollNoTask() {
-    TableRuntime tableRuntimeMeta =
+    DefaultTableRuntime tableRuntimeMeta =
         buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntimeMeta);
     Assert.assertNull(queue.pollTask(0));
@@ -139,7 +139,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   public void testRefreshAndReleaseTable() {
     OptimizingQueue queue = buildOptimizingGroupService();
     Assert.assertEquals(0, queue.getSchedulingPolicy().getTableRuntimeMap().size());
-    TableRuntime tableRuntime =
+    DefaultTableRuntime tableRuntime =
         buildTableRuntimeMeta(OptimizingStatus.IDLE, defaultResourceGroup());
     queue.refreshTable(tableRuntime);
     Assert.assertEquals(1, queue.getSchedulingPolicy().getTableRuntimeMap().size());
@@ -156,7 +156,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testPollTask() {
-    TableRuntime tableRuntime = initTableWithFiles();
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
 
     // 1.poll task
@@ -170,7 +170,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testRetryTask() {
-    TableRuntime tableRuntimeMeta = initTableWithFiles();
+    DefaultTableRuntime tableRuntimeMeta = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntimeMeta);
 
     // 1.poll task
@@ -203,7 +203,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testCommitTask() {
-    TableRuntime tableRuntime = initTableWithFiles();
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
     Assert.assertEquals(0, queue.collectTasks().size());
 
@@ -219,11 +219,11 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
 
     // 7.commit
-    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
+    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingState().getOptimizingProcess();
     Assert.assertEquals(ProcessStatus.RUNNING, optimizingProcess.getStatus());
     optimizingProcess.commit();
     Assert.assertEquals(ProcessStatus.SUCCESS, optimizingProcess.getStatus());
-    Assert.assertNull(tableRuntime.getOptimizingProcess());
+    Assert.assertNull(tableRuntime.getOptimizingState().getOptimizingProcess());
 
     // 8.commit again, throw exceptions, and status not changed.
     Assert.assertThrows(IllegalStateException.class, optimizingProcess::commit);
@@ -235,7 +235,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testCollectingTasks() {
-    TableRuntime tableRuntime = initTableWithFiles();
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
     Assert.assertEquals(0, queue.collectTasks().size());
 
@@ -250,7 +250,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testTaskAndTableMetrics() {
-    TableRuntime tableRuntime = initTableWithFiles();
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
     MetricRegistry registry = MetricManager.getInstance().getGlobalRegistry();
     Map<String, String> tagValues = ImmutableMap.of(GROUP_TAG, testResourceGroup().getName());
@@ -316,7 +316,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(0, idleTablesGauge.getValue().longValue());
     Assert.assertEquals(1, committingTablesGauge.getValue().longValue());
 
-    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
+    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingState().getOptimizingProcess();
     optimizingProcess.commit();
     Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
     Assert.assertEquals(0, executingTasksGauge.getValue().longValue());
@@ -364,19 +364,20 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     queue.dispose();
   }
 
-  protected TableRuntime initTableWithFiles() {
+  protected DefaultTableRuntime initTableWithFiles() {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     appendData(mixedTable.asUnkeyedTable(), 1);
     appendData(mixedTable.asUnkeyedTable(), 2);
-    TableRuntime tableRuntime =
+    DefaultTableRuntime tableRuntime =
         buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
 
-    tableRuntime.refresh(tableService().loadTable(serverTableIdentifier()));
+    tableRuntime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
     return tableRuntime;
   }
 
-  private TableRuntime buildTableRuntimeMeta(OptimizingStatus status, ResourceGroup resourceGroup) {
+  private DefaultTableRuntime buildTableRuntimeMeta(
+      OptimizingStatus status, ResourceGroup resourceGroup) {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     TableRuntimeMeta tableRuntimeMeta = new TableRuntimeMeta();
@@ -388,7 +389,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     tableRuntimeMeta.setTableStatus(status);
     tableRuntimeMeta.setTableConfig(TableConfigurations.parseTableConfig(mixedTable.properties()));
     tableRuntimeMeta.setOptimizerGroup(resourceGroup.getName());
-    return new TableRuntime(tableRuntimeMeta, tableService());
+    return new DefaultTableRuntime(tableRuntimeMeta, tableService());
   }
 
   private void appendData(UnkeyedTable table, int id) {
