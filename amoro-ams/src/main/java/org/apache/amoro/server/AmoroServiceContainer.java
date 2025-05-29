@@ -123,7 +123,7 @@ public class AmoroServiceContainer {
               new Thread(
                   () -> {
                     LOG.info("AMS service is shutting down...");
-                    service.disposeAllService();
+                    service.dispose();
                     LOG.info("AMS service has been shut down");
                   }));
       service.startRestServices();
@@ -137,7 +137,7 @@ public class AmoroServiceContainer {
         } catch (Exception e) {
           LOG.error("AMS start error", e);
         } finally {
-          service.disposeAllService();
+          service.dispose();
         }
       }
     } catch (Throwable t) {
@@ -209,7 +209,7 @@ public class AmoroServiceContainer {
     }
   }
 
-  public void disposeAllService() {
+  public void dispose() {
     if (tableManagementServer != null && tableManagementServer.isServing()) {
       LOG.info("Stopping table management server...");
       tableManagementServer.stop();

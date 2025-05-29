@@ -151,7 +151,7 @@ public class AmsEnvironment {
 
     stopOptimizer();
     if (this.serviceContainer != null) {
-      this.serviceContainer.disposeAllService();
+      this.serviceContainer.dispose();
     }
     testHMS.stop();
     MoreFiles.deleteRecursively(Paths.get(rootPath), RecursiveDeleteOption.ALLOW_INSECURE);
