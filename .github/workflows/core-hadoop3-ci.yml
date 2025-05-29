@@ -35,21 +35,25 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        jdk: [ '8', '11' ]
+    name: Build Amoro with JDK ${{ matrix.jdk }}
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up JDK 8
+      - name: Set up JDK ${{ matrix.jdk }}
         uses: actions/setup-java@v3
         with:
-          java-version: '8'
+          java-version: ${{ matrix.jdk }}
           distribution: 'temurin'
           cache: maven
 
       - name: Validate checkstyle first
         run: mvn validate
 
-      - name: Build all module with Maven
-        run: mvn clean install -Djacoco.flink.skip=true -B -ntp
+      - name: Build all modules with Maven
+        run: mvn clean install -Djacoco.flink.skip=true -B -ntp -Pjava${{ matrix.jdk }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
