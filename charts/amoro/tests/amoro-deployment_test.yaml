@@ -365,3 +365,11 @@ tests:
                         operator: In
                         values:
                           - ssd
+  - it: Amoro Deployment should allow setting custom log4j2 config
+    template: amoro-deployment.yaml
+    set:
+      amoroConf:
+        log4j2: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Configuration status=\"WARN\"></Configuration>" # minimal log4j2 config
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[?(@.name == "amoro-ams")].volumeMounts[?(@.subPath == "log4j2.xml")]

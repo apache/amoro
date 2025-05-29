@@ -45,10 +45,10 @@ import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.resource.OptimizerInstance;
+import org.apache.amoro.server.scheduler.inline.TableRuntimeRefreshExecutor;
 import org.apache.amoro.server.table.AMSTableTestBase;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableManager;
-import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.executor.TableRuntimeRefreshExecutor;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
@@ -128,9 +128,9 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     appendData(mixedTable.asUnkeyedTable(), 1);
     appendData(mixedTable.asUnkeyedTable(), 2);
-    TableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
+    DefaultTableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
 
-    runtime.refresh(tableService().loadTable(serverTableIdentifier()));
+    runtime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
   }
 
   private void appendData(UnkeyedTable table, int id) {
@@ -181,7 +181,13 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     // 4.retry poll task
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
-    Assertions.assertEquals(task2, task);
+    Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    Assertions.assertNotEquals(task2.getTaskInput(), task.getTaskInput());
+    TableOptimizing.OptimizingInput input =
+        SerializationUtil.simpleDeserialize(task.getTaskInput());
+    TableOptimizing.OptimizingInput input2 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input2.toString(), input.toString());
     assertTaskStatus(TaskRuntime.Status.SCHEDULED);
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
     assertTaskStatus(TaskRuntime.Status.ACKED);
@@ -205,7 +211,13 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     // 4.retry poll task
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
-    Assertions.assertEquals(task2, task);
+    Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    Assertions.assertNotEquals(task2.getTaskInput(), task.getTaskInput());
+    TableOptimizing.OptimizingInput input =
+        SerializationUtil.simpleDeserialize(task.getTaskInput());
+    TableOptimizing.OptimizingInput input2 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input2.toString(), input.toString());
 
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
     optimizingService()
@@ -213,7 +225,11 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     // retry again
     OptimizingTask task3 = optimizingService().pollTask(token, THREAD_ID);
-    Assertions.assertEquals(task3, task);
+    Assertions.assertEquals(task3.getTaskId(), task.getTaskId());
+    Assertions.assertNotEquals(task2.getTaskInput(), task.getTaskInput());
+    TableOptimizing.OptimizingInput input3 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input3.toString(), input.toString());
     assertTaskStatus(TaskRuntime.Status.SCHEDULED);
     // third time would be null
     Assertions.assertNull(optimizingService().pollTask(token, THREAD_ID));
@@ -252,7 +268,12 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     Thread.sleep(1000);
     assertTaskStatus(TaskRuntime.Status.PLANNED);
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
-    Assertions.assertEquals(task2, task);
+    Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    TableOptimizing.OptimizingInput input =
+        SerializationUtil.simpleDeserialize(task.getTaskInput());
+    TableOptimizing.OptimizingInput input2 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input2.toString(), input.toString());
   }
 
   @Test
@@ -267,6 +288,11 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task2);
     Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    TableOptimizing.OptimizingInput input =
+        SerializationUtil.simpleDeserialize(task.getTaskInput());
+    TableOptimizing.OptimizingInput input2 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input2.toString(), input.toString());
   }
 
   @Test
@@ -328,10 +354,16 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     reload();
     // Committing process will be closed when reloading
     Assertions.assertNull(
-        tableService().getRuntime(serverTableIdentifier().getId()).getOptimizingProcess());
+        tableService()
+            .getRuntime(serverTableIdentifier().getId())
+            .getOptimizingState()
+            .getOptimizingProcess());
     Assertions.assertEquals(
         OptimizingStatus.IDLE,
-        tableService().getRuntime(serverTableIdentifier().getId()).getOptimizingStatus());
+        tableService()
+            .getRuntime(serverTableIdentifier().getId())
+            .getOptimizingState()
+            .getOptimizingStatus());
   }
 
   @Test
@@ -348,6 +380,11 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    TableOptimizing.OptimizingInput input =
+        SerializationUtil.simpleDeserialize(task.getTaskInput());
+    TableOptimizing.OptimizingInput input2 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input2.toString(), input.toString());
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
     optimizingService()
         .completeTask(token, buildOptimizingTaskFailResult(task.getTaskId(), "error"));
@@ -357,6 +394,9 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     OptimizingTask task3 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertEquals(task3.getTaskId(), task.getTaskId());
+    TableOptimizing.OptimizingInput input3 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input3.toString(), input.toString());
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
     optimizingService()
         .completeTask(token, buildOptimizingTaskFailResult(task.getTaskId(), "error"));
@@ -383,151 +423,151 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     // 1.1 add tables with IDLE status
     // the status will be OptimizingStatus.IDLE default
     String idle1InGroup1 = "idle1InGroup1";
-    TableRuntime idle1 =
-        new TableRuntime(
+    DefaultTableRuntime idle1 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10001L, catalog, db1, idle1InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
 
     // the status will be OptimizingStatus.IDLE default
     String idle2InGroup1 = "idle2InGroup1";
-    TableRuntime idle2 =
-        new TableRuntime(
+    DefaultTableRuntime idle2 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10002L, catalog, db1, idle2InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
 
     // 1.2 add tables with PENDING status
     String pending1InGroup1 = "pending1InGroup1";
-    TableRuntime pending1 =
-        new TableRuntime(
+    DefaultTableRuntime pending1 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10003L, catalog, db1, pending1InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
     // update status
-    pending1.setPendingInput(new AbstractOptimizingEvaluator.PendingInput());
+    pending1.getOptimizingState().setPendingInput(new AbstractOptimizingEvaluator.PendingInput());
 
     String pending2InGroup1 = "pending2InGroup1";
-    TableRuntime pending2 =
-        new TableRuntime(
+    DefaultTableRuntime pending2 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10004L, catalog, db1, pending2InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
     // update status
-    pending2.setPendingInput(new AbstractOptimizingEvaluator.PendingInput());
+    pending2.getOptimizingState().setPendingInput(new AbstractOptimizingEvaluator.PendingInput());
 
     // 1.3 add tables with PLANNING status
     String db2 = "db2";
     String plan1InGroup1 = "plan1InGroup1";
-    TableRuntime plan1 =
-        new TableRuntime(
+    DefaultTableRuntime plan1 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10005L, catalog, db2, plan1InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
-    plan1.beginPlanning();
+    plan1.getOptimizingState().beginPlanning();
 
     String plan2InGroup1 = "plan2InGroup1";
-    TableRuntime plan2 =
-        new TableRuntime(
+    DefaultTableRuntime plan2 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10006L, catalog, db2, plan2InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
-    plan2.beginPlanning();
+    plan2.getOptimizingState().beginPlanning();
 
     // 1.4 add tables with COMMITTING status
     String committing1InGroup1 = "committing1InGroup1";
-    TableRuntime committing1 =
-        new TableRuntime(
+    DefaultTableRuntime committing1 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(
                 10007L, catalog, db2, committing1InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
-    committing1.beginCommitting();
+    committing1.getOptimizingState().beginCommitting();
 
     String commiting2InGroup1 = "committing2InGroup1";
-    TableRuntime committing2 =
-        new TableRuntime(
+    DefaultTableRuntime committing2 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10008L, catalog, db2, commiting2InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
-    committing2.beginCommitting();
+    committing2.getOptimizingState().beginCommitting();
 
     // 1.5 add tables with MINOR_OPTIMIZING status
     String minor1InGroup1 = "minor1InGroup1";
-    TableRuntime minor1 =
-        new TableRuntime(
+    DefaultTableRuntime minor1 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10009L, catalog, db2, minor1InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
     OptimizingProcess process = mock(OptimizingProcess.class);
     doReturn(1L).when(process).getProcessId();
     doReturn(OptimizingType.MINOR).when(process).getOptimizingType();
-    minor1.beginProcess(process);
+    minor1.getOptimizingState().beginProcess(process);
 
     String minor2InGroup1 = "minor2InGroup1";
-    TableRuntime minor2 =
-        new TableRuntime(
+    DefaultTableRuntime minor2 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10010L, catalog, db2, minor2InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
     OptimizingProcess process2 = mock(OptimizingProcess.class);
     doReturn(2L).when(process2).getProcessId();
     doReturn(OptimizingType.MINOR).when(process2).getOptimizingType();
-    minor2.beginProcess(process2);
+    minor2.getOptimizingState().beginProcess(process2);
 
     // 1.6 add tables with MAJOR_OPTIMIZING status
     String major1InGroup1 = "major1InGroup1";
-    TableRuntime major1 =
-        new TableRuntime(
+    DefaultTableRuntime major1 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10011L, catalog, db1, major1InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
     OptimizingProcess process3 = mock(OptimizingProcess.class);
     doReturn(3L).when(process3).getProcessId();
     doReturn(OptimizingType.MAJOR).when(process3).getOptimizingType();
-    major1.beginProcess(process3);
+    major1.getOptimizingState().beginProcess(process3);
 
     String major2InGroup1 = "major2InGroup1";
-    TableRuntime major2 =
-        new TableRuntime(
+    DefaultTableRuntime major2 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10012L, catalog, db1, major2InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
     OptimizingProcess process4 = mock(OptimizingProcess.class);
     doReturn(4L).when(process4).getProcessId();
     doReturn(OptimizingType.MAJOR).when(process4).getOptimizingType();
-    major2.beginProcess(process4);
+    major2.getOptimizingState().beginProcess(process4);
 
     // 1.7 add tables with FULL_OPTIMIZING status
     String full1InGroup1 = "full1InGroup1";
-    TableRuntime full1 =
-        new TableRuntime(
+    DefaultTableRuntime full1 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10013L, catalog, db1, full1InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
     OptimizingProcess process5 = mock(OptimizingProcess.class);
     doReturn(5L).when(process5).getProcessId();
     doReturn(OptimizingType.FULL).when(process5).getOptimizingType();
-    full1.beginProcess(process5);
+    full1.getOptimizingState().beginProcess(process5);
 
     String full2InGroup1 = "full2InGroup1";
-    TableRuntime full2 =
-        new TableRuntime(
+    DefaultTableRuntime full2 =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(10014L, catalog, db1, full2InGroup1, TableFormat.ICEBERG),
             tableService(),
             properties);
     OptimizingProcess process6 = mock(OptimizingProcess.class);
     doReturn(6L).when(process6).getProcessId();
     doReturn(OptimizingType.FULL).when(process6).getOptimizingType();
-    full2.beginProcess(process6);
+    full2.getOptimizingState().beginProcess(process6);
 
     // 1.8 add tables in other group with MINOR_OPTIMIZING status
     // table in other group.
     String opGroup2 = "opGroup2-other";
     properties.put(TableProperties.SELF_OPTIMIZING_GROUP, opGroup2);
     String minor1InOtherGroup1 = "minor1-InOtherGroup";
-    TableRuntime minor1Other =
-        new TableRuntime(
+    DefaultTableRuntime minor1Other =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(
                 10015L, catalog, db1, minor1InOtherGroup1, TableFormat.ICEBERG),
             tableService(),
@@ -535,11 +575,11 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     OptimizingProcess process7 = mock(OptimizingProcess.class);
     doReturn(7L).when(process7).getProcessId();
     doReturn(OptimizingType.MINOR).when(process7).getOptimizingType();
-    minor1Other.beginProcess(process7);
+    minor1Other.getOptimizingState().beginProcess(process7);
 
     String minor2InOtherGroup1 = "minor2-InOtherGroup";
-    TableRuntime minor2Other =
-        new TableRuntime(
+    DefaultTableRuntime minor2Other =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(
                 10016L, catalog, db1, minor2InOtherGroup1, TableFormat.ICEBERG),
             tableService(),
@@ -547,11 +587,11 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     OptimizingProcess process8 = mock(OptimizingProcess.class);
     doReturn(8L).when(process8).getProcessId();
     doReturn(OptimizingType.MINOR).when(process8).getOptimizingType();
-    minor2Other.beginProcess(process8);
+    minor2Other.getOptimizingState().beginProcess(process8);
 
     String minor3InOtherGroup1 = "minor3-InOtherGroup";
-    TableRuntime minor3Other =
-        new TableRuntime(
+    DefaultTableRuntime minor3Other =
+        new DefaultTableRuntime(
             ServerTableIdentifier.of(
                 10017L, catalog, db1, minor3InOtherGroup1, TableFormat.ICEBERG),
             tableService(),
@@ -559,7 +599,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     OptimizingProcess process9 = mock(OptimizingProcess.class);
     doReturn(9L).when(process9).getProcessId();
     doReturn(OptimizingType.MINOR).when(process9).getOptimizingType();
-    minor3Other.beginProcess(process9);
+    minor3Other.getOptimizingState().beginProcess(process9);
 
     // 2 test and assert the result
     // 2.1 only optimize group filter set
@@ -680,11 +720,15 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         ProcessStatus.RUNNING,
         tableService()
             .getRuntime(serverTableIdentifier().getId())
+            .getOptimizingState()
             .getOptimizingProcess()
             .getStatus());
     Assertions.assertEquals(
         OptimizingStatus.COMMITTING,
-        tableService().getRuntime(serverTableIdentifier().getId()).getOptimizingStatus());
+        tableService()
+            .getRuntime(serverTableIdentifier().getId())
+            .getOptimizingState()
+            .getOptimizingStatus());
   }
 
   protected void reload() {

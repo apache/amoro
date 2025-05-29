@@ -91,6 +91,7 @@ public abstract class PersistentBase {
         Arrays.stream(operations).forEach(Runnable::run);
         session.commit();
       } catch (Throwable t) {
+        LOG.error("failed to commit transaction", t);
         session.rollback();
         throw AmoroRuntimeException.wrap(t, PersistenceException::new);
       }

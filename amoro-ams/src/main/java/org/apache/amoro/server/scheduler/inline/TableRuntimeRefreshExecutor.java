@@ -16,20 +16,22 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.executor;
+package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
+import org.apache.amoro.server.table.DefaultOptimizingState;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.MixedTable;
 
 /** Executor that refreshes table runtimes and evaluates optimizing status periodically. */
-public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
+public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
 
   // 1 minutes
   private final long interval;
@@ -43,16 +45,20 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
+  protected boolean enabled(DefaultTableRuntime tableRuntime) {
     return true;
   }
 
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return Math.min(tableRuntime.getOptimizingConfig().getMinorLeastInterval() * 4L / 5, interval);
+  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+    return Math.min(
+        tableRuntime.getOptimizingState().getOptimizingConfig().getMinorLeastInterval() * 4L / 5,
+        interval);
   }
 
-  private void tryEvaluatingPendingInput(TableRuntime tableRuntime, MixedTable table) {
-    if (tableRuntime.isOptimizingEnabled() && !tableRuntime.getOptimizingStatus().isProcessing()) {
+  private void tryEvaluatingPendingInput(DefaultTableRuntime tableRuntime, MixedTable table) {
+    DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
+    if (optimizingState.isOptimizingEnabled()
+        && !optimizingState.getOptimizingStatus().isProcessing()) {
       AbstractOptimizingEvaluator evaluator =
           IcebergTableUtil.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
       if (evaluator.isNecessary()) {
@@ -62,20 +68,22 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
             "{} optimizing is necessary and get pending input {}",
             tableRuntime.getTableIdentifier(),
             pendingInput);
-        tableRuntime.setPendingInput(pendingInput);
+        optimizingState.setPendingInput(pendingInput);
       } else {
-        tableRuntime.optimizingNotNecessary();
+        optimizingState.optimizingNotNecessary();
       }
-      tableRuntime.setTableSummary(evaluator.getPendingInput());
+      optimizingState.setTableSummary(evaluator.getPendingInput());
     }
   }
 
   @Override
-  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public void handleConfigChanged(
+      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
     // After disabling self-optimizing, close the currently running optimizing process.
     if (originalConfig.getOptimizingConfig().isEnabled()
         && !tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
-      OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
+      OptimizingProcess optimizingProcess =
+          tableRuntime.getOptimizingState().getOptimizingProcess();
       if (optimizingProcess != null && optimizingProcess.getStatus() == ProcessStatus.RUNNING) {
         optimizingProcess.close();
       }
@@ -83,18 +91,19 @@ public class TableRuntimeRefreshExecutor extends BaseTableExecutor {
   }
 
   @Override
-  public void execute(TableRuntime tableRuntime) {
+  public void execute(DefaultTableRuntime tableRuntime) {
     try {
-      long lastOptimizedSnapshotId = tableRuntime.getLastOptimizedSnapshotId();
-      long lastOptimizedChangeSnapshotId = tableRuntime.getLastOptimizedChangeSnapshotId();
+      DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
+      long lastOptimizedSnapshotId = optimizingState.getLastOptimizedSnapshotId();
+      long lastOptimizedChangeSnapshotId = optimizingState.getLastOptimizedChangeSnapshotId();
       AmoroTable<?> table = loadTable(tableRuntime);
-      tableRuntime.refresh(table);
+      optimizingState.refresh(table);
       MixedTable mixedTable = (MixedTable) table.originalTable();
       if ((mixedTable.isKeyedTable()
-              && (lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId()
-                  || lastOptimizedChangeSnapshotId != tableRuntime.getCurrentChangeSnapshotId()))
+              && (lastOptimizedSnapshotId != optimizingState.getCurrentSnapshotId()
+                  || lastOptimizedChangeSnapshotId != optimizingState.getCurrentChangeSnapshotId()))
           || (mixedTable.isUnkeyedTable()
-              && lastOptimizedSnapshotId != tableRuntime.getCurrentSnapshotId())) {
+              && lastOptimizedSnapshotId != optimizingState.getCurrentSnapshotId())) {
         tryEvaluatingPendingInput(tableRuntime, mixedTable);
       }
     } catch (Throwable throwable) {

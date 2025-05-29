@@ -54,7 +54,7 @@
   readOnly: true
   subPath: "config.yaml"
 {{- if or .Values.amoroConf.log4j2 }}
-{{- /* log4j2.yaml from config-map*/ -}}
+{{/* log4j2.yaml from config-map*/}}
 - name: conf
   mountPath: {{ include "amoro.home" . }}/conf/log4j2.xml
   readOnly: true

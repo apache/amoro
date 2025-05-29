@@ -16,52 +16,54 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.executor;
+package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Clean table dangling delete files */
-public class DanglingDeleteFilesCleaningExecutor extends BaseTableExecutor {
+import java.time.Duration;
 
-  private static final Logger LOG =
-      LoggerFactory.getLogger(DanglingDeleteFilesCleaningExecutor.class);
+public class DataExpiringExecutor extends PeriodicTableScheduler {
 
-  private static final long INTERVAL = 24 * 60 * 60 * 1000L;
+  private static final Logger LOG = LoggerFactory.getLogger(DataExpiringExecutor.class);
 
-  protected DanglingDeleteFilesCleaningExecutor(TableService tableService, int poolSize) {
+  private final Duration interval;
+
+  protected DataExpiringExecutor(TableService tableService, int poolSize, Duration interval) {
     super(tableService, poolSize);
+    this.interval = interval;
   }
 
   @Override
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return INTERVAL;
+  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+    return interval.toMillis();
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime.getTableConfiguration().isDeleteDanglingDeleteFilesEnabled();
+  protected boolean enabled(DefaultTableRuntime tableRuntime) {
+    return tableRuntime.getTableConfiguration().getExpiringDataConfig().isEnabled();
   }
 
   @Override
-  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public void handleConfigChanged(
+      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 
   @Override
-  protected void execute(TableRuntime tableRuntime) {
+  protected void execute(DefaultTableRuntime tableRuntime) {
     try {
-      LOG.info("{} start cleaning dangling delete files", tableRuntime.getTableIdentifier());
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
       TableMaintainer tableMaintainer = TableMaintainer.ofTable(amoroTable);
-      tableMaintainer.cleanDanglingDeleteFiles(tableRuntime);
+      tableMaintainer.expireData(tableRuntime);
     } catch (Throwable t) {
-      LOG.error("{} failed to clean dangling delete file", tableRuntime.getTableIdentifier(), t);
+      LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);
     }
   }
 }

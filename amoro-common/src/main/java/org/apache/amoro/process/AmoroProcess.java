@@ -33,13 +33,6 @@ import java.util.Map;
 public interface AmoroProcess<T extends ProcessState> {
 
   /**
-   * Submit the process to Amoro. The process will be handled by Amoro after submitted. If the
-   * process is already submitted, this method will do nothing. For external optimizing, the process
-   * will be submitted to external resources like Yarn.
-   */
-  void submit();
-
-  /**
    * return submit future of the process. This method always returns the same future object even if
    * submit() has not been called
    *
@@ -54,12 +47,6 @@ public interface AmoroProcess<T extends ProcessState> {
    * @return complete future of the process
    */
   SimpleFuture getCompleteFuture();
-
-  /**
-   * Cancel and close this process, related resources will be released. This method will block until
-   * getStatus() return CLOSED, but related resource could be released later.
-   */
-  void close();
 
   /**
    * Get {@link ProcessState} of the process
@@ -85,15 +72,6 @@ public interface AmoroProcess<T extends ProcessState> {
    */
   default ProcessStatus getStatus() {
     return getState().getStatus();
-  }
-
-  /**
-   * Check if the process is closed
-   *
-   * @return true if the process is closed, false otherwise
-   */
-  default boolean isClosed() {
-    return getStatus() == ProcessStatus.CLOSED;
   }
 
   /**

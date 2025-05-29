@@ -16,19 +16,20 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.executor;
+package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
 import org.apache.amoro.hive.utils.TableTypeUtil;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.table.MixedTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HiveCommitSyncExecutor extends BaseTableExecutor {
+public class HiveCommitSyncExecutor extends PeriodicTableScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(HiveCommitSyncExecutor.class);
 
   // 10 minutes
@@ -39,17 +40,17 @@ public class HiveCommitSyncExecutor extends BaseTableExecutor {
   }
 
   @Override
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
+  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
     return INTERVAL;
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
+  protected boolean enabled(DefaultTableRuntime tableRuntime) {
     return true;
   }
 
   @Override
-  protected void execute(TableRuntime tableRuntime) {
+  protected void execute(DefaultTableRuntime tableRuntime) {
     long startTime = System.currentTimeMillis();
     ServerTableIdentifier tableIdentifier = tableRuntime.getTableIdentifier();
     try {

@@ -18,89 +18,32 @@
 
 package org.apache.amoro;
 
-import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.shade.thrift.org.apache.commons.lang3.tuple.Pair;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
 import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 public final class Action {
 
-  private static final Map<Integer, Action> ACTIONS = Maps.newConcurrentMap();
-
-  private static final TableFormat[] DEFAULT_FORMATS =
-      new TableFormat[] {TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE};
-
-  static {
-    // default optimizing action
-    register(1, 10, "rewrite");
-    // expire all metadata and data files necessarily.
-    register(4, 1, "expire-data");
-    // delete orphan files
-    register(5, 2, "delete-orphans");
-    // sync optimizing commit to hive
-    register(6, 3, "sync-hive");
-  }
+  private static final int MAX_NAME_LENGTH = 16;
 
   /** supported table formats of this action */
   private final TableFormat[] formats;
-  /**
-   * storage code of this action, normally this code should be identical within supported formats
-   */
-  private final int code;
+
+  private final String name;
   /**
    * the weight number of this action, the bigger the weight number, the higher positions of
    * schedulers or front pages
    */
   private final int weight;
-  /** description of this action, will be shown in front pages */
-  private final String desc;
 
-  private Action(TableFormat[] formats, int code, int weight, String desc) {
+  public Action(TableFormat[] formats, int weight, String name) {
+    Preconditions.checkArgument(
+        name.length() <= MAX_NAME_LENGTH,
+        "Action name length should be less than " + MAX_NAME_LENGTH);
     this.formats = formats;
-    this.code = code;
-    this.desc = desc;
+    this.name = name;
     this.weight = weight;
-  }
-
-  public static Action valueOf(int code) {
-    return ACTIONS.get(code);
-  }
-
-  public static synchronized void register(int code, int weight, String desc) {
-    register(DEFAULT_FORMATS, code, weight, desc);
-  }
-
-  public static synchronized void register(
-      TableFormat[] formats, int code, int weight, String desc) {
-    Map<TableFormat, Set<String>> format2Actions = buildMapFromActions();
-    for (TableFormat format : formats) {
-      if (format2Actions.get(format).contains(desc)) {
-        throw new IllegalArgumentException("Duplicated action: " + desc + " in format: " + format);
-      }
-    }
-    if (ACTIONS.put(code, new Action(formats, code, weight, desc)) != null) {
-      throw new IllegalArgumentException("Duplicated action code: " + code);
-    }
-  }
-
-  private static Map<TableFormat, Set<String>> buildMapFromActions() {
-    return ACTIONS.values().stream()
-        .flatMap(
-            action -> Arrays.stream(action.formats).map(format -> Pair.of(format, action.desc)))
-        .collect(
-            Collectors.groupingBy(
-                Pair::getKey, Collectors.mapping(Pair::getValue, Collectors.toSet())));
-  }
-
-  public int getCode() {
-    return code;
-  }
-
-  public String getDesc() {
-    return desc;
   }
 
   public int getWeight() {
@@ -109,6 +52,10 @@ public final class Action {
 
   public TableFormat[] supportedFormats() {
     return formats;
+  }
+
+  public String getName() {
+    return name;
   }
 
   @Override
@@ -120,11 +67,13 @@ public final class Action {
       return false;
     }
     Action action = (Action) o;
-    return code == action.code;
+    return Objects.equals(name, action.name) && Arrays.equals(formats, action.formats);
   }
 
   @Override
   public int hashCode() {
-    return code;
+    int result = Objects.hash(name);
+    result = 31 * result + Arrays.hashCode(formats);
+    return result;
   }
 }

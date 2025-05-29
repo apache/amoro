@@ -79,7 +79,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class FlinkOptimizerContainer extends AbstractResourceContainer {
+public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkOptimizerContainer.class);
 
   public static final String FLINK_HOME_PROPERTY = "flink-home";
@@ -385,7 +385,7 @@ public class FlinkOptimizerContainer extends AbstractResourceContainer {
   }
 
   @Override
-  public void releaseOptimizer(Resource resource) {
+  public void releaseResource(Resource resource) {
     if (target.runByFlinkRestClient()) {
       Preconditions.checkArgument(
           resource.getProperties().containsKey(SESSION_CLUSTER_JOB_ID),

@@ -40,7 +40,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class SparkOptimizerContainer extends AbstractResourceContainer {
+public class SparkOptimizerContainer extends AbstractOptimizerContainer {
   private static final Logger LOG = LoggerFactory.getLogger(SparkOptimizerContainer.class);
 
   public static final String SPARK_HOME_PROPERTY = "spark-home";
@@ -247,7 +247,7 @@ public class SparkOptimizerContainer extends AbstractResourceContainer {
   }
 
   @Override
-  public void releaseOptimizer(Resource resource) {
+  public void releaseResource(Resource resource) {
     String releaseCommand;
     if (deployedOnKubernetes()) {
       releaseCommand = buildReleaseKubernetesCommand(resource);

@@ -26,8 +26,8 @@ import org.apache.amoro.server.persistence.converter.Map2StringConverter;
 import org.apache.amoro.server.persistence.converter.MapLong2StringConverter;
 import org.apache.amoro.server.persistence.converter.OptimizingStatusConverter;
 import org.apache.amoro.server.persistence.converter.TableFormatConverter;
+import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.TableMetadata;
-import org.apache.amoro.server.table.TableRuntime;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
@@ -349,7 +349,7 @@ public interface TableMetaMapper {
           + " table_summary = #{runtime.tableSummary, jdbcType=VARCHAR,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter}"
           + " WHERE table_id = #{runtime.tableIdentifier.id}")
-  void updateTableRuntime(@Param("runtime") TableRuntime runtime);
+  void updateTableRuntime(@Param("runtime") DefaultOptimizingState optimizingState);
 
   @Delete("DELETE FROM table_runtime WHERE table_id = #{tableId}")
   void deleteOptimizingRuntime(@Param("tableId") long tableId);
@@ -381,7 +381,7 @@ public interface TableMetaMapper {
           + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
           + " #{runtime.tableSummary, jdbcType=VARCHAR,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter})")
-  void insertTableRuntime(@Param("runtime") TableRuntime runtime);
+  void insertTableRuntime(@Param("runtime") DefaultOptimizingState optimizingState);
 
   @Select(
       "SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, i.format, a.current_snapshot_id,"

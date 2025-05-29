@@ -25,7 +25,7 @@ public interface TableRuntimeHandler {
 
   void addHandlerChain(RuntimeHandlerChain handler);
 
-  void handleTableChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus);
+  void handleTableChanged(DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus);
 
-  void handleTableChanged(TableRuntime tableRuntime, TableConfiguration originalConfig);
+  void handleTableChanged(DefaultTableRuntime tableRuntime, TableConfiguration originalConfig);
 }
