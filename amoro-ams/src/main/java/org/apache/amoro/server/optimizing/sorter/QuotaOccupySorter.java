@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.optimizing.sorter;
 
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
 import java.util.Comparator;
@@ -34,15 +34,17 @@ public class QuotaOccupySorter implements SorterFactory {
   }
 
   @Override
-  public Comparator<TableRuntime> createComparator() {
-    return new Comparator<TableRuntime>() {
-      final Map<TableRuntime, Double> tableWeightMap = Maps.newHashMap();
+  public Comparator<DefaultTableRuntime> createComparator() {
+    return new Comparator<DefaultTableRuntime>() {
+      final Map<DefaultTableRuntime, Double> tableWeightMap = Maps.newHashMap();
 
       @Override
-      public int compare(TableRuntime one, TableRuntime another) {
+      public int compare(DefaultTableRuntime one, DefaultTableRuntime another) {
         return Double.compare(
-            tableWeightMap.computeIfAbsent(one, TableRuntime::calculateQuotaOccupy),
-            tableWeightMap.computeIfAbsent(another, TableRuntime::calculateQuotaOccupy));
+            tableWeightMap.computeIfAbsent(
+                one, tableRuntime -> tableRuntime.getOptimizingState().calculateQuotaOccupy()),
+            tableWeightMap.computeIfAbsent(
+                another, tableRuntime -> tableRuntime.getOptimizingState().calculateQuotaOccupy()));
       }
     };
   }

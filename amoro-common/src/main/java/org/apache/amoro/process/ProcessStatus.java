@@ -26,6 +26,7 @@ public enum ProcessStatus {
   RUNNING,
   SUCCESS,
   CLOSED,
+  KILLED,
   FAILED;
 
   public ProcessStage toStage() {

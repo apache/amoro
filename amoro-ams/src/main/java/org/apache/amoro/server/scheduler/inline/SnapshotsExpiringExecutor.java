@@ -16,18 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.executor;
+package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
-import org.apache.amoro.server.table.TableRuntime;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Service for expiring tables periodically. */
-public class SnapshotsExpiringExecutor extends BaseTableExecutor {
+public class SnapshotsExpiringExecutor extends PeriodicTableScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(SnapshotsExpiringExecutor.class);
 
   private static final long INTERVAL = 60 * 60 * 1000L; // 1 hour
@@ -37,22 +38,23 @@ public class SnapshotsExpiringExecutor extends BaseTableExecutor {
   }
 
   @Override
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
+  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
     return INTERVAL;
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
+  protected boolean enabled(DefaultTableRuntime tableRuntime) {
     return tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
   }
 
   @Override
-  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public void handleConfigChanged(
+      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 
   @Override
-  public void execute(TableRuntime tableRuntime) {
+  public void execute(DefaultTableRuntime tableRuntime) {
     try {
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
       TableMaintainer tableMaintainer = TableMaintainer.ofTable(amoroTable);

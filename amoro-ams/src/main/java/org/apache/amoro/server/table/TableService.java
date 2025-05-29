@@ -32,7 +32,7 @@ public interface TableService extends TableRuntimeHandler {
 
   void onTableDropped(InternalCatalog catalog, ServerTableIdentifier identifier);
 
-  TableRuntime getRuntime(Long tableId);
+  DefaultTableRuntime getRuntime(Long tableId);
 
   default boolean contains(Long tableId) {
     return getRuntime(tableId) != null;
