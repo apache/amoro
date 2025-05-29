@@ -20,13 +20,13 @@ package org.apache.amoro.utils.map;
 
 import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkNotNull;
 
+import org.apache.amoro.serialization.ResourceSerde;
 import org.apache.amoro.utils.SerializationUtil;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeWrapper;
 
-public class StructLikeWrapperSerializer
-    implements SerializationUtil.SimpleSerializer<StructLikeWrapper> {
+public class StructLikeWrapperSerializer implements ResourceSerde<StructLikeWrapper> {
 
   protected final StructLikeWrapper structLikeWrapper;
 
@@ -39,14 +39,14 @@ public class StructLikeWrapperSerializer
   }
 
   @Override
-  public byte[] serialize(StructLikeWrapper structLikeWrapper) {
+  public byte[] serializeResource(StructLikeWrapper structLikeWrapper) {
     checkNotNull(structLikeWrapper);
     StructLike copy = StructLikeCopy.copy(structLikeWrapper.get());
     return SerializationUtil.kryoSerialize(copy);
   }
 
   @Override
-  public StructLikeWrapper deserialize(byte[] bytes) {
+  public StructLikeWrapper deserializeResource(byte[] bytes) {
     if (bytes == null) {
       return null;
     }
