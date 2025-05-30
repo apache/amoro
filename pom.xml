@@ -117,7 +117,8 @@
         <cglib.version>2.2.2</cglib.version>
         <curator.version>5.7.0</curator.version>
         <mockito.version>4.11.0</mockito.version>
-        <parquet-avro.version>1.13.1</parquet-avro.version>
+        <parquet-jackson.version>1.13.1</parquet-jackson.version>
+        <parquet-avro.version>1.15.2</parquet-avro.version>
         <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
         <orc-core.version>1.8.3</orc-core.version>
         <awssdk.version>2.24.12</awssdk.version>
@@ -370,6 +371,13 @@
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-avro</artifactId>
                 <version>${parquet-avro.version}</version>
+            </dependency>
+
+            <!-- TODO: Remove this parquet-jackson when upgrade JDK to 17 or higher -->
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-jackson</artifactId>
+                <version>${parquet-jackson.version}</version>
             </dependency>
 
             <dependency>
