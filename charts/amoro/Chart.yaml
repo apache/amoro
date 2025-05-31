@@ -20,7 +20,7 @@ name: amoro
 description: A Helm chart for Amoro
 type: application
 version: 0.1.0
-appVersion: "0.7"
+appVersion: "0.9-SNAPSHOT"
 home: https://amoro.apache.org/
 icon: https://amoro.apache.org/img/amoro-logo-icon.png
 sources:
