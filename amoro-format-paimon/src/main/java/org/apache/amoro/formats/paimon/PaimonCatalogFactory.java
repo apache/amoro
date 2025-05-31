@@ -47,6 +47,8 @@ public class PaimonCatalogFactory implements FormatCatalogFactory {
       String name, String metastoreType, Map<String, String> properties, TableMetaStore metaStore) {
     Optional<URL> hiveSiteLocation = metaStore.getHiveSiteLocation();
     Map<String, String> catalogProperties = Maps.newHashMap();
+    // if format table enabled, paimon will load hive orc/parquet/csv table to paimon table
+    catalogProperties.put(CatalogOptions.FORMAT_TABLE_ENABLED.key(), "false");
     catalogProperties.putAll(properties);
 
     hiveSiteLocation.ifPresent(

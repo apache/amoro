@@ -190,7 +190,8 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         throw new RuntimeException(e);
       }
     } else {
-      snapshots = Collections.singleton(table.tagManager().taggedSnapshot(ref)).iterator();
+      snapshots =
+          Collections.singleton(table.tagManager().getOrThrow(ref).trimToSnapshot()).iterator();
     }
 
     FileStore<?> store = table.store();
@@ -233,7 +234,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     if (BranchManager.isMainBranch(ref) || table.branchManager().branchExists(ref)) {
       snapshot = table.snapshotManager().copyWithBranch(ref).snapshot(commitId);
     } else {
-      snapshot = table.tagManager().tag(ref);
+      snapshot = table.tagManager().getOrThrow(ref).trimToSnapshot();
     }
 
     FileStore<?> store = table.store();
@@ -243,7 +244,6 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
     List<ManifestFileMeta> manifestFileMetas = manifestList.readDeltaManifests(snapshot);
     for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
-      manifestFileMeta.fileSize();
       List<ManifestEntry> manifestEntries = manifestFile.read(manifestFileMeta.fileName());
       for (ManifestEntry entry : manifestEntries) {
         amsDataFileInfos.add(
@@ -275,12 +275,12 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     FileStore<?> store = table.store();
     FileStorePathFactory fileStorePathFactory = store.pathFactory();
     List<ManifestEntry> files = store.newScan().plan().files(FileKind.ADD);
-    Map<BinaryRow, Map<Integer, List<DataFileMeta>>> groupByPartFiles = groupByPartFiles(files);
+    Map<BinaryRow, Map<Integer, List<ManifestEntry>>> groupByPartFiles = groupByPartFiles(files);
 
     List<PartitionBaseInfo> partitionBaseInfoList = new ArrayList<>();
-    for (Map.Entry<BinaryRow, Map<Integer, List<DataFileMeta>>> groupByPartitionEntry :
+    for (Map.Entry<BinaryRow, Map<Integer, List<ManifestEntry>>> groupByPartitionEntry :
         groupByPartFiles.entrySet()) {
-      for (Map.Entry<Integer, List<DataFileMeta>> groupByBucketEntry :
+      for (Map.Entry<Integer, List<ManifestEntry>> groupByBucketEntry :
           groupByPartitionEntry.getValue().entrySet()) {
         String partitionSt =
             partitionString(
@@ -288,10 +288,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         int fileCount = 0;
         long fileSize = 0;
         long lastCommitTime = 0;
-        for (DataFileMeta dataFileMeta : groupByBucketEntry.getValue()) {
+        for (ManifestEntry manifestEntry : groupByBucketEntry.getValue()) {
           fileCount++;
-          fileSize += dataFileMeta.fileSize();
-          lastCommitTime = Math.max(lastCommitTime, dataFileMeta.creationTimeEpochMillis());
+          fileSize += manifestEntry.file().fileSize();
+          lastCommitTime = Math.max(lastCommitTime, manifestEntry.file().creationTimeEpochMillis());
         }
         partitionBaseInfoList.add(
             new PartitionBaseInfo(partitionSt, 0, fileCount, fileSize, lastCommitTime));
@@ -621,7 +621,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     return store
         .pathFactory()
         .createDataFilePathFactory(manifestEntry.partition(), manifestEntry.bucket())
-        .toPath(manifestEntry.file().fileName())
+        .toPath(manifestEntry.file())
         .toString();
   }
 

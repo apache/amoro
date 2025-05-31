@@ -138,7 +138,11 @@ public class LocalSessionFactory implements TerminalSessionFactory {
       sparkconf.set("spark.network.timeout", "200s");
       sparkconf.set(
           "spark.sql.extensions",
-          SparkContextUtil.MIXED_FORMAT_EXTENSION + "," + SparkContextUtil.ICEBERG_EXTENSION);
+          SparkContextUtil.MIXED_FORMAT_EXTENSION
+              + ","
+              + SparkContextUtil.ICEBERG_EXTENSION
+              + ","
+              + SparkContextUtil.PAIMON_EXTENSION);
       sparkconf.set("spark.cleaner.referenceTracking", "false");
 
       for (String key : this.conf.keySet()) {
