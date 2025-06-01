@@ -399,14 +399,16 @@ public class OptimizingQueue extends PersistentBase {
     private boolean hasCommitted = false;
 
     public TaskRuntime<?> poll() {
-      lock.lock();
-      try {
-        return status != ProcessStatus.KILLED && status != ProcessStatus.FAILED
-            ? taskQueue.poll()
-            : null;
-      } finally {
-        lock.unlock();
+      if (lock.tryLock()) {
+        try {
+          return status != ProcessStatus.KILLED && status != ProcessStatus.FAILED
+              ? taskQueue.poll()
+              : null;
+        } finally {
+          lock.unlock();
+        }
       }
+      return null;
     }
 
     public TableOptimizingProcess(

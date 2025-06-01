@@ -18,8 +18,9 @@
 
 package org.apache.amoro.utils.map;
 
+import org.apache.amoro.serialization.JavaSerializer;
+import org.apache.amoro.serialization.ResourceSerde;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.utils.SerializationUtil;
 
 import javax.annotation.Nullable;
 
@@ -42,9 +43,9 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
   private long estimatedPayloadSize = 0;
   private int putCount = 0;
 
-  private final SerializationUtil.SimpleSerializer<K> keySerializer;
+  private final ResourceSerde<K> keySerializer;
 
-  private final SerializationUtil.SimpleSerializer<T> valueSerializer;
+  private final ResourceSerde<T> valueSerializer;
 
   protected SimpleSpillableMap(
       Long maxInMemorySizeInBytes,
@@ -54,8 +55,8 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
     this(
         maxInMemorySizeInBytes,
         backendBaseDir,
-        SerializationUtil.JavaSerializer.INSTANT,
-        SerializationUtil.JavaSerializer.INSTANT,
+        JavaSerializer.INSTANT,
+        JavaSerializer.INSTANT,
         keySizeEstimator,
         valueSizeEstimator);
   }
@@ -63,8 +64,8 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
   protected SimpleSpillableMap(
       Long maxInMemorySizeInBytes,
       @Nullable String backendBaseDir,
-      SerializationUtil.SimpleSerializer<K> keySerializer,
-      SerializationUtil.SimpleSerializer<T> valueSerializer,
+      ResourceSerde<K> keySerializer,
+      ResourceSerde<T> valueSerializer,
       SizeEstimator<K> keySizeEstimator,
       SizeEstimator<T> valueSizeEstimator) {
     this.memoryMap = Maps.newHashMap();
@@ -153,13 +154,13 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
 
     private final String columnFamily = UUID.randomUUID().toString();
 
-    private final SerializationUtil.SimpleSerializer<K> keySerializer;
+    private final ResourceSerde<K> keySerializer;
 
-    private final SerializationUtil.SimpleSerializer<T> valueSerializer;
+    private final ResourceSerde<T> valueSerializer;
 
     public SimpleSpilledMap(
-        SerializationUtil.SimpleSerializer<K> keySerializer,
-        SerializationUtil.SimpleSerializer<T> valueSerializer,
+        ResourceSerde<K> keySerializer,
+        ResourceSerde<T> valueSerializer,
         @Nullable String backendBaseDir) {
       rocksDB = RocksDBBackend.getOrCreateInstance(backendBaseDir);
       rocksDB.addColumnFamily(columnFamily);
@@ -168,19 +169,23 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
     }
 
     public boolean containsKey(K key) {
-      return rocksDB.get(columnFamily, keySerializer.serialize(key)) != null;
+      return rocksDB.get(columnFamily, keySerializer.serializeResource(key)) != null;
     }
 
     public T get(K key) {
-      return valueSerializer.deserialize(rocksDB.get(columnFamily, keySerializer.serialize(key)));
+      return valueSerializer.deserializeResource(
+          rocksDB.get(columnFamily, keySerializer.serializeResource(key)));
     }
 
     public void put(K key, T value) {
-      rocksDB.put(columnFamily, keySerializer.serialize(key), valueSerializer.serialize(value));
+      rocksDB.put(
+          columnFamily,
+          keySerializer.serializeResource(key),
+          valueSerializer.serializeResource(value));
     }
 
     public void delete(K key) {
-      rocksDB.delete(columnFamily, keySerializer.serialize(key));
+      rocksDB.delete(columnFamily, keySerializer.serializeResource(key));
     }
 
     public void close() {
