@@ -49,6 +49,7 @@ public class SparkTestContext {
   public static final String MIXED_CATALOG_IMPL = "org.apache.amoro.spark.MixedFormatSparkCatalog";
   public static final String SQL_EXTENSIONS_IMPL =
       "org.apache.amoro.spark.MixedFormatSparkExtensions"
+          + ",org.apache.paimon.spark.extensions.PaimonSparkSessionExtensions"
           + ",org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions";
 
   public static final String UNIFIED_CATALOG_IMP = "org.apache.amoro.spark.SparkUnifiedCatalog";
