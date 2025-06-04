@@ -101,7 +101,7 @@ public class SchedulingPolicy {
   private Comparator<TableRuntime> createSorterByPolicy() {
     if (sorterFactoryCache.get(policyName) != null) {
       SorterFactory sorterFactory = sorterFactoryCache.get(policyName);
-      LOG.info(
+      LOG.debug(
           "Using sorter instance {} corresponding to the scheduling policy {}",
           sorterFactory.getClass().getName(),
           policyName);
