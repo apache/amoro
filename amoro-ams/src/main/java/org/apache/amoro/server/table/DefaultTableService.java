@@ -113,7 +113,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
                     "Error occurred while removing tableRuntime of table {}",
                     identifier.getId(),
                     e);
-                throw e;
               }
             });
   }
@@ -476,7 +475,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   @VisibleForTesting
-  private void disposeTable(ServerTableIdentifier tableIdentifier) {
+  public void disposeTable(ServerTableIdentifier tableIdentifier) {
     DefaultTableRuntime existedTableRuntime = tableRuntimeMap.get(tableIdentifier.getId());
     try {
       doAsTransaction(

@@ -433,7 +433,7 @@ public class TestSyncTableOfExternalCatalog extends AMSTableTestBase {
     return externalCatalog;
   }
 
-  @Mock private TableRuntime tableRuntimeWithException;
+  @Mock private DefaultTableRuntime tableRuntimeWithException;
   @Mock private ServerTableIdentifier tableIdentifierWithException;
 
   @Test
@@ -513,7 +513,7 @@ public class TestSyncTableOfExternalCatalog extends AMSTableTestBase {
     Assert.assertEquals(1, tableRuntimeMetaListForOptimizerGroupAfterAddTable.size());
     Assert.assertEquals(1, tableRuntimeMetaListAfterAddTable.size());
 
-    TableRuntime tableRuntime = tableService().getRuntime(tableIdentifier.getId());
+    DefaultTableRuntime tableRuntime = tableService().getRuntime(tableIdentifier.getId());
     // create a tableIdentifier that throw exceptions when calling the getTableName() method, which
     // can lead to exceptions when deleting tableIdentifier in disposeTable().
     try (AutoCloseable ignored = MockitoAnnotations.openMocks(this)) {
