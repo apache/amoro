@@ -23,6 +23,8 @@ import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_CUS
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static org.apache.amoro.properties.CatalogMetaProperties.CLIENT_POOL_SIZE;
+import static org.apache.amoro.properties.CatalogMetaProperties.CLIENT_POOL_SIZE_DEFAULT;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
@@ -88,6 +90,9 @@ public class CatalogBuilder {
       case CATALOG_TYPE_HIVE:
         String amsUri = getAmsURI(serverConfiguration);
         catalogMeta.getCatalogProperties().put(CatalogMetaProperties.AMS_URI, amsUri);
+        catalogMeta
+            .getCatalogProperties()
+            .put(CLIENT_POOL_SIZE, String.valueOf(CLIENT_POOL_SIZE_DEFAULT));
         return new ExternalCatalog(catalogMeta);
       case CATALOG_TYPE_AMS:
         return new InternalCatalogImpl(catalogMeta, serverConfiguration);
