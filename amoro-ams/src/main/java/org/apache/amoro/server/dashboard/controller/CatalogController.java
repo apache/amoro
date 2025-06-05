@@ -394,12 +394,16 @@ public class CatalogController {
           STORAGE_CONFIGS_KEY_S3_ENDPOINT);
     } else if (STORAGE_CONFIGS_VALUE_TYPE_OSS.equals(storageType)) {
       CatalogUtil.copyProperty(
+          catalogMeta.getStorageConfigs(),
           catalogMeta.getCatalogProperties(),
-          storageConfig,
           AliyunProperties.OSS_ENDPOINT,
           STORAGE_CONFIGS_KEY_OSS_ENDPOINT);
+      CatalogUtil.copyProperty(
+          catalogMeta.getStorageConfigs(),
+          catalogMeta.getCatalogProperties(),
+          "fs.oss.endpoint",
+          STORAGE_CONFIGS_KEY_OSS_ENDPOINT);
     }
-
     return storageConfig;
   }
 
@@ -475,11 +479,19 @@ public class CatalogController {
           STORAGE_CONFIGS_KEY_S3_ENDPOINT,
           S3FileIOProperties.ENDPOINT);
     } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_OSS)) {
-      CatalogUtil.copyProperty(
-          info.getStorageConfig(),
-          catalogMeta.getCatalogProperties(),
-          STORAGE_CONFIGS_KEY_OSS_ENDPOINT,
-          AliyunProperties.OSS_ENDPOINT);
+      if (TableFormat.valueOf(tableFormats) == TableFormat.ICEBERG) {
+        CatalogUtil.copyProperty(
+            info.getStorageConfig(),
+            catalogMeta.getCatalogProperties(),
+            STORAGE_CONFIGS_KEY_OSS_ENDPOINT,
+            AliyunProperties.OSS_ENDPOINT);
+      } else if (TableFormat.valueOf(tableFormats) == PAIMON) {
+        CatalogUtil.copyProperty(
+            info.getStorageConfig(),
+            catalogMeta.getCatalogProperties(),
+            STORAGE_CONFIGS_KEY_OSS_ENDPOINT,
+            "fs.oss.endpoint");
+      }
     } else {
       throw new RuntimeException("Invalid storage type " + storageType);
     }

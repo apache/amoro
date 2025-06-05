@@ -31,6 +31,8 @@ import org.apache.paimon.catalog.FileSystemCatalogFactory;
 import org.apache.paimon.hive.HiveCatalogOptions;
 import org.apache.paimon.options.CatalogOptions;
 import org.apache.paimon.options.Options;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URL;
@@ -39,8 +41,13 @@ import java.util.Optional;
 
 public class PaimonCatalogFactory implements FormatCatalogFactory {
 
+  private static final Logger LOG = LoggerFactory.getLogger(PaimonCatalogFactory.class);
+
   public static final String PAIMON_S3_ACCESS_KEY = "s3.access-key";
   public static final String PAIMON_S3_SECRET_KEY = "s3.secret-key";
+  public static final String PAIMON_OSS_ACCESS_KEY = "fs.oss.accessKeyId";
+  public static final String PAIMON_OSS_SECRET_KEY = "fs.oss.accessKeySecret";
+  public static final String PAIMON_OSS_ENDPOINT = "fs.oss.endpoint";
 
   @Override
   public PaimonCatalog create(
@@ -50,19 +57,24 @@ public class PaimonCatalogFactory implements FormatCatalogFactory {
     // if format table enabled, paimon will load hive orc/parquet/csv table to paimon table
     catalogProperties.put(CatalogOptions.FORMAT_TABLE_ENABLED.key(), "false");
     catalogProperties.putAll(properties);
-
     hiveSiteLocation.ifPresent(
         url ->
             catalogProperties.put(
                 HiveCatalogOptions.HIVE_CONF_DIR.key(), new File(url.getPath()).getParent()));
-
     if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK.equalsIgnoreCase(
         metaStore.getAuthMethod())) {
-      // s3.access-key, s3.secret-key
-      catalogProperties.put(PAIMON_S3_ACCESS_KEY, metaStore.getAccessKey());
-      catalogProperties.put(PAIMON_S3_SECRET_KEY, metaStore.getSecretKey());
-      Catalog catalog = paimonCatalog(catalogProperties, new Configuration());
-      return new PaimonCatalog(catalog, name);
+      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3.equals(metastoreType)) {
+        // s3.access-key, s3.secret-key
+        catalogProperties.put(PAIMON_S3_ACCESS_KEY, metaStore.getAccessKey());
+        catalogProperties.put(PAIMON_S3_SECRET_KEY, metaStore.getSecretKey());
+        Catalog catalog = paimonCatalog(catalogProperties, new Configuration());
+        return new PaimonCatalog(catalog, name);
+      } else {
+        catalogProperties.put(PAIMON_OSS_ACCESS_KEY, metaStore.getAccessKey());
+        catalogProperties.put(PAIMON_OSS_SECRET_KEY, metaStore.getSecretKey());
+        Catalog catalog = paimonCatalog(catalogProperties, new Configuration());
+        return new PaimonCatalog(catalog, name);
+      }
     } else {
       Catalog catalog = paimonCatalog(catalogProperties, metaStore.getConfiguration());
       return new PaimonCatalog(catalog, name);
