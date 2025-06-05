@@ -148,8 +148,11 @@ public class DefaultTableService extends PersistentBase implements TableService 
   @Override
   public void initialize() {
     checkNotStarted();
-    // Clear orphan tableRuntime and tableIdentifier data with orphaned tableIds.
-    clearOrphanTables();
+    if (serverConfiguration.getBoolean(
+        AmoroManagementConf.ORPHAN_TABLE_CLEANUP_AT_INITIALIZATION_ENABLED)) {
+      // Clear orphan tableRuntime and tableIdentifier data with orphaned tableIds.
+      clearOrphanTables();
+    }
     // Initialize valid table runtime objects
     List<TableRuntimeMeta> tableRuntimeMetaList =
         getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
@@ -573,9 +576,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
               tableRuntimeMeta.getCatalogName(),
               tableRuntimeMeta.getDbName(),
               tableRuntimeMeta.getTableName()));
-      TableRuntime existedTableRuntime =
+      DefaultTableRuntime existedTableRuntime =
           Optional.ofNullable(tableRuntimeMap.remove(tableRuntimeMeta.getTableId()))
-              .orElseGet(() -> new TableRuntime(tableRuntimeMeta, this));
+              .orElseGet(() -> new DefaultTableRuntime(tableRuntimeMeta, this));
       if (headHandler != null) {
         headHandler.fireTableRemoved(existedTableRuntime);
       }
