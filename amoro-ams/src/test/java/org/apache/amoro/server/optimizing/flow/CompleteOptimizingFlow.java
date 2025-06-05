@@ -203,7 +203,8 @@ public class CompleteOptimizingFlow {
         tableRuntime,
         table,
         availableCore,
-        OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT);
+        OptimizerProperties.MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT,
+        System.currentTimeMillis());
   }
 
   private OptimizingConfig optimizingConfig() {
