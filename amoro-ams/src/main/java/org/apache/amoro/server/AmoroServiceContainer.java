@@ -116,9 +116,8 @@ public class AmoroServiceContainer {
   }
 
   public static void main(String[] args) {
-    AmoroServiceContainer service = null;
     try {
-      service = new AmoroServiceContainer();
+      AmoroServiceContainer service = new AmoroServiceContainer();
       Runtime.getRuntime()
           .addShutdownHook(
               new Thread(
@@ -141,9 +140,6 @@ public class AmoroServiceContainer {
       }
     } catch (Throwable t) {
       LOG.error("AMS encountered an unknown exception, will exist", t);
-      if (service != null) {
-        service.disposeRestService();
-      }
       System.exit(1);
     }
   }
