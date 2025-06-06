@@ -53,7 +53,7 @@ public class LoginController {
       ctx.sessionAttribute("user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
       ctx.json(OkResponse.of("success"));
     } else {
-      throw new RuntimeException("bad user " + user + " or password!");
+      throw new RuntimeException("invalid user " + user + " or password!");
     }
   }
 

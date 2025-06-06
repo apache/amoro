@@ -29,6 +29,8 @@ public class SparkContextUtil {
 
   public static final String ICEBERG_EXTENSION =
       "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions";
+  public static final String PAIMON_EXTENSION =
+      "org.apache.paimon.spark.extensions.PaimonSparkSessionExtensions";
   public static final String MIXED_FORMAT_EXTENSION =
       "org.apache.amoro.spark.MixedFormatSparkExtensions";
   public static final String ICEBERG_CATALOG = "org.apache.iceberg.spark.SparkCatalog";
@@ -46,7 +48,9 @@ public class SparkContextUtil {
 
   public static Map<String, String> getSparkConf(Configurations sessionConfig) {
     Map<String, String> sparkConf = Maps.newLinkedHashMap();
-    sparkConf.put("spark.sql.extensions", MIXED_FORMAT_EXTENSION + "," + ICEBERG_EXTENSION);
+    sparkConf.put(
+        "spark.sql.extensions",
+        MIXED_FORMAT_EXTENSION + "," + ICEBERG_EXTENSION + "," + PAIMON_EXTENSION);
 
     List<String> catalogs = sessionConfig.get(TerminalSessionFactory.SessionConfigOptions.CATALOGS);
     String catalogUrlBase =
