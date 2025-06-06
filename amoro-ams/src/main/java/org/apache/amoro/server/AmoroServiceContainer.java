@@ -116,8 +116,9 @@ public class AmoroServiceContainer {
   }
 
   public static void main(String[] args) {
+    AmoroServiceContainer service = null;
     try {
-      AmoroServiceContainer service = new AmoroServiceContainer();
+      service = new AmoroServiceContainer();
       Runtime.getRuntime()
           .addShutdownHook(
               new Thread(
@@ -132,16 +133,17 @@ public class AmoroServiceContainer {
           service.waitLeaderShip();
           service.startOptimizingService();
           service.waitFollowerShip();
-          // become follower, dispose optimizingService stop
-          service.stopOptimizingService();
         } catch (Exception e) {
           LOG.error("AMS start error", e);
         } finally {
-          service.dispose();
+          service.disposeOptimizingService();
         }
       }
     } catch (Throwable t) {
       LOG.error("AMS encountered an unknown exception, will exist", t);
+      if (service != null) {
+        service.disposeRestService();
+      }
       System.exit(1);
     }
   }
@@ -209,7 +211,7 @@ public class AmoroServiceContainer {
     }
   }
 
-  public void dispose() {
+  public void disposeOptimizingService() {
     if (tableManagementServer != null && tableManagementServer.isServing()) {
       LOG.info("Stopping table management server...");
       tableManagementServer.stop();
@@ -218,6 +220,19 @@ public class AmoroServiceContainer {
       LOG.info("Stopping optimizing server...");
       optimizingServiceServer.stop();
     }
+    if (tableService != null) {
+      LOG.info("Stopping table service...");
+      tableService.dispose();
+      tableService = null;
+    }
+    if (optimizingService != null) {
+      LOG.info("Stopping optimizing service...");
+      optimizingService.dispose();
+      optimizingService = null;
+    }
+  }
+
+  public void disposeRestService() {
     if (httpServer != null) {
       LOG.info("Stopping http server...");
       try {
@@ -226,28 +241,22 @@ public class AmoroServiceContainer {
         LOG.error("Error stopping http server", e);
       }
     }
-    if (tableService != null) {
-      LOG.info("Stopping table service...");
-      tableService.dispose();
-      tableService = null;
-    }
     if (terminalManager != null) {
       LOG.info("Stopping terminal manager...");
       terminalManager.dispose();
       terminalManager = null;
     }
-    if (optimizingService != null) {
-      LOG.info("Stopping optimizing service...");
-      optimizingService.dispose();
-      optimizingService = null;
-    }
-
     if (amsServiceMetrics != null) {
       amsServiceMetrics.unregister();
     }
 
     EventsManager.dispose();
     MetricManager.dispose();
+  }
+
+  public void dispose() {
+    disposeOptimizingService();
+    disposeRestService();
   }
 
   private void initConfig() throws Exception {
