@@ -46,7 +46,7 @@
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>com.esotericsoftware.kryo</groupId>
+                    <groupId>com.esotericsoftware</groupId>
                     <artifactId>kryo</artifactId>
                 </exclusion>
             </exclusions>
