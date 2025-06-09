@@ -76,6 +76,16 @@ Common properties include:
 ### Configure table properties
 If you want to add the same table properties to all tables under a catalog, you can add these table properties here on the catalog level. If you also configure this property on the table level, the property on the table will take effect.
 
+## REST Catalog
+When a user needs to create a Iceberg REST Catalog, they can choose **External Catalog Type**、**Custom Metastore Type**、**Iceberg Table Format**, configure properties include:
+**catalog-impl=org.apache.iceberg.rest.RESTCatalog**, **uri=$restCatalog_uri**.
+
+After configuring the above parameters, the final result in the AMS frontend will look like this:
+![create-rest_catalog](../images/admin/create-rest_catalog.png)
+
+### Nessie's REST Catalog
+When a user needs to create a Nessie Rest Catalog, they can also set **catalog-impl=org.apache.iceberg.nessie.NessieCatalog** on top of the above parameters.
+
 ## Delete catalog
 When a user needs to delete a Catalog, they can go to the details page of the Catalog and click the Remove button at the bottom of the page to perform the deletion.
 
