@@ -135,7 +135,7 @@ async function getFiles() {
     const { list, total } = result
     breadcrumbPagination.total = total;
     (list || []).forEach((p: BreadcrumbPartitionItem) => {
-      p.commitTime = p.commitTime ? dateFormat(p.commitTime) : ''
+      p.commitTime = p.commitTime && p.commitTime !== -1 ? dateFormat(p.commitTime) : ''
       breadcrumbDataSource.push(p)
     })
   }
