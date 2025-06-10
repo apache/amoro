@@ -433,6 +433,120 @@ public class TestSyncTableOfExternalCatalog extends AMSTableTestBase {
     return externalCatalog;
   }
 
+  @Mock private DefaultTableRuntime tableRuntimeWithException;
+  @Mock private ServerTableIdentifier tableIdentifierWithException;
+
+  @Test
+  public void testDisposeTableSuccess() {
+    createTable();
+    ServerTableIdentifier tableIdentifier = serverTableIdentifier();
+
+    // test list tables
+    List<TableRuntimeMeta> tableRuntimeMetaListAfterAddTable = persistency.getTableRuntimeMetas();
+    List<TableRuntimeMeta> tableRuntimeMetaListForOptimizerGroupAfterAddTable =
+        persistency.getTableRuntimeMetasForOptimizerGroup(defaultResourceGroup().getName());
+    Assert.assertEquals(1, tableRuntimeMetaListForOptimizerGroupAfterAddTable.size());
+    Assert.assertEquals(1, tableRuntimeMetaListAfterAddTable.size());
+
+    tableService().disposeTable(tableIdentifier);
+    // test list tables after disposing table
+    List<TableRuntimeMeta> tableRuntimeMetaListAfterDropTable = persistency.getTableRuntimeMetas();
+    List<TableRuntimeMeta> tableRuntimeMetaListForOptimizerGroupAfterDropTable =
+        persistency.getTableRuntimeMetasForOptimizerGroup(defaultResourceGroup().getName());
+    Assert.assertEquals(0, tableRuntimeMetaListForOptimizerGroupAfterDropTable.size());
+    Assert.assertEquals(0, tableRuntimeMetaListAfterDropTable.size());
+
+    dropTable();
+    dropDatabase();
+  }
+
+  @Test
+  public void testDeleteTableIdentifierFailure() {
+    createTable();
+    ServerTableIdentifier tableIdentifier = serverTableIdentifier();
+
+    // test list tables
+    List<TableRuntimeMeta> tableRuntimeMetaListAfterAddTable = persistency.getTableRuntimeMetas();
+    List<TableRuntimeMeta> tableRuntimeMetaListForOptimizerGroupAfterAddTable =
+        persistency.getTableRuntimeMetasForOptimizerGroup(defaultResourceGroup().getName());
+    Assert.assertEquals(1, tableRuntimeMetaListForOptimizerGroupAfterAddTable.size());
+    Assert.assertEquals(1, tableRuntimeMetaListAfterAddTable.size());
+
+    // create a tableIdentifier that throw exceptions when calling the getTableName() method, which
+    // can lead to exceptions when deleting tableIdentifier in disposeTable().
+    MockitoAnnotations.openMocks(this);
+    when(tableIdentifierWithException.getId()).thenReturn(tableIdentifier.getId());
+    when(tableIdentifierWithException.getIdentifier()).thenReturn(tableIdentifier.getIdentifier());
+    when(tableIdentifierWithException.getCatalog()).thenReturn(tableIdentifier.getCatalog());
+    when(tableIdentifierWithException.getDatabase()).thenReturn(tableIdentifier.getDatabase());
+    when(tableIdentifierWithException.getTableName())
+        .thenThrow(new RuntimeException("get TableName error"));
+
+    Assert.assertThrows(
+        "get TableName error",
+        RuntimeException.class,
+        () -> tableService().disposeTable(tableIdentifierWithException));
+
+    // test list tables after disposing table
+    // Because the doAsTransaction() method is used, when a tableIdentifier deletion exception
+    // occurs, the tableRuntime and tableIdentifier will remain consistent and neither will actually
+    // be deleted.
+    List<TableRuntimeMeta> tableRuntimeMetaListAfterDropTable = persistency.getTableRuntimeMetas();
+    List<TableRuntimeMeta> tableRuntimeMetaListForOptimizerGroupAfterDropTable =
+        persistency.getTableRuntimeMetasForOptimizerGroup(defaultResourceGroup().getName());
+    Assert.assertEquals(1, tableRuntimeMetaListForOptimizerGroupAfterDropTable.size());
+    Assert.assertEquals(1, tableRuntimeMetaListAfterDropTable.size());
+
+    dropTable();
+    dropDatabase();
+  }
+
+  @Test
+  public void testDisposeTableRuntimeFailure() {
+    createTable();
+    ServerTableIdentifier tableIdentifier = serverTableIdentifier();
+
+    // test list tables
+    List<TableRuntimeMeta> tableRuntimeMetaListAfterAddTable = persistency.getTableRuntimeMetas();
+    List<TableRuntimeMeta> tableRuntimeMetaListForOptimizerGroupAfterAddTable =
+        persistency.getTableRuntimeMetasForOptimizerGroup(defaultResourceGroup().getName());
+    Assert.assertEquals(1, tableRuntimeMetaListForOptimizerGroupAfterAddTable.size());
+    Assert.assertEquals(1, tableRuntimeMetaListAfterAddTable.size());
+
+    DefaultTableRuntime tableRuntime = tableService().getRuntime(tableIdentifier.getId());
+    // create a tableIdentifier that throw exceptions when calling the getTableName() method, which
+    // can lead to exceptions when deleting tableIdentifier in disposeTable().
+    try (AutoCloseable ignored = MockitoAnnotations.openMocks(this)) {
+      when(tableRuntimeWithException.getTableIdentifier())
+          .thenReturn(tableRuntime.getTableIdentifier());
+
+      tableService().setRuntime(tableRuntimeWithException);
+      when(tableRuntimeWithException.getFormat())
+          .thenThrow(new RuntimeException("get table format error"));
+      Assert.assertThrows(
+          "get table format error",
+          RuntimeException.class,
+          () -> tableService().disposeTable(tableIdentifier));
+
+      // test list tables after disposing table
+      // Because the doAsTransaction() method is used, when a tableIdentifier deletion exception
+      // occurs, the tableRuntime and tableIdentifier will remain consistent and neither will
+      // actually be deleted.
+      List<TableRuntimeMeta> tableRuntimeMetaListAfterDropTable =
+          persistency.getTableRuntimeMetas();
+      List<TableRuntimeMeta> tableRuntimeMetaListForOptimizerGroupAfterDropTable =
+          persistency.getTableRuntimeMetasForOptimizerGroup(defaultResourceGroup().getName());
+      Assert.assertEquals(1, tableRuntimeMetaListForOptimizerGroupAfterDropTable.size());
+      Assert.assertEquals(1, tableRuntimeMetaListAfterDropTable.size());
+
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    tableService().setRuntime(tableRuntime);
+    dropTable();
+    dropDatabase();
+  }
+
   private void disposeNewCatalogTable(
       UnifiedCatalog externalCatalog, String catalogName, String dbName, String tableName)
       throws TException {
