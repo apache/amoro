@@ -197,6 +197,12 @@ public class DefaultTableService extends PersistentBase implements TableService 
     return tableRuntimeMap.get(tableId);
   }
 
+  @VisibleForTesting
+  public void setRuntime(TableRuntime tableRuntime) {
+    checkStarted();
+    tableRuntimeMap.put(tableRuntime.getTableIdentifier().getId(), tableRuntime);
+  }
+
   @Override
   public boolean contains(Long tableId) {
     checkStarted();
@@ -465,7 +471,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
     }
   }
 
-  private void disposeTable(ServerTableIdentifier tableIdentifier) {
+  @VisibleForTesting
+  public void disposeTable(ServerTableIdentifier tableIdentifier) {
     TableRuntime existedTableRuntime = tableRuntimeMap.get(tableIdentifier.getId());
     try {
       doAsTransaction(
@@ -482,6 +489,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
                               tableIdentifier.getId()); // remove only after successful operation
                         } catch (Exception e) {
                           LOG.error("Error occurred while disposing table {}", tableIdentifier, e);
+                          throw e;
                         }
                       }),
           () ->
