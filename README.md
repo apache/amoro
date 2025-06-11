@@ -151,7 +151,7 @@ Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixe
 
 ## Quickstart
 
-Visit [https://amoro.apache.org/quick-demo/](https://amoro.apache.org/quick-demo/) to quickly
+Visit [https://amoro.apache.org//quick-start/](https://amoro.apache.org//quick-start/) to quickly
 explore what amoro can do.
 
 ## Join Community
