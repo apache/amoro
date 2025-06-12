@@ -931,6 +931,11 @@
                 <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.casbin</groupId>
+                <artifactId>jcasbin</artifactId>
+                <version>1.39.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1183,6 +1188,8 @@
                             <exclude>**/Chart.lock</exclude>
                             <!-- artifacts created during release process -->
                             <exclude>release/**</exclude>
+                            <exclude>**/*.conf</exclude>
+                            <exclude>**/*.csv</exclude>
                         </excludes>
                     </configuration>
                     <executions>
