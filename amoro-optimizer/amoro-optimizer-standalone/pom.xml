@@ -32,6 +32,10 @@
     <name>Amoro Project AMS Standalone Optimizer</name>
     <url>https://amoro.apache.org</url>
 
+    <properties>
+        <log4j.version>2.20.0</log4j.version>
+    </properties>
+
 
     <dependencies>
         <dependency>
@@ -49,6 +53,29 @@
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
+
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+
+<!--        <dependency>-->
+<!--            &lt;!&ndash; API bridge between log4j 1 and 2 &ndash;&gt;-->
+<!--            <groupId>org.apache.logging.log4j</groupId>-->
+<!--            <artifactId>log4j-1.2-api</artifactId>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>org.apache.amoro</groupId>

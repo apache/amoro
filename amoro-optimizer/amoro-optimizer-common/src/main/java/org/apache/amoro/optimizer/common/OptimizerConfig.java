@@ -23,57 +23,62 @@ import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 
 /** Common config of Optimizer, it can be extended for custom Optimizer. */
 public class OptimizerConfig implements Serializable {
 
+  public static final Logger LOG = LoggerFactory.getLogger(OptimizerConfig.class);
+
+
   @Option(
-      name = "-a",
-      aliases = "--" + OptimizerProperties.AMS_OPTIMIZER_URI,
-      usage = "The ams url",
-      required = true)
+          name = "-a",
+          aliases = "--" + OptimizerProperties.AMS_OPTIMIZER_URI,
+          usage = "The ams url",
+          required = true)
   private String amsUrl;
 
   @Option(
-      name = "-p",
-      aliases = "--" + OptimizerProperties.OPTIMIZER_EXECUTION_PARALLEL,
-      usage = "Optimizer execution parallel",
-      required = true)
+          name = "-p",
+          aliases = "--" + OptimizerProperties.OPTIMIZER_EXECUTION_PARALLEL,
+          usage = "Optimizer execution parallel",
+          required = true)
   private int executionParallel;
 
   private int memorySize;
 
   @Option(
-      name = "-g",
-      aliases = "--" + OptimizerProperties.OPTIMIZER_GROUP_NAME,
-      usage = "Group name optimizer belong",
-      required = true)
+          name = "-g",
+          aliases = "--" + OptimizerProperties.OPTIMIZER_GROUP_NAME,
+          usage = "Group name optimizer belong",
+          required = true)
   private String groupName;
 
   @Option(
-      name = "-hb",
-      aliases = "--" + OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL,
-      usage = "Heart beat interval with ams(ms), default 10s")
+          name = "-hb",
+          aliases = "--" + OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL,
+          usage = "Heart beat interval with ams(ms), default 10s")
   private long heartBeat = 10000; // 10 s
 
   @Option(
-      name = "-eds",
-      aliases = "--" + OptimizerProperties.OPTIMIZER_EXTEND_DISK_STORAGE,
-      usage = "Whether extend storage to disk, default false")
+          name = "-eds",
+          aliases = "--" + OptimizerProperties.OPTIMIZER_EXTEND_DISK_STORAGE,
+          usage = "Whether extend storage to disk, default false")
   private boolean extendDiskStorage = false;
 
   @Option(
-      name = "-dsp",
-      aliases = "--" + OptimizerProperties.OPTIMIZER_DISK_STORAGE_PATH,
-      usage = "Disk storage path")
+          name = "-dsp",
+          aliases = "--" + OptimizerProperties.OPTIMIZER_DISK_STORAGE_PATH,
+          usage = "Disk storage path")
   private String diskStoragePath;
 
   @Option(
-      name = "-msz",
-      aliases = "--" + OptimizerProperties.OPTIMIZER_MEMORY_STORAGE_SIZE,
-      usage = "Memory storage size limit when extending disk storage(MB), default 512MB")
+          name = "-msz",
+          aliases = "--" + OptimizerProperties.OPTIMIZER_MEMORY_STORAGE_SIZE,
+          usage = "Memory storage size limit when extending disk storage(MB), default 512MB")
   private long memoryStorageSize = 512; // 512 M
 
   @Option(name = "-id", aliases = "--" + OptimizerProperties.RESOURCE_ID, usage = "Resource id")
@@ -82,6 +87,8 @@ public class OptimizerConfig implements Serializable {
   public OptimizerConfig() {}
 
   public OptimizerConfig(String[] args) throws CmdLineException {
+    LOG.info("Initializing optimizer configuration...");
+    LOG.info("OptimizerConfig args: {}", String.join(" ", args));
     CmdLineParser parser = new CmdLineParser(this);
     parser.parseArgument(args);
   }
@@ -115,6 +122,7 @@ public class OptimizerConfig implements Serializable {
   }
 
   public void setMemorySize(int memorySize) {
+    LOG.info("Setting optimizer memory resources: {}", memorySize, "MB");
     this.memorySize = memorySize;
   }
 
@@ -161,15 +169,15 @@ public class OptimizerConfig implements Serializable {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("amsUrl", amsUrl)
-        .add("executionParallel", executionParallel)
-        .add("memorySize", memorySize)
-        .add("groupName", groupName)
-        .add("heartBeat", heartBeat)
-        .add("extendDiskStorage", extendDiskStorage)
-        .add("rocksDBBasePath", diskStoragePath)
-        .add("memoryStorageSize", memoryStorageSize)
-        .add("resourceId", resourceId)
-        .toString();
+            .add("amsUrl", amsUrl)
+            .add("executionParallel", executionParallel)
+            .add("memorySize", memorySize)
+            .add("groupName", groupName)
+            .add("heartBeat", heartBeat)
+            .add("extendDiskStorage", extendDiskStorage)
+            .add("rocksDBBasePath", diskStoragePath)
+            .add("memoryStorageSize", memoryStorageSize)
+            .add("resourceId", resourceId)
+            .toString();
   }
 }

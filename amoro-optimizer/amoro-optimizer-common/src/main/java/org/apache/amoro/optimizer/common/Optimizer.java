@@ -36,17 +36,18 @@ public class Optimizer {
 
   public Optimizer(OptimizerConfig config) {
     this(config, () -> new OptimizerToucher(config), (i) -> new OptimizerExecutor(config, i));
+    LOG.info("Creating optimizer instance...");
   }
 
   protected Optimizer(
-      OptimizerConfig config,
-      Supplier<OptimizerToucher> toucherFactory,
-      IntFunction<OptimizerExecutor> executorFactory) {
+          OptimizerConfig config,
+          Supplier<OptimizerToucher> toucherFactory,
+          IntFunction<OptimizerExecutor> executorFactory) {
     this.config = config;
     this.toucher = toucherFactory.get();
     this.executors = new OptimizerExecutor[config.getExecutionParallel()];
     IntStream.range(0, config.getExecutionParallel())
-        .forEach(i -> executors[i] = executorFactory.apply(i));
+            .forEach(i -> executors[i] = executorFactory.apply(i));
     if (config.getResourceId() != null) {
       toucher.withRegisterProperty(OptimizerProperties.RESOURCE_ID, config.getResourceId());
     }
@@ -55,13 +56,13 @@ public class Optimizer {
   public void startOptimizing() {
     LOG.info("Starting optimizer with configuration:{}", config);
     Arrays.stream(executors)
-        .forEach(
-            optimizerExecutor -> {
-              new Thread(
-                      optimizerExecutor::start,
-                      String.format("Optimizer-executor-%d", optimizerExecutor.getThreadId()))
-                  .start();
-            });
+            .forEach(
+                    optimizerExecutor -> {
+                      new Thread(
+                              optimizerExecutor::start,
+                              String.format("Optimizer-executor-%d", optimizerExecutor.getThreadId()))
+                              .start();
+                    });
     toucher.withTokenChangeListener(new SetTokenToExecutors()).start();
   }
 
