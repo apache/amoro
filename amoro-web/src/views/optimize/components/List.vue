@@ -218,7 +218,7 @@ onMounted(async () => {
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'tableName'">
           <a-typography-text
-            style="width: 300px"
+            style="display: block;"
             :ellipsis="{
               tooltip: record.tableName,
             }"
