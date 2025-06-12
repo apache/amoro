@@ -385,6 +385,7 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-aliyun</artifactId>
                 <version>${hadoop.version}</version>
+                <scope>${aliyun-sdk-dependency-scope}</scope>
             </dependency>
 
             <dependency>

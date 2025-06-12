@@ -60,9 +60,15 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-aliyun</artifactId>
+            <scope>${aliyun-sdk-dependency-scope}</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_2.12</artifactId>
-            <version>3.3.2</version>
+            <version>3.3.4</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
