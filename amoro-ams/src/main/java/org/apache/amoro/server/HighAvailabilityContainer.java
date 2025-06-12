@@ -78,7 +78,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
       this.optimizingServiceServerInfo =
           buildServerInfo(
               serviceConfig.getString(AmoroManagementConf.SERVER_EXPOSE_HOST),
-              serviceConfig.getInteger(AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT),
+              serviceConfig.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT),
               serviceConfig.getInteger(AmoroManagementConf.HTTP_SERVER_PORT));
     } else {
       leaderLatch = null;
