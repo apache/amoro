@@ -1,16 +1,18 @@
+# Deploying Amoro in IntelliJ IDEA
+
 This guide describes how to import the Amoro project into IntelliJ IDEA and deploy it.
 
-# Requirements
+## Requirements
 + Java Version: Java 8 or Java 11 is required.
 
-## Required Plugins
+### Required Plugins
 1. Go to `Settings` → `Plugins` in IntelliJ IDEA.
 2. Select the “Marketplace” tab. 
 3. Search for and install the following plugins:
     - Scala
 4. Restart IntelliJ IDEA if prompted.
 
-# Building Amoro in IntelliJ IDEA
+## Building Amoro in IntelliJ IDEA
 This guide is based on IntelliJ IDEA 2024. Some details might differ in other versions.
 
 1. Clone the Repository and  Create the Configuration File:
@@ -51,7 +53,7 @@ ams:
 
    In the `Maven` tab,  click the `Reload All Maven Projects` botton, or right-click the imported Amoro project in the Project view and select `Maven`->`Reload project`.
 
-# Starting AMS
+## Starting AMS
 1. Open the following file: 
 
 `
@@ -63,7 +65,7 @@ ams:
 4. If you see the login page, the startup was successful. The default username and password for login are both `admin`.
 
 # Starting the Optimizer in IntelliJ IDEA
-## Add an Optimizer Group
+### Add an Optimizer Group
 1. Open http://localhost:1630 in your browser and log in with admin/admin.
 2. Click on `Optimizing` in the sidebar, select `Optimizer Groups`, and click the `Add Group` button to create a new group.
 3. Configure the newly added Optimizer group:
@@ -75,7 +77,7 @@ ams:
     - Container: the name of a container configured in containers.
     - Properties: the default configuration under this group, is used as a configuration parameter for tasks when the optimize page is scaled out. 
 
-## Modify Configuration
+### Modify Configuration
 1. Add log4j Dependencies:
 
    Insert the following into the {base_dir}/amoro-optimizer/amoro-optimizer-standalone/pom.xml:
@@ -136,7 +138,7 @@ ams:
 5. Click `Apply` and `Run` to start an optimizer.
 6. In the Amoro dashboard, click on `Optimizing` in the sidebar and choose `Optimizers`. If you see a newly created optimzier, the startup was successful.
 
-# Quickstart
+## Quickstart
 To quickly explore Amoro's core features, such as self-optimizing, visit [https://amoro.apache.org/quick-start/](https://amoro.apache.org/quick-start/).
 
 
