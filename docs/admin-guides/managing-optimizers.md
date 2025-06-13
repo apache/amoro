@@ -56,7 +56,7 @@ containers:
 The format for optimizing URI is `thrift://{host}:{port}?parameter1=value2&parameter2=value2`.
 The supported parameters include:
 
-| Parameter Name | efault Value      | Description                                                |
+| Parameter Name | Default Value     | Description                                                |
 |----------------|-------------------|------------------------------------------------------------|
 | autoReconnect  | true              | If reconnect the server when the connection is broken      |
 | maxReconnects  | 5                 | Retry times when reconnecting                              |
