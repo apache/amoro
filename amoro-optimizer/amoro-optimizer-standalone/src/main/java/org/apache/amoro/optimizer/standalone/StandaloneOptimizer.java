@@ -31,7 +31,6 @@ import java.lang.management.RuntimeMXBean;
 public class StandaloneOptimizer {
   private static final Logger LOG = LoggerFactory.getLogger(StandaloneOptimizer.class);
 
-
   public static void main(String[] args) throws CmdLineException {
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
     Optimizer optimizer = new Optimizer(optimizerConfig);
