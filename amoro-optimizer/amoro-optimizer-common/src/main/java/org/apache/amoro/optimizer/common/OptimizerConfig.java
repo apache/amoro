@@ -23,11 +23,15 @@ import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 
 /** Common config of Optimizer, it can be extended for custom Optimizer. */
 public class OptimizerConfig implements Serializable {
+
+  public static final Logger LOG = LoggerFactory.getLogger(OptimizerConfig.class);
 
   @Option(
       name = "-a",
@@ -82,6 +86,8 @@ public class OptimizerConfig implements Serializable {
   public OptimizerConfig() {}
 
   public OptimizerConfig(String[] args) throws CmdLineException {
+    LOG.info("Initializing optimizer configuration...");
+    LOG.info("OptimizerConfig args: {}", String.join(" ", args));
     CmdLineParser parser = new CmdLineParser(this);
     parser.parseArgument(args);
   }
@@ -115,6 +121,7 @@ public class OptimizerConfig implements Serializable {
   }
 
   public void setMemorySize(int memorySize) {
+    LOG.info("Setting optimizer memory resources: {}", memorySize, "MB");
     this.memorySize = memorySize;
   }
 
