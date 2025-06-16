@@ -434,7 +434,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     // The small table has very little impact on performance,
     // so there is only a small penalty
     return getNormalizedRatio(dataFiles, config.getMinorLeastFileCount())
-            * getNormalizedRatio(dataFilesSize, minTargetSize);
+        * getNormalizedRatio(dataFilesSize, minTargetSize);
   }
 
   private double getNormalizedRatio(double numerator, double denominator) {

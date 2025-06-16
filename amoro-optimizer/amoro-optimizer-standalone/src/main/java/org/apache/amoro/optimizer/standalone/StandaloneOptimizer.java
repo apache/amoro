@@ -27,7 +27,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 
 public class StandaloneOptimizer {
-
   public static void main(String[] args) throws CmdLineException {
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
     Optimizer optimizer = new Optimizer(optimizerConfig);
