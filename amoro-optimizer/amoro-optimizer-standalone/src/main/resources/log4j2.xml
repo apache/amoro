@@ -18,7 +18,6 @@
   -->
 
 <Configuration>
-    <!--<Configuration status="WARN" monitorInterval="30"> -->
     <properties>
         <property name="LOG_HOME">logs</property>
     </properties>
@@ -30,24 +29,12 @@
             <PatternLayout
                     pattern="%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n"/>
         </Console>
-
-        <!-- iceberg rest metric reporter logger -->
-        <Console name="icebergRestMetricReporter" target="SYSTEM_OUT">
-            <!--Set log format and color-->
-            <PatternLayout pattern="%m%n"/>
-        </Console>
     </Appenders>
 
     <Loggers>
         <Root level="debug">
             <AppenderRef ref="consoleAppender" level="info"/>
         </Root>
-        <Logger name="org.apache.spark" additivity="false">
-            <AppenderRef ref="consoleAppender" level="warn"/>
-        </Logger>
-        <Logger name="iceberg.metric"  level="info" additivity="false">
-            <AppenderRef ref="icebergRestMetricReporter"/>
-        </Logger>
     </Loggers>
 
 </Configuration>

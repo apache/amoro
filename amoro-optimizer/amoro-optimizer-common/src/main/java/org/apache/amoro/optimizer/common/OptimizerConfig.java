@@ -86,8 +86,6 @@ public class OptimizerConfig implements Serializable {
   public OptimizerConfig() {}
 
   public OptimizerConfig(String[] args) throws CmdLineException {
-    LOG.info("Initializing optimizer configuration...");
-    LOG.info("OptimizerConfig args: {}", String.join(" ", args));
     CmdLineParser parser = new CmdLineParser(this);
     parser.parseArgument(args);
   }
@@ -121,7 +119,6 @@ public class OptimizerConfig implements Serializable {
   }
 
   public void setMemorySize(int memorySize) {
-    LOG.info("Setting optimizer memory resources: {}", memorySize, "MB");
     this.memorySize = memorySize;
   }
 

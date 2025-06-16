@@ -36,7 +36,6 @@ public class Optimizer {
 
   public Optimizer(OptimizerConfig config) {
     this(config, () -> new OptimizerToucher(config), (i) -> new OptimizerExecutor(config, i));
-    LOG.info("Creating optimizer instance...");
   }
 
   protected Optimizer(

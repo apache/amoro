@@ -22,25 +22,20 @@ import org.apache.amoro.optimizer.common.Optimizer;
 import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.apache.amoro.resource.Resource;
 import org.kohsuke.args4j.CmdLineException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 
 public class StandaloneOptimizer {
-  private static final Logger LOG = LoggerFactory.getLogger(StandaloneOptimizer.class);
 
   public static void main(String[] args) throws CmdLineException {
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
     Optimizer optimizer = new Optimizer(optimizerConfig);
 
     // calculate optimizer memory allocation
-    LOG.info("Calculating optimizer available memory allocation...");
     long memorySize = Runtime.getRuntime().maxMemory() / 1024 / 1024;
     optimizerConfig.setMemorySize((int) memorySize);
 
-    LOG.info("Obtaning current process id...");
     RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
     String processId = runtimeMXBean.getName().split("@")[0];
     optimizer.getToucher().withRegisterProperty(Resource.PROPERTY_JOB_ID, processId);
