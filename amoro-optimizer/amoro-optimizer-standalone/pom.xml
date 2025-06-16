@@ -50,7 +50,6 @@
             <artifactId>snakeyaml</artifactId>
         </dependency>
 
-
         <dependency>
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-common</artifactId>
@@ -59,6 +58,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-
 </project>
