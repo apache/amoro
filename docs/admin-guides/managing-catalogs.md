@@ -69,11 +69,22 @@ You can create a catalog in the AMS frontend:
 Common properties include:
 - warehouse: Warehouse **must be configured** for ams/hadoop/glue catalog, as it determines where our database and table files should be placed
 - catalog-impl: when the metastore is **Custom**, an additional catalog-impl must be defined, and the user must put the jar package for the custom catalog implementation into the **{AMORO_HOME}/lib** directory, **and the service must be restarted to take effect**
+- clients: Hive Catalog connection pool size for accessing HiveMetaStore, default configuration is 20, requires restarting Amoro to take effect.
 - database-filter: Configure a regular expression to filter databases in the catalog. If not set then all databases will be displayed in table menu.
 - table-filter: Configure a regular expression to filter tables in the catalog. The matching will be done in the format of `database.table`. For example, if it is set to `(A\.a)|(B\.b)`, it will ignore all tables except for table `a` in database `A` and table `b` in database `B`
 
 ### Configure table properties
 If you want to add the same table properties to all tables under a catalog, you can add these table properties here on the catalog level. If you also configure this property on the table level, the property on the table will take effect.
+
+## REST Catalog
+When a user needs to create a Iceberg REST Catalog, they can choose **External Catalog Type**、**Custom Metastore Type**、**Iceberg Table Format**, configure properties include:
+**catalog-impl=org.apache.iceberg.rest.RESTCatalog**, **uri=$restCatalog_uri**.
+
+After configuring the above parameters, the final result in the AMS frontend will look like this:
+![create-rest_catalog](../images/admin/create-rest_catalog.png)
+
+### Nessie's REST Catalog
+When a user needs to create a Nessie Rest Catalog, they can also set **catalog-impl=org.apache.iceberg.nessie.NessieCatalog** on top of the above parameters.
 
 ## Delete catalog
 When a user needs to delete a Catalog, they can go to the details page of the Catalog and click the Remove button at the bottom of the page to perform the deletion.
