@@ -397,7 +397,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     long dataFiles = getFragmentFileCount() + getSegmentFileCount();
     long dataRecords = getFragmentFileRecords() + getSegmentFileRecords();
 
-    double averageDataFileSize = getNormalizedRatio(dataFilesSize, dataFiles);
+    double averageDataFileSize = dataFilesSize / dataFiles;
     double eqDeleteRatio = getNormalizedRatio(equalityDeleteFileRecords, dataRecords);
     double posDeleteRatio = getNormalizedRatio(posDeleteFileRecords, dataRecords);
 
@@ -434,7 +434,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     // The small table has very little impact on performance,
     // so there is only a small penalty
     return getNormalizedRatio(dataFiles, config.getMinorLeastFileCount())
-        * getNormalizedRatio(dataFilesSize, config.getTargetSize());
+        * getNormalizedRatio(dataFilesSize, minTargetSize);
   }
 
   private double getNormalizedRatio(double numerator, double denominator) {
