@@ -81,7 +81,11 @@ feature. Here is
 a [design document template](https://docs.google.com/document/d/1LeTyrlzQJfSs2DkRBsucK_vV5gtHRYLb1KSrpu0hp3g/edit?usp=sharing)
 for reference.
 
-## Import the Amoro project into IntelliJ IDEA
+## Building the Project Locally
+
+[Build Guide](https://github.com/apache/amoro?tab=readme-ov-file#building) can be found in GitHub readme.
+
+## Importing the Amoro project into IntelliJ IDEA
 
 The following guide describes how to import the Amoro project into IntelliJ IDEA and deploy it.
 
