@@ -81,24 +81,24 @@ feature. Here is
 a [design document template](https://docs.google.com/document/d/1LeTyrlzQJfSs2DkRBsucK_vV5gtHRYLb1KSrpu0hp3g/edit?usp=sharing)
 for reference.
 
-## Building the Project Locally
+## Import the Amoro project into IntelliJ IDEA
 
 The following guide describes how to import the Amoro project into IntelliJ IDEA and deploy it.
 
 ### Requirements
 + Java Version: Java 8 or Java 11 is required.
 
-#### Required Plugins
+#### Required plugins
 1. Go to `Settings` → `Plugins` in IntelliJ IDEA.
 2. Select the “Marketplace” tab.
 3. Search for and install the following plugins:
     - Scala
 4. Restart IntelliJ IDEA if prompted.
 
-### Importing Amoro into IntelliJ IDEA
+### Import Amoro into IntelliJ IDEA
 This guide is based on IntelliJ IDEA 2024. Some details might differ in other versions.
 
-1. Clone the Repository and  Create the Configuration File:
+1. Clone the repository and create the test configuration file:
 
 ```shell
 $ git clone https://github.com/apache/amoro.git
@@ -106,28 +106,23 @@ $ cd amoro
 $ base_dir=$(pwd)
 $ mkdir -p conf
 $ cp dist/src/main/amoro-bin/conf/config.yaml conf/config.yaml
+$ sed -i '' "s|/tmp/amoro/derby|${base_dir}/conf/derby|g" conf/config.yaml
 ```
+The above text replacement command is applicable to macOS. In the Linux system, `-i ''` should be replaced with `-i`.
 
-2. Import the Project:
+2. Import the project:
     1. Open IntelliJ IDEA and select `File`->`Open`.
     2. Choose the root folder of the cloned Amoro repository.
-3. Configure Java Version:
+3. Configure Java version:
     1. Open the `Maven` tab on the right side of the IDE.
     2. Expand `Profiles` and ensure the selected Java version matches your IDE's Java version.
     3. To check or change the project SDK, go to `File`->`Project Structure...`->`Project`->`SDK`.
-4. Modify the Configuration File:
 
-   The AMS server requires configuration for database connections. The configuration command in the macOS system is presented as follows. In the Linux system, `-i ''` should be replaced with `-i`.
-
-```shell
-$ sed -i '' "s|/tmp/amoro/derby|${base_dir}/conf/derby|g" conf/config.yaml
-```
-
-5. Load Dependencies
+4. Load dependencies
 
    In the `Maven` tab,  click the `Reload All Maven Projects` botton, or right-click the imported Amoro project in the Project view and select `Maven`->`Reload project`.
 
-### Starting AMS
+### Start AMS
 1. Open the following file:
 
 `
@@ -138,8 +133,8 @@ $ sed -i '' "s|/tmp/amoro/derby|${base_dir}/conf/derby|g" conf/config.yaml
 3. Once the service has started, open your web browser and navigate to: [http://localhost:1630](http://localhost:1630/)
 4. If you see the login page, the startup was successful. The default username and password for login are both `admin`.
 
-### Starting the Optimizer
-#### Add an Optimizer Group
+### Start the optimizer
+#### Add an optimizer group
 1. Open http://localhost:1630 in your browser and log in with admin/admin.
 2. Click on `Optimizing` in the sidebar, select `Optimizer Groups`, and click the `Add Group` button to create a new group.
 3. Configure the newly added Optimizer group:
@@ -152,7 +147,7 @@ $ sed -i '' "s|/tmp/amoro/derby|${base_dir}/conf/derby|g" conf/config.yaml
     - Properties: the default configuration under this group, is used as a configuration parameter for tasks when the optimize page is scaled out.
 
 
-#### Start the Optimizer in IntelliJ IDEA
+#### Start an optimizer in IntelliJ IDEA
 1. Open the following file in IntelliJ IDEA:
 
 `
