@@ -20,7 +20,6 @@ package org.apache.amoro.server.utils;
 
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
-import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.io.BulkDeletionFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +28,7 @@ import java.net.URI;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ExpiredFileCleaner {
+public class RollingFileCleaner {
   private final Set<String> collectedFiles = Sets.newConcurrentHashSet();
   private final Set<String> excludeFiles;
 
@@ -40,9 +39,9 @@ public class ExpiredFileCleaner {
 
   private final AuthenticatedFileIO fileIO;
 
-  private static final Logger LOG = LoggerFactory.getLogger(ExpiredFileCleaner.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RollingFileCleaner.class);
 
-  public ExpiredFileCleaner(AuthenticatedFileIO fileIO, Set<String> excludeFiles) {
+  public RollingFileCleaner(AuthenticatedFileIO fileIO, Set<String> excludeFiles) {
     this.fileIO = fileIO;
     this.excludeFiles =
         excludeFiles != null
@@ -60,8 +59,7 @@ public class ExpiredFileCleaner {
       }
     } else {
       String uriPath = URI.create(filePath).getPath();
-      String parentPath = new Path(uriPath).getParent().toString();
-      if (!excludeFiles.contains(uriPath) && !excludeFiles.contains(parentPath)) {
+      if (!excludeFiles.contains(uriPath) && !excludeFiles.contains(filePath)) {
         collectedFiles.add(filePath);
         int fc = fileCounter.incrementAndGet();
 

@@ -20,7 +20,7 @@ package org.apache.amoro.server.util;
 
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.AuthenticatedFileIOAdapter;
-import org.apache.amoro.server.utils.ExpiredFileCleaner;
+import org.apache.amoro.server.utils.RollingFileCleaner;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.iceberg.inmemory.InMemoryFileIO;
 import org.junit.jupiter.api.Assertions;
@@ -28,26 +28,26 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-public class TestExpiredFileCleaner {
+public class TestRollingFileCleaner {
 
   @Test
-  void testCleanExpiredFiles() {
+  void testCleanFiles() {
     InMemoryFileIO io = new InMemoryFileIO();
     AuthenticatedFileIO fileIO = new AuthenticatedFileIOAdapter(io);
-    ExpiredFileCleaner expiredFileCleaner = new ExpiredFileCleaner(fileIO, Sets.newHashSet());
+    RollingFileCleaner fileCleaner = new RollingFileCleaner(fileIO, Sets.newHashSet());
     // generate some files
     Set<String> expiredFiles = Sets.newHashSet();
     for (int i = 0; i < 5050; i++) {
       String filePath = "file_" + i + ".txt";
       io.addFile(filePath, ("file_content" + i).getBytes());
       expiredFiles.add(filePath);
-      expiredFileCleaner.addFile(filePath);
+      fileCleaner.addFile(filePath);
     }
 
-    Assertions.assertEquals(expiredFiles.size(), expiredFileCleaner.fileCount());
+    Assertions.assertEquals(expiredFiles.size(), fileCleaner.fileCount());
 
-    Assertions.assertEquals(5000, expiredFileCleaner.cleanedFileCount());
-    expiredFileCleaner.clear();
-    Assertions.assertEquals(5050, expiredFileCleaner.cleanedFileCount());
+    Assertions.assertEquals(5000, fileCleaner.cleanedFileCount());
+    fileCleaner.clear();
+    Assertions.assertEquals(5050, fileCleaner.cleanedFileCount());
   }
 }

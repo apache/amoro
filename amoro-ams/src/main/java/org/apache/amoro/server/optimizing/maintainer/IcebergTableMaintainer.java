@@ -31,8 +31,8 @@ import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
-import org.apache.amoro.server.utils.ExpiredFileCleaner;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.server.utils.RollingFileCleaner;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
@@ -195,7 +195,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         olderThan,
         minCount,
         exclude);
-    ExpiredFileCleaner expiredFileCleaner = new ExpiredFileCleaner(fileIO(), exclude);
+    RollingFileCleaner expiredFileCleaner = new RollingFileCleaner(fileIO(), exclude);
     table
         .expireSnapshots()
         .retainLast(Math.max(minCount, 1))
