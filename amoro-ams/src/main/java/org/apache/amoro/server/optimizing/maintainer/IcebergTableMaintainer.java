@@ -73,6 +73,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -977,28 +978,29 @@ public class IcebergTableMaintainer implements TableMaintainer {
       String numberDateFormatter,
       Comparable<?> expireValue) {
     Type type = field.type();
-    Object upperBound =
-        Conversions.fromByteBuffer(type, contentFile.upperBounds().get(field.fieldId()));
     Literal<Long> literal = Literal.of(Long.MAX_VALUE);
-    if (null == upperBound) {
-      if (canBeExpireByPartitionValue(contentFile, field, expireValue)) {
-        literal = Literal.of(0L);
+
+    Map<Integer, ByteBuffer> upperBounds = contentFile.upperBounds();
+    if (upperBounds == null || !upperBounds.containsKey(field.fieldId())) {
+      return canBeExpireByPartitionValue(contentFile, field, expireValue)
+          ? Literal.of(0L)
+          : literal;
+    }
+
+    Object upperBound = Conversions.fromByteBuffer(type, upperBounds.get(field.fieldId()));
+    if (upperBound instanceof Long) {
+      if (type.typeId() == Type.TypeID.TIMESTAMP) {
+        // nanosecond -> millisecond
+        literal = Literal.of((Long) upperBound / 1000);
+      } else {
+        if (numberDateFormatter.equals(EXPIRE_TIMESTAMP_MS)) {
+          literal = Literal.of((Long) upperBound);
+        } else if (numberDateFormatter.equals(EXPIRE_TIMESTAMP_S)) {
+          // second -> millisecond
+          literal = Literal.of((Long) upperBound * 1000);
+        }
       }
-    } else if (upperBound instanceof Long) {
-      switch (type.typeId()) {
-        case TIMESTAMP:
-          // nanosecond -> millisecond
-          literal = Literal.of((Long) upperBound / 1000);
-          break;
-        default:
-          if (numberDateFormatter.equals(EXPIRE_TIMESTAMP_MS)) {
-            literal = Literal.of((Long) upperBound);
-          } else if (numberDateFormatter.equals(EXPIRE_TIMESTAMP_S)) {
-            // second -> millisecond
-            literal = Literal.of((Long) upperBound * 1000);
-          }
-      }
-    } else if (type.typeId().equals(Type.TypeID.STRING)) {
+    } else if (type.typeId() == Type.TypeID.STRING) {
       literal =
           Literal.of(
               LocalDate.parse(upperBound.toString(), formatter)
