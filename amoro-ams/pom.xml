@@ -584,6 +584,12 @@
                                     </classesDirectory>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
                                     <finalName>sdk</finalName>
+                                    <excludes>
+                                            <exclude>log4j2.xml</exclude>
+                                            <exclude>derby</exclude>
+                                            <exclude>mysql</exclude>
+                                            <exclude>postgres</exclude>
+                                    </excludes>
                                 </configuration>
                             </execution>
                         </executions>
