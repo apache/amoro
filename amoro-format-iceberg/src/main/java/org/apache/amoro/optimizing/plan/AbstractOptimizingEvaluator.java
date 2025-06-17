@@ -245,7 +245,7 @@ public abstract class AbstractOptimizingEvaluator {
 
     private int avgHealthScore(double totalHealthScore, int partitionCount) {
       if (partitionCount == 0) {
-        return 0;
+        return 100;
       }
       return (int) Math.ceil(totalHealthScore / partitionCount);
     }
