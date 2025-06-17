@@ -31,6 +31,7 @@ import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
+import org.apache.amoro.server.utils.ExpiredFileCleaner;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
@@ -38,7 +39,6 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.utils.TableFileUtil;
-import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.ContentScanTask;
 import org.apache.iceberg.DataFile;
@@ -66,8 +66,8 @@ import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.DateTimeUtil;
 import org.apache.iceberg.util.SerializableFunction;
-import org.apache.iceberg.util.ThreadPools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +90,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -196,54 +195,31 @@ public class IcebergTableMaintainer implements TableMaintainer {
         olderThan,
         minCount,
         exclude);
-    final AtomicInteger toDeleteFiles = new AtomicInteger(0);
-    Set<String> parentDirectories = new HashSet<>();
-    Set<String> expiredFiles = new HashSet<>();
+    ExpiredFileCleaner expiredFileCleaner = new ExpiredFileCleaner(fileIO(), exclude);
     table
         .expireSnapshots()
         .retainLast(Math.max(minCount, 1))
         .expireOlderThan(olderThan)
-        .deleteWith(
-            file -> {
-              if (exclude.isEmpty()) {
-                expiredFiles.add(file);
-              } else {
-                String fileUriPath = TableFileUtil.getUriPath(file);
-                if (!exclude.contains(fileUriPath)
-                    && !exclude.contains(new Path(fileUriPath).getParent().toString())) {
-                  expiredFiles.add(file);
-                }
-              }
-
-              parentDirectories.add(new Path(file).getParent().toString());
-              toDeleteFiles.incrementAndGet();
-            })
+        .deleteWith(expiredFileCleaner::addFile)
         .cleanExpiredFiles(
             true) /* enable clean only for collecting the expired files, will delete them later */
         .commit();
 
-    // try to batch delete files
-    int deletedFiles =
-        TableFileUtil.parallelDeleteFiles(fileIO(), expiredFiles, ThreadPools.getWorkerPool());
-
-    parentDirectories.forEach(
-        parent -> {
-          try {
-            TableFileUtil.deleteEmptyDirectory(fileIO(), parent, exclude);
-          } catch (Exception e) {
-            // Ignore exceptions to remove as many directories as possible
-            LOG.warn("Failed to delete empty directory {} for table {}", parent, table.name(), e);
-          }
-        });
-
-    runWithCondition(
-        toDeleteFiles.get() > 0,
-        () ->
-            LOG.info(
-                "Deleted {}/{} files for table {}",
-                deletedFiles,
-                toDeleteFiles.get(),
-                getTable().name()));
+    int collectedFiles = expiredFileCleaner.fileCount();
+    expiredFileCleaner.clear();
+    if (collectedFiles > 0) {
+      LOG.info(
+          "Expired {}/{} files for table {} order than {}",
+          collectedFiles,
+          expiredFileCleaner.cleanedFileCount(),
+          table.name(),
+          DateTimeUtil.formatTimestampMillis(olderThan));
+    } else {
+      LOG.debug(
+          "No expired files found for table {} order than {}",
+          table.name(),
+          DateTimeUtil.formatTimestampMillis(olderThan));
+    }
   }
 
   @Override
