@@ -51,6 +51,10 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
   public HighAvailabilityContainer(Configurations serviceConfig) throws Exception {
     if (serviceConfig.getBoolean(AmoroManagementConf.HA_ENABLE)) {
       String zkServerAddress = serviceConfig.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS);
+      int zkSessionTimeout =
+          serviceConfig.getInteger(AmoroManagementConf.HA_ZOOKEEPER_SESSION_TIMEOUT_MS);
+      int zkConnectionTimeout =
+          serviceConfig.getInteger(AmoroManagementConf.HA_ZOOKEEPER_CONNECTION_TIMEOUT_MS);
       String haClusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
       tableServiceMasterPath = AmsHAProperties.getTableServiceMasterPath(haClusterName);
       optimizingServiceMasterPath = AmsHAProperties.getOptimizingServiceMasterPath(haClusterName);
@@ -58,8 +62,8 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
       this.zkClient =
           CuratorFrameworkFactory.builder()
               .connectString(zkServerAddress)
-              .sessionTimeoutMs(5000)
-              .connectionTimeoutMs(5000)
+              .sessionTimeoutMs(zkSessionTimeout)
+              .connectionTimeoutMs(zkConnectionTimeout)
               .retryPolicy(retryPolicy)
               .build();
       zkClient.start();
