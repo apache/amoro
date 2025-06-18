@@ -497,6 +497,18 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>log4j2.xml</exclude>
+                        <exclude>derby/**</exclude>
+                        <exclude>mysql/**</exclude>
+                        <exclude>postgres/**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
