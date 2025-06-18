@@ -115,7 +115,7 @@ Amoro contains modules as below:
 
 
 ## Building
-
+Minimum use of Maven 3.8.2+ for build source
 Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixed/amoro-mixed-trino` module).
 
 * Build all modules without `amoro-mixed-trino`: `mvn clean package`
