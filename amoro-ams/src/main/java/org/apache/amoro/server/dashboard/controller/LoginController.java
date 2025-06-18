@@ -21,9 +21,10 @@ package org.apache.amoro.server.dashboard.controller;
 import io.javalin.http.Context;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.dashboard.model.SessionInfo;
 import org.apache.amoro.server.dashboard.response.OkResponse;
+import org.apache.amoro.server.permission.UserInfoManager;
 
-import java.io.Serializable;
 import java.util.Map;
 
 /** The controller that handles login requests. */
@@ -31,10 +32,12 @@ public class LoginController {
 
   private final String adminUser;
   private final String adminPassword;
+  private final UserInfoManager userInfoManager;
 
-  public LoginController(Configurations serviceConfig) {
+  public LoginController(Configurations serviceConfig, UserInfoManager userInfoManager) {
     adminUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
     adminPassword = serviceConfig.get(AmoroManagementConf.ADMIN_PASSWORD);
+    this.userInfoManager = userInfoManager;
   }
 
   /** Get current user. */
@@ -49,8 +52,8 @@ public class LoginController {
     Map<String, String> bodyParams = ctx.bodyAsClass(Map.class);
     String user = bodyParams.get("user");
     String pwd = bodyParams.get("password");
-    if (adminUser.equals(user) && (adminPassword.equals(pwd))) {
-      ctx.sessionAttribute("user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
+    if (userInfoManager.isValidate(user, pwd)) {
+      ctx.sessionAttribute("user", new SessionInfo(user, System.currentTimeMillis() + ""));
       ctx.json(OkResponse.of("success"));
     } else {
       throw new RuntimeException("invalid user " + user + " or password!");
@@ -61,31 +64,5 @@ public class LoginController {
   public void logout(Context ctx) {
     ctx.removeCookie("JSESSIONID");
     ctx.json(OkResponse.ok());
-  }
-
-  static class SessionInfo implements Serializable {
-    String userName;
-    String loginTime;
-
-    public SessionInfo(String username, String loginTime) {
-      this.userName = username;
-      this.loginTime = loginTime;
-    }
-
-    public String getUserName() {
-      return userName;
-    }
-
-    public void setUserName(String userName) {
-      this.userName = userName;
-    }
-
-    public String getLoginTime() {
-      return loginTime;
-    }
-
-    public void setLoginTime(String loginTime) {
-      this.loginTime = loginTime;
-    }
   }
 }
