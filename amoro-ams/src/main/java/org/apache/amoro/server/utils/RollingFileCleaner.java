@@ -20,6 +20,7 @@ package org.apache.amoro.server.utils;
 
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.io.BulkDeletionFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +60,10 @@ public class RollingFileCleaner {
       }
     } else {
       String uriPath = URI.create(filePath).getPath();
-      if (!excludeFiles.contains(uriPath) && !excludeFiles.contains(filePath)) {
+      String parentPath = new Path(uriPath).getParent().toString();
+      if (!excludeFiles.contains(uriPath)
+          && !excludeFiles.contains(filePath)
+          && !excludeFiles.contains(parentPath)) {
         collectedFiles.add(filePath);
         int fc = fileCounter.incrementAndGet();
 
