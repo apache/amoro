@@ -215,16 +215,16 @@ public class AmoroManagementConf {
           .defaultValue("")
           .withDescription("The Zookeeper address used for high availability.");
 
-  public static final ConfigOption<Integer> HA_ZOOKEEPER_SESSION_TIMEOUT_MS =
-      ConfigOptions.key("ha.session-timeout-ms")
-          .intType()
-          .defaultValue(30000)
+  public static final ConfigOption<Duration> HA_ZOOKEEPER_SESSION_TIMEOUT =
+      ConfigOptions.key("ha.session-timeout")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(30))
           .withDescription("The Zookeeper session timeout in milliseconds.");
 
-  public static final ConfigOption<Integer> HA_ZOOKEEPER_CONNECTION_TIMEOUT_MS =
-      ConfigOptions.key("ha.connection-timeout-ms")
-          .intType()
-          .defaultValue(30000)
+  public static final ConfigOption<Duration> HA_ZOOKEEPER_CONNECTION_TIMEOUT =
+      ConfigOptions.key("ha.connection-timeout")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(300))
           .withDescription("The Zookeeper connection timeout in milliseconds.");
 
   public static final ConfigOption<Integer> TABLE_SERVICE_THRIFT_BIND_PORT =

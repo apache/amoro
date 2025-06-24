@@ -52,9 +52,9 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     if (serviceConfig.getBoolean(AmoroManagementConf.HA_ENABLE)) {
       String zkServerAddress = serviceConfig.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS);
       int zkSessionTimeout =
-          serviceConfig.getInteger(AmoroManagementConf.HA_ZOOKEEPER_SESSION_TIMEOUT_MS);
+          (int) serviceConfig.get(AmoroManagementConf.HA_ZOOKEEPER_SESSION_TIMEOUT).toMillis();
       int zkConnectionTimeout =
-          serviceConfig.getInteger(AmoroManagementConf.HA_ZOOKEEPER_CONNECTION_TIMEOUT_MS);
+          (int) serviceConfig.get(AmoroManagementConf.HA_ZOOKEEPER_CONNECTION_TIMEOUT).toMillis();
       String haClusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
       tableServiceMasterPath = AmsHAProperties.getTableServiceMasterPath(haClusterName);
       optimizingServiceMasterPath = AmsHAProperties.getOptimizingServiceMasterPath(haClusterName);
