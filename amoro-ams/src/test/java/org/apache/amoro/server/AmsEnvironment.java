@@ -349,7 +349,8 @@ public class AmsEnvironment {
                     serviceConfig.set(
                         AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL,
                         Duration.ofMillis(1000L));
-                    serviceContainer.startService();
+                    serviceContainer.startRestServices();
+                    serviceContainer.startOptimizingService();
                     break;
                   } catch (TTransportException e) {
                     if (e.getCause() instanceof BindException) {
