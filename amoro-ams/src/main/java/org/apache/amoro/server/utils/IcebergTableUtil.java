@@ -253,7 +253,8 @@ public class IcebergTableUtil {
       DefaultTableRuntime tableRuntime,
       MixedTable table,
       double availableCore,
-      long maxInputSizePerThread) {
+      long maxInputSizePerThread,
+      long planTime) {
     DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
     Expression partitionFilter =
         optimizingState.getPendingInput() == null
@@ -266,7 +267,6 @@ public class IcebergTableUtil {
                             table, entry.getKey(), entry.getValue()))
                 .reduce(Expressions::or)
                 .orElse(Expressions.alwaysTrue());
-    long planTime = System.currentTimeMillis();
     long processId = Math.max(optimizingState.getNewestProcessId() + 1, planTime);
     ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
     OptimizingConfig config = optimizingState.getOptimizingConfig();
