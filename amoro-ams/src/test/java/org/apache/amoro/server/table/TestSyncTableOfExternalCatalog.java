@@ -559,6 +559,69 @@ public class TestSyncTableOfExternalCatalog extends AMSTableTestBase {
     catalogManager().dropCatalog(catalogName);
   }
 
+  @Test
+  public void testClearOrphanTablesWithOrphanTableRuntime() {
+    // Prepare orphan table runtime
+    createTable();
+    persistency.deleteTableIdentifier(
+        serverTableIdentifier().getIdentifier().buildTableIdentifier());
+
+    // Verify that the orphan table runtime is ready
+    List<ServerTableIdentifier> tableIdentifierList = tableManager().listManagedTables();
+    List<TableRuntimeMeta> tableRuntimeMetaList =
+        persistency.getTableRuntimeMetasForOptimizerGroup(defaultResourceGroup().getName());
+    Assert.assertEquals(0, tableIdentifierList.size());
+    Assert.assertEquals(1, tableRuntimeMetaList.size());
+
+    TableRuntimeMeta orphanTableRuntime = new TableRuntimeMeta();
+    orphanTableRuntime.setFormat(TableFormat.ICEBERG);
+
+    // Execute
+    tableService().clearOrphanTables();
+
+    // Verify that the orphan table runtime has been cleared
+    List<ServerTableIdentifier> tableIdentifierListAfterClear = tableManager().listManagedTables();
+    List<TableRuntimeMeta> tableRuntimeMetaListAfterClear =
+        persistency.getTableRuntimeMetasForOptimizerGroup(defaultResourceGroup().getName());
+    Assert.assertEquals(0, tableIdentifierListAfterClear.size());
+    Assert.assertEquals(0, tableRuntimeMetaListAfterClear.size());
+
+    // Clear test data
+    dropTable();
+    dropDatabase();
+  }
+
+  @Test
+  public void testClearOrphanTablesWithOrphanTableIdentifier() {
+    // Prepare orphan table identifier
+    createTable();
+    List<TableRuntimeMeta> tableRuntimeMetaListForOptimizerGroup =
+        persistency.getTableRuntimeMetasForOptimizerGroup(defaultResourceGroup().getName());
+    persistency.deleteTableRuntime(tableRuntimeMetaListForOptimizerGroup.get(0).getTableId());
+
+    // Verify that the orphan table identifier is ready
+    List<ServerTableIdentifier> tableIdentifierList = tableManager().listManagedTables();
+    List<TableRuntimeMeta> tableRuntimeMetaList =
+        persistency.getTableRuntimeMetasForOptimizerGroup(defaultResourceGroup().getName());
+    Assert.assertEquals(1, tableIdentifierList.size());
+    Assert.assertEquals(0, tableRuntimeMetaList.size());
+
+    // Execute
+    tableService().clearOrphanTables();
+
+    // Verify that the orphan table identifier has been cleared
+    List<ServerTableIdentifier> tableIdentifierListAfterClear = tableManager().listManagedTables();
+    List<TableRuntimeMeta> tableRuntimeMetaListAfterClear =
+        persistency.getTableRuntimeMetasForOptimizerGroup(defaultResourceGroup().getName());
+    Assert.assertEquals(0, tableIdentifierListAfterClear.size());
+    Assert.assertEquals(0, tableRuntimeMetaListAfterClear.size());
+
+    // Clear test data
+    tableService().removeExistingTableRuntime(tableRuntimeMetaListForOptimizerGroup.get(0));
+    dropTable();
+    dropDatabase();
+  }
+
   private static class Persistency extends PersistentBase {
     public void addTableIdentifier(
         String catalog, String database, String tableName, TableFormat format) {
