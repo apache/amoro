@@ -112,6 +112,13 @@ ams:
     connection-pool-max-idle: 16
     connection-pool-max-wait-millis: 30000
 
+#  ha:
+#    enabled: true
+#    cluster-name: xxx
+#    zookeeper-address: xxx.xxx.xxx.xxx:2181
+#    session-timeout: 30s
+#    connection-timeout: 30s
+
 #  MySQL database configuration.
 #  database:
 #    type: mysql
