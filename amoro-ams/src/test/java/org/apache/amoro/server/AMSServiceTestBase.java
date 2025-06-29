@@ -38,6 +38,8 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
     try {
       Configurations configurations = new Configurations();
       configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, Duration.ofMillis(800L));
+      configurations.set(
+          AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT, Duration.ofMillis(30000L));
       TABLE_SERVICE = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
       OPTIMIZING_SERVICE =
           new DefaultOptimizingService(

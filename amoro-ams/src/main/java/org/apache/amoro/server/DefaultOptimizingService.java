@@ -91,6 +91,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   private final long optimizerTouchTimeout;
   private final long taskAckTimeout;
+  private final long taskExecuteTimeout;
   private final int maxPlanningParallelism;
   private final long pollingTimeout;
   private final long refreshGroupInterval;
@@ -114,6 +115,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
         serviceConfig.get(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT).toMillis();
     this.taskAckTimeout =
         serviceConfig.get(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT).toMillis();
+    this.taskExecuteTimeout =
+        serviceConfig.get(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT).toMillis();
     this.refreshGroupInterval =
         serviceConfig.get(AmoroManagementConf.OPTIMIZING_REFRESH_GROUP_INTERVAL).toMillis();
     this.maxPlanningParallelism =
@@ -512,10 +515,19 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     private void retryTask(TaskRuntime<?> task, OptimizingQueue queue) {
-      LOG.info(
-          "Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
-          task.getTaskId(),
-          task.getResourceDesc());
+      if (task.getStatus() == TaskRuntime.Status.ACKED
+          && task.getStartTime() + taskExecuteTimeout < System.currentTimeMillis()) {
+        LOG.warn(
+            "Task {} is suspending at ACK status (start time: {}), put it to retry queue, optimizer {}",
+            task.getTaskId(),
+            task.getStartTime(),
+            task.getResourceDesc());
+      } else {
+        LOG.info(
+            "Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
+            task.getTaskId(),
+            task.getResourceDesc());
+      }
       // optimizing task of suspending optimizer would not be counted for retrying
       try {
         queue.retryTask(task);
@@ -533,7 +545,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   && !activeTokens.contains(task.getToken())
                   && task.getStatus() != TaskRuntime.Status.SUCCESS
               || task.getStatus() == TaskRuntime.Status.SCHEDULED
-                  && task.getStartTime() + taskAckTimeout < System.currentTimeMillis();
+                  && task.getStartTime() + taskAckTimeout < System.currentTimeMillis()
+              || task.getStatus() == TaskRuntime.Status.ACKED
+                  && task.getStartTime() + taskExecuteTimeout < System.currentTimeMillis();
     }
   }
 
