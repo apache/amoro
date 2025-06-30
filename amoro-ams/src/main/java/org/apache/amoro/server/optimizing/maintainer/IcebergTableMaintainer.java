@@ -1028,6 +1028,11 @@ public class IcebergTableMaintainer implements TableMaintainer {
                 .apply(expireValue);
         Comparable<Object> filePartitionValue =
             contentFile.partition().get(pos, partitionUpperBound.getClass());
+        // if the partition value is null, can not determine if it can be expired
+        if (filePartitionValue == null) {
+          return false;
+        }
+
         int compared = filePartitionValue.compareTo(partitionUpperBound);
         Boolean compareResult =
             expireField.type() == Types.StringType.get() ? compared <= 0 : compared < 0;
