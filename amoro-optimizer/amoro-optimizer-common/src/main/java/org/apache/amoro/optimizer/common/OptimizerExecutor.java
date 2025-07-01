@@ -132,15 +132,16 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
             return null;
           });
       LOG.info(
-          "Optimizer executor[{}] completed task[{}] to ams, taskResult: {}",
+          "Optimizer executor[{}] completed task[{}](status: {}) to ams",
           threadId,
           optimizingTaskResult.getTaskId(),
           optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL");
     } catch (TException exception) {
       LOG.error(
-          "Optimizer executor[{}] completed task[{}] failed",
+          "Optimizer executor[{}] completed task[{}](status: {}) failed",
           threadId,
           optimizingTaskResult.getTaskId(),
+          optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL",
           exception);
     }
   }

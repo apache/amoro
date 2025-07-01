@@ -241,7 +241,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
     LOG.info(
-        "Optimizer {} (threadId {}) complete task {}, result: {}",
+        "Optimizer {} (threadId {}) complete task {} (status: {})",
         authToken,
         taskResult.getThreadId(),
         taskResult.getTaskId(),
