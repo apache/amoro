@@ -19,6 +19,7 @@
 package org.apache.amoro.server.scheduler;
 
 import org.apache.amoro.Action;
+import org.apache.amoro.SupportsProcessPlugins;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.AmoroProcess;
 import org.apache.amoro.process.ManagedProcess;
@@ -32,10 +33,11 @@ import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceManager;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.ProcessStateMapper;
-import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
 import java.util.List;
+import java.util.Optional;
 
 public abstract class PeriodicExternalScheduler extends PeriodicTableScheduler {
 
@@ -56,21 +58,31 @@ public abstract class PeriodicExternalScheduler extends PeriodicTableScheduler {
   }
 
   @Override
-  protected void initHandler(List<DefaultTableRuntime> tableRuntimeList) {
-    tableRuntimeList.forEach(tableRuntime -> tableRuntime.install(getAction(), processFactory));
+  protected void initHandler(List<TableRuntime> tableRuntimeList) {
+    tableRuntimeList.stream()
+        .filter(t -> t instanceof SupportsProcessPlugins)
+        .map(t -> (SupportsProcessPlugins) t)
+        .forEach(tableRuntime -> tableRuntime.install(getAction(), processFactory));
     super.initHandler(tableRuntimeList);
   }
 
   @Override
-  protected boolean enabled(DefaultTableRuntime tableRuntime) {
-    return tableRuntime.enabled(getAction());
+  protected boolean enabled(TableRuntime tableRuntime) {
+    return Optional.of(tableRuntime)
+        .filter(t -> t instanceof SupportsProcessPlugins)
+        .map(t -> (SupportsProcessPlugins) t)
+        .map(t -> t.enabled(getAction()))
+        .orElse(false);
   }
 
   @Override
-  protected void execute(DefaultTableRuntime tableRuntime) {
+  protected void execute(TableRuntime tableRuntime) {
+    Preconditions.checkArgument(tableRuntime instanceof SupportsProcessPlugins);
+    SupportsProcessPlugins runtimeSupportProcessPlugin = (SupportsProcessPlugins) tableRuntime;
     // Trigger a table process and check conflicts by table runtime
     // Update process state after process completed, the callback must be register first
-    AmoroProcess<? extends TableProcessState> process = tableRuntime.trigger(getAction());
+    AmoroProcess<? extends TableProcessState> process =
+        runtimeSupportProcessPlugin.trigger(getAction());
     process.getCompleteFuture().whenCompleted(() -> persistTableProcess(process));
     ManagedProcess<? extends TableProcessState> managedProcess = new ManagedTableProcess<>(process);
 

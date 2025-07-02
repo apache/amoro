@@ -24,6 +24,7 @@ import static org.apache.amoro.utils.MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE
 import org.apache.amoro.IcebergFileEntry;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.DataExpirationConfig;
+import org.apache.amoro.config.TagConfiguration;
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.server.table.DefaultTableRuntime;
@@ -117,10 +118,8 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireData(DefaultTableRuntime tableRuntime) {
+  public void expireData(DataExpirationConfig expirationConfig) {
     try {
-      DataExpirationConfig expirationConfig =
-          tableRuntime.getTableConfiguration().getExpiringDataConfig();
       Types.NestedField field =
           mixedTable.schema().findField(expirationConfig.getExpirationField());
       if (!TableConfigurations.isValidDataExpirationField(
@@ -130,7 +129,7 @@ public class MixedTableMaintainer implements TableMaintainer {
 
       expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
-      LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
+      LOG.error("Unexpected purge error for table {} ", mixedTable.id(), t);
     }
   }
 
@@ -243,7 +242,7 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void autoCreateTags(DefaultTableRuntime tableRuntime) {
+  public void autoCreateTags(TagConfiguration tagConfiguration) {
     throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
   }
 
@@ -285,7 +284,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     private final UnkeyedTable unkeyedTable;
 
     public ChangeTableMaintainer(UnkeyedTable unkeyedTable) {
-      super(unkeyedTable);
+      super(unkeyedTable, mixedTable.id());
       this.unkeyedTable = unkeyedTable;
     }
 
@@ -441,7 +440,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     private final Set<String> hiveFiles = Sets.newHashSet();
 
     public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
-      super(unkeyedTable);
+      super(unkeyedTable, mixedTable.id());
       if (unkeyedTable.format() == TableFormat.MIXED_HIVE) {
         hiveFiles.addAll(HiveLocationUtil.getHiveLocation(mixedTable));
       }

@@ -21,6 +21,7 @@ package org.apache.amoro.server.table;
 import org.apache.amoro.CommonUnifiedCatalog;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.UnifiedCatalog;
 import org.apache.amoro.api.CatalogMeta;
@@ -300,7 +301,7 @@ public class AMSTableTestBase extends AMSServiceTestBase {
         tableTestHelper().primaryKeySpec().primaryKeyExisted(), mixedTable.isKeyedTable());
   }
 
-  protected void validateTableRuntime(DefaultTableRuntime tableRuntime) {
+  protected void validateTableRuntime(TableRuntime tableRuntime) {
     Assert.assertEquals(serverTableIdentifier(), tableRuntime.getTableIdentifier());
   }
 }

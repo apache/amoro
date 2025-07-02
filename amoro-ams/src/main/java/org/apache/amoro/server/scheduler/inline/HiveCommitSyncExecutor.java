@@ -19,11 +19,11 @@
 package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
 import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
-import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.table.MixedTable;
 import org.slf4j.Logger;
@@ -40,17 +40,17 @@ public class HiveCommitSyncExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+  protected long getNextExecutingTime(TableRuntime tableRuntime) {
     return INTERVAL;
   }
 
   @Override
-  protected boolean enabled(DefaultTableRuntime tableRuntime) {
+  protected boolean enabled(TableRuntime tableRuntime) {
     return true;
   }
 
   @Override
-  protected void execute(DefaultTableRuntime tableRuntime) {
+  protected void execute(TableRuntime tableRuntime) {
     long startTime = System.currentTimeMillis();
     ServerTableIdentifier tableIdentifier = tableRuntime.getTableIdentifier();
     try {

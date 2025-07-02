@@ -20,6 +20,9 @@ package org.apache.amoro.server.optimizing.maintainer;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.config.DataExpirationConfig;
+import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.config.TagConfiguration;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.Table;
@@ -37,7 +40,7 @@ public interface TableMaintainer {
   void cleanOrphanFiles(DefaultTableRuntime tableRuntime);
 
   /** Clean table dangling delete files. */
-  default void cleanDanglingDeleteFiles(DefaultTableRuntime tableRuntime) {
+  default void cleanDanglingDeleteFiles(TableConfiguration tableConfiguration) {
     // DO nothing by default
   }
 
@@ -51,19 +54,19 @@ public interface TableMaintainer {
    * Expire historical data based on the expiration field, and data that exceeds the retention
    * period will be purged
    *
-   * @param tableRuntime TableRuntime
+   * @param expirationConfig expirationConfig
    */
-  void expireData(DefaultTableRuntime tableRuntime);
+  void expireData(DataExpirationConfig expirationConfig);
 
   /** Auto create tags for table. */
-  void autoCreateTags(DefaultTableRuntime tableRuntime);
+  void autoCreateTags(TagConfiguration tagConfiguration);
 
   static TableMaintainer ofTable(AmoroTable<?> amoroTable) {
     TableFormat format = amoroTable.format();
     if (format.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)) {
       return new MixedTableMaintainer((MixedTable) amoroTable.originalTable());
     } else if (TableFormat.ICEBERG.equals(format)) {
-      return new IcebergTableMaintainer((Table) amoroTable.originalTable());
+      return new IcebergTableMaintainer((Table) amoroTable.originalTable(), amoroTable.id());
     } else {
       throw new RuntimeException("Unsupported table type" + amoroTable.originalTable().getClass());
     }
