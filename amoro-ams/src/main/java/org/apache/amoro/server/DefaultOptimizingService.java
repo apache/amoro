@@ -285,7 +285,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       return false;
     }
     long tableId = processMeta.getTableId();
-    DefaultTableRuntime tableRuntime = tableService.getRuntime(tableId);
+    DefaultTableRuntime tableRuntime = (DefaultTableRuntime) tableService.getRuntime(tableId);
     if (tableRuntime == null) {
       return false;
     }

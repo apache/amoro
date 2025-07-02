@@ -21,11 +21,11 @@ package org.apache.amoro.server;
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.InternalCatalog;
-import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -121,13 +121,13 @@ public abstract class RestCatalogServiceTestBase {
     return internalCatalog.loadTableMetadata(identifier.getDatabase(), identifier.getTableName());
   }
 
-  protected DefaultTableRuntime getTableRuntime(TableIdentifier identifier) {
+  protected TableRuntime getTableRuntime(TableIdentifier identifier) {
     ServerTableIdentifier serverTableIdentifier = getServerTableIdentifier(identifier);
     return tableService.getRuntime(serverTableIdentifier.getId());
   }
 
   protected void assertTableRuntime(TableIdentifier identifier, TableFormat format) {
-    DefaultTableRuntime runtime = getTableRuntime(identifier);
+    TableRuntime runtime = getTableRuntime(identifier);
     Assertions.assertNotNull(runtime, "table runtime is not exists after created");
     Assertions.assertEquals(format, runtime.getFormat());
   }
