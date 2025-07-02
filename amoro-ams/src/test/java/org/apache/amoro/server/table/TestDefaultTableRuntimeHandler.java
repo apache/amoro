@@ -99,8 +99,7 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
     MixedTable mixedTable = (MixedTable) tableService().loadTable(createTableId).originalTable();
 
     mixedTable.updateProperties().set(TableProperties.ENABLE_ORPHAN_CLEAN, "true").commit();
-    tableService()
-        .getRuntime(createTableId.getId())
+    getDefaultTableRuntime(createTableId.getId())
         .getOptimizingState()
         .refresh(tableService.loadTable(serverTableIdentifier()));
     Assert.assertEquals(1, handler.getConfigChangedTables().size());
