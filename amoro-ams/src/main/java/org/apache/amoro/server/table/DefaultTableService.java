@@ -69,7 +69,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
   private final long externalCatalogRefreshingInterval;
 
-  private final Map<Long, DefaultTableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
+  private final Map<Long, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
 
   private final ScheduledExecutorService tableExplorerScheduler =
       Executors.newSingleThreadScheduledExecutor(
@@ -148,7 +148,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
     List<TableRuntimeMeta> tableRuntimeMetaList =
         getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
-    List<DefaultTableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
+    List<TableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
     tableRuntimeMetaList.forEach(
         tableRuntimeMeta -> {
           DefaultTableRuntime tableRuntime = new DefaultTableRuntime(tableRuntimeMeta, this);
@@ -251,7 +251,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
         catalogManager.listCatalogMetas().stream()
             .map(CatalogMeta::getCatalogName)
             .collect(Collectors.toSet());
-    for (DefaultTableRuntime tableRuntime : tableRuntimeMap.values()) {
+    for (TableRuntime tableRuntime : tableRuntimeMap.values()) {
       if (!catalogNames.contains(tableRuntime.getTableIdentifier().getCatalog())) {
         disposeTable(tableRuntime.getTableIdentifier());
       }
@@ -466,7 +466,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   @VisibleForTesting
   public void disposeTable(ServerTableIdentifier tableIdentifier) {
-    DefaultTableRuntime existedTableRuntime = tableRuntimeMap.get(tableIdentifier.getId());
+    TableRuntime existedTableRuntime = tableRuntimeMap.get(tableIdentifier.getId());
     try {
       doAsTransaction(
           () ->

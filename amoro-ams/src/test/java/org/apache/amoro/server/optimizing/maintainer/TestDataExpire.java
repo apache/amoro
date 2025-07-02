@@ -394,7 +394,8 @@ public class TestDataExpire extends ExecutorTestBase {
 
     if (getTestFormat().equals(TableFormat.ICEBERG)) {
       Table table = getMixedTable().asUnkeyedTable();
-      IcebergTableMaintainer icebergTableMaintainer = new IcebergTableMaintainer(table);
+      IcebergTableMaintainer icebergTableMaintainer =
+          new IcebergTableMaintainer(table, getMixedTable().id());
       Types.NestedField field = table.schema().findField(config.getExpirationField());
       long lastSnapshotTime = table.currentSnapshot().timestampMillis();
       long lastCommitTime = icebergTableMaintainer.expireBaseOnRule(config, field).toEpochMilli();
@@ -427,7 +428,8 @@ public class TestDataExpire extends ExecutorTestBase {
   protected void getMaintainerAndExpire(DataExpirationConfig config, String datetime) {
     if (getTestFormat().equals(TableFormat.ICEBERG)) {
       Table table = getMixedTable().asUnkeyedTable();
-      IcebergTableMaintainer icebergTableMaintainer = new IcebergTableMaintainer(table);
+      IcebergTableMaintainer icebergTableMaintainer =
+          new IcebergTableMaintainer(table, getMixedTable().id());
       Types.NestedField field = table.schema().findField(config.getExpirationField());
       icebergTableMaintainer.expireDataFrom(
           config,
