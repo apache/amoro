@@ -387,10 +387,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
     private Collection<? extends SplitTask> genSplitTasks(List<FileTask> allDataFiles) {
       List<List<FileTask>> packed =
-          new BinPacking.ListPacker<FileTask>(
-                  config.getMaxTaskSize(),
-                  Integer.MAX_VALUE,
-                  false)
+          new BinPacking.ListPacker<FileTask>(config.getMaxTaskSize(), Integer.MAX_VALUE, false)
               .pack(allDataFiles, f -> f.getFile().fileSizeInBytes());
 
       List<SplitTask> results = Lists.newArrayListWithCapacity(packed.size());
