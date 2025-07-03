@@ -18,11 +18,11 @@
 
 package org.apache.amoro.table;
 
-import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
-import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
+import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
 
 /** Reserved mixed-format table properties list. */
 public class TableProperties {
@@ -80,7 +80,7 @@ public class TableProperties {
   public static final int SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT = 5;
 
   public static final String SELF_OPTIMIZING_TARGET_SIZE = "self-optimizing.target-size";
-  public static final long SELF_OPTIMIZING_TARGET_SIZE_DEFAULT = 134217728; // 128 MB
+  public static final long SELF_OPTIMIZING_TARGET_SIZE_DEFAULT = Long.MAX_VALUE;
 
   public static final String SELF_OPTIMIZING_MAX_FILE_CNT = "self-optimizing.max-file-count";
   public static final int SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT = 10000;
