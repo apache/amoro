@@ -86,26 +86,21 @@ data:
         timeout: 1min # 60000
 
       # optional features
-      expire-snapshots:
-        enabled: true
+      clean-table-data:
+        clean-orphan-files:
+          enabled: true
+        clean-dangling-delete-files:
+          enabled: true
+        data-expiration:
+          enabled: true
+        expire-snapshots:
+          enabled: true
         thread-count: 10
-
-      clean-orphan-files:
-        enabled: true
-        thread-count: 10
-
-      clean-dangling-delete-files:
-        enabled: true
-        thread-count: 10
-
+        interval: 4h
+    
       sync-hive-tables:
         enabled: false
         thread-count: 10
-
-      data-expiration:
-        enabled: true
-        thread-count: 10
-        interval: 1d
       
       auto-create-tags:
         enabled: true

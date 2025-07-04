@@ -21,43 +21,41 @@ package org.apache.amoro.server.scheduler.inline;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.table.TableService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class InlineTableExecutors {
 
   private static final InlineTableExecutors instance = new InlineTableExecutors();
-  private SnapshotsExpiringExecutor snapshotsExpiringExecutor;
+  private static final Logger LOG = LoggerFactory.getLogger(InlineTableExecutors.class);
+  private TableDataCleaningExecutor tableDataCleaningExecutor;
   private TableRuntimeRefreshExecutor tableRefreshingExecutor;
-  private OrphanFilesCleaningExecutor orphanFilesCleaningExecutor;
-  private DanglingDeleteFilesCleaningExecutor danglingDeleteFilesCleaningExecutor;
   private BlockerExpiringExecutor blockerExpiringExecutor;
   private OptimizingCommitExecutor optimizingCommitExecutor;
   private OptimizingExpiringExecutor optimizingExpiringExecutor;
   private HiveCommitSyncExecutor hiveCommitSyncExecutor;
   private TagsAutoCreatingExecutor tagsAutoCreatingExecutor;
-  private DataExpiringExecutor dataExpiringExecutor;
 
   public static InlineTableExecutors getInstance() {
     return instance;
   }
 
   public void setup(TableService tableService, Configurations conf) {
-    if (conf.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
-      this.snapshotsExpiringExecutor =
-          new SnapshotsExpiringExecutor(
-              tableService, conf.getInteger(AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT));
-    }
-    if (conf.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
-      this.orphanFilesCleaningExecutor =
-          new OrphanFilesCleaningExecutor(
+    if (conf.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED)
+        || conf.getBoolean(AmoroManagementConf.DATA_EXPIRATION_ENABLED)
+        || conf.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)
+        || conf.getBoolean(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_ENABLED)) {
+      LOG.info(
+          "Clean Orphan Files Enabled: {}, Clean Dangling Delete Files Enabled: {}, Data Expiration Enabled: {}, Snapshot Expiration Enabled: {}",
+          conf.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED),
+          conf.getBoolean(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_ENABLED),
+          conf.getBoolean(AmoroManagementConf.DATA_EXPIRATION_ENABLED),
+          conf.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED));
+      this.tableDataCleaningExecutor =
+          new TableDataCleaningExecutor(
               tableService,
-              conf.getInteger(AmoroManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT),
-              conf.get(AmoroManagementConf.CLEAN_ORPHAN_FILES_INTERVAL));
-    }
-    if (conf.getBoolean(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_ENABLED)) {
-      this.danglingDeleteFilesCleaningExecutor =
-          new DanglingDeleteFilesCleaningExecutor(
-              tableService,
-              conf.getInteger(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT));
+              conf.getInteger(AmoroManagementConf.CLEAN_TABLE_DATA_THREAD_COUNT),
+              conf.get(AmoroManagementConf.CLEAN_TABLE_DATA_INTERVAL));
     }
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
@@ -86,29 +84,14 @@ public class InlineTableExecutors {
               conf.getInteger(AmoroManagementConf.AUTO_CREATE_TAGS_THREAD_COUNT),
               conf.get(AmoroManagementConf.AUTO_CREATE_TAGS_INTERVAL).toMillis());
     }
-    if (conf.getBoolean(AmoroManagementConf.DATA_EXPIRATION_ENABLED)) {
-      this.dataExpiringExecutor =
-          new DataExpiringExecutor(
-              tableService,
-              conf.getInteger(AmoroManagementConf.DATA_EXPIRATION_THREAD_COUNT),
-              conf.get(AmoroManagementConf.DATA_EXPIRATION_INTERVAL));
-    }
   }
 
-  public SnapshotsExpiringExecutor getSnapshotsExpiringExecutor() {
-    return snapshotsExpiringExecutor;
+  public TableDataCleaningExecutor getTableDataCleaningExecutor() {
+    return tableDataCleaningExecutor;
   }
 
   public TableRuntimeRefreshExecutor getTableRefreshingExecutor() {
     return tableRefreshingExecutor;
-  }
-
-  public OrphanFilesCleaningExecutor getOrphanFilesCleaningExecutor() {
-    return orphanFilesCleaningExecutor;
-  }
-
-  public DanglingDeleteFilesCleaningExecutor getDanglingDeleteFilesCleaningExecutor() {
-    return danglingDeleteFilesCleaningExecutor;
   }
 
   public BlockerExpiringExecutor getBlockerExpiringExecutor() {
@@ -129,9 +112,5 @@ public class InlineTableExecutors {
 
   public TagsAutoCreatingExecutor getTagsAutoCreatingExecutor() {
     return tagsAutoCreatingExecutor;
-  }
-
-  public DataExpiringExecutor getDataExpiringExecutor() {
-    return dataExpiringExecutor;
   }
 }

@@ -86,7 +86,7 @@ public class JacksonUtilTest {
     Map<String, Object> expireSnapshots = new HashMap<>();
     expireSnapshots.put("enabled", true);
     expireSnapshots.put("thread-count", 10);
-    yamlMap.put("expire-snapshots", expireSnapshots);
+    yamlMap.put("clean-table-data.expire-snapshots", expireSnapshots);
 
     List<Map<String, Object>> containersList = new ArrayList<>();
     Map<String, Object> localContainer = new HashMap<>();
@@ -112,7 +112,7 @@ public class JacksonUtilTest {
 
     JsonNode yamlNode = JacksonUtil.fromObjects(yamlMap);
 
-    JsonNode expiredSnapshots = yamlNode.get("expire-snapshots");
+    JsonNode expiredSnapshots = yamlNode.get("clean-table-data.expire-snapshots");
     assertTrue(JacksonUtil.getBoolean(expiredSnapshots, "enabled"));
     Integer expectedThreadCount = 10;
     assertEquals(expectedThreadCount, JacksonUtil.getInteger(expiredSnapshots, "thread-count"));

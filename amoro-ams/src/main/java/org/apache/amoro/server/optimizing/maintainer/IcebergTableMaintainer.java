@@ -131,6 +131,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
         tableRuntime.getOptimizingState().getOrphanFilesCleaningMetrics();
 
     if (!tableConfiguration.isCleanOrphanEnabled()) {
+      LOG.debug(
+          "Table {} does not enable orphan files clean, so skip cleaning orphan files",
+          table.name());
       return;
     }
 
@@ -139,33 +142,34 @@ public class IcebergTableMaintainer implements TableMaintainer {
     cleanContentFiles(System.currentTimeMillis() - keepTime, orphanFilesCleaningMetrics);
 
     // refresh
-    table.refresh();
+    refreshTable();
 
     // clear metadata files
     cleanMetadata(System.currentTimeMillis() - keepTime, orphanFilesCleaningMetrics);
   }
 
   @Override
-  public void cleanDanglingDeleteFiles(DefaultTableRuntime tableRuntime) {
+  public boolean cleanDanglingDeleteFiles(DefaultTableRuntime tableRuntime) {
     TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
 
     if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
-      return;
+      return false;
     }
 
     Snapshot currentSnapshot = table.currentSnapshot();
     if (currentSnapshot == null) {
-      return;
+      return false;
     }
     Optional<String> totalDeleteFiles =
         Optional.ofNullable(currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
     if (totalDeleteFiles.isPresent() && Long.parseLong(totalDeleteFiles.get()) > 0) {
       // clear dangling delete files
-      cleanDanglingDeleteFiles();
+      return cleanDanglingDeleteFiles();
     } else {
       LOG.debug(
           "There are no delete files here, so there is no need to clean dangling delete file for table {}",
           table.name());
+      return false;
     }
   }
 
@@ -247,19 +251,21 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireData(DefaultTableRuntime tableRuntime) {
+  public boolean expireData(DefaultTableRuntime tableRuntime) {
     try {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
       Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
       if (!TableConfigurations.isValidDataExpirationField(expirationConfig, field, table.name())) {
-        return;
+        return false;
       }
 
-      expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
+      return expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
+
+    return false;
   }
 
   protected Instant expireBaseOnRule(
@@ -290,9 +296,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
    *     zone
    */
   @VisibleForTesting
-  public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+  public boolean expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
     if (instant.equals(Instant.MIN)) {
-      return;
+      return false;
     }
 
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
@@ -307,7 +313,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     Expression dataFilter = getDataExpression(table.schema(), expirationConfig, expireTimestamp);
 
     ExpireFiles expiredFiles = expiredFileScan(expirationConfig, dataFilter, expireTimestamp);
-    expireFiles(expiredFiles, expireTimestamp);
+    return expireFiles(expiredFiles, expireTimestamp);
   }
 
   @Override
@@ -315,6 +321,11 @@ public class IcebergTableMaintainer implements TableMaintainer {
     new AutoCreateIcebergTagAction(
             table, tableRuntime.getTableConfiguration().getTagConfiguration(), LocalDateTime.now())
         .execute();
+  }
+
+  @Override
+  public void refreshTable() {
+    table.refresh();
   }
 
   protected void cleanContentFiles(
@@ -339,7 +350,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     clearInternalTableMetadata(lastTime, orphanFilesCleaningMetrics);
   }
 
-  protected void cleanDanglingDeleteFiles() {
+  protected boolean cleanDanglingDeleteFiles() {
     LOG.info("Starting cleaning dangling delete files for table {}", table.name());
     int danglingDeleteFilesCnt = clearInternalTableDanglingDeleteFiles();
     runWithCondition(
@@ -349,6 +360,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
                 "Deleted {} dangling delete files for table {}",
                 danglingDeleteFilesCnt,
                 table.name()));
+    return danglingDeleteFilesCnt > 0;
   }
 
   protected long mustOlderThan(DefaultTableRuntime tableRuntime, long now) {
@@ -809,12 +821,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
     }
   }
 
-  void expireFiles(ExpireFiles expiredFiles, long expireTimestamp) {
+  boolean expireFiles(ExpireFiles expiredFiles, long expireTimestamp) {
     long snapshotId = IcebergTableUtil.getSnapshotId(table, false);
     Queue<DataFile> dataFiles = expiredFiles.dataFiles;
     Queue<DeleteFile> deleteFiles = expiredFiles.deleteFiles;
     if (dataFiles.isEmpty() && deleteFiles.isEmpty()) {
-      return;
+      return false;
     }
     // expire data files
     DeleteFiles delete = table.newDelete();
@@ -847,6 +859,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
         deleteFiles.size(),
         deleteFiles.stream().map(ContentFile::path).collect(Collectors.joining(",")),
         table.name());
+
+    return true;
   }
 
   public static class ExpireFiles {

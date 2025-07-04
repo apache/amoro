@@ -102,46 +102,40 @@ public class AmoroManagementConf {
           .withDescription("The queue size of the executors of the external catalog explorer.");
 
   public static final ConfigOption<Boolean> EXPIRE_SNAPSHOTS_ENABLED =
-      ConfigOptions.key("expire-snapshots.enabled")
+      ConfigOptions.key("clean-table-data.expire-snapshots.enabled")
           .booleanType()
           .defaultValue(true)
           .withDescription("Enable snapshots expiring.");
 
-  public static final ConfigOption<Integer> EXPIRE_SNAPSHOTS_THREAD_COUNT =
-      ConfigOptions.key("expire-snapshots.thread-count")
+  public static final ConfigOption<Integer> CLEAN_TABLE_DATA_THREAD_COUNT =
+      ConfigOptions.key("clean-table-data.thread-count")
           .intType()
           .defaultValue(10)
-          .withDescription("The number of threads used for snapshots expiring.");
+          .withDescription("The number of threads used for cleaning table data.");
+
+  public static final ConfigOption<Duration> CLEAN_TABLE_DATA_INTERVAL =
+      ConfigOptions.key("clean-table-data.interval")
+          .durationType()
+          .defaultValue(Duration.ofHours(4))
+          .withDescription("Execute interval for cleaning table data");
 
   public static final ConfigOption<Boolean> CLEAN_ORPHAN_FILES_ENABLED =
-      ConfigOptions.key("clean-orphan-files.enabled")
+      ConfigOptions.key("clean-table-data.clean-orphan-files.enabled")
           .booleanType()
           .defaultValue(true)
           .withDescription("Enable orphan files cleaning.");
 
-  public static final ConfigOption<Integer> CLEAN_ORPHAN_FILES_THREAD_COUNT =
-      ConfigOptions.key("clean-orphan-files.thread-count")
-          .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used for orphan files cleaning.");
-
-  public static final ConfigOption<Duration> CLEAN_ORPHAN_FILES_INTERVAL =
-      ConfigOptions.key("clean-orphan-files.interval")
-          .durationType()
-          .defaultValue(Duration.ofDays(1))
-          .withDescription("Interval for cleaning orphan files.");
-
   public static final ConfigOption<Boolean> CLEAN_DANGLING_DELETE_FILES_ENABLED =
-      ConfigOptions.key("clean-dangling-delete-files.enabled")
+      ConfigOptions.key("clean-table-data.clean-dangling-delete-files.enabled")
           .booleanType()
           .defaultValue(true)
           .withDescription("Enable dangling delete files cleaning.");
 
-  public static final ConfigOption<Integer> CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT =
-      ConfigOptions.key("clean-dangling-delete-files.thread-count")
-          .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used for dangling delete files cleaning.");
+  public static final ConfigOption<Boolean> DATA_EXPIRATION_ENABLED =
+      ConfigOptions.key("clean-table-data.data-expiration.enabled")
+          .booleanType()
+          .defaultValue(true)
+          .withDescription("Enable data expiration");
 
   public static final ConfigOption<Boolean> SYNC_HIVE_TABLES_ENABLED =
       ConfigOptions.key("sync-hive-tables.enabled")
@@ -441,24 +435,6 @@ public class AmoroManagementConf {
           .defaultValue("")
           .withDescription(
               "Comma-separated list of sensitive conf keys used to desensitize related value.");
-
-  /** configs of data expiration */
-  public static final ConfigOption<Boolean> DATA_EXPIRATION_ENABLED =
-      ConfigOptions.key("data-expiration.enabled")
-          .booleanType()
-          .defaultValue(true)
-          .withDescription("Enable data expiration");
-
-  public static final ConfigOption<Integer> DATA_EXPIRATION_THREAD_COUNT =
-      ConfigOptions.key("data-expiration.thread-count")
-          .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used for data expiring");
-  public static final ConfigOption<Duration> DATA_EXPIRATION_INTERVAL =
-      ConfigOptions.key("data-expiration.interval")
-          .durationType()
-          .defaultValue(Duration.ofDays(1))
-          .withDescription("Execute interval for data expiration");
 
   public static final String SYSTEM_CONFIG = "ams";
 

@@ -167,10 +167,7 @@ public class AmoroServiceContainer {
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
     addHandlerChain(optimizingService.getTableRuntimeHandler());
-    addHandlerChain(InlineTableExecutors.getInstance().getDataExpiringExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getSnapshotsExpiringExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getDanglingDeleteFilesCleaningExecutor());
+    addHandlerChain(InlineTableExecutors.getInstance().getTableDataCleaningExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getOptimizingCommitExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getOptimizingExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getBlockerExpiringExecutor());

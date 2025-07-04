@@ -117,7 +117,7 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireData(DefaultTableRuntime tableRuntime) {
+  public boolean expireData(DefaultTableRuntime tableRuntime) {
     try {
       DataExpirationConfig expirationConfig =
           tableRuntime.getTableConfiguration().getExpiringDataConfig();
@@ -125,13 +125,15 @@ public class MixedTableMaintainer implements TableMaintainer {
           mixedTable.schema().findField(expirationConfig.getExpirationField());
       if (!TableConfigurations.isValidDataExpirationField(
           expirationConfig, field, mixedTable.name())) {
-        return;
+        return false;
       }
 
-      expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig, field));
+      return expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
     }
+
+    return false;
   }
 
   protected Instant expireMixedBaseOnRule(
@@ -149,9 +151,9 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @VisibleForTesting
-  public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+  public boolean expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
     if (instant.equals(Instant.MIN)) {
-      return;
+      return false;
     }
 
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
@@ -170,7 +172,8 @@ public class MixedTableMaintainer implements TableMaintainer {
     Pair<IcebergTableMaintainer.ExpireFiles, IcebergTableMaintainer.ExpireFiles> mixedExpiredFiles =
         mixedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp);
 
-    expireMixedFiles(mixedExpiredFiles.getLeft(), mixedExpiredFiles.getRight(), expireTimestamp);
+    return expireMixedFiles(
+        mixedExpiredFiles.getLeft(), mixedExpiredFiles.getRight(), expireTimestamp);
   }
 
   private Pair<IcebergTableMaintainer.ExpireFiles, IcebergTableMaintainer.ExpireFiles>
@@ -233,18 +236,33 @@ public class MixedTableMaintainer implements TableMaintainer {
     return Pair.of(changeExpiredFiles, baseExpiredFiles);
   }
 
-  private void expireMixedFiles(
+  private boolean expireMixedFiles(
       IcebergTableMaintainer.ExpireFiles changeFiles,
       IcebergTableMaintainer.ExpireFiles baseFiles,
       long expireTimestamp) {
-    Optional.ofNullable(changeMaintainer)
-        .ifPresent(c -> c.expireFiles(changeFiles, expireTimestamp));
-    Optional.ofNullable(baseMaintainer).ifPresent(c -> c.expireFiles(baseFiles, expireTimestamp));
+    boolean changeResult =
+        Optional.ofNullable(changeMaintainer)
+            .map(c -> c.expireFiles(changeFiles, expireTimestamp))
+            .orElse(false);
+    boolean baseResult =
+        Optional.ofNullable(baseMaintainer)
+            .map(c -> c.expireFiles(baseFiles, expireTimestamp))
+            .orElse(false);
+
+    return changeResult || baseResult;
   }
 
   @Override
   public void autoCreateTags(DefaultTableRuntime tableRuntime) {
     throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
+  }
+
+  @Override
+  public void refreshTable() {
+    if (changeMaintainer != null) {
+      changeMaintainer.refreshTable();
+    }
+    baseMaintainer.refreshTable();
   }
 
   protected void cleanContentFiles(
@@ -263,11 +281,11 @@ public class MixedTableMaintainer implements TableMaintainer {
     baseMaintainer.cleanMetadata(lastTime, orphanFilesCleaningMetrics);
   }
 
-  protected void cleanDanglingDeleteFiles() {
+  protected boolean cleanDanglingDeleteFiles() {
     if (changeMaintainer != null) {
       changeMaintainer.cleanDanglingDeleteFiles();
     }
-    baseMaintainer.cleanDanglingDeleteFiles();
+    return baseMaintainer.cleanDanglingDeleteFiles();
   }
 
   public ChangeTableMaintainer getChangeMaintainer() {
@@ -299,6 +317,9 @@ public class MixedTableMaintainer implements TableMaintainer {
     @Override
     public void expireSnapshots(DefaultTableRuntime tableRuntime) {
       if (!expireSnapshotEnabled(tableRuntime)) {
+        LOG.debug(
+            "Table {} does not enable expire snapshots clean, so skip cleaning expire snapshots",
+            table.name());
         return;
       }
       long now = System.currentTimeMillis();
