@@ -22,10 +22,10 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableIDWithFormat;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.ExternalCatalog;
@@ -39,7 +39,6 @@ import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
-import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -70,7 +69,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public static final Logger LOG = LoggerFactory.getLogger(DefaultTableService.class);
   private final long externalCatalogRefreshingInterval;
 
-  private final Map<Long, DefaultTableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
+  private final Map<Long, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
 
   private final ScheduledExecutorService tableExplorerScheduler =
       Executors.newSingleThreadScheduledExecutor(
@@ -149,7 +148,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
     List<TableRuntimeMeta> tableRuntimeMetaList =
         getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
-    List<DefaultTableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
+    List<TableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
     tableRuntimeMetaList.forEach(
         tableRuntimeMeta -> {
           DefaultTableRuntime tableRuntime = new DefaultTableRuntime(tableRuntimeMeta, this);
@@ -184,17 +183,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
     initialized.complete(true);
   }
 
-  private DefaultTableRuntime getAndCheckExist(ServerTableIdentifier tableIdentifier) {
-    Preconditions.checkArgument(tableIdentifier != null, "tableIdentifier cannot be null");
-    DefaultTableRuntime tableRuntime = getRuntime(tableIdentifier.getId());
-    if (tableRuntime == null) {
-      throw new ObjectNotExistsException(tableIdentifier);
-    }
-    return tableRuntime;
-  }
-
   @Override
-  public DefaultTableRuntime getRuntime(Long tableId) {
+  public TableRuntime getRuntime(Long tableId) {
     checkStarted();
     return tableRuntimeMap.get(tableId);
   }
@@ -261,7 +251,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
         catalogManager.listCatalogMetas().stream()
             .map(CatalogMeta::getCatalogName)
             .collect(Collectors.toSet());
-    for (DefaultTableRuntime tableRuntime : tableRuntimeMap.values()) {
+    for (TableRuntime tableRuntime : tableRuntimeMap.values()) {
       if (!catalogNames.contains(tableRuntime.getTableIdentifier().getCatalog())) {
         disposeTable(tableRuntime.getTableIdentifier());
       }
@@ -476,7 +466,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   @VisibleForTesting
   public void disposeTable(ServerTableIdentifier tableIdentifier) {
-    DefaultTableRuntime existedTableRuntime = tableRuntimeMap.get(tableIdentifier.getId());
+    TableRuntime existedTableRuntime = tableRuntimeMap.get(tableIdentifier.getId());
     try {
       doAsTransaction(
           () ->

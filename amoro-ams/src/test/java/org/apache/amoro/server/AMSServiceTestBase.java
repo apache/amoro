@@ -22,6 +22,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.DefaultTableService;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -64,6 +65,10 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
 
   protected DefaultTableService tableService() {
     return TABLE_SERVICE;
+  }
+
+  protected DefaultTableRuntime getDefaultTableRuntime(long tableId) {
+    return (DefaultTableRuntime) TABLE_SERVICE.getRuntime(tableId);
   }
 
   protected DefaultOptimizingService optimizingService() {
