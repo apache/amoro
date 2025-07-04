@@ -187,14 +187,10 @@ public abstract class AbstractRewriteFilesExecutor
   }
 
   protected long targetSize() {
-    long totalSize =
-        Arrays.stream(input.rewrittenDataFiles()).mapToLong(DataFile::fileSizeInBytes).sum();
-    return totalSize > TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE_DEFAULT
-        ? PropertyUtil.propertyAsLong(
-            table.properties(),
-            TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
-            TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT)
-        : Long.MAX_VALUE;
+    return PropertyUtil.propertyAsLong(
+        table.properties(),
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
   }
 
   protected StructLike partition() {
