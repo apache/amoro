@@ -50,8 +50,28 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       try {
         OptimizingTask task = pollTask();
         if (task != null && ackTask(task)) {
-          OptimizingTaskResult result = executeTask(task);
-          completeTask(result);
+          OptimizingTaskResult result = null;
+          try {
+            result = executeTask(task);
+          } catch (Throwable t) {
+            LOG.error(
+                "Optimizer executor[{}] handling task[{}] failed and got an unexpected error",
+                threadId,
+                task.getTaskId(),
+                t);
+            result = new OptimizingTaskResult(task.getTaskId(), threadId);
+            result.setErrorMessage(ExceptionUtil.getErrorMessage(t, ERROR_MESSAGE_MAX_LENGTH));
+          } finally {
+            if (result == null) {
+              LOG.error(
+                  "Optimizer executor[{}] handling task[{}] failed and got an unknown error",
+                  threadId,
+                  task.getTaskId());
+              result = new OptimizingTaskResult(task.getTaskId(), threadId);
+              result.setErrorMessage("Unknown error");
+            }
+            completeTask(result);
+          }
         }
       } catch (Throwable t) {
         LOG.error("Optimizer executor[{}] got an unexpected error", threadId, t);
@@ -112,14 +132,16 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
             return null;
           });
       LOG.info(
-          "Optimizer executor[{}] completed task[{}] to ams",
-          threadId,
-          optimizingTaskResult.getTaskId());
-    } catch (TException exception) {
-      LOG.error(
-          "Optimizer executor[{}] completed task[{}] failed",
+          "Optimizer executor[{}] completed task[{}](status: {}) to ams",
           threadId,
           optimizingTaskResult.getTaskId(),
+          optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL");
+    } catch (TException exception) {
+      LOG.error(
+          "Optimizer executor[{}] completed task[{}](status: {}) failed",
+          threadId,
+          optimizingTaskResult.getTaskId(),
+          optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL",
           exception);
     }
   }
