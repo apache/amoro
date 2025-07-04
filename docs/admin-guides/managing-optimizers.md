@@ -304,14 +304,14 @@ You can click the `edit` button on the `Optimizer Groups` page to modify the con
 You can click the `remove` button on the `Optimizer Groups` page to delete the optimizer group, but only if the group is
 not referenced by any catalog or table and no optimizer belonging to this group is running.
 
-## Optimizer Scale-out and Release
+## Optimizer Create and Release
 
-### Scale out optimizer
-You can click the `Scale-Out` button on the `Optimizer Groups` page to scale out the optimizer for the corresponding optimizer
+### Create optimizer
+You can click the `Create Optimizer` button on the `Optimizers` page to create the optimizer for the corresponding optimizer
 group, and then click `OK` to start the optimizer for this optimizer group according to the parallelism configuration.
 If the optimizer runs normally, you will see an optimizer with the status `RUNNING` on the `Optimizers` page.
 
-![optimize-scale-out](../images/admin/optimizer_scale.png)
+![optimize-create](../images/admin/optimizer_create.png)
 
 ### Release optimizer
 
