@@ -22,7 +22,6 @@ import io.javalin.http.Context;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.resource.ResourceType;
-import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.InternalContainers;
@@ -39,11 +38,7 @@ public class OptimizerController {
 
   private final OptimizerManager optimizerManager;
 
-  private final DefaultOptimizingService optimizingService;
-
-  public OptimizerController(
-      DefaultOptimizingService optimizingService, OptimizerManager optimizerManager) {
-    this.optimizingService = optimizingService;
+  public OptimizerController(OptimizerManager optimizerManager) {
     this.optimizerManager = optimizerManager;
   }
 

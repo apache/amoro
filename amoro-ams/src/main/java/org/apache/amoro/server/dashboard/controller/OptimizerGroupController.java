@@ -22,7 +22,6 @@ import io.javalin.http.Context;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.resource.ResourceType;
-import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.dashboard.model.OptimizerInstanceInfo;
 import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;
 import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
@@ -62,10 +61,7 @@ public class OptimizerGroupController {
   private final OptimizerManager optimizerManager;
   private static final Pattern GROUP_NAME_PATTERN = Pattern.compile("^[A-Za-z0-9_-]{1,50}$");
 
-  public OptimizerGroupController(
-      TableManager tableManager,
-      DefaultOptimizingService optimizingService,
-      OptimizerManager optimizerManager) {
+  public OptimizerGroupController(TableManager tableManager, OptimizerManager optimizerManager) {
     this.tableManager = tableManager;
     this.optimizerManager = optimizerManager;
   }
