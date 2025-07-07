@@ -22,7 +22,6 @@ import org.apache.amoro.spark.mixed.MixedSessionCatalogBase;
 import org.apache.amoro.spark.mixed.MixedSparkCatalogBase;
 import org.apache.spark.sql.catalyst.analysis.NoSuchFunctionException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
-import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
 import org.apache.spark.sql.connector.catalog.FunctionCatalog;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
@@ -55,11 +54,5 @@ public class MixedFormatSparkSessionCatalog<
   @Override
   public UnboundFunction loadFunction(Identifier ident) throws NoSuchFunctionException {
     return getSessionCatalog().loadFunction(ident);
-  }
-
-  @Override
-  public boolean dropNamespace(String[] namespace, boolean cascade)
-      throws NoSuchNamespaceException, NonEmptyNamespaceException {
-    return getSessionCatalog().dropNamespace(namespace, cascade);
   }
 }

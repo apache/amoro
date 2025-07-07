@@ -20,9 +20,7 @@ package org.apache.amoro.spark;
 
 import org.apache.amoro.TableFormat;
 import org.apache.spark.sql.catalyst.analysis.NoSuchFunctionException;
-import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
-import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
 import org.apache.spark.sql.connector.catalog.FunctionCatalog;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
@@ -78,25 +76,5 @@ public class SparkUnifiedSessionCatalog<
 
   private static boolean isSystemNamespace(String[] namespace) {
     return namespace.length == 1 && namespace[0].equalsIgnoreCase("system");
-  }
-
-  /**
-   * Drop a namespace from the catalog with cascade mode, recursively dropping all objects within
-   * the namespace if cascade is true.
-   *
-   * <p>If the catalog implementation does not support this operation, it may throw {@link
-   * UnsupportedOperationException}.
-   *
-   * @param namespace a multi-part namespace
-   * @param cascade When true, deletes all objects under the namespace
-   * @return true if the namespace was dropped
-   * @throws NoSuchNamespaceException If the namespace does not exist (optional)
-   * @throws NonEmptyNamespaceException If the namespace is non-empty and cascade is false
-   * @throws UnsupportedOperationException If drop is not a supported operation
-   */
-  @Override
-  public boolean dropNamespace(String[] namespace, boolean cascade)
-      throws NoSuchNamespaceException, NonEmptyNamespaceException {
-    return getSessionCatalog().dropNamespace(namespace, cascade);
   }
 }
