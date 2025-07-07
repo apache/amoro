@@ -686,6 +686,12 @@
             </dependency>
 
             <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.apache.kyuubi</groupId>
                 <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
                 <version>${kyuubi-hive-jdbc-shaded.version}</version>
