@@ -35,7 +35,6 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.controller.CatalogController;
@@ -99,21 +98,17 @@ public class DashboardServer {
       CatalogManager catalogManager,
       TableManager tableManager,
       OptimizerManager optimizerManager,
-      DefaultOptimizingService optimizingService,
       TerminalManager terminalManager) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController();
     this.loginController = new LoginController(serviceConfig);
-    // TODO: remove table service from OptimizerGroupController
-    this.optimizerGroupController =
-        new OptimizerGroupController(tableManager, optimizingService, optimizerManager);
-    this.optimizerController = new OptimizerController(optimizingService, optimizerManager);
+    this.optimizerGroupController = new OptimizerGroupController(tableManager, optimizerManager);
+    this.optimizerController = new OptimizerController(optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
     this.settingController = new SettingController(serviceConfig, optimizerManager);
     ServerTableDescriptor tableDescriptor =
         new ServerTableDescriptor(catalogManager, tableManager, serviceConfig);
-    // TODO: remove table service from TableController
     this.tableController =
         new TableController(catalogManager, tableManager, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
