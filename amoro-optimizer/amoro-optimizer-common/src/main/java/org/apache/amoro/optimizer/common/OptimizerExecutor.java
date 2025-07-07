@@ -47,34 +47,31 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
   public void start() {
     while (isStarted()) {
+      OptimizingTask ackTask = null;
+      OptimizingTaskResult result = null;
       try {
         OptimizingTask task = pollTask();
         if (task != null && ackTask(task)) {
-          OptimizingTaskResult result = null;
-          try {
-            result = executeTask(task);
-          } catch (Throwable t) {
-            LOG.error(
-                "Optimizer executor[{}] handling task[{}] failed and got an unexpected error",
-                threadId,
-                task.getTaskId(),
-                t);
-            result = new OptimizingTaskResult(task.getTaskId(), threadId);
-            result.setErrorMessage(ExceptionUtil.getErrorMessage(t, ERROR_MESSAGE_MAX_LENGTH));
-          } finally {
-            if (result == null) {
-              LOG.error(
-                  "Optimizer executor[{}] handling task[{}] failed and got an unknown error",
-                  threadId,
-                  task.getTaskId());
-              result = new OptimizingTaskResult(task.getTaskId(), threadId);
-              result.setErrorMessage("Unknown error");
-            }
-            completeTask(result);
-          }
+          ackTask = task;
+          result = executeTask(task);
         }
       } catch (Throwable t) {
-        LOG.error("Optimizer executor[{}] got an unexpected error", threadId, t);
+        if (ackTask != null) {
+          LOG.error(
+              "Optimizer executor[{}] handling task[{}] failed and got an unknown error",
+              threadId,
+              ackTask.getTaskId(),
+              t);
+          String errorMessage = ExceptionUtil.getErrorMessage(t, ERROR_MESSAGE_MAX_LENGTH);
+          result = new OptimizingTaskResult(ackTask.getTaskId(), threadId);
+          result.setErrorMessage(errorMessage);
+        } else {
+          LOG.error("Optimizer executor[{}] got an unexpected error", threadId, t);
+        }
+      } finally {
+        if (result != null) {
+          completeTask(result);
+        }
       }
     }
   }
