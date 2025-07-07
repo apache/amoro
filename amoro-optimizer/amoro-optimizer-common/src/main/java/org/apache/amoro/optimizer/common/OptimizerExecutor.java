@@ -133,7 +133,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
           threadId,
           optimizingTaskResult.getTaskId(),
           optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL");
-    } catch (TException exception) {
+    } catch (Exception exception) {
       LOG.error(
           "Optimizer executor[{}] completed task[{}](status: {}) failed",
           threadId,
