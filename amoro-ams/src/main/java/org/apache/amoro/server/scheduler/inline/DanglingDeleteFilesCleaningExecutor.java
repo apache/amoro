@@ -27,6 +27,8 @@ import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /** Clean table dangling delete files */
 public class DanglingDeleteFilesCleaningExecutor extends PeriodicTableScheduler {
 
@@ -41,7 +43,7 @@ public class DanglingDeleteFilesCleaningExecutor extends PeriodicTableScheduler 
 
   @Override
   protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
-    return INTERVAL;
+    return INTERVAL + getExecutorDelay();
   }
 
   @Override
@@ -53,6 +55,11 @@ public class DanglingDeleteFilesCleaningExecutor extends PeriodicTableScheduler 
   public void handleConfigChanged(
       DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
+  }
+
+  @Override
+  protected long getExecutorDelay() {
+    return ThreadLocalRandom.current().nextLong(INTERVAL / 2);
   }
 
   @Override
