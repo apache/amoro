@@ -41,6 +41,8 @@ to track it.
     * Bug: A problem that prevents the project from functioning as intended.
     * Subtask: A subtask of a Feature/Improvement that can be broken down into smaller steps.
 
+You can assign the issue to yourself by leaving a comment with content `take`.
+
 ## Pull requests
 
 Pull requests are the preferred mechanism for contributing to Amoro
