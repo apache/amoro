@@ -37,6 +37,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.spark.SparkUtil;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
+import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
 import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.NamespaceChange;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
@@ -144,7 +145,8 @@ public abstract class MixedSparkCatalogBase
   }
 
   @Override
-  public boolean dropNamespace(String[] namespace) {
+  public boolean dropNamespace(String[] namespace, boolean cascade)
+      throws NoSuchNamespaceException, NonEmptyNamespaceException {
     String database = namespace[0];
     catalog.dropDatabase(database);
     return true;

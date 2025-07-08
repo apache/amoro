@@ -192,11 +192,6 @@ public class SparkUnifiedCatalogBase implements TableCatalog, SupportsNamespaces
   }
 
   @Override
-  public boolean dropNamespace(String[] namespace) throws NoSuchNamespaceException {
-    return dropNamespace(namespace, false);
-  }
-
-  @Override
   public Identifier[] listTables(String[] namespace) throws NoSuchNamespaceException {
     String database = namespaceToDatabase(namespace);
     List<TableIDWithFormat> tables = unifiedCatalog.listTables(database);
