@@ -68,7 +68,7 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
   }
 
   protected DefaultTableRuntime getDefaultTableRuntime(long tableId) {
-    return (DefaultTableRuntime) TABLE_SERVICE.getRuntime(tableId);
+    return (DefaultTableRuntime) tableService().getRuntime(tableId);
   }
 
   protected DefaultOptimizingService optimizingService() {
