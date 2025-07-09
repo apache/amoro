@@ -181,13 +181,13 @@ export function getTableOptimizingTypes(
   return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-types`, { params: { token } })
 }
 
-// get optimizing taskes
+// get optimizing tasks
 export function getTasksByOptimizingProcessId(
   params: {
     catalog: string
     db: string
     table: string
-    processId: number
+    processId: string
     page: number
     pageSize: number
     token?: string

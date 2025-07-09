@@ -72,7 +72,7 @@ const breadcrumbColumns = shallowReactive([
 ])
 
 const dataSource = reactive<any[]>([])
-const processId = ref<number>(0)
+const processId = ref<string>('0')
 const breadcrumbDataSource = reactive<BreadcrumbOptimizingItem[]>([])
 
 const loading = ref<boolean>(false)
@@ -146,7 +146,7 @@ async function cancel() {
         loading.value = true
         await cancelOptimizingProcess({
           ...sourceData,
-          processId: processId.value?.toString(),
+          processId: processId.value,
         })
         cancelDisabled.value = true
         refresh()
@@ -218,7 +218,7 @@ async function refreshOptimizingTasks() {
   }
 }
 
-function toggleBreadcrumb(rowProcessId: number, status: string) {
+function toggleBreadcrumb(rowProcessId: string, status: string) {
   processId.value = rowProcessId
   cancelDisabled.value = status !== 'RUNNING'
   hasBreadcrumb.value = !hasBreadcrumb.value

@@ -79,6 +79,7 @@ import java.util.stream.Collectors;
 public class IcebergTableUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergTableUtil.class);
+  private static final SnowflakeIdGenerator snowflakeIdGenerator = new SnowflakeIdGenerator(0);
 
   public static long getSnapshotId(Table table, boolean refresh) {
     Snapshot currentSnapshot = getSnapshot(table, refresh);
@@ -266,8 +267,7 @@ public class IcebergTableUtil {
                             table, entry.getKey(), entry.getValue()))
                 .reduce(Expressions::or)
                 .orElse(Expressions.alwaysTrue());
-    long planTime = System.currentTimeMillis();
-    long processId = Math.max(optimizingState.getNewestProcessId() + 1, planTime);
+    long processId = snowflakeIdGenerator.generateId();
     ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
     OptimizingConfig config = optimizingState.getOptimizingConfig();
     long lastMinor = optimizingState.getLastMinorOptimizingTime();

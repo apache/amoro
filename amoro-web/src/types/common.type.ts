@@ -167,7 +167,7 @@ export interface FilesStatistics {
 
 export interface BreadcrumbOptimizingItem {
   tableId: number
-  processId: number
+  processId: string
   taskId: number
   partitionData: string
   status: string
