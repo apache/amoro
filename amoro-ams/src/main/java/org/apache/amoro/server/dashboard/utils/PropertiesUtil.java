@@ -21,8 +21,11 @@ package org.apache.amoro.server.dashboard.utils;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
+import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class PropertiesUtil {
   public static void putNotNullProperties(
@@ -65,5 +68,34 @@ public class PropertiesUtil {
     tableProperties.forEach(
         (key, value) -> result.put(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + key, value));
     return result;
+  }
+
+  /**
+   * Sanitize a map of string properties. This processing includes trimming keys and values,
+   * removing entries with empty keys or null values, and resolving key conflicts by keeping the
+   * latter value.
+   *
+   * @param properties the raw input map to sanitize
+   * @return a new map with cleaned keys and values
+   */
+  public static Map<String, String> sanitizeProperties(Map<String, String> properties) {
+    if (properties == null || properties.isEmpty()) {
+      return Collections.emptyMap();
+    }
+
+    return properties.entrySet().stream()
+        .map(
+            entry -> {
+              String key = entry.getKey() == null ? "" : entry.getKey().trim();
+              String value = entry.getValue() == null ? null : entry.getValue().trim();
+              return new AbstractMap.SimpleEntry<>(key, value);
+            })
+        .filter(e -> !e.getKey().isEmpty() && e.getValue() != null)
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (v1, v2) -> v2 // use the later value on duplicate keys
+                ));
   }
 }
