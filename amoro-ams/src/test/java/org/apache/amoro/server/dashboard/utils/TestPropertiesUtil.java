@@ -22,6 +22,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class TestPropertiesUtil {
@@ -58,5 +59,46 @@ public class TestPropertiesUtil {
     Map<String, String> unionCatalogProperties =
         PropertiesUtil.unionCatalogProperties(TABLE_PROPERTIES, CATALOG_PROPERTIES);
     Assert.assertEquals(unionCatalogProperties, ALL_PROPERTIES);
+  }
+
+  @Test
+  public void testSanitizeEmptyProperties() {
+    Assert.assertEquals(0, PropertiesUtil.sanitizeProperties(null).size());
+
+    Map<String, String> props = new HashMap<>();
+    Map<String, String> sanitizedProps = PropertiesUtil.sanitizeProperties(props);
+    Assert.assertEquals(0, sanitizedProps.size());
+  }
+
+  @Test
+  public void testSanitizePropertiesWithDuplicateKeys() {
+    Map<String, String> props = new HashMap<>();
+    props.put("key1", "value1");
+    props.put(" key2 ", " value");
+    props.put("key1 ", "newValue1 "); // should overwrite
+    props.put(" key2", " newValue2"); // should overwrite
+
+    Map<String, String> sanitizedProps = PropertiesUtil.sanitizeProperties(props);
+    Assert.assertEquals(2, sanitizedProps.size());
+    Assert.assertEquals("newValue1", sanitizedProps.get("key1"));
+    Assert.assertEquals("newValue2", sanitizedProps.get("key2"));
+  }
+
+  @Test
+  public void testSanitizePropertiesWithEmptyKey() {
+    Map<String, String> props = new HashMap<>();
+    props.put(" ", " nullKey ");
+
+    Map<String, String> sanitizedProps = PropertiesUtil.sanitizeProperties(props);
+    Assert.assertEquals(0, sanitizedProps.size());
+  }
+
+  @Test
+  public void testSanitizePropertiesWithNullValue() {
+    Map<String, String> props = new HashMap<>();
+    props.put(" nullValue ", null);
+
+    Map<String, String> sanitizedProps = PropertiesUtil.sanitizeProperties(props);
+    Assert.assertEquals(0, sanitizedProps.size());
   }
 }
