@@ -69,13 +69,11 @@ public class AmoroManagementConfValidator {
     validateThreadCount(configurations, AmoroManagementConf.REFRESH_TABLES_THREAD_COUNT);
     validateThreadCount(configurations, AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT);
 
-    if (configurations.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
-      validateThreadCount(configurations, AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT);
+    if (configurations.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED)
+        || configurations.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
+      validateThreadCount(configurations, AmoroManagementConf.CLEAN_TABLE_DATA_THREAD_COUNT);
     }
 
-    if (configurations.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
-      validateThreadCount(configurations, AmoroManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT);
-    }
     if (configurations.getBoolean(AmoroManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
       validateThreadCount(configurations, AmoroManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT);
     }
