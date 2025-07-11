@@ -50,6 +50,11 @@ public class OptimizingExpiringExecutor extends PeriodicTableScheduler {
   }
 
   @Override
+  protected long getExecutorDelay() {
+    return 0;
+  }
+
+  @Override
   protected void execute(DefaultTableRuntime tableRuntime) {
     try {
       persistency.doExpiring(tableRuntime);
