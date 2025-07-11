@@ -183,7 +183,8 @@ public class TableConfigurations {
   }
 
   public static final Set<Type.TypeID> DATA_EXPIRATION_FIELD_TYPES =
-      Sets.newHashSet(Type.TypeID.TIMESTAMP, Type.TypeID.STRING, Type.TypeID.LONG);
+      Sets.newHashSet(
+          Type.TypeID.TIMESTAMP, Type.TypeID.STRING, Type.TypeID.LONG, Type.TypeID.DATE);
 
   private static boolean validateExpirationField(
       Types.NestedField field, String name, String expirationField) {
