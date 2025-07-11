@@ -105,7 +105,7 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
             .asUnkeyedTable();
     appendData(table);
     appendPosDelete(table);
-    DefaultTableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
+    DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
     runtime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
   }
 
@@ -143,7 +143,7 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
   void refreshPending() {
     TableRuntimeRefreshExecutor refresher =
         new TableRuntimeRefreshExecutor(tableService(), 1, Integer.MAX_VALUE, Integer.MAX_VALUE);
-    refresher.execute(tableService().getRuntime(serverTableIdentifier().getId()));
+    refresher.execute(getDefaultTableRuntime(serverTableIdentifier().getId()));
     refresher.dispose();
   }
 
