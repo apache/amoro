@@ -104,6 +104,9 @@ ams:
     refresh-interval: 3min          # 3 min
     max-size: 3360                # Keep 7 days history by default, 7 * 24 * 60 / 3 = 3360
 
+  orphan-table-cleanup-at-initialization:
+    enabled: false
+
   database:
     type: derby
     jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
