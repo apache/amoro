@@ -750,6 +750,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
             .format(
                 DateTimeFormatter.ofPattern(
                     expirationConfig.getDateTimePattern(), Locale.getDefault()));
+      case DATE:
+        return expireTimestamp / 86400000L;
       default:
         throw new IllegalArgumentException(
             "Unsupported expiration field type: " + field.type().typeId());
@@ -790,6 +792,11 @@ public class IcebergTableMaintainer implements TableMaintainer {
                     DateTimeFormatter.ofPattern(
                         expirationConfig.getDateTimePattern(), Locale.getDefault()));
         return Expressions.lessThanOrEqual(field.name(), expireDateTime);
+      case DATE:
+        ZoneId zoneId = ZoneOffset.UTC;
+        LocalDate expireDate = Instant.ofEpochMilli(expireTimestamp).atZone(zoneId).toLocalDate();
+        long expireEpochDay = expireDate.toEpochDay();
+        return Expressions.lessThanOrEqual(field.name(), expireEpochDay);
       default:
         return Expressions.alwaysTrue();
     }
