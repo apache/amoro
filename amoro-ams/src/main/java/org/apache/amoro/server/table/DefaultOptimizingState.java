@@ -517,7 +517,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     return tableConfiguration.getOptimizingConfig().isEnabled();
   }
 
-  public Double getTargetQuota() {
+  public int getTargetQuota() {
     return tableConfiguration.getOptimizingConfig().getTargetQuota();
   }
 

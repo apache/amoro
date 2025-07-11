@@ -34,6 +34,7 @@ import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
@@ -401,9 +402,14 @@ public class OptimizingQueue extends PersistentBase {
     public TaskRuntime<?> poll() {
       if (lock.tryLock()) {
         try {
-          return status != ProcessStatus.KILLED && status != ProcessStatus.FAILED
-              ? taskQueue.poll()
-              : null;
+          int quota = optimizingState.getTableConfiguration().getOptimizingConfig().getTargetQuota();
+          TaskRuntime<?> task = status != ProcessStatus.KILLED && status != ProcessStatus.FAILED && getActualQuota() < quota
+                  ? taskQueue.poll()
+                  : null;
+          if (task != null) {
+            task.setScheduling(true);
+          }
+          return task;
         } finally {
           lock.unlock();
         }
@@ -579,6 +585,12 @@ public class OptimizingQueue extends PersistentBase {
           .filter(t -> !t.finished())
           .mapToLong(task -> task.getQuotaTime(calculatingStartTime, calculatingEndTime))
           .sum();
+    }
+
+    public int getActualQuota(){
+      return (int) taskMap.values().stream()
+              .filter(t -> t.getStatus() == TaskRuntime.Status.SCHEDULED|| t.getStatus() == Status.ACKED || t.isScheduling())
+              .count();
     }
 
     @Override

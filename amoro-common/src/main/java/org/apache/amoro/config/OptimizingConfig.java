@@ -30,7 +30,7 @@ public class OptimizingConfig {
   private boolean enabled;
 
   // self-optimizing.quota
-  private double targetQuota;
+  private int targetQuota;
 
   // self-optimizing.group
   private String optimizerGroup;
@@ -100,11 +100,11 @@ public class OptimizingConfig {
     return this;
   }
 
-  public double getTargetQuota() {
+  public int getTargetQuota() {
     return targetQuota;
   }
 
-  public OptimizingConfig setTargetQuota(double targetQuota) {
+  public OptimizingConfig setTargetQuota(int targetQuota) {
     this.targetQuota = targetQuota;
     return this;
   }
