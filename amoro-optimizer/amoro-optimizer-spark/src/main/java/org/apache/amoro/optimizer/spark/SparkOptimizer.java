@@ -58,8 +58,7 @@ public class SparkOptimizer extends Optimizer {
     int executorMemory = Utils.memoryStringToMb(jsc.getConf().get("spark.executor.memory", "1g"));
     int executorCores = jsc.getConf().getInt("spark.executor.cores", 1);
     int executionParallel = config.getExecutionParallel();
-    int executorNum =
-        executionParallel / executorCores + (executionParallel % executorCores == 0 ? 0 : 1);
+    int executorNum = (int) Math.ceil((double) executionParallel / executorCores);
     config.setMemorySize(driverMemory + executorNum * executorMemory);
 
     SparkOptimizer optimizer = new SparkOptimizer(config, jsc);
