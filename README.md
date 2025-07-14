@@ -145,6 +145,38 @@ Amoro supports multiple JDK versions for building, with different modules having
 | JDK 11      | All modules                            | Default compilation version, recommended |  
 | JDK 17      | All modules                            | Required for `amoro-mixed-trino` module  |  
 
+### How to Build with Different JDK Versions
+
+#### Building with JDK 8
+
+To build with JDK 8, use the `java8` profile:
+
+| Build Scenario        | Command                                         | Description                                               |  
+|-----------------------|-------------------------------------------------|-----------------------------------------------------------|  
+| Standard JDK 8 Build  | `mvn clean package -Pjava8`                     | Build all modules (except `amoro-mixed-trino`) with JDK 8 |  
+| JDK 8 with Hadoop 2.x | `mvn clean package -DskipTests -Pjava8,hadoop2` | Build with JDK 8 and Hadoop 2.x dependencies              |  
+| JDK 8 Quick Build     | `mvn clean package -DskipTests -Pjava8`         | Skip tests and build with JDK 8                           |  
+
+#### Building with JDK 11
+
+JDK 11 is the default compilation version, so no special profile is needed:
+
+| Build Scenario         | Command                                   | Description                                                |  
+|------------------------|-------------------------------------------|------------------------------------------------------------|  
+| Standard JDK 11 Build  | `mvn clean package`                       | Build all modules (except `amoro-mixed-trino`) with JDK 11 |  
+| JDK 11 with Hadoop 2.x | `mvn clean package -DskipTests -Phadoop2` | Build with JDK 11 and Hadoop 2.x dependencies              |  
+| JDK 11 Quick Build     | `mvn clean package -DskipTests`           | Skip tests and build with JDK 11                           |  
+
+#### Building with JDK 17
+
+For JDK 17, you can build all modules including `amoro-mixed-trino`:
+
+| Build Scenario         | Command                                                                                                                             | Description                                   |  
+|------------------------|-------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------|  
+| JDK 17 All Modules     | `mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino`                                                                | Build all modules including Trino with JDK 17 |  
+| JDK 17 Trino Only      | `mvn clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-mixed-trino' -am` | Build only Trino module with JDK 17           |  
+| JDK 17 with Hadoop 2.x | `mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino,hadoop2`                                                        | Build all modules with JDK 17 and Hadoop 2.x  |  
+
 ### Basic Build Options
 
 The most commonly used build commands:
@@ -194,20 +226,19 @@ If you need to build all modules (including `amoro-mixed-trino`), create a `tool
 the `${user.home}/.m2/` directory:
 
 ```xml  
-<?xml version="1.0" encoding="UTF-8"?>
-<toolchains>
-    <toolchain>
-        <type>jdk</type>
-        <provides>
-            <version>17</version>
-            <vendor>sun</vendor>
-        </provides>
-        <configuration>
-            <jdkHome>${YourJDK17Home}</jdkHome>
-        </configuration>
-    </toolchain>
+<?xml version="1.0" encoding="UTF-8"?>  
+<toolchains>  
+    <toolchain>  
+        <type>jdk</type>  
+        <provides>  
+            <version>17</version>  
+            <vendor>sun</vendor>  
+        </provides>  
+        <configuration>  
+            <jdkHome>${YourJDK17Home}</jdkHome>  
+        </configuration>  
+    </toolchain>  
 </toolchains>
-```
 
 ## Quickstart
 
