@@ -23,6 +23,7 @@ import org.apache.amoro.io.writer.GenericIcebergPartitionedFanoutWriter;
 import org.apache.amoro.io.writer.IcebergFanoutPosDeleteWriter;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.map.StructLikeCollections;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.GenericAppenderFactory;
@@ -35,6 +36,7 @@ import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.UnpartitionedWriter;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 /** OptimizingExecutor for iceberg format. */
@@ -93,6 +95,17 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
           io,
           targetSize());
     }
+  }
+
+  @Override
+  protected long targetSize() {
+    long targetSize = super.targetSize();
+    long inputSize =
+        Arrays.stream(input.rewrittenDataFiles()).mapToLong(DataFile::fileSizeInBytes).sum();
+    // When the input files’ total size is below targetSize, remove the output file size limit to
+    // avoid outputting multiple files.
+    // For more details, please refer to: https://github.com/apache/amoro/issues/3645
+    return inputSize < targetSize ? Long.MAX_VALUE : targetSize;
   }
 
   private PartitionSpec fileSpec() {

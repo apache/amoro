@@ -27,6 +27,7 @@ import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;
 import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.response.PageResult;
+import org.apache.amoro.server.dashboard.utils.PropertiesUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.InternalContainers;
@@ -259,7 +260,7 @@ public class OptimizerGroupController {
     Map<String, Object> map = ctx.bodyAsClass(Map.class);
     String name = (String) map.get("name");
     String container = (String) map.get("container");
-    Map<String, String> properties = (Map) map.get("properties");
+    Map<String, String> properties = PropertiesUtil.sanitizeProperties((Map) map.get("properties"));
     validateGroupName(name);
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
@@ -275,7 +276,7 @@ public class OptimizerGroupController {
     Map<String, Object> map = ctx.bodyAsClass(Map.class);
     String name = (String) map.get("name");
     String container = (String) map.get("container");
-    Map<String, String> properties = (Map) map.get("properties");
+    Map<String, String> properties = PropertiesUtil.sanitizeProperties((Map) map.get("properties"));
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
     optimizerManager.updateResourceGroup(builder.build());
