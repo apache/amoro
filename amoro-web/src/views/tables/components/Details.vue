@@ -69,6 +69,7 @@ const state = reactive({
     tableFormat: '',
     hasPartition: false, // Whether there is a partition, if there is no partition, the file list will be displayed
   } as IBaseDetailInfo,
+  comment: '',
   pkList: [] as DetailColumnItem[],
   partitionColumnList: [] as PartitionColumnItem[],
   properties: [] as IMap<string>[],
@@ -87,7 +88,7 @@ async function getTableDetails() {
     const result = await getTableDetail({
       ...params.value,
     })
-    const { pkList = [], tableType, partitionColumnList = [], properties, changeMetrics, schema, createTime, tableIdentifier, baseMetrics, tableSummary } = result
+    const { pkList = [], tableType, partitionColumnList = [], properties, changeMetrics, schema, createTime, tableIdentifier, baseMetrics, tableSummary, comment } = result
     state.baseDetailInfo = {
       ...tableSummary,
       tableType,
@@ -99,6 +100,7 @@ async function getTableDetails() {
     state.pkList = pkList || []
     state.partitionColumnList = partitionColumnList || []
     state.schema = schema || []
+    state.comment = comment || ''
 
     state.changeMetrics = Object.keys(changeMetricsMap || {}).map((key) => {
       return {
@@ -128,7 +130,10 @@ async function getTableDetails() {
   }
 
   function setBaseDetailInfo() {
-    emit('setBaseDetailInfo', state.baseDetailInfo)
+    emit('setBaseDetailInfo',  {
+                                    ...state.baseDetailInfo,
+                                    comment:state.comment
+                                  })
   }
 }
 
