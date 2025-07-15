@@ -42,6 +42,9 @@ public class TableProperties {
   public static final String TABLE_CREATE_TIME = "table.create-timestamp";
   public static final long TABLE_CREATE_TIME_DEFAULT = 0L;
 
+  /** table comment related properties */
+  public static final String COMMENT = "comment";
+
   /** table watermark related properties */
   public static final String TABLE_EVENT_TIME_FIELD = "table.event-time-field";
 

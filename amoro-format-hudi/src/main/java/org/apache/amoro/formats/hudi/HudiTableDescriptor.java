@@ -97,6 +97,8 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
   private static final Logger LOG = LoggerFactory.getLogger(HudiTableDescriptor.class);
   private static final String COMPACTION = "compaction";
   private static final String CLUSTERING = "clustering";
+  // table comment
+  private static final String COMMENT = "comment";
 
   private ExecutorService ioExecutors;
 
@@ -140,7 +142,13 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     Map<String, AMSColumnInfo> columnMap =
         columns.stream().collect(Collectors.toMap(AMSColumnInfo::getField, Function.identity()));
     meta.setSchema(columns);
-    meta.setProperties(amoroTable.properties());
+    Map<String, String> tableProperties = Maps.newHashMap(amoroTable.properties());
+    meta.setProperties(tableProperties);
+    if (tableProperties.containsKey(COMMENT)) {
+      String comment = tableProperties.get(COMMENT);
+      meta.setComment(comment);
+    }
+
     meta.setBaseLocation(metaClient.getBasePathV2().toString());
 
     if (hoodieTableConfig.isTablePartitioned()) {

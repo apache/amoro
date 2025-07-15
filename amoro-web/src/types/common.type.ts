@@ -68,6 +68,7 @@ export interface IBaseDetailInfo {
   file: string
   averageFile: string
   tableFormat: string
+  comment: string
   hasPartition: boolean
   healthScore: number
 }
