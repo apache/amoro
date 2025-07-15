@@ -67,23 +67,12 @@ public class OptimizingUtil {
 
     long endTime = System.currentTimeMillis();
     long startTime = System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
-
-    if(quotas == null){
-      quotas = Collections.emptyList();
-    }
-    quotas.removeIf(task -> task.checkExpired(startTime));
-    long finishedTaskQuotaTime =
-            quotas.stream()
-                    .mapToLong(taskQuota -> taskQuota.getQuotaTime(startTime))
-                    .sum();
-    long quotaOccupy = processTasks == null ? finishedTaskQuotaTime :
-            finishedTaskQuotaTime
-                    + processTasks.stream()
-                    .filter(t -> t.getStatus() != TaskRuntime.Status.CANCELED && t.getStatus() != Status.SUCCESS && t.getStatus() != TaskRuntime.Status.FAILED)
-                    .mapToLong(task -> TaskRuntime.taskRunningQuotaTime(startTime, endTime, task.getStartTime(), task.getCostTime()))
-                    .sum();
-    double rawValue = (double) quotaOccupy / (AmoroServiceConstants.QUOTA_LOOK_BACK_TIME * optimizingConfig.getTargetQuota());
-    tableOptimizeInfo.setQuotaOccupation(BigDecimal.valueOf(rawValue).setScale(4, RoundingMode.HALF_UP).doubleValue());
+    long quotaOccupy = calculateQuotaOccupy(processTasks, quotas, startTime, endTime);
+    double quotaOccupation =
+        (double) quotaOccupy
+            / (AmoroServiceConstants.QUOTA_LOOK_BACK_TIME * optimizingConfig.getTargetQuota());
+    tableOptimizeInfo.setQuotaOccupation(
+        BigDecimal.valueOf(quotaOccupation).setScale(4, RoundingMode.HALF_UP).doubleValue());
 
     FilesStatistics optimizeFileInfo;
     if (optimizingStatus.isProcessing()) {
@@ -109,26 +98,33 @@ public class OptimizingUtil {
     return tableOptimizeInfo;
   }
 
-  private static double calculateQuotaOccupy(
+  private static long calculateQuotaOccupy(
       List<OptimizingTaskMeta> processTasks,
       List<TaskRuntime.TaskQuota> quotas,
       long startTime,
       long endTime) {
-    double finishedOccupy = 0;
-    if (quotas != null) {
-      finishedOccupy = quotas.stream().mapToDouble(q -> q.getQuotaTime(startTime)).sum();
+    if (quotas == null) {
+      quotas = Collections.emptyList();
     }
-    double runningOccupy = 0;
-    if (processTasks != null) {
-      runningOccupy =
-          processTasks.stream()
-              .mapToDouble(
-                  t ->
-                      TaskRuntime.taskRunningQuotaTime(
-                          startTime, endTime, t.getStartTime(), t.getCostTime()))
-              .sum();
-    }
-    return finishedOccupy + runningOccupy;
+    quotas.removeIf(task -> task.checkExpired(startTime));
+    long finishedTaskQuotaTime =
+        quotas.stream().mapToLong(taskQuota -> taskQuota.getQuotaTime(startTime)).sum();
+    long quotaOccupy =
+        processTasks == null
+            ? finishedTaskQuotaTime
+            : finishedTaskQuotaTime
+                + processTasks.stream()
+                    .filter(
+                        t ->
+                            t.getStatus() != TaskRuntime.Status.CANCELED
+                                && t.getStatus() != Status.SUCCESS
+                                && t.getStatus() != TaskRuntime.Status.FAILED)
+                    .mapToLong(
+                        task ->
+                            TaskRuntime.taskRunningQuotaTime(
+                                startTime, endTime, task.getStartTime(), task.getCostTime()))
+                    .sum();
+    return quotaOccupy;
   }
 
   private static FilesStatistics collectPendingFileInfo(

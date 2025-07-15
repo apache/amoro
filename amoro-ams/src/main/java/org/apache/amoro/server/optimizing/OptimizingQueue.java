@@ -402,8 +402,12 @@ public class OptimizingQueue extends PersistentBase {
     public TaskRuntime<?> poll() {
       if (lock.tryLock()) {
         try {
-          int quota = optimizingState.getTableConfiguration().getOptimizingConfig().getTargetQuota();
-          TaskRuntime<?> task = status != ProcessStatus.KILLED && status != ProcessStatus.FAILED && getActualQuota() < quota
+          int quota =
+              optimizingState.getTableConfiguration().getOptimizingConfig().getTargetQuota();
+          TaskRuntime<?> task =
+              status != ProcessStatus.KILLED
+                      && status != ProcessStatus.FAILED
+                      && getActualQuota() < quota
                   ? taskQueue.poll()
                   : null;
           if (task != null) {
@@ -587,9 +591,14 @@ public class OptimizingQueue extends PersistentBase {
           .sum();
     }
 
-    public int getActualQuota(){
-      return (int) taskMap.values().stream()
-              .filter(t -> t.getStatus() == TaskRuntime.Status.SCHEDULED|| t.getStatus() == Status.ACKED || t.isScheduling())
+    public int getActualQuota() {
+      return (int)
+          taskMap.values().stream()
+              .filter(
+                  t ->
+                      t.getStatus() == TaskRuntime.Status.SCHEDULED
+                          || t.getStatus() == Status.ACKED
+                          || t.isScheduling())
               .count();
     }
 

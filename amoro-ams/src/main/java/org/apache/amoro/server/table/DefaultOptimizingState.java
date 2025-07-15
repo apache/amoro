@@ -626,7 +626,8 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
   public double calculateQuotaOccupy() {
     return new BigDecimal(
             (double) getQuotaTime()
-                / (AmoroServiceConstants.QUOTA_LOOK_BACK_TIME * tableConfiguration.getOptimizingConfig().getTargetQuota()))
+                / (AmoroServiceConstants.QUOTA_LOOK_BACK_TIME
+                    * tableConfiguration.getOptimizingConfig().getTargetQuota()))
         .setScale(4, RoundingMode.HALF_UP)
         .doubleValue();
   }
