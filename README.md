@@ -38,8 +38,7 @@
 </p>
 
 Apache Amoro (incubating) is a Lakehouse management system built on open data lake formats.
-Working with compute engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for
-Lakehouse to provide out-of-the-box data warehouse experience,
+Working with compute engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for Lakehouse to provide out-of-the-box data warehouse experience,
 and helps data platforms or products easily build infra-decoupled, stream-and-batch-fused and lake-native architecture.
 
 Learn more about Amoro at https://amoro.apache.org/, contact the developers and community on
@@ -92,13 +91,12 @@ For details, please refer to: [Iceberg Docs](https://iceberg.apache.org/docs/lat
 
 Amoro support multiple processing engines for Mixed format as below:
 
-| Processing Engine | Version                | Batch Read | Batch Write | Batch Overwrite | Streaming Read | Streaming Write | Create Table | Alter Table |
-|-------------------|------------------------|------------|-------------|-----------------|----------------|-----------------|--------------|-------------|
-| Flink             | 1.15.x, 1.16.x, 1.17.x | &#x2714;   | &#x2714;    | &#x2716;        | &#x2714;       | &#x2714;        | &#x2714;     | &#x2716;    |
-| Spark             | 3.1, 3.2, 3.3,3.5      | &#x2714;   | &#x2714;    | &#x2714;        | &#x2716;       | &#x2716;        | &#x2714;     | &#x2714;    |
-| Hive              | 2.x, 3.x               | &#x2714;   | &#x2716;    | &#x2714;        | &#x2716;       | &#x2716;        | &#x2716;     | &#x2714;    |
-| Trino             | 406                    | &#x2714;   | &#x2716;    | &#x2714;        | &#x2716;       | &#x2716;        | &#x2716;     | &#x2714;    |
-
+| Processing Engine | Version                | Batch Read  | Batch Write | Batch Overwrite | Streaming Read | Streaming Write | Create Table | Alter Table |  
+|-------------------|------------------------|-------------|-------------|-----------------|----------------|-----------------|--------------|-------------|  
+| Flink             | 1.15.x, 1.16.x, 1.17.x |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |  
+| Spark             | 3.3, 3.5               |  &#x2714;   |   &#x2714;   |       &#x2714;   |      &#x2716;   |       &#x2716;   |    &#x2714;   |   &#x2714;   |  
+| Hive              | 2.x, 3.x               |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |  
+| Trino             | 406                    |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
 ## Features
 
 - Self-optimizing - Continuously optimizing tables, including compacting small files, change files, regularly delete
@@ -135,95 +133,26 @@ Amoro contains modules as below:
 
 ## Building
 
-### JDK Version Requirements
+Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixed/amoro-mixed-trino` module).
 
-Amoro supports multiple JDK versions for building, with different modules having different JDK version requirements:
+**Default Build Configuration:**
+- Hadoop version: 3.x (use `-Phadoop2` for Hadoop 2.x)
+- Flink optimizer version: 1.20.0
+- Spark optimizer version: 3.3.3
 
-| JDK Version | Supported Modules                      | Notes                                    |  
-|-------------|----------------------------------------|------------------------------------------|  
-| JDK 8       | All modules except `amoro-mixed-trino` | Minimum required version                 |  
-| JDK 11      | All modules                            | Default compilation version, recommended |  
-| JDK 17      | All modules                            | Required for `amoro-mixed-trino` module  |  
-
-### How to Build with Different JDK Versions
-
-#### Building with JDK 8
-
-To build with JDK 8, use the `java8` profile:
-
-| Build Scenario        | Command                                         | Description                                               |  
-|-----------------------|-------------------------------------------------|-----------------------------------------------------------|  
-| Standard JDK 8 Build  | `mvn clean package -Pjava8`                     | Build all modules (except `amoro-mixed-trino`) with JDK 8 |  
-| JDK 8 with Hadoop 2.x | `mvn clean package -DskipTests -Pjava8,hadoop2` | Build with JDK 8 and Hadoop 2.x dependencies              |  
-| JDK 8 Quick Build     | `mvn clean package -DskipTests -Pjava8`         | Skip tests and build with JDK 8                           |  
-
-#### Building with JDK 11
-
-JDK 11 is the default compilation version, so no special profile is needed:
-
-| Build Scenario         | Command                                   | Description                                                |  
-|------------------------|-------------------------------------------|------------------------------------------------------------|  
-| Standard JDK 11 Build  | `mvn clean package`                       | Build all modules (except `amoro-mixed-trino`) with JDK 11 |  
-| JDK 11 with Hadoop 2.x | `mvn clean package -DskipTests -Phadoop2` | Build with JDK 11 and Hadoop 2.x dependencies              |  
-| JDK 11 Quick Build     | `mvn clean package -DskipTests`           | Skip tests and build with JDK 11                           |  
-
-#### Building with JDK 17
-
-For JDK 17, you can build all modules including `amoro-mixed-trino`:
-
-| Build Scenario         | Command                                                                                                                             | Description                                   |  
-|------------------------|-------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------|  
-| JDK 17 All Modules     | `mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino`                                                                | Build all modules including Trino with JDK 17 |  
-| JDK 17 Trino Only      | `mvn clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-mixed-trino' -am` | Build only Trino module with JDK 17           |  
-| JDK 17 with Hadoop 2.x | `mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino,hadoop2`                                                        | Build all modules with JDK 17 and Hadoop 2.x  |  
-
-### Basic Build Options
-
-The most commonly used build commands:
-
-| Build Scenario      | Command                                    | Description                                    |  
-|---------------------|--------------------------------------------|------------------------------------------------|  
-| Standard Build      | `mvn clean package`                        | Build all modules (except `amoro-mixed-trino`) |  
-| Quick Build         | `mvn clean package -DskipTests`            | Skip tests for faster build                    |  
-| Skip Frontend Build | `mvn clean package -Pskip-dashboard-build` | Skip Web Dashboard build                       |  
-| Hadoop 2.x Build    | `mvn clean package -DskipTests -Phadoop2`  | Use Hadoop 2.x dependencies (default is 3.x)   |  
-
-### Advanced Build Options
-
-<details>  
-<summary>Click to expand advanced build options</summary>  
-
-#### Special Configuration Builds
-
-| Build Scenario       | Command                                                    | Description                                       |  
-|----------------------|------------------------------------------------------------|---------------------------------------------------|  
-| Disable Disk Storage | `mvn clean package -DskipTests -Pno-extented-disk-storage` | Do not introduce RocksDB to avoid memory overflow |  
-| Enable Aliyun OSS    | `mvn clean package -DskipTests -Paliyun-oss-sdk`           | Enable Aliyun OSS SDK support                     |  
-
-#### Engine Version Specific Builds
-
-| Engine Type      | Command Example                                                                                   | Description                                            |  
-|------------------|---------------------------------------------------------------------------------------------------|--------------------------------------------------------|  
-| Flink Optimizer  | `mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.20.0`                            | Specify Flink version (default 1.20.0)                 |  
-| Flink Below 1.15 | `mvn clean package -DskipTests -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6` | Flink versions below 1.15 require additional parameter |  
-| Spark Optimizer  | `mvn clean package -DskipTests -Dspark-optimizer.spark-version=3.3.3`                             | Specify Spark version (default 3.3.3)                  |  
-
-#### Complete Build Options
-
-| Build Scenario        | Command                                                                                                                             | Description                           |  
-|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------|  
-| Build Trino Module    | `mvn clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-mixed-trino' -am` | Requires JDK 17                       |  
-| Build All Modules     | `mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino`                                                                | Requires toolchains.xml configuration |  
-| Complete Distribution | `mvn clean package -Psupport-all-formats`                                                                                           | Distribution package with all formats |  
-| Paimon Format Package | `mvn clean package -Psupport-paimon-format`                                                                                         | Include Apache Paimon format          |  
-| Hudi Format Package   | `mvn clean package -Psupport-hudi-format`                                                                                           | Include Apache Hudi format            |  
-
-</details>  
-
-### JDK 17 Build Configuration
-
-If you need to build all modules (including `amoro-mixed-trino`), create a `toolchains.xml` file in
-the `${user.home}/.m2/` directory:
+* Build all modules without `amoro-mixed-trino`: `mvn clean package`
+* Build and skip tests: `mvn clean package -DskipTests`
+* Build and skip dashboard: `mvn clean package -Pskip-dashboard-build`
+* Build with hadoop 2.x(the default is 3.x) dependencies: `mvn clean package -DskipTests -Phadoop2`
+* Build with JDK 8: `mvn clean package -DskipTests -Pjava8`
+* Specify Flink version for Flink optimizer(the default is 1.20.0): `mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.20.0`
+  * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-optimizer-pre-1.15` parameter: `mvn clean package -DskipTests -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
+* Specify Spark version for Spark optimizer(the default is 3.3.3): `mvn clean package -DskipTests -Dspark-optimizer.spark-version=3.3.3`
+* Build `amoro-mixed-trino` module under JDK 17: `mvn clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-mixed-trino' -am`.
+* Build all modules: `mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
+* Build a distribution package with all formats integrated: `mvn clean package -Psupport-all-formats`
+  * Build a distribution package with Apache Paimon format: `mvn clean package -Psupport-paimon-format`
+  * Build a distribution package with Apache Hudi format: `mvn clean package -Psupport-hudi-format`
 
 ```xml  
 <?xml version="1.0" encoding="UTF-8"?>  
@@ -239,6 +168,7 @@ the `${user.home}/.m2/` directory:
         </configuration>  
     </toolchain>  
 </toolchains>
+```
 
 ## Quickstart
 
