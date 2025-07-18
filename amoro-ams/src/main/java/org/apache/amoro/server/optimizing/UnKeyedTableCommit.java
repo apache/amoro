@@ -35,6 +35,7 @@ import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
@@ -195,6 +196,7 @@ public class UnKeyedTableCommit {
     Set<DeleteFile> addedDeleteFiles = Sets.newHashSet();
     Set<DeleteFile> removedDeleteFiles = Sets.newHashSet();
     tasks.stream()
+        .filter(task -> task.getStatus() == Status.SUCCESS)
         .map(TaskRuntime::getTaskDescriptor)
         .forEach(
             task -> {

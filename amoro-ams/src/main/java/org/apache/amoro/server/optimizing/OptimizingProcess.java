@@ -46,5 +46,7 @@ public interface OptimizingProcess {
 
   void commit();
 
+  void commitClosedProcess();
+
   MetricsSummary getSummary();
 }

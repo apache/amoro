@@ -508,10 +508,24 @@ public class OptimizingQueue extends PersistentBase {
                 taskRuntime.getFailReason());
             retryTask(taskRuntime);
           } else {
-            this.failedReason = taskRuntime.getFailReason();
-            this.status = ProcessStatus.FAILED;
-            this.endTime = taskRuntime.getEndTime();
-            persistAndSetCompleted(false);
+            try {
+              buildCommit().commit();
+              this.failedReason = taskRuntime.getFailReason();
+              this.status = ProcessStatus.FAILED;
+              this.endTime = System.currentTimeMillis();
+              persistAndSetCompleted(false);
+            } catch (Throwable throwable) {
+              LOG.error(
+                  "{} Commit optimizing failed ", optimizingState.getTableIdentifier(), throwable);
+              this.status = ProcessStatus.FAILED;
+              this.failedReason = taskRuntime.getFailReason();
+              this.failedReason =
+                  this.failedReason.concat(
+                      " and commit failed, because "
+                          + ExceptionUtil.getErrorMessage(throwable, 4000));
+              this.endTime = System.currentTimeMillis();
+              persistAndSetCompleted(false);
+            }
           }
         }
       } finally {
@@ -610,6 +624,30 @@ public class OptimizingQueue extends PersistentBase {
               "{} failed to persist process completed, will retry next commit",
               optimizingState.getTableIdentifier(),
               e);
+        } catch (Throwable t) {
+          LOG.error("{} Commit optimizing failed ", optimizingState.getTableIdentifier(), t);
+          status = ProcessStatus.FAILED;
+          failedReason = ExceptionUtil.getErrorMessage(t, 4000);
+          endTime = System.currentTimeMillis();
+          persistAndSetCompleted(false);
+        }
+      } finally {
+        lock.unlock();
+      }
+    }
+
+    @Override
+    public void commitClosedProcess() {
+      lock.lock();
+      try {
+        if (this.status != ProcessStatus.RUNNING) {
+          return;
+        }
+        try {
+          buildCommit().commit();
+          this.status = ProcessStatus.CLOSED;
+          this.endTime = System.currentTimeMillis();
+          persistAndSetCompleted(false);
         } catch (Throwable t) {
           LOG.error("{} Commit optimizing failed ", optimizingState.getTableIdentifier(), t);
           status = ProcessStatus.FAILED;
