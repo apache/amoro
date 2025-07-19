@@ -144,6 +144,29 @@ public class TestDataExpire extends ExecutorTestBase {
             PrimaryKeySpec.noPrimaryKey(),
             PartitionSpec.unpartitioned(),
             getDefaultProp())
+      },
+      // Mixed format partitioned by date type
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(TABLE_SCHEMA3, PRIMARY_KEY_SPEC, SPEC3, getDefaultProp())
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(
+            TABLE_SCHEMA3, PRIMARY_KEY_SPEC, PartitionSpec.unpartitioned(), getDefaultProp())
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(
+            TABLE_SCHEMA3, PrimaryKeySpec.noPrimaryKey(), SPEC3, getDefaultProp())
+      },
+      {
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(
+            TABLE_SCHEMA3,
+            PrimaryKeySpec.noPrimaryKey(),
+            PartitionSpec.unpartitioned(),
+            getDefaultProp())
       }
     };
   }
@@ -164,6 +187,16 @@ public class TestDataExpire extends ExecutorTestBase {
 
   public static final PartitionSpec SPEC2 =
       PartitionSpec.builderFor(TABLE_SCHEMA2).identity("op_time").build();
+
+  public static final Schema TABLE_SCHEMA3 =
+      new Schema(
+          Types.NestedField.required(1, "id", Types.IntegerType.get()),
+          Types.NestedField.required(2, "name", Types.StringType.get()),
+          Types.NestedField.required(3, "ts", Types.LongType.get()),
+          Types.NestedField.required(4, "op_time", Types.DateType.get()));
+
+  public static final PartitionSpec SPEC3 =
+      PartitionSpec.builderFor(TABLE_SCHEMA3).identity("op_time").build();
 
   public TestDataExpire(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
@@ -198,6 +231,10 @@ public class TestDataExpire extends ExecutorTestBase {
     if (tableTestHelper().partitionSpec().isPartitioned()) {
       // retention time is 1 day, expire partitions that order than 2022-01-02
       if (expireByStringDate()) {
+        expected =
+            Lists.newArrayList(
+                createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
+      } else if (expireByDate()) {
         expected =
             Lists.newArrayList(
                 createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
@@ -256,6 +293,8 @@ public class TestDataExpire extends ExecutorTestBase {
     if (tableTestHelper().partitionSpec().isPartitioned()) {
       if (expireByStringDate()) {
         assertScanResult(scanAfterExpire, 1, 0);
+      } else if (expireByDate()) {
+        assertScanResult(scanAfterExpire, 1, 0);
       } else {
         assertScanResult(scanAfterExpire, 3, 0);
       }
@@ -267,6 +306,10 @@ public class TestDataExpire extends ExecutorTestBase {
     List<Record> expected;
     if (tableTestHelper().partitionSpec().isPartitioned()) {
       if (expireByStringDate()) {
+        expected =
+            Lists.newArrayList(
+                createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
+      } else if (expireByDate()) {
         expected =
             Lists.newArrayList(
                 createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
@@ -370,6 +413,10 @@ public class TestDataExpire extends ExecutorTestBase {
 
     List<Record> expected;
     if (expireByStringDate()) {
+      expected =
+          Lists.newArrayList(
+              createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
+    } else if (expireByDate()) {
       expected =
           Lists.newArrayList(
               createRecord(2, "222", parseMillis("2022-01-03T12:00:00"), "2022-01-03T12:00:00"));
@@ -549,6 +596,9 @@ public class TestDataExpire extends ExecutorTestBase {
                 .toInstant(ZoneOffset.UTC)
                 .toEpochMilli();
         break;
+      case DATE:
+        time = LocalDateTime.parse(opTime).atZone(ZoneOffset.UTC).toLocalDate();
+        break;
       default:
         time = opTime;
     }
@@ -636,5 +686,12 @@ public class TestDataExpire extends ExecutorTestBase {
   private static DataExpirationConfig parseDataExpirationConfig(MixedTable table) {
     Map<String, String> properties = table.properties();
     return TableConfigurations.parseDataExpirationConfig(properties);
+  }
+
+  private boolean expireByDate() {
+    String expireField =
+        CompatiblePropertyUtil.propertyAsString(
+            getMixedTable().properties(), TableProperties.DATA_EXPIRATION_FIELD, "");
+    return getMixedTable().schema().findField(expireField).type().typeId().equals(Type.TypeID.DATE);
   }
 }
