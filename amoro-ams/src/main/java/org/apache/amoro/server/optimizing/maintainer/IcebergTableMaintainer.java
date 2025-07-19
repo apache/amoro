@@ -751,7 +751,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
                 DateTimeFormatter.ofPattern(
                     expirationConfig.getDateTimePattern(), Locale.getDefault()));
       case DATE:
-        return expireTimestamp / 86400000L;
+        int expireDays = (int) (expireTimestamp / (24 * 60 * 60 * 1000));
+        return expireDays;
       default:
         throw new IllegalArgumentException(
             "Unsupported expiration field type: " + field.type().typeId());
@@ -793,10 +794,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
                         expirationConfig.getDateTimePattern(), Locale.getDefault()));
         return Expressions.lessThanOrEqual(field.name(), expireDateTime);
       case DATE:
-        ZoneId zoneId = ZoneOffset.UTC;
-        LocalDate expireDate = Instant.ofEpochMilli(expireTimestamp).atZone(zoneId).toLocalDate();
-        long expireEpochDay = expireDate.toEpochDay();
-        return Expressions.lessThanOrEqual(field.name(), expireEpochDay);
+        int expireDays = (int) (expireTimestamp / (24 * 60 * 60 * 1000));
+        return Expressions.lessThanOrEqual(field.name(), expireDays);
       default:
         return Expressions.alwaysTrue();
     }
@@ -1001,6 +1000,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
                   .atZone(getDefaultZoneId(field))
                   .toInstant()
                   .toEpochMilli());
+    } else if (type.typeId() == Type.TypeID.DATE) {
+      if (upperBound instanceof Integer) {
+        literal = Literal.of(((Integer) upperBound).longValue() * 24 * 60 * 60 * 1000);
+      }
     }
 
     return literal;
@@ -1030,8 +1033,13 @@ public class IcebergTableMaintainer implements TableMaintainer {
         }
 
         int compared = filePartitionValue.compareTo(partitionUpperBound);
-        Boolean compareResult =
-            expireField.type() == Types.StringType.get() ? compared <= 0 : compared < 0;
+        Boolean compareResult;
+        if (expireField.type() == Types.StringType.get()
+            || expireField.type() == Types.DateType.get()) {
+          compareResult = compared <= 0;
+        } else {
+          compareResult = compared < 0;
+        }
         compareResults.add(compareResult);
       }
 
