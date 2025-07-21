@@ -460,6 +460,12 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofDays(1))
           .withDescription("Execute interval for data expiration");
 
+  public static final ConfigOption<Boolean> ORPHAN_TABLE_CLEANUP_AT_INITIALIZATION_ENABLED =
+      ConfigOptions.key("orphan-table-cleanup-at-initialization.enabled")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("Enable orphan table metadata cleanup at initializing");
+
   public static final String SYSTEM_CONFIG = "ams";
 
   public static final String CATALOG_CORE_SITE = "core-site";
