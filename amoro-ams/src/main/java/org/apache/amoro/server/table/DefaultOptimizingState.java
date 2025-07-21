@@ -342,7 +342,12 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           OptimizingType processType = optimizingProcess.getOptimizingType();
-          if (success) {
+          boolean isSuccessful =
+              success
+                  || optimizingProcess.getStatus() == ProcessStatus.SUCCESS
+                  || (optimizingProcess.getStatus() == ProcessStatus.CLOSED
+                      && optimizingProcess.containSuccessTasks());
+          if (isSuccessful) {
             lastOptimizedSnapshotId = optimizingProcess.getTargetSnapshotId();
             lastOptimizedChangeSnapshotId = optimizingProcess.getTargetChangeSnapshotId();
             if (processType == OptimizingType.MINOR) {
@@ -353,7 +358,8 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
               lastFullOptimizingTime = optimizingProcess.getPlanTime();
             }
           }
-          optimizingMetrics.processComplete(processType, success, optimizingProcess.getPlanTime());
+          optimizingMetrics.processComplete(
+              processType, isSuccessful, optimizingProcess.getPlanTime());
           updateOptimizingStatus(OptimizingStatus.IDLE);
           optimizingProcess = null;
           persistUpdatingRuntime();

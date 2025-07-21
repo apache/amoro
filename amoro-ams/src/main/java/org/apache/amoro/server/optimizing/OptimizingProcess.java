@@ -44,6 +44,8 @@ public interface OptimizingProcess {
 
   long getRunningQuotaTime(long calculatingStartTime, long calculatingEndTime);
 
+  boolean containSuccessTasks();
+
   void commit();
 
   void commitClosedProcess();

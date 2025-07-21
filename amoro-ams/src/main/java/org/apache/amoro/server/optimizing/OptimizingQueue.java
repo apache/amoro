@@ -510,19 +510,19 @@ public class OptimizingQueue extends PersistentBase {
           } else {
             try {
               buildCommit().commit();
-              this.failedReason = taskRuntime.getFailReason();
-              this.status = ProcessStatus.FAILED;
+              if (containSuccessTasks()) {
+                this.status = ProcessStatus.SUCCESS;
+              } else {
+                this.failedReason = taskRuntime.getFailReason();
+                this.status = ProcessStatus.FAILED;
+              }
               this.endTime = System.currentTimeMillis();
               persistAndSetCompleted(false);
             } catch (Throwable throwable) {
               LOG.error(
                   "{} Commit optimizing failed ", optimizingState.getTableIdentifier(), throwable);
               this.status = ProcessStatus.FAILED;
-              this.failedReason = taskRuntime.getFailReason();
-              this.failedReason =
-                  this.failedReason.concat(
-                      " and commit failed, because "
-                          + ExceptionUtil.getErrorMessage(throwable, 4000));
+              this.failedReason = ExceptionUtil.getErrorMessage(throwable, 4000);
               this.endTime = System.currentTimeMillis();
               persistAndSetCompleted(false);
             }
@@ -593,6 +593,14 @@ public class OptimizingQueue extends PersistentBase {
           .filter(t -> !t.finished())
           .mapToLong(task -> task.getQuotaTime(calculatingStartTime, calculatingEndTime))
           .sum();
+    }
+
+    @Override
+    public boolean containSuccessTasks() {
+      return taskMap.values().stream()
+              .filter(t -> t.getStatus() == TaskRuntime.Status.SUCCESS)
+              .count()
+          > 0;
     }
 
     @Override
