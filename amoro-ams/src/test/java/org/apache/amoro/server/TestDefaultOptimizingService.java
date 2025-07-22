@@ -51,6 +51,7 @@ import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
@@ -133,11 +134,36 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     runtime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
   }
 
+  private void initTableWithPartitionedFiles() {
+    MixedTable mixedTable =
+        (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    appendPartitionedData(mixedTable.asUnkeyedTable(), 1);
+    appendPartitionedData(mixedTable.asUnkeyedTable(), 2);
+    DefaultTableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
+
+    runtime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
+  }
+
   private void appendData(UnkeyedTable table, int id) {
     ArrayList<Record> newRecords =
         Lists.newArrayList(
             MixedDataTestHelpers.createRecord(
                 table.schema(), id, "111", 0L, "2022-01-01T12:00:00"));
+    List<DataFile> dataFiles = MixedDataTestHelpers.writeBaseStore(table, 0L, newRecords, false);
+    AppendFiles appendFiles = table.newAppend();
+    dataFiles.forEach(appendFiles::appendFile);
+    appendFiles.commit();
+  }
+
+  private void appendPartitionedData(UnkeyedTable table, int id) {
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            MixedDataTestHelpers.createRecord(
+                table.schema(), id, "111", 0L, "2022-01-01T12:00:00"));
+    newRecords.add(
+        MixedDataTestHelpers.createRecord(table.schema(), id, "222", 0L, "2022-01-02T12:00:00"));
+    newRecords.add(
+        MixedDataTestHelpers.createRecord(table.schema(), id, "333", 0L, "2022-01-03T12:00:00"));
     List<DataFile> dataFiles = MixedDataTestHelpers.writeBaseStore(table, 0L, newRecords, false);
     AppendFiles appendFiles = table.newAppend();
     dataFiles.forEach(appendFiles::appendFile);
@@ -240,6 +266,43 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         optimizingService().listTasks(defaultResourceGroup().getName()).get(0);
     optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
     assertTaskCompleted(taskRuntime);
+  }
+
+  @Test
+  public void testCancelProcess() throws TException {
+    initTableWithPartitionedFiles();
+    // 1.poll task
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+    assertTaskStatus(TaskRuntime.Status.SCHEDULED);
+    optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
+    assertTaskStatus(TaskRuntime.Status.ACKED);
+
+    TaskRuntime taskRuntime =
+        optimizingService().listTasks(defaultResourceGroup().getName()).get(0);
+    optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
+    assertTaskCompleted(taskRuntime);
+
+    OptimizingProcess optimizingProcess =
+        tableService()
+            .getRuntime(serverTableIdentifier().getId())
+            .getOptimizingState()
+            .getOptimizingProcess();
+    Assertions.assertTrue(optimizingService().cancelProcess(taskRuntime.getProcessId()));
+    Assertions.assertEquals(
+        0, optimizingService().listTasks(defaultResourceGroup().getName()).size());
+    Assertions.assertEquals(
+        OptimizingStatus.IDLE,
+        tableService()
+            .getRuntime(serverTableIdentifier().getId())
+            .getOptimizingState()
+            .getOptimizingStatus());
+    Assertions.assertEquals(ProcessStatus.CLOSED, optimizingProcess.getStatus());
+    Assertions.assertNull(
+        tableService()
+            .getRuntime(serverTableIdentifier().getId())
+            .getOptimizingState()
+            .getOptimizingProcess());
   }
 
   @Test
