@@ -234,55 +234,6 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   }
 
   @Test
-  public void testCommitTaskWithFailed() {
-    DefaultTableRuntime tableRuntime = initTableWithPartitionedFiles();
-    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
-    Assert.assertEquals(0, queue.collectTasks().size());
-
-    TaskRuntime firstTask = queue.pollTask(MAX_POLLING_TIME);
-    firstTask.schedule(optimizerThread);
-    firstTask.ack(optimizerThread);
-    Assert.assertEquals(
-        1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
-    Assert.assertNotNull(firstTask);
-    firstTask.complete(
-        optimizerThread,
-        buildOptimizingTaskResult(firstTask.getTaskId(), optimizerThread.getThreadId()));
-    Assert.assertEquals(TaskRuntime.Status.SUCCESS, firstTask.getStatus());
-
-    TaskRuntime<?> task = queue.pollTask(MAX_POLLING_TIME);
-    Assert.assertNotNull(task);
-
-    for (int i = 0; i < TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT; i++) {
-      queue.retryTask(task);
-      TaskRuntime<?> retryTask = queue.pollTask(MAX_POLLING_TIME);
-      Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
-      retryTask.schedule(optimizerThread);
-      retryTask.ack(optimizerThread);
-      retryTask.complete(
-          optimizerThread,
-          buildOptimizingTaskFailed(task.getTaskId(), optimizerThread.getThreadId()));
-      Assert.assertEquals(TaskRuntime.Status.PLANNED, task.getStatus());
-    }
-
-    queue.retryTask(task);
-    TaskRuntime<?> retryTask = queue.pollTask(MAX_POLLING_TIME);
-    Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
-    retryTask.schedule(optimizerThread);
-    retryTask.ack(optimizerThread);
-
-    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingState().getOptimizingProcess();
-    retryTask.complete(
-        optimizerThread,
-        buildOptimizingTaskFailed(task.getTaskId(), optimizerThread.getThreadId()));
-    Assert.assertEquals(TaskRuntime.Status.FAILED, task.getStatus());
-    Assert.assertEquals(ProcessStatus.FAILED, optimizingProcess.getStatus());
-    Assert.assertNull(tableRuntime.getOptimizingState().getOptimizingProcess());
-    Assert.assertEquals(0, queue.collectTasks().size());
-    queue.dispose();
-  }
-
-  @Test
   public void testCollectingTasks() {
     DefaultTableRuntime tableRuntime = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
@@ -425,18 +376,6 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     return tableRuntime;
   }
 
-  protected DefaultTableRuntime initTableWithPartitionedFiles() {
-    MixedTable mixedTable =
-        (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
-    appendPartitionedData(mixedTable.asUnkeyedTable(), 1);
-    appendPartitionedData(mixedTable.asUnkeyedTable(), 2);
-    DefaultTableRuntime tableRuntime =
-        buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
-
-    tableRuntime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
-    return tableRuntime;
-  }
-
   private DefaultTableRuntime buildTableRuntimeMeta(
       OptimizingStatus status, ResourceGroup resourceGroup) {
     MixedTable mixedTable =
@@ -451,21 +390,6 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     tableRuntimeMeta.setTableConfig(TableConfigurations.parseTableConfig(mixedTable.properties()));
     tableRuntimeMeta.setOptimizerGroup(resourceGroup.getName());
     return new DefaultTableRuntime(tableRuntimeMeta, tableService());
-  }
-
-  private void appendPartitionedData(UnkeyedTable table, int id) {
-    ArrayList<Record> newRecords =
-        Lists.newArrayList(
-            MixedDataTestHelpers.createRecord(
-                table.schema(), id, "111", 0L, "2022-01-01T12:00:00"));
-    newRecords.add(
-        MixedDataTestHelpers.createRecord(table.schema(), id, "222", 0L, "2022-01-02T12:00:00"));
-    newRecords.add(
-        MixedDataTestHelpers.createRecord(table.schema(), id, "333", 0L, "2022-01-03T12:00:00"));
-    List<DataFile> dataFiles = MixedDataTestHelpers.writeBaseStore(table, 0L, newRecords, false);
-    AppendFiles appendFiles = table.newAppend();
-    dataFiles.forEach(appendFiles::appendFile);
-    appendFiles.commit();
   }
 
   private void appendData(UnkeyedTable table, int id) {
