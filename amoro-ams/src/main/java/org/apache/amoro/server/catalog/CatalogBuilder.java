@@ -90,9 +90,11 @@ public class CatalogBuilder {
       case CATALOG_TYPE_HIVE:
         String amsUri = getAmsURI(serverConfiguration);
         catalogMeta.getCatalogProperties().put(CatalogMetaProperties.AMS_URI, amsUri);
-        catalogMeta
-            .getCatalogProperties()
-            .put(CLIENT_POOL_SIZE, String.valueOf(CLIENT_POOL_SIZE_DEFAULT));
+        if (!catalogMeta.getCatalogProperties().containsKey(CLIENT_POOL_SIZE)) {
+          catalogMeta
+              .getCatalogProperties()
+              .put(CLIENT_POOL_SIZE, String.valueOf(CLIENT_POOL_SIZE_DEFAULT));
+        }
         return new ExternalCatalog(catalogMeta);
       case CATALOG_TYPE_AMS:
         return new InternalCatalogImpl(catalogMeta, serverConfiguration);
