@@ -43,6 +43,7 @@ import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.BaseTable;
@@ -327,11 +328,12 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
   public void resetTaskQuotas(long startTimeMills) {
     tableLock.lock();
     try {
+      long minProcessId = SnowflakeIdGenerator.getMinSnowflakeId(startTimeMills);
       taskQuotas.clear();
       taskQuotas.addAll(
           getAs(
               OptimizingMapper.class,
-              mapper -> mapper.selectTaskQuotasByTime(tableIdentifier.getId(), startTimeMills)));
+              mapper -> mapper.selectTaskQuotasByTime(tableIdentifier.getId(), minProcessId)));
     } finally {
       tableLock.unlock();
     }
