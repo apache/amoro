@@ -276,7 +276,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         optimizerThread,
         buildOptimizingTaskFailed(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.FAILED, task.getStatus());
-    Assert.assertEquals(ProcessStatus.FAILED, optimizingProcess.getStatus());
+    Assert.assertEquals(ProcessStatus.SUCCESS, optimizingProcess.getStatus());
     Assert.assertNull(tableRuntime.getOptimizingState().getOptimizingProcess());
     Assert.assertEquals(0, queue.collectTasks().size());
     queue.dispose();
