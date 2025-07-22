@@ -26,12 +26,13 @@ import org.junit.Test;
 public class TestSnowflakeIdGenerator {
   private SnowflakeIdGenerator generator;
 
-  private static final long TEST_TIMESTAMP = 1735689600;
+  private static final long TEST_TIMESTAMP_S = 1735689600;
+  private static final long TEST_TIMESTAMP_MS = 1735689600000L;
   private static final long TEST_MACHINE_ID = 0;
   private static final long TEST_SEQUENCE = 0;
   private static final long TEST_ID =
-      (TEST_TIMESTAMP << 22) | (TEST_MACHINE_ID << 12) | TEST_SEQUENCE;
-  private static final long TEST_MIN_ID = 7280009832038400L;
+      (TEST_TIMESTAMP_S * 100 << 13) | (TEST_MACHINE_ID << 5) | TEST_SEQUENCE;
+  private static final long TEST_MIN_ID = 1421876920320000L;
 
   @Before
   public void setUp() {
@@ -40,7 +41,7 @@ public class TestSnowflakeIdGenerator {
 
   @Test
   public void testConstructor_InvalidMachineId_ThrowsException() {
-    Assert.assertThrows(IllegalArgumentException.class, () -> new SnowflakeIdGenerator(1024));
+    Assert.assertThrows(IllegalArgumentException.class, () -> new SnowflakeIdGenerator(32));
   }
 
   @Test
@@ -51,14 +52,20 @@ public class TestSnowflakeIdGenerator {
   }
 
   @Test
-  public void testGetMinSnowflakeId() {
-    long minId = SnowflakeIdGenerator.getMinSnowflakeId(TEST_TIMESTAMP);
+  public void testGetMinSnowflakeId_From_Timestamp_S() {
+    long minId = SnowflakeIdGenerator.getMinSnowflakeId(TEST_TIMESTAMP_S);
+    Assert.assertEquals(TEST_MIN_ID, minId);
+  }
+
+  @Test
+  public void testGetMinSnowflakeId_From_Timestamp_Ms() {
+    long minId = SnowflakeIdGenerator.getMinSnowflakeId(TEST_TIMESTAMP_MS);
     Assert.assertEquals(TEST_MIN_ID, minId);
   }
 
   @Test
   public void testExtractTimestamp() {
     long extractedTimestamp = SnowflakeIdGenerator.extractTimestamp(TEST_ID);
-    Assert.assertEquals(TEST_TIMESTAMP, extractedTimestamp);
+    Assert.assertEquals(TEST_TIMESTAMP_S, extractedTimestamp);
   }
 }

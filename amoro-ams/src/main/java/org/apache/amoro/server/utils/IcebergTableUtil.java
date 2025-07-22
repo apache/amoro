@@ -79,7 +79,7 @@ import java.util.stream.Collectors;
 public class IcebergTableUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergTableUtil.class);
-  private static final SnowflakeIdGenerator snowflakeIdGenerator = new SnowflakeIdGenerator(0);
+  private static final SnowflakeIdGenerator snowflakeIdGenerator = new SnowflakeIdGenerator();
 
   public static long getSnapshotId(Table table, boolean refresh) {
     Snapshot currentSnapshot = getSnapshot(table, refresh);

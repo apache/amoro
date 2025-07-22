@@ -20,7 +20,7 @@
 ALTER TABLE `table_runtime` MODIFY COLUMN `optimizing_status_start_time` TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Table optimize status start time';
 
 -- Update processId to SnowflakeId
-UPDATE `table_optimizing_process` SET `process_id` = `process_id` << 22;
-UPDATE `task_runtime` SET `process_id` = `process_id` << 22;
-UPDATE `optimizing_task_quota` SET `process_id` = `process_id` << 22;
-UPDATE `table_runtime` SET `optimizing_process_id` = `optimizing_process_id` << 22;
+UPDATE `table_optimizing_process` SET `process_id` = `process_id` /10 << 13;
+UPDATE `task_runtime` SET `process_id` = `process_id` /10 << 13;
+UPDATE `optimizing_task_quota` SET `process_id` = `process_id` /10 << 13;
+UPDATE `table_runtime` SET `optimizing_process_id` = `optimizing_process_id` /10 << 13;

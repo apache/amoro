@@ -187,7 +187,7 @@ export function getTasksByOptimizingProcessId(
     catalog: string
     db: string
     table: string
-    processId: string
+    processId: number
     page: number
     pageSize: number
     token?: string

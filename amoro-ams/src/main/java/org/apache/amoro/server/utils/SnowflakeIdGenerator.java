@@ -22,14 +22,17 @@ package org.apache.amoro.server.utils;
 public class SnowflakeIdGenerator {
   // Base timestamp (e.g., the start time of the service)
   private static final long EPOCH_SECONDS = 0L;
+
+  // Given that the maximum int value in javascript is 2^53-1, here the length of the SnowflakeId is
+  // compressed to 54 bits (fixed header 1 bit + timestamp part + machine ID part + sequence part)
   // Number of bits allocated for the timestamp part
-  private static final long TIMESTAMP_BITS = 41L;
+  private static final long TIMESTAMP_BITS = 40L;
 
   // Number of bits allocated for the machine ID part
-  private static final long MACHINE_ID_BITS = 10L;
+  private static final long MACHINE_ID_BITS = 5L;
 
   // Number of bits allocated for the sequence number part
-  private static final long SEQUENCE_BITS = 12L;
+  private static final long SEQUENCE_BITS = 8L;
 
   // Left shift amount for the timestamp part
   private static final long TIMESTAMP_LEFT_SHIFT = MACHINE_ID_BITS + SEQUENCE_BITS;
@@ -45,13 +48,19 @@ public class SnowflakeIdGenerator {
 
   // Machine ID and Sequence
   private final long machineId;
+  private static final long DEFAULT_MACHINE_ID = 0L;
   private long sequence = 0L;
   private long lastTimestamp = -1L;
+
+  /** Constructor with default machine ID */
+  public SnowflakeIdGenerator() {
+    this(DEFAULT_MACHINE_ID);
+  }
 
   /**
    * Constructor to set Machine ID
    *
-   * @param machineId Machine ID, must be between 0 and 1023
+   * @param machineId Machine ID, must be between 0 and 32
    */
   public SnowflakeIdGenerator(long machineId) {
     if (machineId > MAX_MACHINE_ID || machineId < 0) {
@@ -87,8 +96,9 @@ public class SnowflakeIdGenerator {
         | sequence;
   }
 
+  /** Get the current timestamp in 10ms */
   private long currentTime() {
-    return System.currentTimeMillis();
+    return System.currentTimeMillis() / 10;
   }
 
   private long waitForNextMillis(long lastTimestamp) {
@@ -103,20 +113,27 @@ public class SnowflakeIdGenerator {
    * Get the minimum Snowflake ID for a specific timestamp (for example, 1735689600
    * (2025-01-01T00:00:00Z))
    *
-   * @param timestamp Specified timestamp
+   * @param timestamp Specified timestamp (in milliseconds or seconds)
    * @return Minimum Snowflake ID
    */
   public static long getMinSnowflakeId(long timestamp) {
-    return (timestamp << TIMESTAMP_LEFT_SHIFT) & 0xFFFFFFFFFFFFFFFFL;
+    // if timestamp is milliseconds, compress it to 10ms
+    if (timestamp < 10000000000L) {
+      timestamp *= 100; // Convert seconds to 10ms
+    } else {
+      timestamp /= 10; // Convert milliseconds to 10ms
+    }
+
+    return (timestamp << TIMESTAMP_LEFT_SHIFT);
   }
 
   /**
    * Extract the timestamp part from a Snowflake ID
    *
    * @param snowflakeId Snowflake ID
-   * @return Timestamp part
+   * @return Timestamp part in seconds
    */
   public static long extractTimestamp(long snowflakeId) {
-    return (snowflakeId >> TIMESTAMP_LEFT_SHIFT) + EPOCH_SECONDS;
+    return (snowflakeId >> TIMESTAMP_LEFT_SHIFT) / 100 + EPOCH_SECONDS;
   }
 }
