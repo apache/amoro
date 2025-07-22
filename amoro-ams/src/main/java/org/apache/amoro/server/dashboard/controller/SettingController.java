@@ -26,7 +26,7 @@ import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.ResourceContainers;
-import org.glassfish.jersey.internal.guava.Sets;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.HashMap;
