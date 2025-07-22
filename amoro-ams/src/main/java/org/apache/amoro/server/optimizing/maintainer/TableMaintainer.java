@@ -37,8 +37,9 @@ public interface TableMaintainer {
   void cleanOrphanFiles(DefaultTableRuntime tableRuntime);
 
   /** Clean table dangling delete files. */
-  default void cleanDanglingDeleteFiles(DefaultTableRuntime tableRuntime) {
+  default boolean cleanDanglingDeleteFiles(DefaultTableRuntime tableRuntime) {
     // DO nothing by default
+    return false;
   }
 
   /**
@@ -53,7 +54,7 @@ public interface TableMaintainer {
    *
    * @param tableRuntime TableRuntime
    */
-  void expireData(DefaultTableRuntime tableRuntime);
+  boolean expireData(DefaultTableRuntime tableRuntime);
 
   /** Auto create tags for table. */
   void autoCreateTags(DefaultTableRuntime tableRuntime);
@@ -68,4 +69,7 @@ public interface TableMaintainer {
       throw new RuntimeException("Unsupported table type" + amoroTable.originalTable().getClass());
     }
   }
+
+  /** Refresh the table metadata, such as the latest snapshot, partition spec, etc. */
+  void refreshTable();
 }
