@@ -59,6 +59,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -518,8 +519,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
       if (task.getStatus() == TaskRuntime.Status.ACKED
           && task.getStartTime() + taskExecuteTimeout < System.currentTimeMillis()) {
         LOG.warn(
-            "Task {} is suspending at ACK status (start time: {}), put it to retry queue, optimizer {}",
+            "Task {} has been suspended in ACK state for {} (start time: {}), put it to retry queue, optimizer {}. (Note: The task may have finished executing, but ams did not receive the COMPLETE message from the optimizer.)",
             task.getTaskId(),
+            Duration.ofMillis(taskExecuteTimeout),
             task.getStartTime(),
             task.getResourceDesc());
       } else {
