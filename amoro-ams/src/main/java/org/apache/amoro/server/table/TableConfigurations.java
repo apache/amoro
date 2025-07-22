@@ -265,7 +265,7 @@ public class TableConfigurations {
                 TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE,
                 TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE_DEFAULT))
         .setTargetQuota(
-            CompatiblePropertyUtil.propertyAsInt(
+            CompatiblePropertyUtil.propertyAsDouble(
                 properties,
                 TableProperties.SELF_OPTIMIZING_QUOTA,
                 TableProperties.SELF_OPTIMIZING_QUOTA_DEFAULT))

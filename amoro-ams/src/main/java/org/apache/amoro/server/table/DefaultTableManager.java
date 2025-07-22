@@ -41,9 +41,11 @@ import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -55,6 +57,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -281,6 +284,16 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
 
     // load quota info
     Map<Long, List<TaskRuntime.TaskQuota>> tableQuotaMap = getQuotaTime(tableIds);
+    List<OptimizerInstance> instances = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+    Map<String, List<Integer>> optimizerThreadCountMap =
+        instances == null
+            ? Collections.emptyMap()
+            : instances.stream()
+                .collect(
+                    Collectors.groupingBy(
+                        OptimizerInstance::getGroupName,
+                        Collectors.mapping(
+                            OptimizerInstance::getThreadCount, Collectors.toList())));
 
     List<TableOptimizingInfo> infos =
         ret.stream()
@@ -288,7 +301,13 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
                 meta -> {
                   List<OptimizingTaskMeta> tasks = tableTaskMetaMap.get(meta.getTableId());
                   List<TaskRuntime.TaskQuota> quotas = tableQuotaMap.get(meta.getTableId());
-                  return OptimizingUtil.buildTableOptimizeInfo(meta, tasks, quotas);
+                  int threadCount =
+                      optimizerThreadCountMap
+                          .getOrDefault(meta.getOptimizerGroup(), Collections.emptyList()).stream()
+                          .mapToInt(Integer::intValue)
+                          .sum();
+                  return OptimizingUtil.buildTableOptimizeInfo(
+                      meta, tasks, quotas, Math.max(threadCount, 1));
                 })
             .collect(Collectors.toList());
     return Pair.of(infos, total);

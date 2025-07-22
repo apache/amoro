@@ -402,8 +402,7 @@ public class OptimizingQueue extends PersistentBase {
     public TaskRuntime<?> poll() {
       if (lock.tryLock()) {
         try {
-          int quota =
-              optimizingState.getTableConfiguration().getOptimizingConfig().getTargetQuota();
+          int quota = getQuotaCount();
           TaskRuntime<?> task =
               status != ProcessStatus.KILLED
                       && status != ProcessStatus.FAILED
@@ -452,6 +451,13 @@ public class OptimizingQueue extends PersistentBase {
         tableRuntime.recover(this);
       }
       loadTaskRuntimes(this);
+    }
+
+    @Override
+    public int getQuotaCount() {
+      return (int)
+          (optimizingState.getTableConfiguration().getOptimizingConfig().getTargetQuota()
+              * getAvailableCore());
     }
 
     @Override

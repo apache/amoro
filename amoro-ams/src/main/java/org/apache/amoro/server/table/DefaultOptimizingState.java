@@ -517,7 +517,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     return tableConfiguration.getOptimizingConfig().isEnabled();
   }
 
-  public int getTargetQuota() {
+  public double getTargetQuota() {
     return tableConfiguration.getOptimizingConfig().getTargetQuota();
   }
 
@@ -626,8 +626,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
   public double calculateQuotaOccupy() {
     return new BigDecimal(
             (double) getQuotaTime()
-                / (AmoroServiceConstants.QUOTA_LOOK_BACK_TIME
-                    * tableConfiguration.getOptimizingConfig().getTargetQuota()))
+                / (AmoroServiceConstants.QUOTA_LOOK_BACK_TIME * optimizingProcess.getQuotaCount()))
         .setScale(4, RoundingMode.HALF_UP)
         .doubleValue();
   }

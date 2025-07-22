@@ -48,7 +48,8 @@ public class OptimizingUtil {
   public static TableOptimizingInfo buildTableOptimizeInfo(
       TableRuntimeMeta optimizingTableRuntime,
       List<OptimizingTaskMeta> processTasks,
-      List<TaskRuntime.TaskQuota> quotas) {
+      List<TaskRuntime.TaskQuota> quotas,
+      int threadCount) {
     ServerTableIdentifier identifier =
         ServerTableIdentifier.of(
             optimizingTableRuntime.getTableId(),
@@ -63,14 +64,14 @@ public class OptimizingUtil {
         System.currentTimeMillis() - optimizingTableRuntime.getCurrentStatusStartTime());
     OptimizingConfig optimizingConfig =
         optimizingTableRuntime.getTableConfig().getOptimizingConfig();
-    tableOptimizeInfo.setQuota(optimizingConfig.getTargetQuota());
+    tableOptimizeInfo.setQuota((int) Math.ceil(optimizingConfig.getTargetQuota() * threadCount));
 
     long endTime = System.currentTimeMillis();
     long startTime = System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
     long quotaOccupy = calculateQuotaOccupy(processTasks, quotas, startTime, endTime);
     double quotaOccupation =
         (double) quotaOccupy
-            / (AmoroServiceConstants.QUOTA_LOOK_BACK_TIME * optimizingConfig.getTargetQuota());
+            / (AmoroServiceConstants.QUOTA_LOOK_BACK_TIME * tableOptimizeInfo.getQuota());
     tableOptimizeInfo.setQuotaOccupation(
         BigDecimal.valueOf(quotaOccupation).setScale(4, RoundingMode.HALF_UP).doubleValue());
 
