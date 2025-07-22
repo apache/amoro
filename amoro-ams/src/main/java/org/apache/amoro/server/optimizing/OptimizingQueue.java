@@ -686,11 +686,18 @@ public class OptimizingQueue extends PersistentBase {
                   .loadTable(optimizingState.getTableIdentifier().getIdentifier())
                   .originalTable();
       if (table.isUnkeyedTable()) {
-        return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
+        return new UnKeyedTableCommit(
+            targetSnapshotId,
+            table,
+            taskMap.values().stream()
+                .filter(task -> task.getStatus() == TaskRuntime.Status.SUCCESS)
+                .collect(Collectors.toList()));
       } else {
         return new KeyedTableCommit(
             table,
-            taskMap.values(),
+            taskMap.values().stream()
+                .filter(task -> task.getStatus() == TaskRuntime.Status.SUCCESS)
+                .collect(Collectors.toList()),
             targetSnapshotId,
             convertPartitionSequence(table, fromSequence),
             convertPartitionSequence(table, toSequence));
