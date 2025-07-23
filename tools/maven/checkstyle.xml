@@ -120,6 +120,11 @@ This file is based on the checkstyle file of Apache Beam.
             <message key="import.illegal" value="{0}; Use amoro shaded guava instead."/>
         </module>
 
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="org.glassfish.jersey.internal.guava"/>
+            <message key="import.illegal" value="{0}; Use amoro shaded guava instead."/>
+        </module>
+
         <module name="Regexp">
             <property name="format" value="import com\.fasterxml\.jackson"/>
             <property name="illegalPattern" value="true"/>

@@ -54,8 +54,9 @@ public interface OptimizingMapper {
 
   /** OptimizingProcess operation below */
   @Delete(
-      "DELETE FROM table_optimizing_process WHERE table_id = #{tableId} and process_id < #{time}")
-  void deleteOptimizingProcessBefore(@Param("tableId") long tableId, @Param("time") long time);
+      "DELETE FROM table_optimizing_process WHERE table_id = #{tableId} and process_id < #{expireId}")
+  void deleteOptimizingProcessBefore(
+      @Param("tableId") long tableId, @Param("expireId") long expireId);
 
   @Insert(
       "INSERT INTO table_optimizing_process(table_id, catalog_name, db_name, table_name ,process_id,"
@@ -256,8 +257,8 @@ public interface OptimizingMapper {
   void updateTaskRuntime(
       @Param("taskRuntime") TaskRuntime<? extends StagedTaskDescriptor<?, ?, ?>> taskRuntime);
 
-  @Delete("DELETE FROM task_runtime WHERE table_id = #{tableId} AND process_id < #{time}")
-  void deleteTaskRuntimesBefore(@Param("tableId") long tableId, @Param("time") long time);
+  @Delete("DELETE FROM task_runtime WHERE table_id = #{tableId} AND process_id < #{expireId}")
+  void deleteTaskRuntimesBefore(@Param("tableId") long tableId, @Param("expireId") long expireId);
 
   /** Optimizing rewrite input and output operations below */
   @Update(
@@ -274,7 +275,7 @@ public interface OptimizingMapper {
   /** Optimizing task quota operations below */
   @Select(
       "SELECT process_id, task_id, retry_num, table_id, start_time, end_time, fail_reason "
-          + "FROM optimizing_task_quota WHERE table_id = #{tableId} AND process_id >= #{startTime}")
+          + "FROM optimizing_task_quota WHERE table_id = #{tableId} AND process_id >= #{minProcessId}")
   @Results(
       id = "taskQuota",
       value = {
@@ -290,15 +291,15 @@ public interface OptimizingMapper {
         @Result(property = "failReason", column = "fail_reason")
       })
   List<TaskRuntime.TaskQuota> selectTaskQuotasByTime(
-      @Param("tableId") long tableId, @Param("startTime") long startTime);
+      @Param("tableId") long tableId, @Param("minProcessId") long minProcessId);
 
   @Select(
       "SELECT process_id, task_id, retry_num, table_id, start_time, end_time, fail_reason "
-          + "FROM optimizing_task_quota WHERE table_id in (#{tables::number[]}) AND process_id >= #{startTime}")
+          + "FROM optimizing_task_quota WHERE table_id in (#{tables::number[]}) AND process_id >= #{minProcessId}")
   @Lang(InListExtendedLanguageDriver.class)
   @ResultMap("taskQuota")
   List<TaskRuntime.TaskQuota> selectTableQuotas(
-      @Param("tables") Collection<Long> tables, @Param("startTime") long startTime);
+      @Param("tables") Collection<Long> tables, @Param("minProcessId") long minProcessId);
 
   @Insert(
       "INSERT INTO optimizing_task_quota (process_id, task_id, retry_num, table_id, start_time, end_time,"
@@ -309,6 +310,8 @@ public interface OptimizingMapper {
           + " #{taskQuota.failReason, jdbcType=VARCHAR})")
   void insertTaskQuota(@Param("taskQuota") TaskRuntime.TaskQuota taskQuota);
 
-  @Delete("DELETE FROM optimizing_task_quota WHERE table_id = #{table_id} AND process_id < #{time}")
-  void deleteOptimizingQuotaBefore(@Param("table_id") long tableId, @Param("time") long timestamp);
+  @Delete(
+      "DELETE FROM optimizing_task_quota WHERE table_id = #{table_id} AND process_id < #{expireId}")
+  void deleteOptimizingQuotaBefore(
+      @Param("table_id") long tableId, @Param("expireId") long expireId);
 }
