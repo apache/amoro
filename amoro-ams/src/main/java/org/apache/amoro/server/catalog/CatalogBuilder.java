@@ -92,7 +92,7 @@ public class CatalogBuilder {
         catalogMeta.getCatalogProperties().put(CatalogMetaProperties.AMS_URI, amsUri);
         catalogMeta
             .getCatalogProperties()
-            .put(CLIENT_POOL_SIZE, String.valueOf(CLIENT_POOL_SIZE_DEFAULT));
+            .putIfAbsent(CLIENT_POOL_SIZE, String.valueOf(CLIENT_POOL_SIZE_DEFAULT));
         return new ExternalCatalog(catalogMeta);
       case CATALOG_TYPE_AMS:
         return new InternalCatalogImpl(catalogMeta, serverConfiguration);
