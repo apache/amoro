@@ -346,8 +346,7 @@ public class TestTableManager extends AMSTableTestBase {
   }
 
   private boolean isTableRuntimeBlocked(BlockableOperation operation) {
-    return tableService()
-        .getRuntime(serverTableIdentifier().getId())
+    return getDefaultTableRuntime(serverTableIdentifier().getId())
         .getOptimizingState()
         .isBlocked(operation);
   }

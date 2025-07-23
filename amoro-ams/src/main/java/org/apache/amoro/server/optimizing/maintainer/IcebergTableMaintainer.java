@@ -23,6 +23,7 @@ import static org.apache.amoro.shade.guava32.com.google.common.primitives.Longs.
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.config.DataExpirationConfig;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.config.TagConfiguration;
 import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
@@ -37,6 +38,7 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
@@ -119,9 +121,11 @@ public class IcebergTableMaintainer implements TableMaintainer {
           CommitMetaProducer.CLEAN_DANGLING_DELETE.name());
 
   protected Table table;
+  private final TableIdentifier tableIdentifier;
 
-  public IcebergTableMaintainer(Table table) {
+  public IcebergTableMaintainer(Table table, TableIdentifier tableIdentifier) {
     this.table = table;
+    this.tableIdentifier = tableIdentifier;
   }
 
   @Override
@@ -146,9 +150,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void cleanDanglingDeleteFiles(DefaultTableRuntime tableRuntime) {
-    TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
-
+  public void cleanDanglingDeleteFiles(TableConfiguration tableConfiguration) {
     if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
       return;
     }
@@ -247,10 +249,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireData(DefaultTableRuntime tableRuntime) {
+  public void expireData(DataExpirationConfig expirationConfig) {
     try {
-      DataExpirationConfig expirationConfig =
-          tableRuntime.getTableConfiguration().getExpiringDataConfig();
       Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
       if (!TableConfigurations.isValidDataExpirationField(expirationConfig, field, table.name())) {
         return;
@@ -258,7 +258,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
       expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
-      LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
+      LOG.error("Unexpected purge error for table {} ", tableIdentifier, t);
     }
   }
 
@@ -311,10 +311,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void autoCreateTags(DefaultTableRuntime tableRuntime) {
-    new AutoCreateIcebergTagAction(
-            table, tableRuntime.getTableConfiguration().getTagConfiguration(), LocalDateTime.now())
-        .execute();
+  public void autoCreateTags(TagConfiguration tagConfiguration) {
+    new AutoCreateIcebergTagAction(table, tagConfiguration, LocalDateTime.now()).execute();
   }
 
   protected void cleanContentFiles(
