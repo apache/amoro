@@ -456,8 +456,9 @@ public class OptimizingQueue extends PersistentBase {
     @Override
     public int getQuotaCount() {
       return (int)
-          (optimizingState.getTableConfiguration().getOptimizingConfig().getTargetQuota()
-              * getAvailableCore());
+          Math.ceil(
+              optimizingState.getTableConfiguration().getOptimizingConfig().getTargetQuota()
+                  * getAvailableCore());
     }
 
     @Override
