@@ -47,14 +47,31 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
   public void start() {
     while (isStarted()) {
+      OptimizingTask ackTask = null;
+      OptimizingTaskResult result = null;
       try {
         OptimizingTask task = pollTask();
         if (task != null && ackTask(task)) {
-          OptimizingTaskResult result = executeTask(task);
-          completeTask(result);
+          ackTask = task;
+          result = executeTask(task);
         }
       } catch (Throwable t) {
-        LOG.error("Optimizer executor[{}] got an unexpected error", threadId, t);
+        if (ackTask != null) {
+          LOG.error(
+              "Optimizer executor[{}] handling task[{}] failed and got an unknown error",
+              threadId,
+              ackTask.getTaskId(),
+              t);
+          String errorMessage = ExceptionUtil.getErrorMessage(t, ERROR_MESSAGE_MAX_LENGTH);
+          result = new OptimizingTaskResult(ackTask.getTaskId(), threadId);
+          result.setErrorMessage(errorMessage);
+        } else {
+          LOG.error("Optimizer executor[{}] got an unexpected error", threadId, t);
+        }
+      } finally {
+        if (result != null) {
+          completeTask(result);
+        }
       }
     }
   }
@@ -112,14 +129,16 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
             return null;
           });
       LOG.info(
-          "Optimizer executor[{}] completed task[{}] to ams",
-          threadId,
-          optimizingTaskResult.getTaskId());
-    } catch (TException exception) {
-      LOG.error(
-          "Optimizer executor[{}] completed task[{}] failed",
+          "Optimizer executor[{}] completed task[{}](status: {}) to ams",
           threadId,
           optimizingTaskResult.getTaskId(),
+          optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL");
+    } catch (Exception exception) {
+      LOG.error(
+          "Optimizer executor[{}] completed task[{}](status: {}) failed",
+          threadId,
+          optimizingTaskResult.getTaskId(),
+          optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL",
           exception);
     }
   }

@@ -242,10 +242,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
     LOG.info(
-        "Optimizer {} (threadId {}) complete task {}",
+        "Optimizer {} (threadId {}) complete task {} (status: {})",
         authToken,
         taskResult.getThreadId(),
-        taskResult.getTaskId());
+        taskResult.getTaskId(),
+        taskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL");
     OptimizingQueue queue = getQueueByToken(authToken);
     OptimizerThread thread =
         getAuthenticatedOptimizer(authToken).getThread(taskResult.getThreadId());

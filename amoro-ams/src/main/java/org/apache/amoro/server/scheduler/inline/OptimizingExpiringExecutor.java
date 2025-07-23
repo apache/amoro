@@ -23,6 +23,7 @@ import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,25 +63,26 @@ public class OptimizingExpiringExecutor extends PeriodicTableScheduler {
   private class Persistency extends PersistentBase {
     public void doExpiring(TableRuntime tableRuntime) {
       long expireTime = System.currentTimeMillis() - keepTime;
+      long minProcessId = SnowflakeIdGenerator.getMinSnowflakeId(expireTime);
       doAsTransaction(
           () ->
               doAs(
                   OptimizingMapper.class,
                   mapper ->
                       mapper.deleteOptimizingProcessBefore(
-                          tableRuntime.getTableIdentifier().getId(), expireTime)),
+                          tableRuntime.getTableIdentifier().getId(), minProcessId)),
           () ->
               doAs(
                   OptimizingMapper.class,
                   mapper ->
                       mapper.deleteTaskRuntimesBefore(
-                          tableRuntime.getTableIdentifier().getId(), expireTime)),
+                          tableRuntime.getTableIdentifier().getId(), minProcessId)),
           () ->
               doAs(
                   OptimizingMapper.class,
                   mapper ->
                       mapper.deleteOptimizingQuotaBefore(
-                          tableRuntime.getTableIdentifier().getId(), expireTime)));
+                          tableRuntime.getTableIdentifier().getId(), minProcessId)));
     }
   }
 }
