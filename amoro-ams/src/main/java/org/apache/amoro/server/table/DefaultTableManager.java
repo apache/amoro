@@ -47,6 +47,7 @@ import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
+import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -319,11 +320,9 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
     }
     long calculatingEndTime = System.currentTimeMillis();
     long calculatingStartTime = calculatingEndTime - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
-
+    long minProcessId = SnowflakeIdGenerator.getMinSnowflakeId(calculatingStartTime);
     List<TaskRuntime.TaskQuota> quotas =
-        getAs(
-            OptimizingMapper.class,
-            mapper -> mapper.selectTableQuotas(tableIds, calculatingStartTime));
+        getAs(OptimizingMapper.class, mapper -> mapper.selectTableQuotas(tableIds, minProcessId));
 
     return quotas.stream()
         .collect(Collectors.groupingBy(TaskRuntime.TaskQuota::getTableId, Collectors.toList()));
