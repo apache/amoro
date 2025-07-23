@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.table;
 
+import static org.apache.amoro.properties.CatalogMetaProperties.CLIENT_POOL_SIZE;
+
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TestedCatalogs;
 import org.apache.amoro.api.CatalogMeta;
@@ -133,6 +135,16 @@ public class TestCatalogService extends AMSServiceTestBase {
         IllegalMetadataException.class,
         () -> CATALOG_MANAGER.dropCatalog(catalogMeta.getCatalogName()));
     catalog.dropDatabase("test_db");
+    CATALOG_MANAGER.dropCatalog(catalogMeta.getCatalogName());
+  }
+
+  @Test
+  public void testCreateCatalogWithProperties() {
+    CatalogMeta catalogMeta = catalogTestHelper.buildCatalogMeta("/tmp");
+    catalogMeta.getCatalogProperties().put(CLIENT_POOL_SIZE, "15");
+    CATALOG_MANAGER.createCatalog(catalogMeta);
+    CatalogMeta readCatalogMeta = CATALOG_MANAGER.getCatalogMeta(catalogMeta.getCatalogName());
+    Assert.assertEquals("15", readCatalogMeta.getCatalogProperties().get(CLIENT_POOL_SIZE));
     CATALOG_MANAGER.dropCatalog(catalogMeta.getCatalogName());
   }
 }
