@@ -692,6 +692,175 @@ public class TestDataExpire extends ExecutorTestBase {
     String expireField =
         CompatiblePropertyUtil.propertyAsString(
             getMixedTable().properties(), TableProperties.DATA_EXPIRATION_FIELD, "");
-    return getMixedTable().schema().findField(expireField).type().typeId().equals(Type.TypeID.DATE);
+    Types.NestedField field = getMixedTable().schema().findField(expireField);
+    return field != null && field.type().typeId().equals(Type.TypeID.DATE);
+  }
+
+  @Test
+  public void testDateTypeBoundaryConditions() {
+    assumeTrue(expireByDate());
+    System.out.println(
+        "Actual date value in partition: " + (1641168000000L / (24 * 60 * 60 * 1000)));
+    System.out.println("Expected expire days: 18996");
+
+    DataExpirationConfig config = parseDataExpirationConfig(getMixedTable());
+    Types.NestedField field = getMixedTable().schema().findField(config.getExpirationField());
+    System.out.println("Field type: " + field.type().typeId());
+    System.out.println("Expiration field: " + config.getExpirationField());
+    List<Record> records =
+        Lists.newArrayList(
+            createRecord(1, "111", parseMillis("2022-01-03T00:00:00"), "2022-01-03T00:00:00"),
+            createRecord(2, "222", parseMillis("2022-01-03T00:00:01"), "2022-01-03T00:00:01"),
+            createRecord(3, "333", parseMillis("2022-01-03T23:59:59"), "2022-01-03T23:59:59"),
+            createRecord(4, "444", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"));
+
+    records.forEach(
+        r ->
+            OptimizingTestHelpers.appendBase(
+                getMixedTable(),
+                tableTestHelper()
+                    .writeBaseStore(getMixedTable(), 0, Lists.newArrayList(r), false)));
+
+    getMaintainerAndExpire(config, "2022-01-04T12:00:00.000");
+
+    List<Record> result = readSortedBaseRecords(getMixedTable());
+
+    List<Record> expected =
+        Lists.newArrayList(
+            createRecord(4, "444", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"));
+
+    Assert.assertEquals(expected, result);
+  }
+
+  @Test
+  public void testDateTypeBoundaryConditionsFileLevel() {
+    assumeTrue(expireByDate());
+
+    getMixedTable()
+        .updateProperties()
+        .set(TableProperties.DATA_EXPIRATION_LEVEL, DataExpirationConfig.ExpireLevel.FILE.name())
+        .commit();
+
+    List<Record> records =
+        Lists.newArrayList(
+            createRecord(1, "111", parseMillis("2022-01-03T00:00:00"), "2022-01-03T00:00:00"),
+            createRecord(2, "222", parseMillis("2022-01-03T00:00:01"), "2022-01-03T00:00:01"),
+            createRecord(3, "333", parseMillis("2022-01-03T23:59:59"), "2022-01-03T23:59:59"),
+            createRecord(4, "444", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"));
+
+    records.forEach(
+        r ->
+            OptimizingTestHelpers.appendBase(
+                getMixedTable(),
+                tableTestHelper()
+                    .writeBaseStore(getMixedTable(), 0, Lists.newArrayList(r), false)));
+
+    DataExpirationConfig config = parseDataExpirationConfig(getMixedTable());
+    getMaintainerAndExpire(config, "2022-01-04T12:00:00.000");
+
+    List<Record> result = readSortedBaseRecords(getMixedTable());
+    List<Record> expected =
+        Lists.newArrayList(
+            createRecord(4, "444", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"));
+
+    Assert.assertEquals(expected, result);
+  }
+
+  @Test
+  public void testDateTypeBoundaryConditionsPartitionLevel() {
+    assumeTrue(expireByDate() && tableTestHelper().partitionSpec().isPartitioned());
+
+    List<Record> records =
+        Lists.newArrayList(
+            createRecord(1, "111", parseMillis("2022-01-03T00:00:00"), "2022-01-03T00:00:00"),
+            createRecord(2, "222", parseMillis("2022-01-03T23:59:59"), "2022-01-03T23:59:59"),
+            createRecord(3, "333", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"),
+            createRecord(4, "444", parseMillis("2022-01-04T23:59:59"), "2022-01-04T23:59:59"));
+
+    OptimizingTestHelpers.appendBase(
+        getMixedTable(), tableTestHelper().writeBaseStore(getMixedTable(), 0, records, false));
+
+    DataExpirationConfig config = parseDataExpirationConfig(getMixedTable());
+    getMaintainerAndExpire(config, "2022-01-05T12:00:00.000");
+
+    List<Record> result = readSortedBaseRecords(getMixedTable());
+    List<Record> expected =
+        Lists.newArrayList(
+            createRecord(3, "333", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"),
+            createRecord(4, "444", parseMillis("2022-01-04T23:59:59"), "2022-01-04T23:59:59"));
+
+    Assert.assertEquals(expected, result);
+  }
+
+  @Test
+  public void testDateTypeBoundaryConditionsKeyedTable() {
+    assumeTrue(expireByDate() && isKeyedTable());
+
+    KeyedTable keyedTable = getMixedTable().asKeyedTable();
+
+    List<Record> baseRecords =
+        Lists.newArrayList(
+            createRecord(1, "111", parseMillis("2022-01-03T00:00:00"), "2022-01-03T00:00:00"),
+            createRecord(2, "222", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"));
+    OptimizingTestHelpers.appendBase(
+        keyedTable, tableTestHelper().writeBaseStore(keyedTable, 0, baseRecords, false));
+
+    List<Record> changeRecords =
+        Lists.newArrayList(
+            createRecord(3, "333", parseMillis("2022-01-03T23:59:59"), "2022-01-03T23:59:59"),
+            createRecord(4, "444", parseMillis("2022-01-04T00:00:01"), "2022-01-04T00:00:01"));
+    OptimizingTestHelpers.appendChange(
+        keyedTable,
+        tableTestHelper()
+            .writeChangeStore(keyedTable, 1L, ChangeAction.INSERT, changeRecords, false));
+
+    DataExpirationConfig config = parseDataExpirationConfig(keyedTable);
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(keyedTable);
+    tableMaintainer.expireDataFrom(
+        config,
+        LocalDateTime.parse("2022-01-05T12:00:00.000")
+            .atZone(
+                IcebergTableMaintainer.getDefaultZoneId(
+                    keyedTable.schema().findField(config.getExpirationField())))
+            .toInstant());
+
+    List<Record> records = readSortedKeyedRecords(keyedTable);
+    List<Record> expected =
+        Lists.newArrayList(
+            createRecord(2, "222", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"),
+            createRecord(4, "444", parseMillis("2022-01-04T00:00:01"), "2022-01-04T00:00:01"));
+
+    Assert.assertEquals(expected, records);
+  }
+
+  @Test
+  public void testDateTypeCrossDateBoundaryScenarios() {
+    assumeTrue(expireByDate());
+
+    List<Record> records =
+        Lists.newArrayList(
+            createRecord(1, "111", parseMillis("2022-01-31T23:59:59"), "2022-01-31T23:59:59"),
+            createRecord(2, "222", parseMillis("2022-02-01T00:00:00"), "2022-02-01T00:00:00"),
+            createRecord(3, "333", parseMillis("2021-12-31T23:59:59"), "2021-12-31T23:59:59"),
+            createRecord(4, "444", parseMillis("2022-01-01T00:00:00"), "2022-01-01T00:00:00"),
+            createRecord(5, "555", parseMillis("2020-02-29T12:00:00"), "2020-02-29T12:00:00"),
+            createRecord(6, "666", parseMillis("2020-03-01T00:00:00"), "2020-03-01T00:00:00"));
+
+    records.forEach(
+        r ->
+            OptimizingTestHelpers.appendBase(
+                getMixedTable(),
+                tableTestHelper()
+                    .writeBaseStore(getMixedTable(), 0, Lists.newArrayList(r), false)));
+
+    DataExpirationConfig config = parseDataExpirationConfig(getMixedTable());
+    getMaintainerAndExpire(config, "2022-02-02T12:00:00.000");
+
+    List<Record> result = readSortedBaseRecords(getMixedTable());
+    List<Record> expected =
+        Lists.newArrayList(
+            createRecord(2, "222", parseMillis("2022-02-01T00:00:00"), "2022-02-01T00:00:00"));
+
+    Assert.assertEquals(expected, result);
   }
 }
