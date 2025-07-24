@@ -37,10 +37,12 @@ import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -237,7 +239,11 @@ public class OptimizingQueue extends PersistentBase {
   private void scheduleTableIfNecessary(long startTime) {
     if (planningTables.size() < maxPlanningParallelism) {
       Set<ServerTableIdentifier> skipTables = new HashSet<>(planningTables);
-      Optional.ofNullable(scheduler.scheduleTable(skipTables))
+      List<TableBlocker> allTableBlockerList =
+          getAs(
+              TableBlockerMapper.class,
+              mapper -> mapper.selectAllBlockers(System.currentTimeMillis()));
+      Optional.ofNullable(scheduler.scheduleTable(skipTables, allTableBlockerList))
           .ifPresent(tableRuntime -> triggerAsyncPlanning(tableRuntime, skipTables, startTime));
     }
   }

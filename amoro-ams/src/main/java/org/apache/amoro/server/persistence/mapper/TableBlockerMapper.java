@@ -40,6 +40,29 @@ public interface TableBlockerMapper {
       "SELECT blocker_id,catalog_name,db_name,table_name,operations,create_time,"
           + "expiration_time,properties FROM "
           + TABLE_NAME
+          + " WHERE expiration_time > #{now, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}")
+  @Results({
+    @Result(property = "blockerId", column = "blocker_id"),
+    @Result(property = "catalog", column = "catalog_name"),
+    @Result(property = "database", column = "db_name"),
+    @Result(property = "tableName", column = "table_name"),
+    @Result(
+        property = "operations",
+        column = "operations",
+        typeHandler = List2StringConverter.class),
+    @Result(property = "createTime", column = "create_time", typeHandler = Long2TsConverter.class),
+    @Result(
+        property = "expirationTime",
+        column = "expiration_time",
+        typeHandler = Long2TsConverter.class),
+    @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class)
+  })
+  List<TableBlocker> selectAllBlockers(@Param("now") long now);
+
+  @Select(
+      "SELECT blocker_id,catalog_name,db_name,table_name,operations,create_time,"
+          + "expiration_time,properties FROM "
+          + TABLE_NAME
           + " "
           + "WHERE catalog_name = #{catalog} "
           + "AND db_name = #{database} "
