@@ -747,17 +747,15 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   /**
-   * Convert expiration timestamp to appropriate value based on field type. For Date type, we round
-   * up to the next day to ensure inclusive comparison works correctly with the existing comparison
-   * logic.
+   * Convert expiration timestamp to appropriate value based on field type. This method handles
+   * different field types for data expiration: - TIMESTAMP: converts milliseconds to microseconds -
+   * LONG: handles both millisecond and second formats - STRING: formats timestamp as date string
+   * using configured pattern - DATE: converts timestamp to days since epoch
    *
    * @param expirationConfig expiration configuration containing format patterns
-   * @param field the field used for expiration comparison
-   * @param expireTimestamp expiration timestamp in milliseconds
-   * @return comparable value for the specific field type: - TIMESTAMP: converts to microseconds
-   *     (Iceberg timestamp format) - LONG: returns milliseconds or seconds based on configuration -
-   *     STRING: formats as date string using configured pattern - DATE: converts to days since
-   *     epoch, rounded up to include the expire date
+   * @param field the field being used for expiration
+   * @param expireTimestamp timestamp in milliseconds for expiration boundary
+   * @return comparable value appropriate for the field type
    */
   private Comparable<?> getExpireValue(
       DataExpirationConfig expirationConfig, Types.NestedField field, long expireTimestamp) {
@@ -784,8 +782,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
       case DATE:
         // Round up to next day to ensure inclusive behavior for date boundaries
         // This allows the existing < comparison to work correctly for Date types
-        int expireDays =
-            (int) ((expireTimestamp + 24 * 60 * 60 * 1000 - 1) / (24 * 60 * 60 * 1000));
+        int expireDays = (int) ((expireTimestamp + 24 * 60 * 60 * 1000) / (24 * 60 * 60 * 1000));
+        LOG.info(
+            "Date expiration debug: expireTimestamp={}, expireDays={}, original_days={}",
+            expireTimestamp,
+            expireDays,
+            (int) (expireTimestamp / (24 * 60 * 60 * 1000)));
         return expireDays;
       default:
         throw new IllegalArgumentException(
@@ -828,9 +830,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
                         expirationConfig.getDateTimePattern(), Locale.getDefault()));
         return Expressions.lessThanOrEqual(field.name(), expireDateTime);
       case DATE:
-        int expireDays =
-            (int) ((expireTimestamp + 24 * 60 * 60 * 1000 - 1) / (24 * 60 * 60 * 1000));
-        return Expressions.lessThanOrEqual(field.name(), expireDays);
+        int expireDays = (int) ((expireTimestamp + 24 * 60 * 60 * 1000) / (24 * 60 * 60 * 1000));
+        return Expressions.lessThan(field.name(), expireDays);
       default:
         return Expressions.alwaysTrue();
     }
@@ -1070,6 +1071,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         int compared = filePartitionValue.compareTo(partitionUpperBound);
         Boolean compareResult =
             expireField.type() == Types.StringType.get() ? compared <= 0 : compared < 0;
+        compareResults.add(compareResult);
       }
 
       pos++;
