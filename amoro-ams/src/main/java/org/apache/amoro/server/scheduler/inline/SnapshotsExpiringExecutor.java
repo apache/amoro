@@ -27,6 +27,8 @@ import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /** Service for expiring tables periodically. */
 public class SnapshotsExpiringExecutor extends PeriodicTableScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(SnapshotsExpiringExecutor.class);
@@ -51,6 +53,11 @@ public class SnapshotsExpiringExecutor extends PeriodicTableScheduler {
   public void handleConfigChanged(
       DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
+  }
+
+  @Override
+  protected long getExecutorDelay() {
+    return ThreadLocalRandom.current().nextLong(INTERVAL);
   }
 
   @Override
