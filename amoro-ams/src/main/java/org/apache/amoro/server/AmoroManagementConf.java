@@ -392,6 +392,12 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofSeconds(3))
           .withDescription("Optimizer polling task timeout.");
 
+  public static final ConfigOption<Boolean> OPTIMIZER_OVER_QUOTA_ENABLED =
+          ConfigOptions.key("optimizer.over-quota-enabled")
+                  .booleanType()
+                  .defaultValue(true)
+                  .withDescription("Enable tables use optimizer over quota.");
+
   public static final ConfigOption<Duration> OPTIMIZING_REFRESH_GROUP_INTERVAL =
       ConfigOptions.key("self-optimizing.refresh-group-interval")
           .durationType()

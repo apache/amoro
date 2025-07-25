@@ -93,6 +93,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final long taskAckTimeout;
   private final int maxPlanningParallelism;
   private final long pollingTimeout;
+  private final boolean enableOverQuota;
   private final long refreshGroupInterval;
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
@@ -120,6 +121,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
     this.pollingTimeout =
         serviceConfig.get(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT).toMillis();
+    this.enableOverQuota = serviceConfig.getBoolean(AmoroManagementConf.OPTIMIZER_OVER_QUOTA_ENABLED);
     this.tableService = tableService;
     this.catalogManager = catalogManager;
     this.optimizerManager = optimizerManager;
@@ -210,7 +212,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   public OptimizingTask pollTask(String authToken, int threadId) {
     LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
-    return Optional.ofNullable(queue.pollTask(pollingTimeout))
+    return Optional.ofNullable(queue.pollTask(pollingTimeout, enableOverQuota))
         .map(task -> extractOptimizingTask(task, authToken, threadId, queue))
         .orElse(null);
   }

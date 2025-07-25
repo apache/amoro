@@ -193,13 +193,35 @@ public class OptimizingQueue extends PersistentBase {
         taskRuntime -> taskRuntime.getTaskId().getProcessId() == optimizingProcess.getProcessId());
   }
 
-  public TaskRuntime<?> pollTask(long maxWaitTime) {
+  public TaskRuntime<?> pollTask(long maxWaitTime, boolean enableOverQuota) {
     long deadline = calculateDeadline(maxWaitTime);
     TaskRuntime<?> task = fetchTask();
     while (task == null && waitTask(deadline)) {
       task = fetchTask();
     }
+    if(task == null && enableOverQuota && shouldPollOverQuota()){
+      task = tableQueue.stream()
+              .map(process -> process.poll(false))
+              .filter(Objects::nonNull)
+              .findFirst()
+              .orElse(null);
+    }
     return task;
+  }
+
+  public TaskRuntime<?> pollTask(long maxWaitTime) {
+    return pollTask(maxWaitTime, false);
+  }
+
+  private boolean shouldPollOverQuota() {
+    boolean noPendingTables = scheduler.getTableRuntimeMap().values().stream()
+            .map(DefaultTableRuntime::getOptimizingState)
+            .noneMatch(state -> state.getOptimizingStatus() == OptimizingStatus.PENDING);
+
+    boolean allProcessesFullQuota = tableQueue.stream()
+            .noneMatch(process -> process.getActualQuota() < process.getQuotaCount());
+
+    return noPendingTables && allProcessesFullQuota;
   }
 
   private long calculateDeadline(long maxWaitTime) {
@@ -229,7 +251,7 @@ public class OptimizingQueue extends PersistentBase {
 
   private TaskRuntime<?> fetchScheduledTask() {
     return tableQueue.stream()
-        .map(TableOptimizingProcess::poll)
+        .map(process -> process.poll(true))
         .filter(Objects::nonNull)
         .findFirst()
         .orElse(null);
@@ -399,16 +421,15 @@ public class OptimizingQueue extends PersistentBase {
     private Map<String, Long> toSequence = Maps.newHashMap();
     private boolean hasCommitted = false;
 
-    public TaskRuntime<?> poll() {
+    public TaskRuntime<?> poll(boolean checkQuota) {
       if (lock.tryLock()) {
         try {
-          int quota = getQuotaCount();
-          TaskRuntime<?> task =
-              status != ProcessStatus.KILLED
-                      && status != ProcessStatus.FAILED
-                      && getActualQuota() < quota
-                  ? taskQueue.poll()
-                  : null;
+          TaskRuntime<?> task = null;
+                  if(status != ProcessStatus.KILLED && status != ProcessStatus.FAILED){
+                    if(!checkQuota || getActualQuota() < getQuotaCount()){
+                      task = taskQueue.poll();
+                    }
+                  }
           if (task != null) {
             task.setScheduling(true);
           }
