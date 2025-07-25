@@ -141,6 +141,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     Map<String, Object> baseMetric = new HashMap<>();
     // table summary
     TableSummary tableSummary;
+    if (table.comment().isPresent()) {
+      serverTableMeta.setComment(table.comment().get());
+    }
     Snapshot snapshot = store.snapshotManager().latestSnapshot();
     if (snapshot != null) {
       AmoroSnapshotsOfTable snapshotsOfTable =
