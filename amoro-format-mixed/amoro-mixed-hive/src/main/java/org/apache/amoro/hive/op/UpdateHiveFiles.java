@@ -152,8 +152,16 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     this.addFiles.addAll(committedDataFiles);
     postHiveDataCommitted(this.addFiles);
 
+    // if no DataFiles to add or delete in Hive location, only commit to iceberg
+    boolean noHiveDataFilesChanged =
+        CollectionUtils.isEmpty(addFiles)
+            && CollectionUtils.isEmpty(deleteFiles)
+            && expr != Expressions.alwaysTrue();
+
     if (table.spec().isUnpartitioned()) {
-      generateUnpartitionTableLocation();
+      if (!noHiveDataFilesChanged) {
+        generateUnpartitionTableLocation();
+      }
     } else {
       this.partitionToDelete = getDeletePartition();
       this.partitionToCreate = getCreatePartition(this.partitionToDelete);
@@ -162,11 +170,6 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     if (checkOrphanFiles) {
       checkPartitionedOrphanFilesAndDelete(table.spec().isUnpartitioned());
     }
-    // if no DataFiles to add or delete in Hive location, only commit to iceberg
-    boolean noHiveDataFilesChanged =
-        CollectionUtils.isEmpty(addFiles)
-            && CollectionUtils.isEmpty(deleteFiles)
-            && expr != Expressions.alwaysTrue();
 
     delegate.commit();
     if (!noHiveDataFilesChanged) {
@@ -353,7 +356,10 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   private void checkPartitionedOrphanFilesAndDelete(boolean isUnPartitioned) {
     List<String> partitionsToCheck = Lists.newArrayList();
     if (isUnPartitioned) {
-      partitionsToCheck.add(this.unpartitionTableLocation);
+      // location is not null for an unpatitioned table is valid and it should be clean
+      if (this.unpartitionTableLocation != null) {
+        partitionsToCheck.add(this.unpartitionTableLocation);
+      }
     } else {
       partitionsToCheck.addAll(
           this.partitionToCreate.values().stream()
