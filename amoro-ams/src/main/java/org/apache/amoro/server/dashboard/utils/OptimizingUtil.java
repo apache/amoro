@@ -22,14 +22,19 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
+import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.table.descriptor.FilesStatistics;
 import org.apache.iceberg.ContentFile;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,7 +48,8 @@ public class OptimizingUtil {
   public static TableOptimizingInfo buildTableOptimizeInfo(
       TableRuntimeMeta optimizingTableRuntime,
       List<OptimizingTaskMeta> processTasks,
-      List<TaskRuntime.TaskQuota> quotas) {
+      List<TaskRuntime.TaskQuota> quotas,
+      int threadCount) {
     ServerTableIdentifier identifier =
         ServerTableIdentifier.of(
             optimizingTableRuntime.getTableId(),
@@ -58,14 +64,19 @@ public class OptimizingUtil {
         System.currentTimeMillis() - optimizingTableRuntime.getCurrentStatusStartTime());
     OptimizingConfig optimizingConfig =
         optimizingTableRuntime.getTableConfig().getOptimizingConfig();
-    tableOptimizeInfo.setQuota(optimizingConfig.getTargetQuota());
-    double quotaOccupy =
-        calculateQuotaOccupy(
-            processTasks,
-            quotas,
-            optimizingTableRuntime.getCurrentStatusStartTime(),
-            System.currentTimeMillis());
-    tableOptimizeInfo.setQuotaOccupation(quotaOccupy);
+    double targetQuota = optimizingConfig.getTargetQuota();
+    tableOptimizeInfo.setQuota(
+        targetQuota > 1 ? (int) targetQuota : (int) Math.ceil(targetQuota * threadCount));
+
+    long endTime = System.currentTimeMillis();
+    long startTime = System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
+    long quotaOccupy = calculateQuotaOccupy(processTasks, quotas, startTime, endTime);
+    double quotaOccupation =
+        (double) quotaOccupy
+            / (AmoroServiceConstants.QUOTA_LOOK_BACK_TIME * tableOptimizeInfo.getQuota());
+    tableOptimizeInfo.setQuotaOccupation(
+        BigDecimal.valueOf(quotaOccupation).setScale(4, RoundingMode.HALF_UP).doubleValue());
+
     FilesStatistics optimizeFileInfo;
     if (optimizingStatus.isProcessing()) {
       MetricsSummary summary = null;
@@ -90,26 +101,33 @@ public class OptimizingUtil {
     return tableOptimizeInfo;
   }
 
-  private static double calculateQuotaOccupy(
+  private static long calculateQuotaOccupy(
       List<OptimizingTaskMeta> processTasks,
       List<TaskRuntime.TaskQuota> quotas,
       long startTime,
       long endTime) {
-    double finishedOccupy = 0;
-    if (quotas != null) {
-      finishedOccupy = quotas.stream().mapToDouble(q -> q.getQuotaTime(startTime)).sum();
+    if (quotas == null) {
+      quotas = Collections.emptyList();
     }
-    double runningOccupy = 0;
-    if (processTasks != null) {
-      runningOccupy =
-          processTasks.stream()
-              .mapToDouble(
-                  t ->
-                      TaskRuntime.taskRunningQuotaTime(
-                          startTime, endTime, t.getStartTime(), t.getCostTime()))
-              .sum();
-    }
-    return finishedOccupy + runningOccupy;
+    quotas.removeIf(task -> task.checkExpired(startTime));
+    long finishedTaskQuotaTime =
+        quotas.stream().mapToLong(taskQuota -> taskQuota.getQuotaTime(startTime)).sum();
+    long quotaOccupy =
+        processTasks == null
+            ? finishedTaskQuotaTime
+            : finishedTaskQuotaTime
+                + processTasks.stream()
+                    .filter(
+                        t ->
+                            t.getStatus() != TaskRuntime.Status.CANCELED
+                                && t.getStatus() != Status.SUCCESS
+                                && t.getStatus() != TaskRuntime.Status.FAILED)
+                    .mapToLong(
+                        task ->
+                            TaskRuntime.taskRunningQuotaTime(
+                                startTime, endTime, task.getStartTime(), task.getCostTime()))
+                    .sum();
+    return quotaOccupy;
   }
 
   private static FilesStatistics collectPendingFileInfo(

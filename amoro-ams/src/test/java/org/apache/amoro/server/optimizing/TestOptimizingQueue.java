@@ -164,6 +164,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
     Assert.assertNotNull(task);
     Assert.assertEquals(TaskRuntime.Status.PLANNED, task.getStatus());
+    Assert.assertTrue(task.isScheduling());
     Assert.assertNull(queue.pollTask(0));
     queue.dispose();
   }
