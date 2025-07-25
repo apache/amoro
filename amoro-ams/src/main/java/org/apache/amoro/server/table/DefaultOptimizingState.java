@@ -38,9 +38,11 @@ import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
@@ -626,12 +628,26 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
   }
 
   public double calculateQuotaOccupy() {
+    double targetQuota = tableConfiguration.getOptimizingConfig().getTargetQuota();
     return new BigDecimal(
-            (double) getQuotaTime()
-                / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME
-                / tableConfiguration.getOptimizingConfig().getTargetQuota())
+            (double) getQuotaTime() / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME / targetQuota > 1
+                ? (int) targetQuota
+                : (int) Math.ceil(targetQuota * getThreadCount()))
         .setScale(4, RoundingMode.HALF_UP)
         .doubleValue();
+  }
+
+  public int getThreadCount() {
+    List<OptimizerInstance> instances = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+    if (instances == null || instances.isEmpty()) {
+      return 1;
+    }
+    return Math.max(
+        instances.stream()
+            .filter(instance -> optimizerGroup.equals(instance.getGroupName()))
+            .mapToInt(OptimizerInstance::getThreadCount)
+            .sum(),
+        1);
   }
 
   /**

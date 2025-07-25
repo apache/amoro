@@ -64,7 +64,9 @@ public class OptimizingUtil {
         System.currentTimeMillis() - optimizingTableRuntime.getCurrentStatusStartTime());
     OptimizingConfig optimizingConfig =
         optimizingTableRuntime.getTableConfig().getOptimizingConfig();
-    tableOptimizeInfo.setQuota((int) Math.ceil(optimizingConfig.getTargetQuota() * threadCount));
+    double targetQuota = optimizingConfig.getTargetQuota();
+    tableOptimizeInfo.setQuota(
+        targetQuota > 1 ? (int) targetQuota : (int) Math.ceil(targetQuota * threadCount));
 
     long endTime = System.currentTimeMillis();
     long startTime = System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
