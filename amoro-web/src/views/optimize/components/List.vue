@@ -105,7 +105,7 @@ async function getTableList() {
       return {
         ...p,
         quotaOccupationDesc: p.quotaOccupation - 0.0005 > 0 ? `${(p.quotaOccupation * 100).toFixed(1)}%` : '0',
-        durationDesc: p.duration ? formatMS2Time(p.duration) : '-',
+        durationDesc: p.duration ? formatMS2DisplayTime(p.duration) : '-',
         fileSizeDesc: bytesToSize(p.fileSize),
       }
     })
@@ -229,7 +229,7 @@ onMounted(async () => {
         </template>
         <template v-if="column.dataIndex === 'duration'">
           <span :title="record.durationDesc">
-            {{ formatMS2DisplayTime(record.duration || 0) }}
+            {{ formatMS2Time(record.duration || 0) }}
           </span>
         </template>
         <template v-if="column.dataIndex === 'quotaOccupation'">
