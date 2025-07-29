@@ -68,9 +68,9 @@ export interface IBaseDetailInfo {
   file: string
   averageFile: string
   tableFormat: string
-  comment: string
   hasPartition: boolean
   healthScore: number
+  comment: string
 }
 
 export interface ResourceUsageItem {
