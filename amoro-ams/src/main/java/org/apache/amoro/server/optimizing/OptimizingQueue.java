@@ -511,12 +511,20 @@ public class OptimizingQueue extends PersistentBase {
             try {
               buildCommit().commit();
               if (containSuccessTasks()) {
+                LOG.info(
+                    "Task {} has reached the max execute retry count. Process cancels unfinished tasks and commits SUCCESS tasks.",
+                    taskRuntime.getTaskId());
                 this.status = ProcessStatus.SUCCESS;
+                this.endTime = System.currentTimeMillis();
               } else {
+                LOG.info(
+                    "Task {} has reached the max execute retry count. Process {} failed.",
+                    taskRuntime.getTaskId(),
+                    processId);
                 this.failedReason = taskRuntime.getFailReason();
                 this.status = ProcessStatus.FAILED;
+                this.endTime = taskRuntime.getEndTime();
               }
-              this.endTime = System.currentTimeMillis();
               persistAndSetCompleted(false);
             } catch (Throwable throwable) {
               LOG.error(

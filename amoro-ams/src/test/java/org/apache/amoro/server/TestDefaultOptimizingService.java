@@ -375,6 +375,36 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
+  public void testExecuteTaskTimeOutAndRetry() throws InterruptedException {
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+
+    optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
+
+    TaskRuntime taskRuntime =
+        optimizingService().listTasks(defaultResourceGroup().getName()).get(0);
+    assertTaskStatus(TaskRuntime.Status.ACKED);
+
+    // In this test, OPTIMIZER_TASK_EXECUTE_TIMEOUT is set to 30 seconds, so after waiting 45
+    // seconds the task will be considered suspended and retried
+    Thread.sleep(45000);
+
+    assertTaskStatus(TaskRuntime.Status.PLANNED);
+    OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task2);
+    Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    TableOptimizing.OptimizingInput input =
+        SerializationUtil.simpleDeserialize(task.getTaskInput());
+    TableOptimizing.OptimizingInput input2 =
+        SerializationUtil.simpleDeserialize(task2.getTaskInput());
+    Assertions.assertEquals(input2.toString(), input.toString());
+
+    optimizingService().ackTask(token, THREAD_ID, task2.getTaskId());
+    optimizingService().completeTask(token, buildOptimizingTaskResult(task2.getTaskId()));
+    assertTaskCompleted(taskRuntime);
+  }
+
+  @Test
   public void testReloadScheduledTask() {
     // 1.poll task
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
