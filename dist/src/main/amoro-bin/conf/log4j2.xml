@@ -114,6 +114,14 @@
             <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}"/>
         </logger>
 
+        <logger name="org.apache.iceberg.BaseMetastoreCatalog" level="debug"/>
+
+        <logger name="org.apache.iceberg.metrics.LoggingMetricsReporter" level="debug"/>
+
+        <logger name="org.apache.iceberg.SnapshotScan" level="debug"/>
+
+        <logger name="org.apache.hadoop.fs.CosNFileSystem" level="debug"/>
+
         <Root level="debug">
             <!--By default, debug logs are not printed-->
             <!--<AppenderRef ref="debugFileAppender" level="debug"/>-->
