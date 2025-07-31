@@ -56,24 +56,15 @@ public class MetricsSummary {
   private long rewriteDataRecordCnt = 0;
   private long rewritePosDataSize = 0;
   private int rewritePosDataFileCnt = 0;
-  /** @deprecated since 0.7.0, will be removed in 0.8.0 */
-  @Deprecated private int reRowDeletedDataFileCnt = 0;
 
   private long rewritePosDataRecordCnt = 0;
   private long equalityDeleteSize = 0;
   private int eqDeleteFileCnt = 0;
   private long eqDeleteRecordCnt = 0;
   private long positionDeleteSize = 0;
-  /** @deprecated since 0.7.0, will be removed in 0.8.0 */
-  @Deprecated private long positionalDeleteSize = 0;
 
   private int posDeleteFileCnt = 0;
   private long posDeleteRecordCnt = 0;
-
-  /** @deprecated since 0.7.0, will be removed in 0.8.0 */
-  @Deprecated private long newFileSize = 0;
-
-  @Deprecated private int newFileCnt = 0;
   private long newDataSize = 0;
   private int newDataFileCnt = 0;
   private long newDataRecordCnt = 0;
@@ -88,7 +79,6 @@ public class MetricsSummary {
   protected MetricsSummary(RewriteFilesInput input) {
     rewriteDataFileCnt = input.rewrittenDataFiles().length;
     rewritePosDataFileCnt = input.rePosDeletedDataFiles().length;
-    reRowDeletedDataFileCnt = input.rePosDeletedDataFiles().length;
     for (DataFile rewriteFile : input.rewrittenDataFiles()) {
       rewriteDataSize += rewriteFile.fileSizeInBytes();
       rewriteDataRecordCnt += rewriteFile.recordCount();
@@ -100,7 +90,6 @@ public class MetricsSummary {
     for (ContentFile<?> delete : input.deleteFiles()) {
       if (delete.content() == FileContent.POSITION_DELETES) {
         positionDeleteSize += delete.fileSizeInBytes();
-        positionalDeleteSize += delete.fileSizeInBytes();
         posDeleteRecordCnt += delete.recordCount();
         posDeleteFileCnt++;
       } else {
@@ -121,26 +110,17 @@ public class MetricsSummary {
           newDeleteFileCnt += metrics.getNewDeleteFileCnt();
           newDeleteRecordCnt += metrics.getNewDeleteRecordCnt();
           rewriteDataFileCnt += metrics.getRewriteDataFileCnt();
-          // to be compatible with old metrics name when calculating total metrics of all tasks
-          reRowDeletedDataFileCnt +=
-              Math.max(metrics.getReRowDeletedDataFileCnt(), metrics.getRewritePosDataFileCnt());
-          rewritePosDataFileCnt +=
-              Math.max(metrics.getReRowDeletedDataFileCnt(), metrics.getRewritePosDataFileCnt());
+          rewritePosDataFileCnt += metrics.getRewritePosDataFileCnt();
           rewriteDataSize += metrics.getRewriteDataSize();
           rewritePosDataSize += metrics.getRewritePosDataSize();
           posDeleteFileCnt += metrics.getPosDeleteFileCnt();
-          positionalDeleteSize +=
-              Math.max(metrics.getPositionalDeleteSize(), metrics.getPositionDeleteSize());
-          positionDeleteSize +=
-              Math.max(metrics.getPositionalDeleteSize(), metrics.getPositionDeleteSize());
+          positionDeleteSize += metrics.getPositionDeleteSize();
           eqDeleteFileCnt += metrics.getEqDeleteFileCnt();
           equalityDeleteSize += metrics.getEqualityDeleteSize();
           rewriteDataRecordCnt += metrics.getRewriteDataRecordCnt();
           rewritePosDataRecordCnt += metrics.getRewritePosDataRecordCnt();
           eqDeleteRecordCnt += metrics.getEqDeleteRecordCnt();
           posDeleteRecordCnt += metrics.getPosDeleteRecordCnt();
-          newFileCnt += metrics.getNewFileCnt();
-          newFileSize += metrics.getNewFileSize();
         });
   }
 
@@ -149,21 +129,14 @@ public class MetricsSummary {
     put(summary, INPUT_DATA_FILES, rewriteDataFileCnt);
     put(summary, INPUT_DATA_SIZE, rewriteDataSize, humanReadable);
     put(summary, INPUT_DATA_RECORDS, rewriteDataRecordCnt);
-    putIfPositive(
-        summary,
-        INPUT_READ_ONLY_DATA_FILES,
-        Math.max(reRowDeletedDataFileCnt, rewritePosDataFileCnt));
+    putIfPositive(summary, INPUT_READ_ONLY_DATA_FILES, rewritePosDataFileCnt);
     putIfPositive(summary, INPUT_READ_ONLY_DATA_SIZE, rewritePosDataSize, humanReadable);
     putIfPositive(summary, INPUT_READ_ONLY_DATA_RECORDS, rewritePosDataRecordCnt);
     putIfPositive(summary, INPUT_EQ_DELETE_FILES, eqDeleteFileCnt);
     putIfPositive(summary, INPUT_EQ_DELETE_SIZE, equalityDeleteSize, humanReadable);
     putIfPositive(summary, INPUT_EQ_DELETE_RECORDS, eqDeleteRecordCnt);
     putIfPositive(summary, INPUT_POS_DELETE_FILES, posDeleteFileCnt);
-    putIfPositive(
-        summary,
-        INPUT_POS_DELETE_SIZE,
-        Math.max(positionalDeleteSize, positionDeleteSize),
-        humanReadable);
+    putIfPositive(summary, INPUT_POS_DELETE_SIZE, positionDeleteSize, humanReadable);
     putIfPositive(summary, INPUT_POS_DELETE_RECORDS, posDeleteRecordCnt);
     put(summary, OUTPUT_DATA_FILES, newDataFileCnt);
     put(summary, OUTPUT_DATA_SIZE, newDataSize, humanReadable);
@@ -196,32 +169,24 @@ public class MetricsSummary {
   public FilesStatistics getInputFilesStatistics() {
     FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
     inputBuilder.addFiles(equalityDeleteSize, eqDeleteFileCnt);
-    inputBuilder.addFiles(Math.max(positionDeleteSize, positionalDeleteSize), posDeleteFileCnt);
+    inputBuilder.addFiles(positionDeleteSize, posDeleteFileCnt);
     inputBuilder.addFiles(rewriteDataSize, rewriteDataFileCnt);
-    inputBuilder.addFiles(
-        rewritePosDataSize, Math.max(reRowDeletedDataFileCnt, rewritePosDataFileCnt));
+    inputBuilder.addFiles(rewritePosDataSize, rewritePosDataFileCnt);
     return inputBuilder.build();
   }
 
   public FilesStatistics getOutputFilesStatistics() {
     FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
-    outputBuilder.addFiles(newFileSize, newFileCnt);
+    outputBuilder.addFiles(newDataSize, newDataFileCnt);
+    outputBuilder.addFiles(newDeleteSize, newDeleteFileCnt);
     return outputBuilder.build();
-  }
-
-  public long getNewFileSize() {
-    return newFileSize;
-  }
-
-  public int getNewFileCnt() {
-    return newFileCnt;
   }
 
   public long getNewDataSize() {
     return newDataSize;
   }
 
-  protected void setNewDataSize(long newDataSize) {
+  public void setNewDataSize(long newDataSize) {
     this.newDataSize = newDataSize;
   }
 
@@ -229,7 +194,7 @@ public class MetricsSummary {
     return newDataFileCnt;
   }
 
-  protected void setNewDataFileCnt(int newDataFileCnt) {
+  public void setNewDataFileCnt(int newDataFileCnt) {
     this.newDataFileCnt = newDataFileCnt;
   }
 
@@ -265,14 +230,6 @@ public class MetricsSummary {
     this.newDeleteRecordCnt = newDeleteRecordCnt;
   }
 
-  public void setNewFileSize(long newFileSize) {
-    this.newFileSize = newFileSize;
-  }
-
-  public void setNewFileCnt(int newFileCnt) {
-    this.newFileCnt = newFileCnt;
-  }
-
   public long getRewriteDataSize() {
     return rewriteDataSize;
   }
@@ -285,20 +242,12 @@ public class MetricsSummary {
     return equalityDeleteSize;
   }
 
-  public long getPositionalDeleteSize() {
-    return positionalDeleteSize;
-  }
-
   public long getPositionDeleteSize() {
     return positionDeleteSize;
   }
 
   public int getRewriteDataFileCnt() {
     return rewriteDataFileCnt;
-  }
-
-  public int getReRowDeletedDataFileCnt() {
-    return reRowDeletedDataFileCnt;
   }
 
   public int getRewritePosDataFileCnt() {
@@ -337,17 +286,13 @@ public class MetricsSummary {
         .add("rewriteDataRecordCnt", rewriteDataRecordCnt)
         .add("rewritePosDataSize", rewritePosDataSize)
         .add("rewritePosDataFileCnt", rewritePosDataFileCnt)
-        .add("reRowDeletedDataFileCnt", reRowDeletedDataFileCnt)
         .add("rewritePosDataRecordCnt", rewritePosDataRecordCnt)
         .add("equalityDeleteSize", equalityDeleteSize)
         .add("eqDeleteFileCnt", eqDeleteFileCnt)
         .add("eqDeleteRecordCnt", eqDeleteRecordCnt)
         .add("positionDeleteSize", positionDeleteSize)
-        .add("positionalDeleteSize", positionalDeleteSize)
         .add("posDeleteFileCnt", posDeleteFileCnt)
         .add("posDeleteRecordCnt", posDeleteRecordCnt)
-        .add("newFileSize", newFileSize)
-        .add("newFileCnt", newFileCnt)
         .add("newDataSize", newDataSize)
         .add("newDataFileCnt", newDataFileCnt)
         .add("newDataRecordCnt", newDataRecordCnt)
