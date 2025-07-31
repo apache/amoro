@@ -201,8 +201,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
 
-    TaskRuntime RetryTask = queue.pollTask(MAX_POLLING_TIME);
-    Assert.assertNotNull(RetryTask);
+    TaskRuntime retryTask = queue.pollTask(MAX_POLLING_TIME);
+    Assert.assertNotNull(retryTask);
 
     queue.dispose();
   }
@@ -218,7 +218,6 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             planExecutor,
             Collections.singletonList(tableRuntime),
             1);
-    ;
 
     TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
     Assert.assertNotNull(task);
@@ -239,8 +238,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
     TaskRuntime task4 = queue.pollTask(MAX_POLLING_TIME);
     Assert.assertNull(task4);
-    TaskRuntime RetryTask = queue.pollTask(MAX_POLLING_TIME, true);
-    Assert.assertNotNull(RetryTask);
+    TaskRuntime retryTask = queue.pollTask(MAX_POLLING_TIME, true);
+    Assert.assertNotNull(retryTask);
     queue.dispose();
   }
 
