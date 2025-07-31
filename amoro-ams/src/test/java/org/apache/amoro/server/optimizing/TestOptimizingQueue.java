@@ -31,6 +31,7 @@ import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
 
 import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.api.OptimizerRegisterInfo;
@@ -62,6 +63,7 @@ import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.SerializationUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.Record;
 import org.junit.Assert;
 import org.junit.Test;
@@ -167,6 +169,127 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertTrue(task.isScheduling());
     Assert.assertNull(queue.pollTask(0));
     queue.dispose();
+  }
+
+  @Test
+  public void testPollTaskWithOverQuotaDisabled() {
+    DefaultTableRuntime tableRuntime = initTableWithPartitionedFiles();
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            CATALOG_MANAGER,
+            testResourceGroup(),
+            resourceGroup -> 2,
+            planExecutor,
+            Collections.singletonList(tableRuntime),
+            1);
+
+    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+    Assert.assertEquals(TaskRuntime.Status.PLANNED, task.getStatus());
+    Assert.assertTrue(task.isScheduling());
+    task.schedule(optimizerThread);
+    task.ack(optimizerThread);
+    Assert.assertEquals(
+        1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
+    Assert.assertNotNull(task);
+
+    TaskRuntime task2 = queue.pollTask(MAX_POLLING_TIME);
+    Assert.assertNull(task2);
+
+    task.complete(
+        optimizerThread,
+        buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
+    Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
+
+    TaskRuntime RetryTask = queue.pollTask(MAX_POLLING_TIME);
+    Assert.assertNotNull(RetryTask);
+
+    queue.dispose();
+  }
+
+  @Test
+  public void testPollTaskWithOverQuotaEnabled() {
+    DefaultTableRuntime tableRuntime = initTableWithPartitionedFiles();
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            CATALOG_MANAGER,
+            testResourceGroup(),
+            resourceGroup -> 2,
+            planExecutor,
+            Collections.singletonList(tableRuntime),
+            1);
+    ;
+
+    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+    Assert.assertEquals(TaskRuntime.Status.PLANNED, task.getStatus());
+    Assert.assertTrue(task.isScheduling());
+    task.schedule(optimizerThread);
+    task.ack(optimizerThread);
+    Assert.assertEquals(
+        1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
+    Assert.assertNotNull(task);
+
+    TaskRuntime task2 = queue.pollTask(MAX_POLLING_TIME, true);
+    Assert.assertNotNull(task2);
+
+    task.complete(
+        optimizerThread,
+        buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
+    Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
+    TaskRuntime task4 = queue.pollTask(MAX_POLLING_TIME);
+    Assert.assertNull(task4);
+    TaskRuntime RetryTask = queue.pollTask(MAX_POLLING_TIME, true);
+    Assert.assertNotNull(RetryTask);
+    queue.dispose();
+  }
+
+  @Test
+  public void testQuotaSchedulePolicy() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            CATALOG_MANAGER,
+            testResourceGroup(),
+            resourceGroup -> 2,
+            planExecutor,
+            Collections.singletonList(tableRuntime),
+            1);
+    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
+    task.schedule(optimizerThread);
+    task.ack(optimizerThread);
+    Assert.assertEquals(
+        1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
+    Assert.assertNotNull(task);
+    Assert.assertTrue(tableRuntime.getTableIdentifier().getId() == task.getTableId());
+    task.complete(
+        optimizerThread,
+        buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
+    Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
+    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingState().getOptimizingProcess();
+    Assert.assertEquals(ProcessStatus.RUNNING, optimizingProcess.getStatus());
+    optimizingProcess.commit();
+    Assert.assertEquals(ProcessStatus.SUCCESS, optimizingProcess.getStatus());
+    Assert.assertNull(tableRuntime.getOptimizingState().getOptimizingProcess());
+
+    tableRuntime = initTableWithPartitionedFiles();
+    ServerTableIdentifier serverTableIdentifier =
+        ServerTableIdentifier.of(
+            org.apache.amoro.table.TableIdentifier.of(
+                serverTableIdentifier().getCatalog(), "db", "test_table2"),
+            TableFormat.ICEBERG);
+    serverTableIdentifier.setId(2L);
+    DefaultTableRuntime tableRuntime2 = createTable(serverTableIdentifier);
+    queue.refreshTable(tableRuntime2);
+    queue.refreshTable(tableRuntime);
+
+    TaskRuntime task2 = queue.pollTask(MAX_POLLING_TIME);
+    Assert.assertNotNull(task2);
+    Assert.assertTrue(tableRuntime2.getTableIdentifier().getId() == task2.getTableId());
+    TaskRuntime task3 = queue.pollTask(MAX_POLLING_TIME);
+    Assert.assertNotNull(task3);
+    Assert.assertTrue(tableRuntime.getTableIdentifier().getId() == task3.getTableId());
   }
 
   @Test
@@ -377,6 +500,18 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     return tableRuntime;
   }
 
+  protected DefaultTableRuntime initTableWithPartitionedFiles() {
+    MixedTable mixedTable =
+        (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    appendPartitionedData(mixedTable.asUnkeyedTable(), 1);
+    appendPartitionedData(mixedTable.asUnkeyedTable(), 2);
+    DefaultTableRuntime tableRuntime =
+        buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
+
+    tableRuntime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
+    return tableRuntime;
+  }
+
   private DefaultTableRuntime buildTableRuntimeMeta(
       OptimizingStatus status, ResourceGroup resourceGroup) {
     MixedTable mixedTable =
@@ -393,6 +528,21 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     return new DefaultTableRuntime(tableRuntimeMeta, tableService());
   }
 
+  private void appendPartitionedData(UnkeyedTable table, int id) {
+    ArrayList<Record> newRecords =
+        Lists.newArrayList(
+            MixedDataTestHelpers.createRecord(
+                table.schema(), id, "111", 0L, "2022-01-01T12:00:00"));
+    newRecords.add(
+        MixedDataTestHelpers.createRecord(table.schema(), id, "222", 0L, "2022-01-02T12:00:00"));
+    newRecords.add(
+        MixedDataTestHelpers.createRecord(table.schema(), id, "333", 0L, "2022-01-03T12:00:00"));
+    List<DataFile> dataFiles = MixedDataTestHelpers.writeBaseStore(table, 0L, newRecords, false);
+    AppendFiles appendFiles = table.newAppend();
+    dataFiles.forEach(appendFiles::appendFile);
+    appendFiles.commit();
+  }
+
   private void appendData(UnkeyedTable table, int id) {
     ArrayList<Record> newRecords =
         Lists.newArrayList(
@@ -402,6 +552,37 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     AppendFiles appendFiles = table.newAppend();
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
+  }
+
+  private DefaultTableRuntime createTable(ServerTableIdentifier serverTableIdentifier) {
+    org.apache.iceberg.catalog.Catalog catalog =
+        catalogTestHelper().buildIcebergCatalog(catalogMeta());
+    catalog.createTable(
+        TableIdentifier.of(
+            serverTableIdentifier.getDatabase(), serverTableIdentifier.getTableName()),
+        tableTestHelper().tableSchema(),
+        tableTestHelper().partitionSpec(),
+        tableTestHelper().tableProperties());
+
+    MixedTable mixedTable =
+        (MixedTable) tableService().loadTable(serverTableIdentifier).originalTable();
+    appendPartitionedData(mixedTable.asUnkeyedTable(), 1);
+    appendPartitionedData(mixedTable.asUnkeyedTable(), 2);
+
+    TableRuntimeMeta tableRuntimeMeta = new TableRuntimeMeta();
+    tableRuntimeMeta.setCatalogName(serverTableIdentifier.getCatalog());
+    tableRuntimeMeta.setDbName(serverTableIdentifier.getDatabase());
+    tableRuntimeMeta.setTableName(serverTableIdentifier.getTableName());
+    tableRuntimeMeta.setTableId(serverTableIdentifier.getId());
+    tableRuntimeMeta.setFormat(TableFormat.ICEBERG);
+    tableRuntimeMeta.setTableStatus(OptimizingStatus.PENDING);
+    tableRuntimeMeta.setTableConfig(TableConfigurations.parseTableConfig(mixedTable.properties()));
+    tableRuntimeMeta.setOptimizerGroup(defaultResourceGroup().getName());
+    DefaultTableRuntime tableRuntime = new DefaultTableRuntime(tableRuntimeMeta, tableService());
+
+    tableRuntime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier));
+
+    return tableRuntime;
   }
 
   private OptimizingTaskResult buildOptimizingTaskResult(OptimizingTaskId taskId, int threadId) {

@@ -122,7 +122,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     this.pollingTimeout =
         serviceConfig.get(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT).toMillis();
     this.enableOverQuota =
-        serviceConfig.getBoolean(AmoroManagementConf.OPTIMIZER_OVER_QUOTA_ENABLED);
+        serviceConfig.getBoolean(AmoroManagementConf.OPTIMIZING_BREAK_QUOTA_LIMIT_ENABLED);
     this.tableService = tableService;
     this.catalogManager = catalogManager;
     this.optimizerManager = optimizerManager;

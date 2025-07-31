@@ -101,7 +101,7 @@ public class OptimizingUtil {
     return tableOptimizeInfo;
   }
 
-  private static long calculateQuotaOccupy(
+  public static long calculateQuotaOccupy(
       List<OptimizingTaskMeta> processTasks,
       List<TaskRuntime.TaskQuota> quotas,
       long startTime,

@@ -56,8 +56,6 @@ import org.apache.iceberg.Snapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -629,12 +627,9 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
 
   public double calculateQuotaOccupy() {
     double targetQuota = tableConfiguration.getOptimizingConfig().getTargetQuota();
-    return new BigDecimal(
-            (double) getQuotaTime() / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME / targetQuota > 1
-                ? (int) targetQuota
-                : (int) Math.ceil(targetQuota * getThreadCount()))
-        .setScale(4, RoundingMode.HALF_UP)
-        .doubleValue();
+    int targetQuotaCount =
+        targetQuota > 1 ? (int) targetQuota : (int) Math.ceil(targetQuota * getThreadCount());
+    return (double) getQuotaTime() / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME / targetQuotaCount;
   }
 
   public int getThreadCount() {
