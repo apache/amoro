@@ -514,6 +514,10 @@ public class OptimizingQueue extends PersistentBase {
                 taskRuntime.getFailReason());
             retryTask(taskRuntime);
           } else {
+            LOG.info(
+                "Task {} has reached the max execute retry count. Process {} failed.",
+                taskRuntime.getTaskId(),
+                processId);
             this.failedReason = taskRuntime.getFailReason();
             this.status = ProcessStatus.FAILED;
             this.endTime = taskRuntime.getEndTime();

@@ -380,6 +380,12 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofSeconds(30))
           .withDescription("Timeout duration for task acknowledgment.");
 
+  public static final ConfigOption<Duration> OPTIMIZER_TASK_EXECUTE_TIMEOUT =
+      ConfigOptions.key("optimizer.task-execute-timeout")
+          .durationType()
+          .defaultValue(Duration.ofHours(1))
+          .withDescription("Timeout duration for task execution, default to 1 hour.");
+
   public static final ConfigOption<Integer> OPTIMIZER_MAX_PLANNING_PARALLELISM =
       ConfigOptions.key("optimizer.max-planning-parallelism")
           .intType()
