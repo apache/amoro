@@ -19,24 +19,19 @@
 package org.apache.amoro.server.optimizing;
 
 import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.optimizing.sorter.QuotaOccupySorter;
 import org.apache.amoro.server.optimizing.sorter.SorterFactory;
 import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.table.TableIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -90,11 +85,10 @@ public class SchedulingPolicy {
     return policyName;
   }
 
-  public DefaultTableRuntime scheduleTable(
-      Set<ServerTableIdentifier> skipSet, List<TableBlocker> allTableBlockerList) {
+  public DefaultTableRuntime scheduleTable(Set<ServerTableIdentifier> skipSet) {
     tableLock.lock();
     try {
-      fillSkipSet(skipSet, allTableBlockerList);
+      fillSkipSet(skipSet);
       return tableRuntimeMap.values().stream()
           .filter(tableRuntime -> !skipSet.contains(tableRuntime.getTableIdentifier()))
           .min(createSorterByPolicy())
@@ -126,29 +120,13 @@ public class SchedulingPolicy {
     }
   }
 
-  private void fillSkipSet(
-      Set<ServerTableIdentifier> originalSet, List<TableBlocker> allTableBlockerList) {
+  private void fillSkipSet(Set<ServerTableIdentifier> originalSet) {
     long currentTime = System.currentTimeMillis();
-    Map<TableIdentifier, List<TableBlocker>> tableBlockersMap = Maps.newHashMap();
-    allTableBlockerList.forEach(
-        blocker -> {
-          List<TableBlocker> blockers =
-              tableBlockersMap.computeIfAbsent(
-                  TableIdentifier.of(
-                      blocker.getCatalog(), blocker.getDatabase(), blocker.getTableName()),
-                  k -> new ArrayList<>());
-          blockers.add(blocker);
-        });
     tableRuntimeMap.values().stream()
         .map(DefaultTableRuntime::getOptimizingState)
         .filter(
             optimizingState ->
                 !isTablePending(optimizingState)
-                    || TableBlocker.conflict(
-                        BlockableOperation.OPTIMIZE,
-                        tableBlockersMap.getOrDefault(
-                            optimizingState.getTableIdentifier().getIdentifier(),
-                            new ArrayList<>()))
                     || currentTime - optimizingState.getLastPlanTime()
                         < optimizingState.getOptimizingConfig().getMinPlanInterval())
         .forEach(tableRuntime -> originalSet.add(tableRuntime.getTableIdentifier()));

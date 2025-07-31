@@ -21,6 +21,7 @@ package org.apache.amoro.server.optimizing;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.exception.OptimizingClosedException;
 import org.apache.amoro.exception.PersistenceException;
@@ -49,6 +50,7 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ExceptionUtil;
 import org.apache.amoro.utils.MixedDataFiles;
@@ -74,6 +76,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -239,13 +242,29 @@ public class OptimizingQueue extends PersistentBase {
   private void scheduleTableIfNecessary(long startTime) {
     if (planningTables.size() < maxPlanningParallelism) {
       Set<ServerTableIdentifier> skipTables = new HashSet<>(planningTables);
-      List<TableBlocker> allTableBlockerList =
-          getAs(
-              TableBlockerMapper.class,
-              mapper -> mapper.selectAllBlockers(System.currentTimeMillis()));
-      Optional.ofNullable(scheduler.scheduleTable(skipTables, allTableBlockerList))
+      skipBlockedTables(skipTables);
+      Optional.ofNullable(scheduler.scheduleTable(skipTables))
           .ifPresent(tableRuntime -> triggerAsyncPlanning(tableRuntime, skipTables, startTime));
     }
+  }
+
+  private void skipBlockedTables(Set<ServerTableIdentifier> skipTables) {
+    List<TableBlocker> tableBlockerList =
+        getAs(
+            TableBlockerMapper.class,
+            mapper -> mapper.selectAllBlockers(System.currentTimeMillis()));
+    Map<TableIdentifier, ServerTableIdentifier> identifierMap =
+        scheduler.getTableRuntimeMap().keySet().stream()
+            .collect(Collectors.toMap(ServerTableIdentifier::getIdentifier, Function.identity()));
+    tableBlockerList.stream()
+        .filter(blocker -> TableBlocker.conflict(BlockableOperation.OPTIMIZE, blocker))
+        .map(
+            blocker ->
+                TableIdentifier.of(
+                    blocker.getCatalog(), blocker.getDatabase(), blocker.getTableName()))
+        .map(identifierMap::get)
+        .filter(Objects::nonNull)
+        .forEach(skipTables::add);
   }
 
   private void triggerAsyncPlanning(
