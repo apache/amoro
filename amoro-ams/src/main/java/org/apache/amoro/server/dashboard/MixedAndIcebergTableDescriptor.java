@@ -706,7 +706,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     serverTableMeta.setTableType(table.format().toString());
     serverTableMeta.setTableIdentifier(table.id());
     serverTableMeta.setBaseLocation(table.location());
-    fillTableProperties(serverTableMeta, table.properties());
+    Map<String, String> tableProperties = Maps.newHashMap(table.properties());
+    fillTableProperties(serverTableMeta, tableProperties);
+    if (tableProperties.containsKey(TableProperties.COMMENT)) {
+      String comment = tableProperties.get(TableProperties.COMMENT);
+      serverTableMeta.setComment(comment);
+    }
+
     serverTableMeta.setPartitionColumnList(
         table.spec().fields().stream()
             .map(item -> buildPartitionFieldFromPartitionSpec(table.spec().schema(), item))
@@ -732,13 +738,11 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
               .filter(s -> table.schema().identifierFieldNames().contains(s.getField()))
               .collect(Collectors.toList()));
     }
-
     return serverTableMeta;
   }
 
   private void fillTableProperties(
-      ServerTableMeta serverTableMeta, Map<String, String> tableProperties) {
-    Map<String, String> properties = Maps.newHashMap(tableProperties);
+      ServerTableMeta serverTableMeta, Map<String, String> properties) {
     serverTableMeta.setTableWatermark(properties.remove(TableProperties.WATERMARK_TABLE));
     serverTableMeta.setBaseWatermark(properties.remove(TableProperties.WATERMARK_BASE_STORE));
     serverTableMeta.setCreateTime(
