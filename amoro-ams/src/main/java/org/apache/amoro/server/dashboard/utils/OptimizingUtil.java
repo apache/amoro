@@ -30,7 +30,6 @@ import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.table.descriptor.FilesStatistics;
-import org.apache.iceberg.ContentFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -149,35 +148,8 @@ public class OptimizingUtil {
     }
     return FilesStatistics.builder()
         .addFiles(metricsSummary.getEqualityDeleteSize(), metricsSummary.getEqDeleteFileCnt())
-        .addFiles(
-            Math.max(
-                metricsSummary.getPositionalDeleteSize(), metricsSummary.getPositionDeleteSize()),
-            metricsSummary.getPosDeleteFileCnt())
+        .addFiles(metricsSummary.getPositionDeleteSize(), metricsSummary.getPosDeleteFileCnt())
         .addFiles(metricsSummary.getRewriteDataSize(), metricsSummary.getRewriteDataFileCnt())
         .build();
-  }
-
-  public static long getFileSize(ContentFile<?>[] contentFiles) {
-    long size = 0;
-    if (contentFiles != null) {
-      for (ContentFile<?> contentFile : contentFiles) {
-        size += contentFile.fileSizeInBytes();
-      }
-    }
-    return size;
-  }
-
-  public static int getFileCount(ContentFile<?>[] contentFiles) {
-    return contentFiles == null ? 0 : contentFiles.length;
-  }
-
-  public static long getRecordCnt(ContentFile<?>[] contentFiles) {
-    int recordCnt = 0;
-    if (contentFiles != null) {
-      for (ContentFile<?> contentFile : contentFiles) {
-        recordCnt += contentFile.recordCount();
-      }
-    }
-    return recordCnt;
   }
 }
