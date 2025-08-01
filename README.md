@@ -41,7 +41,8 @@ Apache Amoro (incubating) is a Lakehouse management system built on open data la
 Working with compute engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for Lakehouse to provide out-of-the-box data warehouse experience,
 and helps data platforms or products easily build infra-decoupled, stream-and-batch-fused and lake-native architecture.
 
-Learn more about Amoro at https://amoro.apache.org/, contact the developers and community on the [mailing list](https://amoro.apache.org/join-community/#mailing-lists) if you need any help.
+Learn more about Amoro at https://amoro.apache.org/, contact the developers and community on
+the [mailing list](https://amoro.apache.org/join-community/#mailing-lists) if you need any help.
 
 ## Architecture
 
@@ -52,22 +53,32 @@ Here is the architecture diagram of Amoro:
 </p>
 
 * AMS: Amoro Management Service provides Lakehouse management features, like self-optimizing, data expiration, etc.
-  It also provides a unified catalog service for all compute engines, which can also be combined with existing metadata services.
+  It also provides a unified catalog service for all compute engines, which can also be combined with existing metadata
+  services.
 * Plugins: Amoro provides a wide selection of external plugins to meet different scenarios.
     * Optimizers: The self-optimizing execution engine plugin asynchronously performs merging, sorting, deduplication,
       layout optimization, and other operations on all type table format tables.
     * Terminal: SQL command-line tools, provide various implementations like local Spark and Kyuubi.
-    * LogStore: Provide millisecond to second level SLAs for real-time data processing based on message queues like Kafka and Pulsar.
+    * LogStore: Provide millisecond to second level SLAs for real-time data processing based on message queues like
+      Kafka and Pulsar.
 
 ## Supported table formats
 
-Amoro can manage tables of different table formats, similar to how MySQL/ClickHouse can choose different storage engines.
+Amoro can manage tables of different table formats, similar to how MySQL/ClickHouse can choose different storage
+engines.
 Amoro meets diverse user needs by using different table formats. Currently, Amoro supports four table formats:
 
-* Iceberg format: Users can directly entrust their Iceberg tables to Amoro for maintenance, so that users can not only use all the functions of Iceberg tables, but also enjoy the performance and stability improvements brought by Amoro.
-* Mixed-Iceberg format: Amoro provides a set of more optimized formats for streaming update scenarios on top of the Iceberg format. If users have high performance requirements for streaming updates or have demands for CDC incremental data reading functions, they can choose to use the Mixed-Iceberg format.
-* Mixed-Hive format: Many users do not want to affect the business originally built on Hive while using data lakes. Therefore, Amoro provides the Mixed-Hive format, which can upgrade Hive tables to Mixed-Hive format only through metadata migration, and the original Hive tables can still be used normally. This ensures business stability and benefits from the advantages of data lake computing.
-* Paimon format: Amoro supports displaying metadata information in the Paimon format, including Schema, Options, Files, Snapshots, DDLs, and Compaction information.
+* Iceberg format: Users can directly entrust their Iceberg tables to Amoro for maintenance, so that users can not only
+  use all the functions of Iceberg tables, but also enjoy the performance and stability improvements brought by Amoro.
+* Mixed-Iceberg format: Amoro provides a set of more optimized formats for streaming update scenarios on top of the
+  Iceberg format. If users have high performance requirements for streaming updates or have demands for CDC incremental
+  data reading functions, they can choose to use the Mixed-Iceberg format.
+* Mixed-Hive format: Many users do not want to affect the business originally built on Hive while using data lakes.
+  Therefore, Amoro provides the Mixed-Hive format, which can upgrade Hive tables to Mixed-Hive format only through
+  metadata migration, and the original Hive tables can still be used normally. This ensures business stability and
+  benefits from the advantages of data lake computing.
+* Paimon format: Amoro supports displaying metadata information in the Paimon format, including Schema, Options, Files,
+  Snapshots, DDLs, and Compaction information.
 
 ## Supported engines
 
@@ -80,21 +91,26 @@ For details, please refer to: [Iceberg Docs](https://iceberg.apache.org/docs/lat
 
 Amoro support multiple processing engines for Mixed format as below:
 
-| Processing Engine | Version                | Batch Read  | Batch Write | Batch Overwrite | Streaming Read | Streaming Write | Create Table | Alter Table |
-|-------------------|------------------------|-------------|-------------|-----------------|----------------|-----------------|--------------|-------------|
-| Flink             | 1.15.x, 1.16.x, 1.17.x |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |
-| Spark             | 3.1, 3.2, 3.3          |  &#x2714;   |   &#x2714;   |       &#x2714;   |      &#x2716;   |       &#x2716;   |    &#x2714;   |   &#x2714;   |
-| Hive              | 2.x, 3.x               |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
+| Processing Engine | Version                | Batch Read  | Batch Write | Batch Overwrite | Streaming Read | Streaming Write | Create Table | Alter Table |  
+|-------------------|------------------------|-------------|-------------|-----------------|----------------|-----------------|--------------|-------------|  
+| Flink             | 1.15.x, 1.16.x, 1.17.x |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |  
+| Spark             | 3.3, 3.5               |  &#x2714;   |   &#x2714;   |       &#x2714;   |      &#x2716;   |       &#x2716;   |    &#x2714;   |   &#x2714;   |  
+| Hive              | 2.x, 3.x               |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |  
 | Trino             | 406                    |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
-
 ## Features
 
-- Self-optimizing - Continuously optimizing tables, including compacting small files, change files, regularly delete expired files to keep high query performance and reducing storage costs.
-- Multiple Formats - Support different table formats such as Iceberg, Mixed-Iceberg and Mixed-Hive to meet different scenario requirements and provide them with unified management capabilities.
-- Catalog Service - Provide a unified catalog service for all compute engines, which can also used with existing metadata store service such as Hive Metastore and AWS Glue.
-- Rich Plugins - Provide various plugins to integrate with other systems, like continuously optimizing with Flink and data analysis with Spark and Kyuubi.
-- Management Tools - Provide a variety of management tools, including WEB UI and standard SQL command line, to help you get started faster and integrate with other systems more easily.
-- Infrastructure Independent - Can be easily deployed and used in private environments, cloud environments, hybrid cloud environments, and multi-cloud environments.
+- Self-optimizing - Continuously optimizing tables, including compacting small files, change files, regularly delete
+  expired files to keep high query performance and reducing storage costs.
+- Multiple Formats - Support different table formats such as Iceberg, Mixed-Iceberg and Mixed-Hive to meet different
+  scenario requirements and provide them with unified management capabilities.
+- Catalog Service - Provide a unified catalog service for all compute engines, which can also used with existing
+  metadata store service such as Hive Metastore and AWS Glue.
+- Rich Plugins - Provide various plugins to integrate with other systems, like continuously optimizing with Flink and
+  data analysis with Spark and Kyuubi.
+- Management Tools - Provide a variety of management tools, including WEB UI and standard SQL command line, to help you
+  get started faster and integrate with other systems more easily.
+- Infrastructure Independent - Can be easily deployed and used in private environments, cloud environments, hybrid cloud
+  environments, and multi-cloud environments.
 
 ## Modules
 
@@ -109,21 +125,26 @@ Amoro contains modules as below:
 - `amoro-format-paimon` contains integration of Apache Paimon format
 - `amoro-format-mixed` provides Mixed format implementation
     - `amoro-mixed-hive` integrates with Apache Hive and implements Mixed Hive format
-    - `amoro-mixed-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded version)
-    - `amoro-mixed-spark` provides Spark connectors for Mixed format tables (use amoro-spark-runtime for a shaded version)
+    - `amoro-mixed-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded
+      version)
+    - `amoro-mixed-spark` provides Spark connectors for Mixed format tables (use amoro-spark-runtime for a shaded
+      version)
     - `amoro-mixed-trino` provides Trino connectors for Mixed format tables
-
 
 ## Building
 
 Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixed/amoro-mixed-trino` module).
 
+**Default Build Configuration:**
+- Hadoop version: 3.x (use `-Phadoop2` for Hadoop 2.x)
+- Flink optimizer version: 1.20.0
+- Spark optimizer version: 3.3.3
+
 * Build all modules without `amoro-mixed-trino`: `mvn clean package`
 * Build and skip tests: `mvn clean package -DskipTests`
 * Build and skip dashboard: `mvn clean package -Pskip-dashboard-build`
-* Build and disable disk storage, RocksDB will NOT be introduced to avoid memory overflow: `mvn clean package -DskipTests -Pno-extented-disk-storage`
-* Build and enable aliyun-oss-sdk: `mvn clean package -DskipTests -Paliyun-oss-sdk`
 * Build with hadoop 2.x(the default is 3.x) dependencies: `mvn clean package -DskipTests -Phadoop2`
+* Build with JDK 8: `mvn clean package -DskipTests -Pjava8`
 * Specify Flink version for Flink optimizer(the default is 1.20.0): `mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.20.0`
   * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-optimizer-pre-1.15` parameter: `mvn clean package -DskipTests -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
 * Specify Spark version for Spark optimizer(the default is 3.3.3): `mvn clean package -DskipTests -Dspark-optimizer.spark-version=3.3.3`
@@ -133,19 +154,19 @@ Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixe
   * Build a distribution package with Apache Paimon format: `mvn clean package -Psupport-paimon-format`
   * Build a distribution package with Apache Hudi format: `mvn clean package -Psupport-hudi-format`
 
-```
-<?xml version="1.0" encoding="UTF-8"?>
-<toolchains>
-    <toolchain>
-        <type>jdk</type>
-        <provides>
-            <version>17</version>
-            <vendor>sun</vendor>
-        </provides>
-        <configuration>
-            <jdkHome>${YourJDK17Home}</jdkHome>
-        </configuration>
-    </toolchain>
+```xml  
+<?xml version="1.0" encoding="UTF-8"?>  
+<toolchains>  
+    <toolchain>  
+        <type>jdk</type>  
+        <provides>  
+            <version>17</version>  
+            <vendor>sun</vendor>  
+        </provides>  
+        <configuration>  
+            <jdkHome>${YourJDK17Home}</jdkHome>  
+        </configuration>  
+    </toolchain>  
 </toolchains>
 ```
 
@@ -166,12 +187,15 @@ You can join the Amoro community on Slack. Amoro channel is in ASF Slack workspa
 - Anyone with an @apache.org email address can become a full member of the ASF Slack workspace.
 - Search [Amoro channel](https://the-asf.slack.com/archives/C06RZ9UHUTH) and join it.
 - If you don't have an @apache.org email address, you can email to `dev@amoro.apache.org` to apply for an
-  [ASF Slack invitation](https://infra.apache.org/slack.html). Then join [Amoro channel](https://the-asf.slack.com/archives/C06RZ9UHUTH).
+  [ASF Slack invitation](https://infra.apache.org/slack.html). Then
+  join [Amoro channel](https://the-asf.slack.com/archives/C06RZ9UHUTH).
 
 ### Wechat
+
 Join the Amoro WeChat Group: Add " `kllnn999` " as a friend and request to join the group.
 
 ## Contributors
+
 This project exists thanks to all the people who contribute.
 
 <a href="https://github.com/apache/amoro/graphs/contributors">
