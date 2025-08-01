@@ -186,7 +186,8 @@ public class UnKeyedTableCommit {
   }
 
   public void commit() throws OptimizingCommitException {
-    LOG.info("{} get {} tasks to commit", table.id(), tasks.size());
+    long startTime = System.currentTimeMillis();
+    LOG.info("Starting to commit table {} with {} tasks.", table.id(), tasks.size());
 
     List<DataFile> hiveNewDataFiles = moveFile2HiveIfNeed();
     // collect files
@@ -231,12 +232,16 @@ public class UnKeyedTableCommit {
             transaction, removedDataFiles, addedDataFiles, removedDeleteFiles, addedDeleteFiles);
       }
       transaction.commitTransaction();
-      LOG.info("Successfully commit table {} with {} tasks", table.id(), tasks.size());
+      LOG.info(
+          "Table {} committed {} tasks successfully in {} ms.",
+          table.id(),
+          tasks.size(),
+          System.currentTimeMillis() - startTime);
     } catch (Exception e) {
       if (needMoveFile2Hive()) {
         correctHiveData(addedDataFiles, addedDeleteFiles);
       }
-      LOG.warn("Optimize commit table {} failed, give up commit.", table.id(), e);
+      LOG.warn("Failed to commit table {}. Aborting commit.", table.id(), e);
       throw new OptimizingCommitException("unexpected commit error ", e);
     }
   }
