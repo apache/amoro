@@ -109,10 +109,21 @@
             <AppenderRef ref="amoroMetricReporter"/>
         </logger>
 
+        <logger name="org.apache.iceberg.metrics.LoggingMetricsReporter"  level="info" additivity="false">
+            <!-- iceberg rest metric reporter logs -->
+            <AppenderRef ref="amoroMetricReporter"/>
+        </logger>
+
         <logger name="org.apache.spark"  level="warn" additivity="false">
             <AppenderRef ref="infoFileAppender"/>
             <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}"/>
         </logger>
+
+        <logger name="org.apache.iceberg.BaseMetastoreCatalog" level="debug"/>
+
+        <logger name="org.apache.iceberg.BaseMetastoreTableOperations" level="debug"/>
+
+        <logger name="org.apache.iceberg.SnapshotScan" level="debug"/>
 
         <Root level="debug">
             <!--By default, debug logs are not printed-->
