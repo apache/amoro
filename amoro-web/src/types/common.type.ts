@@ -70,6 +70,7 @@ export interface IBaseDetailInfo {
   tableFormat: string
   hasPartition: boolean
   healthScore: number
+  comment: string
 }
 
 export interface ResourceUsageItem {

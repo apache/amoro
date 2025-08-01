@@ -61,7 +61,7 @@
                 <!--Set the log base file size to trigger rolling log file updates if the size is exceeded-->
                 <SizeBasedTriggeringPolicy size="2048MB"/>
             </Policies>
-            <DefaultRolloverStrategy max="7">
+            <DefaultRolloverStrategy fileIndex="nomax">
                 <Delete basePath="${LOG_HOME}/history" maxDepth="1">
                     <IfFileName glob="*.log.gz"/>
                     <IfAny>

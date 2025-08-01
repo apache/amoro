@@ -44,7 +44,45 @@ if [ ! -f $STDERR_LOG ];then
     touch $STDERR_LOG
 fi
 
-JAVA_OPTS="-Xmx$2m -Dlog.home=${OPTIMIZER_LOG_DIR}"
+# get jdk major version（such as 8, 11, 17）
+JAVA_VERSION=$(java -version 2>&1 | head -1 | cut -d'"' -f2 | cut -d'.' -f1)
+
+# base jvm parameter
+BASE_JVM_OPTS="-server -XX:+UseG1GC -Xmx$2m \
+-Dlog4j.configurationFile=${OPTIMIZER_LOG_CONF_FILE} -Dlog.home=${OPTIMIZER_LOG_DIR} \
+-XX:+ExitOnOutOfMemoryError -XX:MaxGCPauseMillis=200"
+
+# set jvm gc log parameter according jdk major version
+if [ "$JAVA_VERSION" -eq "8" ]; then
+    GC_LOG_OPTS="-verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps \
+    -Xloggc:${OPTIMIZER_LOG_DIR}/gc.log \
+    -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M"
+else
+    GC_LOG_OPTS="-Xlog:gc*,gc+heap*,gc+metaspace*:file=${OPTIMIZER_LOG_DIR}/gc-%t.log::filecount=10,filesize=10M:time,level,tags"
+fi
+
+# jdk 9+ add-opens
+if [ "$JAVA_VERSION" -ge "9" ]; then
+    MODULE_OPTS="--add-opens=java.base/java.lang=ALL-UNNAMED \
+    --add-opens=java.base/java.lang.invoke=ALL-UNNAMED \
+    --add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
+    --add-opens=java.base/java.io=ALL-UNNAMED \
+    --add-opens=java.base/java.net=ALL-UNNAMED \
+    --add-opens=java.base/java.nio=ALL-UNNAMED \
+    --add-opens=java.base/java.util=ALL-UNNAMED \
+    --add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
+    --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED \
+    --add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
+    --add-opens=java.base/sun.nio.cs=ALL-UNNAMED \
+    --add-opens=java.base/sun.security.action=ALL-UNNAMED \
+    --add-opens=java.base/sun.util.calendar=ALL-UNNAMED"
+else
+    MODULE_OPTS=""
+fi
+
+# merge parameter
+JAVA_OPTS="$BASE_JVM_OPTS $GC_LOG_OPTS $MODULE_OPTS"
+
 RUN_SERVER="org.apache.amoro.optimizer.standalone.StandaloneOptimizer"
 CMDS="$JAVA_RUN $JAVA_OPTS $RUN_SERVER $ARGS"
 

@@ -54,8 +54,6 @@ public class RewriteStageTask
         summary.setNewDeleteFileCnt(getFileCount(output.getDeleteFiles()));
         summary.setNewDeleteSize(getFileSize(output.getDeleteFiles()));
         summary.setNewDeleteRecordCnt(getRecordCnt(output.getDeleteFiles()));
-        summary.setNewFileSize(summary.getNewDataSize() + summary.getNewDeleteSize());
-        summary.setNewFileCnt(summary.getNewDataFileCnt() + summary.getNewDeleteFileCnt());
       }
     }
   }

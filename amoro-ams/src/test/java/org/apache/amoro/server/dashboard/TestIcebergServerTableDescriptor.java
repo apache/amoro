@@ -88,8 +88,8 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
     descriptor.insertTable(identifier);
     MetricsSummary dummySummery = new MetricsSummary();
     dummySummery.setNewDeleteFileCnt(1);
-    dummySummery.setNewFileCnt(1);
-    dummySummery.setNewFileSize(1);
+    dummySummery.setNewDataFileCnt(1);
+    dummySummery.setNewDataSize(1);
     dummySummery.setNewDeleteFileCnt(1);
     dummySummery.setNewDeleteSize(1);
     descriptor.insertOptimizingProcess(

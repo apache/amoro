@@ -191,7 +191,7 @@ CREATE TABLE `table_process_state`
     `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `summary`                       mediumtext COMMENT 'state summary, usually a map',
     PRIMARY KEY (`process_id`),
-    KEY  `table_index` (`table_id`, `plan_time`)
+    KEY  `table_index` (`table_id`, `start_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
 
 CREATE TABLE `optimizing_task_quota`
