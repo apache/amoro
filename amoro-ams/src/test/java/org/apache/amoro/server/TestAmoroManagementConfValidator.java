@@ -128,19 +128,12 @@ public class TestAmoroManagementConfValidator {
     AmoroManagementConfValidator.validateConfig(configurations);
 
     configurations.setBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED, true);
-    configurations.setInteger(AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT, -1);
-    Assert.assertThrows(
-        IllegalArgumentException.class,
-        () -> AmoroManagementConfValidator.validateConfig(configurations));
-    configurations.setInteger(AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT, 10);
-    AmoroManagementConfValidator.validateConfig(configurations);
-
     configurations.setBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED, true);
-    configurations.setInteger(AmoroManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT, -1);
+    configurations.setInteger(AmoroManagementConf.CLEAN_TABLE_DATA_THREAD_COUNT, -1);
     Assert.assertThrows(
         IllegalArgumentException.class,
         () -> AmoroManagementConfValidator.validateConfig(configurations));
-    configurations.setInteger(AmoroManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT, 10);
+    configurations.setInteger(AmoroManagementConf.CLEAN_TABLE_DATA_THREAD_COUNT, 10);
     AmoroManagementConfValidator.validateConfig(configurations);
 
     configurations.setBoolean(AmoroManagementConf.SYNC_HIVE_TABLES_ENABLED, true);
