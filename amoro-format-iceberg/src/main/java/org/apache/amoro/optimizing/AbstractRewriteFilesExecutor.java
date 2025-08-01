@@ -167,8 +167,10 @@ public abstract class AbstractRewriteFilesExecutor
   }
 
   protected FileFormat deleteFileFormat() {
+    String dataFileFormatName =
+        table.properties().getOrDefault(DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT);
     String deleteFileFormatName =
-        table.properties().getOrDefault(DELETE_DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT);
+        table.properties().getOrDefault(DELETE_DEFAULT_FILE_FORMAT, dataFileFormatName);
     return FileFormat.valueOf(deleteFileFormatName.toUpperCase());
   }
 
