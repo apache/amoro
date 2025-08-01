@@ -65,4 +65,7 @@ public interface TableRuntime {
   default TableFormat getFormat() {
     return getTableIdentifier().getFormat();
   }
+
+  /** Dispose the table runtime. */
+  default void dispose() {}
 }

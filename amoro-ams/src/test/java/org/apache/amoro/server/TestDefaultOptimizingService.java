@@ -128,7 +128,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     appendData(mixedTable.asUnkeyedTable(), 1);
     appendData(mixedTable.asUnkeyedTable(), 2);
-    DefaultTableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
+    DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
 
     runtime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
   }
@@ -384,14 +384,12 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     reload();
     // Committing process will be closed when reloading
     Assertions.assertNull(
-        tableService()
-            .getRuntime(serverTableIdentifier().getId())
+        getDefaultTableRuntime(serverTableIdentifier().getId())
             .getOptimizingState()
             .getOptimizingProcess());
     Assertions.assertEquals(
         OptimizingStatus.IDLE,
-        tableService()
-            .getRuntime(serverTableIdentifier().getId())
+        getDefaultTableRuntime(serverTableIdentifier().getId())
             .getOptimizingState()
             .getOptimizingStatus());
   }
@@ -748,15 +746,13 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     }
     Assertions.assertEquals(
         ProcessStatus.RUNNING,
-        tableService()
-            .getRuntime(serverTableIdentifier().getId())
+        getDefaultTableRuntime(serverTableIdentifier().getId())
             .getOptimizingState()
             .getOptimizingProcess()
             .getStatus());
     Assertions.assertEquals(
         OptimizingStatus.COMMITTING,
-        tableService()
-            .getRuntime(serverTableIdentifier().getId())
+        getDefaultTableRuntime(serverTableIdentifier().getId())
             .getOptimizingState()
             .getOptimizingStatus());
   }
@@ -783,7 +779,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     }
 
     void refreshPending() {
-      execute(tableService().getRuntime(serverTableIdentifier().getId()));
+      execute(getDefaultTableRuntime(serverTableIdentifier().getId()));
     }
   }
 
