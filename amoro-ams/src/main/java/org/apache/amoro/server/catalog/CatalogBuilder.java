@@ -27,8 +27,6 @@ import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIV
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.config.Configurations;
-import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -59,12 +57,6 @@ public class CatalogBuilder {
                   TableFormat.HUDI),
           CATALOG_TYPE_AMS, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
 
-  private static String getAmsURI(Configurations serviceConfig) {
-    String host = serviceConfig.getString(AmoroManagementConf.SERVER_EXPOSE_HOST);
-    Integer port = serviceConfig.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT);
-    return String.format("thrift://%s:%d", host, port);
-  }
-
   public static ServerCatalog buildServerCatalog(
       CatalogMeta catalogMeta, Configurations serverConfiguration) {
     String type = catalogMeta.getCatalogType();
@@ -84,10 +76,7 @@ public class CatalogBuilder {
       case CATALOG_TYPE_HADOOP:
       case CATALOG_TYPE_GLUE:
       case CATALOG_TYPE_CUSTOM:
-        return new ExternalCatalog(catalogMeta);
       case CATALOG_TYPE_HIVE:
-        String amsUri = getAmsURI(serverConfiguration);
-        catalogMeta.getCatalogProperties().put(CatalogMetaProperties.AMS_URI, amsUri);
         return new ExternalCatalog(catalogMeta);
       case CATALOG_TYPE_AMS:
         return new InternalCatalogImpl(catalogMeta, serverConfiguration);
