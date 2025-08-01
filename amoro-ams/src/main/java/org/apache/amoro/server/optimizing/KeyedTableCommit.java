@@ -85,8 +85,10 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
   public void commit() throws OptimizingCommitException {
     if (tasks.isEmpty()) {
       LOG.info("{} found no tasks to commit", table.id());
+    } else {
+      LOG.info(
+          "{} found {} tasks to commit from snapshot {}", table.id(), tasks.size(), fromSnapshotId);
     }
-    LOG.info("{} found tasks to commit from snapshot {}", table.id(), fromSnapshotId);
 
     // In the scene of moving files to hive, the files will be renamed
     List<DataFile> hiveNewDataFiles = moveFile2HiveIfNeed();
@@ -139,6 +141,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
 
     try {
       executeCommit(addedDataFiles, removedDataFiles, addedDeleteFiles, removedDeleteFiles);
+      LOG.info("Successfully commit table {} with {} tasks", table.id(), tasks.size());
     } catch (Exception e) {
       // Only failures to clean files will trigger a retry
       LOG.warn("Optimize commit table {} failed, give up commit.", table.id(), e);

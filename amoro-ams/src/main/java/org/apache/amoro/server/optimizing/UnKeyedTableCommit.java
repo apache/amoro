@@ -187,7 +187,6 @@ public class UnKeyedTableCommit {
 
   public void commit() throws OptimizingCommitException {
     LOG.info("{} get {} tasks to commit", table.id(), tasks.size());
-    LOG.debug("commit tasks: {}", tasks);
 
     List<DataFile> hiveNewDataFiles = moveFile2HiveIfNeed();
     // collect files
@@ -232,6 +231,7 @@ public class UnKeyedTableCommit {
             transaction, removedDataFiles, addedDataFiles, removedDeleteFiles, addedDeleteFiles);
       }
       transaction.commitTransaction();
+      LOG.info("Successfully commit table {} with {} tasks", table.id(), tasks.size());
     } catch (Exception e) {
       if (needMoveFile2Hive()) {
         correctHiveData(addedDataFiles, addedDeleteFiles);

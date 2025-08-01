@@ -274,7 +274,7 @@ public class OptimizingQueue extends PersistentBase {
                       process.getTaskMap().size(),
                       currentTime - startTime,
                       skipTables.size());
-                  LOG.debug("Skipping tables id list:{}", skipIds);
+                  LOG.debug("Skip planning tables id list:{}", skipIds);
                 } else if (throwable == null) {
                   LOG.info(
                       "Skip planning table {} with a total cost of {} ms.",
