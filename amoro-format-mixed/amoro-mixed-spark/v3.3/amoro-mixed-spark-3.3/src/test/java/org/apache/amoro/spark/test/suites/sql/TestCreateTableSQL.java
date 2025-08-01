@@ -32,6 +32,7 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -303,6 +304,102 @@ public class TestCreateTableSQL extends MixedTableTestBase {
 
     Asserts.assertType(expectSchema.asStruct(), tbl.schema().asStruct());
     Asserts.assertHashMapContainExpect(expectProperties, tbl.properties());
+    if (TableFormat.MIXED_HIVE.equals(format)) {
+      Table hiveTable = loadHiveTable();
+      Asserts.assertHiveColumns(
+          expectSchema, PartitionSpec.unpartitioned(), hiveTable.getSd().getCols());
+    }
+  }
+
+  public static Stream<Arguments> testPrimaryKeyComment() {
+    String structDDL =
+        "id INT comment 'primary key id',\n"
+            + "data string NOT NULL,\n"
+            + "point struct<x: double NOT NULL, y: double NOT NULL>,\n"
+            + "maps map<string, string>,\n"
+            + "arrays array<string>,\n"
+            + "pt string ";
+    Types.NestedField id =
+        Types.NestedField.optional(1, "id", Types.IntegerType.get(), "primary key id");
+    Types.NestedField data = Types.NestedField.required(2, "data", Types.StringType.get());
+    Types.NestedField point =
+        Types.NestedField.optional(
+            3,
+            "point",
+            Types.StructType.of(
+                Types.NestedField.required(4, "x", Types.DoubleType.get()),
+                Types.NestedField.required(5, "y", Types.DoubleType.get())));
+    Types.NestedField map =
+        Types.NestedField.optional(
+            6,
+            "maps",
+            Types.MapType.ofOptional(7, 8, Types.StringType.get(), Types.StringType.get()));
+    Types.NestedField array =
+        Types.NestedField.optional(
+            9, "arrays", Types.ListType.ofOptional(10, Types.StringType.get()));
+    Types.NestedField pt = Types.NestedField.optional(11, "pt", Types.StringType.get());
+
+    return Stream.of(
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            structDDL,
+            "TBLPROPERTIES('key'='value1', 'catalog'='INTERNAL')",
+            new Schema(Lists.newArrayList(id, data, point, map, array, pt)),
+            ImmutableMap.of("key", "value1", "catalog", "INTERNAL"),
+            "primary key comment"),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            structDDL + ", PRIMARY KEY(id)",
+            "TBLPROPERTIES('key'='value1', 'catalog'='INTERNAL')",
+            new Schema(Lists.newArrayList(id.asRequired(), data, point, map, array, pt)),
+            ImmutableMap.of("key", "value1", "catalog", "INTERNAL"),
+            "primary key comment"),
+        Arguments.of(
+            TableFormat.MIXED_HIVE,
+            structDDL,
+            "tblproperties('key'='value1', 'catalog'='hive')",
+            new Schema(Lists.newArrayList(id, data, point, map, array, pt)),
+            ImmutableMap.of("key", "value1", "catalog", "hive"),
+            "Primary key comment"),
+        Arguments.of(
+            TableFormat.MIXED_HIVE,
+            structDDL + ", PRIMARY KEY(id)",
+            "tblproperties('key'='value1', 'catalog'='hive')",
+            new Schema(Lists.newArrayList(id.asRequired(), data, point, map, array, pt)),
+            ImmutableMap.of("key", "value1", "catalog", "hive"),
+            "Primary key comment"));
+  }
+
+  @DisplayName("Test comment contains primary key")
+  @ParameterizedTest
+  @MethodSource
+  public void testPrimaryKeyComment(
+      TableFormat format,
+      String structDDL,
+      String propertiesDDL,
+      Schema expectSchema,
+      Map<String, String> expectProperties,
+      String tableComment) {
+    spark().conf().set(SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, false);
+    String sqlText =
+        "CREATE TABLE "
+            + target()
+            + "("
+            + structDDL
+            + ") using  "
+            + provider(format)
+            + " "
+            + propertiesDDL
+            + " comment '"
+            + tableComment
+            + "'";
+    sql(sqlText);
+
+    MixedTable tbl = loadTable();
+
+    Asserts.assertType(expectSchema.asStruct(), tbl.schema().asStruct());
+    Asserts.assertHashMapContainExpect(expectProperties, tbl.properties());
+    Assert.assertEquals(tableComment, tbl.properties().get("comment"));
     if (TableFormat.MIXED_HIVE.equals(format)) {
       Table hiveTable = loadHiveTable();
       Asserts.assertHiveColumns(
