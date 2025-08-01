@@ -233,15 +233,14 @@ public class UnKeyedTableCommit {
       }
       transaction.commitTransaction();
       LOG.info(
-          "Table {} committed {} tasks successfully in {} ms.",
+          "Successfully committed table {} in {} ms.",
           table.id(),
-          tasks.size(),
           System.currentTimeMillis() - startTime);
     } catch (Exception e) {
       if (needMoveFile2Hive()) {
         correctHiveData(addedDataFiles, addedDeleteFiles);
       }
-      LOG.warn("Failed to commit table {}. Aborting commit.", table.id(), e);
+      LOG.warn("Failed to commit table {}.", table.id(), e);
       throw new OptimizingCommitException("unexpected commit error ", e);
     }
   }
