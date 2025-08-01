@@ -289,6 +289,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     TaskRuntime task3 = queue.pollTask(MAX_POLLING_TIME);
     Assert.assertNotNull(task3);
     Assert.assertTrue(tableRuntime.getTableIdentifier().getId() == task3.getTableId());
+    queue.dispose();
   }
 
   @Test
