@@ -113,9 +113,10 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     this.tableConfiguration = TableConfigurations.parseTableConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
-    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
-    orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
-    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
+    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier, optimizerGroup);
+    orphanFilesCleaningMetrics =
+        new TableOrphanFilesCleaningMetrics(tableIdentifier, optimizerGroup);
+    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier, optimizerGroup);
   }
 
   public DefaultOptimizingState(
@@ -151,13 +152,14 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
             : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
     this.tableSummary = tableRuntimeMeta.getTableSummary();
-    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
+    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier, optimizerGroup);
     optimizingMetrics.statusChanged(optimizingStatus, this.currentStatusStartTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.MINOR, this.lastMinorOptimizingTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.MAJOR, this.lastMajorOptimizingTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.FULL, this.lastFullOptimizingTime);
-    orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
-    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
+    orphanFilesCleaningMetrics =
+        new TableOrphanFilesCleaningMetrics(tableIdentifier, optimizerGroup);
+    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier, optimizerGroup);
     tableSummaryMetrics.refresh(tableSummary);
 
     this.targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
@@ -439,6 +441,9 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
         optimizingProcess.close();
       }
       this.optimizerGroup = newTableConfig.getOptimizingConfig().getOptimizerGroup();
+      this.tableSummaryMetrics.optimizerGroupChanged(optimizerGroup);
+      this.optimizingMetrics.optimizerGroupChanged(optimizerGroup);
+      this.orphanFilesCleaningMetrics.optimizerGroupChanged(optimizerGroup);
     }
     this.tableConfiguration = newTableConfig;
     return true;

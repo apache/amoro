@@ -39,29 +39,29 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 
 | Metric Name                                          | Type    | Tags                     | Description                                                                            |
 |------------------------------------------------------|---------|--------------------------|----------------------------------------------------------------------------------------|
-| table_optimizing_status_idle_duration_mills          | Gauge   | catalog, database, table | Duration in milliseconds after table be in idle status                                 |
-| table_optimizing_status_pending_duration_mills       | Gauge   | catalog, database, table | Duration in milliseconds after table be in pending status                              |
-| table_optimizing_status_planning_duration_mills      | Gauge   | catalog, database, table | Duration in milliseconds after table be in planning status                             |
-| table_optimizing_status_executing_duration_mills     | Gauge   | catalog, database, table | Duration in milliseconds after table be in executing status                            |
-| table_optimizing_status_committing_duration_mills    | Gauge   | catalog, database, table | Duration in milliseconds after table be in committing status                           |
-| table_optimizing_process_total_count                 | Counter | catalog, database, table | Count of all optimizing process since ams started                                      |
-| table_optimizing_process_failed_count                | Counter | catalog, database, table | Count of failed optimizing process since ams started                                   |
-| table_optimizing_minor_total_count                   | Counter | catalog, database, table | Count of minor optimizing process since ams started                                    |
-| table_optimizing_minor_failed_count                  | Counter | catalog, database, table | Count of failed minor optimizing process since ams started                             |
-| table_optimizing_major_total_count                   | Counter | catalog, database, table | Count of major optimizing process since ams started                                    |
-| table_optimizing_major_failed_count                  | Counter | catalog, database, table | Count of failed major optimizing process since ams started                             |
-| table_optimizing_full_total_count                    | Counter | catalog, database, table | Count of full optimizing process since ams started                                     |
-| table_optimizing_full_failed_count                   | Counter | catalog, database, table | Count of failed full optimizing process since ams started                              |
-| table_optimizing_status_in_idle                      | Gauge   | catalog, database, table | If currently table is in idle status                                                   |
-| table_optimizing_status_in_pending                   | Gauge   | catalog, database, table | If currently table is in pending status                                                |
-| table_optimizing_status_in_planning                  | Gauge   | catalog, database, table | If currently table is in planning status                                               |
-| table_optimizing_status_in_executing                 | Gauge   | catalog, database, table | If currently table is in executing status                                              |
-| table_optimizing_status_in_committing                | Gauge   | catalog, database, table | If currently table is in committing status                                             |
-| table_optimizing_since_last_minor_optimization_mills | Gauge   | catalog, database, table | Duration in milliseconds since last successful minor optimization                      |
-| table_optimizing_since_last_major_optimization_mills | Gauge   | catalog, database, table | Duration in milliseconds since last successful major optimization                      |
-| table_optimizing_since_last_full_optimization_mills  | Gauge   | catalog, database, table | Duration in milliseconds since last successful full optimization                       |
-| table_optimizing_since_last_optimization_mills       | Gauge   | catalog, database, table | Duration in milliseconds since last successful optimization                            |
-| table_optimizing_lag_duration_mills                  | Gauge   | catalog, database, table | Duration in milliseconds between last self-optimizing snapshot and refreshed snapshot  |
+| table_optimizing_status_idle_duration_mills          | Gauge   | catalog, database, table, group | Duration in milliseconds after table be in idle status                                 |
+| table_optimizing_status_pending_duration_mills       | Gauge   | catalog, database, table, group | Duration in milliseconds after table be in pending status                              |
+| table_optimizing_status_planning_duration_mills      | Gauge   | catalog, database, table, group | Duration in milliseconds after table be in planning status                             |
+| table_optimizing_status_executing_duration_mills     | Gauge   | catalog, database, table, group | Duration in milliseconds after table be in executing status                            |
+| table_optimizing_status_committing_duration_mills    | Gauge   | catalog, database, table, group | Duration in milliseconds after table be in committing status                           |
+| table_optimizing_process_total_count                 | Counter | catalog, database, table, group | Count of all optimizing process since ams started                                      |
+| table_optimizing_process_failed_count                | Counter | catalog, database, table, group | Count of failed optimizing process since ams started                                   |
+| table_optimizing_minor_total_count                   | Counter | catalog, database, table, group | Count of minor optimizing process since ams started                                    |
+| table_optimizing_minor_failed_count                  | Counter | catalog, database, table, group | Count of failed minor optimizing process since ams started                             |
+| table_optimizing_major_total_count                   | Counter | catalog, database, table, group | Count of major optimizing process since ams started                                    |
+| table_optimizing_major_failed_count                  | Counter | catalog, database, table, group | Count of failed major optimizing process since ams started                             |
+| table_optimizing_full_total_count                    | Counter | catalog, database, table, group | Count of full optimizing process since ams started                                     |
+| table_optimizing_full_failed_count                   | Counter | catalog, database, table, group | Count of failed full optimizing process since ams started                              |
+| table_optimizing_status_in_idle                      | Gauge   | catalog, database, table, group | If currently table is in idle status                                                   |
+| table_optimizing_status_in_pending                   | Gauge   | catalog, database, table, group | If currently table is in pending status                                                |
+| table_optimizing_status_in_planning                  | Gauge   | catalog, database, table, group | If currently table is in planning status                                               |
+| table_optimizing_status_in_executing                 | Gauge   | catalog, database, table, group | If currently table is in executing status                                              |
+| table_optimizing_status_in_committing                | Gauge   | catalog, database, table, group | If currently table is in committing status                                             |
+| table_optimizing_since_last_minor_optimization_mills | Gauge   | catalog, database, table, group | Duration in milliseconds since last successful minor optimization                      |
+| table_optimizing_since_last_major_optimization_mills | Gauge   | catalog, database, table, group | Duration in milliseconds since last successful major optimization                      |
+| table_optimizing_since_last_full_optimization_mills  | Gauge   | catalog, database, table, group | Duration in milliseconds since last successful full optimization                       |
+| table_optimizing_since_last_optimization_mills       | Gauge   | catalog, database, table, group | Duration in milliseconds since last successful optimization                            |
+| table_optimizing_lag_duration_mills                  | Gauge   | catalog, database, table, group | Duration in milliseconds between last self-optimizing snapshot and refreshed snapshot  |
 
 ## Optimizer Group metrics
 
@@ -82,10 +82,10 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 
 | Metric Name                                        | Type    | Tags                     | Description                                                                    |
 |----------------------------------------------------|---------|--------------------------|--------------------------------------------------------------------------------|
-| table_orphan_content_file_cleaning_count           | Counter | catalog, database, table | Count of orphan content files cleaned in the table since ams started           |
-| table_orphan_metadata_file_cleaning_count          | Counter | catalog, database, table | Count of orphan metadata files cleaned in the table since ams started          |
-| table_expected_orphan_content_file_cleaning_count  | Counter | catalog, database, table | Expected Count of orphan content files cleaned in the table since ams started  |
-| table_expected_orphan_metadata_file_cleaning_count | Counter | catalog, database, table | Expected Count of orphan metadata files cleaned in the table since ams started |
+| table_orphan_content_file_cleaning_count           | Counter | catalog, database, table, group | Count of orphan content files cleaned in the table since ams started           |
+| table_orphan_metadata_file_cleaning_count          | Counter | catalog, database, table, group | Count of orphan metadata files cleaned in the table since ams started          |
+| table_expected_orphan_content_file_cleaning_count  | Counter | catalog, database, table, group | Expected Count of orphan content files cleaned in the table since ams started  |
+| table_expected_orphan_metadata_file_cleaning_count | Counter | catalog, database, table, group | Expected Count of orphan metadata files cleaned in the table since ams started |
 
 
 ## Ams service metrics
@@ -104,18 +104,18 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 
 | Metric Name                                   | Type    | Tags                     | Description                                   |
 |-----------------------------------------------|---------|--------------------------|-----------------------------------------------|
-| table_summary_total_files                     | Gauge   | catalog, database, table | Total number of files in the table            |
-| table_summary_data_files                      | Gauge   | catalog, database, table | Number of data files in the table             |
-| table_summary_equality_delete_files           | Gauge   | catalog, database, table | Number of equality delete files in the table  |
-| table_summary_position_delete_files           | Gauge   | catalog, database, table | Number of position delete files in the table  |
-| table_summary_dangling_delete_files           | Gauge   | catalog, database, table | Number of dangling delete files in the table  |
-| table_summary_total_files_size                | Gauge   | catalog, database, table | Total size of files in the table              |
-| table_summary_data_files_size                 | Gauge   | catalog, database, table | Size of data files in the table               |
-| table_summary_equality_delete_files_size      | Gauge   | catalog, database, table | Size of equality delete files in the table    |
-| table_summary_position_delete_files_size      | Gauge   | catalog, database, table | Size of position delete files in the table    |
-| table_summary_total_records                   | Gauge   | catalog, database, table | Total records in the table                    |
-| table_summary_data_files_records              | Gauge   | catalog, database, table | Records of data files in the table            |
-| table_summary_equality_delete_files_records   | Gauge   | catalog, database, table | Records of equality delete files in the table |
-| table_summary_position_delete_files_records   | Gauge   | catalog, database, table | Records of position delete files in the table |
-| table_summary_snapshots                       | Gauge   | catalog, database, table | Number of snapshots in the table              |
-| table_summary_health_score                    | Gauge   | catalog, database, table | Health score of the table                     |
+| table_summary_total_files                     | Gauge   | catalog, database, table, group | Total number of files in the table            |
+| table_summary_data_files                      | Gauge   | catalog, database, table, group | Number of data files in the table             |
+| table_summary_equality_delete_files           | Gauge   | catalog, database, table, group | Number of equality delete files in the table  |
+| table_summary_position_delete_files           | Gauge   | catalog, database, table, group | Number of position delete files in the table  |
+| table_summary_dangling_delete_files           | Gauge   | catalog, database, table, group | Number of dangling delete files in the table  |
+| table_summary_total_files_size                | Gauge   | catalog, database, table, group | Total size of files in the table              |
+| table_summary_data_files_size                 | Gauge   | catalog, database, table, group | Size of data files in the table               |
+| table_summary_equality_delete_files_size      | Gauge   | catalog, database, table, group | Size of equality delete files in the table    |
+| table_summary_position_delete_files_size      | Gauge   | catalog, database, table, group | Size of position delete files in the table    |
+| table_summary_total_records                   | Gauge   | catalog, database, table, group | Total records in the table                    |
+| table_summary_data_files_records              | Gauge   | catalog, database, table, group | Records of data files in the table            |
+| table_summary_equality_delete_files_records   | Gauge   | catalog, database, table, group | Records of equality delete files in the table |
+| table_summary_position_delete_files_records   | Gauge   | catalog, database, table, group | Records of position delete files in the table |
+| table_summary_snapshots                       | Gauge   | catalog, database, table, group | Number of snapshots in the table              |
+| table_summary_health_score                    | Gauge   | catalog, database, table, group | Health score of the table                     |

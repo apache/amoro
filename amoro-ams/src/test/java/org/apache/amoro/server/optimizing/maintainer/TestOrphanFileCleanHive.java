@@ -19,6 +19,7 @@
 package org.apache.amoro.server.optimizing.maintainer;
 
 import static org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
@@ -92,7 +93,8 @@ public class TestOrphanFileCleanHive extends TestOrphanFileClean {
                 tableIdentifier.getCatalog(),
                 tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName(),
-                getTestFormat()));
+                getTestFormat()),
+            SELF_OPTIMIZING_GROUP_DEFAULT);
     maintainer.cleanContentFiles(System.currentTimeMillis(), orphanFilesCleaningMetrics);
     Assert.assertTrue(getMixedTable().io().exists(hiveOrphanFilePath));
   }
