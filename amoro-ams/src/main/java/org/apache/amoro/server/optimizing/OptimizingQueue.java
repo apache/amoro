@@ -508,14 +508,32 @@ public class OptimizingQueue extends PersistentBase {
                 taskRuntime.getFailReason());
             retryTask(taskRuntime);
           } else {
-            LOG.info(
-                "Task {} has reached the max execute retry count. Process {} failed.",
-                taskRuntime.getTaskId(),
-                processId);
-            this.failedReason = taskRuntime.getFailReason();
-            this.status = ProcessStatus.FAILED;
-            this.endTime = taskRuntime.getEndTime();
-            persistAndSetCompleted(false);
+            try {
+              buildCommit().commit();
+              if (containSuccessTasks()) {
+                LOG.info(
+                    "Task {} has reached the max execute retry count. Process cancels unfinished tasks and commits SUCCESS tasks.",
+                    taskRuntime.getTaskId());
+                this.status = ProcessStatus.SUCCESS;
+                this.endTime = System.currentTimeMillis();
+              } else {
+                LOG.info(
+                    "Task {} has reached the max execute retry count. Process {} failed.",
+                    taskRuntime.getTaskId(),
+                    processId);
+                this.failedReason = taskRuntime.getFailReason();
+                this.status = ProcessStatus.FAILED;
+                this.endTime = taskRuntime.getEndTime();
+              }
+              persistAndSetCompleted(false);
+            } catch (Throwable throwable) {
+              LOG.error(
+                  "{} Commit optimizing failed ", optimizingState.getTableIdentifier(), throwable);
+              this.status = ProcessStatus.FAILED;
+              this.failedReason = ExceptionUtil.getErrorMessage(throwable, 4000);
+              this.endTime = System.currentTimeMillis();
+              persistAndSetCompleted(false);
+            }
           }
         }
       } finally {
@@ -586,6 +604,14 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     @Override
+    public boolean containSuccessTasks() {
+      return taskMap.values().stream()
+              .filter(t -> t.getStatus() == TaskRuntime.Status.SUCCESS)
+              .count()
+          > 0;
+    }
+
+    @Override
     public void commit() {
       LOG.debug(
           "{} get {} tasks of {} partitions to commit",
@@ -627,6 +653,30 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     @Override
+    public void commitClosedProcess() {
+      lock.lock();
+      try {
+        if (this.status != ProcessStatus.RUNNING) {
+          return;
+        }
+        try {
+          buildCommit().commit();
+          this.status = ProcessStatus.CLOSED;
+          this.endTime = System.currentTimeMillis();
+          persistAndSetCompleted(false);
+        } catch (Throwable t) {
+          LOG.error("{} Commit optimizing failed ", optimizingState.getTableIdentifier(), t);
+          status = ProcessStatus.FAILED;
+          failedReason = ExceptionUtil.getErrorMessage(t, 4000);
+          endTime = System.currentTimeMillis();
+          persistAndSetCompleted(false);
+        }
+      } finally {
+        lock.unlock();
+      }
+    }
+
+    @Override
     public MetricsSummary getSummary() {
       List<MetricsSummary> taskSummaries =
           taskMap.values().stream()
@@ -644,11 +694,18 @@ public class OptimizingQueue extends PersistentBase {
                   .loadTable(optimizingState.getTableIdentifier().getIdentifier())
                   .originalTable();
       if (table.isUnkeyedTable()) {
-        return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
+        return new UnKeyedTableCommit(
+            targetSnapshotId,
+            table,
+            taskMap.values().stream()
+                .filter(task -> task.getStatus() == TaskRuntime.Status.SUCCESS)
+                .collect(Collectors.toList()));
       } else {
         return new KeyedTableCommit(
             table,
-            taskMap.values(),
+            taskMap.values().stream()
+                .filter(task -> task.getStatus() == TaskRuntime.Status.SUCCESS)
+                .collect(Collectors.toList()),
             targetSnapshotId,
             convertPartitionSequence(table, fromSequence),
             convertPartitionSequence(table, toSequence));
