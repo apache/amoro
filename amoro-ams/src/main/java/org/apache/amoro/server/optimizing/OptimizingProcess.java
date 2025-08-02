@@ -24,6 +24,8 @@ import org.apache.amoro.process.ProcessStatus;
 
 public interface OptimizingProcess {
 
+  int getQuotaCount();
+
   long getProcessId();
 
   void close();

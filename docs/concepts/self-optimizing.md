@@ -151,18 +151,21 @@ by configuring the quota configuration on the table:
 
 ```SQL
 -- Quota for Self-optimizing, indicating the CPU resource the table can take up
-self-optimizing.quota = 0.1;
+self-optimizing.quota = 0.5;
 ```
-Quota defines the maximum CPU usage that a single table can use, but Self-optimizing is actually executed in a distributed manner, and actual resource
-usage is dynamically managed based on actual execution time.In the optimizing management Web UI, the dynamic quota usage of a single table can be
-viewed through the "Quota Occupy" metric. From a design perspective, the quota occupy metric should dynamically approach 100%.
+Quota specifies the maximum number of optimizer resources that can be allocated to each table. Quota can be set as either a decimal or an integer, depending on
+user requirements. When Quota is set as a decimal, it presents a percentage of the total available optimizer resources, thereby constraining the upper limit of
+optimizer threads that can be assigned to a single table. If Quota is set as a value greater than 1, it specifies a fixed number of optimizer resources
+allocated to the table.
+This approach helps prevent the waste of idle optimizer resources that may occur when the default quota is set to a small integer, while also allowing users to
+customize the allocation based on their specific needs.
 
-In a platform, two situations may occur: overselling and overbuying.
+In the optimizing management Web UI, the dynamic quota usage for each table can be monitored through the "Occupation" metric. Occupation is expressed as a 
+percentage and is calculated as the ratio of the actual execution time of optimizer threads used by a table to its quota execution time within the QUOTA_LOOK_BACK_TIME window.
+In the Amoro management configuration, the parameter `self-optimizing.break-quota-limit-enabled` controls whether over-quota usage is allowed. When this parameter is enabled, 
+Occupation may exceed 100%. When it is disabled, a strict limit is enforced to ensure that the actual resource allocation for any table does not exceed its Quota, thereby 
+guaranteeing that Occupation never surpasses 100%.
 
-- Overselling — If all optimizer configurations exceed the total quota of all table configurations, the quota occupy metric may dynamically approach
-above 100%
-- Overbuying — If all optimizer configurations are lower than the total quota of all table configurations, the quota occupy metric should dynamically
-approach below 100%
 
 ### Balanced
 

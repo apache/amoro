@@ -444,6 +444,7 @@ public class AmsEnvironment {
         + "    commit-thread-count: 10\n"
         + "    runtime-data-keep-days: 30\n"
         + "    runtime-data-expire-interval-hours: 1\n"
+        + "    break-quota-limit-enabled: true\n"
         + "\n"
         + "  database:\n"
         + "    type: \"derby\"\n"
