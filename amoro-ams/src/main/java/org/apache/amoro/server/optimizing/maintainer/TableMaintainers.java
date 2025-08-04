@@ -27,7 +27,7 @@ import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.Table;
 
 /** Factory for creating {@link TableMaintainer}. */
-public class TableMaintainerFactory {
+public class TableMaintainers {
 
   /** Create a {@link TableMaintainer} for the given table. */
   public static TableMaintainer create(AmoroTable<?> amoroTable, TableRuntime tableRuntime) {

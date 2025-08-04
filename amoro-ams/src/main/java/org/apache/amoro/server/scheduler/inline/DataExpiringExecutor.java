@@ -22,7 +22,7 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
-import org.apache.amoro.server.optimizing.maintainer.TableMaintainerFactory;
+import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
@@ -60,7 +60,7 @@ public class DataExpiringExecutor extends PeriodicTableScheduler {
   protected void execute(TableRuntime tableRuntime) {
     try {
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
-      TableMaintainer tableMaintainer = TableMaintainerFactory.create(amoroTable, tableRuntime);
+      TableMaintainer tableMaintainer = TableMaintainers.create(amoroTable, tableRuntime);
       tableMaintainer.expireData();
     } catch (Throwable t) {
       LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);

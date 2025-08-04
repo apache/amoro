@@ -22,7 +22,7 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
-import org.apache.amoro.server.optimizing.maintainer.TableMaintainerFactory;
+import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
@@ -59,7 +59,7 @@ public class OrphanFilesCleaningExecutor extends PeriodicTableScheduler {
     try {
       LOG.info("{} start cleaning orphan files", tableRuntime.getTableIdentifier());
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
-      TableMaintainer tableMaintainer = TableMaintainerFactory.create(amoroTable, tableRuntime);
+      TableMaintainer tableMaintainer = TableMaintainers.create(amoroTable, tableRuntime);
       tableMaintainer.cleanOrphanFiles();
     } catch (Throwable t) {
       LOG.error("{} failed to clean orphan file", tableRuntime.getTableIdentifier(), t);
