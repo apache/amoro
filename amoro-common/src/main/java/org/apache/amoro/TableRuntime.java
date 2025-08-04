@@ -47,6 +47,9 @@ public interface TableRuntime {
    */
   List<? extends TableProcessState> getProcessStates(Action action);
 
+  /** Get the group name of the table runtime. */
+  String getGroupName();
+
   /**
    * Get the table identifier containing server side id and table format.
    *

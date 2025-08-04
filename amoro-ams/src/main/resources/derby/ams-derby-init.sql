@@ -99,29 +99,32 @@ CREATE TABLE table_metadata (
     CONSTRAINT table_metadata_pk PRIMARY KEY (table_id)
 );
 
+
 CREATE TABLE table_runtime (
-    table_id                    BIGINT NOT NULL,
-    catalog_name                VARCHAR(64) NOT NULL,
-    db_name                     VARCHAR(128) NOT NULL,
-    table_name                  VARCHAR(256) NOT NULL,
-    current_snapshot_id         BIGINT NOT NULL DEFAULT -1,
-    current_change_snapshotId   BIGINT,
-    last_optimized_snapshotId   BIGINT NOT NULL DEFAULT -1,
-    last_optimized_change_snapshotId   BIGINT NOT NULL DEFAULT -1,
-    last_major_optimizing_time  TIMESTAMP,
-    last_minor_optimizing_time  TIMESTAMP,
-    last_full_optimizing_time   TIMESTAMP,
-    optimizing_status_code           INT DEFAULT 700,
-    optimizing_status_start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    optimizing_process_id       BIGINT NOT NULL,
-    optimizer_group             VARCHAR(64) NOT NULL,
-    table_config                CLOB(64m),
-    optimizing_config           CLOB(64m),
-    pending_input               CLOB(64m),
-    table_summary               CLOB(64m),
-    CONSTRAINT table_runtime_pk PRIMARY KEY (table_id),
-    CONSTRAINT table_runtime_table_name_idx UNIQUE (catalog_name, db_name, table_name)
+    table_id            BIGINT NOT NULL PRIMARY KEY,
+    group_name          VARCHAR(64) NOT NULL,
+    status_code         INTEGER NOT NULL DEFAULT 700,
+    status_code_update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    table_config        CLOB,
+    table_summary       CLOB
 );
+
+CREATE INDEX idx_status_time_desc
+    ON table_runtime (status_code, status_code_update_time DESC);
+
+CREATE TABLE table_runtime_state (
+    state_id        BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+    table_id        BIGINT NOT NULL,
+    state_key       VARCHAR(256) NOT NULL,
+    state_value     CLOB,
+    state_version   BIGINT NOT NULL DEFAULT 0,
+    create_time     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (state_id),
+    CONSTRAINT uniq_table_state_key UNIQUE (table_id, state_key)
+);
+
+CREATE UNIQUE INDEX uniq_table_state_key ON table_runtime_state (table_id, state_key);
 
 CREATE TABLE table_process (
     process_id       BIGINT NOT NULL PRIMARY KEY,

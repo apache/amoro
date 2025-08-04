@@ -78,12 +78,12 @@ public class TestIcebergPartitionPlan extends TestUnkeyedPartitionPlan {
     DefaultTableRuntime tableRuntime = getTableRuntime();
     return new IcebergPartitionPlan(
         tableRuntime.getTableIdentifier(),
-        tableRuntime.getOptimizingState().getOptimizingConfig(),
+        tableRuntime.getOptimizingConfig(),
         getMixedTable(),
         getPartition(),
         System.currentTimeMillis(),
-        tableRuntime.getOptimizingState().getLastMinorOptimizingTime(),
-        tableRuntime.getOptimizingState().getLastFullOptimizingTime());
+        tableRuntime.getLastMinorOptimizingTime(),
+        tableRuntime.getLastFullOptimizingTime());
   }
 
   @Override

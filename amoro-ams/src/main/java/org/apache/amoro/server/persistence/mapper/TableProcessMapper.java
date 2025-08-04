@@ -21,9 +21,11 @@ package org.apache.amoro.server.persistence.mapper;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.persistence.converter.Long2TsConverter;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
+import org.apache.amoro.server.persistence.extension.InListExtendedLanguageDriver;
 import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Lang;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.ResultMap;
@@ -31,6 +33,7 @@ import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -113,4 +116,11 @@ public interface TableProcessMapper {
       @Param("tableId") long tableId,
       @Param("processType") String processType,
       @Param("status") ProcessStatus optimizingStatus);
+
+  @Select(
+      "SELECT max(process_id) FROM table_process "
+          + "WHERE table_id in (#{tables::number[]}) "
+          + "GROUP BY table_id ")
+  @Lang(InListExtendedLanguageDriver.class)
+  List<Long> selectTableMaxProcessIds(@Param("tables") Collection<Long> tables);
 }

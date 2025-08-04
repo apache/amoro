@@ -48,13 +48,11 @@ import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.metrics.MetricRegistry;
-import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
@@ -241,7 +239,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   }
 
   @Test
-  public void testQuotaSchedulePolicy() {
+  public void testQuotaSchedulePolicy() throws InterruptedException {
     DefaultTableRuntime tableRuntime = initTableWithFiles();
 
     OptimizingQueue queue =
@@ -263,12 +261,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         optimizerThread,
         buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
-    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingState().getOptimizingProcess();
+    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
     Assert.assertEquals(ProcessStatus.RUNNING, optimizingProcess.getStatus());
     optimizingProcess.commit();
     Assert.assertEquals(ProcessStatus.SUCCESS, optimizingProcess.getStatus());
-    Assert.assertNull(tableRuntime.getOptimizingState().getOptimizingProcess());
+    Assert.assertNull(tableRuntime.getOptimizingProcess());
 
+    // waiting for min-plan-interval and minor-trigger-interval
+    Thread.sleep(500);
     tableRuntime = initTableWithPartitionedFiles();
     ServerTableIdentifier serverTableIdentifier =
         ServerTableIdentifier.of(
@@ -287,6 +287,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertNotNull(task3);
     Assert.assertTrue(tableRuntime.getTableIdentifier().getId() == task3.getTableId());
     queue.dispose();
+    tableRuntime2.dispose();
   }
 
   @Test
@@ -340,11 +341,11 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
 
     // 7.commit
-    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingState().getOptimizingProcess();
+    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
     Assert.assertEquals(ProcessStatus.RUNNING, optimizingProcess.getStatus());
     optimizingProcess.commit();
     Assert.assertEquals(ProcessStatus.SUCCESS, optimizingProcess.getStatus());
-    Assert.assertNull(tableRuntime.getOptimizingState().getOptimizingProcess());
+    Assert.assertNull(tableRuntime.getOptimizingProcess());
 
     // 8.commit again, throw exceptions, and status not changed.
     Assert.assertThrows(IllegalStateException.class, optimizingProcess::commit);
@@ -437,7 +438,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(0, idleTablesGauge.getValue().longValue());
     Assert.assertEquals(1, committingTablesGauge.getValue().longValue());
 
-    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingState().getOptimizingProcess();
+    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
     optimizingProcess.commit();
     Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
     Assert.assertEquals(0, executingTasksGauge.getValue().longValue());
@@ -488,12 +489,17 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   protected DefaultTableRuntime initTableWithFiles() {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    mixedTable
+        .updateProperties()
+        .set(TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL, "10")
+        .set(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "10")
+        .commit();
     appendData(mixedTable.asUnkeyedTable(), 1);
     appendData(mixedTable.asUnkeyedTable(), 2);
     DefaultTableRuntime tableRuntime =
         buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
 
-    tableRuntime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
+    tableRuntime.refresh(tableService().loadTable(serverTableIdentifier()));
     return tableRuntime;
   }
 
@@ -505,24 +511,21 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     DefaultTableRuntime tableRuntime =
         buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
 
-    tableRuntime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
+    tableRuntime.refresh(tableService().loadTable(serverTableIdentifier()));
     return tableRuntime;
   }
 
   private DefaultTableRuntime buildTableRuntimeMeta(
       OptimizingStatus status, ResourceGroup resourceGroup) {
-    MixedTable mixedTable =
-        (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
-    TableRuntimeMeta tableRuntimeMeta = new TableRuntimeMeta();
-    tableRuntimeMeta.setCatalogName(serverTableIdentifier().getCatalog());
-    tableRuntimeMeta.setDbName(serverTableIdentifier().getDatabase());
-    tableRuntimeMeta.setTableName(serverTableIdentifier().getTableName());
-    tableRuntimeMeta.setTableId(serverTableIdentifier().getId());
-    tableRuntimeMeta.setFormat(TableFormat.ICEBERG);
-    tableRuntimeMeta.setTableStatus(status);
-    tableRuntimeMeta.setTableConfig(TableConfigurations.parseTableConfig(mixedTable.properties()));
-    tableRuntimeMeta.setOptimizerGroup(resourceGroup.getName());
-    return new DefaultTableRuntime(tableRuntimeMeta, tableService());
+    DefaultTableRuntime tableRuntime =
+        (DefaultTableRuntime) tableService().getRuntime(serverTableIdentifier().getId());
+    tableRuntime
+        .store()
+        .begin()
+        .updateStatusCode(code -> status.getCode())
+        .updateGroup(any -> resourceGroup.getName())
+        .commit();
+    return tableRuntime;
   }
 
   private void appendPartitionedData(UnkeyedTable table, int id) {
@@ -560,24 +563,27 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         tableTestHelper().tableSchema(),
         tableTestHelper().partitionSpec(),
         tableTestHelper().tableProperties());
+    exploreTableRuntimes();
+    serverTableIdentifier =
+        tableManager()
+            .getServerTableIdentifier(serverTableIdentifier.getIdentifier().buildTableIdentifier());
 
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier).originalTable();
     appendPartitionedData(mixedTable.asUnkeyedTable(), 1);
     appendPartitionedData(mixedTable.asUnkeyedTable(), 2);
 
-    TableRuntimeMeta tableRuntimeMeta = new TableRuntimeMeta();
-    tableRuntimeMeta.setCatalogName(serverTableIdentifier.getCatalog());
-    tableRuntimeMeta.setDbName(serverTableIdentifier.getDatabase());
-    tableRuntimeMeta.setTableName(serverTableIdentifier.getTableName());
-    tableRuntimeMeta.setTableId(serverTableIdentifier.getId());
-    tableRuntimeMeta.setFormat(TableFormat.ICEBERG);
-    tableRuntimeMeta.setTableStatus(OptimizingStatus.PENDING);
-    tableRuntimeMeta.setTableConfig(TableConfigurations.parseTableConfig(mixedTable.properties()));
-    tableRuntimeMeta.setOptimizerGroup(defaultResourceGroup().getName());
-    DefaultTableRuntime tableRuntime = new DefaultTableRuntime(tableRuntimeMeta, tableService());
+    DefaultTableRuntime tableRuntime =
+        (DefaultTableRuntime) tableService().getRuntime(serverTableIdentifier.getId());
 
-    tableRuntime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier));
+    tableRuntime
+        .store()
+        .begin()
+        .updateGroup(any -> defaultResourceGroup().getName())
+        .updateStatusCode(any -> OptimizingStatus.PENDING.getCode())
+        .commit();
+
+    tableRuntime.refresh(tableService().loadTable(serverTableIdentifier));
 
     return tableRuntime;
   }

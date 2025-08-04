@@ -22,7 +22,6 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.optimizing.sorter.QuotaOccupySorter;
 import org.apache.amoro.server.optimizing.sorter.SorterFactory;
-import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -111,32 +110,22 @@ public class SchedulingPolicy {
     }
   }
 
-  public DefaultTableRuntime getTableRuntime(ServerTableIdentifier tableIdentifier) {
-    tableLock.lock();
-    try {
-      return tableRuntimeMap.get(tableIdentifier);
-    } finally {
-      tableLock.unlock();
-    }
-  }
-
   private void fillSkipSet(Set<ServerTableIdentifier> originalSet) {
     long currentTime = System.currentTimeMillis();
     tableRuntimeMap.values().stream()
-        .map(DefaultTableRuntime::getOptimizingState)
         .filter(
-            optimizingState ->
-                !isTablePending(optimizingState)
-                    || currentTime - optimizingState.getLastPlanTime()
-                        < optimizingState.getOptimizingConfig().getMinPlanInterval())
+            tableRuntime ->
+                !isTablePending(tableRuntime)
+                    || currentTime - tableRuntime.getLastPlanTime()
+                        < tableRuntime.getOptimizingConfig().getMinPlanInterval())
         .forEach(tableRuntime -> originalSet.add(tableRuntime.getTableIdentifier()));
   }
 
-  private boolean isTablePending(DefaultOptimizingState optimizingState) {
-    return optimizingState.getOptimizingStatus() == OptimizingStatus.PENDING
-        && (optimizingState.getLastOptimizedSnapshotId() != optimizingState.getCurrentSnapshotId()
-            || optimizingState.getLastOptimizedChangeSnapshotId()
-                != optimizingState.getCurrentChangeSnapshotId());
+  private boolean isTablePending(DefaultTableRuntime tableRuntime) {
+    return tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING
+        && (tableRuntime.getLastOptimizedSnapshotId() != tableRuntime.getCurrentSnapshotId()
+            || tableRuntime.getLastOptimizedChangeSnapshotId()
+                != tableRuntime.getCurrentChangeSnapshotId());
   }
 
   public void addTable(DefaultTableRuntime tableRuntime) {

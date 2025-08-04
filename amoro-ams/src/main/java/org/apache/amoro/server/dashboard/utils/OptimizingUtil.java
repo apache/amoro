@@ -20,8 +20,8 @@ package org.apache.amoro.server.dashboard.utils;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.OptimizingConfig;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.optimizing.MetricsSummary;
-import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
@@ -29,7 +29,9 @@ import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.table.TableSummary;
 import org.apache.amoro.table.descriptor.FilesStatistics;
 
 import java.math.BigDecimal;
@@ -45,24 +47,20 @@ public class OptimizingUtil {
    * @return TableOptimizeInfo
    */
   public static TableOptimizingInfo buildTableOptimizeInfo(
-      TableRuntimeMeta optimizingTableRuntime,
+      ServerTableIdentifier identifier,
+      TableRuntimeMeta tableRuntimeMeta,
       List<OptimizingTaskMeta> processTasks,
       List<TaskRuntime.TaskQuota> quotas,
       int threadCount) {
-    ServerTableIdentifier identifier =
-        ServerTableIdentifier.of(
-            optimizingTableRuntime.getTableId(),
-            optimizingTableRuntime.getCatalogName(),
-            optimizingTableRuntime.getDbName(),
-            optimizingTableRuntime.getTableName(),
-            optimizingTableRuntime.getFormat());
     TableOptimizingInfo tableOptimizeInfo = new TableOptimizingInfo(identifier);
-    OptimizingStatus optimizingStatus = optimizingTableRuntime.getTableStatus();
-    tableOptimizeInfo.setOptimizeStatus(optimizingStatus.displayValue());
+    OptimizingStatus optimizingStatus = OptimizingStatus.ofCode(tableRuntimeMeta.getStatusCode());
+    String displayStatus = optimizingStatus == null ? "UNKNOWN" : optimizingStatus.displayValue();
+    tableOptimizeInfo.setOptimizeStatus(displayStatus);
     tableOptimizeInfo.setDuration(
-        System.currentTimeMillis() - optimizingTableRuntime.getCurrentStatusStartTime());
-    OptimizingConfig optimizingConfig =
-        optimizingTableRuntime.getTableConfig().getOptimizingConfig();
+        System.currentTimeMillis() - tableRuntimeMeta.getStatusCodeUpdateTime());
+    TableConfiguration tableConfig =
+        TableConfigurations.parseTableConfig(tableRuntimeMeta.getTableConfig());
+    OptimizingConfig optimizingConfig = tableConfig.getOptimizingConfig();
     double targetQuota = optimizingConfig.getTargetQuota();
     tableOptimizeInfo.setQuota(
         targetQuota > 1 ? (int) targetQuota : (int) Math.ceil(targetQuota * threadCount));
@@ -77,7 +75,7 @@ public class OptimizingUtil {
         BigDecimal.valueOf(quotaOccupation).setScale(4, RoundingMode.HALF_UP).doubleValue());
 
     FilesStatistics optimizeFileInfo;
-    if (optimizingStatus.isProcessing()) {
+    if (optimizingStatus != null && optimizingStatus.isProcessing()) {
       MetricsSummary summary = null;
       if (processTasks != null && !processTasks.isEmpty()) {
         List<MetricsSummary> taskSummary =
@@ -88,7 +86,7 @@ public class OptimizingUtil {
       }
       optimizeFileInfo = collectOptimizingFileInfo(summary);
     } else if (optimizingStatus == OptimizingStatus.PENDING) {
-      optimizeFileInfo = collectPendingFileInfo(optimizingTableRuntime.getPendingInput());
+      optimizeFileInfo = collectPendingFileInfo(tableRuntimeMeta.getTableSummary());
     } else {
       optimizeFileInfo = null;
     }
@@ -96,7 +94,7 @@ public class OptimizingUtil {
       tableOptimizeInfo.setFileCount(optimizeFileInfo.getFileCnt());
       tableOptimizeInfo.setFileSize(optimizeFileInfo.getTotalSize());
     }
-    tableOptimizeInfo.setGroupName(optimizingTableRuntime.getOptimizerGroup());
+    tableOptimizeInfo.setGroupName(tableRuntimeMeta.getGroupName());
     return tableOptimizeInfo;
   }
 
@@ -130,16 +128,12 @@ public class OptimizingUtil {
     return finishedOccupy + runningOccupy;
   }
 
-  private static FilesStatistics collectPendingFileInfo(
-      AbstractOptimizingEvaluator.PendingInput pendingInput) {
-    if (pendingInput == null) {
+  private static FilesStatistics collectPendingFileInfo(TableSummary tableSummary) {
+    if (tableSummary == null) {
       return null;
     }
     return FilesStatistics.builder()
-        .addFiles(pendingInput.getDataFileSize(), pendingInput.getDataFileCount())
-        .addFiles(pendingInput.getEqualityDeleteBytes(), pendingInput.getEqualityDeleteFileCount())
-        .addFiles(
-            pendingInput.getPositionalDeleteBytes(), pendingInput.getPositionalDeleteFileCount())
+        .addFiles(tableSummary.getPendingFileSize(), tableSummary.getPendingFileCount())
         .build();
   }
 
