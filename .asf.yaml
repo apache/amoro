@@ -24,7 +24,6 @@ github:
     - big-data
     - data-lake
     - lake-house
-    - data-ingestion
     - iceberg
     - paimon
     - hudi
