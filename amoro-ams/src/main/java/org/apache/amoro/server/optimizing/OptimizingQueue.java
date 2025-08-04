@@ -76,7 +76,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -253,9 +252,10 @@ public class OptimizingQueue extends PersistentBase {
         getAs(
             TableBlockerMapper.class,
             mapper -> mapper.selectAllBlockers(System.currentTimeMillis()));
-    Map<TableIdentifier, ServerTableIdentifier> identifierMap =
-        scheduler.getTableRuntimeMap().keySet().stream()
-            .collect(Collectors.toMap(ServerTableIdentifier::getIdentifier, Function.identity()));
+    Map<TableIdentifier, ServerTableIdentifier> identifierMap = Maps.newHashMap();
+    for (ServerTableIdentifier identifier : scheduler.getTableRuntimeMap().keySet()) {
+      identifierMap.put(identifier.getIdentifier(), identifier);
+    }
     tableBlockerList.stream()
         .filter(blocker -> TableBlocker.conflict(BlockableOperation.OPTIMIZE, blocker))
         .map(
