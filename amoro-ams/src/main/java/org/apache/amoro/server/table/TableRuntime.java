@@ -373,7 +373,7 @@ public class TableRuntime extends StatedPersistentBase {
       currentSnapshotId = doRefreshSnapshots(baseTable);
 
       if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
-        LOG.info(
+        LOG.debug(
             "Refreshing table {} with base snapshot id {} and change snapshot id {}",
             tableIdentifier,
             currentSnapshotId,
@@ -383,7 +383,7 @@ public class TableRuntime extends StatedPersistentBase {
     } else {
       currentSnapshotId = doRefreshSnapshots((UnkeyedTable) table);
       if (currentSnapshotId != lastSnapshotId) {
-        LOG.info(
+        LOG.debug(
             "Refreshing table {} with base snapshot id {}", tableIdentifier, currentSnapshotId);
         return true;
       }
