@@ -24,7 +24,6 @@ import static org.apache.amoro.utils.MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE
 import org.apache.amoro.IcebergFileEntry;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.DataExpirationConfig;
-import org.apache.amoro.config.TagConfiguration;
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.server.table.DefaultTableRuntime;
@@ -82,31 +81,34 @@ public class MixedTableMaintainer implements TableMaintainer {
   private ChangeTableMaintainer changeMaintainer;
 
   private final BaseTableMaintainer baseMaintainer;
+  private final DefaultTableRuntime tableRuntime;
 
-  public MixedTableMaintainer(MixedTable mixedTable) {
+  public MixedTableMaintainer(MixedTable mixedTable, DefaultTableRuntime tableRuntime) {
     this.mixedTable = mixedTable;
+    this.tableRuntime = tableRuntime;
     if (mixedTable.isKeyedTable()) {
-      changeMaintainer = new ChangeTableMaintainer(mixedTable.asKeyedTable().changeTable());
-      baseMaintainer = new BaseTableMaintainer(mixedTable.asKeyedTable().baseTable());
+      changeMaintainer =
+          new ChangeTableMaintainer(mixedTable.asKeyedTable().changeTable(), tableRuntime);
+      baseMaintainer = new BaseTableMaintainer(mixedTable.asKeyedTable().baseTable(), tableRuntime);
     } else {
-      baseMaintainer = new BaseTableMaintainer(mixedTable.asUnkeyedTable());
+      baseMaintainer = new BaseTableMaintainer(mixedTable.asUnkeyedTable(), tableRuntime);
     }
   }
 
   @Override
-  public void cleanOrphanFiles(DefaultTableRuntime tableRuntime) {
+  public void cleanOrphanFiles() {
     if (changeMaintainer != null) {
-      changeMaintainer.cleanOrphanFiles(tableRuntime);
+      changeMaintainer.cleanOrphanFiles();
     }
-    baseMaintainer.cleanOrphanFiles(tableRuntime);
+    baseMaintainer.cleanOrphanFiles();
   }
 
   @Override
-  public void expireSnapshots(DefaultTableRuntime tableRuntime) {
+  public void expireSnapshots() {
     if (changeMaintainer != null) {
-      changeMaintainer.expireSnapshots(tableRuntime);
+      changeMaintainer.expireSnapshots();
     }
-    baseMaintainer.expireSnapshots(tableRuntime);
+    baseMaintainer.expireSnapshots();
   }
 
   @VisibleForTesting
@@ -118,7 +120,9 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireData(DataExpirationConfig expirationConfig) {
+  public void expireData() {
+    DataExpirationConfig expirationConfig =
+        tableRuntime.getTableConfiguration().getExpiringDataConfig();
     try {
       Types.NestedField field =
           mixedTable.schema().findField(expirationConfig.getExpirationField());
@@ -242,7 +246,7 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void autoCreateTags(TagConfiguration tagConfiguration) {
+  public void autoCreateTags() {
     throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
   }
 
@@ -262,11 +266,11 @@ public class MixedTableMaintainer implements TableMaintainer {
     baseMaintainer.cleanMetadata(lastTime, orphanFilesCleaningMetrics);
   }
 
-  protected void cleanDanglingDeleteFiles() {
+  protected void doCleanDanglingDeleteFiles() {
     if (changeMaintainer != null) {
-      changeMaintainer.cleanDanglingDeleteFiles();
+      changeMaintainer.doCleanDanglingDeleteFiles();
     }
-    baseMaintainer.cleanDanglingDeleteFiles();
+    baseMaintainer.doCleanDanglingDeleteFiles();
   }
 
   public ChangeTableMaintainer getChangeMaintainer() {
@@ -283,8 +287,8 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     private final UnkeyedTable unkeyedTable;
 
-    public ChangeTableMaintainer(UnkeyedTable unkeyedTable) {
-      super(unkeyedTable, mixedTable.id());
+    public ChangeTableMaintainer(UnkeyedTable unkeyedTable, DefaultTableRuntime tableRuntime) {
+      super(unkeyedTable, mixedTable.id(), tableRuntime);
       this.unkeyedTable = unkeyedTable;
     }
 
@@ -296,7 +300,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    public void expireSnapshots(DefaultTableRuntime tableRuntime) {
+    public void expireSnapshots() {
       if (!expireSnapshotEnabled(tableRuntime)) {
         return;
       }
@@ -439,8 +443,8 @@ public class MixedTableMaintainer implements TableMaintainer {
   public class BaseTableMaintainer extends IcebergTableMaintainer {
     private final Set<String> hiveFiles = Sets.newHashSet();
 
-    public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
-      super(unkeyedTable, mixedTable.id());
+    public BaseTableMaintainer(UnkeyedTable unkeyedTable, DefaultTableRuntime tableRuntime) {
+      super(unkeyedTable, mixedTable.id(), tableRuntime);
       if (unkeyedTable.format() == TableFormat.MIXED_HIVE) {
         hiveFiles.addAll(HiveLocationUtil.getHiveLocation(mixedTable));
       }

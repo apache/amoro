@@ -242,7 +242,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
     // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = parseDataExpirationConfig(keyedTable);
-    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(keyedTable);
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(keyedTable, null);
     tableMaintainer.expireDataFrom(
         config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
@@ -325,7 +325,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
     // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = parseDataExpirationConfig(keyedTable);
-    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
+    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable(), null);
     mixedTableMaintainer.expireDataFrom(
         config,
         LocalDateTime.parse("2022-01-03T18:00:00.000")
@@ -395,14 +395,14 @@ public class TestDataExpire extends ExecutorTestBase {
     if (getTestFormat().equals(TableFormat.ICEBERG)) {
       Table table = getMixedTable().asUnkeyedTable();
       IcebergTableMaintainer icebergTableMaintainer =
-          new IcebergTableMaintainer(table, getMixedTable().id());
+          new IcebergTableMaintainer(table, getMixedTable().id(), null);
       Types.NestedField field = table.schema().findField(config.getExpirationField());
       long lastSnapshotTime = table.currentSnapshot().timestampMillis();
       long lastCommitTime = icebergTableMaintainer.expireBaseOnRule(config, field).toEpochMilli();
       Assert.assertEquals(lastSnapshotTime, lastCommitTime);
     } else {
       MixedTable mixedTable = getMixedTable();
-      MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(mixedTable);
+      MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(mixedTable, null);
       Types.NestedField field = getMixedTable().schema().findField(config.getExpirationField());
 
       long lastSnapshotTime;
@@ -429,7 +429,7 @@ public class TestDataExpire extends ExecutorTestBase {
     if (getTestFormat().equals(TableFormat.ICEBERG)) {
       Table table = getMixedTable().asUnkeyedTable();
       IcebergTableMaintainer icebergTableMaintainer =
-          new IcebergTableMaintainer(table, getMixedTable().id());
+          new IcebergTableMaintainer(table, getMixedTable().id(), null);
       Types.NestedField field = table.schema().findField(config.getExpirationField());
       icebergTableMaintainer.expireDataFrom(
           config,
@@ -441,7 +441,7 @@ public class TestDataExpire extends ExecutorTestBase {
                           getMixedTable().schema().findField(config.getExpirationField())))
                   .toInstant());
     } else {
-      MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
+      MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable(), null);
       Types.NestedField field = getMixedTable().schema().findField(config.getExpirationField());
       mixedTableMaintainer.expireDataFrom(
           config,
@@ -503,7 +503,7 @@ public class TestDataExpire extends ExecutorTestBase {
     assertScanResult(scan, 1, 0);
 
     DataExpirationConfig config = parseDataExpirationConfig(testTable);
-    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable());
+    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable(), null);
     mixedTableMaintainer.expireDataFrom(
         config,
         LocalDateTime.parse("2024-01-01T00:00:00.000")

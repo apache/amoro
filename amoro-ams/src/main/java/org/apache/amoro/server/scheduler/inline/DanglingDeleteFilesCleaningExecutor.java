@@ -22,6 +22,7 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
+import org.apache.amoro.server.optimizing.maintainer.TableMaintainerFactory;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
@@ -61,8 +62,8 @@ public class DanglingDeleteFilesCleaningExecutor extends PeriodicTableScheduler 
     try {
       LOG.info("{} start cleaning dangling delete files", tableRuntime.getTableIdentifier());
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
-      TableMaintainer tableMaintainer = TableMaintainer.ofTable(amoroTable);
-      tableMaintainer.cleanDanglingDeleteFiles(tableRuntime.getTableConfiguration());
+      TableMaintainer tableMaintainer = TableMaintainerFactory.create(amoroTable, tableRuntime);
+      tableMaintainer.cleanDanglingDeleteFiles();
     } catch (Throwable t) {
       LOG.error("{} failed to clean dangling delete file", tableRuntime.getTableIdentifier(), t);
     }

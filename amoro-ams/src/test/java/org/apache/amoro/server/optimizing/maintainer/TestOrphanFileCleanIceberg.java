@@ -100,8 +100,10 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
         .commit();
     assertDanglingDeleteFiles(testTable, 1);
 
-    IcebergTableMaintainer tableMaintainer = new IcebergTableMaintainer(testTable, testTable.id());
-    tableMaintainer.cleanDanglingDeleteFiles();
+
+    IcebergTableMaintainer tableMaintainer =
+        new IcebergTableMaintainer(testTable, testTable.id(), null);
+    tableMaintainer.doCleanDanglingDeleteFiles();
 
     assertDanglingDeleteFiles(testTable, 0);
   }
