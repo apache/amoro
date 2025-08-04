@@ -382,7 +382,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
       currentSnapshotId = doRefreshSnapshots(baseTable);
 
       if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
-        LOG.info(
+        LOG.debug(
             "Refreshing table {} with base snapshot id {} and change snapshot id {}",
             tableIdentifier,
             currentSnapshotId,
@@ -392,7 +392,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     } else {
       currentSnapshotId = doRefreshSnapshots((UnkeyedTable) table);
       if (currentSnapshotId != lastSnapshotId) {
-        LOG.info(
+        LOG.debug(
             "Refreshing table {} with base snapshot id {}", tableIdentifier, currentSnapshotId);
         return true;
       }
