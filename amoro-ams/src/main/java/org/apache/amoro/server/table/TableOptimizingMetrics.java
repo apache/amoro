@@ -24,12 +24,15 @@ import static org.apache.amoro.metrics.MetricDefine.defineGauge;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.metrics.Counter;
 import org.apache.amoro.metrics.Gauge;
+import org.apache.amoro.metrics.Metric;
 import org.apache.amoro.metrics.MetricDefine;
+import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.primitives.Longs;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
@@ -55,142 +58,142 @@ public class TableOptimizingMetrics extends AbstractTableMetrics {
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IDLE_DURATION =
       defineGauge("table_optimizing_status_idle_duration_mills")
           .withDescription("Duration in milliseconds after table be in idle status")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_PENDING_DURATION =
       defineGauge("table_optimizing_status_pending_duration_mills")
           .withDescription("Duration in milliseconds after table be in pending status")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_PLANNING_DURATION =
       defineGauge("table_optimizing_status_planning_duration_mills")
           .withDescription("Duration in milliseconds after table be in planning status")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_EXECUTING_DURATION =
       defineGauge("table_optimizing_status_executing_duration_mills")
           .withDescription("Duration in milliseconds after table be in executing status")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_COMMITTING_DURATION =
       defineGauge("table_optimizing_status_committing_duration_mills")
           .withDescription("Duration in milliseconds after table be in committing status")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   // table optimizing process count metrics
   public static final MetricDefine TABLE_OPTIMIZING_PROCESS_TOTAL_COUNT =
       defineCounter("table_optimizing_process_total_count")
           .withDescription("Count of all optimizing process since ams started")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_PROCESS_FAILED_COUNT =
       defineCounter("table_optimizing_process_failed_count")
           .withDescription("Count of failed optimizing process since ams started")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_MINOR_TOTAL_COUNT =
       defineCounter("table_optimizing_minor_total_count")
           .withDescription("Count of minor optimizing process since ams started")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_MINOR_FAILED_COUNT =
       defineCounter("table_optimizing_minor_failed_count")
           .withDescription("Count of failed minor optimizing process since ams started")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_MAJOR_TOTAL_COUNT =
       defineCounter("table_optimizing_major_total_count")
           .withDescription("Count of major optimizing process since ams started")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_MAJOR_FAILED_COUNT =
       defineCounter("table_optimizing_major_failed_count")
           .withDescription("Count of failed major optimizing process since ams started")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_FULL_TOTAL_COUNT =
       defineCounter("table_optimizing_full_total_count")
           .withDescription("Count of full optimizing process since ams started")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_FULL_FAILED_COUNT =
       defineCounter("table_optimizing_full_failed_count")
           .withDescription("Count of failed full optimizing process since ams started")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   // table optimizing process status metrics
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IN_IDLE =
       defineGauge("table_optimizing_status_in_idle")
           .withDescription("If currently table is in idle status")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IN_PENDING =
       defineGauge("table_optimizing_status_in_pending")
           .withDescription("If currently table is in pending status")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IN_PLANNING =
       defineGauge("table_optimizing_status_in_planning")
           .withDescription("If currently table is in planning status")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IN_EXECUTING =
       defineGauge("table_optimizing_status_in_executing")
           .withDescription("If currently table is in executing status")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_STATUS_IN_COMMITTING =
       defineGauge("table_optimizing_status_in_committing")
           .withDescription("If currently table is in committing status")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_SINCE_LAST_MINOR_OPTIMIZATION =
       defineGauge("table_optimizing_since_last_minor_optimization_mills")
           .withDescription("Duration in milliseconds since last successful minor optimization")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_SINCE_LAST_MAJOR_OPTIMIZATION =
       defineGauge("table_optimizing_since_last_major_optimization_mills")
           .withDescription("Duration in milliseconds since last successful major optimization")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_SINCE_LAST_FULL_OPTIMIZATION =
       defineGauge("table_optimizing_since_last_full_optimization_mills")
           .withDescription("Duration in milliseconds since last successful full optimization")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_SINCE_LAST_OPTIMIZATION =
       defineGauge("table_optimizing_since_last_optimization_mills")
           .withDescription("Duration in milliseconds since last successful optimization")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   public static final MetricDefine TABLE_OPTIMIZING_LAG_DURATION =
       defineGauge("table_optimizing_lag_duration_mills")
           .withDescription(
               "Duration in milliseconds between last self-optimizing snapshot and refreshed snapshot")
-          .withTags("catalog", "database", "table")
+          .withTags("catalog", "database", "table", "group")
           .build();
 
   private final Counter processTotalCount = new Counter();
@@ -208,8 +211,29 @@ public class TableOptimizingMetrics extends AbstractTableMetrics {
   private long lastNonMaintainedTime = AmoroServiceConstants.INVALID_TIME;
   private long lastOptimizingTime = AmoroServiceConstants.INVALID_TIME;
 
-  public TableOptimizingMetrics(ServerTableIdentifier identifier) {
+  private String optimizerGroup;
+
+  public TableOptimizingMetrics(ServerTableIdentifier identifier, String optimizerGroup) {
     super(identifier);
+    this.optimizerGroup = optimizerGroup;
+  }
+
+  @Override
+  protected void registerMetric(MetricRegistry registry, MetricDefine define, Metric metric) {
+    MetricKey key =
+        registry.register(
+            define,
+            ImmutableMap.of(
+                "catalog",
+                identifier.getCatalog(),
+                "database",
+                identifier.getDatabase(),
+                "table",
+                identifier.getTableName(),
+                "group",
+                optimizerGroup),
+            metric);
+    registeredMetricKeys.add(key);
   }
 
   @Override
@@ -286,6 +310,18 @@ public class TableOptimizingMetrics extends AbstractTableMetrics {
   public void statusChanged(OptimizingStatus optimizingStatus, long statusSetTimestamp) {
     this.optimizingStatus = optimizingStatus;
     this.statusSetTimestamp = statusSetTimestamp;
+  }
+
+  /**
+   * Handle table optimizer group change event.
+   *
+   * @param optimizerGroup new optimizer group name
+   */
+  public void optimizerGroupChanged(String optimizerGroup) {
+    MetricRegistry metricRegistry = globalRegistry;
+    unregister();
+    this.optimizerGroup = optimizerGroup;
+    register(metricRegistry);
   }
 
   /**
