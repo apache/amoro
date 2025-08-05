@@ -522,10 +522,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
         .thenReturn(ServerTableIdentifier.of(testUnkeyedTable.id(), getTestFormat()));
     Mockito.when(tableRuntime.getOptimizingState().getOptimizingStatus())
         .thenReturn(OptimizingStatus.IDLE);
-    testUnkeyedTable
-        .updateProperties()
-        .set(TableProperties.SNAPSHOT_KEEP_DURATION, "0")
-        .commit();
+    testUnkeyedTable.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0").commit();
     Mockito.when(tableRuntime.getTableConfiguration())
         .thenReturn(TableConfigurations.parseTableConfig(testUnkeyedTable.properties()));
 
