@@ -19,15 +19,17 @@
 package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
+import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
-import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class DataExpiringExecutor extends PeriodicTableScheduler {
 
@@ -41,27 +43,31 @@ public class DataExpiringExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+  protected long getNextExecutingTime(TableRuntime tableRuntime) {
     return interval.toMillis();
   }
 
   @Override
-  protected boolean enabled(DefaultTableRuntime tableRuntime) {
+  protected boolean enabled(TableRuntime tableRuntime) {
     return tableRuntime.getTableConfiguration().getExpiringDataConfig().isEnabled();
   }
 
   @Override
-  public void handleConfigChanged(
-      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 
   @Override
-  protected void execute(DefaultTableRuntime tableRuntime) {
+  protected long getExecutorDelay() {
+    return ThreadLocalRandom.current().nextLong(interval.toMillis());
+  }
+
+  @Override
+  protected void execute(TableRuntime tableRuntime) {
     try {
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
-      TableMaintainer tableMaintainer = TableMaintainer.ofTable(amoroTable);
-      tableMaintainer.expireData(tableRuntime);
+      TableMaintainer tableMaintainer = TableMaintainers.create(amoroTable, tableRuntime);
+      tableMaintainer.expireData();
     } catch (Throwable t) {
       LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);
     }

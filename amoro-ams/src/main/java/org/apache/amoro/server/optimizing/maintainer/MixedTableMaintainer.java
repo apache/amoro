@@ -81,31 +81,34 @@ public class MixedTableMaintainer implements TableMaintainer {
   private ChangeTableMaintainer changeMaintainer;
 
   private final BaseTableMaintainer baseMaintainer;
+  private final DefaultTableRuntime tableRuntime;
 
-  public MixedTableMaintainer(MixedTable mixedTable) {
+  public MixedTableMaintainer(MixedTable mixedTable, DefaultTableRuntime tableRuntime) {
     this.mixedTable = mixedTable;
+    this.tableRuntime = tableRuntime;
     if (mixedTable.isKeyedTable()) {
-      changeMaintainer = new ChangeTableMaintainer(mixedTable.asKeyedTable().changeTable());
-      baseMaintainer = new BaseTableMaintainer(mixedTable.asKeyedTable().baseTable());
+      changeMaintainer =
+          new ChangeTableMaintainer(mixedTable.asKeyedTable().changeTable(), tableRuntime);
+      baseMaintainer = new BaseTableMaintainer(mixedTable.asKeyedTable().baseTable(), tableRuntime);
     } else {
-      baseMaintainer = new BaseTableMaintainer(mixedTable.asUnkeyedTable());
+      baseMaintainer = new BaseTableMaintainer(mixedTable.asUnkeyedTable(), tableRuntime);
     }
   }
 
   @Override
-  public void cleanOrphanFiles(DefaultTableRuntime tableRuntime) {
+  public void cleanOrphanFiles() {
     if (changeMaintainer != null) {
-      changeMaintainer.cleanOrphanFiles(tableRuntime);
+      changeMaintainer.cleanOrphanFiles();
     }
-    baseMaintainer.cleanOrphanFiles(tableRuntime);
+    baseMaintainer.cleanOrphanFiles();
   }
 
   @Override
-  public void expireSnapshots(DefaultTableRuntime tableRuntime) {
+  public void expireSnapshots() {
     if (changeMaintainer != null) {
-      changeMaintainer.expireSnapshots(tableRuntime);
+      changeMaintainer.expireSnapshots();
     }
-    baseMaintainer.expireSnapshots(tableRuntime);
+    baseMaintainer.expireSnapshots();
   }
 
   @VisibleForTesting
@@ -117,10 +120,10 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireData(DefaultTableRuntime tableRuntime) {
+  public void expireData() {
+    DataExpirationConfig expirationConfig =
+        tableRuntime.getTableConfiguration().getExpiringDataConfig();
     try {
-      DataExpirationConfig expirationConfig =
-          tableRuntime.getTableConfiguration().getExpiringDataConfig();
       Types.NestedField field =
           mixedTable.schema().findField(expirationConfig.getExpirationField());
       if (!TableConfigurations.isValidDataExpirationField(
@@ -130,7 +133,7 @@ public class MixedTableMaintainer implements TableMaintainer {
 
       expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
-      LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
+      LOG.error("Unexpected purge error for table {} ", mixedTable.id(), t);
     }
   }
 
@@ -243,7 +246,7 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void autoCreateTags(DefaultTableRuntime tableRuntime) {
+  public void autoCreateTags() {
     throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
   }
 
@@ -263,11 +266,11 @@ public class MixedTableMaintainer implements TableMaintainer {
     baseMaintainer.cleanMetadata(lastTime, orphanFilesCleaningMetrics);
   }
 
-  protected void cleanDanglingDeleteFiles() {
+  protected void doCleanDanglingDeleteFiles() {
     if (changeMaintainer != null) {
-      changeMaintainer.cleanDanglingDeleteFiles();
+      changeMaintainer.doCleanDanglingDeleteFiles();
     }
-    baseMaintainer.cleanDanglingDeleteFiles();
+    baseMaintainer.doCleanDanglingDeleteFiles();
   }
 
   public ChangeTableMaintainer getChangeMaintainer() {
@@ -284,8 +287,8 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     private final UnkeyedTable unkeyedTable;
 
-    public ChangeTableMaintainer(UnkeyedTable unkeyedTable) {
-      super(unkeyedTable);
+    public ChangeTableMaintainer(UnkeyedTable unkeyedTable, DefaultTableRuntime tableRuntime) {
+      super(unkeyedTable, mixedTable.id(), tableRuntime);
       this.unkeyedTable = unkeyedTable;
     }
 
@@ -297,7 +300,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    public void expireSnapshots(DefaultTableRuntime tableRuntime) {
+    public void expireSnapshots() {
       if (!expireSnapshotEnabled(tableRuntime)) {
         return;
       }
@@ -440,8 +443,8 @@ public class MixedTableMaintainer implements TableMaintainer {
   public class BaseTableMaintainer extends IcebergTableMaintainer {
     private final Set<String> hiveFiles = Sets.newHashSet();
 
-    public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
-      super(unkeyedTable);
+    public BaseTableMaintainer(UnkeyedTable unkeyedTable, DefaultTableRuntime tableRuntime) {
+      super(unkeyedTable, mixedTable.id(), tableRuntime);
       if (unkeyedTable.format() == TableFormat.MIXED_HIVE) {
         hiveFiles.addAll(HiveLocationUtil.getHiveLocation(mixedTable));
       }

@@ -113,7 +113,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     this.tableConfiguration = TableConfigurations.parseTableConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
-    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
+    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier, optimizerGroup);
     orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
     tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
   }
@@ -151,7 +151,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
             : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
     this.tableSummary = tableRuntimeMeta.getTableSummary();
-    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
+    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier, optimizerGroup);
     optimizingMetrics.statusChanged(optimizingStatus, this.currentStatusStartTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.MINOR, this.lastMinorOptimizingTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.MAJOR, this.lastMajorOptimizingTime);
@@ -382,7 +382,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
       currentSnapshotId = doRefreshSnapshots(baseTable);
 
       if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
-        LOG.info(
+        LOG.debug(
             "Refreshing table {} with base snapshot id {} and change snapshot id {}",
             tableIdentifier,
             currentSnapshotId,
@@ -392,7 +392,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     } else {
       currentSnapshotId = doRefreshSnapshots((UnkeyedTable) table);
       if (currentSnapshotId != lastSnapshotId) {
-        LOG.info(
+        LOG.debug(
             "Refreshing table {} with base snapshot id {}", tableIdentifier, currentSnapshotId);
         return true;
       }
@@ -439,6 +439,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
         optimizingProcess.close();
       }
       this.optimizerGroup = newTableConfig.getOptimizingConfig().getOptimizerGroup();
+      this.optimizingMetrics.optimizerGroupChanged(optimizerGroup);
     }
     this.tableConfiguration = newTableConfig;
     return true;
