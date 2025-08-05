@@ -29,6 +29,8 @@ import org.apache.amoro.table.MixedTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class HiveCommitSyncExecutor extends PeriodicTableScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(HiveCommitSyncExecutor.class);
 
@@ -47,6 +49,11 @@ public class HiveCommitSyncExecutor extends PeriodicTableScheduler {
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
     return true;
+  }
+
+  @Override
+  protected long getExecutorDelay() {
+    return ThreadLocalRandom.current().nextLong(INTERVAL);
   }
 
   @Override

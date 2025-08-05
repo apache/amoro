@@ -98,6 +98,11 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
   }
 
   @Override
+  protected long getExecutorDelay() {
+    return 0;
+  }
+
+  @Override
   public void execute(TableRuntime tableRuntime) {
     try {
       Preconditions.checkArgument(tableRuntime instanceof DefaultTableRuntime);

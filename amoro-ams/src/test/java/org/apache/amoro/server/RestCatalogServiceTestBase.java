@@ -40,14 +40,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
 
 public abstract class RestCatalogServiceTestBase {
-  private static final Logger LOG = LoggerFactory.getLogger(RestCatalogServiceTestBase.class);
 
   static AmsEnvironment ams = AmsEnvironment.getIntegrationInstances();
   static String restCatalogUri = RestCatalogService.ICEBERG_REST_API_PREFIX;

@@ -151,8 +151,10 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
     logger.info("dispose thread pool for threads {}", getThreadName());
   }
 
+  protected abstract long getExecutorDelay();
+
   protected long getStartDelay() {
-    return START_DELAY;
+    return START_DELAY + getExecutorDelay();
   }
 
   protected AmoroTable<?> loadTable(TableRuntime tableRuntime) {

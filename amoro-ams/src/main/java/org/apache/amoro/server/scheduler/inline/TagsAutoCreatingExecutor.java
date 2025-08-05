@@ -29,6 +29,8 @@ import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /** Service for automatically creating tags for table periodically. */
 public class TagsAutoCreatingExecutor extends PeriodicTableScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(TagsAutoCreatingExecutor.class);
@@ -49,6 +51,11 @@ public class TagsAutoCreatingExecutor extends PeriodicTableScheduler {
   protected boolean enabled(TableRuntime tableRuntime) {
     return tableRuntime.getTableConfiguration().getTagConfiguration().isAutoCreateTag()
         && tableRuntime.getFormat() == TableFormat.ICEBERG;
+  }
+
+  @Override
+  protected long getExecutorDelay() {
+    return ThreadLocalRandom.current().nextLong(interval);
   }
 
   @Override

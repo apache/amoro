@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class OrphanFilesCleaningExecutor extends PeriodicTableScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleaningExecutor.class);
@@ -52,6 +53,11 @@ public class OrphanFilesCleaningExecutor extends PeriodicTableScheduler {
   @Override
   public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
+  }
+
+  @Override
+  protected long getExecutorDelay() {
+    return ThreadLocalRandom.current().nextLong(interval.toMillis());
   }
 
   @Override
