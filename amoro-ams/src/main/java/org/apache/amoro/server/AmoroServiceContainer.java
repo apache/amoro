@@ -257,12 +257,7 @@ public class AmoroServiceContainer {
   private void initHttpService() {
     DashboardServer dashboardServer =
         new DashboardServer(
-            serviceConfig,
-            catalogManager,
-            tableManager,
-            optimizerManager,
-            optimizingService,
-            terminalManager);
+            serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager);
     RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
 
     httpServer =

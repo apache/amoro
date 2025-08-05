@@ -23,6 +23,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.AmsHAProperties;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.transaction.CuratorOp;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.retry.ExponentialBackoffRetry;
@@ -46,11 +47,15 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
   private final String optimizingServiceMasterPath;
   private final AmsServerInfo tableServiceServerInfo;
   private final AmsServerInfo optimizingServiceServerInfo;
-  private volatile CountDownLatch followerLath;
+  private volatile CountDownLatch followerLatch;
 
   public HighAvailabilityContainer(Configurations serviceConfig) throws Exception {
     if (serviceConfig.getBoolean(AmoroManagementConf.HA_ENABLE)) {
       String zkServerAddress = serviceConfig.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS);
+      int zkSessionTimeout =
+          (int) serviceConfig.get(AmoroManagementConf.HA_ZOOKEEPER_SESSION_TIMEOUT).toMillis();
+      int zkConnectionTimeout =
+          (int) serviceConfig.get(AmoroManagementConf.HA_ZOOKEEPER_CONNECTION_TIMEOUT).toMillis();
       String haClusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
       tableServiceMasterPath = AmsHAProperties.getTableServiceMasterPath(haClusterName);
       optimizingServiceMasterPath = AmsHAProperties.getOptimizingServiceMasterPath(haClusterName);
@@ -58,8 +63,8 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
       this.zkClient =
           CuratorFrameworkFactory.builder()
               .connectString(zkServerAddress)
-              .sessionTimeoutMs(5000)
-              .connectionTimeoutMs(5000)
+              .sessionTimeoutMs(zkSessionTimeout)
+              .connectionTimeoutMs(zkConnectionTimeout)
               .retryPolicy(retryPolicy)
               .build();
       zkClient.start();
@@ -88,7 +93,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
       tableServiceServerInfo = null;
       optimizingServiceServerInfo = null;
       // block follower latch forever when ha is disabled
-      followerLath = new CountDownLatch(1);
+      followerLatch = new CountDownLatch(1);
     }
   }
 
@@ -97,17 +102,25 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     if (leaderLatch != null) {
       leaderLatch.await();
       if (leaderLatch.hasLeadership()) {
+        CuratorOp tableServiceMasterPathOp =
+            zkClient
+                .transactionOp()
+                .setData()
+                .forPath(
+                    tableServiceMasterPath,
+                    JacksonUtil.toJSONString(tableServiceServerInfo)
+                        .getBytes(StandardCharsets.UTF_8));
+        CuratorOp optimizingServiceMasterPathOp =
+            zkClient
+                .transactionOp()
+                .setData()
+                .forPath(
+                    optimizingServiceMasterPath,
+                    JacksonUtil.toJSONString(optimizingServiceServerInfo)
+                        .getBytes(StandardCharsets.UTF_8));
         zkClient
-            .setData()
-            .forPath(
-                tableServiceMasterPath,
-                JacksonUtil.toJSONString(tableServiceServerInfo).getBytes(StandardCharsets.UTF_8));
-        zkClient
-            .setData()
-            .forPath(
-                optimizingServiceMasterPath,
-                JacksonUtil.toJSONString(optimizingServiceServerInfo)
-                    .getBytes(StandardCharsets.UTF_8));
+            .transaction()
+            .forOperations(tableServiceMasterPathOp, optimizingServiceMasterPathOp);
       }
     }
     LOG.info("Became the leader of AMS");
@@ -115,8 +128,8 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
 
   public void waitFollowerShip() throws Exception {
     LOG.info("Waiting to become the follower of AMS");
-    if (followerLath != null) {
-      followerLath.await();
+    if (followerLatch != null) {
+      followerLatch.await();
     }
     LOG.info("Became the follower of AMS");
   }
@@ -138,7 +151,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
         "Table service server {} and optimizing service server {} got leadership",
         tableServiceServerInfo.toString(),
         optimizingServiceServerInfo.toString());
-    followerLath = new CountDownLatch(1);
+    followerLatch = new CountDownLatch(1);
   }
 
   @Override
@@ -147,7 +160,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
         "Table service server {} and optimizing service server {} lost leadership",
         tableServiceServerInfo.toString(),
         optimizingServiceServerInfo.toString());
-    followerLath.countDown();
+    followerLatch.countDown();
   }
 
   private AmsServerInfo buildServerInfo(String host, int thriftBindPort, int restBindPort) {

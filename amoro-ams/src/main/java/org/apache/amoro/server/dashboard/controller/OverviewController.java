@@ -87,7 +87,7 @@ public class OverviewController {
                 item ->
                     item.getHealthScore() < 0
                         ? (isAsc ? Long.MAX_VALUE : Long.MIN_VALUE)
-                        : item.getTableSize());
+                        : item.getHealthScore());
         top10Tables = getTopTables(isAsc, healthScoreComparator, limit);
         break;
       default:

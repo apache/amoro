@@ -32,6 +32,7 @@ import org.apache.amoro.op.SnapshotSummary;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.amoro.utils.MixedTableUtil;
@@ -43,7 +44,6 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.util.StructLikeMap;
-import org.glassfish.jersey.internal.guava.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,9 +84,15 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
   @Override
   public void commit() throws OptimizingCommitException {
     if (tasks.isEmpty()) {
-      LOG.info("{} found no tasks to commit", table.id());
+      LOG.info("No tasks to commit for table {}", table.id());
+      return;
     }
-    LOG.info("{} found tasks to commit from snapshot {}", table.id(), fromSnapshotId);
+    long startTime = System.currentTimeMillis();
+    LOG.info(
+        "Starting to commit table {} with {} tasks from snapshot {}.",
+        table.id(),
+        tasks.size(),
+        fromSnapshotId);
 
     // In the scene of moving files to hive, the files will be renamed
     List<DataFile> hiveNewDataFiles = moveFile2HiveIfNeed();
@@ -139,9 +145,13 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
 
     try {
       executeCommit(addedDataFiles, removedDataFiles, addedDeleteFiles, removedDeleteFiles);
+      LOG.info(
+          "Successfully committed table {} in {} ms.",
+          table.id(),
+          System.currentTimeMillis() - startTime);
     } catch (Exception e) {
       // Only failures to clean files will trigger a retry
-      LOG.warn("Optimize commit table {} failed, give up commit.", table.id(), e);
+      LOG.warn("Failed to commit table {}.", table.id(), e);
 
       if (needMoveFile2Hive()) {
         correctHiveData(addedDataFiles, addedDeleteFiles);

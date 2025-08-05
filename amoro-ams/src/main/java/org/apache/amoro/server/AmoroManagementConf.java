@@ -215,6 +215,18 @@ public class AmoroManagementConf {
           .defaultValue("")
           .withDescription("The Zookeeper address used for high availability.");
 
+  public static final ConfigOption<Duration> HA_ZOOKEEPER_SESSION_TIMEOUT =
+      ConfigOptions.key("ha.session-timeout")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(30))
+          .withDescription("The Zookeeper session timeout in milliseconds.");
+
+  public static final ConfigOption<Duration> HA_ZOOKEEPER_CONNECTION_TIMEOUT =
+      ConfigOptions.key("ha.connection-timeout")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(300))
+          .withDescription("The Zookeeper connection timeout in milliseconds.");
+
   public static final ConfigOption<Integer> TABLE_SERVICE_THRIFT_BIND_PORT =
       ConfigOptions.key("thrift-server.table-service.bind-port")
           .intType()
@@ -367,6 +379,12 @@ public class AmoroManagementConf {
           .durationType()
           .defaultValue(Duration.ofSeconds(30))
           .withDescription("Timeout duration for task acknowledgment.");
+
+  public static final ConfigOption<Duration> OPTIMIZER_TASK_EXECUTE_TIMEOUT =
+      ConfigOptions.key("optimizer.task-execute-timeout")
+          .durationType()
+          .defaultValue(Duration.ofHours(1))
+          .withDescription("Timeout duration for task execution, default to 1 hour.");
 
   public static final ConfigOption<Integer> OPTIMIZER_MAX_PLANNING_PARALLELISM =
       ConfigOptions.key("optimizer.max-planning-parallelism")

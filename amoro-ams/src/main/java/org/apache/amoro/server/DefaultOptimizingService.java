@@ -20,6 +20,7 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.api.OptimizingTask;
@@ -59,6 +60,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +93,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   private final long optimizerTouchTimeout;
   private final long taskAckTimeout;
+  private final long taskExecuteTimeout;
   private final int maxPlanningParallelism;
   private final long pollingTimeout;
   private final long refreshGroupInterval;
@@ -114,6 +117,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
         serviceConfig.get(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT).toMillis();
     this.taskAckTimeout =
         serviceConfig.get(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT).toMillis();
+    this.taskExecuteTimeout =
+        serviceConfig.get(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT).toMillis();
     this.refreshGroupInterval =
         serviceConfig.get(AmoroManagementConf.OPTIMIZING_REFRESH_GROUP_INTERVAL).toMillis();
     this.maxPlanningParallelism =
@@ -241,10 +246,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
   @Override
   public void completeTask(String authToken, OptimizingTaskResult taskResult) {
     LOG.info(
-        "Optimizer {} (threadId {}) complete task {}",
+        "Optimizer {} (threadId {}) complete task {} (status: {})",
         authToken,
         taskResult.getThreadId(),
-        taskResult.getTaskId());
+        taskResult.getTaskId(),
+        taskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL");
     OptimizingQueue queue = getQueueByToken(authToken);
     OptimizerThread thread =
         getAuthenticatedOptimizer(authToken).getThread(taskResult.getThreadId());
@@ -285,7 +291,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       return false;
     }
     long tableId = processMeta.getTableId();
-    DefaultTableRuntime tableRuntime = tableService.getRuntime(tableId);
+    DefaultTableRuntime tableRuntime = (DefaultTableRuntime) tableService.getRuntime(tableId);
     if (tableRuntime == null) {
       return false;
     }
@@ -374,17 +380,17 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private class TableRuntimeHandlerImpl extends RuntimeHandlerChain {
 
     @Override
-    public void handleStatusChanged(
-        DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus) {
-      if (!tableRuntime.getOptimizingState().getOptimizingStatus().isProcessing()) {
-        getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
-            .ifPresent(q -> q.refreshTable(tableRuntime));
+    public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+      DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
+      if (!defaultTableRuntime.getOptimizingState().getOptimizingStatus().isProcessing()) {
+        getOptionalQueueByGroup(defaultTableRuntime.getOptimizingState().getOptimizerGroup())
+            .ifPresent(q -> q.refreshTable(defaultTableRuntime));
       }
     }
 
     @Override
-    public void handleConfigChanged(
-        DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
+    public void handleConfigChanged(TableRuntime runtime, TableConfiguration originalConfig) {
+      DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       String originalGroup = originalConfig.getOptimizingConfig().getOptimizerGroup();
       if (!tableRuntime.getOptimizingState().getOptimizerGroup().equals(originalGroup)) {
         getOptionalQueueByGroup(originalGroup).ifPresent(q -> q.releaseTable(tableRuntime));
@@ -394,21 +400,27 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     @Override
-    public void handleTableAdded(AmoroTable<?> table, DefaultTableRuntime tableRuntime) {
+    public void handleTableAdded(AmoroTable<?> table, TableRuntime runtime) {
+      DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
           .ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
     @Override
-    public void handleTableRemoved(DefaultTableRuntime tableRuntime) {
+    public void handleTableRemoved(TableRuntime runtime) {
+      DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
           .ifPresent(queue -> queue.releaseTable(tableRuntime));
     }
 
     @Override
-    protected void initHandler(List<DefaultTableRuntime> tableRuntimeList) {
+    protected void initHandler(List<TableRuntime> tableRuntimeList) {
       LOG.info("OptimizerManagementService begin initializing");
-      loadOptimizingQueues(tableRuntimeList);
+      loadOptimizingQueues(
+          tableRuntimeList.stream()
+              .filter(t -> t instanceof DefaultTableRuntime)
+              .map(t -> (DefaultTableRuntime) t)
+              .collect(Collectors.toList()));
       optimizerKeeper.start();
       optimizingConfigWatcher.start();
       LOG.info("SuspendingDetector for Optimizer has been started.");
@@ -512,10 +524,20 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     private void retryTask(TaskRuntime<?> task, OptimizingQueue queue) {
-      LOG.info(
-          "Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
-          task.getTaskId(),
-          task.getResourceDesc());
+      if (task.getStatus() == TaskRuntime.Status.ACKED
+          && task.getStartTime() + taskExecuteTimeout < System.currentTimeMillis()) {
+        LOG.warn(
+            "Task {} has been suspended in ACK state for {} (start time: {}), put it to retry queue, optimizer {}. (Note: The task may have finished executing, but ams did not receive the COMPLETE message from the optimizer.)",
+            task.getTaskId(),
+            Duration.ofMillis(taskExecuteTimeout),
+            task.getStartTime(),
+            task.getResourceDesc());
+      } else {
+        LOG.info(
+            "Task {} is suspending, since it's optimizer is expired, put it to retry queue, optimizer {}",
+            task.getTaskId(),
+            task.getResourceDesc());
+      }
       // optimizing task of suspending optimizer would not be counted for retrying
       try {
         queue.retryTask(task);
@@ -533,7 +555,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   && !activeTokens.contains(task.getToken())
                   && task.getStatus() != TaskRuntime.Status.SUCCESS
               || task.getStatus() == TaskRuntime.Status.SCHEDULED
-                  && task.getStartTime() + taskAckTimeout < System.currentTimeMillis();
+                  && task.getStartTime() + taskAckTimeout < System.currentTimeMillis()
+              || task.getStatus() == TaskRuntime.Status.ACKED
+                  && task.getStartTime() + taskExecuteTimeout < System.currentTimeMillis();
     }
   }
 

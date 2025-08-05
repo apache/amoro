@@ -21,6 +21,7 @@ package org.apache.amoro.server.optimizing;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.exception.OptimizingClosedException;
 import org.apache.amoro.exception.PersistenceException;
@@ -37,16 +38,19 @@ import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ExceptionUtil;
 import org.apache.amoro.utils.MixedDataFiles;
@@ -237,9 +241,30 @@ public class OptimizingQueue extends PersistentBase {
   private void scheduleTableIfNecessary(long startTime) {
     if (planningTables.size() < maxPlanningParallelism) {
       Set<ServerTableIdentifier> skipTables = new HashSet<>(planningTables);
+      skipBlockedTables(skipTables);
       Optional.ofNullable(scheduler.scheduleTable(skipTables))
           .ifPresent(tableRuntime -> triggerAsyncPlanning(tableRuntime, skipTables, startTime));
     }
+  }
+
+  private void skipBlockedTables(Set<ServerTableIdentifier> skipTables) {
+    List<TableBlocker> tableBlockerList =
+        getAs(
+            TableBlockerMapper.class,
+            mapper -> mapper.selectAllBlockers(System.currentTimeMillis()));
+    Map<TableIdentifier, ServerTableIdentifier> identifierMap = Maps.newHashMap();
+    for (ServerTableIdentifier identifier : scheduler.getTableRuntimeMap().keySet()) {
+      identifierMap.put(identifier.getIdentifier(), identifier);
+    }
+    tableBlockerList.stream()
+        .filter(blocker -> TableBlocker.conflict(BlockableOperation.OPTIMIZE, blocker))
+        .map(
+            blocker ->
+                TableIdentifier.of(
+                    blocker.getCatalog(), blocker.getDatabase(), blocker.getTableName()))
+        .map(identifierMap::get)
+        .filter(Objects::nonNull)
+        .forEach(skipTables::add);
   }
 
   private void triggerAsyncPlanning(
@@ -269,16 +294,15 @@ public class OptimizingQueue extends PersistentBase {
                           .map(item -> item + "")
                           .collect(Collectors.joining(","));
                   LOG.info(
-                      "Completed planning on table {} with {} tasks with a total cost of {} ms, skipping {} tables,"
-                          + " id list:{}",
+                      "Completed planning on table {} with {} tasks with a total cost of {} ms, skipping {} tables.",
                       tableRuntime.getTableIdentifier(),
                       process.getTaskMap().size(),
                       currentTime - startTime,
-                      skipTables.size(),
-                      skipIds);
+                      skipTables.size());
+                  LOG.debug("Skipped planning table IDs:{}", skipIds);
                 } else if (throwable == null) {
                   LOG.info(
-                      "Skip planning table {} with a total cost of {} ms.",
+                      "Skipping planning table {} with a total cost of {} ms.",
                       tableRuntime.getTableIdentifier(),
                       currentTime - startTime);
                 }
@@ -508,6 +532,10 @@ public class OptimizingQueue extends PersistentBase {
                 taskRuntime.getFailReason());
             retryTask(taskRuntime);
           } else {
+            LOG.info(
+                "Task {} has reached the max execute retry count. Process {} failed.",
+                taskRuntime.getTaskId(),
+                processId);
             this.failedReason = taskRuntime.getFailReason();
             this.status = ProcessStatus.FAILED;
             this.endTime = taskRuntime.getEndTime();

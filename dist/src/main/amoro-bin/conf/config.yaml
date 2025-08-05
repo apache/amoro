@@ -55,6 +55,7 @@ ams:
   optimizer:
     heart-beat-timeout: 1min # 60000
     task-ack-timeout: 30s # 30000
+    task-execute-timeout: 1h # 3600000
     polling-timeout: 3s # 3000
     max-planning-parallelism: 1 # default 1
 
@@ -111,6 +112,13 @@ ams:
     connection-pool-max-total: 20
     connection-pool-max-idle: 16
     connection-pool-max-wait-millis: 30000
+
+#  ha:
+#    enabled: true
+#    cluster-name: xxx
+#    zookeeper-address: xxx.xxx.xxx.xxx:2181
+#    session-timeout: 30s
+#    connection-timeout: 30s
 
 #  MySQL database configuration.
 #  database:

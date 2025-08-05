@@ -22,12 +22,12 @@ import io.javalin.http.Context;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.resource.ResourceType;
-import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.dashboard.model.OptimizerInstanceInfo;
 import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;
 import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.response.PageResult;
+import org.apache.amoro.server.dashboard.utils.PropertiesUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.InternalContainers;
@@ -62,10 +62,7 @@ public class OptimizerGroupController {
   private final OptimizerManager optimizerManager;
   private static final Pattern GROUP_NAME_PATTERN = Pattern.compile("^[A-Za-z0-9_-]{1,50}$");
 
-  public OptimizerGroupController(
-      TableManager tableManager,
-      DefaultOptimizingService optimizingService,
-      OptimizerManager optimizerManager) {
+  public OptimizerGroupController(TableManager tableManager, OptimizerManager optimizerManager) {
     this.tableManager = tableManager;
     this.optimizerManager = optimizerManager;
   }
@@ -263,7 +260,7 @@ public class OptimizerGroupController {
     Map<String, Object> map = ctx.bodyAsClass(Map.class);
     String name = (String) map.get("name");
     String container = (String) map.get("container");
-    Map<String, String> properties = (Map) map.get("properties");
+    Map<String, String> properties = PropertiesUtil.sanitizeProperties((Map) map.get("properties"));
     validateGroupName(name);
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
@@ -279,7 +276,7 @@ public class OptimizerGroupController {
     Map<String, Object> map = ctx.bodyAsClass(Map.class);
     String name = (String) map.get("name");
     String container = (String) map.get("container");
-    Map<String, String> properties = (Map) map.get("properties");
+    Map<String, String> properties = PropertiesUtil.sanitizeProperties((Map) map.get("properties"));
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
     optimizerManager.updateResourceGroup(builder.build());

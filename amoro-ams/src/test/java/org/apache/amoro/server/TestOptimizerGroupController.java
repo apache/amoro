@@ -49,7 +49,7 @@ public class TestOptimizerGroupController {
     tableManager = mock(TableManager.class);
     optimizingService = mock(DefaultOptimizingService.class);
     optimizerManager = mock(OptimizerManager.class);
-    controller = new OptimizerGroupController(tableManager, optimizingService, optimizerManager);
+    controller = new OptimizerGroupController(tableManager, optimizerManager);
     ctx = mock(Context.class);
   }
 
