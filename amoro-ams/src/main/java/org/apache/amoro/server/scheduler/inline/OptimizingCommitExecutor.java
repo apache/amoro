@@ -45,6 +45,11 @@ public class OptimizingCommitExecutor extends PeriodicTableScheduler {
   }
 
   @Override
+  protected long getExecutorDelay() {
+    return 0;
+  }
+
+  @Override
   protected void execute(DefaultTableRuntime tableRuntime) {
     Optional.ofNullable(tableRuntime.getOptimizingState().getOptimizingProcess())
         .orElseThrow(
