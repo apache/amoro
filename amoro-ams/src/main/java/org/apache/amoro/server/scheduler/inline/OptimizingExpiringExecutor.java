@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.scheduler.inline;
 
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
-import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.slf4j.Logger;
@@ -41,12 +41,12 @@ public class OptimizingExpiringExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+  protected long getNextExecutingTime(TableRuntime tableRuntime) {
     return interval;
   }
 
   @Override
-  protected boolean enabled(DefaultTableRuntime tableRuntime) {
+  protected boolean enabled(TableRuntime tableRuntime) {
     return true;
   }
 
@@ -56,7 +56,7 @@ public class OptimizingExpiringExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  protected void execute(DefaultTableRuntime tableRuntime) {
+  protected void execute(TableRuntime tableRuntime) {
     try {
       persistency.doExpiring(tableRuntime);
     } catch (Throwable throwable) {
@@ -66,7 +66,7 @@ public class OptimizingExpiringExecutor extends PeriodicTableScheduler {
   }
 
   private class Persistency extends PersistentBase {
-    public void doExpiring(DefaultTableRuntime tableRuntime) {
+    public void doExpiring(TableRuntime tableRuntime) {
       long expireTime = System.currentTimeMillis() - keepTime;
       long minProcessId = SnowflakeIdGenerator.getMinSnowflakeId(expireTime);
       doAsTransaction(
