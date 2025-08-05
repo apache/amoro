@@ -71,7 +71,7 @@ public class TestDefaultTableRuntimeManager extends AMSTableTestBase {
 
   @Test
   public void testTableRuntime() {
-    DefaultTableRuntime tableRuntime = tableService().getRuntime(serverTableIdentifier().getId());
+    DefaultTableRuntime tableRuntime = getDefaultTableRuntime(serverTableIdentifier().getId());
     validateTableRuntime(tableRuntime);
   }
 }

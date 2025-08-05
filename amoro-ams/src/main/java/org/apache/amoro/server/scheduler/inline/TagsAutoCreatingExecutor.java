@@ -20,10 +20,11 @@ package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
+import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
-import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,12 +43,12 @@ public class TagsAutoCreatingExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+  protected long getNextExecutingTime(TableRuntime tableRuntime) {
     return interval;
   }
 
   @Override
-  protected boolean enabled(DefaultTableRuntime tableRuntime) {
+  protected boolean enabled(TableRuntime tableRuntime) {
     return tableRuntime.getTableConfiguration().getTagConfiguration().isAutoCreateTag()
         && tableRuntime.getFormat() == TableFormat.ICEBERG;
   }
@@ -58,19 +59,18 @@ public class TagsAutoCreatingExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  protected void execute(DefaultTableRuntime tableRuntime) {
+  protected void execute(TableRuntime tableRuntime) {
     try {
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
-      TableMaintainer tableMaintainer = TableMaintainer.ofTable(amoroTable);
-      tableMaintainer.autoCreateTags(tableRuntime);
+      TableMaintainer tableMaintainer = TableMaintainers.create(amoroTable, tableRuntime);
+      tableMaintainer.autoCreateTags();
     } catch (Throwable t) {
       LOG.error("Failed to create tags on {}", tableRuntime.getTableIdentifier(), t);
     }
   }
 
   @Override
-  public void handleConfigChanged(
-      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 }
