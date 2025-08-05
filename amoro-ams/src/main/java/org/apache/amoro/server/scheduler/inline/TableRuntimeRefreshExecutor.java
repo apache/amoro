@@ -91,6 +91,11 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
   }
 
   @Override
+  protected long getExecutorDelay() {
+    return 0;
+  }
+
+  @Override
   public void execute(DefaultTableRuntime tableRuntime) {
     try {
       DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();

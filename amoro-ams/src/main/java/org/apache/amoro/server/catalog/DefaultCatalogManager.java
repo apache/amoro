@@ -18,7 +18,12 @@
 
 package org.apache.amoro.server.catalog;
 
+import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static org.apache.amoro.properties.CatalogMetaProperties.CLIENT_POOL_SIZE;
+import static org.apache.amoro.properties.CatalogMetaProperties.CLIENT_POOL_SIZE_DEFAULT;
+
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.Constants;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.AlreadyExistsException;
@@ -26,6 +31,7 @@ import org.apache.amoro.exception.IllegalMetadataException;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
@@ -162,6 +168,7 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
     if (catalogExist(catalogMeta.getCatalogName())) {
       throw new AlreadyExistsException("Catalog " + catalogMeta.getCatalogName());
     }
+    fillCatalogProperties(catalogMeta);
     // Build to make sure the catalog is valid
     ServerCatalog catalog = CatalogBuilder.buildServerCatalog(catalogMeta, serverConfiguration);
     doAs(CatalogMetaMapper.class, mapper -> mapper.insertCatalog(catalog.getMetadata()));
@@ -169,6 +176,20 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
     serverCatalogMap.put(catalogMeta.getCatalogName(), catalog);
     LOG.info(
         "Create catalog {}, type:{}", catalogMeta.getCatalogName(), catalogMeta.getCatalogType());
+  }
+
+  private void fillCatalogProperties(CatalogMeta catalogMeta) {
+    String type = catalogMeta.getCatalogType();
+
+    if (CATALOG_TYPE_HIVE.equals(type)) {
+      String amsUri =
+          AmsUtil.getAMSThriftAddress(serverConfiguration, Constants.THRIFT_TABLE_SERVICE_NAME);
+      catalogMeta.getCatalogProperties().put(CatalogMetaProperties.AMS_URI, amsUri);
+
+      catalogMeta
+          .getCatalogProperties()
+          .putIfAbsent(CLIENT_POOL_SIZE, String.valueOf(CLIENT_POOL_SIZE_DEFAULT));
+    }
   }
 
   @Override

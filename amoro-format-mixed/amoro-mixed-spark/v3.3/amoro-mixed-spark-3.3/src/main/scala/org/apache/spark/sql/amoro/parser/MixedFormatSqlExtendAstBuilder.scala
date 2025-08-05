@@ -198,8 +198,10 @@ class MixedFormatSqlExtendAstBuilder()
    * Create a comment string.
    */
   override def visitPrimarySpec(ctx: MixedFormatSqlExtendParser.PrimarySpecContext): Seq[String] =
-    withOrigin(ctx) {
-      visitIdentifierList(ctx.identifierList())
+    Option(ctx).fold(Seq.empty[String]) { validCtx =>
+      withOrigin(validCtx) {
+        visitIdentifierList(validCtx.identifierList())
+      }
     }
 
   override def visitCreateTableClauses(ctx: MixedFormatSqlExtendParser.CreateTableClausesContext)
