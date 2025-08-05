@@ -263,9 +263,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
       throw new TaskNotFoundException(taskResult.getTaskId());
     }
     task.complete(thread, taskResult);
-    queue
-        .getOptimizingTasksCountMap()
-        .computeIfPresent(task.getTaskDescriptor().getTableId(), (k, v) -> v > 0 ? v - 1 : v);
   }
 
   @Override

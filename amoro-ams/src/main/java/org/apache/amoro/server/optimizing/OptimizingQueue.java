@@ -70,6 +70,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -93,7 +94,8 @@ public class OptimizingQueue extends PersistentBase {
   private final int maxPlanningParallelism;
   private final OptimizerGroupMetrics metrics;
   private ResourceGroup optimizerGroup;
-  private final Map<Long, Integer> optimizingTasksCountMap = new ConcurrentHashMap<>();
+  private final Map<ServerTableIdentifier, AtomicInteger> optimizingTasksMap =
+      new ConcurrentHashMap<>();
 
   public OptimizingQueue(
       CatalogManager catalogManager,
@@ -152,10 +154,6 @@ public class OptimizingQueue extends PersistentBase {
 
   public String getContainerName() {
     return optimizerGroup.getContainer();
-  }
-
-  public Map<Long, Integer> getOptimizingTasksCountMap() {
-    return optimizingTasksCountMap;
   }
 
   public void refreshTable(DefaultTableRuntime tableRuntime) {
@@ -420,7 +418,9 @@ public class OptimizingQueue extends PersistentBase {
             }
           }
           if (task != null) {
-            optimizingTasksCountMap.merge(task.getTableId(), 1, Integer::sum);
+            optimizingTasksMap
+                .computeIfAbsent(optimizingState.getTableIdentifier(), k -> new AtomicInteger(0))
+                .incrementAndGet();
           }
           return task;
         } finally {
@@ -505,6 +505,14 @@ public class OptimizingQueue extends PersistentBase {
     private void acceptResult(TaskRuntime<?> taskRuntime) {
       lock.lock();
       try {
+        optimizingTasksMap.computeIfPresent(
+            optimizingState.getTableIdentifier(),
+            (k, v) -> {
+              if (v.get() > 0) {
+                v.decrementAndGet();
+              }
+              return v;
+            });
         try {
           optimizingState.addTaskQuota(taskRuntime.getCurrentQuota());
         } catch (Throwable throwable) {
@@ -614,7 +622,9 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     public int getActualQuota() {
-      return optimizingTasksCountMap.getOrDefault(optimizingState.getTableIdentifier().getId(), 0);
+      return optimizingTasksMap
+          .getOrDefault(optimizingState.getTableIdentifier(), new AtomicInteger(0))
+          .get();
     }
 
     @Override
