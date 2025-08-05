@@ -32,11 +32,9 @@ public abstract class AbstractTableMetrics {
   protected final ServerTableIdentifier identifier;
   protected final List<MetricKey> registeredMetricKeys = Lists.newArrayList();
   protected MetricRegistry globalRegistry;
-  protected String optimizerGroup;
 
-  protected AbstractTableMetrics(ServerTableIdentifier identifier, String optimizerGroup) {
+  protected AbstractTableMetrics(ServerTableIdentifier identifier) {
     this.identifier = identifier;
-    this.optimizerGroup = optimizerGroup;
   }
 
   protected void registerMetric(MetricRegistry registry, MetricDefine define, Metric metric) {
@@ -49,9 +47,7 @@ public abstract class AbstractTableMetrics {
                 "database",
                 identifier.getDatabase(),
                 "table",
-                identifier.getTableName(),
-                "group",
-                optimizerGroup),
+                identifier.getTableName()),
             metric);
     registeredMetricKeys.add(key);
   }
@@ -72,11 +68,4 @@ public abstract class AbstractTableMetrics {
   }
 
   protected abstract void registerMetrics(MetricRegistry registry);
-
-  public void optimizerGroupChanged(String optimizerGroup) {
-    MetricRegistry metricRegistry = globalRegistry;
-    unregister();
-    this.optimizerGroup = optimizerGroup;
-    register(metricRegistry);
-  }
 }

@@ -20,7 +20,6 @@ package org.apache.amoro.server.optimizing.maintainer;
 
 import static org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
 import static org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer.FLINK_JOB_ID;
-import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.ServerTableIdentifier;
@@ -120,8 +119,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
                 tableIdentifier.getCatalog(),
                 tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName(),
-                getTestFormat()),
-            SELF_OPTIMIZING_GROUP_DEFAULT);
+                getTestFormat()));
     MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
     maintainer.cleanContentFiles(
         System.currentTimeMillis()
@@ -214,8 +212,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
                 tableIdentifier.getCatalog(),
                 tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName(),
-                getTestFormat()),
-            SELF_OPTIMIZING_GROUP_DEFAULT);
+                getTestFormat()));
     maintainer.cleanMetadata(System.currentTimeMillis(), orphanFilesCleaningMetrics);
 
     Assert.assertFalse(getMixedTable().io().exists(baseOrphanFilePath));
@@ -308,8 +305,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
                 tableIdentifier.getCatalog(),
                 tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName(),
-                getTestFormat()),
-            SELF_OPTIMIZING_GROUP_DEFAULT);
+                getTestFormat()));
 
     tableMaintainer.cleanMetadata(System.currentTimeMillis(), orphanFilesCleaningMetrics);
     Assert.assertFalse(getMixedTable().io().exists(baseOrphanFilePath));
@@ -345,8 +341,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
                 tableIdentifier.getCatalog(),
                 tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName(),
-                getTestFormat()),
-            SELF_OPTIMIZING_GROUP_DEFAULT);
+                getTestFormat()));
 
     Assert.assertTrue(unkeyedTable.io().exists(file1.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file2.path()));
@@ -414,8 +409,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     Mockito.when(tableRuntime.getOptimizingState().getOrphanFilesCleaningMetrics())
         .thenReturn(
             new TableOrphanFilesCleaningMetrics(
-                ServerTableIdentifier.of(baseTable.id(), getTestFormat()),
-                SELF_OPTIMIZING_GROUP_DEFAULT));
+                ServerTableIdentifier.of(baseTable.id(), getTestFormat())));
 
     MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
     maintainer.cleanOrphanFiles(tableRuntime);

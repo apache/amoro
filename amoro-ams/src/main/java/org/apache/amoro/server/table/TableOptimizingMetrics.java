@@ -24,12 +24,15 @@ import static org.apache.amoro.metrics.MetricDefine.defineGauge;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.metrics.Counter;
 import org.apache.amoro.metrics.Gauge;
+import org.apache.amoro.metrics.Metric;
 import org.apache.amoro.metrics.MetricDefine;
+import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.primitives.Longs;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
@@ -208,8 +211,29 @@ public class TableOptimizingMetrics extends AbstractTableMetrics {
   private long lastNonMaintainedTime = AmoroServiceConstants.INVALID_TIME;
   private long lastOptimizingTime = AmoroServiceConstants.INVALID_TIME;
 
+  private String optimizerGroup;
+
   public TableOptimizingMetrics(ServerTableIdentifier identifier, String optimizerGroup) {
-    super(identifier, optimizerGroup);
+    super(identifier);
+    this.optimizerGroup = optimizerGroup;
+  }
+
+  @Override
+  protected void registerMetric(MetricRegistry registry, MetricDefine define, Metric metric) {
+    MetricKey key =
+        registry.register(
+            define,
+            ImmutableMap.of(
+                "catalog",
+                identifier.getCatalog(),
+                "database",
+                identifier.getDatabase(),
+                "table",
+                identifier.getTableName(),
+                "group",
+                optimizerGroup),
+            metric);
+    registeredMetricKeys.add(key);
   }
 
   @Override
@@ -286,6 +310,18 @@ public class TableOptimizingMetrics extends AbstractTableMetrics {
   public void statusChanged(OptimizingStatus optimizingStatus, long statusSetTimestamp) {
     this.optimizingStatus = optimizingStatus;
     this.statusSetTimestamp = statusSetTimestamp;
+  }
+
+  /**
+   * Handle table optimizer group change event.
+   *
+   * @param optimizerGroup new optimizer group name
+   */
+  public void optimizerGroupChanged(String optimizerGroup) {
+    MetricRegistry metricRegistry = globalRegistry;
+    unregister();
+    this.optimizerGroup = optimizerGroup;
+    register(metricRegistry);
   }
 
   /**

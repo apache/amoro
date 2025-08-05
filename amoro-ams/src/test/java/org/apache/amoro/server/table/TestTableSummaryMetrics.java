@@ -33,7 +33,6 @@ import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_SN
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TOTAL_FILES;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TOTAL_FILES_SIZE;
 import static org.apache.amoro.server.table.TableSummaryMetrics.TABLE_SUMMARY_TOTAL_RECORDS;
-import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.ServerTableIdentifier;
@@ -227,9 +226,7 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
                         "database",
                         identifier.getDatabase(),
                         "table",
-                        identifier.getTableName(),
-                        "group",
-                        SELF_OPTIMIZING_GROUP_DEFAULT)));
+                        identifier.getTableName())));
     return metric;
   }
 }

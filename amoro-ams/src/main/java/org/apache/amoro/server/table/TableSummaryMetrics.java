@@ -36,95 +36,95 @@ public class TableSummaryMetrics extends AbstractTableMetrics {
   public static final MetricDefine TABLE_SUMMARY_TOTAL_FILES =
       defineGauge("table_summary_total_files")
           .withDescription("Total number of files in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_SUMMARY_DATA_FILES =
       defineGauge("table_summary_data_files")
           .withDescription("Number of data files in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_SUMMARY_EQUALITY_DELETE_FILES =
       defineGauge("table_summary_equality_delete_files")
           .withDescription("Number of equality delete files in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_SUMMARY_POSITION_DELETE_FILES =
       defineGauge("table_summary_position_delete_files")
           .withDescription("Number of position delete files in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_SUMMARY_DANGLING_DELETE_FILES =
       defineGauge("table_summary_dangling_delete_files")
           .withDescription("Number of dangling delete files in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   // table summary files size metrics
   public static final MetricDefine TABLE_SUMMARY_TOTAL_FILES_SIZE =
       defineGauge("table_summary_total_files_size")
           .withDescription("Total size of files in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_SUMMARY_DATA_FILES_SIZE =
       defineGauge("table_summary_data_files_size")
           .withDescription("Size of data files in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_SUMMARY_EQUALITY_DELETE_FILES_SIZE =
       defineGauge("table_summary_equality_delete_files_size")
           .withDescription("Size of equality delete files in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_SUMMARY_POSITION_DELETE_FILES_SIZE =
       defineGauge("table_summary_position_delete_files_size")
           .withDescription("Size of position delete files in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   // table summary files records metrics
   public static final MetricDefine TABLE_SUMMARY_TOTAL_RECORDS =
       defineGauge("table_summary_total_records")
           .withDescription("Total records in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_SUMMARY_DATA_FILES_RECORDS =
       defineGauge("table_summary_data_files_records")
           .withDescription("Records of data files in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_SUMMARY_EQUALITY_DELETE_FILES_RECORDS =
       defineGauge("table_summary_equality_delete_files_records")
           .withDescription("Records of equality delete files in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_SUMMARY_POSITION_DELETE_FILES_RECORDS =
       defineGauge("table_summary_position_delete_files_records")
           .withDescription("Records of position delete files in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   // table summary snapshots number metric
   public static final MetricDefine TABLE_SUMMARY_SNAPSHOTS =
       defineGauge("table_summary_snapshots")
           .withDescription("Number of snapshots in the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   // table summary health score metric
   public static final MetricDefine TABLE_SUMMARY_HEALTH_SCORE =
       defineGauge("table_summary_health_score")
           .withDescription("Health score of the table")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   private AbstractOptimizingEvaluator.PendingInput tableSummary =
@@ -132,8 +132,8 @@ public class TableSummaryMetrics extends AbstractTableMetrics {
 
   private long snapshots = 0L;
 
-  public TableSummaryMetrics(ServerTableIdentifier identifier, String optimizerGroup) {
-    super(identifier, optimizerGroup);
+  public TableSummaryMetrics(ServerTableIdentifier identifier) {
+    super(identifier);
   }
 
   @Override

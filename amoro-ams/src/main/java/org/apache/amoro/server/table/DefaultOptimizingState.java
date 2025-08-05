@@ -114,9 +114,8 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier, optimizerGroup);
-    orphanFilesCleaningMetrics =
-        new TableOrphanFilesCleaningMetrics(tableIdentifier, optimizerGroup);
-    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier, optimizerGroup);
+    orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
+    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
   }
 
   public DefaultOptimizingState(
@@ -157,9 +156,8 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     optimizingMetrics.lastOptimizingTime(OptimizingType.MINOR, this.lastMinorOptimizingTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.MAJOR, this.lastMajorOptimizingTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.FULL, this.lastFullOptimizingTime);
-    orphanFilesCleaningMetrics =
-        new TableOrphanFilesCleaningMetrics(tableIdentifier, optimizerGroup);
-    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier, optimizerGroup);
+    orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
+    tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
     tableSummaryMetrics.refresh(tableSummary);
 
     this.targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
@@ -441,9 +439,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
         optimizingProcess.close();
       }
       this.optimizerGroup = newTableConfig.getOptimizingConfig().getOptimizerGroup();
-      this.tableSummaryMetrics.optimizerGroupChanged(optimizerGroup);
       this.optimizingMetrics.optimizerGroupChanged(optimizerGroup);
-      this.orphanFilesCleaningMetrics.optimizerGroupChanged(optimizerGroup);
     }
     this.tableConfiguration = newTableConfig;
     return true;

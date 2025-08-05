@@ -33,34 +33,34 @@ public class TableOrphanFilesCleaningMetrics extends AbstractTableMetrics {
   private final Counter orphanMetadataFilesCount = new Counter();
   private final Counter expectedOrphanMetadataFilesCount = new Counter();
 
-  public TableOrphanFilesCleaningMetrics(ServerTableIdentifier identifier, String optimizerGroup) {
-    super(identifier, optimizerGroup);
+  public TableOrphanFilesCleaningMetrics(ServerTableIdentifier identifier) {
+    super(identifier);
   }
 
   public static final MetricDefine TABLE_ORPHAN_CONTENT_FILE_CLEANING_COUNT =
       defineCounter("table_orphan_content_file_cleaning_count")
           .withDescription("Count of orphan content files cleaned in the table since ams started")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_ORPHAN_METADATA_FILE_CLEANING_COUNT =
       defineCounter("table_orphan_metadata_file_cleaning_count")
           .withDescription("Count of orphan metadata files cleaned in the table since ams started")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_EXPECTED_ORPHAN_CONTENT_FILE_CLEANING_COUNT =
       defineCounter("table_expected_orphan_content_file_cleaning_count")
           .withDescription(
               "Expected count of orphan content files cleaned in the table since ams started")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   public static final MetricDefine TABLE_EXPECTED_ORPHAN_METADATA_FILE_CLEANING_COUNT =
       defineCounter("table_expected_orphan_metadata_file_cleaning_count")
           .withDescription(
               "Expected count of orphan metadata files cleaned in the table since ams started")
-          .withTags("catalog", "database", "table", "group")
+          .withTags("catalog", "database", "table")
           .build();
 
   @Override
