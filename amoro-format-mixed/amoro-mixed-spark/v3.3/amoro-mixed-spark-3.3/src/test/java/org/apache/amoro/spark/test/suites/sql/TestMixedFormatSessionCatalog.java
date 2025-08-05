@@ -152,4 +152,28 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
     String hiveComment = hiveTable.getParameters().get("comment");
     Assertions.assertTrue(Objects.equals(hiveComment, comment));
   }
+
+  @Test
+  public void testLoadTable() {
+    createTarget(
+        SCHEMA,
+        c -> c.withPrimaryKeySpec(PrimaryKeySpec.builderFor(SCHEMA).addColumn("id").build()));
+    createViewSource(SCHEMA, source);
+    Table hiveTable = loadHiveTable();
+    Map<String, String> properties = Maps.newHashMap(hiveTable.getParameters());
+    properties.put(HiveTableProperties.MIXED_TABLE_FLAG, "true");
+    hiveTable.setParameters(properties);
+    try {
+      CONTEXT
+          .getHiveClient()
+          .alter_table(hiveTable.getDbName(), hiveTable.getTableName(), hiveTable);
+    } catch (TException e) {
+      throw new RuntimeException(e);
+    }
+
+    sql("insert into " + target() + " select * from " + source());
+    MixedTable table = loadTable();
+    List<Record> changes = TestTableUtil.changeRecordsWithAction(table.asKeyedTable());
+    Assertions.assertTrue(changes.size() > 0);
+  }
 }
