@@ -19,8 +19,10 @@
 package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
+import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
@@ -42,18 +44,18 @@ public class DanglingDeleteFilesCleaningExecutor extends PeriodicTableScheduler 
   }
 
   @Override
-  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+  protected long getNextExecutingTime(TableRuntime tableRuntime) {
     return INTERVAL;
   }
 
   @Override
-  protected boolean enabled(DefaultTableRuntime tableRuntime) {
-    return tableRuntime.getTableConfiguration().isDeleteDanglingDeleteFilesEnabled();
+  protected boolean enabled(TableRuntime tableRuntime) {
+    return tableRuntime instanceof DefaultTableRuntime
+        && tableRuntime.getTableConfiguration().isDeleteDanglingDeleteFilesEnabled();
   }
 
   @Override
-  public void handleConfigChanged(
-      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 
@@ -63,12 +65,12 @@ public class DanglingDeleteFilesCleaningExecutor extends PeriodicTableScheduler 
   }
 
   @Override
-  protected void execute(DefaultTableRuntime tableRuntime) {
+  protected void execute(TableRuntime tableRuntime) {
     try {
       LOG.info("{} start cleaning dangling delete files", tableRuntime.getTableIdentifier());
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
-      TableMaintainer tableMaintainer = TableMaintainer.ofTable(amoroTable);
-      tableMaintainer.cleanDanglingDeleteFiles(tableRuntime);
+      TableMaintainer tableMaintainer = TableMaintainers.create(amoroTable, tableRuntime);
+      tableMaintainer.cleanDanglingDeleteFiles();
     } catch (Throwable t) {
       LOG.error("{} failed to clean dangling delete file", tableRuntime.getTableIdentifier(), t);
     }

@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.scheduler.inline;
 
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
-import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 
 public class BlockerExpiringExecutor extends PeriodicTableScheduler {
@@ -35,12 +35,12 @@ public class BlockerExpiringExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+  protected long getNextExecutingTime(TableRuntime tableRuntime) {
     return INTERVAL;
   }
 
   @Override
-  protected boolean enabled(DefaultTableRuntime tableRuntime) {
+  protected boolean enabled(TableRuntime tableRuntime) {
     return true;
   }
 
@@ -50,7 +50,7 @@ public class BlockerExpiringExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  protected void execute(DefaultTableRuntime tableRuntime) {
+  protected void execute(TableRuntime tableRuntime) {
     try {
       persistency.doExpiring(tableRuntime);
     } catch (Throwable t) {
@@ -60,7 +60,7 @@ public class BlockerExpiringExecutor extends PeriodicTableScheduler {
 
   private static class Persistency extends PersistentBase {
 
-    public void doExpiring(DefaultTableRuntime tableRuntime) {
+    public void doExpiring(TableRuntime tableRuntime) {
       String catalog = tableRuntime.getTableIdentifier().getCatalog();
       String database = tableRuntime.getTableIdentifier().getDatabase();
       String table = tableRuntime.getTableIdentifier().getTableName();

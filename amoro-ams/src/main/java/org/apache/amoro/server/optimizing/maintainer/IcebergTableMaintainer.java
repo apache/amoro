@@ -23,6 +23,7 @@ import static org.apache.amoro.shade.guava32.com.google.common.primitives.Longs.
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.config.DataExpirationConfig;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.config.TagConfiguration;
 import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
@@ -37,6 +38,7 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
@@ -119,13 +121,18 @@ public class IcebergTableMaintainer implements TableMaintainer {
           CommitMetaProducer.CLEAN_DANGLING_DELETE.name());
 
   protected Table table;
+  private final TableIdentifier tableIdentifier;
+  private final DefaultTableRuntime tableRuntime;
 
-  public IcebergTableMaintainer(Table table) {
+  public IcebergTableMaintainer(
+      Table table, TableIdentifier tableIdentifier, DefaultTableRuntime tableRuntime) {
     this.table = table;
+    this.tableIdentifier = tableIdentifier;
+    this.tableRuntime = tableRuntime;
   }
 
   @Override
-  public void cleanOrphanFiles(DefaultTableRuntime tableRuntime) {
+  public void cleanOrphanFiles() {
     TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
     TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
         tableRuntime.getOptimizingState().getOrphanFilesCleaningMetrics();
@@ -146,9 +153,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void cleanDanglingDeleteFiles(DefaultTableRuntime tableRuntime) {
+  public void cleanDanglingDeleteFiles() {
     TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
-
     if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
       return;
     }
@@ -161,7 +167,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
         Optional.ofNullable(currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
     if (totalDeleteFiles.isPresent() && Long.parseLong(totalDeleteFiles.get()) > 0) {
       // clear dangling delete files
-      cleanDanglingDeleteFiles();
+      doCleanDanglingDeleteFiles();
     } else {
       LOG.debug(
           "There are no delete files here, so there is no need to clean dangling delete file for table {}",
@@ -170,7 +176,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireSnapshots(DefaultTableRuntime tableRuntime) {
+  public void expireSnapshots() {
     if (!expireSnapshotEnabled(tableRuntime)) {
       return;
     }
@@ -247,10 +253,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireData(DefaultTableRuntime tableRuntime) {
+  public void expireData() {
+    DataExpirationConfig expirationConfig =
+        tableRuntime.getTableConfiguration().getExpiringDataConfig();
     try {
-      DataExpirationConfig expirationConfig =
-          tableRuntime.getTableConfiguration().getExpiringDataConfig();
       Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
       if (!TableConfigurations.isValidDataExpirationField(expirationConfig, field, table.name())) {
         return;
@@ -258,7 +264,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
       expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
-      LOG.error("Unexpected purge error for table {} ", tableRuntime.getTableIdentifier(), t);
+      LOG.error("Unexpected purge error for table {} ", tableIdentifier, t);
     }
   }
 
@@ -311,10 +317,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void autoCreateTags(DefaultTableRuntime tableRuntime) {
-    new AutoCreateIcebergTagAction(
-            table, tableRuntime.getTableConfiguration().getTagConfiguration(), LocalDateTime.now())
-        .execute();
+  public void autoCreateTags() {
+    TagConfiguration tagConfiguration = tableRuntime.getTableConfiguration().getTagConfiguration();
+    new AutoCreateIcebergTagAction(table, tagConfiguration, LocalDateTime.now()).execute();
   }
 
   protected void cleanContentFiles(
@@ -339,7 +344,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     clearInternalTableMetadata(lastTime, orphanFilesCleaningMetrics);
   }
 
-  protected void cleanDanglingDeleteFiles() {
+  protected void doCleanDanglingDeleteFiles() {
     LOG.info("Starting cleaning dangling delete files for table {}", table.name());
     int danglingDeleteFilesCnt = clearInternalTableDanglingDeleteFiles();
     runWithCondition(
