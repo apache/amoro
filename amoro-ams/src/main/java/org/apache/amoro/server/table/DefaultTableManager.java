@@ -286,15 +286,14 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
     // load quota info
     Map<Long, List<TaskRuntime.TaskQuota>> tableQuotaMap = getQuotaTime(tableIds);
     List<OptimizerInstance> instances = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
-    Map<String, List<Integer>> optimizerThreadCountMap =
+    Map<String, Integer> optimizerThreadCountMap =
         instances == null
             ? Collections.emptyMap()
             : instances.stream()
                 .collect(
                     Collectors.groupingBy(
                         OptimizerInstance::getGroupName,
-                        Collectors.mapping(
-                            OptimizerInstance::getThreadCount, Collectors.toList())));
+                        Collectors.summingInt(OptimizerInstance::getThreadCount)));
 
     List<TableOptimizingInfo> infos =
         ret.stream()
@@ -303,10 +302,7 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
                   List<OptimizingTaskMeta> tasks = tableTaskMetaMap.get(meta.getTableId());
                   List<TaskRuntime.TaskQuota> quotas = tableQuotaMap.get(meta.getTableId());
                   int threadCount =
-                      optimizerThreadCountMap
-                          .getOrDefault(meta.getOptimizerGroup(), Collections.emptyList()).stream()
-                          .mapToInt(Integer::intValue)
-                          .sum();
+                      optimizerThreadCountMap.getOrDefault(meta.getOptimizerGroup(), 0);
                   return OptimizingUtil.buildTableOptimizeInfo(
                       meta, tasks, quotas, Math.max(threadCount, 1));
                 })

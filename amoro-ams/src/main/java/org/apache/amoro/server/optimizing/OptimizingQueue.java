@@ -34,7 +34,6 @@ import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.MetricManager;
-import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
@@ -67,6 +66,7 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
@@ -93,6 +93,7 @@ public class OptimizingQueue extends PersistentBase {
   private final int maxPlanningParallelism;
   private final OptimizerGroupMetrics metrics;
   private ResourceGroup optimizerGroup;
+  private final Map<Long, Integer> optimizingTasksCountMap = new ConcurrentHashMap<>();
 
   public OptimizingQueue(
       CatalogManager catalogManager,
@@ -153,6 +154,10 @@ public class OptimizingQueue extends PersistentBase {
     return optimizerGroup.getContainer();
   }
 
+  public Map<Long, Integer> getOptimizingTasksCountMap() {
+    return optimizingTasksCountMap;
+  }
+
   public void refreshTable(DefaultTableRuntime tableRuntime) {
     DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
     if (optimizingState.isOptimizingEnabled()
@@ -193,38 +198,20 @@ public class OptimizingQueue extends PersistentBase {
         taskRuntime -> taskRuntime.getTaskId().getProcessId() == optimizingProcess.getProcessId());
   }
 
-  public TaskRuntime<?> pollTask(long maxWaitTime, boolean enableOverQuota) {
+  public TaskRuntime<?> pollTask(long maxWaitTime, boolean breakQuotaLimit) {
     long deadline = calculateDeadline(maxWaitTime);
     TaskRuntime<?> task = fetchTask();
     while (task == null && waitTask(deadline)) {
       task = fetchTask();
     }
-    if (task == null && enableOverQuota && shouldPollOverQuota()) {
-      task =
-          tableQueue.stream()
-              .map(process -> process.poll(false))
-              .filter(Objects::nonNull)
-              .findFirst()
-              .orElse(null);
+    if (task == null && breakQuotaLimit && planningTables.isEmpty()) {
+      task = fetchScheduledTask(false);
     }
     return task;
   }
 
   public TaskRuntime<?> pollTask(long maxWaitTime) {
     return pollTask(maxWaitTime, false);
-  }
-
-  private boolean shouldPollOverQuota() {
-    boolean noPendingTables =
-        scheduler.getTableRuntimeMap().values().stream()
-            .map(DefaultTableRuntime::getOptimizingState)
-            .noneMatch(state -> state.getOptimizingStatus() == OptimizingStatus.PENDING);
-
-    boolean allProcessesFullQuota =
-        tableQueue.stream()
-            .noneMatch(process -> process.getActualQuota() < process.getQuotaCount());
-
-    return noPendingTables && allProcessesFullQuota;
   }
 
   private long calculateDeadline(long maxWaitTime) {
@@ -249,12 +236,12 @@ public class OptimizingQueue extends PersistentBase {
 
   private TaskRuntime<?> fetchTask() {
     TaskRuntime<?> task = retryTaskQueue.poll();
-    return task != null ? task : fetchScheduledTask();
+    return task != null ? task : fetchScheduledTask(true);
   }
 
-  private TaskRuntime<?> fetchScheduledTask() {
+  private TaskRuntime<?> fetchScheduledTask(boolean needQuotaChecking) {
     return tableQueue.stream()
-        .map(process -> process.poll(true))
+        .map(process -> process.poll(needQuotaChecking))
         .filter(Objects::nonNull)
         .findFirst()
         .orElse(null);
@@ -424,17 +411,17 @@ public class OptimizingQueue extends PersistentBase {
     private Map<String, Long> toSequence = Maps.newHashMap();
     private boolean hasCommitted = false;
 
-    public TaskRuntime<?> poll(boolean checkQuota) {
+    public TaskRuntime<?> poll(boolean needQuotaChecking) {
       if (lock.tryLock()) {
         try {
           TaskRuntime<?> task = null;
           if (status != ProcessStatus.KILLED && status != ProcessStatus.FAILED) {
-            if (!checkQuota || getActualQuota() < getQuotaCount()) {
+            if (!needQuotaChecking || getActualQuota() < getQuotaLimit()) {
               task = taskQueue.poll();
             }
           }
           if (task != null) {
-            task.setScheduling(true);
+            optimizingTasksCountMap.merge(task.getTableId(), 1, Integer::sum);
           }
           return task;
         } finally {
@@ -478,7 +465,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     @Override
-    public int getQuotaCount() {
+    public int getQuotaLimit() {
       double targetQuota =
           optimizingState.getTableConfiguration().getOptimizingConfig().getTargetQuota();
       return targetQuota > 1
@@ -628,14 +615,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     public int getActualQuota() {
-      return (int)
-          taskMap.values().stream()
-              .filter(
-                  t ->
-                      t.getStatus() == TaskRuntime.Status.SCHEDULED
-                          || t.getStatus() == Status.ACKED
-                          || t.isScheduling())
-              .count();
+      return optimizingTasksCountMap.getOrDefault(optimizingState.getTableIdentifier().getId(), 0);
     }
 
     @Override

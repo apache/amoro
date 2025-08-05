@@ -29,11 +29,11 @@ import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.table.descriptor.FilesStatistics;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -100,33 +100,34 @@ public class OptimizingUtil {
     return tableOptimizeInfo;
   }
 
-  public static long calculateQuotaOccupy(
+  @VisibleForTesting
+  static long calculateQuotaOccupy(
       List<OptimizingTaskMeta> processTasks,
       List<TaskRuntime.TaskQuota> quotas,
       long startTime,
       long endTime) {
-    if (quotas == null) {
-      quotas = Collections.emptyList();
+    long finishedOccupy = 0;
+    if (quotas != null) {
+      quotas.removeIf(task -> task.checkExpired(startTime));
+      finishedOccupy =
+          quotas.stream().mapToLong(taskQuota -> taskQuota.getQuotaTime(startTime)).sum();
     }
-    quotas.removeIf(task -> task.checkExpired(startTime));
-    long finishedTaskQuotaTime =
-        quotas.stream().mapToLong(taskQuota -> taskQuota.getQuotaTime(startTime)).sum();
-    long quotaOccupy =
-        processTasks == null
-            ? finishedTaskQuotaTime
-            : finishedTaskQuotaTime
-                + processTasks.stream()
-                    .filter(
-                        t ->
-                            t.getStatus() != TaskRuntime.Status.CANCELED
-                                && t.getStatus() != Status.SUCCESS
-                                && t.getStatus() != TaskRuntime.Status.FAILED)
-                    .mapToLong(
-                        task ->
-                            TaskRuntime.taskRunningQuotaTime(
-                                startTime, endTime, task.getStartTime(), task.getCostTime()))
-                    .sum();
-    return quotaOccupy;
+    long runningOccupy = 0;
+    if (processTasks != null) {
+      runningOccupy =
+          processTasks.stream()
+              .filter(
+                  t ->
+                      t.getStatus() != TaskRuntime.Status.CANCELED
+                          && t.getStatus() != Status.SUCCESS
+                          && t.getStatus() != TaskRuntime.Status.FAILED)
+              .mapToLong(
+                  task ->
+                      TaskRuntime.taskRunningQuotaTime(
+                          startTime, endTime, task.getStartTime(), task.getCostTime()))
+              .sum();
+    }
+    return finishedOccupy + runningOccupy;
   }
 
   private static FilesStatistics collectPendingFileInfo(

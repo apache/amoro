@@ -265,5 +265,4 @@ The Optimizing page displays self-optimizing status of all tables.
 - **File Count**: The total number of files involved in the current Self-optimizing, including base, insert, eq-delete, and pos-delete file types.
 - **File Size**: The total size of files involved in the current self-optimizing.
 - **Quota**: The maximum number of optimizer resources that can be allocated to each table.
-- **Quota Occupation**: the ratio of the actual execution time of optimizer threads used by a table to its Quota execution time within the QUOTA_LOOK_BACK_TIME window (one hour). When break quota limit is enabled, Occupation is possible to surpass 100%. When break quota limit is disabled, there is a strict
-  limit to ensure that the actual resource allocation for any table does not exceed its Quota, thereby guaranteeing that Occupation never surpasses 100%.
+- **Quota Occupation**: The ratio of the actual optimizer thread execution time used by a table to its quota execution time within the QUOTA_LOOK_BACK_TIME window (one hour). 

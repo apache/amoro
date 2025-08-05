@@ -95,7 +95,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final long taskExecuteTimeout;
   private final int maxPlanningParallelism;
   private final long pollingTimeout;
-  private final boolean enableOverQuota;
+  private final boolean breakQuotaLimit;
   private final long refreshGroupInterval;
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
@@ -125,7 +125,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
     this.pollingTimeout =
         serviceConfig.get(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT).toMillis();
-    this.enableOverQuota =
+    this.breakQuotaLimit =
         serviceConfig.getBoolean(AmoroManagementConf.OPTIMIZING_BREAK_QUOTA_LIMIT_ENABLED);
     this.tableService = tableService;
     this.catalogManager = catalogManager;
@@ -217,7 +217,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   public OptimizingTask pollTask(String authToken, int threadId) {
     LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
-    return Optional.ofNullable(queue.pollTask(pollingTimeout, enableOverQuota))
+    return Optional.ofNullable(queue.pollTask(pollingTimeout, breakQuotaLimit))
         .map(task -> extractOptimizingTask(task, authToken, threadId, queue))
         .orElse(null);
   }
@@ -256,9 +256,15 @@ public class DefaultOptimizingService extends StatedPersistentBase
     OptimizingQueue queue = getQueueByToken(authToken);
     OptimizerThread thread =
         getAuthenticatedOptimizer(authToken).getThread(taskResult.getThreadId());
-    Optional.ofNullable(queue.getTask(taskResult.getTaskId()))
-        .orElseThrow(() -> new TaskNotFoundException(taskResult.getTaskId()))
-        .complete(thread, taskResult);
+    TaskRuntime<?> task = queue.getTask(taskResult.getTaskId());
+
+    if (task == null) {
+      throw new TaskNotFoundException(taskResult.getTaskId());
+    }
+    task.complete(thread, taskResult);
+    queue
+        .getOptimizingTasksCountMap()
+        .computeIfPresent(task.getTaskDescriptor().getTableId(), (k, v) -> v > 0 ? v - 1 : v);
   }
 
   @Override

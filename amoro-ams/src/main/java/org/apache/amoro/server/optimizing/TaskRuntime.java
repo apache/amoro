@@ -43,7 +43,6 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
   private final TaskStatusMachine statusMachine = new TaskStatusMachine();
   private OptimizingTaskId taskId;
   private T taskDescriptor;
-  private boolean scheduling = false;
   @StateField private Status status = Status.PLANNED;
   @StateField private int runTimes = 0;
   @StateField private long startTime = AmoroServiceConstants.INVALID_TIME;
@@ -126,7 +125,6 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
     invokeConsistency(
         () -> {
           statusMachine.accept(Status.SCHEDULED);
-          scheduling = false;
           token = thread.getToken();
           threadId = thread.getThreadId();
           startTime = System.currentTimeMillis();
@@ -161,14 +159,6 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
     return this.status == Status.SUCCESS
         || this.status == Status.FAILED
         || this.status == Status.CANCELED;
-  }
-
-  public boolean isScheduling() {
-    return scheduling;
-  }
-
-  public void setScheduling(boolean flag) {
-    this.scheduling = flag;
   }
 
   public Map<String, String> getProperties() {

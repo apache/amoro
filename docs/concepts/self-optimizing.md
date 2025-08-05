@@ -147,24 +147,25 @@ Currently, there are two main scheduling policies available: `Quota` and `Balanc
 ### Quota
 
 The `Quota` strategy is a scheduling policy that schedules based on resource usage. The Self-optimizing resource usage of a single table is managed
-by configuring the quota configuration on the table:
+by configuring the quota configuration on the table. Quota specifies the maximum number of optimizer resources that can be allocated to each table.
+Quotas can be specified as either a decimal (representing a percentage) or an integer (representing a fixed number of resources):
 
 ```SQL
--- Quota for Self-optimizing, indicating the CPU resource the table can take up
+-- Set quota as a percentage of total optimizer resources
 self-optimizing.quota = 0.5;
 ```
-Quota specifies the maximum number of optimizer resources that can be allocated to each table. Quota can be set as either a decimal or an integer, depending on
-user requirements. When Quota is set as a decimal, it presents a percentage of the total available optimizer resources, thereby constraining the upper limit of
-optimizer threads that can be assigned to a single table. If Quota is set as a value greater than 1, it specifies a fixed number of optimizer resources
-allocated to the table.
-This approach helps prevent the waste of idle optimizer resources that may occur when the default quota is set to a small integer, while also allowing users to
-customize the allocation based on their specific needs.
+A decimal quota (e.g., 0.5) limits the table to a percentage of the total available optimizer resources.
 
-In the optimizing management Web UI, the dynamic quota usage for each table can be monitored through the "Occupation" metric. Occupation is expressed as a 
-percentage and is calculated as the ratio of the actual execution time of optimizer threads used by a table to its quota execution time within the QUOTA_LOOK_BACK_TIME window.
-In the Amoro management configuration, the parameter `self-optimizing.break-quota-limit-enabled` controls whether over-quota usage is allowed. When this parameter is enabled, 
-Occupation may exceed 100%. When it is disabled, a strict limit is enforced to ensure that the actual resource allocation for any table does not exceed its Quota, thereby 
-guaranteeing that Occupation never surpasses 100%.
+```SQL
+-- Set quota as a fixed number of optimizer resources
+self-optimizing.quota = 10;
+```
+An integer quota (e.g., 10) restricts the table to a specific number of optimizer resources.
+
+This flexible configuration prevents resource underutilization and allows users to tailor resource allocation to their needs.
+
+The `Quota` strategy schedules tables based on their Occupation metric, which is calculated as the ratio of the actual optimizer thread execution time used
+by a table to its quota execution time within the QUOTA_LOOK_BACK_TIME window. Tables with lower Occupation are given higher scheduling priority.
 
 
 ### Balanced
