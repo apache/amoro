@@ -139,7 +139,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     appendPartitionedData(mixedTable.asUnkeyedTable(), 1);
     appendPartitionedData(mixedTable.asUnkeyedTable(), 2);
-    DefaultTableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
+    DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
 
     runtime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
   }
@@ -283,26 +283,16 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
     assertTaskCompleted(taskRuntime);
 
-    OptimizingProcess optimizingProcess =
-        tableService()
-            .getRuntime(serverTableIdentifier().getId())
-            .getOptimizingState()
-            .getOptimizingProcess();
+    DefaultTableRuntime tableRuntime =
+        (DefaultTableRuntime) tableService().getRuntime(serverTableIdentifier().getId());
+    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingState().getOptimizingProcess();
     Assertions.assertTrue(optimizingService().cancelProcess(taskRuntime.getProcessId()));
     Assertions.assertEquals(
         0, optimizingService().listTasks(defaultResourceGroup().getName()).size());
     Assertions.assertEquals(
-        OptimizingStatus.IDLE,
-        tableService()
-            .getRuntime(serverTableIdentifier().getId())
-            .getOptimizingState()
-            .getOptimizingStatus());
+        OptimizingStatus.IDLE, tableRuntime.getOptimizingState().getOptimizingStatus());
     Assertions.assertEquals(ProcessStatus.CLOSED, optimizingProcess.getStatus());
-    Assertions.assertNull(
-        tableService()
-            .getRuntime(serverTableIdentifier().getId())
-            .getOptimizingState()
-            .getOptimizingProcess());
+    Assertions.assertNull(tableRuntime.getOptimizingState().getOptimizingProcess());
   }
 
   @Test
