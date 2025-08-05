@@ -84,7 +84,7 @@ public class TestOrphanFileCleanHive extends TestOrphanFileClean {
     changeOrphanDataFile.createOrOverwrite().close();
     Assert.assertTrue(getMixedTable().io().exists(hiveOrphanFilePath));
 
-    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable(), null);
     TableIdentifier tableIdentifier = getMixedTable().id();
     TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
         new TableOrphanFilesCleaningMetrics(

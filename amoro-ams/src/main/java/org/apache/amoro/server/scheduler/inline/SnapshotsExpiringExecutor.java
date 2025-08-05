@@ -19,10 +19,11 @@
 package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
+import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
-import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,18 +41,17 @@ public class SnapshotsExpiringExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+  protected long getNextExecutingTime(TableRuntime tableRuntime) {
     return INTERVAL;
   }
 
   @Override
-  protected boolean enabled(DefaultTableRuntime tableRuntime) {
+  protected boolean enabled(TableRuntime tableRuntime) {
     return tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
   }
 
   @Override
-  public void handleConfigChanged(
-      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 
@@ -61,11 +61,11 @@ public class SnapshotsExpiringExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  public void execute(DefaultTableRuntime tableRuntime) {
+  public void execute(TableRuntime tableRuntime) {
     try {
       AmoroTable<?> amoroTable = loadTable(tableRuntime);
-      TableMaintainer tableMaintainer = TableMaintainer.ofTable(amoroTable);
-      tableMaintainer.expireSnapshots(tableRuntime);
+      TableMaintainer tableMaintainer = TableMaintainers.create(amoroTable, tableRuntime);
+      tableMaintainer.expireSnapshots();
     } catch (Throwable t) {
       LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);
     }

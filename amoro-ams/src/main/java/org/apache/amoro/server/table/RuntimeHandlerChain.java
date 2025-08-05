@@ -20,6 +20,7 @@ package org.apache.amoro.server.table;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -51,8 +52,8 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void initialize(List<DefaultTableRuntime> tableRuntimes) {
-    List<DefaultTableRuntime> supportedtableRuntimeList =
+  public final void initialize(List<TableRuntime> tableRuntimes) {
+    List<TableRuntime> supportedtableRuntimeList =
         tableRuntimes.stream()
             .filter(runtime -> formatSupported(runtime.getFormat()))
             .collect(Collectors.toList());
@@ -63,8 +64,7 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void fireStatusChanged(
-      DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus) {
+  public final void fireStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
     if (!initialized) {
       return;
     }
@@ -77,7 +77,7 @@ public abstract class RuntimeHandlerChain {
   }
 
   public final void fireConfigChanged(
-      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
+      TableRuntime tableRuntime, TableConfiguration originalConfig) {
     if (!initialized) {
       return;
     }
@@ -90,7 +90,7 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void fireTableAdded(AmoroTable<?> table, DefaultTableRuntime tableRuntime) {
+  public final void fireTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
     if (!initialized) {
       return;
     }
@@ -103,7 +103,7 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void fireTableRemoved(DefaultTableRuntime tableRuntime) {
+  public final void fireTableRemoved(TableRuntime tableRuntime) {
     if (!initialized) {
       return;
     }
@@ -138,16 +138,16 @@ public abstract class RuntimeHandlerChain {
   }
 
   protected abstract void handleStatusChanged(
-      DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus);
+      TableRuntime tableRuntime, OptimizingStatus originalStatus);
 
   protected abstract void handleConfigChanged(
-      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig);
+      TableRuntime tableRuntime, TableConfiguration originalConfig);
 
-  protected abstract void handleTableAdded(AmoroTable<?> table, DefaultTableRuntime tableRuntime);
+  protected abstract void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime);
 
-  protected abstract void handleTableRemoved(DefaultTableRuntime tableRuntime);
+  protected abstract void handleTableRemoved(TableRuntime tableRuntime);
 
-  protected abstract void initHandler(List<DefaultTableRuntime> tableRuntimeList);
+  protected abstract void initHandler(List<TableRuntime> tableRuntimeList);
 
   protected abstract void doDispose();
 }

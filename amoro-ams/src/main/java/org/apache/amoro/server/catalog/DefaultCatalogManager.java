@@ -218,8 +218,8 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
     ServerCatalog catalog = getServerCatalog(catalogMeta.getCatalogName());
     validateCatalogUpdate(catalog.getMetadata(), catalogMeta);
 
-    metaCache.invalidate(catalogMeta.getCatalogName());
     catalog.updateMetadata(catalogMeta);
+    metaCache.invalidate(catalogMeta.getCatalogName());
     LOG.info("Update catalog metadata: {}", catalogMeta.getCatalogName());
   }
 
