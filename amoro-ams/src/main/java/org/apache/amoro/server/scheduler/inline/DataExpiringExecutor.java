@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class DataExpiringExecutor extends PeriodicTableScheduler {
 
@@ -54,6 +55,11 @@ public class DataExpiringExecutor extends PeriodicTableScheduler {
   public void handleConfigChanged(
       DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
+  }
+
+  @Override
+  protected long getExecutorDelay() {
+    return ThreadLocalRandom.current().nextLong(interval.toMillis());
   }
 
   @Override
