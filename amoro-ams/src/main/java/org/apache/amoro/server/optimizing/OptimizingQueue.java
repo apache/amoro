@@ -488,8 +488,7 @@ public class OptimizingQueue extends PersistentBase {
       loadTaskRuntimes(this);
     }
 
-    @Override
-    public int getQuotaLimit() {
+    private int getQuotaLimit() {
       double targetQuota =
           optimizingState.getTableConfiguration().getOptimizingConfig().getTargetQuota();
       return targetQuota > 1
