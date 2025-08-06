@@ -38,9 +38,11 @@ import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
@@ -54,8 +56,6 @@ import org.apache.iceberg.Snapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -520,7 +520,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     return tableConfiguration.getOptimizingConfig().isEnabled();
   }
 
-  public Double getTargetQuota() {
+  public double getTargetQuota() {
     return tableConfiguration.getOptimizingConfig().getTargetQuota();
   }
 
@@ -627,12 +627,23 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
   }
 
   public double calculateQuotaOccupy() {
-    return new BigDecimal(
-            (double) getQuotaTime()
-                / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME
-                / tableConfiguration.getOptimizingConfig().getTargetQuota())
-        .setScale(4, RoundingMode.HALF_UP)
-        .doubleValue();
+    double targetQuota = tableConfiguration.getOptimizingConfig().getTargetQuota();
+    int targetQuotaLimit =
+        targetQuota > 1 ? (int) targetQuota : (int) Math.ceil(targetQuota * getThreadCount());
+    return (double) getQuotaTime() / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME / targetQuotaLimit;
+  }
+
+  public int getThreadCount() {
+    List<OptimizerInstance> instances = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+    if (instances == null || instances.isEmpty()) {
+      return 1;
+    }
+    return Math.max(
+        instances.stream()
+            .filter(instance -> optimizerGroup.equals(instance.getGroupName()))
+            .mapToInt(OptimizerInstance::getThreadCount)
+            .sum(),
+        1);
   }
 
   /**

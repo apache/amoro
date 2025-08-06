@@ -70,9 +70,11 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -96,6 +98,8 @@ public class OptimizingQueue extends PersistentBase {
   private final int maxPlanningParallelism;
   private final OptimizerGroupMetrics metrics;
   private ResourceGroup optimizerGroup;
+  private final Map<ServerTableIdentifier, AtomicInteger> optimizingTasksMap =
+      new ConcurrentHashMap<>();
 
   public OptimizingQueue(
       CatalogManager catalogManager,
@@ -196,13 +200,20 @@ public class OptimizingQueue extends PersistentBase {
         taskRuntime -> taskRuntime.getTaskId().getProcessId() == optimizingProcess.getProcessId());
   }
 
-  public TaskRuntime<?> pollTask(long maxWaitTime) {
+  public TaskRuntime<?> pollTask(long maxWaitTime, boolean breakQuotaLimit) {
     long deadline = calculateDeadline(maxWaitTime);
     TaskRuntime<?> task = fetchTask();
     while (task == null && waitTask(deadline)) {
       task = fetchTask();
     }
+    if (task == null && breakQuotaLimit && planningTables.isEmpty()) {
+      task = fetchScheduledTask(false);
+    }
     return task;
+  }
+
+  public TaskRuntime<?> pollTask(long maxWaitTime) {
+    return pollTask(maxWaitTime, false);
   }
 
   private long calculateDeadline(long maxWaitTime) {
@@ -227,12 +238,12 @@ public class OptimizingQueue extends PersistentBase {
 
   private TaskRuntime<?> fetchTask() {
     TaskRuntime<?> task = retryTaskQueue.poll();
-    return task != null ? task : fetchScheduledTask();
+    return task != null ? task : fetchScheduledTask(true);
   }
 
-  private TaskRuntime<?> fetchScheduledTask() {
+  private TaskRuntime<?> fetchScheduledTask(boolean needQuotaChecking) {
     return tableQueue.stream()
-        .map(TableOptimizingProcess::poll)
+        .map(process -> process.poll(needQuotaChecking))
         .filter(Objects::nonNull)
         .findFirst()
         .orElse(null);
@@ -422,12 +433,21 @@ public class OptimizingQueue extends PersistentBase {
     private Map<String, Long> toSequence = Maps.newHashMap();
     private boolean hasCommitted = false;
 
-    public TaskRuntime<?> poll() {
+    public TaskRuntime<?> poll(boolean needQuotaChecking) {
       if (lock.tryLock()) {
         try {
-          return status != ProcessStatus.KILLED && status != ProcessStatus.FAILED
-              ? taskQueue.poll()
-              : null;
+          TaskRuntime<?> task = null;
+          if (status != ProcessStatus.KILLED && status != ProcessStatus.FAILED) {
+            if (!needQuotaChecking || getActualQuota() < getQuotaLimit()) {
+              task = taskQueue.poll();
+            }
+          }
+          if (task != null) {
+            optimizingTasksMap
+                .computeIfAbsent(optimizingState.getTableIdentifier(), k -> new AtomicInteger(0))
+                .incrementAndGet();
+          }
+          return task;
         } finally {
           lock.unlock();
         }
@@ -468,6 +488,14 @@ public class OptimizingQueue extends PersistentBase {
       loadTaskRuntimes(this);
     }
 
+    private int getQuotaLimit() {
+      double targetQuota =
+          optimizingState.getTableConfiguration().getOptimizingConfig().getTargetQuota();
+      return targetQuota > 1
+          ? (int) targetQuota
+          : (int) Math.ceil(targetQuota * getAvailableCore());
+    }
+
     @Override
     public long getProcessId() {
       return processId;
@@ -501,6 +529,14 @@ public class OptimizingQueue extends PersistentBase {
     private void acceptResult(TaskRuntime<?> taskRuntime) {
       lock.lock();
       try {
+        optimizingTasksMap.computeIfPresent(
+            optimizingState.getTableIdentifier(),
+            (k, v) -> {
+              if (v.get() > 0) {
+                v.decrementAndGet();
+              }
+              return v;
+            });
         try {
           optimizingState.addTaskQuota(taskRuntime.getCurrentQuota());
         } catch (Throwable throwable) {
@@ -607,6 +643,12 @@ public class OptimizingQueue extends PersistentBase {
           .filter(t -> !t.finished())
           .mapToLong(task -> task.getQuotaTime(calculatingStartTime, calculatingEndTime))
           .sum();
+    }
+
+    public int getActualQuota() {
+      return optimizingTasksMap
+          .getOrDefault(optimizingState.getTableIdentifier(), new AtomicInteger(0))
+          .get();
     }
 
     @Override

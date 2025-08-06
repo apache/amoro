@@ -147,22 +147,26 @@ Currently, there are two main scheduling policies available: `Quota` and `Balanc
 ### Quota
 
 The `Quota` strategy is a scheduling policy that schedules based on resource usage. The Self-optimizing resource usage of a single table is managed
-by configuring the quota configuration on the table:
+by configuring the quota configuration on the table. Quota specifies the maximum number of optimizer resources that can be allocated to each table.
+Quotas can be specified as either a decimal (representing a percentage) or an integer (representing a fixed number of resources):
 
 ```SQL
--- Quota for Self-optimizing, indicating the CPU resource the table can take up
-self-optimizing.quota = 0.1;
+-- Set quota as a percentage of total optimizer resources
+self-optimizing.quota = 0.5;
 ```
-Quota defines the maximum CPU usage that a single table can use, but Self-optimizing is actually executed in a distributed manner, and actual resource
-usage is dynamically managed based on actual execution time.In the optimizing management Web UI, the dynamic quota usage of a single table can be
-viewed through the "Quota Occupy" metric. From a design perspective, the quota occupy metric should dynamically approach 100%.
+A decimal quota (e.g., 0.5) limits the table to a percentage of the total available optimizer resources.
 
-In a platform, two situations may occur: overselling and overbuying.
+```SQL
+-- Set quota as a fixed number of optimizer resources
+self-optimizing.quota = 10;
+```
+An integer quota (e.g., 10) restricts the table to a specific number of optimizer resources.
 
-- Overselling — If all optimizer configurations exceed the total quota of all table configurations, the quota occupy metric may dynamically approach
-above 100%
-- Overbuying — If all optimizer configurations are lower than the total quota of all table configurations, the quota occupy metric should dynamically
-approach below 100%
+This flexible configuration prevents resource underutilization and allows users to tailor resource allocation to their needs.
+
+The `Quota` strategy schedules tables based on their Occupation metric, which is calculated as the ratio of the actual optimizer thread execution time used
+by a table to its quota execution time within the QUOTA_LOOK_BACK_TIME window. Tables with lower Occupation are given higher scheduling priority.
+
 
 ### Balanced
 
