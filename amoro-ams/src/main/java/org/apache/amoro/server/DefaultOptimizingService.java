@@ -257,12 +257,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
     OptimizingQueue queue = getQueueByToken(authToken);
     OptimizerThread thread =
         getAuthenticatedOptimizer(authToken).getThread(taskResult.getThreadId());
-    TaskRuntime<?> task = queue.getTask(taskResult.getTaskId());
-
-    if (task == null) {
-      throw new TaskNotFoundException(taskResult.getTaskId());
-    }
-    task.complete(thread, taskResult);
+    Optional.ofNullable(queue.getTask(taskResult.getTaskId()))
+        .orElseThrow(() -> new TaskNotFoundException(taskResult.getTaskId()))
+        .complete(thread, taskResult);
   }
 
   @Override

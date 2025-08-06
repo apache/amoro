@@ -628,9 +628,9 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
 
   public double calculateQuotaOccupy() {
     double targetQuota = tableConfiguration.getOptimizingConfig().getTargetQuota();
-    int targetQuotaCount =
+    int targetQuotaLimit =
         targetQuota > 1 ? (int) targetQuota : (int) Math.ceil(targetQuota * getThreadCount());
-    return (double) getQuotaTime() / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME / targetQuotaCount;
+    return (double) getQuotaTime() / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME / targetQuotaLimit;
   }
 
   public int getThreadCount() {
