@@ -76,7 +76,7 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_GROUP_DEFAULT = "default";
 
   public static final String SELF_OPTIMIZING_QUOTA = "self-optimizing.quota";
-  public static final double SELF_OPTIMIZING_QUOTA_DEFAULT = 0.1;
+  public static final double SELF_OPTIMIZING_QUOTA_DEFAULT = 0.5;
 
   public static final String SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER =
       "self-optimizing.execute.num-retries";

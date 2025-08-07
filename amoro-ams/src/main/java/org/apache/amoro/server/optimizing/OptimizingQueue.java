@@ -21,6 +21,7 @@ package org.apache.amoro.server.optimizing;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.exception.OptimizingClosedException;
 import org.apache.amoro.exception.PersistenceException;
@@ -37,16 +38,19 @@ import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ExceptionUtil;
 import org.apache.amoro.utils.MixedDataFiles;
@@ -66,9 +70,11 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -92,6 +98,8 @@ public class OptimizingQueue extends PersistentBase {
   private final int maxPlanningParallelism;
   private final OptimizerGroupMetrics metrics;
   private ResourceGroup optimizerGroup;
+  private final Map<ServerTableIdentifier, AtomicInteger> optimizingTasksMap =
+      new ConcurrentHashMap<>();
 
   public OptimizingQueue(
       CatalogManager catalogManager,
@@ -192,13 +200,20 @@ public class OptimizingQueue extends PersistentBase {
         taskRuntime -> taskRuntime.getTaskId().getProcessId() == optimizingProcess.getProcessId());
   }
 
-  public TaskRuntime<?> pollTask(long maxWaitTime) {
+  public TaskRuntime<?> pollTask(long maxWaitTime, boolean breakQuotaLimit) {
     long deadline = calculateDeadline(maxWaitTime);
     TaskRuntime<?> task = fetchTask();
     while (task == null && waitTask(deadline)) {
       task = fetchTask();
     }
+    if (task == null && breakQuotaLimit && planningTables.isEmpty()) {
+      task = fetchScheduledTask(false);
+    }
     return task;
+  }
+
+  public TaskRuntime<?> pollTask(long maxWaitTime) {
+    return pollTask(maxWaitTime, false);
   }
 
   private long calculateDeadline(long maxWaitTime) {
@@ -223,12 +238,12 @@ public class OptimizingQueue extends PersistentBase {
 
   private TaskRuntime<?> fetchTask() {
     TaskRuntime<?> task = retryTaskQueue.poll();
-    return task != null ? task : fetchScheduledTask();
+    return task != null ? task : fetchScheduledTask(true);
   }
 
-  private TaskRuntime<?> fetchScheduledTask() {
+  private TaskRuntime<?> fetchScheduledTask(boolean needQuotaChecking) {
     return tableQueue.stream()
-        .map(TableOptimizingProcess::poll)
+        .map(process -> process.poll(needQuotaChecking))
         .filter(Objects::nonNull)
         .findFirst()
         .orElse(null);
@@ -237,9 +252,30 @@ public class OptimizingQueue extends PersistentBase {
   private void scheduleTableIfNecessary(long startTime) {
     if (planningTables.size() < maxPlanningParallelism) {
       Set<ServerTableIdentifier> skipTables = new HashSet<>(planningTables);
+      skipBlockedTables(skipTables);
       Optional.ofNullable(scheduler.scheduleTable(skipTables))
           .ifPresent(tableRuntime -> triggerAsyncPlanning(tableRuntime, skipTables, startTime));
     }
+  }
+
+  private void skipBlockedTables(Set<ServerTableIdentifier> skipTables) {
+    List<TableBlocker> tableBlockerList =
+        getAs(
+            TableBlockerMapper.class,
+            mapper -> mapper.selectAllBlockers(System.currentTimeMillis()));
+    Map<TableIdentifier, ServerTableIdentifier> identifierMap = Maps.newHashMap();
+    for (ServerTableIdentifier identifier : scheduler.getTableRuntimeMap().keySet()) {
+      identifierMap.put(identifier.getIdentifier(), identifier);
+    }
+    tableBlockerList.stream()
+        .filter(blocker -> TableBlocker.conflict(BlockableOperation.OPTIMIZE, blocker))
+        .map(
+            blocker ->
+                TableIdentifier.of(
+                    blocker.getCatalog(), blocker.getDatabase(), blocker.getTableName()))
+        .map(identifierMap::get)
+        .filter(Objects::nonNull)
+        .forEach(skipTables::add);
   }
 
   private void triggerAsyncPlanning(
@@ -397,12 +433,21 @@ public class OptimizingQueue extends PersistentBase {
     private Map<String, Long> toSequence = Maps.newHashMap();
     private boolean hasCommitted = false;
 
-    public TaskRuntime<?> poll() {
+    public TaskRuntime<?> poll(boolean needQuotaChecking) {
       if (lock.tryLock()) {
         try {
-          return status != ProcessStatus.KILLED && status != ProcessStatus.FAILED
-              ? taskQueue.poll()
-              : null;
+          TaskRuntime<?> task = null;
+          if (status != ProcessStatus.KILLED && status != ProcessStatus.FAILED) {
+            if (!needQuotaChecking || getActualQuota() < getQuotaLimit()) {
+              task = taskQueue.poll();
+            }
+          }
+          if (task != null) {
+            optimizingTasksMap
+                .computeIfAbsent(optimizingState.getTableIdentifier(), k -> new AtomicInteger(0))
+                .incrementAndGet();
+          }
+          return task;
         } finally {
           lock.unlock();
         }
@@ -443,6 +488,14 @@ public class OptimizingQueue extends PersistentBase {
       loadTaskRuntimes(this);
     }
 
+    private int getQuotaLimit() {
+      double targetQuota =
+          optimizingState.getTableConfiguration().getOptimizingConfig().getTargetQuota();
+      return targetQuota > 1
+          ? (int) targetQuota
+          : (int) Math.ceil(targetQuota * getAvailableCore());
+    }
+
     @Override
     public long getProcessId() {
       return processId;
@@ -476,6 +529,14 @@ public class OptimizingQueue extends PersistentBase {
     private void acceptResult(TaskRuntime<?> taskRuntime) {
       lock.lock();
       try {
+        optimizingTasksMap.computeIfPresent(
+            optimizingState.getTableIdentifier(),
+            (k, v) -> {
+              if (v.get() > 0) {
+                v.decrementAndGet();
+              }
+              return v;
+            });
         try {
           optimizingState.addTaskQuota(taskRuntime.getCurrentQuota());
         } catch (Throwable throwable) {
@@ -600,6 +661,12 @@ public class OptimizingQueue extends PersistentBase {
           .filter(t -> !t.finished())
           .mapToLong(task -> task.getQuotaTime(calculatingStartTime, calculatingEndTime))
           .sum();
+    }
+
+    public int getActualQuota() {
+      return optimizingTasksMap
+          .getOrDefault(optimizingState.getTableIdentifier(), new AtomicInteger(0))
+          .get();
     }
 
     @Override
