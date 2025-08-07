@@ -302,7 +302,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     if (process == null || process.getProcessId() != processId) {
       return false;
     }
-    process.commitClosedProcess();
+    process.commit(true);
     return true;
   }
 

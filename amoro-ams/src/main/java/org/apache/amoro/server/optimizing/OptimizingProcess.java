@@ -46,9 +46,11 @@ public interface OptimizingProcess {
 
   boolean containSuccessTasks();
 
-  void commit();
+  void commit(boolean isClosed);
 
-  void commitClosedProcess();
+  default void commit() {
+    commit(false);
+  }
 
   MetricsSummary getSummary();
 }

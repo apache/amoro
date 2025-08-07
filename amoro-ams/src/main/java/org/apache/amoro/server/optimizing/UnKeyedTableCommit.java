@@ -186,6 +186,11 @@ public class UnKeyedTableCommit {
   }
 
   public void commit() throws OptimizingCommitException {
+    if (tasks.isEmpty()) {
+      LOG.info("No tasks to commit for table {}", table.id());
+      return;
+    }
+
     long startTime = System.currentTimeMillis();
     LOG.info("Starting to commit table {} with {} tasks.", table.id(), tasks.size());
 
