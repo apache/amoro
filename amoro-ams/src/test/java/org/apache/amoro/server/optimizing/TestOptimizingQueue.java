@@ -273,9 +273,9 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     ServerTableIdentifier serverTableIdentifier =
         ServerTableIdentifier.of(
             org.apache.amoro.table.TableIdentifier.of(
-                serverTableIdentifier().getCatalog(), "db", "test_table2"),
+                serverTableIdentifier().getCatalog(), "db", "new_table"),
             TableFormat.ICEBERG);
-    serverTableIdentifier.setId(2L);
+    serverTableIdentifier.setId(100L);
     DefaultTableRuntime tableRuntime2 = createTable(serverTableIdentifier);
     queue.refreshTable(tableRuntime2);
     queue.refreshTable(tableRuntime);
@@ -397,6 +397,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         optimizerThread,
         buildOptimizingTaskFailed(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.FAILED, task.getStatus());
+    optimizingProcess.commit();
     Assert.assertEquals(ProcessStatus.SUCCESS, optimizingProcess.getStatus());
     Assert.assertNull(tableRuntime.getOptimizingState().getOptimizingProcess());
     Assert.assertEquals(0, queue.collectTasks().size());
