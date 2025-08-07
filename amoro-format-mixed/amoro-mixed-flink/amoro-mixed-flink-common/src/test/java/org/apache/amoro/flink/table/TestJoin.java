@@ -32,7 +32,7 @@ import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.flink.api.common.JobStatus;
 import org.apache.flink.runtime.testutils.CommonTestUtils;
-import org.apache.flink.shaded.guava30.com.google.common.collect.Lists;
+import org.apache.flink.shaded.guava31.com.google.common.collect.Lists;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.TableSchema;
