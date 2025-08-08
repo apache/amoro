@@ -18,23 +18,31 @@
 
 package org.apache.amoro.spark.test.suites.sql;
 
+import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.spark.mixed.SparkSQLProperties;
 import org.apache.amoro.spark.test.MixedTableTestBase;
 import org.apache.amoro.spark.test.utils.RecordGenerator;
+import org.apache.amoro.spark.test.utils.TestTableUtil;
+import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.thrift.TException;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.platform.commons.util.StringUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
@@ -127,5 +135,29 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
 
     Table hiveTable = loadHiveTable();
     Assertions.assertNotNull(hiveTable);
+  }
+
+  @Test
+  public void testLoadTable() {
+    createTarget(
+        SCHEMA,
+        c -> c.withPrimaryKeySpec(PrimaryKeySpec.builderFor(SCHEMA).addColumn("id").build()));
+    createViewSource(SCHEMA, source);
+    Table hiveTable = loadHiveTable();
+    Map<String, String> properties = Maps.newHashMap(hiveTable.getParameters());
+    properties.put(HiveTableProperties.MIXED_TABLE_FLAG, "true");
+    hiveTable.setParameters(properties);
+    try {
+      CONTEXT
+          .getHiveClient()
+          .alter_table(hiveTable.getDbName(), hiveTable.getTableName(), hiveTable);
+    } catch (TException e) {
+      throw new RuntimeException(e);
+    }
+
+    sql("insert into " + target() + " select * from " + source());
+    MixedTable table = loadTable();
+    List<Record> changes = TestTableUtil.changeRecordsWithAction(table.asKeyedTable());
+    Assertions.assertTrue(changes.size() > 0);
   }
 }
