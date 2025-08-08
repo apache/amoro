@@ -132,10 +132,10 @@ case class RewriteMixedFormatMergeIntoTable(spark: SparkSession) extends Rule[Lo
         Some(ProjectingInternalRow.newProjectInternalRow(plan, targetRowAttrs, isFront = true, 0))
       val backRowProjection =
         ProjectingInternalRow.newProjectInternalRow(
-          source,
+          plan,
           targetRowAttrs,
           isFront = false,
-          1 + rowIdAttrs.size)
+          rowIdAttrs.size)
       (frontRowProjection, backRowProjection)
     } else {
       val frontRowProjection =
@@ -187,7 +187,8 @@ case class RewriteMixedFormatMergeIntoTable(spark: SparkSession) extends Rule[Lo
     // also disable broadcasts for the target table to perform the cardinality check
     val joinType = if (notMatchedActions.isEmpty) Inner else RightOuter
     val joinHint = JoinHint(leftHint = Some(HintInfo(Some(NO_BROADCAST_HASH))), rightHint = None)
-    val joinPlan = Join(targetTableProj, sourceTableProj, joinType, Some(cond), joinHint)
+    val joinPlan =
+      Join(NoStatsUnaryNode(targetTableProj), sourceTableProj, joinType, Some(cond), joinHint)
 
     val matchedConditions = matchedActions.map(actionCondition)
     val matchedOutputs =
@@ -264,14 +265,16 @@ case class RewriteMixedFormatMergeIntoTable(spark: SparkSession) extends Rule[Lo
 
     action match {
       case u: UpdateAction =>
-        val finalSourceOutput = rebuildAttribute(sourceOutput, u.assignments)
+//        val finalSourceOutput = rebuildAttribute(sourceOutput, u.assignments)
+        val finalSourceOutput = u.assignments.map(_.value)
         Seq(Literal(UPDATE_OPERATION)) ++ targetOutput ++ finalSourceOutput
 
       case _: DeleteAction =>
         Seq(Literal(DELETE_OPERATION)) ++ targetOutput ++ sourceOutput
 
       case i: InsertAction =>
-        val finalSourceOutput = rebuildAttribute(sourceOutput, i.assignments)
+//        val finalSourceOutput = rebuildAttribute(sourceOutput, i.assignments)
+        val finalSourceOutput = i.assignments.map(_.value)
         Seq(Literal(INSERT_OPERATION)) ++ targetOutput ++ finalSourceOutput
 
       case other =>
