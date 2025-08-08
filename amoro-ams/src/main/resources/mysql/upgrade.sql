@@ -24,3 +24,55 @@ UPDATE `table_optimizing_process` SET `process_id` = `process_id` /10 << 13;
 UPDATE `task_runtime` SET `process_id` = `process_id` /10 << 13;
 UPDATE `optimizing_task_quota` SET `process_id` = `process_id` /10 << 13;
 UPDATE `table_runtime` SET `optimizing_process_id` = `optimizing_process_id` /10 << 13;
+
+CREATE TABLE `table_process`
+(
+    `process_id`                    bigint(20) NOT NULL COMMENT 'table process id',
+    `table_id`                      bigint(20) NOT NULL COMMENT 'table id',
+    `status`                        varchar(64) NOT NULL COMMENT 'Table optimizing status',
+    `process_type`                  varchar(64) NOT NULL COMMENT 'Process action type',
+    `process_stage`                 varchar(64) NOT NULL COMMENT 'Process current stage',
+    `execution_engine`              varchar(64) NOT NULL COMMENT 'Execution engine',
+    `create_time`                   timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
+    `finish_time`                   timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
+    `fail_message`                  mediumtext(4096) DEFAULT NULL COMMENT 'Error message after task failed',
+    `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
+    PRIMARY KEY (`process_id`),
+    KEY  `table_index` (`table_id`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
+
+CREATE TABLE `optimizing_process_state`
+(
+    `process_id`                    bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
+    `table_id`                      bigint(20) NOT NULL,
+    `target_snapshot_id`            bigint(20) NOT NULL,
+    `target_change_snapshot_id`     bigint(20) NOT NULL,
+    `rewrite_input`                 longblob DEFAULT NULL COMMENT 'rewrite files input',
+    `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
+    `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
+    PRIMARY KEY (`process_id`)
+    KEY  `table_index` (`table_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
+
+INSERT INTO `table_process`
+(`process_id`, `table_id`, `status`, `process_type`,
+`process_stage`, `execution_engine`, `create_time`, `finish_time`, `fail_message`, `summary`)
+SELECT p.`process_id`, p.`table_id`, p.`status`, p.`optimizing_type`,
+CASE
+            WHEN t.`optimizing_status_code` = 700 THEN 'IDLE'
+            WHEN t.`optimizing_status_code` = 600 THEN 'PENDING'
+            WHEN t.`optimizing_status_code` = 500 THEN 'PLANNING'
+            WHEN t.`optimizing_status_code` = 400 THEN 'COMMITTING'
+            WHEN t.`optimizing_status_code` = 300 THEN 'MINOR_OPTIMIZING'
+            WHEN t.`optimizing_status_code` = 200 THEN 'MAJOR_OPTIMIZING'
+            WHEN t.`optimizing_status_code` = 100 THEN 'FULL_OPTIMIZING'
+END,
+ 'AMORO', p.`plan_time`, p.`end_time`, p.`fail_reason`, p.`summary`
+FROM `table_optimizing_process` p JOIN `table_runtime` t ON p.table_id = t.table_id;
+
+INSERT INTO `optimizing_process_state`
+(`process_id`, `table_id`, `target_snapshot_id`, `target_change_snapshot_id`, `rewrite_input`, `from_sequence`, `to_sequence`)
+SELECT `process_id`, `table_id`, `target_snapshot_id`, `target_change_snapshot_id`, `rewrite_input`, `from_sequence`, `to_sequence`
+FROM `table_optimizing_process`;
+
+DROP TABLE IF EXISTS `table_optimizing_process`;

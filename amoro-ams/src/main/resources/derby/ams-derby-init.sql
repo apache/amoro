@@ -123,25 +123,32 @@ CREATE TABLE table_runtime (
     CONSTRAINT table_runtime_table_name_idx UNIQUE (catalog_name, db_name, table_name)
 );
 
-CREATE TABLE table_optimizing_process (
-    process_id          BIGINT NOT NULL,
-    table_id            BIGINT NOT NULL,
-    catalog_name        VARCHAR(64) NOT NULL,
-    db_name             VARCHAR(128) NOT NULL,
-    table_name          VARCHAR(256) NOT NULL,
-    target_snapshot_id  BIGINT NOT NULL,
-    target_change_snapshot_id  BIGINT NOT NULL,
-    status              VARCHAR(10) NOT NULL,
-    optimizing_type     VARCHAR(10) NOT NULL,
-    plan_time           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    end_time            TIMESTAMP DEFAULT NULL,
-    fail_reason         VARCHAR(4096),
-    rewrite_input       BLOB(64m),
-    summary             CLOB(64m),
-    from_sequence       CLOB(64m),
-    to_sequence         CLOB(64m),
-    CONSTRAINT table_optimizing_process_pk PRIMARY KEY (process_id)
+CREATE TABLE table_process (
+    process_id       BIGINT NOT NULL PRIMARY KEY,
+    table_id         BIGINT NOT NULL,
+    status           VARCHAR(64) NOT NULL,
+    process_type     VARCHAR(64) NOT NULL,
+    process_stage    VARCHAR(64) NOT NULL,
+    execution_engine VARCHAR(64) NOT NULL,
+    create_time      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    finish_time      TIMESTAMP DEFAULT NULL,
+    fail_message     CLOB,
+    summary          CLOB
 );
+CREATE INDEX table_process_table_idx ON table_process (table_id, create_time);
+
+CREATE TABLE optimizing_process_state (
+    process_id                BIGINT NOT NULL PRIMARY KEY,
+    table_id                  BIGINT NOT NULL,
+    target_snapshot_id        BIGINT NOT NULL,
+    target_change_snapshot_id BIGINT NOT NULL,
+    rewrite_input             BLOB,
+    from_sequence             CLOB,
+    to_sequence               CLOB
+);
+CREATE INDEX optimizing_process_state_table_idx
+    ON optimizing_process_state (table_id);
+
 
 CREATE TABLE task_runtime (
     process_id      BIGINT NOT NULL,

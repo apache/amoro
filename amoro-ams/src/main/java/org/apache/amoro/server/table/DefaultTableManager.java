@@ -42,7 +42,7 @@ import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
@@ -271,7 +271,7 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
 
     List<OptimizingTaskMeta> taskMetas =
         getAs(
-            OptimizingMapper.class,
+            OptimizingProcessMapper.class,
             m -> {
               if (processIds.isEmpty()) {
                 return Lists.newArrayList();
@@ -318,7 +318,9 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
     long calculatingStartTime = calculatingEndTime - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
     long minProcessId = SnowflakeIdGenerator.getMinSnowflakeId(calculatingStartTime);
     List<TaskRuntime.TaskQuota> quotas =
-        getAs(OptimizingMapper.class, mapper -> mapper.selectTableQuotas(tableIds, minProcessId));
+        getAs(
+            OptimizingProcessMapper.class,
+            mapper -> mapper.selectTableQuotas(tableIds, minProcessId));
 
     return quotas.stream()
         .collect(Collectors.groupingBy(TaskRuntime.TaskQuota::getTableId, Collectors.toList()));

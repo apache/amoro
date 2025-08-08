@@ -20,7 +20,8 @@ package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.server.persistence.PersistentBase;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
@@ -72,19 +73,24 @@ public class OptimizingExpiringExecutor extends PeriodicTableScheduler {
       doAsTransaction(
           () ->
               doAs(
-                  OptimizingMapper.class,
+                  TableProcessMapper.class,
                   mapper ->
-                      mapper.deleteOptimizingProcessBefore(
+                      mapper.deleteBefore(tableRuntime.getTableIdentifier().getId(), minProcessId)),
+          () ->
+              doAs(
+                  OptimizingProcessMapper.class,
+                  mapper ->
+                      mapper.deleteProcessStateBefore(
                           tableRuntime.getTableIdentifier().getId(), minProcessId)),
           () ->
               doAs(
-                  OptimizingMapper.class,
+                  OptimizingProcessMapper.class,
                   mapper ->
                       mapper.deleteTaskRuntimesBefore(
                           tableRuntime.getTableIdentifier().getId(), minProcessId)),
           () ->
               doAs(
-                  OptimizingMapper.class,
+                  OptimizingProcessMapper.class,
                   mapper ->
                       mapper.deleteOptimizingQuotaBefore(
                           tableRuntime.getTableIdentifier().getId(), minProcessId)));

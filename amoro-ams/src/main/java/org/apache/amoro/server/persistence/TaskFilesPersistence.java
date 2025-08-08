@@ -22,7 +22,7 @@ import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.TaskRuntime;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.utils.CompressUtil;
 import org.apache.amoro.utils.SerializationUtil;
 
@@ -49,7 +49,7 @@ public class TaskFilesPersistence {
   public static Map<Integer, RewriteFilesInput> loadTaskInputs(long processId) {
     List<byte[]> bytes =
         persistence.getAs(
-            OptimizingMapper.class, mapper -> mapper.selectProcessInputFiles(processId));
+            OptimizingProcessMapper.class, mapper -> mapper.selectProcessInputFiles(processId));
     if (bytes == null || bytes.isEmpty()) {
       return Collections.emptyMap();
     } else {
@@ -64,7 +64,9 @@ public class TaskFilesPersistence {
   private static class DatabasePersistence extends PersistentBase {
 
     public void persistTaskInputs(long processId, Map<Integer, RewriteFilesInput> tasks) {
-      doAs(OptimizingMapper.class, mapper -> mapper.updateProcessInputFiles(processId, tasks));
+      doAs(
+          OptimizingProcessMapper.class,
+          mapper -> mapper.updateProcessInputFiles(processId, tasks));
     }
   }
 }

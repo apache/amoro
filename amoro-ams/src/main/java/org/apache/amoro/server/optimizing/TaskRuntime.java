@@ -28,7 +28,7 @@ import org.apache.amoro.process.SimpleFuture;
 import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
@@ -259,7 +259,7 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
   }
 
   private void persistTaskRuntime() {
-    doAs(OptimizingMapper.class, mapper -> mapper.updateTaskRuntime(this));
+    doAs(OptimizingProcessMapper.class, mapper -> mapper.updateTaskRuntime(this));
   }
 
   public TaskQuota getCurrentQuota() {

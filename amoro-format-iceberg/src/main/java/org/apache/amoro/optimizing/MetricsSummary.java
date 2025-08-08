@@ -74,6 +74,43 @@ public class MetricsSummary {
   private int newDeleteFileCnt = 0;
   private long newDeleteRecordCnt = 0;
 
+  public static MetricsSummary fromMap(Map<String, String> summary) {
+    MetricsSummary metricsSummary = new MetricsSummary();
+    metricsSummary.rewriteDataSize = Long.parseLong(summary.getOrDefault(INPUT_DATA_SIZE, "0"));
+    metricsSummary.rewriteDataFileCnt =
+        Integer.parseInt(summary.getOrDefault(INPUT_DATA_FILES, "0"));
+    metricsSummary.rewriteDataRecordCnt =
+        Long.parseLong(summary.getOrDefault(INPUT_DATA_RECORDS, "0"));
+    metricsSummary.rewritePosDataSize =
+        Long.parseLong(summary.getOrDefault(INPUT_POS_DELETE_SIZE, "0"));
+    metricsSummary.rewritePosDataFileCnt =
+        Integer.parseInt(summary.getOrDefault(INPUT_POS_DELETE_FILES, "0"));
+    metricsSummary.rewritePosDataRecordCnt =
+        Long.parseLong(summary.getOrDefault(INPUT_POS_DELETE_RECORDS, "0"));
+    metricsSummary.equalityDeleteSize =
+        Long.parseLong(summary.getOrDefault(INPUT_EQ_DELETE_SIZE, "0"));
+    metricsSummary.eqDeleteFileCnt =
+        Integer.parseInt(summary.getOrDefault(INPUT_EQ_DELETE_FILES, "0"));
+    metricsSummary.eqDeleteRecordCnt =
+        Long.parseLong(summary.getOrDefault(INPUT_EQ_DELETE_RECORDS, "0"));
+    metricsSummary.positionDeleteSize =
+        Long.parseLong(summary.getOrDefault(INPUT_POS_DELETE_SIZE, "0"));
+    metricsSummary.posDeleteFileCnt =
+        Integer.parseInt(summary.getOrDefault(INPUT_POS_DELETE_FILES, "0"));
+    metricsSummary.posDeleteRecordCnt =
+        Long.parseLong(summary.getOrDefault(INPUT_POS_DELETE_RECORDS, "0"));
+    metricsSummary.newDataSize = Long.parseLong(summary.getOrDefault(OUTPUT_DATA_SIZE, "0"));
+    metricsSummary.newDataFileCnt = Integer.parseInt(summary.getOrDefault(OUTPUT_DATA_FILES, "0"));
+    metricsSummary.newDataRecordCnt =
+        Long.parseLong(summary.getOrDefault(OUTPUT_DATA_RECORDS, "0"));
+    metricsSummary.newDeleteSize = Long.parseLong(summary.getOrDefault(OUTPUT_DELETE_SIZE, "0"));
+    metricsSummary.newDeleteFileCnt =
+        Integer.parseInt(summary.getOrDefault(OUTPUT_DELETE_FILES, "0"));
+    metricsSummary.newDeleteRecordCnt =
+        Long.parseLong(summary.getOrDefault(OUTPUT_DELETE_RECORDS, "0"));
+    return metricsSummary;
+  }
+
   public MetricsSummary() {}
 
   protected MetricsSummary(RewriteFilesInput input) {
