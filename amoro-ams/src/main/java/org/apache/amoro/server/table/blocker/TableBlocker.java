@@ -48,8 +48,11 @@ public class TableBlocker {
 
   public static boolean conflict(
       BlockableOperation blockableOperation, List<TableBlocker> blockers) {
-    return blockers.stream()
-        .anyMatch(blocker -> blocker.getOperations().contains(blockableOperation.name()));
+    return blockers.stream().anyMatch(blocker -> conflict(blockableOperation, blocker));
+  }
+
+  public static boolean conflict(BlockableOperation blockableOperation, TableBlocker blocker) {
+    return blocker.getOperations().contains(blockableOperation.name());
   }
 
   public static TableBlocker buildTableBlocker(

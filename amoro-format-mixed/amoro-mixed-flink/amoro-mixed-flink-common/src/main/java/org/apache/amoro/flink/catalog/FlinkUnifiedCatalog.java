@@ -37,6 +37,8 @@ import org.apache.amoro.flink.table.UnifiedDynamicTableFactory;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.utils.CatalogUtil;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
@@ -66,7 +68,9 @@ import org.apache.flink.table.factories.Factory;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /** This is a Flink catalog wrap a unified catalog. */
 public class FlinkUnifiedCatalog extends AbstractCatalog {
@@ -169,22 +173,43 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   @Override
   public CatalogBaseTable getTable(ObjectPath tablePath)
       throws TableNotExistException, CatalogException {
-    AmoroTable<?> amoroTable;
-    try {
-      amoroTable = unifiedCatalog.loadTable(tablePath.getDatabaseName(), tablePath.getObjectName());
-    } catch (NoSuchTableException e) {
-      throw new TableNotExistException(getName(), tablePath, e);
-    }
-    AbstractCatalog catalog = originalCatalog(amoroTable);
-    CatalogTable catalogTable = (CatalogTable) catalog.getTable(tablePath);
-    final Map<String, String> flinkProperties = Maps.newHashMap(catalogTable.getOptions());
-    flinkProperties.put(TABLE_FORMAT.key(), amoroTable.format().toString());
+    TableIdentifier tableIdentifier =
+        TableIdentifier.of(
+            this.amoroCatalogName, tablePath.getDatabaseName(), tablePath.getObjectName());
+    Set<TableFormat> formats =
+        CatalogUtil.tableFormats(unifiedCatalog.metastoreType(), unifiedCatalog.properties());
 
-    return CatalogTable.of(
-        catalogTable.getUnresolvedSchema(),
-        catalogTable.getComment(),
-        catalogTable.getPartitionKeys(),
-        flinkProperties);
+    TableMetaStore tableMetaStore = unifiedCatalog.authenticationContext();
+    return formats.stream()
+        .map(
+            f -> {
+              try {
+                AbstractCatalog catalog =
+                    getOriginalCatalog(f)
+                        .orElseGet(() -> createOriginalCatalog(tableIdentifier, f));
+                CatalogTable catalogTable =
+                    (CatalogTable) tableMetaStore.doAs(() -> catalog.getTable(tablePath));
+                final Map<String, String> flinkProperties =
+                    Maps.newHashMap(catalogTable.getOptions());
+                flinkProperties.put(TABLE_FORMAT.key(), f.toString());
+                return CatalogTable.of(
+                    catalogTable.getUnresolvedSchema(),
+                    catalogTable.getComment(),
+                    catalogTable.getPartitionKeys(),
+                    flinkProperties);
+              } catch (RuntimeException e) {
+                // only handle no such table case
+                if (e.getCause() instanceof TableNotExistException
+                    || e.getCause() instanceof NoSuchTableException) {
+                  return null;
+                } else {
+                  throw e;
+                }
+              }
+            })
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElseThrow(() -> new TableNotExistException(getName(), tablePath));
   }
 
   @Override
