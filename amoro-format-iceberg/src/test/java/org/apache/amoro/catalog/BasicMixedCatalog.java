@@ -474,10 +474,7 @@ public class BasicMixedCatalog implements MixedFormatCatalog {
       if (catalogProperties != null) {
         String catalogWarehouse =
             catalogProperties.getOrDefault(CatalogMetaProperties.KEY_WAREHOUSE, null);
-        if (catalogWarehouse == null) {
-          catalogWarehouse =
-              catalogProperties.getOrDefault(CatalogMetaProperties.KEY_WAREHOUSE_DIR, null);
-        }
+
         if (catalogWarehouse == null) {
           throw new NullPointerException("Catalog warehouse is null.");
         }

@@ -38,19 +38,5 @@ public class TestCompatibleHivePropertyUtil {
     Assert.assertTrue(
         CompatibleHivePropertyUtil.propertyAsBoolean(
             properties, HiveTableProperties.MIXED_TABLE_FLAG, false));
-
-    properties.put(HiveTableProperties.AMORO_TABLE_FLAG_LEGACY, "false");
-    Assert.assertTrue(
-        CompatibleHivePropertyUtil.propertyAsBoolean(
-            properties, HiveTableProperties.MIXED_TABLE_FLAG, false));
-  }
-
-  @Test
-  public void testGetLegacyProperty() {
-    Map<String, String> properties = Maps.newHashMap();
-    properties.put(HiveTableProperties.AMORO_TABLE_FLAG_LEGACY, "true");
-    Assert.assertTrue(
-        CompatibleHivePropertyUtil.propertyAsBoolean(
-            properties, HiveTableProperties.MIXED_TABLE_FLAG, false));
   }
 }

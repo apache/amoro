@@ -43,19 +43,12 @@ public class TestCompatiblePropertyUtil {
             properties,
             TableProperties.ENABLE_SELF_OPTIMIZING,
             TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
-
-    properties.put(TableProperties.ENABLE_OPTIMIZE, "true");
-    Assert.assertFalse(
-        CompatiblePropertyUtil.propertyAsBoolean(
-            properties,
-            TableProperties.ENABLE_SELF_OPTIMIZING,
-            TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
   }
 
   @Test
   public void testGetLegacyProperty() {
     Map<String, String> properties = Maps.newHashMap();
-    properties.put(TableProperties.ENABLE_OPTIMIZE, "false");
+    properties.put(TableProperties.ENABLE_SELF_OPTIMIZING, "false");
     Assert.assertFalse(
         CompatiblePropertyUtil.propertyAsBoolean(
             properties,
