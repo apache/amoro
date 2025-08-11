@@ -387,7 +387,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
       DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
       if (!defaultTableRuntime.getOptimizingState().getOptimizingStatus().isProcessing()) {
         getOptionalQueueByGroup(defaultTableRuntime.getOptimizingState().getOptimizerGroup())
-            .ifPresent(q -> q.refreshTable(defaultTableRuntime));
+            .ifPresent(
+                queue -> {
+                  queue.refreshTable(defaultTableRuntime);
+                  queue.clearOptimizingProcessState(defaultTableRuntime);
+                });
       }
     }
 

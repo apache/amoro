@@ -160,7 +160,7 @@ CREATE TABLE `optimizing_process_state`
     `rewrite_input`                 longblob DEFAULT NULL COMMENT 'rewrite files input',
     `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
     `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
-    PRIMARY KEY (`process_id`)
+    PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
 
