@@ -22,6 +22,8 @@ import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.process.ProcessStatus;
 
+import java.util.List;
+
 public interface OptimizingProcess {
 
   long getProcessId();
@@ -47,4 +49,6 @@ public interface OptimizingProcess {
   void commit();
 
   MetricsSummary getSummary();
+
+  List<OptimizingTaskMeta> getProcessTasks();
 }

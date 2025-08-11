@@ -282,6 +282,14 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
           .put(Status.SUCCESS, ImmutableSet.of())
           .build();
 
+  public OptimizingTaskMeta getTaskMeta() {
+    OptimizingTaskMeta taskMeta = new OptimizingTaskMeta();
+    taskMeta.setStartTime(startTime);
+    taskMeta.setEndTime(endTime);
+    taskMeta.setStatus(status);
+    return taskMeta;
+  }
+
   private class TaskStatusMachine {
 
     public void accept(Status targetStatus) {

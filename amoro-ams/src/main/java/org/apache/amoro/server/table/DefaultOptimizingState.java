@@ -32,9 +32,11 @@ import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessState;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.AmoroServiceConstants;
+import org.apache.amoro.server.dashboard.utils.OptimizingUtil;
 import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
@@ -613,17 +615,13 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
   }
 
   public long getQuotaTime() {
-    long calculatingEndTime = System.currentTimeMillis();
-    long calculatingStartTime = calculatingEndTime - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
-    taskQuotas.removeIf(task -> task.checkExpired(calculatingStartTime));
-    long finishedTaskQuotaTime =
-        taskQuotas.stream()
-            .mapToLong(taskQuota -> taskQuota.getQuotaTime(calculatingStartTime))
-            .sum();
-    return optimizingProcess == null
-        ? finishedTaskQuotaTime
-        : finishedTaskQuotaTime
-            + optimizingProcess.getRunningQuotaTime(calculatingStartTime, calculatingEndTime);
+    long endTime = System.currentTimeMillis();
+    long startTime = endTime - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
+    List<OptimizingTaskMeta> processTasks =
+        Optional.ofNullable(optimizingProcess)
+            .map(process -> process.getProcessTasks())
+            .orElse(null);
+    return OptimizingUtil.calculateQuotaOccupy(processTasks, taskQuotas, startTime, endTime);
   }
 
   public double calculateQuotaOccupy() {
