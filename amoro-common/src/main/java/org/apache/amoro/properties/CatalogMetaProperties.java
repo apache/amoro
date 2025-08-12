@@ -47,8 +47,6 @@ public class CatalogMetaProperties {
   public static final String AUTH_CONFIGS_VALUE_TYPE_AK_SK = "ak/sk";
   public static final String AUTH_CONFIGS_VALUE_TYPE_CUSTOM = "custom";
 
-  // Deprecated from version v0.4.0, use KEY_WAREHOUSE
-  @Deprecated public static final String KEY_WAREHOUSE_DIR = "warehouse.dir";
   public static final String KEY_WAREHOUSE = "warehouse";
 
   public static final String KEY_DATABASE_FILTER = "database-filter";

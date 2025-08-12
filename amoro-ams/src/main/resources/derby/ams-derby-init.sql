@@ -133,7 +133,7 @@ CREATE TABLE table_process (
     create_time      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     finish_time      TIMESTAMP DEFAULT NULL,
     fail_message     CLOB,
-    summary          CLOB
+    summary          CLOB(64m)
 );
 CREATE INDEX table_process_table_idx ON table_process (table_id, create_time);
 
@@ -142,9 +142,9 @@ CREATE TABLE optimizing_process_state (
     table_id                  BIGINT NOT NULL,
     target_snapshot_id        BIGINT NOT NULL,
     target_change_snapshot_id BIGINT NOT NULL,
-    rewrite_input             BLOB,
-    from_sequence             CLOB,
-    to_sequence               CLOB
+    rewrite_input             BLOB(64m),
+    from_sequence             CLOB(64m),
+    to_sequence               CLOB(64m)
 );
 CREATE INDEX optimizing_process_state_table_idx
     ON optimizing_process_state (table_id);
