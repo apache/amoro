@@ -145,7 +145,7 @@ CREATE TABLE `table_process`
     `execution_engine`              varchar(64) NOT NULL COMMENT 'Execution engine',
     `create_time`                   timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
     `finish_time`                   timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
-    `fail_message`                  mediumtext(4096) DEFAULT NULL COMMENT 'Error message after task failed',
+    `fail_message`                  mediumtext DEFAULT NULL COMMENT 'Error message after task failed',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
     PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`, `create_time`)
@@ -160,7 +160,7 @@ CREATE TABLE `optimizing_process_state`
     `rewrite_input`                 longblob DEFAULT NULL COMMENT 'rewrite files input',
     `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
     `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
-    PRIMARY KEY (`process_id`)
+    PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
 

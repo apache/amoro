@@ -35,7 +35,7 @@ CREATE TABLE `table_process`
     `execution_engine`              varchar(64) NOT NULL COMMENT 'Execution engine',
     `create_time`                   timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
     `finish_time`                   timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
-    `fail_message`                  mediumtext(4096) DEFAULT NULL COMMENT 'Error message after task failed',
+    `fail_message`                  mediumtext DEFAULT NULL COMMENT 'Error message after task failed',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
     PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`, `create_time`)
