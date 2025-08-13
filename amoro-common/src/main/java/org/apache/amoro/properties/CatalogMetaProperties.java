@@ -84,9 +84,27 @@ public class CatalogMetaProperties {
   public static final String TABLE_PROPERTIES_PREFIX = "table.";
   public static final String LOG_STORE_PROPERTIES_PREFIX = "log-store.";
   public static final String OPTIMIZE_PROPERTIES_PREFIX = "self-optimizing.";
+  public static final String DEPRECATED_OPTIMIZE_PROPERTIES_PREFIX = "optimize.";
+  public static final String TABLE_EXPIRE_PREFIX = "table-expire.";
+  public static final String ORPHAN_CLEAN_PREFIX = "clean-orphan-file.";
+  public static final String DANGLING_DELETE_FILES_CLEAN_PREFIX = "clean-dangling-delete-files.";
+  public static final String DATA_EXPIRATION_PREFIX = "data-expire.";
+  public static final String TABLE_TRASH_PREFIX = "table-trash.";
+  public static final String AUTO_CREATE_TAG_PREFIX = "tag.auto-create.";
 
   // mixed-format properties
   public static final String MIXED_FORMAT_TABLE_STORE_SEPARATOR =
       "mixed-format.table-store.separator";
   public static final String MIXED_FORMAT_TABLE_STORE_SEPARATOR_DEFAULT = "_";
+
+  // a (semicolon-separated) list of property names(or prefix) that would not write into underlying
+  // tables in addition
+  // to default names(or prefix)
+  public static final String TABLE_NON_PERSISTED_PROPERTIES_ADDITIONAL =
+      "table-properties.non-persisted.additional";
+
+  //  a (semicolon-separated) list of property names(or prefix) excluded from
+  //  default 'merge on loading' properties
+  public static final String TABLE_NON_PERSISTED_PROPERTIES_EXCLUDED =
+      "table-properties.non-persisted.excluded";
 }
