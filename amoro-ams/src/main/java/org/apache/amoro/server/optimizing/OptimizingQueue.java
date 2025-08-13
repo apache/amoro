@@ -46,6 +46,7 @@ import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -173,6 +174,24 @@ public class OptimizingQueue extends PersistentBase {
           System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
       scheduler.addTable(tableRuntime);
     }
+  }
+
+  public void clearOptimizingProcessState(DefaultTableRuntime tableRuntime) {
+    DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
+    long currentProcessId =
+        Optional.ofNullable(optimizingState.getOptimizingProcess())
+            .map(OptimizingProcess::getProcessId)
+            .orElse(0L);
+    long minProcessId =
+        currentProcessId == 0
+            ? SnowflakeIdGenerator.getMinSnowflakeId(System.currentTimeMillis())
+            : currentProcessId - 1;
+
+    doAs(
+        OptimizingProcessMapper.class,
+        mapper ->
+            mapper.deleteProcessStateBefore(
+                tableRuntime.getTableIdentifier().getId(), minProcessId));
   }
 
   public void releaseTable(DefaultTableRuntime tableRuntime) {
