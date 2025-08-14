@@ -44,7 +44,13 @@ public interface OptimizingProcess {
 
   long getRunningQuotaTime(long calculatingStartTime, long calculatingEndTime);
 
-  void commit();
+  boolean containSuccessTasks();
+
+  void commit(boolean isClosed);
+
+  default void commit() {
+    commit(false);
+  }
 
   MetricsSummary getSummary();
 }
