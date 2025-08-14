@@ -31,8 +31,9 @@ import org.apache.amoro.hive.formats.IcebergHiveCatalogTestHelper;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.process.ProcessStatus;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.table.DerbyPersistence;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.descriptor.FormatTableDescriptor;
@@ -306,17 +307,25 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
         Map<String, Long> fromSequence,
         Map<String, Long> toSequence) {
       doAs(
-          OptimizingMapper.class,
+          TableProcessMapper.class,
           mapper ->
-              mapper.insertOptimizingProcess(
-                  identifier,
+              mapper.insertProcess(
+                  identifier.getId(),
+                  processId,
+                  status,
+                  type.name(),
+                  type.name(),
+                  "AMORO",
+                  planTime,
+                  summary.summaryAsMap(false)));
+      doAs(
+          OptimizingProcessMapper.class,
+          mapper ->
+              mapper.insertInternalProcessState(
+                  identifier.getId(),
                   processId,
                   targetSnapshotId,
                   targetChangeSnapshotId,
-                  status,
-                  type,
-                  planTime,
-                  summary,
                   fromSequence,
                   toSequence));
     }

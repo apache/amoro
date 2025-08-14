@@ -31,7 +31,6 @@ public class HiveTableProperties {
   }
 
   public static final String MIXED_TABLE_FLAG = "arctic.enabled";
-  @Deprecated public static final String AMORO_TABLE_FLAG_LEGACY = "arctic.enable";
 
   public static final String MIXED_TABLE_PRIMARY_KEYS = "arctic.table.primary-keys";
   // save the root location of mixed-format table.

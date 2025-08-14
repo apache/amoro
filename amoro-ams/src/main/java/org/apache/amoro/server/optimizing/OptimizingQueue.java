@@ -38,8 +38,9 @@ import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultOptimizingState;
@@ -189,10 +190,6 @@ public class OptimizingQueue extends PersistentBase {
         "Release queue {} with table {}",
         optimizerGroup.getName(),
         tableRuntime.getTableIdentifier());
-  }
-
-  public boolean containsTable(ServerTableIdentifier identifier) {
-    return scheduler.getTableRuntime(identifier) != null;
   }
 
   private void clearProcess(OptimizingProcess optimizingProcess) {
@@ -768,22 +765,31 @@ public class OptimizingQueue extends PersistentBase {
       doAsTransaction(
           () ->
               doAs(
-                  OptimizingMapper.class,
+                  TableProcessMapper.class,
                   mapper ->
-                      mapper.insertOptimizingProcess(
-                          optimizingState.getTableIdentifier(),
+                      mapper.insertProcess(
+                          optimizingState.getTableIdentifier().getId(),
+                          processId,
+                          status,
+                          optimizingType.name().toUpperCase(),
+                          optimizingState.getOptimizingStatus().name().toLowerCase(),
+                          "AMORO",
+                          planTime,
+                          getSummary().summaryAsMap(false))),
+          () ->
+              doAs(
+                  OptimizingProcessMapper.class,
+                  mapper ->
+                      mapper.insertInternalProcessState(
+                          optimizingState.getTableIdentifier().getId(),
                           processId,
                           targetSnapshotId,
                           targetChangeSnapshotId,
-                          status,
-                          optimizingType,
-                          planTime,
-                          getSummary(),
                           fromSequence,
                           toSequence)),
           () ->
               doAs(
-                  OptimizingMapper.class,
+                  OptimizingProcessMapper.class,
                   mapper -> mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
           () -> TaskFilesPersistence.persistTaskInputs(processId, taskMap.values()),
           () -> optimizingState.beginProcess(this));
@@ -798,15 +804,16 @@ public class OptimizingQueue extends PersistentBase {
           },
           () ->
               doAs(
-                  OptimizingMapper.class,
+                  TableProcessMapper.class,
                   mapper ->
-                      mapper.updateOptimizingProcess(
+                      mapper.updateProcess(
                           optimizingState.getTableIdentifier().getId(),
                           processId,
                           status,
-                          endTime,
-                          getSummary(),
-                          getFailedReason())),
+                          optimizingState.getOptimizingStatus().name().toLowerCase(),
+                          System.currentTimeMillis(),
+                          getFailedReason(),
+                          getSummary().summaryAsMap(false))),
           () -> optimizingState.completeProcess(success),
           () -> clearProcess(this));
     }
@@ -819,7 +826,7 @@ public class OptimizingQueue extends PersistentBase {
       try {
         List<TaskRuntime<RewriteStageTask>> taskRuntimes =
             getAs(
-                OptimizingMapper.class,
+                OptimizingProcessMapper.class,
                 mapper ->
                     mapper.selectTaskRuntimes(
                         optimizingState.getTableIdentifier().getId(), processId));

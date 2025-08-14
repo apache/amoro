@@ -39,7 +39,7 @@ import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
@@ -332,7 +332,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
       taskQuotas.clear();
       taskQuotas.addAll(
           getAs(
-              OptimizingMapper.class,
+              OptimizingProcessMapper.class,
               mapper -> mapper.selectTaskQuotasByTime(tableIdentifier.getId(), minProcessId)));
     } finally {
       tableLock.unlock();
@@ -452,7 +452,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
   }
 
   public void addTaskQuota(TaskRuntime.TaskQuota taskQuota) {
-    doAsIgnoreError(OptimizingMapper.class, mapper -> mapper.insertTaskQuota(taskQuota));
+    doAsIgnoreError(OptimizingProcessMapper.class, mapper -> mapper.insertTaskQuota(taskQuota));
     taskQuotas.add(taskQuota);
     long validTime = System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
     this.taskQuotas.removeIf(task -> task.checkExpired(validTime));
