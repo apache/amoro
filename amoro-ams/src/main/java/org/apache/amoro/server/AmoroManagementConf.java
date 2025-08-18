@@ -302,6 +302,13 @@ public class AmoroManagementConf {
           .withDescription(
               "The number of hours that self-optimizing runtime data expire interval.");
 
+  public static final ConfigOption<Boolean> OPTIMIZING_BREAK_QUOTA_LIMIT_ENABLED =
+      ConfigOptions.key("self-optimizing.break-quota-limit-enabled")
+          .booleanType()
+          .defaultValue(true)
+          .withDescription(
+              "Allow the table to break the quota limit when the resource is sufficient.");
+
   public static final ConfigOption<Duration> OVERVIEW_CACHE_REFRESH_INTERVAL =
       ConfigOptions.key("overview-cache.refresh-interval")
           .durationType()
@@ -379,6 +386,12 @@ public class AmoroManagementConf {
           .durationType()
           .defaultValue(Duration.ofSeconds(30))
           .withDescription("Timeout duration for task acknowledgment.");
+
+  public static final ConfigOption<Duration> OPTIMIZER_TASK_EXECUTE_TIMEOUT =
+      ConfigOptions.key("optimizer.task-execute-timeout")
+          .durationType()
+          .defaultValue(Duration.ofHours(1))
+          .withDescription("Timeout duration for task execution, default to 1 hour.");
 
   public static final ConfigOption<Integer> OPTIMIZER_MAX_PLANNING_PARALLELISM =
       ConfigOptions.key("optimizer.max-planning-parallelism")

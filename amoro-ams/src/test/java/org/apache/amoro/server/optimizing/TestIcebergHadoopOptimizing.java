@@ -24,6 +24,7 @@ import org.apache.amoro.server.AmsEnvironment;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -103,7 +104,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
         partitionData);
 
     // wait Minor Optimize result
-    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    TableProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     checker.assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
 
@@ -179,7 +180,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
         partitionData);
 
     // wait Minor Optimize result
-    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    TableProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
 
@@ -221,7 +222,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
         partitionData);
 
     // wait Minor Optimize result
-    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    TableProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 2, 1);
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
 
@@ -334,7 +335,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
 
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
-    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    TableProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 9, 1);
 
     assertIds(readRecords(table), 4, 5);
@@ -368,7 +369,7 @@ public class TestIcebergHadoopOptimizing extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT, "4");
 
     // wait Minor Optimize result
-    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    TableProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.MINOR, 6, 3);
     assertIds(readRecords(table), 1, 2, 3, 4, 5, 6);
 

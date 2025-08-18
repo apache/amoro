@@ -38,9 +38,11 @@ import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
@@ -54,8 +56,6 @@ import org.apache.iceberg.Snapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -113,7 +113,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     this.tableConfiguration = TableConfigurations.parseTableConfig(properties);
     this.optimizerGroup = tableConfiguration.getOptimizingConfig().getOptimizerGroup();
     persistTableRuntime();
-    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
+    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier, optimizerGroup);
     orphanFilesCleaningMetrics = new TableOrphanFilesCleaningMetrics(tableIdentifier);
     tableSummaryMetrics = new TableSummaryMetrics(tableIdentifier);
   }
@@ -151,7 +151,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
             : tableRuntimeMeta.getTableStatus();
     this.pendingInput = tableRuntimeMeta.getPendingInput();
     this.tableSummary = tableRuntimeMeta.getTableSummary();
-    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
+    optimizingMetrics = new TableOptimizingMetrics(tableIdentifier, optimizerGroup);
     optimizingMetrics.statusChanged(optimizingStatus, this.currentStatusStartTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.MINOR, this.lastMinorOptimizingTime);
     optimizingMetrics.lastOptimizingTime(OptimizingType.MAJOR, this.lastMajorOptimizingTime);
@@ -332,7 +332,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
       taskQuotas.clear();
       taskQuotas.addAll(
           getAs(
-              OptimizingMapper.class,
+              OptimizingProcessMapper.class,
               mapper -> mapper.selectTaskQuotasByTime(tableIdentifier.getId(), minProcessId)));
     } finally {
       tableLock.unlock();
@@ -382,7 +382,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
       currentSnapshotId = doRefreshSnapshots(baseTable);
 
       if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
-        LOG.info(
+        LOG.debug(
             "Refreshing table {} with base snapshot id {} and change snapshot id {}",
             tableIdentifier,
             currentSnapshotId,
@@ -392,7 +392,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     } else {
       currentSnapshotId = doRefreshSnapshots((UnkeyedTable) table);
       if (currentSnapshotId != lastSnapshotId) {
-        LOG.info(
+        LOG.debug(
             "Refreshing table {} with base snapshot id {}", tableIdentifier, currentSnapshotId);
         return true;
       }
@@ -439,13 +439,14 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
         optimizingProcess.close();
       }
       this.optimizerGroup = newTableConfig.getOptimizingConfig().getOptimizerGroup();
+      this.optimizingMetrics.optimizerGroupChanged(optimizerGroup);
     }
     this.tableConfiguration = newTableConfig;
     return true;
   }
 
   public void addTaskQuota(TaskRuntime.TaskQuota taskQuota) {
-    doAsIgnoreError(OptimizingMapper.class, mapper -> mapper.insertTaskQuota(taskQuota));
+    doAsIgnoreError(OptimizingProcessMapper.class, mapper -> mapper.insertTaskQuota(taskQuota));
     taskQuotas.add(taskQuota);
     long validTime = System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
     this.taskQuotas.removeIf(task -> task.checkExpired(validTime));
@@ -519,7 +520,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     return tableConfiguration.getOptimizingConfig().isEnabled();
   }
 
-  public Double getTargetQuota() {
+  public double getTargetQuota() {
     return tableConfiguration.getOptimizingConfig().getTargetQuota();
   }
 
@@ -626,12 +627,23 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
   }
 
   public double calculateQuotaOccupy() {
-    return new BigDecimal(
-            (double) getQuotaTime()
-                / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME
-                / tableConfiguration.getOptimizingConfig().getTargetQuota())
-        .setScale(4, RoundingMode.HALF_UP)
-        .doubleValue();
+    double targetQuota = tableConfiguration.getOptimizingConfig().getTargetQuota();
+    int targetQuotaLimit =
+        targetQuota > 1 ? (int) targetQuota : (int) Math.ceil(targetQuota * getThreadCount());
+    return (double) getQuotaTime() / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME / targetQuotaLimit;
+  }
+
+  public int getThreadCount() {
+    List<OptimizerInstance> instances = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+    if (instances == null || instances.isEmpty()) {
+      return 1;
+    }
+    return Math.max(
+        instances.stream()
+            .filter(instance -> optimizerGroup.equals(instance.getGroupName()))
+            .mapToInt(OptimizerInstance::getThreadCount)
+            .sum(),
+        1);
   }
 
   /**

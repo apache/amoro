@@ -51,10 +51,12 @@ ams:
     runtime-data-keep-days: 30
     runtime-data-expire-interval-hours: 1
     refresh-group-interval: 30s
+    break-quota-limit-enabled: true
 
   optimizer:
     heart-beat-timeout: 1min # 60000
     task-ack-timeout: 30s # 30000
+    task-execute-timeout: 1h # 3600000
     polling-timeout: 3s # 3000
     max-planning-parallelism: 1 # default 1
 

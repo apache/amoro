@@ -87,6 +87,7 @@ public class DefaultTableRuntime extends StatedPersistentBase
     optimizingState.registerMetric(metricRegistry);
   }
 
+  @Override
   public void dispose() {
     optimizingState.dispose();
   }

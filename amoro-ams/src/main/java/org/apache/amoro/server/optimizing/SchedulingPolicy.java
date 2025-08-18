@@ -19,7 +19,6 @@
 package org.apache.amoro.server.optimizing;
 
 import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.optimizing.sorter.QuotaOccupySorter;
 import org.apache.amoro.server.optimizing.sorter.SorterFactory;
@@ -128,7 +127,6 @@ public class SchedulingPolicy {
         .filter(
             optimizingState ->
                 !isTablePending(optimizingState)
-                    || optimizingState.isBlocked(BlockableOperation.OPTIMIZE)
                     || currentTime - optimizingState.getLastPlanTime()
                         < optimizingState.getOptimizingConfig().getMinPlanInterval())
         .forEach(tableRuntime -> originalSet.add(tableRuntime.getTableIdentifier()));

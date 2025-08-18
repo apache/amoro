@@ -43,6 +43,8 @@ public class ServerTableMeta {
 
   private String tableWatermark;
   private String baseWatermark;
+  // table comment
+  private String comment;
 
   public ServerTableMeta() {}
 
@@ -166,6 +168,14 @@ public class ServerTableMeta {
     this.tableSummary = tableSummary;
   }
 
+  public String getComment() {
+    return comment;
+  }
+
+  public void setComment(String comment) {
+    this.comment = comment;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -179,12 +189,13 @@ public class ServerTableMeta {
         && Objects.equals(schema, that.schema)
         && Objects.equals(pkList, that.pkList)
         && Objects.equals(partitionColumnList, that.partitionColumnList)
-        && Objects.equals(properties, that.properties);
+        && Objects.equals(properties, that.properties)
+        && Objects.equals(comment, that.comment);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(tableIdentifier, schema, pkList, partitionColumnList, properties);
+    return Objects.hash(tableIdentifier, schema, pkList, partitionColumnList, properties, comment);
   }
 
   @Override
@@ -195,6 +206,7 @@ public class ServerTableMeta {
         .add("pkList", pkList)
         .add("partitionColumnList", partitionColumnList)
         .add("properties", properties)
+        .add("comment", comment)
         .toString();
   }
 }

@@ -18,10 +18,14 @@
 
 package org.apache.amoro.server.optimizing;
 
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.persistence.PersistentBase;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.data.Record;
@@ -87,45 +91,45 @@ public class BaseOptimizingChecker extends PersistentBase {
   }
 
   protected void assertOptimizingProcess(
-      OptimizingProcessMeta optimizingProcess,
+      TableProcessMeta optimizingProcess,
       OptimizingType optimizeType,
       int fileCntBefore,
       int fileCntAfter) {
     Assert.assertNotNull(optimizingProcess);
-    Assert.assertEquals(optimizeType, optimizingProcess.getOptimizingType());
+    Assert.assertEquals(optimizeType.name(), optimizingProcess.getProcessType());
+    MetricsSummary summary = MetricsSummary.fromMap(optimizingProcess.getSummary());
     Assert.assertEquals(
         fileCntBefore,
-        optimizingProcess.getSummary().getRewritePosDataFileCnt()
-            + optimizingProcess.getSummary().getRewriteDataFileCnt()
-            + optimizingProcess.getSummary().getEqDeleteFileCnt()
-            + optimizingProcess.getSummary().getPosDeleteFileCnt());
-    Assert.assertEquals(
-        fileCntAfter,
-        optimizingProcess.getSummary().getNewDataFileCnt()
-            + optimizingProcess.getSummary().getNewDeleteFileCnt());
+        summary.getRewritePosDataFileCnt()
+            + summary.getRewriteDataFileCnt()
+            + summary.getEqDeleteFileCnt()
+            + summary.getPosDeleteFileCnt());
+    Assert.assertEquals(fileCntAfter, summary.getNewDataFileCnt() + summary.getNewDeleteFileCnt());
   }
 
-  protected OptimizingProcessMeta waitOptimizeResult() {
+  protected TableProcessMeta waitOptimizeResult() {
     boolean success;
+    ServerTableIdentifier identifier =
+        getAs(
+            TableMetaMapper.class,
+            m ->
+                m.selectTableIdentifier(
+                    tableIdentifier.getCatalog(),
+                    tableIdentifier.getDatabase(),
+                    tableIdentifier.getTableName()));
     try {
       success =
           waitUntilFinish(
               () -> {
-                List<OptimizingProcessMeta> tableOptimizingProcesses =
+                List<TableProcessMeta> tableOptimizingProcesses =
                     getAs(
-                        OptimizingMapper.class,
-                        mapper ->
-                            mapper.selectOptimizingProcesses(
-                                tableIdentifier.getCatalog(),
-                                tableIdentifier.getDatabase(),
-                                tableIdentifier.getTableName(),
-                                null,
-                                null));
+                        TableProcessMapper.class,
+                        mapper -> mapper.listProcessMeta(identifier.getId(), null, null));
                 if (tableOptimizingProcesses == null || tableOptimizingProcesses.isEmpty()) {
                   LOG.info("optimize history is empty");
                   return Status.RUNNING;
                 }
-                Optional<OptimizingProcessMeta> any =
+                Optional<TableProcessMeta> any =
                     tableOptimizingProcesses.stream()
                         .filter(p -> p.getProcessId() > lastProcessId)
                         .filter(p -> p.getStatus().equals(ProcessStatus.SUCCESS))
@@ -137,7 +141,7 @@ public class BaseOptimizingChecker extends PersistentBase {
                   LOG.info(
                       "optimize max process id {}",
                       tableOptimizingProcesses.stream()
-                          .map(OptimizingProcessMeta::getProcessId)
+                          .map(TableProcessMeta::getProcessId)
                           .max(Comparator.naturalOrder())
                           .get());
                   return Status.RUNNING;
@@ -150,16 +154,10 @@ public class BaseOptimizingChecker extends PersistentBase {
     }
 
     if (success) {
-      List<OptimizingProcessMeta> result =
+      List<TableProcessMeta> result =
           getAs(
-                  OptimizingMapper.class,
-                  mapper ->
-                      mapper.selectOptimizingProcesses(
-                          tableIdentifier.getCatalog(),
-                          tableIdentifier.getDatabase(),
-                          tableIdentifier.getTableName(),
-                          null,
-                          null))
+                  TableProcessMapper.class,
+                  mapper -> mapper.listProcessMeta(identifier.getId(), null, null))
               .stream()
               .filter(p -> p.getProcessId() > lastProcessId)
               .filter(p -> p.getStatus().equals(ProcessStatus.SUCCESS))
@@ -181,16 +179,18 @@ public class BaseOptimizingChecker extends PersistentBase {
     } catch (InterruptedException e) {
       throw new IllegalStateException("waiting result was interrupted");
     }
-    List<OptimizingProcessMeta> tableOptimizingProcesses =
+    ServerTableIdentifier identifier =
         getAs(
-                OptimizingMapper.class,
-                mapper ->
-                    mapper.selectOptimizingProcesses(
-                        tableIdentifier.getCatalog(),
-                        tableIdentifier.getDatabase(),
-                        tableIdentifier.getTableName(),
-                        null,
-                        null))
+            TableMetaMapper.class,
+            m ->
+                m.selectTableIdentifier(
+                    tableIdentifier.getCatalog(),
+                    tableIdentifier.getDatabase(),
+                    tableIdentifier.getTableName()));
+    List<TableProcessMeta> tableOptimizingProcesses =
+        getAs(
+                TableProcessMapper.class,
+                mapper -> mapper.listProcessMeta(identifier.getId(), null, null))
             .stream()
             .filter(p -> p.getProcessId() > lastProcessId)
             .collect(Collectors.toList());

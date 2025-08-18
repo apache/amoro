@@ -34,11 +34,9 @@ import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.manager.AbstractOptimizerContainer;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.OptimizerManager;
-import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.io.MoreFiles;
 import org.apache.amoro.shade.guava32.com.google.common.io.RecursiveDeleteOption;
-import org.apache.amoro.shade.thrift.org.apache.thrift.server.TServer;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.commons.io.FileUtils;
@@ -51,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -58,8 +57,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AmsEnvironment {
 
@@ -69,9 +66,7 @@ public class AmsEnvironment {
   private static final String DEFAULT_ROOT_PATH = "/tmp/amoro_integration";
   private static final String OPTIMIZE_GROUP = "default";
   private final AmoroServiceContainer serviceContainer;
-  private Configurations serviceConfig;
   private DefaultCatalogManager catalogManager;
-  private final AtomicBoolean amsExit;
   private int tableServiceBindPort;
   private int optimizingServiceBindPort;
   private final HMSMockServer testHMS;
@@ -116,13 +111,13 @@ public class AmsEnvironment {
 
   public AmsEnvironment(String rootPath) throws Exception {
     this.rootPath = rootPath;
-    LOG.info("ams environment root path: {}", rootPath);
+    LOG.info("Initializing test AMS environment with root path: {}", rootPath);
     String path =
         Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath();
-    FileUtils.writeStringToFile(new File(rootPath + "/conf/config.yaml"), getAmsConfig());
+    FileUtils.writeStringToFile(
+        new File(rootPath + "/conf/config.yaml"), getAmsConfig(), Charset.defaultCharset());
     System.setProperty(Environments.AMORO_HOME, rootPath);
     System.setProperty("derby.init.sql.dir", path + "../classes/sql/derby/");
-    amsExit = new AtomicBoolean(false);
     serviceContainer = new AmoroServiceContainer();
     TemporaryFolder hiveDir = new TemporaryFolder();
     hiveDir.create();
@@ -140,29 +135,9 @@ public class AmsEnvironment {
 
     testHMS.start();
     startAms();
-    DynFields.UnboundField<DefaultTableService> amsTableServiceField =
-        DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "tableService").build();
     DynFields.UnboundField<DefaultCatalogManager> amsCatalogManagerField =
         DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "catalogManager").build();
     catalogManager = amsCatalogManagerField.bind(serviceContainer).get();
-    DefaultTableService tableService = amsTableServiceField.bind(serviceContainer).get();
-    DynFields.UnboundField<CompletableFuture<Boolean>> tableServiceInitializedField =
-        DynFields.builder().hiddenImpl(DefaultTableService.class, "initialized").build();
-    boolean tableServiceIsStart = false;
-    long startTime = System.currentTimeMillis();
-    while (!tableServiceIsStart) {
-      if (System.currentTimeMillis() - startTime > 10000) {
-        throw new RuntimeException("table service not start yet after 10s");
-      }
-      try {
-        tableServiceInitializedField.bind(tableService).get().get();
-        tableServiceIsStart = true;
-      } catch (RuntimeException e) {
-        LOG.info("table service not start yet");
-      }
-      Thread.sleep(1000);
-    }
-
     initCatalog();
     started = true;
   }
@@ -329,82 +304,33 @@ public class AmsEnvironment {
   }
 
   private void startAms() throws Exception {
-    Thread amsRunner =
-        new Thread(
-            () -> {
-              int retry = 10;
-              try {
-                while (true) {
-                  try {
-                    LOG.info("start ams");
-                    genThriftBindPort();
-                    DynFields.UnboundField<Configurations> field =
-                        DynFields.builder()
-                            .hiddenImpl(AmoroServiceContainer.class, "serviceConfig")
-                            .build();
-                    serviceConfig = field.bind(serviceContainer).get();
-                    serviceConfig.set(
-                        AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT, tableServiceBindPort);
-                    serviceConfig.set(
-                        AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT,
-                        optimizingServiceBindPort);
-                    serviceConfig.set(
-                        AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL,
-                        Duration.ofMillis(1000L));
-                    serviceContainer.startService();
-                    break;
-                  } catch (TTransportException e) {
-                    if (e.getCause() instanceof BindException) {
-                      LOG.error("start ams failed", e);
-                      if (retry-- < 0) {
-                        throw e;
-                      } else {
-                        Thread.sleep(1000);
-                      }
-                    } else {
-                      throw e;
-                    }
-                  } catch (Throwable e) {
-                    throw e;
-                  }
-                }
-              } catch (Throwable t) {
-                LOG.error("start ams failed", t);
-              } finally {
-                amsExit.set(true);
-              }
-            },
-            "ams-runner");
-    amsRunner.start();
-
-    DynFields.UnboundField<TServer> tableManagementServerField =
-        DynFields.builder()
-            .hiddenImpl(AmoroServiceContainer.class, "tableManagementServer")
-            .build();
-    DynFields.UnboundField<TServer> optimizingServiceServerField =
-        DynFields.builder()
-            .hiddenImpl(AmoroServiceContainer.class, "optimizingServiceServer")
-            .build();
+    int retry = 10;
     while (true) {
-      if (amsExit.get()) {
-        LOG.error("ams exit");
-        break;
-      }
-      TServer tableManagementServer = tableManagementServerField.bind(serviceContainer).get();
-      TServer optimizingServiceServer = optimizingServiceServerField.bind(serviceContainer).get();
-      if (tableManagementServer != null
-          && tableManagementServer.isServing()
-          && optimizingServiceServer != null
-          && optimizingServiceServer.isServing()) {
-        LOG.info("ams start");
-        break;
-      }
       try {
-        Thread.sleep(100);
-      } catch (InterruptedException e) {
-        LOG.warn("interrupt ams");
-        amsRunner.interrupt();
+        LOG.info("Starting test AMS...");
+        genThriftBindPort();
+        DynFields.UnboundField<Configurations> field =
+            DynFields.builder().hiddenImpl(AmoroServiceContainer.class, "serviceConfig").build();
+        Configurations serviceConfig = field.bind(serviceContainer).get();
+        serviceConfig.set(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT, tableServiceBindPort);
+        serviceConfig.set(
+            AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT, optimizingServiceBindPort);
+        serviceConfig.set(
+            AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, Duration.ofMillis(1000L));
+        serviceContainer.startService();
+        LOG.info("Started test AMS.");
         break;
+      } catch (TTransportException e) {
+        if (e.getCause() instanceof BindException) {
+          if (retry-- < 0) {
+            throw e;
+          } else {
+            LOG.error("Started test AMS failed, retry later...", e);
+            Thread.sleep(1000);
+          }
+        } else {
+          throw e;
+        }
       }
     }
   }
@@ -446,6 +372,7 @@ public class AmsEnvironment {
         + "    commit-thread-count: 10\n"
         + "    runtime-data-keep-days: 30\n"
         + "    runtime-data-expire-interval-hours: 1\n"
+        + "    break-quota-limit-enabled: true\n"
         + "\n"
         + "  database:\n"
         + "    type: \"derby\"\n"
