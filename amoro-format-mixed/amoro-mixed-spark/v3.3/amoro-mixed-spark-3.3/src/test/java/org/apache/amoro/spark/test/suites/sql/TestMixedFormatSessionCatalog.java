@@ -154,15 +154,14 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
   }
 
   @Test
-  public void testLoadLegacyTable() {
+  public void testLoadTable() {
     createTarget(
         SCHEMA,
         c -> c.withPrimaryKeySpec(PrimaryKeySpec.builderFor(SCHEMA).addColumn("id").build()));
     createViewSource(SCHEMA, source);
     Table hiveTable = loadHiveTable();
     Map<String, String> properties = Maps.newHashMap(hiveTable.getParameters());
-    properties.remove(HiveTableProperties.MIXED_TABLE_FLAG);
-    properties.put(HiveTableProperties.AMORO_TABLE_FLAG_LEGACY, "true");
+    properties.put(HiveTableProperties.MIXED_TABLE_FLAG, "true");
     hiveTable.setParameters(properties);
     try {
       CONTEXT

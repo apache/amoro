@@ -81,7 +81,7 @@ public class TableOrphanFilesCleaningMetrics extends AbstractTableMetrics {
   }
 
   public void completeOrphanDataFiles(int expected, int cleaned) {
-    expectedOrphanMetadataFilesCount.inc(expected);
+    expectedOrphanDataFilesCount.inc(expected);
     orphanDataFilesCount.inc(cleaned);
   }
 

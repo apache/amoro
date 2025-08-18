@@ -18,11 +18,13 @@
 
 package org.apache.amoro.server.scheduler.inline;
 
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.server.persistence.PersistentBase;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
-import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,17 +42,22 @@ public class OptimizingExpiringExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+  protected long getNextExecutingTime(TableRuntime tableRuntime) {
     return interval;
   }
 
   @Override
-  protected boolean enabled(DefaultTableRuntime tableRuntime) {
+  protected boolean enabled(TableRuntime tableRuntime) {
     return true;
   }
 
   @Override
-  protected void execute(DefaultTableRuntime tableRuntime) {
+  protected long getExecutorDelay() {
+    return 0;
+  }
+
+  @Override
+  protected void execute(TableRuntime tableRuntime) {
     try {
       persistency.doExpiring(tableRuntime);
     } catch (Throwable throwable) {
@@ -60,27 +67,33 @@ public class OptimizingExpiringExecutor extends PeriodicTableScheduler {
   }
 
   private class Persistency extends PersistentBase {
-    public void doExpiring(DefaultTableRuntime tableRuntime) {
+    public void doExpiring(TableRuntime tableRuntime) {
       long expireTime = System.currentTimeMillis() - keepTime;
+      long minProcessId = SnowflakeIdGenerator.getMinSnowflakeId(expireTime);
       doAsTransaction(
           () ->
               doAs(
-                  OptimizingMapper.class,
+                  TableProcessMapper.class,
                   mapper ->
-                      mapper.deleteOptimizingProcessBefore(
-                          tableRuntime.getTableIdentifier().getId(), expireTime)),
+                      mapper.deleteBefore(tableRuntime.getTableIdentifier().getId(), minProcessId)),
           () ->
               doAs(
-                  OptimizingMapper.class,
+                  OptimizingProcessMapper.class,
+                  mapper ->
+                      mapper.deleteProcessStateBefore(
+                          tableRuntime.getTableIdentifier().getId(), minProcessId)),
+          () ->
+              doAs(
+                  OptimizingProcessMapper.class,
                   mapper ->
                       mapper.deleteTaskRuntimesBefore(
-                          tableRuntime.getTableIdentifier().getId(), expireTime)),
+                          tableRuntime.getTableIdentifier().getId(), minProcessId)),
           () ->
               doAs(
-                  OptimizingMapper.class,
+                  OptimizingProcessMapper.class,
                   mapper ->
                       mapper.deleteOptimizingQuotaBefore(
-                          tableRuntime.getTableIdentifier().getId(), expireTime)));
+                          tableRuntime.getTableIdentifier().getId(), minProcessId)));
     }
   }
 }

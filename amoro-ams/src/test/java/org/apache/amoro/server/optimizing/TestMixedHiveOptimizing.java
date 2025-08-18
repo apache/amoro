@@ -22,6 +22,7 @@ import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.io.AuthenticatedHadoopFileIO;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.optimizing.OptimizingType;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Streams;
 import org.apache.amoro.table.KeyedTable;
@@ -58,7 +59,7 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, 1 + "");
     writeBase(table, rangeFromTo(1, 100, "aaa", quickDateWithZone(3)));
     // wait Full Optimize result
-    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    TableProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 1, 1);
     assertIdRange(readRecords(table), 1, 100);
     // assert file are in hive location
@@ -98,7 +99,7 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES, false + "");
     writeBase(table, rangeFromTo(1, 100, "aaa", quickDateWithZone(3)));
     // wait Full Optimize result
-    OptimizingProcessMeta optimizeHistory = checker.waitOptimizeResult();
+    TableProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 1, 1);
     assertIdRange(readRecords(table), 1, 100);
     // assert file are in hive location

@@ -20,3 +20,100 @@
 ALTER TABLE table_runtime
     ALTER COLUMN optimizing_status_start_time TYPE TIMESTAMP(3),
     ALTER COLUMN optimizing_status_start_time SET DEFAULT CURRENT_TIMESTAMP(3);
+
+-- Update processId to SnowflakeId
+UPDATE table_optimizing_process SET process_id = process_id /10 << 13;
+UPDATE task_runtime SET process_id = process_id /10 << 13;
+UPDATE optimizing_task_quota SET process_id = process_id /10 << 13;
+UPDATE table_runtime SET optimizing_process_id = optimizing_process_id /10 << 13;
+
+CREATE TABLE table_process (
+    process_id      bigserial PRIMARY KEY,
+    table_id        bigint NOT NULL,
+    status          varchar(64) NOT NULL,
+    process_type    varchar(64) NOT NULL,
+    process_stage   varchar(64) NOT NULL,
+    execution_engine varchar(64) NOT NULL,
+    create_time     timestamptz NOT NULL DEFAULT now(),
+    finish_time     timestamptz,
+    fail_message    text CHECK (length(fail_message) <= 4096),
+    summary         text,
+    CONSTRAINT table_process_unique UNIQUE (process_id)
+);
+
+CREATE INDEX table_process_table_idx ON table_process (table_id, create_time);
+
+COMMENT ON TABLE  table_process IS 'History of optimizing after each commit';
+COMMENT ON COLUMN table_process.process_id      IS 'table process id';
+COMMENT ON COLUMN table_process.table_id        IS 'table id';
+COMMENT ON COLUMN table_process.status          IS 'Table optimizing status';
+COMMENT ON COLUMN table_process.process_type    IS 'Process action type';
+COMMENT ON COLUMN table_process.process_stage   IS 'Process current stage';
+COMMENT ON COLUMN table_process.execution_engine IS 'Execution engine';
+COMMENT ON COLUMN table_process.create_time     IS 'First plan time';
+COMMENT ON COLUMN table_process.finish_time     IS 'finish time or failed time';
+COMMENT ON COLUMN table_process.fail_message    IS 'Error message after task failed';
+COMMENT ON COLUMN table_process.summary         IS 'Max change transaction id of these tasks';
+
+CREATE TABLE optimizing_process_state (
+    process_id                bigint PRIMARY KEY,
+    table_id                  bigint NOT NULL,
+    target_snapshot_id        bigint NOT NULL,
+    target_change_snapshot_id bigint NOT NULL,
+    rewrite_input             bytea,
+    from_sequence             text,
+    to_sequence               text
+);
+
+CREATE INDEX optimizing_process_state_table_idx ON optimizing_process_state (table_id);
+
+COMMENT ON TABLE  optimizing_process_state IS 'History of optimizing after each commit';
+COMMENT ON COLUMN optimizing_process_state.process_id                IS 'optimizing_procedure UUID';
+COMMENT ON COLUMN optimizing_process_state.table_id                  IS 'table id';
+COMMENT ON COLUMN optimizing_process_state.target_snapshot_id        IS 'target snapshot id';
+COMMENT ON COLUMN optimizing_process_state.target_change_snapshot_id IS 'target change snapshot id';
+COMMENT ON COLUMN optimizing_process_state.rewrite_input             IS 'rewrite files input';
+COMMENT ON COLUMN optimizing_process_state.from_sequence             IS 'from or min sequence of each partition';
+COMMENT ON COLUMN optimizing_process_state.to_sequence               IS 'to or max sequence of each partition';
+
+INSERT INTO table_process
+(process_id, table_id, status, process_type,
+ process_stage, execution_engine, create_time, finish_time, fail_message, summary)
+SELECT
+    p.process_id,
+    p.table_id,
+    p.status,
+    p.optimizing_type,
+    CASE t.optimizing_status_code
+        WHEN 700 THEN 'IDLE'
+        WHEN 600 THEN 'PENDING'
+        WHEN 500 THEN 'PLANNING'
+        WHEN 400 THEN 'COMMITTING'
+        WHEN 300 THEN 'MINOR_OPTIMIZING'
+        WHEN 200 THEN 'MAJOR_OPTIMIZING'
+        WHEN 100 THEN 'FULL_OPTIMIZING'
+    END,
+    'AMORO',
+    p.plan_time,
+    p.end_time,
+    p.fail_reason,
+    p.summary
+FROM table_optimizing_process AS p
+JOIN table_runtime AS t
+  ON p.table_id = t.table_id;
+
+INSERT INTO optimizing_process_state
+(process_id, table_id,
+ target_snapshot_id, target_change_snapshot_id,
+ rewrite_input, from_sequence, to_sequence)
+SELECT
+    process_id,
+    table_id,
+    target_snapshot_id,
+    target_change_snapshot_id,
+    rewrite_input,
+    from_sequence,
+    to_sequence
+FROM table_optimizing_process;
+
+DROP TABLE IF EXISTS table_optimizing_process;

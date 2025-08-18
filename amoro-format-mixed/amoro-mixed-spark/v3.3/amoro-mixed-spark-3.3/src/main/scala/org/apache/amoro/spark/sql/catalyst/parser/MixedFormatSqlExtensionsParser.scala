@@ -37,6 +37,7 @@ import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
+import org.apache.spark.sql.execution.command.ExplainCommand
 import org.apache.spark.sql.types.{DataType, StructType}
 
 import org.apache.amoro.spark.sql.catalyst.plans.UnresolvedMergeIntoMixedFormatTable
@@ -165,6 +166,8 @@ class MixedFormatSqlExtensionsParser(delegate: ParserInterface) extends ParserIn
     } else {
       val parsedPlan = delegate.parsePlan(sqlText)
       parsedPlan match {
+        case e: ExplainCommand =>
+          e.copy(logicalPlan = replaceMergeIntoCommands(e.logicalPlan))
         case p =>
           replaceMergeIntoCommands(p)
       }
