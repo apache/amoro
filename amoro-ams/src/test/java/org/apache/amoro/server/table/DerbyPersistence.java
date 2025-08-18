@@ -42,6 +42,8 @@ public class DerbyPersistence extends ExternalResource {
 
   private static final TemporaryFolder SINGLETON_FOLDER;
 
+  private static final int TRUNCATE_RETRY_NUM = 3;
+
   static {
     try {
       SINGLETON_FOLDER = new TemporaryFolder();
@@ -86,7 +88,20 @@ public class DerbyPersistence extends ExternalResource {
             }
           }
           for (String table : tableList) {
-            statement.execute("TRUNCATE TABLE " + table);
+            int retry = TRUNCATE_RETRY_NUM;
+            while (true) {
+              try {
+                statement.execute("TRUNCATE TABLE " + table);
+                break;
+              } catch (SQLException e) {
+                if (retry > 0) {
+                  LOG.warn("Failed to truncate {}, retry later.", table, e);
+                  retry--;
+                } else {
+                  throw e;
+                }
+              }
+            }
           }
         }
       }

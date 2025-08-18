@@ -20,6 +20,7 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.api.OptimizingTask;
@@ -35,14 +36,14 @@ import org.apache.amoro.exception.TaskNotFoundException;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
-import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.ResourceMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.OptimizerThread;
@@ -95,6 +96,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final long taskExecuteTimeout;
   private final int maxPlanningParallelism;
   private final long pollingTimeout;
+  private final boolean breakQuotaLimit;
   private final long refreshGroupInterval;
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
@@ -124,6 +126,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
     this.pollingTimeout =
         serviceConfig.get(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT).toMillis();
+    this.breakQuotaLimit =
+        serviceConfig.getBoolean(AmoroManagementConf.OPTIMIZING_BREAK_QUOTA_LIMIT_ENABLED);
     this.tableService = tableService;
     this.catalogManager = catalogManager;
     this.optimizerManager = optimizerManager;
@@ -214,7 +218,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   public OptimizingTask pollTask(String authToken, int threadId) {
     LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
-    return Optional.ofNullable(queue.pollTask(pollingTimeout))
+    return Optional.ofNullable(queue.pollTask(pollingTimeout, breakQuotaLimit))
         .map(task -> extractOptimizingTask(task, authToken, threadId, queue))
         .orElse(null);
   }
@@ -284,13 +288,13 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   @Override
   public boolean cancelProcess(long processId) throws TException {
-    OptimizingProcessMeta processMeta =
-        getAs(OptimizingMapper.class, m -> m.getOptimizingProcess(processId));
+    TableProcessMeta processMeta =
+        getAs(TableProcessMapper.class, m -> m.getProcessMeta(processId));
     if (processMeta == null) {
       return false;
     }
     long tableId = processMeta.getTableId();
-    DefaultTableRuntime tableRuntime = tableService.getRuntime(tableId);
+    DefaultTableRuntime tableRuntime = (DefaultTableRuntime) tableService.getRuntime(tableId);
     if (tableRuntime == null) {
       return false;
     }
@@ -379,17 +383,17 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private class TableRuntimeHandlerImpl extends RuntimeHandlerChain {
 
     @Override
-    public void handleStatusChanged(
-        DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus) {
-      if (!tableRuntime.getOptimizingState().getOptimizingStatus().isProcessing()) {
-        getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
-            .ifPresent(q -> q.refreshTable(tableRuntime));
+    public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+      DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
+      if (!defaultTableRuntime.getOptimizingState().getOptimizingStatus().isProcessing()) {
+        getOptionalQueueByGroup(defaultTableRuntime.getOptimizingState().getOptimizerGroup())
+            .ifPresent(q -> q.refreshTable(defaultTableRuntime));
       }
     }
 
     @Override
-    public void handleConfigChanged(
-        DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
+    public void handleConfigChanged(TableRuntime runtime, TableConfiguration originalConfig) {
+      DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       String originalGroup = originalConfig.getOptimizingConfig().getOptimizerGroup();
       if (!tableRuntime.getOptimizingState().getOptimizerGroup().equals(originalGroup)) {
         getOptionalQueueByGroup(originalGroup).ifPresent(q -> q.releaseTable(tableRuntime));
@@ -399,21 +403,27 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     @Override
-    public void handleTableAdded(AmoroTable<?> table, DefaultTableRuntime tableRuntime) {
+    public void handleTableAdded(AmoroTable<?> table, TableRuntime runtime) {
+      DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
           .ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
     @Override
-    public void handleTableRemoved(DefaultTableRuntime tableRuntime) {
+    public void handleTableRemoved(TableRuntime runtime) {
+      DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
           .ifPresent(queue -> queue.releaseTable(tableRuntime));
     }
 
     @Override
-    protected void initHandler(List<DefaultTableRuntime> tableRuntimeList) {
+    protected void initHandler(List<TableRuntime> tableRuntimeList) {
       LOG.info("OptimizerManagementService begin initializing");
-      loadOptimizingQueues(tableRuntimeList);
+      loadOptimizingQueues(
+          tableRuntimeList.stream()
+              .filter(t -> t instanceof DefaultTableRuntime)
+              .map(t -> (DefaultTableRuntime) t)
+              .collect(Collectors.toList()));
       optimizerKeeper.start();
       optimizingConfigWatcher.start();
       LOG.info("SuspendingDetector for Optimizer has been started.");

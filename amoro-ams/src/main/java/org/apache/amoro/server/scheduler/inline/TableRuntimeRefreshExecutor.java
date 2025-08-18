@@ -19,6 +19,7 @@
 package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
@@ -28,6 +29,7 @@ import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.MixedTable;
 
 /** Executor that refreshes table runtimes and evaluates optimizing status periodically. */
@@ -45,13 +47,17 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  protected boolean enabled(DefaultTableRuntime tableRuntime) {
-    return true;
+  protected boolean enabled(TableRuntime tableRuntime) {
+    return tableRuntime instanceof DefaultTableRuntime;
   }
 
-  protected long getNextExecutingTime(DefaultTableRuntime tableRuntime) {
+  @Override
+  protected long getNextExecutingTime(TableRuntime tableRuntime) {
+    DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
     return Math.min(
-        tableRuntime.getOptimizingState().getOptimizingConfig().getMinorLeastInterval() * 4L / 5,
+        defaultTableRuntime.getOptimizingState().getOptimizingConfig().getMinorLeastInterval()
+            * 4L
+            / 5,
         interval);
   }
 
@@ -77,13 +83,14 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  public void handleConfigChanged(
-      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
+    Preconditions.checkArgument(tableRuntime instanceof DefaultTableRuntime);
+    DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
     // After disabling self-optimizing, close the currently running optimizing process.
     if (originalConfig.getOptimizingConfig().isEnabled()
         && !tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
       OptimizingProcess optimizingProcess =
-          tableRuntime.getOptimizingState().getOptimizingProcess();
+          defaultTableRuntime.getOptimizingState().getOptimizingProcess();
       if (optimizingProcess != null && optimizingProcess.getStatus() == ProcessStatus.RUNNING) {
         optimizingProcess.close();
       }
@@ -91,9 +98,17 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  public void execute(DefaultTableRuntime tableRuntime) {
+  protected long getExecutorDelay() {
+    return 0;
+  }
+
+  @Override
+  public void execute(TableRuntime tableRuntime) {
     try {
-      DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
+      Preconditions.checkArgument(tableRuntime instanceof DefaultTableRuntime);
+      DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
+
+      DefaultOptimizingState optimizingState = defaultTableRuntime.getOptimizingState();
       long lastOptimizedSnapshotId = optimizingState.getLastOptimizedSnapshotId();
       long lastOptimizedChangeSnapshotId = optimizingState.getLastOptimizedChangeSnapshotId();
       AmoroTable<?> table = loadTable(tableRuntime);
@@ -104,7 +119,7 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
                   || lastOptimizedChangeSnapshotId != optimizingState.getCurrentChangeSnapshotId()))
           || (mixedTable.isUnkeyedTable()
               && lastOptimizedSnapshotId != optimizingState.getCurrentSnapshotId())) {
-        tryEvaluatingPendingInput(tableRuntime, mixedTable);
+        tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);

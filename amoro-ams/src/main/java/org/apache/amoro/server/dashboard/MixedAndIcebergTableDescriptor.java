@@ -22,6 +22,7 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.data.DataFileType;
@@ -35,12 +36,14 @@ import org.apache.amoro.server.dashboard.model.TableBasicInfo;
 import org.apache.amoro.server.dashboard.model.TableStatistics;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.TableStatCollector;
-import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.PersistentBase;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
+import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -510,22 +513,27 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
+    ServerTableIdentifier identifier =
+        getAs(
+            TableMetaMapper.class,
+            m ->
+                m.selectTableIdentifier(
+                    tableIdentifier.getCatalog(),
+                    tableIdentifier.getDatabase(),
+                    tableIdentifier.getTableName()));
+    if (identifier == null) {
+      return Pair.of(Collections.emptyList(), 0);
+    }
     int total = 0;
     // page helper is 1-based
     int pageNumber = (offset / limit) + 1;
-    List<OptimizingProcessMeta> processMetaList = Collections.emptyList();
+    List<TableProcessMeta> processMetaList = Collections.emptyList();
     try (Page<?> ignored = PageHelper.startPage(pageNumber, limit, true)) {
       processMetaList =
           getAs(
-              OptimizingMapper.class,
-              mapper ->
-                  mapper.selectOptimizingProcesses(
-                      tableIdentifier.getCatalog(),
-                      tableIdentifier.getDatabase(),
-                      tableIdentifier.getTableName(),
-                      type,
-                      status));
-      PageInfo<OptimizingProcessMeta> pageInfo = new PageInfo<>(processMetaList);
+              TableProcessMapper.class,
+              mapper -> mapper.listProcessMeta(identifier.getId(), type, status));
+      PageInfo<TableProcessMeta> pageInfo = new PageInfo<>(processMetaList);
       total = (int) pageInfo.getTotal();
       LOG.info(
           "Get optimizing processes total : {} , pageNumber:{}, limit:{}, offset:{}",
@@ -538,17 +546,19 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       }
     }
     List<Long> processIds =
-        processMetaList.stream()
-            .map(OptimizingProcessMeta::getProcessId)
-            .collect(Collectors.toList());
+        processMetaList.stream().map(TableProcessMeta::getProcessId).collect(Collectors.toList());
     Map<Long, List<OptimizingTaskMeta>> optimizingTasks =
-        getAs(OptimizingMapper.class, mapper -> mapper.selectOptimizeTaskMetas(processIds)).stream()
+        getAs(OptimizingProcessMapper.class, mapper -> mapper.selectOptimizeTaskMetas(processIds))
+            .stream()
             .collect(Collectors.groupingBy(OptimizingTaskMeta::getProcessId));
 
     LOG.info("Get {} optimizing tasks. ", optimizingTasks.size());
     return Pair.of(
         processMetaList.stream()
-            .map(p -> buildOptimizingProcessInfo(p, optimizingTasks.get(p.getProcessId())))
+            .map(
+                p ->
+                    buildOptimizingProcessInfo(
+                        identifier, p, optimizingTasks.get(p.getProcessId())))
             .collect(Collectors.toList()),
         total);
   }
@@ -568,7 +578,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     long id = Long.parseLong(processId);
     List<OptimizingTaskMeta> optimizingTaskMetaList =
         getAs(
-            OptimizingMapper.class,
+            OptimizingProcessMapper.class,
             mapper -> mapper.selectOptimizeTaskMetas(Collections.singletonList(id)));
     if (CollectionUtils.isEmpty(optimizingTaskMetaList)) {
       return Collections.emptyList();
@@ -706,7 +716,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     serverTableMeta.setTableType(table.format().toString());
     serverTableMeta.setTableIdentifier(table.id());
     serverTableMeta.setBaseLocation(table.location());
-    fillTableProperties(serverTableMeta, table.properties());
+    Map<String, String> tableProperties = Maps.newHashMap(table.properties());
+    fillTableProperties(serverTableMeta, tableProperties);
+    if (tableProperties.containsKey(TableProperties.COMMENT)) {
+      String comment = tableProperties.get(TableProperties.COMMENT);
+      serverTableMeta.setComment(comment);
+    }
+
     serverTableMeta.setPartitionColumnList(
         table.spec().fields().stream()
             .map(item -> buildPartitionFieldFromPartitionSpec(table.spec().schema(), item))
@@ -732,13 +748,11 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
               .filter(s -> table.schema().identifierFieldNames().contains(s.getField()))
               .collect(Collectors.toList()));
     }
-
     return serverTableMeta;
   }
 
   private void fillTableProperties(
-      ServerTableMeta serverTableMeta, Map<String, String> tableProperties) {
-    Map<String, String> properties = Maps.newHashMap(tableProperties);
+      ServerTableMeta serverTableMeta, Map<String, String> properties) {
     serverTableMeta.setTableWatermark(properties.remove(TableProperties.WATERMARK_TABLE));
     serverTableMeta.setBaseWatermark(properties.remove(TableProperties.WATERMARK_BASE_STORE));
     serverTableMeta.setCreateTime(
@@ -829,7 +843,9 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   private static OptimizingProcessInfo buildOptimizingProcessInfo(
-      OptimizingProcessMeta meta, List<OptimizingTaskMeta> optimizingTaskStats) {
+      ServerTableIdentifier identifier,
+      TableProcessMeta meta,
+      List<OptimizingTaskMeta> optimizingTaskStats) {
     if (meta == null) {
       return null;
     }
@@ -854,28 +870,25 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       result.setSuccessTasks(successTasks);
       result.setRunningTasks(runningTasks);
     }
-    MetricsSummary summary = meta.getSummary();
-    if (summary != null) {
-      result.setInputFiles(summary.getInputFilesStatistics());
-      result.setOutputFiles(summary.getOutputFilesStatistics());
-    }
-
+    MetricsSummary summary = MetricsSummary.fromMap(meta.getSummary());
+    result.setInputFiles(summary.getInputFilesStatistics());
+    result.setOutputFiles(summary.getOutputFilesStatistics());
     result.setTableId(meta.getTableId());
-    result.setCatalogName(meta.getCatalogName());
-    result.setDbName(meta.getDbName());
-    result.setTableName(meta.getTableName());
+    result.setCatalogName(identifier.getCatalog());
+    result.setDbName(identifier.getDatabase());
+    result.setTableName(identifier.getTableName());
 
     result.setProcessId(String.valueOf(meta.getProcessId()));
-    result.setStartTime(meta.getPlanTime());
-    result.setOptimizingType(meta.getOptimizingType().name());
+    result.setStartTime(meta.getCreateTime());
+    result.setOptimizingType(meta.getProcessType());
     result.setStatus(ProcessStatus.valueOf(meta.getStatus().name()));
-    result.setFailReason(meta.getFailReason());
+    result.setFailReason(meta.getFailMessage());
     result.setDuration(
-        meta.getEndTime() > 0
-            ? meta.getEndTime() - meta.getPlanTime()
-            : System.currentTimeMillis() - meta.getPlanTime());
-    result.setFinishTime(meta.getEndTime());
-    result.setSummary(meta.getSummary().summaryAsMap(true));
+        meta.getFinishTime() > 0
+            ? meta.getFinishTime() - meta.getCreateTime()
+            : System.currentTimeMillis() - meta.getCreateTime());
+    result.setFinishTime(meta.getFinishTime());
+    result.setSummary(meta.getSummary());
     return result;
   }
 }

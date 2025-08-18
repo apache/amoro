@@ -42,6 +42,9 @@ public class TableProperties {
   public static final String TABLE_CREATE_TIME = "table.create-timestamp";
   public static final long TABLE_CREATE_TIME_DEFAULT = 0L;
 
+  /** table comment related properties */
+  public static final String COMMENT = "comment";
+
   /** table watermark related properties */
   public static final String TABLE_EVENT_TIME_FIELD = "table.event-time-field";
 
@@ -73,7 +76,7 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_GROUP_DEFAULT = "default";
 
   public static final String SELF_OPTIMIZING_QUOTA = "self-optimizing.quota";
-  public static final double SELF_OPTIMIZING_QUOTA_DEFAULT = 0.1;
+  public static final double SELF_OPTIMIZING_QUOTA_DEFAULT = 0.5;
 
   public static final String SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER =
       "self-optimizing.execute.num-retries";
@@ -122,29 +125,6 @@ public class TableProperties {
       "self-optimizing.min-plan-interval";
   public static final long SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT = 60000;
 
-  /** deprecated table optimize related properties */
-  @Deprecated public static final String ENABLE_OPTIMIZE = "optimize.enable";
-
-  @Deprecated public static final String OPTIMIZE_GROUP = "optimize.group";
-
-  @Deprecated public static final String OPTIMIZE_RETRY_NUMBER = "optimize.num-retries";
-
-  @Deprecated public static final String OPTIMIZE_MAX_FILE_COUNT = "optimize.max-file-count";
-
-  @Deprecated
-  public static final String FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL =
-      "optimize.full.trigger.max-interval";
-
-  @Deprecated
-  public static final String MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL =
-      "optimize.minor.trigger.max-interval";
-
-  @Deprecated
-  public static final String MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT =
-      "optimize.minor.trigger.delete-file-count";
-
-  @Deprecated public static final String OPTIMIZE_QUOTA = "optimize.quota";
-
   /** table clean related properties */
   public static final String ENABLE_TABLE_EXPIRE = "table-expire.enabled";
 
@@ -152,17 +132,6 @@ public class TableProperties {
 
   public static final String CHANGE_DATA_TTL = "change.data.ttl.minutes";
   public static final long CHANGE_DATA_TTL_DEFAULT = 10080; // 7 Days
-
-  /**
-   * @deprecated Use {@link TableProperties#SNAPSHOT_KEEP_DURATION } instead; will be removed in
-   *     0.9.0
-   */
-  @Deprecated public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
-  /**
-   * @deprecated Use {@link TableProperties#SNAPSHOT_KEEP_DURATION_DEFAULT } instead; will be
-   *     removed in 0.9.0
-   */
-  @Deprecated public static final long BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = 720; // 12 Hours
 
   public static final String SNAPSHOT_KEEP_DURATION = "snapshot.keep.duration";
   public static final String SNAPSHOT_KEEP_DURATION_DEFAULT = "720min"; // 12 Hours
@@ -217,9 +186,6 @@ public class TableProperties {
           "|.*v[0-9]+\\.metadata\\.json"
           + // v123.metadata.json
           "|.*[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}-m[0-9]+\\.avro"; // UUID-m0.avro
-
-  @Deprecated public static final String ENABLE_TABLE_EXPIRE_LEGACY = "table-expire.enable";
-  @Deprecated public static final String ENABLE_ORPHAN_CLEAN_LEGACY = "clean-orphan-file.enable";
 
   /** table tag management related properties */
   public static final String ENABLE_AUTO_CREATE_TAG = "tag.auto-create.enabled";
@@ -329,8 +295,6 @@ public class TableProperties {
   public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";
-
-  @Deprecated public static final String ENABLE_LOG_STORE_LEGACY = "log-store.enable";
 
   /** table format related properties */
   public static final String TABLE_FORMAT = "table-format";

@@ -126,7 +126,7 @@ public class AutoCreateIcebergTagAction {
     Iterable<Snapshot> snapshots = table.snapshots();
     for (Snapshot snapshot : snapshots) {
       long waterMark = getWaterMark(table, snapshot);
-      if (waterMark > tagTriggerTime) {
+      if (waterMark >= tagTriggerTime) {
         return snapshot;
       }
     }

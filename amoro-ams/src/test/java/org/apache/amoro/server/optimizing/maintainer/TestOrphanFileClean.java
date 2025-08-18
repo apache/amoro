@@ -120,7 +120,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
                 tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName(),
                 getTestFormat()));
-    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable(), null);
     maintainer.cleanContentFiles(
         System.currentTimeMillis()
             - TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT * 60 * 1000,
@@ -204,7 +204,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       Assert.assertTrue(getMixedTable().io().exists(changeInvalidMetadataJson));
     }
 
-    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable(), null);
     TableIdentifier tableIdentifier = getMixedTable().id();
     TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
         new TableOrphanFilesCleaningMetrics(
@@ -297,7 +297,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       Assert.assertTrue(getMixedTable().io().exists(changeInvalidMetadataJson));
     }
 
-    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(getMixedTable());
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(getMixedTable(), null);
     TableIdentifier tableIdentifier = getMixedTable().id();
     TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
         new TableOrphanFilesCleaningMetrics(
@@ -346,9 +346,9 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     Assert.assertTrue(unkeyedTable.io().exists(file1.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file2.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file3.path()));
-    new MixedTableMaintainer(getMixedTable())
+    new MixedTableMaintainer(getMixedTable(), null)
         .cleanContentFiles(System.currentTimeMillis() + 1, orphanFilesCleaningMetrics);
-    new MixedTableMaintainer(getMixedTable())
+    new MixedTableMaintainer(getMixedTable(), null)
         .cleanMetadata(System.currentTimeMillis() + 1, orphanFilesCleaningMetrics);
     Assert.assertTrue(unkeyedTable.io().exists(file1.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file2.path()));
@@ -411,8 +411,8 @@ public class TestOrphanFileClean extends ExecutorTestBase {
             new TableOrphanFilesCleaningMetrics(
                 ServerTableIdentifier.of(baseTable.id(), getTestFormat())));
 
-    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable());
-    maintainer.cleanOrphanFiles(tableRuntime);
+    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable(), tableRuntime);
+    maintainer.cleanOrphanFiles();
 
     Assert.assertTrue(getMixedTable().io().exists(baseOrphanFileDir));
     Assert.assertTrue(getMixedTable().io().exists(baseOrphanFilePath));
@@ -420,7 +420,7 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     baseTable.updateProperties().set("gc.enabled", "true").commit();
     Mockito.when(tableRuntime.getTableConfiguration())
         .thenReturn(TableConfigurations.parseTableConfig((baseTable.properties())));
-    maintainer.cleanOrphanFiles(tableRuntime);
+    maintainer.cleanOrphanFiles();
 
     Assert.assertFalse(getMixedTable().io().exists(baseOrphanFileDir));
     Assert.assertFalse(getMixedTable().io().exists(baseOrphanFilePath));

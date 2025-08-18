@@ -61,6 +61,7 @@ export default defineComponent({
         tableFormat: '',
         hasPartition: false,
         healthScore: -1,
+        comment: ''
       } as IBaseDetailInfo,
       detailLoaded: false,
     })
@@ -69,7 +70,7 @@ export default defineComponent({
       return state.baseInfo.tableType === 'ICEBERG'
     })
 
-    const setBaseDetailInfo = (baseInfo: IBaseDetailInfo) => {
+    const setBaseDetailInfo = (baseInfo: IBaseDetailInfo  & { comment?: string }) => {
       state.detailLoaded = true
       state.baseInfo = { ...baseInfo }
     }
@@ -141,6 +142,9 @@ export default defineComponent({
         <div class="g-flex-col">
           <div class="g-flex">
             <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{ baseInfo.tableName }}</span>
+          </div>
+          <div v-if="baseInfo.comment" class="table-info g-flex-ac">
+            <p>{{ $t('Comment') }}: <span class="text-color">{{ baseInfo.comment }}</span></p>
           </div>
           <div class="table-info g-flex-ac">
             <p>{{ $t('optimizingStatus') }}: <span class="text-color">{{ baseInfo.optimizingStatus }}</span></p>
