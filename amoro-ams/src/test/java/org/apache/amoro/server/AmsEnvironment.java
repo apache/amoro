@@ -28,6 +28,7 @@ import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.optimizer.standalone.StandaloneOptimizer;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.resource.ResourceContainer;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.catalog.ServerCatalog;
@@ -286,8 +287,15 @@ public class AmsEnvironment {
         .listOptimizers()
         .forEach(
             resource -> {
-              ((AbstractOptimizerContainer) Containers.get(resource.getContainerName()))
-                  .releaseResource(resource);
+              ResourceContainer rc = Containers.get(resource.getContainerName());
+              if (!(rc instanceof AbstractOptimizerContainer)) {
+                LOG.warn(
+                    "Cannot stop optimizer on non-optimizer resource container {}.",
+                    resource.getContainerName());
+                return;
+              }
+
+              ((AbstractOptimizerContainer) rc).releaseResource(resource);
             });
   }
 
