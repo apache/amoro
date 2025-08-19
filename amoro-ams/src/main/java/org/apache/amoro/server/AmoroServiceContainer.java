@@ -144,14 +144,6 @@ public class AmoroServiceContainer {
     }
   }
 
-  private void stopOptimizingService() {
-    if (optimizingService != null) {
-      LOG.info("AMS Become follower and Stopping optimizing service...");
-      optimizingService.dispose();
-      optimizingService = null;
-    }
-  }
-
   public void waitLeaderShip() throws Exception {
     haContainer.waitLeaderShip();
   }

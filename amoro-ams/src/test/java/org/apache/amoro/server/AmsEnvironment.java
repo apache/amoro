@@ -315,6 +315,7 @@ public class AmsEnvironment {
             AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT, optimizingServiceBindPort);
         serviceConfig.set(
             AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, Duration.ofMillis(1000L));
+        serviceContainer.startRestServices();
         serviceContainer.startOptimizingService();
         LOG.info("Started test AMS.");
         break;
