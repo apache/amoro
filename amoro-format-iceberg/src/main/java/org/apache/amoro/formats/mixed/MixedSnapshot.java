@@ -45,11 +45,11 @@ public class MixedSnapshot implements TableSnapshot {
     return Longs.max(getChangeCommit(), getBaseCommit());
   }
 
-  public long getChangeCommit() {
+  private long getChangeCommit() {
     return Optional.ofNullable(changeSnapshot).map(Snapshot::timestampMillis).orElse(-1L);
   }
 
-  public long getBaseCommit() {
+  private long getBaseCommit() {
     return Optional.ofNullable(baseSnapshot).map(Snapshot::timestampMillis).orElse(-1L);
   }
 
