@@ -42,10 +42,15 @@ public class MixedSnapshot implements TableSnapshot {
 
   @Override
   public long commitTime() {
-    Long changCommit =
-        Optional.ofNullable(changeSnapshot).map(Snapshot::timestampMillis).orElse(-1L);
-    Long baseCommit = Optional.ofNullable(baseSnapshot).map(Snapshot::timestampMillis).orElse(-1L);
-    return Longs.max(changCommit, baseCommit);
+    return Longs.max(getChangeCommit(), getBaseCommit());
+  }
+
+  public long getChangeCommit() {
+    return Optional.ofNullable(changeSnapshot).map(Snapshot::timestampMillis).orElse(-1L);
+  }
+
+  public long getBaseCommit() {
+    return Optional.ofNullable(baseSnapshot).map(Snapshot::timestampMillis).orElse(-1L);
   }
 
   public Snapshot getChangeSnapshot() {
@@ -67,5 +72,21 @@ public class MixedSnapshot implements TableSnapshot {
   @Override
   public String id() {
     return changeSnapshot + "_" + baseSnapshot;
+  }
+
+  @Override
+  public String operation() {
+    if (getChangeCommit() >= getBaseCommit()) {
+      return changeSnapshot.operation();
+    }
+    return baseSnapshot.operation();
+  }
+
+  @Override
+  public long schemaId() {
+    if (getChangeCommit() >= getBaseCommit()) {
+      return changeSnapshot.schemaId();
+    }
+    return baseSnapshot.schemaId();
   }
 }
