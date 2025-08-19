@@ -43,6 +43,16 @@ public class IcebergSnapshot implements TableSnapshot {
     return String.valueOf(snapshot.snapshotId());
   }
 
+  @Override
+  public String operation() {
+    return snapshot.operation();
+  }
+
+  @Override
+  public long schemaId() {
+    return snapshot.schemaId();
+  }
+
   public Snapshot icebergSnapshot() {
     return snapshot;
   }

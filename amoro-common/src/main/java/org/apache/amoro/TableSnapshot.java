@@ -28,4 +28,10 @@ public interface TableSnapshot {
 
   /** Returns the id of this snapshot. */
   String id();
+
+  /** Returns the operation of this snapshot. */
+  String operation();
+
+  /** Returns the schema id of this snapshot. */
+  long schemaId();
 }
