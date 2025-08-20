@@ -126,15 +126,16 @@ public class AmoroServiceContainer {
                     service.dispose();
                     LOG.info("AMS service has been shut down");
                   }));
+      service.startRestServices();
       while (true) {
         try {
           service.waitLeaderShip();
-          service.startService();
+          service.startOptimizingService();
           service.waitFollowerShip();
         } catch (Exception e) {
           LOG.error("AMS start error", e);
         } finally {
-          service.dispose();
+          service.disposeOptimizingService();
         }
       }
     } catch (Throwable t) {
@@ -151,14 +152,21 @@ public class AmoroServiceContainer {
     haContainer.waitFollowerShip();
   }
 
-  public void startService() throws Exception {
+  public void startRestServices() throws Exception {
     EventsManager.getInstance();
     MetricManager.getInstance();
 
     catalogManager = new DefaultCatalogManager(serviceConfig);
     tableManager = new DefaultTableManager(serviceConfig, catalogManager);
     optimizerManager = new DefaultOptimizerManager(serviceConfig, catalogManager);
+    terminalManager = new TerminalManager(serviceConfig, catalogManager);
 
+    initHttpService();
+    startHttpService();
+    registerAmsServiceMetric();
+  }
+
+  public void startOptimizingService() throws Exception {
     tableService = new DefaultTableService(serviceConfig, catalogManager);
 
     optimizingService =
@@ -180,14 +188,9 @@ public class AmoroServiceContainer {
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
     tableManager.setTableService(tableService);
-    terminalManager = new TerminalManager(serviceConfig, catalogManager);
 
     initThriftService();
     startThriftService();
-
-    initHttpService();
-    startHttpService();
-    registerAmsServiceMetric();
   }
 
   private void addHandlerChain(RuntimeHandlerChain chain) {
@@ -196,7 +199,7 @@ public class AmoroServiceContainer {
     }
   }
 
-  public void dispose() {
+  public void disposeOptimizingService() {
     if (tableManagementServer != null && tableManagementServer.isServing()) {
       LOG.info("Stopping table management server...");
       tableManagementServer.stop();
@@ -205,6 +208,19 @@ public class AmoroServiceContainer {
       LOG.info("Stopping optimizing server...");
       optimizingServiceServer.stop();
     }
+    if (tableService != null) {
+      LOG.info("Stopping table service...");
+      tableService.dispose();
+      tableService = null;
+    }
+    if (optimizingService != null) {
+      LOG.info("Stopping optimizing service...");
+      optimizingService.dispose();
+      optimizingService = null;
+    }
+  }
+
+  public void disposeRestService() {
     if (httpServer != null) {
       LOG.info("Stopping http server...");
       try {
@@ -213,28 +229,22 @@ public class AmoroServiceContainer {
         LOG.error("Error stopping http server", e);
       }
     }
-    if (tableService != null) {
-      LOG.info("Stopping table service...");
-      tableService.dispose();
-      tableService = null;
-    }
     if (terminalManager != null) {
       LOG.info("Stopping terminal manager...");
       terminalManager.dispose();
       terminalManager = null;
     }
-    if (optimizingService != null) {
-      LOG.info("Stopping optimizing service...");
-      optimizingService.dispose();
-      optimizingService = null;
-    }
-
     if (amsServiceMetrics != null) {
       amsServiceMetrics.unregister();
     }
 
     EventsManager.dispose();
     MetricManager.dispose();
+  }
+
+  public void dispose() {
+    disposeOptimizingService();
+    disposeRestService();
   }
 
   private void initConfig() throws Exception {
