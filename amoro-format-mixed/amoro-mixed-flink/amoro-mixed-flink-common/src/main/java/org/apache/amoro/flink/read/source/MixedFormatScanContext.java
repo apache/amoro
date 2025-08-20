@@ -181,7 +181,7 @@ public class MixedFormatScanContext extends ScanContext implements Serializable 
         FlinkReadOptions.MAX_ALLOWED_PLANNING_FAILURES_OPTION.defaultValue();
     private String watermarkColumn = FlinkReadOptions.WATERMARK_COLUMN_OPTION.defaultValue();
     private TimeUnit watermarkColumnTimeUnit =
-            FlinkReadOptions.WATERMARK_COLUMN_TIME_UNIT_OPTION.defaultValue();
+        FlinkReadOptions.WATERMARK_COLUMN_TIME_UNIT_OPTION.defaultValue();
     private String branch = FlinkReadOptions.BRANCH.defaultValue();
 
     private String tag = FlinkReadOptions.TAG.defaultValue();
