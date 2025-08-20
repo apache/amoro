@@ -134,6 +134,10 @@
                     <groupId>org.rocksdb</groupId>
                     <artifactId>rocksdbjni</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -183,6 +187,11 @@
                     <artifactId>jackson-mapper-asl</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-arrow</artifactId>
         </dependency>
 
         <dependency>
