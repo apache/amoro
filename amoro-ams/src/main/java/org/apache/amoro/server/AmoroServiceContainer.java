@@ -42,8 +42,8 @@ import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.resource.ContainerMetadata;
+import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.DefaultOptimizerManager;
-import org.apache.amoro.server.resource.InternalContainers;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.scheduler.inline.InlineTableExecutors;
 import org.apache.amoro.server.table.DefaultTableManager;
@@ -533,7 +533,7 @@ public class AmoroServiceContainer {
           containerList.add(container);
         }
       }
-      InternalContainers.init(containerList);
+      Containers.init(containerList);
     }
   }
 
