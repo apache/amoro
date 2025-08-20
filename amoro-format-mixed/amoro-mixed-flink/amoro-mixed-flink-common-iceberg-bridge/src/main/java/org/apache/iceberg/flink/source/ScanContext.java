@@ -265,11 +265,11 @@ public class ScanContext implements Serializable {
           tag == null,
           String.format("Cannot scan table using ref %s configured for streaming reader", tag));
       Preconditions.checkArgument(
-              snapshotId == null, "Cannot set snapshot-id option for streaming reader");
+          snapshotId == null, "Cannot set snapshot-id option for streaming reader");
       Preconditions.checkArgument(
-              asOfTimestamp == null, "Cannot set as-of-timestamp option for streaming reader");
+          asOfTimestamp == null, "Cannot set as-of-timestamp option for streaming reader");
       Preconditions.checkArgument(
-              endSnapshotId == null, "Cannot set end-snapshot-id option for streaming reader");
+          endSnapshotId == null, "Cannot set end-snapshot-id option for streaming reader");
       Preconditions.checkArgument(endTag == null, "Cannot set end-tag option for streaming reader");
     }
     Preconditions.checkArgument(
@@ -498,7 +498,7 @@ public class ScanContext implements Serializable {
         FlinkReadOptions.MAX_ALLOWED_PLANNING_FAILURES_OPTION.defaultValue();
     private String watermarkColumn = FlinkReadOptions.WATERMARK_COLUMN_OPTION.defaultValue();
     private TimeUnit watermarkColumnTimeUnit =
-            FlinkReadOptions.WATERMARK_COLUMN_TIME_UNIT_OPTION.defaultValue();
+        FlinkReadOptions.WATERMARK_COLUMN_TIME_UNIT_OPTION.defaultValue();
 
     private Builder() {}
 
