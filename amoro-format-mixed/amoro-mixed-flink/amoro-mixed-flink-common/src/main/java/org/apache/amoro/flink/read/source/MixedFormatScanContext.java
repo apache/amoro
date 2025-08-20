@@ -33,9 +33,11 @@ import org.apache.iceberg.flink.source.StreamingStartingStrategy;
 
 import java.io.Serializable;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /** This is an mixed-format source scan context. */
 public class MixedFormatScanContext extends ScanContext implements Serializable {
@@ -64,10 +66,13 @@ public class MixedFormatScanContext extends ScanContext implements Serializable 
         builder.filters,
         builder.limit,
         builder.includeColumnStats,
+        builder.includeStatsForColumns,
         builder.exposeLocality,
         builder.planParallelism,
         builder.maxPlanningSnapshotCount,
         builder.maxAllowedPlanningFailures,
+        builder.watermarkColumn,
+        builder.watermarkColumnTimeUnit,
         builder.branch,
         builder.tag,
         builder.startTag,
@@ -166,6 +171,7 @@ public class MixedFormatScanContext extends ScanContext implements Serializable 
     private long limit = FlinkReadOptions.LIMIT_OPTION.defaultValue();
     private boolean includeColumnStats =
         FlinkReadOptions.INCLUDE_COLUMN_STATS_OPTION.defaultValue();
+    private Collection<String> includeStatsForColumns = null;
     private boolean exposeLocality;
     private Integer planParallelism =
         FlinkConfigOptions.TABLE_EXEC_ICEBERG_WORKER_POOL_SIZE.defaultValue();
@@ -173,7 +179,9 @@ public class MixedFormatScanContext extends ScanContext implements Serializable 
 
     private int maxAllowedPlanningFailures =
         FlinkReadOptions.MAX_ALLOWED_PLANNING_FAILURES_OPTION.defaultValue();
-
+    private String watermarkColumn = FlinkReadOptions.WATERMARK_COLUMN_OPTION.defaultValue();
+    private TimeUnit watermarkColumnTimeUnit =
+            FlinkReadOptions.WATERMARK_COLUMN_TIME_UNIT_OPTION.defaultValue();
     private String branch = FlinkReadOptions.BRANCH.defaultValue();
 
     private String tag = FlinkReadOptions.TAG.defaultValue();
