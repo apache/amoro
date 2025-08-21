@@ -642,6 +642,11 @@ public class OptimizingQueue extends PersistentBase {
           .sum();
     }
 
+    @Override
+    public List<OptimizingTaskMeta> getProcessTasks() {
+      return taskMap.values().stream().map(task -> task.getTaskMeta()).collect(Collectors.toList());
+    }
+
     public int getActualQuota() {
       return optimizingTasksMap
           .getOrDefault(optimizingState.getTableIdentifier(), new AtomicInteger(0))

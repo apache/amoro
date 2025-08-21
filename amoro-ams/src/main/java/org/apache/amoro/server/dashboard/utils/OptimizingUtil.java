@@ -72,7 +72,8 @@ public class OptimizingUtil {
     long quotaOccupy = calculateQuotaOccupy(processTasks, quotas, startTime, endTime);
     double quotaOccupation =
         (double) quotaOccupy
-            / (AmoroServiceConstants.QUOTA_LOOK_BACK_TIME * tableOptimizeInfo.getQuota());
+            / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME
+            / tableOptimizeInfo.getQuota();
     tableOptimizeInfo.setQuotaOccupation(
         BigDecimal.valueOf(quotaOccupation).setScale(4, RoundingMode.HALF_UP).doubleValue());
 
@@ -101,7 +102,7 @@ public class OptimizingUtil {
   }
 
   @VisibleForTesting
-  static long calculateQuotaOccupy(
+  public static long calculateQuotaOccupy(
       List<OptimizingTaskMeta> processTasks,
       List<TaskRuntime.TaskQuota> quotas,
       long startTime,
