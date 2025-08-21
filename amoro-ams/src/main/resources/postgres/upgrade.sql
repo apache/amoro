@@ -27,6 +27,32 @@ UPDATE task_runtime SET process_id = process_id /10 << 13;
 UPDATE optimizing_task_quota SET process_id = process_id /10 << 13;
 UPDATE table_runtime SET optimizing_process_id = optimizing_process_id /10 << 13;
 
+CREATE TABLE table_process_state
+(
+    process_id   BIGINT NOT NULL,
+    action       VARCHAR(16) NOT NULL,
+    table_id     BIGINT NOT NULL,
+    retry_num    INT DEFAULT NULL,
+    status       VARCHAR(10) NOT NULL,
+    start_time   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time     TIMESTAMP DEFAULT NULL,
+    fail_reason  VARCHAR(4096) DEFAULT NULL,
+    summary      TEXT,
+    PRIMARY KEY (process_id)
+);
+CREATE INDEX table_process_state_index ON table_process_state (table_id, start_time);
+
+COMMENT ON TABLE table_process_state IS 'History of optimizing after each commit';
+
+COMMENT ON COLUMN table_process_state.process_id IS 'optimizing_procedure UUID';
+COMMENT ON COLUMN table_process_state.action IS 'process action';
+COMMENT ON COLUMN table_process_state.retry_num IS 'Retry times';
+COMMENT ON COLUMN table_process_state.status IS 'Direct to TableOptimizingStatus';
+COMMENT ON COLUMN table_process_state.start_time IS 'First plan time';
+COMMENT ON COLUMN table_process_state.end_time IS 'finish time or failed time';
+COMMENT ON COLUMN table_process_state.fail_reason IS 'Error message after task failed';
+COMMENT ON COLUMN table_process_state.summary IS 'state summary, usually a map';
+
 CREATE TABLE table_process (
     process_id      bigserial PRIMARY KEY,
     table_id        bigint NOT NULL,
