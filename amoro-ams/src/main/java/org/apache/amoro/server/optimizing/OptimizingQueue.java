@@ -141,7 +141,7 @@ public class OptimizingQueue extends PersistentBase {
               "Close the committing process {} on table {}",
               process.getProcessId(),
               tableRuntime.getTableIdentifier());
-          process.close();
+          process.close(false);
         }
       }
       if (!optimizingState.getOptimizingStatus().isProcessing()) {
@@ -152,7 +152,7 @@ public class OptimizingQueue extends PersistentBase {
     } else {
       OptimizingProcess process = optimizingState.getOptimizingProcess();
       if (process != null) {
-        process.close();
+        process.close(false);
       }
     }
   }
@@ -182,7 +182,7 @@ public class OptimizingQueue extends PersistentBase {
             .filter(process -> process.optimizingState == tableRuntime.getOptimizingState())
             .collect(Collectors.toList());
     for (OptimizingProcess process : processList) {
-      process.close();
+      process.close(false);
       clearProcess(process);
     }
     LOG.info(
@@ -513,15 +513,19 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     @Override
-    public void close() {
+    public void close(boolean needCommit) {
       lock.lock();
       try {
         if (this.status != ProcessStatus.RUNNING) {
           return;
         }
-        this.status = ProcessStatus.CLOSED;
-        this.endTime = System.currentTimeMillis();
-        persistAndSetCompleted(false);
+        if (optimizingState.isCommitOnPartialSuccess() && needCommit) {
+          optimizingState.beginCommitting();
+        } else {
+          this.status = ProcessStatus.CLOSED;
+          this.endTime = System.currentTimeMillis();
+          persistAndSetCompleted(false);
+        }
       } finally {
         lock.unlock();
       }
@@ -569,11 +573,14 @@ public class OptimizingQueue extends PersistentBase {
                 taskRuntime.getFailReason());
             retryTask(taskRuntime);
           } else {
-            if (containSuccessTasks()) {
+            if (optimizingState.isCommitOnPartialSuccess()
+                && optimizingState.getOptimizingStatus().isProcessing()
+                && optimizingState.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
               LOG.info(
                   "Task {} has reached the max execute retry count. Process {} cancels unfinished tasks and commits SUCCESS tasks.",
                   taskRuntime.getTaskId(),
                   processId);
+              failedReason = taskRuntime.getFailReason();
               optimizingState.beginCommitting();
             } else {
               LOG.info(
@@ -661,13 +668,11 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     @Override
-    public boolean containSuccessTasks() {
-      return getSuccessTasks().size() > 0;
-    }
-
-    @Override
-    public void commit(boolean isClosed) {
-      List<TaskRuntime<RewriteStageTask>> successTasks = getSuccessTasks();
+    public void commit() {
+      List<TaskRuntime<RewriteStageTask>> successTasks =
+          taskMap.values().stream()
+              .filter(task -> task.getStatus() == Status.SUCCESS)
+              .collect(Collectors.toList());
       LOG.debug(
           "{} get {} tasks of {} partitions to commit",
           optimizingState.getTableIdentifier(),
@@ -690,12 +695,16 @@ public class OptimizingQueue extends PersistentBase {
         try {
           hasCommitted = true;
           buildCommit().commit();
-          status = isClosed ? ProcessStatus.CLOSED : ProcessStatus.SUCCESS;
+          if (allTasksPrepared()) {
+            status = ProcessStatus.SUCCESS;
+          } else if (taskMap.values().stream()
+              .anyMatch(task -> task.getStatus() == TaskRuntime.Status.FAILED)) {
+            status = ProcessStatus.FAILED;
+          } else {
+            status = ProcessStatus.CLOSED;
+          }
           endTime = System.currentTimeMillis();
-          persistAndSetCompleted(
-              !isClosed
-                  && taskMap.values().stream()
-                      .noneMatch(task -> task.getStatus() == TaskRuntime.Status.FAILED));
+          persistAndSetCompleted(status == ProcessStatus.SUCCESS);
         } catch (PersistenceException e) {
           LOG.warn(
               "{} failed to persist process completed, will retry next commit",
@@ -731,21 +740,15 @@ public class OptimizingQueue extends PersistentBase {
                   .loadTable(optimizingState.getTableIdentifier().getIdentifier())
                   .originalTable();
       if (table.isUnkeyedTable()) {
-        return new UnKeyedTableCommit(targetSnapshotId, table, getSuccessTasks());
+        return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
       } else {
         return new KeyedTableCommit(
             table,
-            getSuccessTasks(),
+            taskMap.values(),
             targetSnapshotId,
             convertPartitionSequence(table, fromSequence),
             convertPartitionSequence(table, toSequence));
       }
-    }
-
-    private List<TaskRuntime<RewriteStageTask>> getSuccessTasks() {
-      return taskMap.values().stream()
-          .filter(task -> task.getStatus() == Status.SUCCESS)
-          .collect(Collectors.toList());
     }
 
     private StructLikeMap<Long> convertPartitionSequence(
@@ -842,7 +845,7 @@ public class OptimizingQueue extends PersistentBase {
             "Load task inputs failed, close the optimizing process : {}",
             optimizingProcess.getProcessId(),
             e);
-        optimizingProcess.close();
+        optimizingProcess.close(false);
       }
     }
 

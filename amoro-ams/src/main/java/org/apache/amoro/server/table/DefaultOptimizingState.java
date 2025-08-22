@@ -188,7 +188,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     tableLock.lock();
     try {
       doAsTransaction(
-          () -> Optional.ofNullable(optimizingProcess).ifPresent(OptimizingProcess::close),
+          () -> Optional.ofNullable(optimizingProcess).ifPresent(process -> process.close(false)),
           () ->
               doAs(
                   TableMetaMapper.class,
@@ -344,12 +344,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
         () -> {
           OptimizingStatus originalStatus = optimizingStatus;
           OptimizingType processType = optimizingProcess.getOptimizingType();
-          boolean isSuccessful =
-              success
-                  || optimizingProcess.getStatus() == ProcessStatus.SUCCESS
-                  || (optimizingProcess.getStatus() == ProcessStatus.CLOSED
-                      && optimizingProcess.containSuccessTasks());
-          if (isSuccessful) {
+          if (success) {
             lastOptimizedSnapshotId = optimizingProcess.getTargetSnapshotId();
             lastOptimizedChangeSnapshotId = optimizingProcess.getTargetChangeSnapshotId();
             if (processType == OptimizingType.MINOR) {
@@ -360,8 +355,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
               lastFullOptimizingTime = optimizingProcess.getPlanTime();
             }
           }
-          optimizingMetrics.processComplete(
-              processType, isSuccessful, optimizingProcess.getPlanTime());
+          optimizingMetrics.processComplete(processType, success, optimizingProcess.getPlanTime());
           updateOptimizingStatus(OptimizingStatus.IDLE);
           optimizingProcess = null;
           persistUpdatingRuntime();
@@ -442,7 +436,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     if (!Objects.equals(
         this.optimizerGroup, newTableConfig.getOptimizingConfig().getOptimizerGroup())) {
       if (optimizingProcess != null) {
-        optimizingProcess.close();
+        optimizingProcess.close(false);
       }
       this.optimizerGroup = newTableConfig.getOptimizingConfig().getOptimizerGroup();
       this.optimizingMetrics.optimizerGroupChanged(optimizerGroup);
@@ -524,6 +518,10 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
 
   public boolean isOptimizingEnabled() {
     return tableConfiguration.getOptimizingConfig().isEnabled();
+  }
+
+  public boolean isCommitOnPartialSuccess() {
+    return tableConfiguration.getOptimizingConfig().isCommitOnPartialSuccess();
   }
 
   public double getTargetQuota() {

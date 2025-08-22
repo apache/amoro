@@ -72,6 +72,10 @@ public class TableProperties {
 
   public static final boolean ENABLE_SELF_OPTIMIZING_DEFAULT = true;
 
+  public static final String SELF_OPTIMIZING_COMMIT_ON_PARTIAL_SUCCESS =
+      "self-optimizing.commit-on-partial-success";
+  public static final boolean SELF_OPTIMIZING_COMMIT_ON_PARTIAL_SUCCESS_DEFAULT = true;
+
   public static final String SELF_OPTIMIZING_GROUP = "self-optimizing.group";
   public static final String SELF_OPTIMIZING_GROUP_DEFAULT = "default";
 
