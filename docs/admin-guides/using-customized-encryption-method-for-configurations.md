@@ -2,11 +2,11 @@
 title: "Using Customized Encryption Method for Configurations"
 url: using-customized-encryption-method
 aliases:
-- "admin-guides/using-customized-encryption-method"
+    - "admin-guides/using-customized-encryption-method"
 menu:
-main:
-parent: Admin Guides
-weight: 400
+    main:
+        parent: Admin Guides
+        weight: 400
 ---
 <!--
  - Licensed to the Apache Software Foundation (ASF) under one or more
