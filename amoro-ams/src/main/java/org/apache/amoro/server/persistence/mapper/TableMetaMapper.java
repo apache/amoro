@@ -337,7 +337,7 @@ public interface TableMetaMapper {
           + " last_full_optimizing_time = #{runtime.lastFullOptimizingTime,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
           + " optimizing_status_code = #{runtime.optimizingStatus,"
-          + "typeHandler=org.apache.amoro.server.persistence.converter.OptimizingStatusConverter},"
+          + " typeHandler=org.apache.amoro.server.persistence.converter.OptimizingStatusConverter},"
           + " optimizing_status_start_time = #{runtime.currentStatusStartTime,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
           + " optimizing_process_id = #{runtime.processId},"
@@ -388,10 +388,13 @@ public interface TableMetaMapper {
           + " a.current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId,"
           + " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time,"
           + " a.optimizing_status_code, a.optimizing_status_start_time, a.optimizing_process_id,"
-          + " a.optimizer_group, a.table_config, a.pending_input, a.table_summary, b.optimizing_type, b.target_snapshot_id,"
-          + " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a"
+          + " a.optimizer_group, a.table_config, a.pending_input, a.table_summary, "
+          + " p.process_type, s.target_snapshot_id,"
+          + " s.target_change_snapshot_id, p.create_time, s.from_sequence, s.to_sequence "
+          + " FROM table_runtime a "
           + " INNER JOIN table_identifier i ON a.table_id = i.table_id "
-          + " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id")
+          + " LEFT JOIN table_process p ON a.optimizing_process_id = p.process_id "
+          + " LEFT JOIN optimizing_process_state s ON a.optimizing_process_id = s.process_id")
   @Results(
       id = "tableRuntimeMeta",
       value = {
@@ -440,10 +443,13 @@ public interface TableMetaMapper {
             property = "tableSummary",
             column = "table_summary",
             typeHandler = JsonObjectConverter.class),
-        @Result(property = "optimizingType", column = "optimizing_type"),
+        @Result(property = "optimizingType", column = "process_type"),
         @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
         @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
-        @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
+        @Result(
+            property = "planTime",
+            column = "create_time",
+            typeHandler = Long2TsConverter.class),
         @Result(
             property = "fromSequence",
             column = "from_sequence",
@@ -460,10 +466,13 @@ public interface TableMetaMapper {
           + " a.current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId,"
           + " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time,"
           + " a.optimizing_status_code, a.optimizing_status_start_time, a.optimizing_process_id,"
-          + " a.optimizer_group, a.table_config, a.pending_input, a.table_summary, b.optimizing_type, b.target_snapshot_id,"
-          + " b.target_change_snapshot_id, b.plan_time, b.from_sequence, b.to_sequence FROM table_runtime a"
+          + " a.optimizer_group, a.table_config, a.pending_input, a.table_summary, "
+          + " p.process_type, s.target_snapshot_id,"
+          + " s.target_change_snapshot_id, p.create_time, s.from_sequence, s.to_sequence "
+          + " FROM table_runtime a "
           + " INNER JOIN table_identifier i ON a.table_id = i.table_id "
-          + " LEFT JOIN table_optimizing_process b ON a.optimizing_process_id = b.process_id "
+          + " LEFT JOIN table_process p ON a.optimizing_process_id = p.process_id "
+          + " LEFT JOIN optimizing_process_state s ON a.optimizing_process_id = s.process_id"
           + " WHERE a.table_id = #{tableId}")
   @ResultMap("tableRuntimeMeta")
   TableRuntimeMeta getTableRuntimeMeta(@Param("tableId") long tableId);

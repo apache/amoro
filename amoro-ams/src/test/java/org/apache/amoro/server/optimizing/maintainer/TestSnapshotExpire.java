@@ -92,7 +92,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
   public void testExpireChangeTableFiles() {
     Assume.assumeTrue(isKeyedTable());
     KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
-    testKeyedTable.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    testKeyedTable.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0").commit();
     testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
     List<DataFile> s1Files = insertChangeDataFiles(testKeyedTable, 1);
     long l = testKeyedTable.changeTable().currentSnapshot().timestampMillis();
@@ -212,7 +212,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     writeAndCommitBaseStore(table);
     Snapshot lastSnapshot = table.currentSnapshot();
 
-    table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    table.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0").commit();
     DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
     DefaultOptimizingState optimizingState = Mockito.mock(DefaultOptimizingState.class);
     Mockito.when(tableRuntime.getOptimizingState()).thenReturn(optimizingState);
@@ -254,7 +254,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     writeAndCommitBaseStore(table);
     Snapshot lastSnapshot = table.currentSnapshot();
 
-    table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    table.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0").commit();
     DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
     DefaultOptimizingState optimizingState = Mockito.mock(DefaultOptimizingState.class);
     Mockito.when(tableRuntime.getOptimizingState()).thenReturn(optimizingState);
@@ -287,7 +287,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
             : getMixedTable().asUnkeyedTable();
     table.newAppend().commit();
     table.newAppend().commit();
-    table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    table.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0").commit();
 
     DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
     DefaultOptimizingState optimizingState = Mockito.mock(DefaultOptimizingState.class);
@@ -332,7 +332,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
         isKeyedTable()
             ? getMixedTable().asKeyedTable().baseTable()
             : getMixedTable().asUnkeyedTable();
-    table.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    table.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0").commit();
     List<DataFile> dataFiles = writeAndCommitBaseStore(table);
 
     DeleteFiles deleteFiles = table.newDelete();
@@ -356,7 +356,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assume.assumeTrue(isKeyedTable());
     KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
 
-    testKeyedTable.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    testKeyedTable.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0").commit();
     testKeyedTable.updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
 
     List<DataFile> s1Files = insertChangeDataFiles(testKeyedTable, 1);
@@ -418,7 +418,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assume.assumeTrue(isKeyedTable());
     KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
     BaseTable baseTable = testKeyedTable.baseTable();
-    testKeyedTable.updateProperties().set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0").commit();
+    testKeyedTable.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0").commit();
     // commit an empty snapshot and its statistic file
     baseTable.newAppend().commit();
     Snapshot s1 = baseTable.currentSnapshot();
@@ -522,10 +522,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
         .thenReturn(ServerTableIdentifier.of(testUnkeyedTable.id(), getTestFormat()));
     Mockito.when(tableRuntime.getOptimizingState().getOptimizingStatus())
         .thenReturn(OptimizingStatus.IDLE);
-    testUnkeyedTable
-        .updateProperties()
-        .set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0")
-        .commit();
+    testUnkeyedTable.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0").commit();
     Mockito.when(tableRuntime.getTableConfiguration())
         .thenReturn(TableConfigurations.parseTableConfig(testUnkeyedTable.properties()));
 

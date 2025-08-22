@@ -195,23 +195,24 @@ public class MixedCatalog extends AbstractCatalog {
   public CatalogBaseTable getTable(ObjectPath tablePath)
       throws TableNotExistException, CatalogException {
     TableIdentifier tableIdentifier = getTableIdentifier(tablePath);
-    if (!internalCatalog.tableExists(tableIdentifier)) {
+    try {
+      MixedTable table = internalCatalog.loadTable(tableIdentifier);
+      Schema mixedTableSchema = table.schema();
+
+      Map<String, String> mixedTableProperties = Maps.newHashMap(table.properties());
+      fillTableProperties(mixedTableProperties);
+      fillTableMetaPropertiesIfLookupLike(mixedTableProperties, tableIdentifier);
+
+      List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
+      return CatalogTable.of(
+          toSchema(mixedTableSchema, MixedFormatUtils.getPrimaryKeys(table), mixedTableProperties)
+              .toSchema(),
+          null,
+          partitionKeys,
+          mixedTableProperties);
+    } catch (NoSuchTableException e) {
       throw new TableNotExistException(this.getName(), tablePath);
     }
-    MixedTable table = internalCatalog.loadTable(tableIdentifier);
-    Schema mixedTableSchema = table.schema();
-
-    Map<String, String> mixedTableProperties = Maps.newHashMap(table.properties());
-    fillTableProperties(mixedTableProperties);
-    fillTableMetaPropertiesIfLookupLike(mixedTableProperties, tableIdentifier);
-
-    List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
-    return CatalogTable.of(
-        toSchema(mixedTableSchema, MixedFormatUtils.getPrimaryKeys(table), mixedTableProperties)
-            .toSchema(),
-        null,
-        partitionKeys,
-        mixedTableProperties);
   }
 
   /**
