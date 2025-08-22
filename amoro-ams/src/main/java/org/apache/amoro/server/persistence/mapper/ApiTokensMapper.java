@@ -19,12 +19,27 @@
 package org.apache.amoro.server.persistence.mapper;
 
 import org.apache.amoro.server.dashboard.model.ApiTokens;
+import org.apache.amoro.server.persistence.converter.Long2TsConverter;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
 
 public interface ApiTokensMapper {
   String TABLE_NAME = "api_tokens";
+
+  @Select("SELECT id, apikey, apply_time FROM " + TABLE_NAME)
+  @Results({
+    @Result(property = "id", column = "id"),
+    @Result(property = "apikey", column = "apikey"),
+    @Result(property = "secret", column = "secret"),
+    @Result(property = "applyTime", column = "apply_time", typeHandler = Long2TsConverter.class)
+  })
+  List<ApiTokens> getApiTokens();
 
   @Select("SELECT secret FROM " + TABLE_NAME + " WHERE apikey = #{apikey}")
   String getSecretByKey(String apikey);
@@ -32,10 +47,14 @@ public interface ApiTokensMapper {
   @Insert(
       "INSERT INTO "
           + TABLE_NAME
-          + " (apikey, secret, apply_time) VALUES(#{apiTokens.apikey}, "
-          + "#{apiTokens.secret}, #{apiTokens.applyTime})")
+          + " (apikey, secret, apply_time) VALUES(#{apiTokens.apikey},"
+          + " #{apiTokens.secret},"
+          + " #{apiTokens.applyTime, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter})")
   void insert(@Param("apiTokens") ApiTokens apiTokens);
 
-  @Insert("DELETE FROM " + TABLE_NAME + " WHERE id = #{id}")
+  @Delete("DELETE FROM " + TABLE_NAME + " WHERE id = #{id}")
   void delToken(@Param("id") Integer id);
+
+  @Delete("DELETE FROM " + TABLE_NAME + " WHERE apikey = #{apikey}")
+  void delTokenByKey(@Param("apikey") String apikey);
 }

@@ -37,6 +37,7 @@ import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.catalog.CatalogManager;
+import org.apache.amoro.server.dashboard.controller.ApiTokenController;
 import org.apache.amoro.server.dashboard.controller.CatalogController;
 import org.apache.amoro.server.dashboard.controller.HealthCheckController;
 import org.apache.amoro.server.dashboard.controller.LoginController;
@@ -49,12 +50,10 @@ import org.apache.amoro.server.dashboard.controller.TableController;
 import org.apache.amoro.server.dashboard.controller.TerminalController;
 import org.apache.amoro.server.dashboard.controller.VersionController;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
-import org.apache.amoro.server.dashboard.utils.ParamSignatureCalculator;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,9 +63,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -88,6 +84,7 @@ public class DashboardServer {
   private final TerminalController terminalController;
   private final VersionController versionController;
   private final OverviewController overviewController;
+  private final ApiTokenController apiTokenController;
 
   private final String authType;
   private final String basicAuthUser;
@@ -115,6 +112,8 @@ public class DashboardServer {
     this.versionController = new VersionController();
     OverviewManager manager = new OverviewManager(serviceConfig);
     this.overviewController = new OverviewController(manager);
+    APITokenManager apiTokenManager = new APITokenManager();
+    this.apiTokenController = new ApiTokenController(apiTokenManager);
 
     this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
     this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
@@ -367,6 +366,17 @@ public class DashboardServer {
             get("/dataSize", overviewController::getDataSizeHistory);
             get("/top", overviewController::getTopTables);
           });
+
+      // api token apis
+      path(
+          "/api/token",
+          () -> {
+            post("/create", apiTokenController::createApiToken);
+            post("/delete", apiTokenController::deleteApiToken);
+            get("/info", apiTokenController::getApiTokens);
+            post("/calculate/signature", apiTokenController::calculateSignature);
+            post("/calculate/encryptString", apiTokenController::getEncryptStringFromQueryParam);
+          });
     };
   }
 
@@ -392,8 +402,7 @@ public class DashboardServer {
             "Failed to authenticate via basic authentication for url:" + uriPath);
       }
     } else {
-      checkApiToken(
-          ctx.url(), ctx.queryParam("apiKey"), ctx.queryParam("signature"), ctx.queryParamMap());
+      apiTokenController.checkApiToken(ctx);
     }
   }
 
@@ -433,6 +442,8 @@ public class DashboardServer {
     "/openapi-ui",
     "/openapi-ui/*",
     "/swagger-docs",
+    "/api/ams/v1/api/token/calculate/signature",
+    "/api/ams/v1/api/token/calculate/encryptString",
     RestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
   };
 
@@ -449,54 +460,5 @@ public class DashboardServer {
       }
     }
     return false;
-  }
-
-  private void checkApiToken(
-      String requestUrl, String apiKey, String signature, Map<String, List<String>> params) {
-    String plainText;
-    String encryptString;
-    String signCal;
-
-    try {
-      if (apiKey == null || signature == null) {
-        throw new SignatureCheckException("API key or signature is missing");
-      }
-      APITokenManager apiTokenService = new APITokenManager();
-      String secret = apiTokenService.getSecretByKey(apiKey);
-
-      if (secret == null) {
-        throw new SignatureCheckException("Invalid API key");
-      }
-
-      params.remove("apiKey");
-      params.remove("signature");
-
-      String paramString = ParamSignatureCalculator.generateParamStringWithValueList(params);
-
-      if (StringUtils.isBlank(paramString)) {
-        encryptString = ParamSignatureCalculator.SIMPLE_DATE_FORMAT.format(new Date());
-      } else {
-        encryptString = paramString;
-      }
-
-      plainText = String.format("%s%s%s", apiKey, encryptString, secret);
-      signCal = ParamSignatureCalculator.getMD5(plainText);
-      LOG.debug(
-          "Calculated signature for url:{}, plain text:{}, calculated signature:{}, signature in request: {}",
-          requestUrl,
-          plainText,
-          signCal,
-          signature);
-
-      if (!signature.equals(signCal)) {
-        throw new SignatureCheckException(
-            String.format(
-                "Check signature for url:%s failed,"
-                    + " calculated signature:%s, signature in request:%s",
-                requestUrl, signCal, signature));
-      }
-    } catch (Exception e) {
-      throw new SignatureCheckException("Check url signature failed", e);
-    }
   }
 }
