@@ -179,7 +179,7 @@ public class KafkaSource<OUT>
         props,
         enumContext,
         boundedness,
-        checkpoint.assignedPartitions());
+        checkpoint);
   }
 
   @Internal
