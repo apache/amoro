@@ -44,7 +44,7 @@ public class TemporalJoinSplits implements Serializable {
   public static final long serialVersionUID = 1L;
   public static final Logger LOGGER = LoggerFactory.getLogger(TemporalJoinSplits.class);
 
-  private transient final MetricGroup metricGroup;
+  private final transient MetricGroup metricGroup;
   private final long startTimeMs = System.currentTimeMillis();
   private Map<String, Boolean> splits;
   private long unfinishedCount;
