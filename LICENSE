@@ -199,3 +199,25 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+   This product bundles various third-party components also under the
+   Apache Software License 2.0.
+
+   amoro-common/src/main/java/org/apache/amoro/client/ClientPool.java
+   amoro-common/src/main/java/org/apache/amoro/client/ClientPoolImpl.java
+   amoro-format-mixed/amoro-mixed-spark/v3.3/amoro-mixed-spark-3.3/src/main/java/org/apache/amoro/spark/SparkInternalRowWrapper.java
+   amoro-format-mixed/amoro-mixed-spark/v3.5/amoro-mixed-spark-3.5/src/main/java/org/apache/amoro/spark/SparkInternalRowWrapper.java
+   from Apache Iceberg(https://github.com/apache/iceberg/) version 1.4.3
+
+   amoro-common/src/main/java/org/apache/amoro/utils/DynConstructors.java
+   amoro-common/src/main/java/org/apache/amoro/utils/DynMethods.java
+   amoro-common/src/main/java/org/apache/amoro/utils/PropertyUtil.java
+   from Apache Parquet(https://github.com/apache/parquet-java/) version 1.15.2
+
+   amoro-common/src/main/java/org/apache/amoro/utils/MemorySize.java
+   amoro-format-mixed/amoro-mixed-flink/amoro-mixed-flink-common/src/main/java/org/apache/amoro/flink/planner/calcite/FlinkTypeSystem.java
+   amoro-format-mixed/amoro-mixed-flink/amoro-mixed-flink-common/src/main/java/org/apache/amoro/flink/util/DateTimeUtils.java
+   amoro-format-mixed/amoro-mixed-flink/amoro-mixed-flink-common/src/main/java/org/apache/amoro/flink/util/Projection.java
+   amoro-format-mixed/amoro-mixed-flink/amoro-mixed-flink-common/src/main/java/org/apache/amoro/flink/util/Projection.java
+   from Apache Flink(https://github.com/apache/flink/) version 1.18.1
+
