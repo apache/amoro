@@ -167,47 +167,21 @@ public class TableConfigurations {
     }
   }
 
-  /**
-   * Check if the given field is valid for data expiration.
-   *
-   * @param config data expiration config
-   * @param field table nested field
-   * @param name table name
-   * @return true if field is valid
-   */
-  public static boolean isValidDataExpirationField(
-      DataExpirationConfig config, Types.NestedField field, String name) {
-    return config.isEnabled()
-        && config.getRetentionTime() > 0
-        && validateExpirationField(field, name, config.getExpirationField());
-  }
-
   public static final Set<Type.TypeID> DATA_EXPIRATION_FIELD_TYPES =
       Sets.newHashSet(Type.TypeID.TIMESTAMP, Type.TypeID.STRING, Type.TypeID.LONG);
 
-  private static boolean validateExpirationField(
-      Types.NestedField field, String name, String expirationField) {
-    if (StringUtils.isBlank(expirationField) || null == field) {
-      LOG.warn(
-          String.format(
-              "Field(%s) used to determine data expiration is illegal for table(%s)",
-              expirationField, name));
-      return false;
-    }
-    Type.TypeID typeID = field.type().typeId();
-    if (!DATA_EXPIRATION_FIELD_TYPES.contains(typeID)) {
-      LOG.warn(
-          String.format(
-              "Table(%s) field(%s) type(%s) is not supported for data expiration, please use the "
-                  + "following types: %s",
-              name,
-              expirationField,
-              typeID.name(),
-              StringUtils.join(DATA_EXPIRATION_FIELD_TYPES, ", ")));
-      return false;
-    }
+  public static void validateExpirationField(Types.NestedField field, String name) {
+    Preconditions.checkNotNull(field, "Field for data expiration is not found in table: " + name);
 
-    return true;
+    Type.TypeID typeID = field.type().typeId();
+    Preconditions.checkArgument(
+        DATA_EXPIRATION_FIELD_TYPES.contains(typeID),
+        "Field for data expiration must be one of the types: "
+            + StringUtils.join(DATA_EXPIRATION_FIELD_TYPES, ", ")
+            + ", but is "
+            + typeID.name()
+            + " in table: "
+            + name);
   }
 
   /**

@@ -27,10 +27,8 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.table.PrimaryKeySpec;
 import org.apache.iceberg.PartitionSpec;
-import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-@RunWith(Parameterized.class)
 public class TestDataExpireIceberg extends TestDataExpire {
 
   @Parameterized.Parameters(name = "{0}, {1}")
@@ -43,7 +41,7 @@ public class TestDataExpireIceberg extends TestDataExpire {
       },
       {
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(false, false, getDefaultProp())
+        new BasicTableTestHelper(false, false, getFileLevelProp())
       },
       // Iceberg format partitioned by timestampz field
       {
@@ -57,7 +55,7 @@ public class TestDataExpireIceberg extends TestDataExpire {
             TABLE_SCHEMA1,
             PrimaryKeySpec.noPrimaryKey(),
             PartitionSpec.unpartitioned(),
-            getDefaultProp())
+            getFileLevelProp())
       },
       // Iceberg format partitioned by date string field
       {
@@ -71,7 +69,7 @@ public class TestDataExpireIceberg extends TestDataExpire {
             TABLE_SCHEMA2,
             PrimaryKeySpec.noPrimaryKey(),
             PartitionSpec.unpartitioned(),
-            getDefaultProp())
+            getFileLevelProp())
       }
     };
   }

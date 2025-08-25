@@ -20,6 +20,7 @@ package org.apache.amoro.server.optimizing.maintainer;
 
 import static org.apache.amoro.BasicTableTestHelper.PRIMARY_KEY_SPEC;
 import static org.apache.amoro.BasicTableTestHelper.SPEC;
+import static org.apache.amoro.server.optimizing.maintainer.DataExpirationProcessor.defaultZoneId;
 import static org.junit.Assume.assumeTrue;
 
 import org.apache.amoro.BasicTableTestHelper;
@@ -59,11 +60,13 @@ import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -74,6 +77,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
@@ -89,7 +93,7 @@ public class TestDataExpire extends ExecutorTestBase {
       },
       {
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(true, false, getDefaultProp())
+        new BasicTableTestHelper(true, false, getFileLevelProp())
       },
       {
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
@@ -97,7 +101,7 @@ public class TestDataExpire extends ExecutorTestBase {
       },
       {
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(false, false, getDefaultProp())
+        new BasicTableTestHelper(false, false, getFileLevelProp())
       },
       // Mixed format partitioned by timestampz
       {
@@ -107,7 +111,7 @@ public class TestDataExpire extends ExecutorTestBase {
       {
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(
-            TABLE_SCHEMA1, PRIMARY_KEY_SPEC, PartitionSpec.unpartitioned(), getDefaultProp())
+            TABLE_SCHEMA1, PRIMARY_KEY_SPEC, PartitionSpec.unpartitioned(), getFileLevelProp())
       },
       {
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
@@ -120,7 +124,7 @@ public class TestDataExpire extends ExecutorTestBase {
             TABLE_SCHEMA1,
             PrimaryKeySpec.noPrimaryKey(),
             PartitionSpec.unpartitioned(),
-            getDefaultProp())
+            getFileLevelProp())
       },
       // Mixed format partitioned by date string
       {
@@ -130,7 +134,7 @@ public class TestDataExpire extends ExecutorTestBase {
       {
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(
-            TABLE_SCHEMA2, PRIMARY_KEY_SPEC, PartitionSpec.unpartitioned(), getDefaultProp())
+            TABLE_SCHEMA2, PRIMARY_KEY_SPEC, PartitionSpec.unpartitioned(), getFileLevelProp())
       },
       {
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
@@ -143,7 +147,7 @@ public class TestDataExpire extends ExecutorTestBase {
             TABLE_SCHEMA2,
             PrimaryKeySpec.noPrimaryKey(),
             PartitionSpec.unpartitioned(),
-            getDefaultProp())
+            getFileLevelProp())
       }
     };
   }
@@ -171,6 +175,9 @@ public class TestDataExpire extends ExecutorTestBase {
 
   @Test
   public void testPartitionLevel() {
+    assumeTrue(
+        "Skip test for non-partitioned tables", tableTestHelper().partitionSpec().isPartitioned());
+
     if (getMixedTable().isUnkeyedTable()) {
       testUnKeyedPartitionLevel();
     } else {
@@ -243,13 +250,9 @@ public class TestDataExpire extends ExecutorTestBase {
     // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = parseDataExpirationConfig(keyedTable);
     MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(keyedTable, null);
+    Type type = keyedTable.schema().findField(config.getExpirationField()).type();
     tableMaintainer.expireDataFrom(
-        config,
-        LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(
-                IcebergTableMaintainer.getDefaultZoneId(
-                    keyedTable.schema().findField(config.getExpirationField())))
-            .toInstant());
+        config, parseInstantWithZone("2022-01-03T18:00:00.000", defaultZoneId(type)));
 
     CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire =
         buildKeyedFileScanHelper().scan();
@@ -326,13 +329,9 @@ public class TestDataExpire extends ExecutorTestBase {
     // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = parseDataExpirationConfig(keyedTable);
     MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable(), null);
+    Type type = keyedTable.schema().findField(config.getExpirationField()).type();
     mixedTableMaintainer.expireDataFrom(
-        config,
-        LocalDateTime.parse("2022-01-03T18:00:00.000")
-            .atZone(
-                IcebergTableMaintainer.getDefaultZoneId(
-                    keyedTable.schema().findField(config.getExpirationField())))
-            .toInstant());
+        config, parseInstantWithZone("2022-01-03T18:00:00.000", defaultZoneId(type)));
 
     CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire =
         buildKeyedFileScanHelper().scan();
@@ -435,11 +434,7 @@ public class TestDataExpire extends ExecutorTestBase {
           config,
           StringUtils.isBlank(datetime)
               ? icebergTableMaintainer.expireBaseOnRule(config, field)
-              : LocalDateTime.parse(datetime)
-                  .atZone(
-                      IcebergTableMaintainer.getDefaultZoneId(
-                          getMixedTable().schema().findField(config.getExpirationField())))
-                  .toInstant());
+              : LocalDateTime.parse(datetime).atZone(defaultZoneId(field.type())).toInstant());
     } else {
       MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable(), null);
       Types.NestedField field = getMixedTable().schema().findField(config.getExpirationField());
@@ -447,19 +442,20 @@ public class TestDataExpire extends ExecutorTestBase {
           config,
           StringUtils.isBlank(datetime)
               ? mixedTableMaintainer.expireMixedBaseOnRule(config, field)
-              : LocalDateTime.parse(datetime)
-                  .atZone(
-                      IcebergTableMaintainer.getDefaultZoneId(
-                          getMixedTable().schema().findField(config.getExpirationField())))
-                  .toInstant());
+              : LocalDateTime.parse(datetime).atZone(defaultZoneId(field.type())).toInstant());
     }
   }
 
   @Test
   public void testNormalFieldPartitionLevel() {
+    assumeTrue(
+        "Skip test for non-partitioned tables", tableTestHelper().partitionSpec().isPartitioned());
     getMixedTable().updateProperties().set(TableProperties.DATA_EXPIRATION_FIELD, "ts").commit();
 
-    testPartitionLevel();
+    Assert.assertThrows(
+        "Expiration field ts is not in partition spec",
+        RuntimeException.class,
+        this::testPartitionLevel);
   }
 
   @Test
@@ -494,31 +490,110 @@ public class TestDataExpire extends ExecutorTestBase {
     OptimizingTestHelpers.appendBase(
         testTable, tableTestHelper().writeBaseStore(testTable, 0, baseRecords, false));
 
-    CloseableIterable<TableFileScanHelper.FileScanResult> scan;
-    if (isKeyedTable()) {
-      scan = buildKeyedFileScanHelper().scan();
-    } else {
-      scan = getTableFileScanHelper().scan();
-    }
+    CloseableIterable<TableFileScanHelper.FileScanResult> scan = scanTable();
     assertScanResult(scan, 1, 0);
 
     DataExpirationConfig config = parseDataExpirationConfig(testTable);
-    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable(), null);
-    mixedTableMaintainer.expireDataFrom(
-        config,
-        LocalDateTime.parse("2024-01-01T00:00:00.000")
-            .atZone(
-                IcebergTableMaintainer.getDefaultZoneId(
-                    testTable.schema().findField(config.getExpirationField())))
-            .toInstant());
+    Assert.assertFalse(config.isEnabled());
+  }
 
-    CloseableIterable<TableFileScanHelper.FileScanResult> scanAfterExpire;
-    if (isKeyedTable()) {
-      scanAfterExpire = buildKeyedFileScanHelper().scan();
-    } else {
-      scanAfterExpire = getTableFileScanHelper().scan();
+  @Test
+  public void testPureExpiredManifest() throws IOException {
+    DataExpirationConfig config = parseDataExpirationConfig(getMixedTable());
+    assumeTrue(
+        "Skip test for level FILE",
+        config.getExpirationLevel() == DataExpirationConfig.ExpireLevel.PARTITION);
+    assumeTrue(
+        "Skip test for unpartitioned tables", tableTestHelper().partitionSpec().isPartitioned());
+
+    // append expired manifest1
+    List<Record> records =
+        Lists.newArrayList(
+            createRecord(1, "111", parseMillis("2022-01-01T12:00:00"), "2022-01-01T12:00:00"));
+    OptimizingTestHelpers.appendBase(
+        getMixedTable(), tableTestHelper().writeBaseStore(getMixedTable(), 0, records, false));
+    // append expired manifest2
+    records =
+        Lists.newArrayList(
+            createRecord(2, "222", parseMillis("2022-01-01T03:00:00"), "2022-01-01T03:00:00"));
+    OptimizingTestHelpers.appendBase(
+        getMixedTable(), tableTestHelper().writeBaseStore(getMixedTable(), 0, records, false));
+
+    // expire data before 2022-12-11T00:00:00.000, all manifests are expired
+    getMaintainerAndExpire(config, "2022-12-12T00:00:00.000");
+    assertScanResult(scanTable(), 0, 0);
+  }
+
+  @Test
+  public void testMaxExpiringFileCount() {
+    // Store original system property value
+    String originalValue = System.getProperty("MAX_EXPIRING_FILE_COUNT");
+
+    // Set max expiring file count to 1 via system property
+    System.setProperty("MAX_EXPIRING_FILE_COUNT", "1");
+
+    try {
+      List<Record> overRecords =
+          generateRandomRecords(3, "2022-01-01T00:00:00", "2022-01-03T23:59:59");
+      // each record in one file
+      overRecords.forEach(
+          r ->
+              OptimizingTestHelpers.appendBase(
+                  getMixedTable(),
+                  tableTestHelper()
+                      .writeBaseStore(getMixedTable(), 0, Lists.newArrayList(r), false)));
+
+      // expire data before 2022-01-04T18:30:09.231, only 1 file is expired at most
+      DataExpirationConfig config = parseDataExpirationConfig(getMixedTable());
+      getMaintainerAndExpire(config, "2022-01-05T18:30:09.231");
+
+      assertScanResult(scanTable(), 2, 0);
+    } finally {
+      // Restore original system property value
+      if (originalValue != null) {
+        System.setProperty("MAX_EXPIRING_FILE_COUNT", originalValue);
+      } else {
+        System.clearProperty("MAX_EXPIRING_FILE_COUNT");
+      }
     }
-    assertScanResult(scanAfterExpire, 0, 0);
+  }
+
+  @Test
+  public void testNoFilesToExpire() {
+    List<Record> records = generateRandomRecords(10, "2025-10-01T00:00:00", "2025-10-03T23:59:59");
+    OptimizingTestHelpers.appendBase(
+        getMixedTable(), tableTestHelper().writeBaseStore(getMixedTable(), 0, records, false));
+    DataExpirationConfig config = parseDataExpirationConfig(getMixedTable());
+    getMaintainerAndExpire(config, "2025-10-01T00:00:00.000");
+    List<Record> result = readSortedBaseRecords(getMixedTable());
+
+    Assert.assertEquals(records.size(), result.size());
+    Assert.assertEquals(records, result);
+  }
+
+  protected CloseableIterable<TableFileScanHelper.FileScanResult> scanTable() {
+    if (isKeyedTable()) {
+      return buildKeyedFileScanHelper().scan();
+    } else {
+      return getTableFileScanHelper().scan();
+    }
+  }
+
+  List<Record> generateRandomRecords(int size, String startTime, String endTime) {
+    List<Record> records = new ArrayList<>(size);
+    long startMillis = parseInstantWithZone(startTime, ZoneId.systemDefault()).toEpochMilli();
+    long endMillis = parseInstantWithZone(endTime, ZoneId.systemDefault()).toEpochMilli();
+    for (int id = 1; id < size + 1; id++) {
+      Random random = new Random();
+      long range = endMillis - startMillis + 1;
+      long ts = startMillis + (Math.abs(random.nextLong()) % range);
+      String opTime =
+          LocalDateTime.ofInstant(Instant.ofEpochMilli(ts), ZoneId.systemDefault())
+              .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+      records.add(createRecord(id, String.valueOf(id), ts, opTime));
+    }
+
+    return records;
   }
 
   protected Record createRecord(int id, String name, long ts, String opTime) {
@@ -557,13 +632,13 @@ public class TestDataExpire extends ExecutorTestBase {
   }
 
   protected void assertScanResult(
-      CloseableIterable<TableFileScanHelper.FileScanResult> result, int size, Integer deleteCnt) {
-    int scanCnt = 0;
+      CloseableIterable<TableFileScanHelper.FileScanResult> result,
+      int expectedDataFiles,
+      int expectedDeleteFiles) {
+    int scannedDataFiles = 0, scannedDeleteFiles = 0;
     for (TableFileScanHelper.FileScanResult fileScanResult : result) {
-      ++scanCnt;
-      if (deleteCnt != null) {
-        Assert.assertEquals(deleteCnt.intValue(), fileScanResult.deleteFiles().size());
-      }
+      scannedDataFiles++;
+
       for (ContentFile<?> deleteFile : fileScanResult.deleteFiles()) {
         if (ContentFiles.isDataFile(deleteFile)) {
           Assert.assertTrue(deleteFile instanceof PrimaryKeyedFile);
@@ -573,9 +648,12 @@ public class TestDataExpire extends ExecutorTestBase {
           Assert.assertTrue(deleteFile instanceof DeleteFile);
         }
       }
+
+      scannedDeleteFiles += fileScanResult.deleteFiles().size();
     }
 
-    Assert.assertEquals(size, scanCnt);
+    Assert.assertEquals(expectedDataFiles, scannedDataFiles);
+    Assert.assertEquals(expectedDeleteFiles, scannedDeleteFiles);
   }
 
   protected List<Record> readSortedKeyedRecords(KeyedTable keyedTable) {
@@ -613,6 +691,12 @@ public class TestDataExpire extends ExecutorTestBase {
     return prop;
   }
 
+  protected static Map<String, String> getFileLevelProp() {
+    Map<String, String> prop = getDefaultProp();
+    prop.put(TableProperties.DATA_EXPIRATION_LEVEL, DataExpirationConfig.ExpireLevel.FILE.name());
+    return prop;
+  }
+
   private static long parseMillis(String datetime) {
     return parseInstantWithZone(datetime, ZoneOffset.UTC).toEpochMilli();
   }
@@ -636,5 +720,10 @@ public class TestDataExpire extends ExecutorTestBase {
   private static DataExpirationConfig parseDataExpirationConfig(MixedTable table) {
     Map<String, String> properties = table.properties();
     return TableConfigurations.parseDataExpirationConfig(properties);
+  }
+
+  @After
+  public void clearSystemProperty() {
+    System.clearProperty("MAX_EXPIRING_FILE_COUNT");
   }
 }

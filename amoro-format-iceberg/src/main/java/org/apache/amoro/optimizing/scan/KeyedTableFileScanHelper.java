@@ -197,7 +197,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
                         insertFile -> {
                           List<ContentFile<?>> relatedDeleteFiles =
                               changeFiles.getRelatedDeleteFiles(insertFile);
-                          return new FileScanResult(insertFile, relatedDeleteFiles);
+                          return FileScanResult.ofChange(insertFile, relatedDeleteFiles);
                         })
                     .collect(Collectors.toList()));
       }
@@ -214,7 +214,7 @@ public class KeyedTableFileScanHelper implements TableFileScanHelper {
                 List<ContentFile<?>> relatedChangeDeleteFiles =
                     changeFiles.getRelatedDeleteFiles(dataFile);
                 deleteFiles.addAll(relatedChangeDeleteFiles);
-                return new FileScanResult(dataFile, deleteFiles);
+                return FileScanResult.ofBase(dataFile, deleteFiles);
               });
     }
 

@@ -27,13 +27,34 @@ import org.apache.iceberg.io.CloseableIterable;
 import java.util.List;
 
 public interface TableFileScanHelper {
+  enum StoreType {
+    BASE,
+    CHANGE
+  }
+
   class FileScanResult {
     private final DataFile file;
     private final List<ContentFile<?>> deleteFiles;
+    private final StoreType storeType;
 
     public FileScanResult(DataFile file, List<ContentFile<?>> deleteFiles) {
       this.file = file;
       this.deleteFiles = deleteFiles;
+      this.storeType = StoreType.BASE;
+    }
+
+    public FileScanResult(DataFile file, List<ContentFile<?>> deleteFiles, StoreType storeType) {
+      this.file = file;
+      this.deleteFiles = deleteFiles;
+      this.storeType = storeType;
+    }
+
+    public static FileScanResult ofBase(DataFile file, List<ContentFile<?>> deleteFiles) {
+      return new FileScanResult(file, deleteFiles);
+    }
+
+    public static FileScanResult ofChange(DataFile file, List<ContentFile<?>> deleteFiles) {
+      return new FileScanResult(file, deleteFiles, StoreType.CHANGE);
     }
 
     public DataFile file() {
@@ -42,6 +63,10 @@ public interface TableFileScanHelper {
 
     public List<ContentFile<?>> deleteFiles() {
       return deleteFiles;
+    }
+
+    public StoreType storeType() {
+      return storeType;
     }
   }
 
