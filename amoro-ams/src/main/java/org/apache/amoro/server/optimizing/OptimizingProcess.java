@@ -26,7 +26,7 @@ public interface OptimizingProcess {
 
   long getProcessId();
 
-  void close();
+  void close(boolean needCommit);
 
   boolean isClosed();
 

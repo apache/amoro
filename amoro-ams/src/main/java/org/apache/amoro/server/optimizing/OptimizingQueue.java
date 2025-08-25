@@ -35,6 +35,7 @@ import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
@@ -141,7 +142,7 @@ public class OptimizingQueue extends PersistentBase {
               "Close the committing process {} on table {}",
               process.getProcessId(),
               tableRuntime.getTableIdentifier());
-          process.close();
+          process.close(false);
         }
       }
       if (!optimizingState.getOptimizingStatus().isProcessing()) {
@@ -152,7 +153,7 @@ public class OptimizingQueue extends PersistentBase {
     } else {
       OptimizingProcess process = optimizingState.getOptimizingProcess();
       if (process != null) {
-        process.close();
+        process.close(false);
       }
     }
   }
@@ -182,7 +183,7 @@ public class OptimizingQueue extends PersistentBase {
             .filter(process -> process.optimizingState == tableRuntime.getOptimizingState())
             .collect(Collectors.toList());
     for (OptimizingProcess process : processList) {
-      process.close();
+      process.close(false);
       clearProcess(process);
     }
     LOG.info(
@@ -509,15 +510,19 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     @Override
-    public void close() {
+    public void close(boolean needCommit) {
       lock.lock();
       try {
         if (this.status != ProcessStatus.RUNNING) {
           return;
         }
-        this.status = ProcessStatus.CLOSED;
-        this.endTime = System.currentTimeMillis();
-        persistAndSetCompleted(false);
+        if (optimizingState.isCommitOnPartialSuccess() && needCommit) {
+          optimizingState.beginCommitting();
+        } else {
+          this.status = ProcessStatus.CLOSED;
+          this.endTime = System.currentTimeMillis();
+          persistAndSetCompleted(false);
+        }
       } finally {
         lock.unlock();
       }
@@ -565,14 +570,25 @@ public class OptimizingQueue extends PersistentBase {
                 taskRuntime.getFailReason());
             retryTask(taskRuntime);
           } else {
-            LOG.info(
-                "Task {} has reached the max execute retry count. Process {} failed.",
-                taskRuntime.getTaskId(),
-                processId);
-            this.failedReason = taskRuntime.getFailReason();
-            this.status = ProcessStatus.FAILED;
-            this.endTime = taskRuntime.getEndTime();
-            persistAndSetCompleted(false);
+            if (optimizingState.isCommitOnPartialSuccess()
+                && optimizingState.getOptimizingStatus().isProcessing()
+                && optimizingState.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
+              LOG.info(
+                  "Task {} has reached the max execute retry count. Process {} cancels unfinished tasks and commits SUCCESS tasks.",
+                  taskRuntime.getTaskId(),
+                  processId);
+              failedReason = taskRuntime.getFailReason();
+              optimizingState.beginCommitting();
+            } else {
+              LOG.info(
+                  "Task {} has reached the max execute retry count. Process {} failed.",
+                  taskRuntime.getTaskId(),
+                  processId);
+              this.failedReason = taskRuntime.getFailReason();
+              this.status = ProcessStatus.FAILED;
+              this.endTime = taskRuntime.getEndTime();
+              persistAndSetCompleted(false);
+            }
           }
         }
       } finally {
@@ -650,11 +666,18 @@ public class OptimizingQueue extends PersistentBase {
 
     @Override
     public void commit() {
+      List<TaskRuntime<RewriteStageTask>> successTasks =
+          taskMap.values().stream()
+              .filter(task -> task.getStatus() == Status.SUCCESS)
+              .collect(Collectors.toList());
       LOG.debug(
           "{} get {} tasks of {} partitions to commit",
           optimizingState.getTableIdentifier(),
-          taskMap.size(),
-          taskMap.values());
+          successTasks.size(),
+          successTasks.stream()
+              .map(task -> task.getTaskDescriptor().getPartition())
+              .distinct()
+              .count());
 
       lock.lock();
       try {
@@ -669,9 +692,16 @@ public class OptimizingQueue extends PersistentBase {
         try {
           hasCommitted = true;
           buildCommit().commit();
-          status = ProcessStatus.SUCCESS;
+          if (allTasksPrepared()) {
+            status = ProcessStatus.SUCCESS;
+          } else if (taskMap.values().stream()
+              .anyMatch(task -> task.getStatus() == TaskRuntime.Status.FAILED)) {
+            status = ProcessStatus.FAILED;
+          } else {
+            status = ProcessStatus.CLOSED;
+          }
           endTime = System.currentTimeMillis();
-          persistAndSetCompleted(true);
+          persistAndSetCompleted(status == ProcessStatus.SUCCESS);
         } catch (PersistenceException e) {
           LOG.warn(
               "{} failed to persist process completed, will retry next commit",
@@ -822,7 +852,7 @@ public class OptimizingQueue extends PersistentBase {
             "Load task inputs failed, close the optimizing process : {}",
             optimizingProcess.getProcessId(),
             e);
-        optimizingProcess.close();
+        optimizingProcess.close(false);
       }
     }
 

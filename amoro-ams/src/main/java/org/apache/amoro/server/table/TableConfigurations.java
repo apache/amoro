@@ -224,6 +224,11 @@ public class TableConfigurations {
                 properties,
                 TableProperties.ENABLE_SELF_OPTIMIZING,
                 TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT))
+        .setCommitOnPartialSuccess(
+            CompatiblePropertyUtil.propertyAsBoolean(
+                properties,
+                TableProperties.SELF_OPTIMIZING_COMMIT_ON_PARTIAL_SUCCESS,
+                TableProperties.SELF_OPTIMIZING_COMMIT_ON_PARTIAL_SUCCESS_DEFAULT))
         .setMaxExecuteRetryCount(
             CompatiblePropertyUtil.propertyAsInt(
                 properties,

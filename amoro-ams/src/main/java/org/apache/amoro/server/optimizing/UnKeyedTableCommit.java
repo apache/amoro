@@ -35,6 +35,7 @@ import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.MixedTable;
@@ -186,6 +187,15 @@ public class UnKeyedTableCommit {
   }
 
   public void commit() throws OptimizingCommitException {
+    List<TaskRuntime<RewriteStageTask>> successTasks =
+        tasks.stream()
+            .filter(task -> task.getStatus() == Status.SUCCESS)
+            .collect(Collectors.toList());
+    if (successTasks.isEmpty()) {
+      LOG.info("No tasks to commit for table {}", table.id());
+      return;
+    }
+
     long startTime = System.currentTimeMillis();
     LOG.info("Starting to commit table {} with {} tasks.", table.id(), tasks.size());
 
@@ -195,7 +205,7 @@ public class UnKeyedTableCommit {
     Set<DataFile> removedDataFiles = Sets.newHashSet();
     Set<DeleteFile> addedDeleteFiles = Sets.newHashSet();
     Set<DeleteFile> removedDeleteFiles = Sets.newHashSet();
-    tasks.stream()
+    successTasks.stream()
         .map(TaskRuntime::getTaskDescriptor)
         .forEach(
             task -> {
@@ -213,6 +223,7 @@ public class UnKeyedTableCommit {
               if (task.getInput().rewrittenDeleteFiles() != null) {
                 removedDeleteFiles.addAll(
                     Arrays.stream(task.getInput().rewrittenDeleteFiles())
+                        .filter(deleteFile -> needRemove(successTasks, deleteFile))
                         .map(ContentFiles::asDeleteFile)
                         .collect(Collectors.toSet()));
               }
@@ -243,6 +254,17 @@ public class UnKeyedTableCommit {
       LOG.warn("Failed to commit table {}.", table.id(), e);
       throw new OptimizingCommitException("unexpected commit error ", e);
     }
+  }
+
+  private boolean needRemove(
+      List<TaskRuntime<RewriteStageTask>> successTasks, ContentFile<?> deleteFile) {
+    return tasks.stream()
+        .filter(task -> !successTasks.contains(task))
+        .map(TaskRuntime::getTaskDescriptor)
+        .noneMatch(
+            task ->
+                task.getInput().rewrittenDeleteFiles() != null
+                    && Arrays.asList(task.getInput().rewrittenDeleteFiles()).contains(deleteFile));
   }
 
   private void rewriteDataFiles(
