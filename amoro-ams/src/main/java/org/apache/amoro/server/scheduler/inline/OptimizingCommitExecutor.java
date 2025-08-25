@@ -44,7 +44,7 @@ public class OptimizingCommitExecutor extends PeriodicTableScheduler {
     return Optional.of(tableRuntime)
         .filter(t -> t instanceof DefaultTableRuntime)
         .map(t -> (DefaultTableRuntime) t)
-        .map(t -> t.getOptimizingState().getOptimizingStatus() == OptimizingStatus.COMMITTING)
+        .map(t -> t.getOptimizingStatus() == OptimizingStatus.COMMITTING)
         .orElse(false);
   }
 
@@ -58,7 +58,7 @@ public class OptimizingCommitExecutor extends PeriodicTableScheduler {
     Optional.of(tableRuntime)
         .filter(t -> t instanceof DefaultTableRuntime)
         .map(t -> (DefaultTableRuntime) t)
-        .map(t -> t.getOptimizingState().getOptimizingProcess())
+        .map(DefaultTableRuntime::getOptimizingProcess)
         .orElseThrow(
             () ->
                 new IllegalStateException(

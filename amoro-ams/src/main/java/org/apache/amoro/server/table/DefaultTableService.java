@@ -35,18 +35,23 @@ import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.TableRuntimeState;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.persistence.mapper.TableRuntimeMapper;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.amoro.table.TableRuntimeStore;
+import org.apache.amoro.table.TableSummary;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,6 +67,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DefaultTableService extends PersistentBase implements TableService {
@@ -147,15 +153,37 @@ public class DefaultTableService extends PersistentBase implements TableService 
     checkNotStarted();
 
     List<TableRuntimeMeta> tableRuntimeMetaList =
-        getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
+        getAs(TableRuntimeMapper.class, TableRuntimeMapper::selectAllRuntimes);
+    Map<Long, ServerTableIdentifier> identifierMap =
+        getAs(TableMetaMapper.class, TableMetaMapper::selectAllTableIdentifiers).stream()
+            .collect(Collectors.toMap(ServerTableIdentifier::getId, Function.identity()));
+
+    Map<Long, List<TableRuntimeState>> statesMap =
+        getAs(TableRuntimeMapper.class, TableRuntimeMapper::selectAllStates).stream()
+            .collect(
+                Collectors.toMap(
+                    TableRuntimeState::getTableId,
+                    Lists::newArrayList,
+                    (a, b) -> {
+                      a.addAll(b);
+                      return a;
+                    }));
+
     List<TableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
-    tableRuntimeMetaList.forEach(
-        tableRuntimeMeta -> {
-          DefaultTableRuntime tableRuntime = new DefaultTableRuntime(tableRuntimeMeta, this);
-          tableRuntimeMap.put(tableRuntimeMeta.getTableId(), tableRuntime);
-          tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
-          tableRuntimes.add(tableRuntime);
-        });
+    tableRuntimeMetaList.stream()
+        .filter(t -> identifierMap.containsKey(t.getTableId()))
+        .forEach(
+            tableRuntimeMeta -> {
+              ServerTableIdentifier identifier = identifierMap.get(tableRuntimeMeta.getTableId());
+              List<TableRuntimeState> states = statesMap.get(tableRuntimeMeta.getTableId());
+              TableRuntimeStore store =
+                  new DefaultTableRuntimeStore(
+                      identifier, tableRuntimeMeta, DefaultTableRuntime.REQUIRED_STATES, states);
+              DefaultTableRuntime tableRuntime = new DefaultTableRuntime(store, this);
+              tableRuntimeMap.put(tableRuntimeMeta.getTableId(), tableRuntime);
+              tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
+              tableRuntimes.add(tableRuntime);
+            });
 
     if (headHandler != null) {
       headHandler.initialize(tableRuntimes);
@@ -444,8 +472,24 @@ public class DefaultTableService extends PersistentBase implements TableService 
         return false;
       }
     }
-    DefaultTableRuntime tableRuntime =
-        new DefaultTableRuntime(serverTableIdentifier, this, table.properties());
+
+    Map<String, String> properties = table.properties();
+    TableRuntimeMeta meta = new TableRuntimeMeta();
+    meta.setTableId(serverTableIdentifier.getId());
+    meta.setTableConfig(properties);
+    TableConfiguration configuration = TableConfigurations.parseTableConfig(properties);
+    meta.setStatusCode(OptimizingStatus.IDLE.getCode());
+    meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
+    meta.setTableSummary(new TableSummary());
+    doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
+
+    DefaultTableRuntimeStore store =
+        new DefaultTableRuntimeStore(
+            serverTableIdentifier,
+            meta,
+            DefaultTableRuntime.REQUIRED_STATES,
+            Collections.emptyList());
+    DefaultTableRuntime tableRuntime = new DefaultTableRuntime(store, this);
     tableRuntimeMap.put(serverTableIdentifier.getId(), tableRuntime);
     tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
     if (headHandler != null) {

@@ -91,3 +91,64 @@ SELECT `process_id`, `table_id`, `target_snapshot_id`, `target_change_snapshot_i
 FROM `table_optimizing_process`;
 
 DROP TABLE IF EXISTS `table_optimizing_process`;
+
+ALTER TABLE table_runtime RENAME TO table_runtime_old;
+
+CREATE TABLE `table_runtime`
+(
+    `table_id`                      bigint(20) NOT NULL,
+    `group_name`                    varchar(64) NOT NULL,
+    `status_code`                   int DEFAULT 700 NOT NULL COMMENT 'Table runtime status code.',
+    `status_code_update_time`       timestamp(3) default CURRENT_TIMESTAMP(3) COMMENT 'Table runtime status code update time',
+    `table_config`                  mediumtext COMMENT 'table configuration cached from table.properties',
+    `table_summary`                 mediumtext COMMENT 'table summary for ams',
+    PRIMARY KEY (`table_id`),
+    INDEX idx_status_and_time (status_code, status_code_update_time DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table running information of each table' ROW_FORMAT=DYNAMIC;
+
+
+CREATE TABLE `table_runtime_state` (
+  `state_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+  `table_id` bigint unsigned NOT NULL COMMENT 'Table identifier id',
+  `state_key` varchar(256) NOT NULL COMMENT 'Table Runtime state key',
+  `state_value` mediumtext COMMENT 'Table Runtime state value, string type',
+  `state_version` bigint NOT NULL DEFAULT '0' COMMENT 'Table runtime state version, auto inc when update',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+  PRIMARY KEY (`state_id`),
+  UNIQUE KEY `uniq_table_state_key` (`table_id`,`state_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='State of Table Runtimes';
+
+INSERT INTO table_runtime
+(`table_id`, `group_name`, `status_code`, `status_code_update_time`, `table_config`, `table_summary`)
+SELECT `table_id`, `optimizer_group`, `optimizing_status_code`, `optimizing_status_start_time`,
+`table_config`, `table_summary`
+FROM table_runtime_old;
+
+INSERT INTO table_runtime_state
+(`table_id`, `state_key`, `state_value`)
+SELECT
+`table_id`, 'pending_input', `pending_input`
+FROM table_runtime_old;
+
+INSERT INTO table_runtime_state
+(`table_id`, `state_key`, `state_value`)
+SELECT
+`table_id`, 'process_id', `optimizing_process_id`
+FROM table_runtime_old;
+
+INSERT INTO table_runtime_state
+(`table_id`, `state_key`, `state_value`)
+SELECT
+`table_id`, 'optimizing_state', JSON_OBJECT(
+    'currentSnapshotId', `current_snapshot_id`,
+    'currentChangeSnapshotId', `current_change_snapshot_id`,
+    'lastOptimizedSnapshotId', `last_optimized_snapshot_id`,
+    'lastOptimizedChangeSnapshotId', `last_optimized_change_snapshot_id`,
+    'lastMajorOptimizingTime', `last_major_optimizing_time`,
+    'lastFullOptimizingTime', `last_full_optimizing_time`,
+    'lastMinorOptimizingTime', `last_minor_optimizing_time`
+)
+FROM table_runtime_old;
+
+DROP TABLE IF EXISTS table_runtime_old;

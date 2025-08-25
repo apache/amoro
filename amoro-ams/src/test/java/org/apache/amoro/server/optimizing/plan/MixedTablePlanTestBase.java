@@ -31,7 +31,6 @@ import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
 import org.apache.amoro.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
-import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.utils.IcebergTableUtil;
@@ -79,12 +78,10 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     tableRuntime = Mockito.mock(DefaultTableRuntime.class);
     ServerTableIdentifier id = ServerTableIdentifier.of(getMixedTable().id(), getTestFormat());
     id.setId(0L);
-    DefaultOptimizingState optimizingState = Mockito.mock(DefaultOptimizingState.class);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(id);
-    Mockito.when(tableRuntime.getOptimizingState()).thenReturn(optimizingState);
-    Mockito.when(optimizingState.getOptimizingConfig()).thenAnswer(f -> getConfig());
-    Mockito.when(optimizingState.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
-    Mockito.when(optimizingState.getCurrentChangeSnapshotId())
+    Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> getConfig());
+    Mockito.when(tableRuntime.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
+    Mockito.when(tableRuntime.getCurrentChangeSnapshotId())
         .thenAnswer(f -> getCurrentChangeSnapshotId());
   }
 

@@ -143,3 +143,72 @@ SELECT
 FROM table_optimizing_process;
 
 DROP TABLE IF EXISTS table_optimizing_process;
+
+ALTER TABLE table_runtime RENAME TO table_runtime_old;
+
+create table if not exists table_runtime (
+    table_id            bigint primary key,
+    group_name          varchar(64) not null,
+    status_code         int not null default 700,
+    status_code_update_time timestamptz not null default now(),
+    table_config        text,
+    table_summary       text
+);
+
+create index if not exists idx_status_and_time
+    on table_runtime (status_code, status_code_update_time desc);
+
+comment on table  table_runtime is 'Table running information of each table';
+comment on column table_runtime.status_code is 'Table runtime status code.';
+comment on column table_runtime.status_code_update_time is 'Table runtime status code update time';
+comment on column table_runtime.table_config is 'table configuration cached from table.properties';
+comment on column table_runtime.table_summary is 'table summary for ams';
+
+
+create table if not exists table_runtime_state (
+    state_id      bigserial primary key,
+    table_id      bigint not null,
+    state_key     varchar(256) not null,
+    state_value   text,
+    state_version bigint not null default 0,
+    create_time   timestamptz not null default now(),
+    update_time   timestamptz not null default now()
+);
+
+create unique index if not exists uniq_table_state_key
+    on table_runtime_state (table_id, state_key);
+
+comment on table  table_runtime_state is 'State of Table Runtimes';
+comment on column table_runtime_state.state_id is 'Primary key';
+comment on column table_runtime_state.table_id is 'Table identifier id';
+comment on column table_runtime_state.state_key is 'Table Runtime state key';
+comment on column table_runtime_state.state_value is 'Table Runtime state value, string type';
+comment on column table_runtime_state.state_version is 'Table runtime state version, auto inc when update';
+comment on column table_runtime_state.create_time is 'create time';
+comment on column table_runtime_state.update_time is 'update time';
+
+INSERT INTO table_runtime
+(table_id,group_name,status_code,status_code_update_time,table_config,table_summary)
+SELECT
+table_id,optimizer_group,optimizing_status_code,optimizing_status_start_time,table_config,table_summary
+FROM table_runtime_old;
+
+INSERT INTO table_runtime_state (table_id,state_key,state_value)
+SELECT table_id,'pending_input',pending_input FROM table_runtime_old;
+
+INSERT INTO table_runtime_state (table_id,state_key,state_value)
+SELECT table_id,'process_id',optimizing_process_id FROM table_runtime_old;
+
+INSERT INTO table_runtime_state (table_id,state_key,state_value)
+SELECT table_id,'optimizing_state',
+       jsonb_build_object(
+        'currentSnapshotId',current_snapshot_id,
+        'currentChangeSnapshotId',current_change_snapshot_id,
+        'lastOptimizedSnapshotId',last_optimized_snapshot_id,
+        'lastOptimizedChangeSnapshotId',last_optimized_change_snapshot_id,
+        'lastMajorOptimizingTime',last_major_optimizing_time,
+        'lastFullOptimizingTime',last_full_optimizing_time,
+        'lastMinorOptimizingTime',last_minor_optimizing_time)::text
+FROM table_runtime_old;
+
+DROP TABLE IF EXISTS table_runtime_old;

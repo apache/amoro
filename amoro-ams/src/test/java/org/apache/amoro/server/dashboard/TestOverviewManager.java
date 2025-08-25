@@ -92,7 +92,7 @@ public class TestOverviewManager extends AMSTableTestBase {
     appendData(table, 1);
     appendData(table, 2);
     DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
-    runtime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
+    runtime.refresh(tableService().loadTable(serverTableIdentifier()));
   }
 
   private void appendData(UnkeyedTable table, int id) {

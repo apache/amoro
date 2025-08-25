@@ -22,6 +22,7 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nullable;
@@ -44,6 +45,9 @@ public interface MaintainedTableManager {
    * @return the {@link ServerTableIdentifier} instance
    */
   ServerTableIdentifier getServerTableIdentifier(TableIdentifier id);
+
+  /** Get the table process meta. */
+  TableProcessMeta getTableProcessMeta(long processId);
 
   /** Get the table runtime meta. */
   TableRuntimeMeta getTableRuntimeMata(ServerTableIdentifier id);

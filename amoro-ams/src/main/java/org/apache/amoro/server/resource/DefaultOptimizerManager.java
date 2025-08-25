@@ -28,7 +28,7 @@ import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.ResourceMapper;
-import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.persistence.mapper.TableRuntimeMapper;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.TableProperties;
 
@@ -164,9 +164,7 @@ public class DefaultOptimizerManager extends PersistentBase implements Optimizer
       }
     }
     List<TableRuntimeMeta> tableRuntimeMetas =
-        getAs(
-            TableMetaMapper.class,
-            mapper -> mapper.selectTableRuntimesForOptimizerGroup(name, null, null, null));
+        getAs(TableRuntimeMapper.class, mapper -> mapper.queryForGroups(name, null, null, null));
     return tableRuntimeMetas.isEmpty();
   }
 }

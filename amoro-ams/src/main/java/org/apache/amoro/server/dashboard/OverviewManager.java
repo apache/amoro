@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.dashboard;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.dashboard.model.OverviewDataSizeItem;
@@ -29,11 +30,13 @@ import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.persistence.mapper.TableRuntimeMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.amoro.table.TableSummary;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +54,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class OverviewManager extends PersistentBase {
@@ -159,20 +163,29 @@ public class OverviewManager extends PersistentBase {
     int totalCatalogs = getAs(CatalogMetaMapper.class, CatalogMetaMapper::selectCatalogCount);
 
     List<TableRuntimeMeta> metas =
-        getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
+        getAs(TableRuntimeMapper.class, TableRuntimeMapper::selectAllRuntimes);
+    Map<Long, ServerTableIdentifier> tableIdentifierMap =
+        getAs(TableMetaMapper.class, TableMetaMapper::selectAllTableIdentifiers).stream()
+            .collect(Collectors.toMap(ServerTableIdentifier::getId, Function.identity()));
+
     AtomicLong totalDataSize = new AtomicLong();
     AtomicInteger totalFileCounts = new AtomicInteger();
     Map<String, OverviewTopTableItem> topTableItemMap = Maps.newHashMap();
     Map<String, Long> optimizingStatusMap = Maps.newHashMap();
     for (TableRuntimeMeta meta : metas) {
-      Optional<OverviewTopTableItem> optItem = toTopTableItem(meta);
+      ServerTableIdentifier identifier = tableIdentifierMap.get(meta.getTableId());
+      if (identifier == null) {
+        continue;
+      }
+      Optional<OverviewTopTableItem> optItem = toTopTableItem(identifier, meta);
       optItem.ifPresent(
           tableItem -> {
             topTableItemMap.put(tableItem.getTableName(), tableItem);
             totalDataSize.addAndGet(tableItem.getTableSize());
             totalFileCounts.addAndGet(tableItem.getFileCount());
           });
-      String status = statusToMetricString(meta.getTableStatus());
+      OptimizingStatus optimizingStatus = OptimizingStatus.ofCode(meta.getStatusCode());
+      String status = statusToMetricString(optimizingStatus);
       if (StringUtils.isNotEmpty(status)) {
         optimizingStatusMap.putIfAbsent(status, 0L);
         optimizingStatusMap.computeIfPresent(status, (k, v) -> v + 1);
@@ -189,15 +202,17 @@ public class OverviewManager extends PersistentBase {
     this.optimizingStatusCountMap.putAll(optimizingStatusMap);
   }
 
-  private Optional<OverviewTopTableItem> toTopTableItem(TableRuntimeMeta meta) {
+  private Optional<OverviewTopTableItem> toTopTableItem(
+      ServerTableIdentifier identifier, TableRuntimeMeta meta) {
     if (meta == null) {
       return Optional.empty();
     }
-    OverviewTopTableItem tableItem = new OverviewTopTableItem(fullTableName(meta));
+    OverviewTopTableItem tableItem = new OverviewTopTableItem(fullTableName(identifier));
     if (meta.getTableSummary() != null) {
-      tableItem.setTableSize(meta.getTableSummary().getTotalFileSize());
-      tableItem.setFileCount(meta.getTableSummary().getTotalFileCount());
-      tableItem.setHealthScore(meta.getTableSummary().getHealthScore());
+      TableSummary tableSummary = meta.getTableSummary();
+      tableItem.setTableSize(tableSummary.getTotalFileSize());
+      tableItem.setFileCount(tableSummary.getTotalFileCount());
+      tableItem.setHealthScore(tableSummary.getHealthScore());
     }
     tableItem.setAverageFileSize(
         tableItem.getFileCount() == 0 ? 0 : tableItem.getTableSize() / tableItem.getFileCount());
@@ -264,11 +279,12 @@ public class OverviewManager extends PersistentBase {
     }
   }
 
-  private String fullTableName(TableRuntimeMeta meta) {
-    return meta.getCatalogName()
+  private String fullTableName(ServerTableIdentifier identifier) {
+    return identifier
+        .getCatalog()
         .concat(".")
-        .concat(meta.getDbName())
+        .concat(identifier.getDatabase())
         .concat(".")
-        .concat(meta.getTableName());
+        .concat(identifier.getTableName());
   }
 }

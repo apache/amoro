@@ -346,9 +346,7 @@ public class TestTableManager extends AMSTableTestBase {
   }
 
   private boolean isTableRuntimeBlocked(BlockableOperation operation) {
-    return getDefaultTableRuntime(serverTableIdentifier().getId())
-        .getOptimizingState()
-        .isBlocked(operation);
+    return getDefaultTableRuntime(serverTableIdentifier().getId()).isBlocked(operation);
   }
 
   private void assertBlockerCnt(int i) {

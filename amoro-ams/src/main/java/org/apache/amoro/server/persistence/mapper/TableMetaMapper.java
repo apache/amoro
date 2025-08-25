@@ -19,21 +19,16 @@
 package org.apache.amoro.server.persistence.mapper;
 
 import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.server.persistence.TableRuntimeMeta;
-import org.apache.amoro.server.persistence.converter.JsonObjectConverter;
-import org.apache.amoro.server.persistence.converter.Long2TsConverter;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
-import org.apache.amoro.server.persistence.converter.MapLong2StringConverter;
-import org.apache.amoro.server.persistence.converter.OptimizingStatusConverter;
 import org.apache.amoro.server.persistence.converter.TableFormatConverter;
-import org.apache.amoro.server.table.DefaultOptimizingState;
+import org.apache.amoro.server.persistence.extension.InListExtendedLanguageDriver;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Lang;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
-import org.apache.ibatis.annotations.ResultMap;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -69,40 +64,6 @@ public interface TableMetaMapper {
 
   @Select("SELECT table_count FROM database_metadata WHERE db_name = #{databaseName}")
   Integer selectTableCount(@Param("databaseName") String databaseName);
-
-  @Select(
-      "SELECT m.table_id, i.table_name, i.db_name, i.catalog_name, i.format, primary_key, "
-          + "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, "
-          + "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version "
-          + "FROM table_metadata m INNER JOIN table_identifier i ON m.table_id = i.table_id ")
-  @Results({
-    @Result(property = "tableIdentifier.id", column = "table_id"),
-    @Result(property = "tableIdentifier.tableName", column = "table_name"),
-    @Result(property = "tableIdentifier.database", column = "db_name"),
-    @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
-    @Result(
-        property = "tableIdentifier.format",
-        column = "format",
-        typeHandler = TableFormatConverter.class),
-    @Result(property = "primaryKey", column = "primary_key"),
-    @Result(property = "tableLocation", column = "table_location"),
-    @Result(property = "baseLocation", column = "base_location"),
-    @Result(property = "changeLocation", column = "change_location"),
-    @Result(property = "metaStoreSite", column = "meta_store_site"),
-    @Result(property = "hdfsSite", column = "hdfs_site"),
-    @Result(property = "coreSite", column = "core_site"),
-    @Result(property = "authMethod", column = "auth_method"),
-    @Result(property = "hadoopUsername", column = "hadoop_username"),
-    @Result(property = "krbKeytab", column = "krb_keytab"),
-    @Result(property = "krbConf", column = "krb_conf"),
-    @Result(property = "krbPrincipal", column = "krb_principal"),
-    @Result(
-        property = "properties",
-        column = "properties",
-        typeHandler = Map2StringConverter.class),
-    @Result(property = "metaVersion", column = "meta_version")
-  })
-  List<TableMetadata> selectTableMetas();
 
   @Select(
       "SELECT table_identifier.table_id as table_id, table_identifier.catalog_name as catalog_name, "
@@ -325,186 +286,28 @@ public interface TableMetaMapper {
   })
   List<ServerTableIdentifier> selectAllTableIdentifiers();
 
-  @Update(
-      "UPDATE table_runtime SET current_snapshot_id = #{runtime.currentSnapshotId},"
-          + " current_change_snapshotId =#{runtime.currentChangeSnapshotId},"
-          + " last_optimized_snapshotId = #{runtime.lastOptimizedSnapshotId},"
-          + " last_optimized_change_snapshotId = #{runtime.lastOptimizedChangeSnapshotId},"
-          + " last_major_optimizing_time = #{runtime.lastMajorOptimizingTime, "
-          + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
-          + " last_minor_optimizing_time = #{runtime.lastMinorOptimizingTime,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
-          + " last_full_optimizing_time = #{runtime.lastFullOptimizingTime,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
-          + " optimizing_status_code = #{runtime.optimizingStatus,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.OptimizingStatusConverter},"
-          + " optimizing_status_start_time = #{runtime.currentStatusStartTime,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
-          + " optimizing_process_id = #{runtime.processId},"
-          + " optimizer_group = #{runtime.optimizerGroup},"
-          + " table_config = #{runtime.tableConfiguration,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
-          + " pending_input = #{runtime.pendingInput, jdbcType=VARCHAR,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
-          + " table_summary = #{runtime.tableSummary, jdbcType=VARCHAR,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter}"
-          + " WHERE table_id = #{runtime.tableIdentifier.id}")
-  void updateTableRuntime(@Param("runtime") DefaultOptimizingState optimizingState);
-
-  @Delete("DELETE FROM table_runtime WHERE table_id = #{tableId}")
-  void deleteOptimizingRuntime(@Param("tableId") long tableId);
-
-  @Insert(
-      "INSERT INTO table_runtime (table_id, catalog_name, db_name, table_name, current_snapshot_id,"
-          + " current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId,"
-          + " last_major_optimizing_time, last_minor_optimizing_time,"
-          + " last_full_optimizing_time, optimizing_status_code, optimizing_status_start_time, optimizing_process_id,"
-          + " optimizer_group, table_config, pending_input, table_summary) VALUES"
-          + " (#{runtime.tableIdentifier.id}, #{runtime.tableIdentifier.catalog},"
-          + " #{runtime.tableIdentifier.database}, #{runtime.tableIdentifier.tableName}, #{runtime"
-          + ".currentSnapshotId},"
-          + " #{runtime.currentChangeSnapshotId}, #{runtime.lastOptimizedSnapshotId},"
-          + " #{runtime.lastOptimizedChangeSnapshotId}, #{runtime.lastMajorOptimizingTime,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
-          + " #{runtime.lastMinorOptimizingTime,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
-          + " #{runtime.lastFullOptimizingTime,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
-          + " #{runtime.optimizingStatus,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.OptimizingStatusConverter},"
-          + " #{runtime.currentStatusStartTime, "
-          + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
-          + " #{runtime.processId}, #{runtime.optimizerGroup},"
-          + " #{runtime.tableConfiguration,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
-          + " #{runtime.pendingInput, jdbcType=VARCHAR,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
-          + " #{runtime.tableSummary, jdbcType=VARCHAR,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter})")
-  void insertTableRuntime(@Param("runtime") DefaultOptimizingState optimizingState);
+  @Select(
+      "SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier "
+          + " WHERE table_id IN (#{tableIds::number[]})")
+  @Results({
+    @Result(property = "id", column = "table_id"),
+    @Result(property = "catalog", column = "catalog_name"),
+    @Result(property = "database", column = "db_name"),
+    @Result(property = "tableName", column = "table_name"),
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
+  })
+  @Lang(InListExtendedLanguageDriver.class)
+  List<ServerTableIdentifier> selectTableIdentifiers(@Param("tableIds") List<Long> tableIds);
 
   @Select(
-      "SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, i.format, a.current_snapshot_id,"
-          + " a.current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId,"
-          + " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time,"
-          + " a.optimizing_status_code, a.optimizing_status_start_time, a.optimizing_process_id,"
-          + " a.optimizer_group, a.table_config, a.pending_input, a.table_summary, "
-          + " p.process_type, s.target_snapshot_id,"
-          + " s.target_change_snapshot_id, p.create_time, s.from_sequence, s.to_sequence "
-          + " FROM table_runtime a "
-          + " INNER JOIN table_identifier i ON a.table_id = i.table_id "
-          + " LEFT JOIN table_process p ON a.optimizing_process_id = p.process_id "
-          + " LEFT JOIN optimizing_process_state s ON a.optimizing_process_id = s.process_id")
-  @Results(
-      id = "tableRuntimeMeta",
-      value = {
-        @Result(property = "tableId", column = "table_id"),
-        @Result(property = "catalogName", column = "catalog_name"),
-        @Result(property = "dbName", column = "db_name"),
-        @Result(property = "tableName", column = "table_name"),
-        @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class),
-        @Result(property = "currentSnapshotId", column = "current_snapshot_id"),
-        @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
-        @Result(property = "lastOptimizedSnapshotId", column = "last_optimized_snapshotId"),
-        @Result(
-            property = "lastOptimizedChangeSnapshotId",
-            column = "last_optimized_change_snapshotId"),
-        @Result(
-            property = "lastMajorOptimizingTime",
-            column = "last_major_optimizing_time",
-            typeHandler = Long2TsConverter.class),
-        @Result(
-            property = "lastMinorOptimizingTime",
-            column = "last_minor_optimizing_time",
-            typeHandler = Long2TsConverter.class),
-        @Result(
-            property = "lastFullOptimizingTime",
-            column = "last_full_optimizing_time",
-            typeHandler = Long2TsConverter.class),
-        @Result(
-            property = "tableStatus",
-            column = "optimizing_status_code",
-            typeHandler = OptimizingStatusConverter.class),
-        @Result(
-            property = "currentStatusStartTime",
-            column = "optimizing_status_start_time",
-            typeHandler = Long2TsConverter.class),
-        @Result(property = "optimizingProcessId", column = "optimizing_process_id"),
-        @Result(property = "optimizerGroup", column = "optimizer_group"),
-        @Result(
-            property = "tableConfig",
-            column = "table_config",
-            typeHandler = JsonObjectConverter.class),
-        @Result(
-            property = "pendingInput",
-            column = "pending_input",
-            typeHandler = JsonObjectConverter.class),
-        @Result(
-            property = "tableSummary",
-            column = "table_summary",
-            typeHandler = JsonObjectConverter.class),
-        @Result(property = "optimizingType", column = "process_type"),
-        @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
-        @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
-        @Result(
-            property = "planTime",
-            column = "create_time",
-            typeHandler = Long2TsConverter.class),
-        @Result(
-            property = "fromSequence",
-            column = "from_sequence",
-            typeHandler = MapLong2StringConverter.class),
-        @Result(
-            property = "toSequence",
-            column = "to_sequence",
-            typeHandler = MapLong2StringConverter.class)
-      })
-  List<TableRuntimeMeta> selectTableRuntimeMetas();
-
-  @Select(
-      "SELECT a.table_id, a.catalog_name, a.db_name, a.table_name, i.format, a.current_snapshot_id,"
-          + " a.current_change_snapshotId, a.last_optimized_snapshotId, a.last_optimized_change_snapshotId,"
-          + " a.last_major_optimizing_time, a.last_minor_optimizing_time, a.last_full_optimizing_time,"
-          + " a.optimizing_status_code, a.optimizing_status_start_time, a.optimizing_process_id,"
-          + " a.optimizer_group, a.table_config, a.pending_input, a.table_summary, "
-          + " p.process_type, s.target_snapshot_id,"
-          + " s.target_change_snapshot_id, p.create_time, s.from_sequence, s.to_sequence "
-          + " FROM table_runtime a "
-          + " INNER JOIN table_identifier i ON a.table_id = i.table_id "
-          + " LEFT JOIN table_process p ON a.optimizing_process_id = p.process_id "
-          + " LEFT JOIN optimizing_process_state s ON a.optimizing_process_id = s.process_id"
-          + " WHERE a.table_id = #{tableId}")
-  @ResultMap("tableRuntimeMeta")
-  TableRuntimeMeta getTableRuntimeMeta(@Param("tableId") long tableId);
-
-  @Select(
-      "<script>"
-          + "<bind name=\"isMySQL\" value=\"_databaseId == 'mysql'\" />"
-          + "<bind name=\"isPostgreSQL\" value=\"_databaseId == 'postgres'\" />"
-          + "<bind name=\"isDerby\" value=\"_databaseId == 'derby'\" />"
-          + "SELECT table_id, catalog_name, db_name, table_name, current_snapshot_id, "
-          + "current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId, "
-          + "last_major_optimizing_time, last_minor_optimizing_time, last_full_optimizing_time, optimizing_status_code, "
-          + "optimizing_status_start_time, optimizing_process_id, "
-          + "optimizer_group, table_config, pending_input, table_summary FROM table_runtime "
-          + "/* Debug: ${_databaseId} */"
-          + "WHERE 1=1 "
-          + "<if test='optimizerGroup != null'> AND optimizer_group = #{optimizerGroup} </if> "
-          + "<if test='fuzzyDbName != null and isMySQL'> AND db_name like CONCAT('%', #{fuzzyDbName, jdbcType=VARCHAR}, '%') </if>"
-          + "<if test='fuzzyDbName != null and (isPostgreSQL or isDerby)'> AND db_name like '%' || #{fuzzyDbName, jdbcType=VARCHAR} || '%' </if>"
-          + "<if test='fuzzyTableName != null and isMySQL'> AND table_name like CONCAT('%', #{fuzzyTableName, jdbcType=VARCHAR}, '%') </if>"
-          + "<if test='fuzzyTableName != null and (isPostgreSQL or isDerby)'> AND table_name like '%' || #{fuzzyTableName, jdbcType=VARCHAR} || '%' </if>"
-          + "<if test='statusCodeFilter != null and statusCodeFilter.size() > 0'>"
-          + "AND optimizing_status_code IN ("
-          + "<foreach item='item' collection='statusCodeFilter' separator=','>"
-          + "#{item}"
-          + "</foreach> ) </if>"
-          + "ORDER BY optimizing_status_code, optimizing_status_start_time DESC "
-          + "</script>")
-  @ResultMap("tableRuntimeMeta")
-  List<TableRuntimeMeta> selectTableRuntimesForOptimizerGroup(
-      @Param("optimizerGroup") String optimizerGroup,
-      @Param("fuzzyDbName") String fuzzyDbName,
-      @Param("fuzzyTableName") String fuzzyTableName,
-      @Param("statusCodeFilter") List<Integer> statusCodeFilter);
+      "SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier "
+          + " WHERE table_id = #{tableId}")
+  @Results({
+    @Result(property = "id", column = "table_id"),
+    @Result(property = "catalog", column = "catalog_name"),
+    @Result(property = "database", column = "db_name"),
+    @Result(property = "tableName", column = "table_name"),
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
+  })
+  ServerTableIdentifier getTableIdentifier(long tableId);
 }

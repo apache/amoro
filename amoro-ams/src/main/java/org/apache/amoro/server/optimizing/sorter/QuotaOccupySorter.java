@@ -41,10 +41,8 @@ public class QuotaOccupySorter implements SorterFactory {
       @Override
       public int compare(DefaultTableRuntime one, DefaultTableRuntime another) {
         return Double.compare(
-            tableWeightMap.computeIfAbsent(
-                one, tableRuntime -> tableRuntime.getOptimizingState().calculateQuotaOccupy()),
-            tableWeightMap.computeIfAbsent(
-                another, tableRuntime -> tableRuntime.getOptimizingState().calculateQuotaOccupy()));
+            tableWeightMap.computeIfAbsent(one, DefaultTableRuntime::calculateQuotaOccupy),
+            tableWeightMap.computeIfAbsent(another, DefaultTableRuntime::calculateQuotaOccupy));
       }
     };
   }

@@ -43,7 +43,7 @@ public class TableOptimizingInfo {
   private long duration = 0;
   private long fileCount = 0;
   private long fileSize = 0;
-  private int quota = 0;
+  private double quota = 0;
   private double quotaOccupation = 0.0;
 
   private String groupName = TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT;
@@ -88,11 +88,11 @@ public class TableOptimizingInfo {
     this.fileSize = fileSize;
   }
 
-  public int getQuota() {
+  public double getQuota() {
     return quota;
   }
 
-  public void setQuota(int quota) {
+  public void setQuota(double quota) {
     this.quota = quota;
   }
 

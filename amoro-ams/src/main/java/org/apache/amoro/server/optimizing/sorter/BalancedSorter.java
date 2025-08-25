@@ -38,15 +38,12 @@ public class BalancedSorter implements SorterFactory {
       public int compare(DefaultTableRuntime one, DefaultTableRuntime another) {
         return Long.compare(
             Math.max(
-                one.getOptimizingState().getLastFullOptimizingTime(),
-                Math.max(
-                    one.getOptimizingState().getLastMinorOptimizingTime(),
-                    one.getOptimizingState().getLastMajorOptimizingTime())),
+                one.getLastFullOptimizingTime(),
+                Math.max(one.getLastMinorOptimizingTime(), one.getLastMajorOptimizingTime())),
             Math.max(
-                another.getOptimizingState().getLastFullOptimizingTime(),
+                another.getLastFullOptimizingTime(),
                 Math.max(
-                    another.getOptimizingState().getLastMinorOptimizingTime(),
-                    another.getOptimizingState().getLastMajorOptimizingTime())));
+                    another.getLastMinorOptimizingTime(), another.getLastMajorOptimizingTime())));
       }
     };
   }

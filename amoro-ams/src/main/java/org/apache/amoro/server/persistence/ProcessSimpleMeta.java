@@ -16,37 +16,44 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing;
+package org.apache.amoro.server.persistence;
 
-import org.apache.amoro.optimizing.MetricsSummary;
-import org.apache.amoro.optimizing.OptimizingType;
-import org.apache.amoro.process.ProcessStatus;
+/** Process simple meta */
+public class ProcessSimpleMeta {
+  private Long processId;
+  private Long tableId;
+  private String status;
+  private String actionType;
 
-public interface OptimizingProcess {
+  public Long getProcessId() {
+    return processId;
+  }
 
-  long getTableId();
+  public Long getTableId() {
+    return tableId;
+  }
 
-  long getProcessId();
+  public String getStatus() {
+    return status;
+  }
 
-  void close();
+  public String getActionType() {
+    return actionType;
+  }
 
-  boolean isClosed();
+  public void setProcessId(Long processId) {
+    this.processId = processId;
+  }
 
-  long getTargetSnapshotId();
+  public void setTableId(Long tableId) {
+    this.tableId = tableId;
+  }
 
-  long getTargetChangeSnapshotId();
+  public void setStatus(String status) {
+    this.status = status;
+  }
 
-  long getPlanTime();
-
-  long getDuration();
-
-  OptimizingType getOptimizingType();
-
-  ProcessStatus getStatus();
-
-  long getRunningQuotaTime(long calculatingStartTime, long calculatingEndTime);
-
-  void commit();
-
-  MetricsSummary getSummary();
+  public void setActionType(String actionType) {
+    this.actionType = actionType;
+  }
 }

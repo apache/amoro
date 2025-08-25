@@ -28,7 +28,6 @@ import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;
-import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
@@ -135,7 +134,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
   public void cleanOrphanFiles() {
     TableConfiguration tableConfiguration = tableRuntime.getTableConfiguration();
     TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
-        tableRuntime.getOptimizingState().getOrphanFilesCleaningMetrics();
+        tableRuntime.getOrphanFilesCleaningMetrics();
 
     if (!tableConfiguration.isCleanOrphanEnabled()) {
       return;
@@ -520,9 +519,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
    */
   public static long fetchOptimizingPlanSnapshotTime(
       Table table, DefaultTableRuntime tableRuntime) {
-    DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
-    if (optimizingState.getOptimizingStatus().isProcessing()) {
-      long fromSnapshotId = optimizingState.getOptimizingProcess().getTargetSnapshotId();
+    if (tableRuntime.getOptimizingStatus().isProcessing()) {
+      long fromSnapshotId = tableRuntime.getOptimizingProcess().getTargetSnapshotId();
 
       for (Snapshot snapshot : table.snapshots()) {
         if (snapshot.snapshotId() == fromSnapshotId) {
