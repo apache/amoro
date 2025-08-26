@@ -284,7 +284,7 @@ CREATE TABLE task_runtime
     properties TEXT,
     PRIMARY KEY (process_id, task_id)
 );
-CREATE INDEX task_runtime_index ON table_optimizing_process (table_id, process_id);
+CREATE INDEX task_runtime_index ON task_runtime (table_id, process_id);
 
 COMMENT ON TABLE task_runtime IS 'Optimize task basic information';
 COMMENT ON COLUMN task_runtime.process_id IS 'Process ID';
@@ -304,6 +304,32 @@ COMMENT ON COLUMN task_runtime.rewrite_output IS 'Rewrite files output';
 COMMENT ON COLUMN task_runtime.metrics_summary IS 'Metrics summary';
 COMMENT ON COLUMN task_runtime.properties IS 'Task properties';
 
+CREATE TABLE table_process_state
+(
+     process_id   BIGINT NOT NULL,
+     action       VARCHAR(16) NOT NULL,
+     table_id     BIGINT NOT NULL,
+     retry_num    INT DEFAULT NULL,
+     status       VARCHAR(10) NOT NULL,
+     start_time   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     end_time     TIMESTAMP DEFAULT NULL,
+     fail_reason  VARCHAR(4096) DEFAULT NULL,
+     summary      TEXT,
+     PRIMARY KEY (process_id)
+);
+CREATE INDEX table_process_state_index ON table_process_state (table_id, start_time);
+
+COMMENT ON TABLE table_process_state IS 'History of optimizing after each commit';
+
+COMMENT ON COLUMN table_process_state.process_id IS 'optimizing_procedure UUID';
+COMMENT ON COLUMN table_process_state.action IS 'process action';
+COMMENT ON COLUMN table_process_state.retry_num IS 'Retry times';
+COMMENT ON COLUMN table_process_state.status IS 'Direct to TableOptimizingStatus';
+COMMENT ON COLUMN table_process_state.start_time IS 'First plan time';
+COMMENT ON COLUMN table_process_state.end_time IS 'finish time or failed time';
+COMMENT ON COLUMN table_process_state.fail_reason IS 'Error message after task failed';
+COMMENT ON COLUMN table_process_state.summary IS 'state summary, usually a map';
+
 CREATE TABLE optimizing_task_quota
 (
     process_id BIGINT NOT NULL,
@@ -315,7 +341,7 @@ CREATE TABLE optimizing_task_quota
     fail_reason VARCHAR(4096),
     PRIMARY KEY (process_id, task_id, retry_num)
 );
-CREATE INDEX quota_index ON table_optimizing_process (table_id);
+CREATE INDEX quota_index ON optimizing_task_quota (table_id);
 
 COMMENT ON TABLE optimizing_task_quota IS 'Optimize task basic information';
 COMMENT ON COLUMN optimizing_task_quota.process_id IS 'Optimizing procedure UUID';

@@ -170,6 +170,21 @@ CREATE TABLE task_runtime (
     CONSTRAINT task_runtime_pk PRIMARY KEY (process_id, task_id)
 );
 
+CREATE TABLE table_process_state
+(
+    process_id                    BIGINT NOT NULL,
+    action                        VARCHAR(16) NOT NULL,
+    table_id                      BIGINT NOT NULL,
+    retry_num                     INT DEFAULT NULL,
+    status                        VARCHAR(10) NOT NULL,
+    start_time                    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time                      TIMESTAMP DEFAULT NULL,
+    fail_reason                   VARCHAR(4096) DEFAULT NULL,
+    summary                       CLOB,
+    CONSTRAINT table_process_state_pk PRIMARY KEY (process_id)
+);
+CREATE INDEX table_process_state_table_idx ON table_process_state (table_id, start_time);
+
 CREATE TABLE optimizing_task_quota (
     process_id      BIGINT NOT NULL,
     task_id         INT NOT NULL,

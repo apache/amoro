@@ -44,4 +44,14 @@ public class PaimonSnapshot implements TableSnapshot {
   public String id() {
     return String.valueOf(snapshot.id());
   }
+
+  @Override
+  public String operation() {
+    return snapshot.commitKind().toString();
+  }
+
+  @Override
+  public long schemaId() {
+    return snapshot.schemaId();
+  }
 }

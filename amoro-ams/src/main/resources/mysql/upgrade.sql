@@ -25,6 +25,21 @@ UPDATE `task_runtime` SET `process_id` = `process_id` /10 << 13;
 UPDATE `optimizing_task_quota` SET `process_id` = `process_id` /10 << 13;
 UPDATE `table_runtime` SET `optimizing_process_id` = `optimizing_process_id` /10 << 13;
 
+CREATE TABLE `table_process_state`
+(
+    `process_id`                    bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
+    `action`                        varchar(16) NOT NULL COMMENT 'process action',
+    `table_id`                      bigint(20) NOT NULL,
+    `retry_num`                     int(11) DEFAULT NULL COMMENT 'Retry times',
+    `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
+    `start_time`                    timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
+    `end_time`                      timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
+    `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
+    `summary`                       mediumtext COMMENT 'state summary, usually a map',
+    PRIMARY KEY (`process_id`),
+    KEY  `table_index` (`table_id`, `start_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
+
 CREATE TABLE `table_process`
 (
     `process_id`                    bigint(20) NOT NULL COMMENT 'table process id',
@@ -50,7 +65,7 @@ CREATE TABLE `optimizing_process_state`
     `rewrite_input`                 longblob DEFAULT NULL COMMENT 'rewrite files input',
     `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
     `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
-    PRIMARY KEY (`process_id`)
+    PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
 
