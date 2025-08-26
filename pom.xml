@@ -29,7 +29,7 @@
 
     <groupId>org.apache.amoro</groupId>
     <artifactId>amoro-parent</artifactId>
-    <version>0.8.0-incubating</version>
+    <version>0.8.1-incubating</version>
     <packaging>pom</packaging>
 
     <name>Amoro Project Parent</name>

@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-parent</artifactId>
-        <version>0.8.0-incubating</version>
+        <version>0.8.1-incubating</version>
     </parent>
 
     <artifactId>amoro-format-iceberg</artifactId>
