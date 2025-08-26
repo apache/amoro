@@ -516,7 +516,7 @@ public class OptimizingQueue extends PersistentBase {
         if (this.status != ProcessStatus.RUNNING) {
           return;
         }
-        if (optimizingState.isCommitOnPartialSuccess() && needCommit) {
+        if (optimizingState.isAllowPartialCommit() && needCommit) {
           optimizingState.beginCommitting();
         } else {
           this.status = ProcessStatus.CLOSED;
@@ -570,7 +570,7 @@ public class OptimizingQueue extends PersistentBase {
                 taskRuntime.getFailReason());
             retryTask(taskRuntime);
           } else {
-            if (optimizingState.isCommitOnPartialSuccess()
+            if (optimizingState.isAllowPartialCommit()
                 && optimizingState.getOptimizingStatus().isProcessing()
                 && optimizingState.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
               LOG.info(

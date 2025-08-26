@@ -29,7 +29,7 @@ public class OptimizingConfig {
   // self-optimizing.enabled
   private boolean enabled;
 
-  private boolean commitOnPartialSuccess;
+  private boolean allowPartialCommit;
 
   // self-optimizing.quota
   private double targetQuota;
@@ -102,12 +102,12 @@ public class OptimizingConfig {
     return this;
   }
 
-  public boolean isCommitOnPartialSuccess() {
-    return commitOnPartialSuccess;
+  public boolean isAllowPartialCommit() {
+    return allowPartialCommit;
   }
 
-  public OptimizingConfig setCommitOnPartialSuccess(boolean commitOnPartialSuccess) {
-    this.commitOnPartialSuccess = commitOnPartialSuccess;
+  public OptimizingConfig setAllowPartialCommit(boolean allowPartialCommit) {
+    this.allowPartialCommit = allowPartialCommit;
     return this;
   }
 
@@ -300,7 +300,7 @@ public class OptimizingConfig {
     }
     OptimizingConfig that = (OptimizingConfig) o;
     return enabled == that.enabled
-        && commitOnPartialSuccess == that.commitOnPartialSuccess
+        && allowPartialCommit == that.allowPartialCommit
         && Double.compare(that.targetQuota, targetQuota) == 0
         && maxExecuteRetryCount == that.maxExecuteRetryCount
         && maxCommitRetryCount == that.maxCommitRetryCount
@@ -327,7 +327,7 @@ public class OptimizingConfig {
   public int hashCode() {
     return Objects.hashCode(
         enabled,
-        commitOnPartialSuccess,
+        allowPartialCommit,
         targetQuota,
         optimizerGroup,
         maxExecuteRetryCount,
@@ -354,7 +354,7 @@ public class OptimizingConfig {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("enabled", enabled)
-        .add("commitOnPartialSuccess", commitOnPartialSuccess)
+        .add("commitOnPartialSuccess", allowPartialCommit)
         .add("targetQuota", targetQuota)
         .add("optimizerGroup", optimizerGroup)
         .add("maxExecuteRetryCount", maxExecuteRetryCount)

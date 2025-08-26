@@ -520,8 +520,8 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     return tableConfiguration.getOptimizingConfig().isEnabled();
   }
 
-  public boolean isCommitOnPartialSuccess() {
-    return tableConfiguration.getOptimizingConfig().isCommitOnPartialSuccess();
+  public boolean isAllowPartialCommit() {
+    return tableConfiguration.getOptimizingConfig().isAllowPartialCommit();
   }
 
   public double getTargetQuota() {

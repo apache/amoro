@@ -87,6 +87,25 @@ public class UnKeyedTableCommit {
     this.tasks = tasks;
   }
 
+  private Set<ContentFile<?>> getExcludedDeleteFiles(
+      List<TaskRuntime<RewriteStageTask>> successTasks) {
+    Set<ContentFile<?>> excludedDeleteFiles = new HashSet<>();
+    tasks.stream()
+        .filter(task -> !successTasks.contains(task))
+        .map(TaskRuntime::getTaskDescriptor)
+        .filter(task -> task.getInput().rewrittenDeleteFiles() != null)
+        .forEach(
+            task ->
+                excludedDeleteFiles.addAll(
+                    Arrays.stream(task.getInput().rewrittenDeleteFiles())
+                        .collect(Collectors.toSet())));
+    return excludedDeleteFiles;
+  }
+
+  private boolean needRemove(Set<ContentFile<?>> excludedDeleteFiles, ContentFile<?> deleteFile) {
+    return !excludedDeleteFiles.contains(deleteFile);
+  }
+
   protected List<DataFile> moveFile2HiveIfNeed() {
     if (!needMoveFile2Hive()) {
       return null;
@@ -199,6 +218,7 @@ public class UnKeyedTableCommit {
     long startTime = System.currentTimeMillis();
     LOG.info("Starting to commit table {} with {} tasks.", table.id(), tasks.size());
 
+    Set<ContentFile<?>> excludedDeleteFiles = getExcludedDeleteFiles(successTasks);
     List<DataFile> hiveNewDataFiles = moveFile2HiveIfNeed();
     // collect files
     Set<DataFile> addedDataFiles = Sets.newHashSet();
@@ -223,7 +243,7 @@ public class UnKeyedTableCommit {
               if (task.getInput().rewrittenDeleteFiles() != null) {
                 removedDeleteFiles.addAll(
                     Arrays.stream(task.getInput().rewrittenDeleteFiles())
-                        .filter(deleteFile -> needRemove(successTasks, deleteFile))
+                        .filter(deleteFile -> needRemove(excludedDeleteFiles, deleteFile))
                         .map(ContentFiles::asDeleteFile)
                         .collect(Collectors.toSet()));
               }
@@ -254,17 +274,6 @@ public class UnKeyedTableCommit {
       LOG.warn("Failed to commit table {}.", table.id(), e);
       throw new OptimizingCommitException("unexpected commit error ", e);
     }
-  }
-
-  private boolean needRemove(
-      List<TaskRuntime<RewriteStageTask>> successTasks, ContentFile<?> deleteFile) {
-    return tasks.stream()
-        .filter(task -> !successTasks.contains(task))
-        .map(TaskRuntime::getTaskDescriptor)
-        .noneMatch(
-            task ->
-                task.getInput().rewrittenDeleteFiles() != null
-                    && Arrays.asList(task.getInput().rewrittenDeleteFiles()).contains(deleteFile));
   }
 
   private void rewriteDataFiles(
