@@ -63,8 +63,14 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
 
   private void tryEvaluatingPendingInput(DefaultTableRuntime tableRuntime, MixedTable table) {
     DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
+    // When planning tasks, tables may be ignored if their plan intervals are too small,
+    // resulting in this optimization being ineffective， so skip evaluator in advance
+    boolean canPlan =
+        tableRuntime.getOptimizingState().getLastPlanTime() - System.currentTimeMillis()
+            > tableRuntime.getTableConfiguration().getOptimizingConfig().getMinPlanInterval();
     if (optimizingState.isOptimizingEnabled()
-        && !optimizingState.getOptimizingStatus().isProcessing()) {
+        && !optimizingState.getOptimizingStatus().isProcessing()
+        && canPlan) {
       AbstractOptimizingEvaluator evaluator =
           IcebergTableUtil.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
       if (evaluator.isNecessary()) {
