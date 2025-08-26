@@ -20,11 +20,13 @@ package org.apache.amoro.server.dashboard.controller;
 
 import io.javalin.http.Context;
 import org.apache.amoro.resource.Resource;
+import org.apache.amoro.resource.ResourceContainer;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.resource.ResourceType;
 import org.apache.amoro.server.dashboard.response.OkResponse;
+import org.apache.amoro.server.manager.AbstractOptimizerContainer;
 import org.apache.amoro.server.resource.ContainerMetadata;
-import org.apache.amoro.server.resource.InternalContainers;
+import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -62,7 +64,13 @@ public class OptimizerController {
             "The resource ID %s has not been indexed" + " to any optimizer.", resourceId));
     Resource resource = optimizerManager.getResource(resourceId);
     resource.getProperties().putAll(optimizerInstances.get(0).getProperties());
-    InternalContainers.get(resource.getContainerName()).releaseResource(resource);
+    ResourceContainer rc = Containers.get(resource.getContainerName());
+    Preconditions.checkState(
+        rc instanceof AbstractOptimizerContainer,
+        "Cannot release optimizer on non-optimizer resource container %s.",
+        resource.getContainerName());
+    ((AbstractOptimizerContainer) rc).releaseResource(resource);
+
     optimizerManager.deleteResource(resourceId);
     optimizerManager.deleteOptimizer(resource.getGroupName(), resourceId);
     ctx.json(OkResponse.of("Success to release optimizer"));
@@ -80,7 +88,13 @@ public class OptimizerController {
             .setProperties(resourceGroup.getProperties())
             .setThreadCount(parallelism)
             .build();
-    InternalContainers.get(resource.getContainerName()).requestResource(resource);
+    ResourceContainer rc = Containers.get(resource.getContainerName());
+    Preconditions.checkState(
+        rc instanceof AbstractOptimizerContainer,
+        "Cannot create optimizer on non-optimizer resource container %s.",
+        resource.getContainerName());
+    ((AbstractOptimizerContainer) rc).requestResource(resource);
+
     optimizerManager.createResource(resource);
     ctx.json(OkResponse.of("success to create optimizer"));
   }
@@ -89,7 +103,7 @@ public class OptimizerController {
   public void getContainers(Context ctx) {
     ctx.json(
         OkResponse.of(
-            InternalContainers.getMetadataList().stream()
+            Containers.getMetadataList().stream()
                 .map(ContainerMetadata::getName)
                 .collect(Collectors.toList())));
   }
