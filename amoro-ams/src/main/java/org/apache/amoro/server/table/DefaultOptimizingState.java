@@ -188,7 +188,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     tableLock.lock();
     try {
       doAsTransaction(
-          () -> Optional.ofNullable(optimizingProcess).ifPresent(OptimizingProcess::close),
+          () -> Optional.ofNullable(optimizingProcess).ifPresent(process -> process.close(false)),
           () ->
               doAs(
                   TableMetaMapper.class,
@@ -436,7 +436,7 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
     if (!Objects.equals(
         this.optimizerGroup, newTableConfig.getOptimizingConfig().getOptimizerGroup())) {
       if (optimizingProcess != null) {
-        optimizingProcess.close();
+        optimizingProcess.close(false);
       }
       this.optimizerGroup = newTableConfig.getOptimizingConfig().getOptimizerGroup();
       this.optimizingMetrics.optimizerGroupChanged(optimizerGroup);
@@ -518,6 +518,10 @@ public class DefaultOptimizingState extends StatedPersistentBase implements Proc
 
   public boolean isOptimizingEnabled() {
     return tableConfiguration.getOptimizingConfig().isEnabled();
+  }
+
+  public boolean isAllowPartialCommit() {
+    return tableConfiguration.getOptimizingConfig().isAllowPartialCommit();
   }
 
   public double getTargetQuota() {
