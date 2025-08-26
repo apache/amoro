@@ -33,6 +33,7 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.utils.MixedFormatCatalogUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.spark.SparkUtil;
@@ -256,6 +257,10 @@ public class SparkUnifiedCatalogBase implements TableCatalog, SupportsNamespaces
     }
     TableFormat format = TableFormat.valueOf(provider.toUpperCase());
     TableCatalog catalog = tableCatalog(format);
+    unifiedCatalog.refresh();
+    properties =
+        MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
+            properties, unifiedCatalog.properties());
     return catalog.createTable(ident, schema, partitions, properties);
   }
 
