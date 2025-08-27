@@ -16,9 +16,6 @@
 -- If you have any changes to the AMS database, please record them in this file.
 -- We will confirm the corresponding version of these upgrade scripts when releasing.
 
--- Update the precision from s level to ms.
-ALTER TABLE `table_runtime` MODIFY COLUMN `optimizing_status_start_time` TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Table optimize status start time';
-
 -- Update processId to SnowflakeId
 UPDATE `table_optimizing_process` SET `process_id` = `process_id` /10 << 13;
 UPDATE `task_runtime` SET `process_id` = `process_id` /10 << 13;
