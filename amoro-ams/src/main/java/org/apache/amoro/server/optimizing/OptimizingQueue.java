@@ -35,14 +35,15 @@ import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.persistence.OptimizingProcessState;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
-import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
@@ -124,18 +125,25 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   private void initTableRuntime(DefaultTableRuntime tableRuntime) {
-    DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
-    if (optimizingState.getOptimizingStatus().isProcessing()
-        && optimizingState.getProcessId() != 0) {
-      tableRuntime.recover(new TableOptimizingProcess(tableRuntime));
+    TableOptimizingProcess process = null;
+    if (tableRuntime.getOptimizingStatus().isProcessing() && tableRuntime.getProcessId() != 0) {
+      TableProcessMeta meta =
+          getAs(
+              TableProcessMapper.class,
+              mapper -> mapper.getProcessMeta(tableRuntime.getProcessId()));
+      OptimizingProcessState state =
+          getAs(
+              OptimizingProcessMapper.class,
+              mapper -> mapper.getProcessState(tableRuntime.getProcessId()));
+      process = new TableOptimizingProcess(tableRuntime, meta, state);
+      tableRuntime.recover(process);
     }
 
-    if (optimizingState.isOptimizingEnabled()) {
-      optimizingState.resetTaskQuotas(
+    if (tableRuntime.getOptimizingConfig().isEnabled()) {
+      tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
       // Close the committing process to avoid duplicate commit on the table.
-      if (optimizingState.getOptimizingStatus() == OptimizingStatus.COMMITTING) {
-        OptimizingProcess process = optimizingState.getOptimizingProcess();
+      if (tableRuntime.getOptimizingStatus() == OptimizingStatus.COMMITTING) {
         if (process != null) {
           LOG.warn(
               "Close the committing process {} on table {}",
@@ -144,13 +152,12 @@ public class OptimizingQueue extends PersistentBase {
           process.close();
         }
       }
-      if (!optimizingState.getOptimizingStatus().isProcessing()) {
+      if (!tableRuntime.getOptimizingStatus().isProcessing()) {
         scheduler.addTable(tableRuntime);
-      } else {
-        tableQueue.offer(new TableOptimizingProcess(tableRuntime));
+      } else if (process != null) {
+        tableQueue.offer(process);
       }
     } else {
-      OptimizingProcess process = optimizingState.getOptimizingProcess();
       if (process != null) {
         process.close();
       }
@@ -162,14 +169,13 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   public void refreshTable(DefaultTableRuntime tableRuntime) {
-    DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
-    if (optimizingState.isOptimizingEnabled()
-        && !optimizingState.getOptimizingStatus().isProcessing()) {
+    if (tableRuntime.getOptimizingConfig().isEnabled()
+        && !tableRuntime.getOptimizingStatus().isProcessing()) {
       LOG.info(
           "Bind queue {} success with table {}",
           optimizerGroup.getName(),
           tableRuntime.getTableIdentifier());
-      optimizingState.resetTaskQuotas(
+      tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
       scheduler.addTable(tableRuntime);
     }
@@ -179,7 +185,7 @@ public class OptimizingQueue extends PersistentBase {
     scheduler.removeTable(tableRuntime);
     List<OptimizingProcess> processList =
         tableQueue.stream()
-            .filter(process -> process.optimizingState == tableRuntime.getOptimizingState())
+            .filter(process -> process.getTableId() == tableRuntime.getTableIdentifier().getId())
             .collect(Collectors.toList());
     for (OptimizingProcess process : processList) {
       process.close();
@@ -291,7 +297,7 @@ public class OptimizingQueue extends PersistentBase {
               long currentTime = System.currentTimeMillis();
               scheduleLock.lock();
               try {
-                tableRuntime.getOptimizingState().setLastPlanTime(currentTime);
+                tableRuntime.setLastPlanTime(currentTime);
                 planningTables.remove(tableRuntime.getTableIdentifier());
                 if (process != null) {
                   tableQueue.offer(process);
@@ -322,24 +328,24 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   private TableOptimizingProcess planInternal(DefaultTableRuntime tableRuntime) {
-    tableRuntime.getOptimizingState().beginPlanning();
+    tableRuntime.beginPlanning();
     try {
       ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
       AmoroTable<?> table = catalogManager.loadTable(identifier.getIdentifier());
       AbstractOptimizingPlanner planner =
           IcebergTableUtil.createOptimizingPlanner(
-              tableRuntime.getOptimizingState().refresh(table),
+              tableRuntime.refresh(table),
               (MixedTable) table.originalTable(),
               getAvailableCore(),
               maxInputSizePerThread());
       if (planner.isNecessary()) {
         return new TableOptimizingProcess(planner, tableRuntime);
       } else {
-        tableRuntime.getOptimizingState().completeEmptyProcess();
+        tableRuntime.completeEmptyProcess();
         return null;
       }
     } catch (Throwable throwable) {
-      tableRuntime.getOptimizingState().planFailed();
+      tableRuntime.planFailed();
       LOG.error("Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
       throw throwable;
     }
@@ -417,7 +423,7 @@ public class OptimizingQueue extends PersistentBase {
     private final Lock lock = new ReentrantLock();
     private final long processId;
     private final OptimizingType optimizingType;
-    private final DefaultOptimizingState optimizingState;
+    private final DefaultTableRuntime tableRuntime;
     private final long planTime;
     private final long targetSnapshotId;
     private final long targetChangeSnapshotId;
@@ -435,13 +441,15 @@ public class OptimizingQueue extends PersistentBase {
         try {
           TaskRuntime<?> task = null;
           if (status != ProcessStatus.KILLED && status != ProcessStatus.FAILED) {
-            if (!needQuotaChecking || getActualQuota() < getQuotaLimit()) {
+            int actualQuota = getActualQuota();
+            int quotaLimit = getQuotaLimit();
+            if (!needQuotaChecking || actualQuota < quotaLimit) {
               task = taskQueue.poll();
             }
           }
           if (task != null) {
             optimizingTasksMap
-                .computeIfAbsent(optimizingState.getTableIdentifier(), k -> new AtomicInteger(0))
+                .computeIfAbsent(tableRuntime.getTableIdentifier(), k -> new AtomicInteger(0))
                 .incrementAndGet();
           }
           return task;
@@ -455,7 +463,7 @@ public class OptimizingQueue extends PersistentBase {
     public TableOptimizingProcess(
         AbstractOptimizingPlanner planner, DefaultTableRuntime tableRuntime) {
       processId = planner.getProcessId();
-      optimizingState = tableRuntime.getOptimizingState();
+      this.tableRuntime = tableRuntime;
       optimizingType = planner.getOptimizingType();
       planTime = planner.getPlanTime();
       targetSnapshotId = planner.getTargetSnapshotId();
@@ -466,18 +474,21 @@ public class OptimizingQueue extends PersistentBase {
       beginAndPersistProcess();
     }
 
-    public TableOptimizingProcess(DefaultTableRuntime tableRuntime) {
-      optimizingState = tableRuntime.getOptimizingState();
-      processId = optimizingState.getProcessId();
-      optimizingType = optimizingState.getOptimizingType();
-      targetSnapshotId = optimizingState.getTargetSnapshotId();
-      targetChangeSnapshotId = optimizingState.getTargetChangeSnapshotId();
-      planTime = optimizingState.getLastPlanTime();
-      if (optimizingState.getFromSequence() != null) {
-        fromSequence = optimizingState.getFromSequence();
+    public TableOptimizingProcess(
+        DefaultTableRuntime tableRuntime,
+        TableProcessMeta processMeta,
+        OptimizingProcessState processState) {
+      this.tableRuntime = tableRuntime;
+      processId = tableRuntime.getProcessId();
+      optimizingType = OptimizingType.valueOf(processMeta.getProcessType());
+      targetSnapshotId = processState.getTargetSnapshotId();
+      targetChangeSnapshotId = processState.getTargetChangeSnapshotId();
+      planTime = processMeta.getCreateTime();
+      if (processState.getFromSequence() != null) {
+        fromSequence = processState.getFromSequence();
       }
-      if (optimizingState.getToSequence() != null) {
-        toSequence = optimizingState.getToSequence();
+      if (processState.getToSequence() != null) {
+        toSequence = processState.getToSequence();
       }
       if (this.status != ProcessStatus.KILLED) {
         tableRuntime.recover(this);
@@ -486,11 +497,15 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     private int getQuotaLimit() {
-      double targetQuota =
-          optimizingState.getTableConfiguration().getOptimizingConfig().getTargetQuota();
+      double targetQuota = tableRuntime.getOptimizingConfig().getTargetQuota();
       return targetQuota > 1
           ? (int) targetQuota
           : (int) Math.ceil(targetQuota * getAvailableCore());
+    }
+
+    @Override
+    public long getTableId() {
+      return tableRuntime.getTableIdentifier().getId();
     }
 
     @Override
@@ -527,7 +542,7 @@ public class OptimizingQueue extends PersistentBase {
       lock.lock();
       try {
         optimizingTasksMap.computeIfPresent(
-            optimizingState.getTableIdentifier(),
+            tableRuntime.getTableIdentifier(),
             (k, v) -> {
               if (v.get() > 0) {
                 v.decrementAndGet();
@@ -535,11 +550,11 @@ public class OptimizingQueue extends PersistentBase {
               return v;
             });
         try {
-          optimizingState.addTaskQuota(taskRuntime.getCurrentQuota());
+          tableRuntime.addTaskQuota(taskRuntime.getCurrentQuota());
         } catch (Throwable throwable) {
           LOG.warn(
               "{} failed to add task quota {}, ignore it",
-              optimizingState.getTableIdentifier(),
+              tableRuntime.getTableIdentifier(),
               taskRuntime.getTaskId(),
               throwable);
         }
@@ -553,12 +568,13 @@ public class OptimizingQueue extends PersistentBase {
         if (taskRuntime.getStatus() == TaskRuntime.Status.SUCCESS) {
           // the lock of TableOptimizingProcess makes it thread-safe
           if (allTasksPrepared()
-              && optimizingState.getOptimizingStatus().isProcessing()
-              && optimizingState.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
-            optimizingState.beginCommitting();
+              && tableRuntime.getOptimizingStatus().isProcessing()
+              && tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
+            tableRuntime.beginCommitting();
           }
         } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
-          if (taskRuntime.getRetry() < optimizingState.getMaxExecuteRetryCount()) {
+          if (taskRuntime.getRetry()
+              < tableRuntime.getOptimizingConfig().getMaxExecuteRetryCount()) {
             LOG.info(
                 "Put task {} to retry queue, because {}",
                 taskRuntime.getTaskId(),
@@ -644,7 +660,7 @@ public class OptimizingQueue extends PersistentBase {
 
     public int getActualQuota() {
       return optimizingTasksMap
-          .getOrDefault(optimizingState.getTableIdentifier(), new AtomicInteger(0))
+          .getOrDefault(tableRuntime.getTableIdentifier(), new AtomicInteger(0))
           .get();
     }
 
@@ -652,14 +668,14 @@ public class OptimizingQueue extends PersistentBase {
     public void commit() {
       LOG.debug(
           "{} get {} tasks of {} partitions to commit",
-          optimizingState.getTableIdentifier(),
+          tableRuntime.getTableIdentifier(),
           taskMap.size(),
           taskMap.values());
 
       lock.lock();
       try {
         if (hasCommitted) {
-          LOG.warn("{} has already committed, give up", optimizingState.getTableIdentifier());
+          LOG.warn("{} has already committed, give up", tableRuntime.getTableIdentifier());
           try {
             persistAndSetCompleted(status == ProcessStatus.SUCCESS);
           } catch (Exception ignored) {
@@ -675,10 +691,10 @@ public class OptimizingQueue extends PersistentBase {
         } catch (PersistenceException e) {
           LOG.warn(
               "{} failed to persist process completed, will retry next commit",
-              optimizingState.getTableIdentifier(),
+              tableRuntime.getTableIdentifier(),
               e);
         } catch (Throwable t) {
-          LOG.error("{} Commit optimizing failed ", optimizingState.getTableIdentifier(), t);
+          LOG.error("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), t);
           status = ProcessStatus.FAILED;
           failedReason = ExceptionUtil.getErrorMessage(t, 4000);
           endTime = System.currentTimeMillis();
@@ -704,7 +720,7 @@ public class OptimizingQueue extends PersistentBase {
       MixedTable table =
           (MixedTable)
               catalogManager
-                  .loadTable(optimizingState.getTableIdentifier().getIdentifier())
+                  .loadTable(tableRuntime.getTableIdentifier().getIdentifier())
                   .originalTable();
       if (table.isUnkeyedTable()) {
         return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
@@ -741,11 +757,11 @@ public class OptimizingQueue extends PersistentBase {
                   TableProcessMapper.class,
                   mapper ->
                       mapper.insertProcess(
-                          optimizingState.getTableIdentifier().getId(),
+                          tableRuntime.getTableIdentifier().getId(),
                           processId,
                           status,
                           optimizingType.name().toUpperCase(),
-                          optimizingState.getOptimizingStatus().name().toLowerCase(),
+                          tableRuntime.getOptimizingStatus().name().toLowerCase(),
                           "AMORO",
                           planTime,
                           getSummary().summaryAsMap(false))),
@@ -754,7 +770,7 @@ public class OptimizingQueue extends PersistentBase {
                   OptimizingProcessMapper.class,
                   mapper ->
                       mapper.insertInternalProcessState(
-                          optimizingState.getTableIdentifier().getId(),
+                          tableRuntime.getTableIdentifier().getId(),
                           processId,
                           targetSnapshotId,
                           targetChangeSnapshotId,
@@ -765,7 +781,7 @@ public class OptimizingQueue extends PersistentBase {
                   OptimizingProcessMapper.class,
                   mapper -> mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
           () -> TaskFilesPersistence.persistTaskInputs(processId, taskMap.values()),
-          () -> optimizingState.beginProcess(this));
+          () -> tableRuntime.beginProcess(this));
     }
 
     private void persistAndSetCompleted(boolean success) {
@@ -780,14 +796,14 @@ public class OptimizingQueue extends PersistentBase {
                   TableProcessMapper.class,
                   mapper ->
                       mapper.updateProcess(
-                          optimizingState.getTableIdentifier().getId(),
+                          tableRuntime.getTableIdentifier().getId(),
                           processId,
                           status,
-                          optimizingState.getOptimizingStatus().name().toLowerCase(),
+                          tableRuntime.getOptimizingStatus().name().toLowerCase(),
                           System.currentTimeMillis(),
                           getFailedReason(),
                           getSummary().summaryAsMap(false))),
-          () -> optimizingState.completeProcess(success),
+          () -> tableRuntime.completeProcess(success),
           () -> clearProcess(this));
     }
 
@@ -802,7 +818,7 @@ public class OptimizingQueue extends PersistentBase {
                 OptimizingProcessMapper.class,
                 mapper ->
                     mapper.selectTaskRuntimes(
-                        optimizingState.getTableIdentifier().getId(), processId));
+                        tableRuntime.getTableIdentifier().getId(), processId));
         Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
         taskRuntimes.forEach(
             taskRuntime -> {
@@ -833,7 +849,7 @@ public class OptimizingQueue extends PersistentBase {
             new TaskRuntime<>(new OptimizingTaskId(processId, taskId++), taskDescriptor);
         LOG.info(
             "{} plan new task {}, summary {}",
-            optimizingState.getTableIdentifier(),
+            tableRuntime.getTableIdentifier(),
             taskRuntime.getTaskId(),
             taskRuntime.getSummary());
         taskRuntime.getCompletedFuture().whenCompleted(() -> acceptResult(taskRuntime));

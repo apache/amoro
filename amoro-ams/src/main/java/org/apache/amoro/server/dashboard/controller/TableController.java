@@ -34,7 +34,6 @@ import org.apache.amoro.hive.catalog.MixedHiveCatalog;
 import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.hive.utils.UpgradeHiveTableUtil;
 import org.apache.amoro.mixed.CatalogLoader;
-import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.HiveTableProperties;
@@ -54,6 +53,7 @@ import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Function;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -159,11 +159,13 @@ public class TableController {
       TableRuntimeMeta tableRuntimeMeta =
           tableManager.getTableRuntimeMata(serverTableIdentifier.get());
       if (tableRuntimeMeta != null) {
-        tableSummary.setOptimizingStatus(tableRuntimeMeta.getTableStatus().name());
-        AbstractOptimizingEvaluator.PendingInput tableRuntimeSummary =
-            tableRuntimeMeta.getTableSummary();
-        if (tableRuntimeSummary != null) {
-          tableSummary.setHealthScore(tableRuntimeSummary.getHealthScore());
+        OptimizingStatus status = OptimizingStatus.ofCode(tableRuntimeMeta.getStatusCode());
+        if (status != null) {
+          tableSummary.setOptimizingStatus(status.name());
+        }
+        org.apache.amoro.table.TableSummary summary = tableRuntimeMeta.getTableSummary();
+        if (summary != null) {
+          tableSummary.setHealthScore(summary.getHealthScore());
         }
       }
     } else {
@@ -685,11 +687,14 @@ public class TableController {
     ServerTableIdentifier serverTableIdentifier =
         tableManager.getServerTableIdentifier(
             TableIdentifier.of(catalog, db, table).buildTableIdentifier());
-    TableRuntimeMeta meta = tableManager.getTableRuntimeMata(serverTableIdentifier);
-    if (meta == null || meta.getOptimizingProcessId() != processId) {
-      throw new IllegalArgumentException(
-          String.format("Can't cancel optimizing process %s", processId));
-    }
+    TableProcessMeta processMeta = tableManager.getTableProcessMeta(processId);
+    Preconditions.checkState(
+        processMeta != null, "table process meta not found, processId: %s", processId);
+    Preconditions.checkState(
+        processMeta.getTableId() == serverTableIdentifier.getId(),
+        "table process meta tableId not match, processId: %s, tableId: %s",
+        processId,
+        serverTableIdentifier.getId());
 
     OptimizingService.Iface client =
         OptimizingClientPools.getClient(

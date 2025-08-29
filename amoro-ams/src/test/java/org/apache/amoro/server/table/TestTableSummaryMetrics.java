@@ -106,7 +106,7 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
     appendData(table);
     appendPosDelete(table);
     DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
-    runtime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
+    runtime.refresh(tableService().loadTable(serverTableIdentifier()));
   }
 
   private void appendData(UnkeyedTable table) {

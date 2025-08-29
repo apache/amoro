@@ -34,12 +34,10 @@ import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
-import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
@@ -151,7 +149,7 @@ public class TestOptimizingUtil extends AMSTableTestBase {
     DefaultTableRuntime tableRuntime =
         buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
 
-    tableRuntime.getOptimizingState().refresh(tableService().loadTable(serverTableIdentifier()));
+    tableRuntime.refresh(tableService().loadTable(serverTableIdentifier()));
     return tableRuntime;
   }
 
@@ -170,16 +168,15 @@ public class TestOptimizingUtil extends AMSTableTestBase {
       OptimizingStatus status, ResourceGroup resourceGroup) {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
-    TableRuntimeMeta tableRuntimeMeta = new TableRuntimeMeta();
-    tableRuntimeMeta.setCatalogName(serverTableIdentifier().getCatalog());
-    tableRuntimeMeta.setDbName(serverTableIdentifier().getDatabase());
-    tableRuntimeMeta.setTableName(serverTableIdentifier().getTableName());
-    tableRuntimeMeta.setTableId(serverTableIdentifier().getId());
-    tableRuntimeMeta.setFormat(TableFormat.ICEBERG);
-    tableRuntimeMeta.setTableStatus(status);
-    tableRuntimeMeta.setTableConfig(TableConfigurations.parseTableConfig(mixedTable.properties()));
-    tableRuntimeMeta.setOptimizerGroup(resourceGroup.getName());
-    return new DefaultTableRuntime(tableRuntimeMeta, tableService());
+    DefaultTableRuntime tableRuntime =
+        (DefaultTableRuntime) tableService().getRuntime(serverTableIdentifier().getId());
+    tableRuntime
+        .store()
+        .begin()
+        .updateStatusCode(code -> status.getCode())
+        .updateGroup(any -> resourceGroup.getName())
+        .commit();
+    return tableRuntime;
   }
 
   private OptimizingTaskResult buildOptimizingTaskResult(OptimizingTaskId taskId, int threadId) {
