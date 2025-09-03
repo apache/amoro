@@ -44,7 +44,6 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.amoro.table.TableRuntimeStore;
 import org.apache.amoro.table.TableSummary;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.slf4j.Logger;
@@ -86,14 +85,19 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private final CompletableFuture<Boolean> initialized = new CompletableFuture<>();
   private final Configurations serverConfiguration;
   private final CatalogManager catalogManager;
+  private final TableRuntimeFactoryManager tableRuntimeFactoryManager;
   private RuntimeHandlerChain headHandler;
   private ExecutorService tableExplorerExecutors;
 
-  public DefaultTableService(Configurations configuration, CatalogManager catalogManager) {
+  public DefaultTableService(
+      Configurations configuration,
+      CatalogManager catalogManager,
+      TableRuntimeFactoryManager tableRuntimeFactoryManager) {
     this.catalogManager = catalogManager;
     this.externalCatalogRefreshingInterval =
         configuration.get(AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL).toMillis();
     this.serverConfiguration = configuration;
+    this.tableRuntimeFactoryManager = tableRuntimeFactoryManager;
   }
 
   @Override
@@ -133,16 +137,14 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   @Override
-  public void handleTableChanged(
-      DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus) {
+  public void handleTableChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
     if (headHandler != null) {
       headHandler.fireStatusChanged(tableRuntime, originalStatus);
     }
   }
 
   @Override
-  public void handleTableChanged(
-      DefaultTableRuntime tableRuntime, TableConfiguration originalConfig) {
+  public void handleTableChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
     if (headHandler != null) {
       headHandler.fireConfigChanged(tableRuntime, originalConfig);
     }
@@ -170,20 +172,29 @@ public class DefaultTableService extends PersistentBase implements TableService 
                     }));
 
     List<TableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
-    tableRuntimeMetaList.stream()
-        .filter(t -> identifierMap.containsKey(t.getTableId()))
-        .forEach(
-            tableRuntimeMeta -> {
-              ServerTableIdentifier identifier = identifierMap.get(tableRuntimeMeta.getTableId());
-              List<TableRuntimeState> states = statesMap.get(tableRuntimeMeta.getTableId());
-              TableRuntimeStore store =
-                  new DefaultTableRuntimeStore(
-                      identifier, tableRuntimeMeta, DefaultTableRuntime.REQUIRED_STATES, states);
-              DefaultTableRuntime tableRuntime = new DefaultTableRuntime(store, this);
-              tableRuntimeMap.put(tableRuntimeMeta.getTableId(), tableRuntime);
-              tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
-              tableRuntimes.add(tableRuntime);
-            });
+
+    for (TableRuntimeMeta tableRuntimeMeta : tableRuntimeMetaList) {
+      ServerTableIdentifier identifier = identifierMap.get(tableRuntimeMeta.getTableId());
+      if (identifier == null) {
+        LOG.warn(
+            "No available table identifier found for table runtime meta id={}",
+            tableRuntimeMeta.getTableId());
+        continue;
+      }
+      List<TableRuntimeState> states = statesMap.get(tableRuntimeMeta.getTableId());
+      Optional<TableRuntime> tableRuntime =
+          createTableRuntime(identifier, tableRuntimeMeta, states);
+      if (!tableRuntime.isPresent()) {
+        LOG.warn("No available table runtime factory found for table {}", identifier);
+        continue;
+      }
+      tableRuntime.ifPresent(
+          t -> {
+            t.registerMetric(MetricManager.getInstance().getGlobalRegistry());
+            tableRuntimeMap.put(t.getTableIdentifier().getId(), t);
+            tableRuntimes.add(t);
+          });
+    }
 
     if (headHandler != null) {
       headHandler.initialize(tableRuntimes);
@@ -218,7 +229,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   @VisibleForTesting
-  public void setRuntime(DefaultTableRuntime tableRuntime) {
+  public void setRuntime(TableRuntime tableRuntime) {
     checkStarted();
     tableRuntimeMap.put(tableRuntime.getTableIdentifier().getId(), tableRuntime);
   }
@@ -481,21 +492,45 @@ public class DefaultTableService extends PersistentBase implements TableService 
     meta.setStatusCode(OptimizingStatus.IDLE.getCode());
     meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
     meta.setTableSummary(new TableSummary());
+    meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
+    meta.setTableSummary(new TableSummary());
     doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
 
-    DefaultTableRuntimeStore store =
-        new DefaultTableRuntimeStore(
-            serverTableIdentifier,
-            meta,
-            DefaultTableRuntime.REQUIRED_STATES,
-            Collections.emptyList());
-    DefaultTableRuntime tableRuntime = new DefaultTableRuntime(store, this);
+    Optional<TableRuntime> tableRuntimeOpt =
+        createTableRuntime(serverTableIdentifier, meta, Collections.emptyList());
+    if (!tableRuntimeOpt.isPresent()) {
+      LOG.warn("No available table runtime factory found for table {}", serverTableIdentifier);
+      return false;
+    }
+
+    TableRuntime tableRuntime = tableRuntimeOpt.get();
     tableRuntimeMap.put(serverTableIdentifier.getId(), tableRuntime);
     tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
     if (headHandler != null) {
       headHandler.fireTableAdded(table, tableRuntime);
     }
     return true;
+  }
+
+  private Optional<TableRuntime> createTableRuntime(
+      ServerTableIdentifier identifier,
+      TableRuntimeMeta runtimeMeta,
+      List<TableRuntimeState> restoredStates) {
+    return tableRuntimeFactoryManager.installedPlugins().stream()
+        .map(f -> f.accept(identifier, runtimeMeta.getTableConfig()))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .findFirst()
+        .map(
+            creator -> {
+              DefaultTableRuntimeStore store =
+                  new DefaultTableRuntimeStore(
+                      identifier, runtimeMeta, creator.requiredStateKeys(), restoredStates);
+              store.setRuntimeHandler(this);
+              TableRuntime tableRuntime = creator.create(store);
+              store.setTableRuntime(tableRuntime);
+              return tableRuntime;
+            });
   }
 
   private void revertTableRuntimeAdded(

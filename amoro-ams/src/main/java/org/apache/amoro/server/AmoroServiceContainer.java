@@ -50,6 +50,7 @@ import org.apache.amoro.server.table.DefaultTableManager;
 import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.server.table.TableRuntimeFactoryManager;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.server.utils.ThriftServiceProxy;
@@ -167,7 +168,11 @@ public class AmoroServiceContainer {
   }
 
   public void startOptimizingService() throws Exception {
-    tableService = new DefaultTableService(serviceConfig, catalogManager);
+    TableRuntimeFactoryManager tableRuntimeFactoryManager = new TableRuntimeFactoryManager();
+    tableRuntimeFactoryManager.initialize();
+
+    tableService =
+        new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
 
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);

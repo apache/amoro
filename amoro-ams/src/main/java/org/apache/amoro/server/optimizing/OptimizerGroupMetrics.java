@@ -31,7 +31,7 @@ import org.apache.amoro.metrics.Gauge;
 import org.apache.amoro.metrics.Metric;
 import org.apache.amoro.metrics.MetricDefine;
 import org.apache.amoro.metrics.MetricKey;
-import org.apache.amoro.server.metrics.MetricRegistry;
+import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
