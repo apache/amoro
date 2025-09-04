@@ -126,7 +126,7 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
     if (tableService != null) {
       return tableService;
     } else {
-      return super.tableService();
+      return (DefaultTableService) super.tableService();
     }
   }
 

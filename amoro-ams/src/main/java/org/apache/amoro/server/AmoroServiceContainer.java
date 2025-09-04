@@ -47,10 +47,10 @@ import org.apache.amoro.server.resource.DefaultOptimizerManager;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.scheduler.inline.InlineTableExecutors;
 import org.apache.amoro.server.table.DefaultTableManager;
-import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.TableServiceLoader;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.server.utils.ThriftServiceProxy;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
@@ -167,7 +167,7 @@ public class AmoroServiceContainer {
   }
 
   public void startOptimizingService() throws Exception {
-    tableService = new DefaultTableService(serviceConfig, catalogManager);
+    tableService = TableServiceLoader.load(serviceConfig, catalogManager);
 
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);

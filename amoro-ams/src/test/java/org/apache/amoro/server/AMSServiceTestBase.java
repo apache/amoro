@@ -23,7 +23,8 @@ import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.DefaultTableService;
+import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.TableServiceLoader;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -31,7 +32,7 @@ import org.junit.BeforeClass;
 import java.time.Duration;
 
 public abstract class AMSServiceTestBase extends AMSManagerTestBase {
-  private static DefaultTableService TABLE_SERVICE = null;
+  private static TableService TABLE_SERVICE = null;
   private static DefaultOptimizingService OPTIMIZING_SERVICE = null;
 
   @BeforeClass
@@ -41,7 +42,7 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
       configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, Duration.ofMillis(800L));
       configurations.set(
           AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT, Duration.ofMillis(30000L));
-      TABLE_SERVICE = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
+      TABLE_SERVICE = TableServiceLoader.load(configurations, CATALOG_MANAGER);
       OPTIMIZING_SERVICE =
           new DefaultOptimizingService(
               configurations, CATALOG_MANAGER, OPTIMIZER_MANAGER, TABLE_SERVICE);
@@ -65,7 +66,7 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
     EventsManager.dispose();
   }
 
-  protected DefaultTableService tableService() {
+  protected TableService tableService() {
     return TABLE_SERVICE;
   }
 
