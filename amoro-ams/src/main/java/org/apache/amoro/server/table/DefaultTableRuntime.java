@@ -284,6 +284,9 @@ public class DefaultTableRuntime extends AbstractTableRuntime
         .updateTableSummary(
             summary -> {
               summary.setHealthScore(tableSummary.getHealthScore());
+              summary.setSmallFileScore(tableSummary.getSmallFileScore());
+              summary.setEqualityDeleteScore(tableSummary.getEqualityDeleteScore());
+              summary.setPositionalDeleteScore(tableSummary.getPositionalDeleteScore());
               summary.setTotalFileCount(tableSummary.getTotalFileCount());
               summary.setTotalFileSize(tableSummary.getTotalFileSize());
             })
