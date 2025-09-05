@@ -78,6 +78,7 @@ public class MetricRegistry implements MetricSet {
         define.getName());
 
     MetricKey key = new MetricKey(define, tags);
+    unregister(key);
 
     definedMetrics.computeIfPresent(
         define.getName(),
