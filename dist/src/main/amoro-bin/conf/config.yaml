@@ -20,6 +20,8 @@ ams:
   admin-password: admin
   server-bind-host: "0.0.0.0"
   server-expose-host: "127.0.0.1"
+  table-service:
+    impl: default
 
   thrift-server:
     max-message-size: 100MB # 104857600
