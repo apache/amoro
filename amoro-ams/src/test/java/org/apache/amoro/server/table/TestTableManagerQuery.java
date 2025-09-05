@@ -318,7 +318,7 @@ public class TestTableManagerQuery extends AMSTableTestBase {
       DefaultTableRuntimeStore store =
           new DefaultTableRuntimeStore(
               identifier, meta, DefaultTableRuntime.REQUIRED_STATES, Collections.emptyList());
-      return new DefaultTableRuntime(store, tableService());
+      return new DefaultTableRuntime(store);
     }
   }
 }

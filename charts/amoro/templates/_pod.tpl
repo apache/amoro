@@ -73,6 +73,13 @@
   readOnly: true
   subPath: "metric-reporters.yaml"
 {{- end -}}
+{{- /* table-runtime-factories.yaml from config-map*/ -}}
+{{- if or .Values.plugin.metricReporters }}
+- name: conf
+  mountPath: {{ include "amoro.home" . }}/conf/plugins/table-runtime-factories.yaml
+  readOnly: true
+  subPath: "table-runtime-factories.yaml"
+{{- end -}}
 {{- /* flink install dir. if flink optimizer container enabled.
 flink distribution package will be installed to here*/ -}}
 {{- if .Values.optimizer.flink.enabled }}

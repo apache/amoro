@@ -32,14 +32,18 @@ public class PluginConfiguration {
   private static final String NAME = "name";
   private static final String ENABLED = "enabled";
   private static final String PROPERTIES = "properties";
+  private static final String PRIORITY = "priority";
   private final String name;
   private final boolean enabled;
+  private final int priority;
   private final Map<String, String> properties;
 
-  public PluginConfiguration(String name, boolean enabled, Map<String, String> properties) {
+  public PluginConfiguration(
+      String name, boolean enabled, int priority, Map<String, String> properties) {
     this.name = name;
     this.enabled = enabled;
     this.properties = properties;
+    this.priority = priority;
   }
 
   public static PluginConfiguration fromJSONObject(JsonNode configOptions) {
@@ -48,12 +52,16 @@ public class PluginConfiguration {
     String name = nameNode.textValue();
 
     boolean enabled = JacksonUtil.getBoolean(configOptions, ENABLED, true);
+    Integer priority = JacksonUtil.getInteger(configOptions, PRIORITY);
+    if (priority == null) {
+      priority = 0;
+    }
     Map<String, String> props =
         JacksonUtil.getMap(configOptions, PROPERTIES, new TypeReference<Map<String, String>>() {});
     if (props == null) {
       props = ImmutableMap.of();
     }
-    return new PluginConfiguration(name, enabled, props);
+    return new PluginConfiguration(name, enabled, priority, props);
   }
 
   /** @return Plugin name. */
@@ -69,5 +77,9 @@ public class PluginConfiguration {
   /** @return Plugin installation properties. */
   public Map<String, String> getProperties() {
     return Collections.unmodifiableMap(properties);
+  }
+
+  public int getPriority() {
+    return priority;
   }
 }

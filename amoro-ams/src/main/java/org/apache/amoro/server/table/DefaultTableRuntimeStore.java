@@ -19,8 +19,11 @@
 package org.apache.amoro.server.table;
 
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.TableRuntime;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.exception.AmoroRuntimeException;
 import org.apache.amoro.exception.PersistenceException;
+import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.NestedSqlSession;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
@@ -46,12 +49,16 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/** Default table runtime store implementation. */
 public class DefaultTableRuntimeStore extends PersistentBase implements TableRuntimeStore {
   private static final Logger LOG = LoggerFactory.getLogger(DefaultTableRuntimeStore.class);
   private final Lock tableLock = new ReentrantLock();
   private final ServerTableIdentifier tableIdentifier;
   private final TableRuntimeMeta meta;
   private final Map<String, TableRuntimeState> states = new ConcurrentHashMap<>();
+
+  private TableRuntimeHandler runtimeHandler;
+  private TableRuntime tableRuntime;
 
   public DefaultTableRuntimeStore(
       ServerTableIdentifier tableIdentifier,
@@ -65,6 +72,14 @@ public class DefaultTableRuntimeStore extends PersistentBase implements TableRun
     this.tableIdentifier = tableIdentifier;
     this.meta = meta;
     restoreStates(requiredStates, restoredStates);
+  }
+
+  public void setTableRuntime(TableRuntime tableRuntime) {
+    this.tableRuntime = tableRuntime;
+  }
+
+  public void setRuntimeHandler(TableRuntimeHandler runtimeHandler) {
+    this.runtimeHandler = runtimeHandler;
   }
 
   @Override
@@ -163,6 +178,8 @@ public class DefaultTableRuntimeStore extends PersistentBase implements TableRun
     private final Map<String, String> oldStates = new ConcurrentHashMap<>();
     private boolean metaOperation = false;
 
+    private final List<Consumer<TableRuntimeHandler>> handlerCallback = Lists.newArrayList();
+
     public TableRuntimeOperationImpl() {
       this.oldMeta = meta.copy();
       states.forEach((k, v) -> oldStates.put(k, v.getStateValue()));
@@ -202,6 +219,8 @@ public class DefaultTableRuntimeStore extends PersistentBase implements TableRun
             Integer newStatusCode = updater.apply(oldMeta.getStatusCode());
             oldMeta.setStatusCode(newStatusCode);
           });
+      OptimizingStatus status = OptimizingStatus.ofCode(oldMeta.getStatusCode());
+      handlerCallback.add(handler -> handler.handleTableChanged(tableRuntime, status));
       metaOperation = true;
       return this;
     }
@@ -214,6 +233,9 @@ public class DefaultTableRuntimeStore extends PersistentBase implements TableRun
             updater.accept(tableConfig);
             oldMeta.setTableConfig(tableConfig);
           });
+      TableConfiguration oldConfiguration =
+          TableConfigurations.parseTableConfig(oldMeta.getTableConfig());
+      handlerCallback.add(handler -> handler.handleTableChanged(tableRuntime, oldConfiguration));
       metaOperation = true;
       return this;
     }
@@ -277,6 +299,10 @@ public class DefaultTableRuntimeStore extends PersistentBase implements TableRun
             TableRuntimeState state = states.get(key);
             state.setStateValue(oldStates.get(key));
           });
+
+      if (runtimeHandler != null && tableRuntime != null) {
+        handlerCallback.forEach(c -> c.accept(runtimeHandler));
+      }
     }
   }
 }

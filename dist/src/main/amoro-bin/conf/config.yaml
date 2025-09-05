@@ -63,6 +63,12 @@ ams:
   blocker:
     timeout: 1min # 60000
 
+  # config table runtime factories
+  table-runtime-factories:
+    - name: default
+      properties:
+        ~
+
   # optional features
   expire-snapshots:
     enabled: true

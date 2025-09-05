@@ -18,34 +18,13 @@
 
 package org.apache.amoro.server.table;
 
-import org.apache.amoro.AmoroTable;
-import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.TableRuntime;
-import org.apache.amoro.server.catalog.InternalCatalog;
+import org.apache.amoro.server.manager.AbstractPluginManager;
+import org.apache.amoro.table.TableRuntimeFactory;
 
-public interface TableService extends TableRuntimeHandler {
+public class TableRuntimeFactoryManager extends AbstractPluginManager<TableRuntimeFactory> {
+  public static final String PLUGIN_CATEGORY = "table-runtime-factories";
 
-  void addHandlerChain(RuntimeHandlerChain handler);
-
-  void initialize();
-
-  void dispose();
-
-  void onTableCreated(InternalCatalog catalog, ServerTableIdentifier identifier);
-
-  void onTableDropped(InternalCatalog catalog, ServerTableIdentifier identifier);
-
-  TableRuntime getRuntime(Long tableId);
-
-  default boolean contains(Long tableId) {
-    return getRuntime(tableId) != null;
+  public TableRuntimeFactoryManager() {
+    super(PLUGIN_CATEGORY);
   }
-
-  /**
-   * load a table via server catalog.
-   *
-   * @param identifier managed table identifier
-   * @return managed table.
-   */
-  AmoroTable<?> loadTable(ServerTableIdentifier identifier);
 }

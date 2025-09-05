@@ -117,6 +117,10 @@ public class AmsEnvironment {
         Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath();
     FileUtils.writeStringToFile(
         new File(rootPath + "/conf/config.yaml"), getAmsConfig(), Charset.defaultCharset());
+    FileUtils.writeStringToFile(
+        new File(rootPath + "/conf/plugins/table-runtime-factories.yaml"),
+        getTableRuntimeFactoriesConfig(),
+        Charset.defaultCharset());
     System.setProperty(Environments.AMORO_HOME, rootPath);
     System.setProperty("derby.init.sql.dir", path + "../classes/sql/derby/");
     serviceContainer = new AmoroServiceContainer();
@@ -414,5 +418,12 @@ public class AmsEnvironment {
         + "metric-reporters:\n"
         + "  - name: mocked-reporter\n"
         + "    properties:\n";
+  }
+
+  private String getTableRuntimeFactoriesConfig() {
+    return "table-runtime-factories:\n"
+        + "  - name: default\n"
+        + "    enabled: true\n"
+        + "    priority: 100\n";
   }
 }

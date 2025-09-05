@@ -99,18 +99,18 @@ public class TestAbstractPluginManager {
     return Stream.of(
         // enable 1 plugin
         Arguments.of(
-            ImmutableList.of(new PluginConfiguration("test-A", true, Maps.newHashMap())), 1),
+            ImmutableList.of(new PluginConfiguration("test-A", true, 0, Maps.newHashMap())), 1),
         // enable 2 plugin
         Arguments.of(
             ImmutableList.of(
-                new PluginConfiguration("test-A", true, Maps.newHashMap()),
-                new PluginConfiguration("test-B", true, Maps.newHashMap())),
+                new PluginConfiguration("test-A", true, 0, Maps.newHashMap()),
+                new PluginConfiguration("test-B", true, 0, Maps.newHashMap())),
             2),
         // provider 2 configs, 1 enabled
         Arguments.of(
             ImmutableList.of(
-                new PluginConfiguration("test-A", false, Maps.newHashMap()),
-                new PluginConfiguration("test-B", true, Maps.newHashMap())),
+                new PluginConfiguration("test-A", false, 0, Maps.newHashMap()),
+                new PluginConfiguration("test-B", true, 0, Maps.newHashMap())),
             1));
   }
 
@@ -132,9 +132,9 @@ public class TestAbstractPluginManager {
   public void testPluginNotInSpiProvider() {
     List<PluginConfiguration> configs =
         ImmutableList.of(
-            new PluginConfiguration("test-A", true, Maps.newHashMap()),
-            new PluginConfiguration("test-B", true, Maps.newHashMap()),
-            new PluginConfiguration("test-C", true, Maps.newHashMap()));
+            new PluginConfiguration("test-A", true, 0, Maps.newHashMap()),
+            new PluginConfiguration("test-B", true, 0, Maps.newHashMap()),
+            new PluginConfiguration("test-C", true, 0, Maps.newHashMap()));
     TestPluginManager manager = new TestPluginManager();
     manager.setConfigs(configs);
 
@@ -145,9 +145,9 @@ public class TestAbstractPluginManager {
   public void testPluginDuplicateConfigs() {
     List<PluginConfiguration> configs =
         ImmutableList.of(
-            new PluginConfiguration("test-A", true, Maps.newHashMap()),
-            new PluginConfiguration("test-B", true, Maps.newHashMap()),
-            new PluginConfiguration("test-B", true, Maps.newHashMap()));
+            new PluginConfiguration("test-A", true, 0, Maps.newHashMap()),
+            new PluginConfiguration("test-B", true, 0, Maps.newHashMap()),
+            new PluginConfiguration("test-B", true, 0, Maps.newHashMap()));
     TestPluginManager manager = new TestPluginManager();
     manager.setConfigs(configs);
 
@@ -158,8 +158,8 @@ public class TestAbstractPluginManager {
   public void testPluginDuplicateInstall() {
     List<PluginConfiguration> configs =
         ImmutableList.of(
-            new PluginConfiguration("test-A", true, Maps.newHashMap()),
-            new PluginConfiguration("test-B", true, Maps.newHashMap()));
+            new PluginConfiguration("test-A", true, 0, Maps.newHashMap()),
+            new PluginConfiguration("test-B", true, 0, Maps.newHashMap()));
     TestPluginManager manager = new TestPluginManager();
     manager.setConfigs(configs);
     manager.initialize();

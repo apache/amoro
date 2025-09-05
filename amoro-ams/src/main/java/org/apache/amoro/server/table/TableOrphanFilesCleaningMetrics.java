@@ -23,7 +23,7 @@ import static org.apache.amoro.metrics.MetricDefine.defineCounter;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.metrics.Counter;
 import org.apache.amoro.metrics.MetricDefine;
-import org.apache.amoro.server.metrics.MetricRegistry;
+import org.apache.amoro.metrics.MetricRegistry;
 
 /** Table Orphan Files Cleaning metrics. */
 public class TableOrphanFilesCleaningMetrics extends AbstractTableMetrics {

@@ -35,6 +35,11 @@ data:
         properties:
           {{ .prometheusExporter.properties | toYaml | nindent 10 | trim }}
     {{- end }}
+  table-runtime-factories.yaml: |
+    table-runtime-factories:
+      - name: default
+        enabled: true
+        priority: 100
   ## Helm chart provided Amoro configurations
   config.yaml: |
     ams:
