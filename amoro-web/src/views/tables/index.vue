@@ -24,6 +24,7 @@ import UFiles from './components/Files.vue'
 import UOperations from './components/Operations.vue'
 import USnapshots from './components/Snapshots.vue'
 import UOptimizing from './components/Optimizing.vue'
+import UHealthScore from './components/HealthScoreDetails.vue'
 import useStore from '@/store/index'
 import type { IBaseDetailInfo } from '@/types/common.type'
 
@@ -35,6 +36,7 @@ export default defineComponent({
     UOperations,
     USnapshots,
     UOptimizing,
+    UHealthScore,
   },
   setup() {
     const router = useRouter()
@@ -61,6 +63,9 @@ export default defineComponent({
         tableFormat: '',
         hasPartition: false,
         healthScore: -1,
+        smallFileScore: 0,
+        equalityDeleteScore: 0,
+        positionalDeleteScore: 0,
         comment: ''
       } as IBaseDetailInfo,
       detailLoaded: false,
@@ -158,7 +163,8 @@ export default defineComponent({
             <p>{{ $t('tableFormat') }}: <span class="text-color">{{ baseInfo.tableFormat }}</span></p>
             <a-divider type="vertical" />
             <p>
-              {{ $t('healthScore') }}: <span class="text-color">{{ baseInfo.healthScore == null || baseInfo.healthScore < 0 ? 'N/A' : baseInfo.healthScore }}</span>
+              {{ $t('healthScore') }}:
+              <UHealthScore :base-info="baseInfo" />
             </p>
           </div>
         </div>
@@ -215,6 +221,11 @@ export default defineComponent({
 
     .text-color {
       color: #7CB305;
+    }
+
+    .clickable-score {
+      cursor: pointer;
+      text-decoration: underline;
     }
   }
 

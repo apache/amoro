@@ -194,6 +194,9 @@ public abstract class AbstractOptimizingEvaluator {
     private long positionalDeleteFileRecords = 0L;
     private int danglingDeleteFileCount = 0;
     private int healthScore = -1; // -1 means not calculated
+    private int smallFileScore = 0; // 0 means not calculated
+    private int equalityDeleteScore = 0; // 0 means not calculated
+    private int positionalDeleteScore = 0; // 0 means not calculated
 
     public PendingInput() {}
 
@@ -220,12 +223,27 @@ public abstract class AbstractOptimizingEvaluator {
     }
 
     private void initialize(Collection<PartitionEvaluator> evaluators) {
-      double totalHealthScore = 0;
+      double totalSmallFileScore = 0;
+      double totalEqualityDeleteScore = 0;
+      double totalPositionalDeleteScore = 0;
+      int defaultSmallFilesWithEqDeleteScore = 40;
+      int defaultPosDeleteScore = 20;
+
       for (PartitionEvaluator evaluator : evaluators) {
         addPartitionData(evaluator);
-        totalHealthScore += evaluator.getHealthScore();
+        totalSmallFileScore += evaluator.getHealthScore().getSmallFileScore();
+        totalEqualityDeleteScore += evaluator.getHealthScore().getEqualityDeleteScore();
+        totalPositionalDeleteScore += evaluator.getHealthScore().getPositionalDeleteScore();
       }
-      healthScore = avgHealthScore(totalHealthScore, evaluators.size());
+      smallFileScore =
+          avgHealthScore(
+              totalSmallFileScore, evaluators.size(), defaultSmallFilesWithEqDeleteScore);
+      equalityDeleteScore =
+          avgHealthScore(
+              totalEqualityDeleteScore, evaluators.size(), defaultSmallFilesWithEqDeleteScore);
+      positionalDeleteScore =
+          avgHealthScore(totalPositionalDeleteScore, evaluators.size(), defaultPosDeleteScore);
+      healthScore = smallFileScore + equalityDeleteScore + positionalDeleteScore;
     }
 
     private void addPartitionData(PartitionEvaluator evaluator) {
@@ -243,9 +261,9 @@ public abstract class AbstractOptimizingEvaluator {
       equalityDeleteFileCount += evaluator.getEqualityDeleteFileCount();
     }
 
-    private int avgHealthScore(double totalHealthScore, int partitionCount) {
+    private int avgHealthScore(double totalHealthScore, int partitionCount, int defaultScore) {
       if (partitionCount == 0) {
-        return 100;
+        return defaultScore;
       }
       return (int) Math.ceil(totalHealthScore / partitionCount);
     }
@@ -294,6 +312,18 @@ public abstract class AbstractOptimizingEvaluator {
       return healthScore;
     }
 
+    public int getSmallFileScore() {
+      return smallFileScore;
+    }
+
+    public int getEqualityDeleteScore() {
+      return equalityDeleteScore;
+    }
+
+    public int getPositionalDeleteScore() {
+      return positionalDeleteScore;
+    }
+
     public int getTotalFileCount() {
       return totalFileCount;
     }
@@ -327,6 +357,9 @@ public abstract class AbstractOptimizingEvaluator {
           .add("equalityDeleteFileRecords", equalityDeleteFileRecords)
           .add("positionalDeleteFileRecords", positionalDeleteFileRecords)
           .add("healthScore", healthScore)
+          .add("smallFileScore", smallFileScore)
+          .add("equalityDeleteScore", equalityDeleteScore)
+          .add("positionalDeleteScore", positionalDeleteScore)
           .add("danglingDeleteFileCount", danglingDeleteFileCount)
           .toString();
     }
