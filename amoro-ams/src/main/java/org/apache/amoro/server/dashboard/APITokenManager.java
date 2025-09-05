@@ -22,7 +22,13 @@ import org.apache.amoro.server.dashboard.model.ApiTokens;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.ApiTokensMapper;
 
+import java.util.List;
+
 public class APITokenManager extends PersistentBase {
+
+  public List<ApiTokens> getApiTokens() {
+    return getAs(ApiTokensMapper.class, ApiTokensMapper::getApiTokens);
+  }
 
   public String getSecretByKey(String key) {
     return getAs(ApiTokensMapper.class, mapper -> mapper.getSecretByKey(key));
@@ -34,5 +40,9 @@ public class APITokenManager extends PersistentBase {
 
   public void deleteApiToken(Integer id) {
     doAs(ApiTokensMapper.class, mapper -> mapper.delToken(id));
+  }
+
+  public void deleteApiTokenByKey(String apiKey) {
+    doAs(ApiTokensMapper.class, mapper -> mapper.delTokenByKey(apiKey));
   }
 }

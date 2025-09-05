@@ -169,51 +169,48 @@ COMMENT ON COLUMN table_metadata.krb_conf IS 'Kerberos conf when auth method is 
 COMMENT ON COLUMN table_metadata.krb_principal IS 'Kerberos principal when auth method is KERBEROS';
 COMMENT ON COLUMN table_metadata.current_schema_id IS 'Current schema ID';
 
-CREATE TABLE table_runtime
-(
-    table_id BIGINT NOT NULL,
-    catalog_name VARCHAR(64) NOT NULL,
-    db_name VARCHAR(128) NOT NULL,
-    table_name VARCHAR(256) NOT NULL,
-    current_snapshot_id BIGINT NOT NULL DEFAULT -1,
-    current_change_snapshotId BIGINT,
-    last_optimized_snapshotId BIGINT NOT NULL DEFAULT -1,
-    last_optimized_change_snapshotId BIGINT NOT NULL DEFAULT -1,
-    last_major_optimizing_time TIMESTAMP,
-    last_minor_optimizing_time TIMESTAMP,
-    last_full_optimizing_time TIMESTAMP,
-    optimizing_status_code INT DEFAULT 700,
-    optimizing_status_start_time TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3),
-    optimizing_process_id BIGINT NOT NULL,
-    optimizer_group VARCHAR(64) NOT NULL,
-    table_config TEXT,
-    optimizing_config TEXT,
-    pending_input TEXT,
-    table_summary TEXT,
-    PRIMARY KEY (table_id),
-    UNIQUE (catalog_name, db_name, table_name)
+
+create table if not exists table_runtime (
+    table_id            bigint primary key,
+    group_name          varchar(64) not null,
+    status_code         int not null default 700,
+    status_code_update_time timestamptz not null default now(),
+    table_config        text,
+    table_summary       text
 );
-COMMENT ON TABLE table_runtime IS 'Optimize running information of each table';
-COMMENT ON COLUMN table_runtime.table_id IS 'Table ID';
-COMMENT ON COLUMN table_runtime.catalog_name IS 'Catalog name';
-COMMENT ON COLUMN table_runtime.db_name IS 'Database name';
-COMMENT ON COLUMN table_runtime.table_name IS 'Table name';
-COMMENT ON COLUMN table_runtime.current_snapshot_id IS 'Base table current snapshot ID';
-COMMENT ON COLUMN table_runtime.current_change_snapshotId IS 'Change table current snapshot ID';
-COMMENT ON COLUMN table_runtime.last_optimized_snapshotId IS 'Last optimized snapshot ID';
-COMMENT ON COLUMN table_runtime.last_optimized_change_snapshotId IS 'Last optimized change snapshot ID';
-COMMENT ON COLUMN table_runtime.last_major_optimizing_time IS 'Latest Major Optimize time for all partitions';
-COMMENT ON COLUMN table_runtime.last_minor_optimizing_time IS 'Latest Minor Optimize time for all partitions';
-COMMENT ON COLUMN table_runtime.last_full_optimizing_time IS 'Latest Full Optimize time for all partitions';
-COMMENT ON COLUMN table_runtime.optimizing_status_code IS 'Table optimize status code: 100(FULL_OPTIMIZING), 200(MAJOR_OPTIMIZING), 300(MINOR_OPTIMIZING), 400(COMMITTING), 500(PLANING), 600(PENDING), 700(IDLE)';
-COMMENT ON COLUMN table_runtime.optimizing_status_start_time IS 'Table optimize status start time';
-COMMENT ON COLUMN table_runtime.optimizing_process_id IS 'Optimizing procedure UUID';
-COMMENT ON COLUMN table_runtime.optimizer_group IS 'Optimizer group';
-COMMENT ON COLUMN table_runtime.table_config IS 'Table-specific configuration';
-COMMENT ON COLUMN table_runtime.optimizing_config IS 'Optimizing configuration';
-COMMENT ON COLUMN table_runtime.pending_input IS 'Pending input data';
-COMMENT ON COLUMN table_runtime.table_summary IS 'Table summary data';
-CREATE INDEX idx_optimizer_status_and_time ON table_runtime(optimizing_status_code, optimizing_status_start_time DESC);
+
+create index if not exists idx_status_and_time
+    on table_runtime (status_code, status_code_update_time desc);
+
+comment on table  table_runtime is 'Table running information of each table';
+comment on column table_runtime.status_code is 'Table runtime status code.';
+comment on column table_runtime.status_code_update_time is 'Table runtime status code update time';
+comment on column table_runtime.table_config is 'table configuration cached from table.properties';
+comment on column table_runtime.table_summary is 'table summary for ams';
+
+
+create table if not exists table_runtime_state (
+    state_id      bigserial primary key,
+    table_id      bigint not null,
+    state_key     varchar(256) not null,
+    state_value   text,
+    state_version bigint not null default 0,
+    create_time   timestamptz not null default now(),
+    update_time   timestamptz not null default now()
+);
+
+create unique index if not exists uniq_table_state_key
+    on table_runtime_state (table_id, state_key);
+
+comment on table  table_runtime_state is 'State of Table Runtimes';
+comment on column table_runtime_state.state_id is 'Primary key';
+comment on column table_runtime_state.table_id is 'Table identifier id';
+comment on column table_runtime_state.state_key is 'Table Runtime state key';
+comment on column table_runtime_state.state_value is 'Table Runtime state value, string type';
+comment on column table_runtime_state.state_version is 'Table runtime state version, auto inc when update';
+comment on column table_runtime_state.create_time is 'create time';
+comment on column table_runtime_state.update_time is 'update time';
+
 
 CREATE TABLE table_process (
     process_id      bigserial PRIMARY KEY,

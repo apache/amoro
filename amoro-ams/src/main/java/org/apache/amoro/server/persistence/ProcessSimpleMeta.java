@@ -16,51 +16,44 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.dashboard.model;
+package org.apache.amoro.server.persistence;
 
-public class ApiTokens {
-  Integer id;
-  String apikey;
-  String secret;
-  long applyTime;
+/** Process simple meta */
+public class ProcessSimpleMeta {
+  private Long processId;
+  private Long tableId;
+  private String status;
+  private String actionType;
 
-  public ApiTokens() {}
-
-  public ApiTokens(String apiKey, String secret) {
-    this.apikey = apiKey;
-    this.secret = secret;
-    this.applyTime = System.currentTimeMillis();
+  public Long getProcessId() {
+    return processId;
   }
 
-  public Integer getId() {
-    return id;
+  public Long getTableId() {
+    return tableId;
   }
 
-  public void setId(Integer id) {
-    this.id = id;
+  public String getStatus() {
+    return status;
   }
 
-  public String getApikey() {
-    return apikey;
+  public String getActionType() {
+    return actionType;
   }
 
-  public void setApikey(String apikey) {
-    this.apikey = apikey;
+  public void setProcessId(Long processId) {
+    this.processId = processId;
   }
 
-  public String getSecret() {
-    return secret;
+  public void setTableId(Long tableId) {
+    this.tableId = tableId;
   }
 
-  public void setSecret(String secret) {
-    this.secret = secret;
+  public void setStatus(String status) {
+    this.status = status;
   }
 
-  public long getApplyTime() {
-    return applyTime;
-  }
-
-  public void setApplyTime(long applyTime) {
-    this.applyTime = applyTime;
+  public void setActionType(String actionType) {
+    this.actionType = actionType;
   }
 }
