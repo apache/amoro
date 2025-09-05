@@ -333,6 +333,7 @@ software.amazon.awssdk:third-party-jackson-core
 software.amazon.awssdk:url-connection-client
 software.amazon.awssdk:utils
 org.yaml:snakeyaml
+org.snakeyaml:snakeyaml-engine
 org.xerial.snappy:snappy-java
 org.wildfly.openssl:wildfly-openssl
 org.wildfly.common:wildfly-common
@@ -367,7 +368,6 @@ org.jboss.threads:jboss-threads
 org.jboss.xnio:xnio-api
 org.jetbrains:annotations
 org.jline:jline
-org.snakeyaml:snakeyaml-engine
 org.postgresql:postgresql
 
 BSD 2-Clause License
