@@ -18,6 +18,7 @@
 
 package org.apache.amoro.optimizing.plan;
 
+import org.apache.amoro.optimizing.HealthScoreInfo;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -81,8 +82,8 @@ public interface PartitionEvaluator {
    */
   OptimizingType getOptimizingType();
 
-  /** Get health score of this partition. */
-  int getHealthScore();
+  /** Get health score info of this partition. */
+  HealthScoreInfo getHealthScore();
 
   /** Get the count of fragment files involved in optimizing. */
   int getFragmentFileCount();
