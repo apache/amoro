@@ -38,7 +38,6 @@ import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.TableRuntimeState;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.persistence.mapper.TableRuntimeMapper;
-import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -217,7 +216,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
     return tableRuntimeMap.get(tableId);
   }
 
-  @VisibleForTesting
+  @Override
   public void setRuntime(DefaultTableRuntime tableRuntime) {
     checkStarted();
     tableRuntimeMap.put(tableRuntime.getTableIdentifier().getId(), tableRuntime);
@@ -245,8 +244,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
     }
   }
 
-  @VisibleForTesting
-  void exploreTableRuntimes() {
+  @Override
+  public void exploreTableRuntimes() {
     if (!initialized.isDone()) {
       throw new IllegalStateException("TableService is not initialized");
     }
@@ -289,7 +288,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
     LOG.info("Syncing external catalogs took {} ms.", end - start);
   }
 
-  @VisibleForTesting
+  @Override
   public void exploreExternalCatalog(ExternalCatalog externalCatalog) {
     final List<CompletableFuture<Set<TableIdentity>>> tableIdentifiersFutures =
         Lists.newArrayList();
@@ -508,7 +507,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
     }
   }
 
-  @VisibleForTesting
+  @Override
   public void disposeTable(ServerTableIdentifier tableIdentifier) {
     TableRuntime existedTableRuntime = tableRuntimeMap.get(tableIdentifier.getId());
     try {

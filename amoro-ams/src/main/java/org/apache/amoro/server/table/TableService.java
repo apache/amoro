@@ -21,6 +21,7 @@ package org.apache.amoro.server.table;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.server.catalog.ExternalCatalog;
 import org.apache.amoro.server.catalog.InternalCatalog;
 
 public interface TableService extends TableRuntimeHandler {
@@ -46,4 +47,16 @@ public interface TableService extends TableRuntimeHandler {
    * @return managed table.
    */
   AmoroTable<?> loadTable(ServerTableIdentifier identifier);
+
+  /** Explore and synchronize table runtimes from catalogs. Intended for periodic sync and tests. */
+  void exploreTableRuntimes();
+
+  /** Explore and synchronize a specific external catalog. */
+  void exploreExternalCatalog(ExternalCatalog externalCatalog);
+
+  /** Set or replace a runtime for testing or recovery scenarios. */
+  void setRuntime(DefaultTableRuntime tableRuntime);
+
+  /** Dispose a managed table and its runtime. */
+  void disposeTable(ServerTableIdentifier tableIdentifier);
 }

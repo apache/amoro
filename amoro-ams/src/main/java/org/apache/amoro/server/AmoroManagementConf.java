@@ -233,6 +233,13 @@ public class AmoroManagementConf {
           .defaultValue(1260)
           .withDescription("Port that the table service thrift server is bound to.");
 
+  public static final ConfigOption<String> TABLE_SERVICE_IMPL =
+      ConfigOptions.key("table-service.impl")
+          .stringType()
+          .defaultValue("default")
+          .withDescription(
+              "TableService implementation provider name or FQCN. Default is 'default'.");
+
   public static final ConfigOption<Integer> OPTIMIZING_SERVICE_THRIFT_BIND_PORT =
       ConfigOptions.key("thrift-server.optimizing-service.bind-port")
           .intType()
