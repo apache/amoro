@@ -234,6 +234,6 @@ export default {
   subModule: '子模块',
   healthScoreDescription: '评估表的健康状态(最高100分)，计算方式如下',
   smallFileScoreDescription: '评估表的平均数据文件大小(最高40分)，值越大表示文件越接近目标大小',
-  equalityDeleteScoreDescription: '评估表的相等删除记录比例(最高40分)，值越大表示相等删除记录的比例越低',
+  equalityDeleteScoreDescription: '评估表的eq-delete记录比例(最高40分)，值越大表示相等删除记录的比例越低',
   positionalDeleteScoreDescription: '评估表的位置删除记录比例(最高20分)，值越大表示位置删除记录的比例越低',
 }
