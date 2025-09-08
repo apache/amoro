@@ -229,7 +229,7 @@ export default {
   healthScoreDetails: '健康分数详情',
   healthScore: '健康分数',
   smallFileScore: '小文件分数',
-  equalityDeleteScore: '相等删除分数',
+  equalityDeleteScore: 'eq-delete分数',
   positionalDeleteScore: '位置删除分数',
   subModule: '子模块',
   healthScoreDescription: '评估表的健康状态(最高100分)，计算方式如下',
