@@ -23,10 +23,14 @@ import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.DefaultTableRuntimeFactory;
 import org.apache.amoro.server.table.DefaultTableService;
+import org.apache.amoro.server.table.TableRuntimeFactoryManager;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.mockito.Mockito;
 
 import java.time.Duration;
 
@@ -34,14 +38,22 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
   private static DefaultTableService TABLE_SERVICE = null;
   private static DefaultOptimizingService OPTIMIZING_SERVICE = null;
 
+  private static TableRuntimeFactoryManager tableRuntimeFactoryManager = null;
+
   @BeforeClass
   public static void initTableService() {
+    DefaultTableRuntimeFactory runtimeFactory = new DefaultTableRuntimeFactory();
+    tableRuntimeFactoryManager = Mockito.mock(TableRuntimeFactoryManager.class);
+    Mockito.when(tableRuntimeFactoryManager.installedPlugins())
+        .thenReturn(Lists.newArrayList(runtimeFactory));
     try {
       Configurations configurations = new Configurations();
       configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, Duration.ofMillis(800L));
       configurations.set(
           AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT, Duration.ofMillis(30000L));
-      TABLE_SERVICE = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
+      TABLE_SERVICE =
+          new DefaultTableService(
+              new Configurations(), CATALOG_MANAGER, tableRuntimeFactoryManager);
       OPTIMIZING_SERVICE =
           new DefaultOptimizingService(
               configurations, CATALOG_MANAGER, OPTIMIZER_MANAGER, TABLE_SERVICE);
@@ -63,6 +75,7 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
     TABLE_SERVICE.dispose();
     MetricManager.dispose();
     EventsManager.dispose();
+    tableRuntimeFactoryManager = null;
   }
 
   protected DefaultTableService tableService() {

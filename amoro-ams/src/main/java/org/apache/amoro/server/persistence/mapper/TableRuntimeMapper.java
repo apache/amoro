@@ -41,9 +41,8 @@ public interface TableRuntimeMapper {
           + TABLE_NAME
           + " (table_id, group_name, status_code, table_config, table_summary) "
           + "VALUES (#{tableId}, #{groupName}, #{statusCode}, "
-          + "        "
-          + "        #{tableConfig,typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}, "
-          + "        #{tableSummary,typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter})")
+          + "#{tableConfig,typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}, "
+          + "#{tableSummary,typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter})")
   int insertRuntime(TableRuntimeMeta meta);
 
   /* ---------- update ---------- */
