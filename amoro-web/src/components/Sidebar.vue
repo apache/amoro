@@ -74,8 +74,8 @@ export default defineComponent({
           icon: 'catalogs',
         },
         {
-          key: 'optimizing',
-          title: t('optimizing'),
+          key: 'execution',
+          title: t('execution'),
           icon: 'optimizers',
         },
         {

@@ -27,13 +27,14 @@ import {
 } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import TableList from '../optimize/components/List.vue'
+import TableList from './components/TableList.vue'
+import ProcessList from './components/ProcessList.vue'
 import List from './components/List.vue'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { usePagination } from '@/hooks/usePagination'
 import type { IIOptimizeGroupItem, ILableAndValue } from '@/types/common.type'
-import GroupModal from '@/views/resource/components/GroupModal.vue'
-import CreateOptimizerModal from '@/views/resource/components/CreateOptimizerModal.vue'
+import GroupModal from '@/views/execution/components/GroupModal.vue'
+import CreateOptimizerModal from '@/views/execution/components/CreateOptimizerModal.vue'
 
 export default defineComponent({
   name: 'Resource',
@@ -41,6 +42,7 @@ export default defineComponent({
     List,
     GroupModal,
     TableList,
+    ProcessList,
     CreateOptimizerModal,
   },
   setup() {
@@ -153,7 +155,7 @@ export default defineComponent({
               :tab="t('processes')"
               :class="[activeTab === 'processes' ? 'active' : '']"
           >
-            <TableList />
+            <ProcessList />
           </a-tab-pane>
           <a-tab-pane
             key="optimizers"
