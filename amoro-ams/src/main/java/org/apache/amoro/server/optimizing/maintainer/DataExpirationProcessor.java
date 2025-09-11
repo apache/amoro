@@ -537,7 +537,10 @@ public abstract class DataExpirationProcessor {
 
     @Override
     public boolean equals(Object o) {
-      if (o == null || getClass() != o.getClass()) return false;
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
       ManifestFileWrapper wrapper = (ManifestFileWrapper) o;
       return com.google.common.base.Objects.equal(manifestFile, wrapper.manifestFile)
           && com.google.common.base.Objects.equal(range, wrapper.range);
@@ -698,9 +701,7 @@ public abstract class DataExpirationProcessor {
             } else if (tsUnit.equals(EXPIRE_TIMESTAMP_S)) {
               return (Long) boundValue * 1000;
             }
-          default:
-            throw new UnsupportedOperationException(
-                "Cannot extract partition bound from identity transform for type: " + sourceType);
+            break;
         }
       } else if (transformName.equalsIgnoreCase("day")) {
         Integer days = (Integer) boundValue;
@@ -822,11 +823,13 @@ public abstract class DataExpirationProcessor {
       case TIMESTAMP:
         return expireTimestamp * DateTimeUtil.MICROS_PER_MILLIS;
       case LONG:
-        if (config.getNumberDateFormat().equals(EXPIRE_TIMESTAMP_MS)) {
+        String dateFormat = config.getNumberDateFormat();
+        if (EXPIRE_TIMESTAMP_MS.equalsIgnoreCase(dateFormat)) {
           return expireTimestamp;
-        } else if (config.getNumberDateFormat().equals(EXPIRE_TIMESTAMP_S)) {
+        } else if (EXPIRE_TIMESTAMP_S.equalsIgnoreCase(dateFormat)) {
           return expireTimestamp / 1000L;
         }
+        break;
       case STRING:
         return expireTimestamp;
       default:
@@ -836,6 +839,8 @@ public abstract class DataExpirationProcessor {
                 + " for type: "
                 + expirationType);
     }
+
+    throw new IllegalStateException("Cannot sanitize expire timestamp: " + expireTimestamp);
   }
 
   static class PartitionFieldInfo {
