@@ -101,7 +101,7 @@ public class IcebergExpirationProcessor extends DataExpirationProcessor {
       LOG.debug(
           "{}'s last snapshot {} was maintained, there are no incremental changes, skip data expiration",
           table.name(),
-          currentSnapshot.snapshotId());
+          Long.valueOf(currentSnapshot.snapshotId()));
       return;
     }
 
@@ -120,13 +120,13 @@ public class IcebergExpirationProcessor extends DataExpirationProcessor {
       }
     } catch (Exception e) {
       LOG.error(
-          "Failed to expire data files in table {} with level {}, before {}",
-          table.name(),
-          level,
-          expireTimestamp,
-          e);
-      throw new RuntimeException(
-          "Failed to expire data files in table " + table.name() + "(level=" + level + ")", e);
+          "Failed to expire data files in table "
+              + table.name()
+              + "(level="
+              + level
+              + "), before "
+              + expireTimestamp);
+      throw new RuntimeException(e);
     }
   }
 
@@ -205,7 +205,7 @@ public class IcebergExpirationProcessor extends DataExpirationProcessor {
     Optional<PartitionFieldInfo> partitionFieldOp =
         findFieldInSpec(table.spec(), expirationField.fieldId());
 
-    if (partitionFieldOp.isEmpty()) {
+    if (partitionFieldOp.isPresent()) {
       LOG.warn(
           "Expiration field: {} is not used for partitioning, cannot extract from manifest",
           expirationField.name());
@@ -222,7 +222,7 @@ public class IcebergExpirationProcessor extends DataExpirationProcessor {
         // spec
         Optional<PartitionFieldInfo> manifestFieldOp =
             findFieldInSpec(table.specs().get(manifestSpecId), expirationField.fieldId());
-        if (manifestFieldOp.isEmpty()) {
+        if (manifestFieldOp.isPresent()) {
           // manifest's spec does not have the expiration field, skip it
           continue;
         }
