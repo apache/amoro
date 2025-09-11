@@ -27,6 +27,9 @@ public class TableSummary {
   private long records;
   private String optimizingStatus;
   private int healthScore = -1; // -1 means not calculated
+  private int smallFileScore = 0;
+  private int equalityDeleteScore = 0;
+  private int positionalDeleteScore = 0;
 
   public TableSummary() {}
 
@@ -80,5 +83,32 @@ public class TableSummary {
 
   public void setHealthScore(int healthScore) {
     this.healthScore = healthScore;
+  }
+
+  /** Current table small files score */
+  public int getSmallFileScore() {
+    return smallFileScore;
+  }
+
+  public void setSmallFileScore(int smallFileScore) {
+    this.smallFileScore = smallFileScore;
+  }
+
+  /** Current table equality delete records ratio score */
+  public int getEqualityDeleteScore() {
+    return equalityDeleteScore;
+  }
+
+  public void setEqualityDeleteScore(int equalityDeleteScore) {
+    this.equalityDeleteScore = equalityDeleteScore;
+  }
+
+  /** Current table positional delete records ratio score */
+  public int getPositionalDeleteScore() {
+    return positionalDeleteScore;
+  }
+
+  public void setPositionalDeleteScore(int positionalDeleteScore) {
+    this.positionalDeleteScore = positionalDeleteScore;
   }
 }

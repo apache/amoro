@@ -166,6 +166,9 @@ public class TableController {
         org.apache.amoro.table.TableSummary summary = tableRuntimeMeta.getTableSummary();
         if (summary != null) {
           tableSummary.setHealthScore(summary.getHealthScore());
+          tableSummary.setSmallFileScore(summary.getSmallFileScore());
+          tableSummary.setEqualityDeleteScore(summary.getEqualityDeleteScore());
+          tableSummary.setPositionalDeleteScore(summary.getPositionalDeleteScore());
         }
       }
     } else {

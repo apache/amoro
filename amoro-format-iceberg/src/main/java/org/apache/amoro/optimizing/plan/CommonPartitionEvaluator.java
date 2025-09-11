@@ -20,6 +20,7 @@ package org.apache.amoro.optimizing.plan;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.OptimizingConfig;
+import org.apache.amoro.optimizing.HealthScoreInfo;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -392,7 +393,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   @Override
-  public int getHealthScore() {
+  public HealthScoreInfo getHealthScore() {
     long dataFilesSize = getFragmentFileSize() + getSegmentFileSize();
     long dataFiles = getFragmentFileCount() + getSegmentFileCount();
     long dataRecords = getFragmentFileRecords() + getSegmentFileRecords();
@@ -402,13 +403,17 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     double posDeleteRatio = getNormalizedRatio(posDeleteFileRecords, dataRecords);
 
     double tablePenaltyFactor = getTablePenaltyFactor(dataFiles, dataFilesSize);
-    return (int)
-        Math.ceil(
-            100
-                - tablePenaltyFactor
-                    * (40 * getSmallFilePenaltyFactor(averageDataFileSize)
-                        + 40 * getEqDeletePenaltyFactor(eqDeleteRatio)
-                        + 20 * getPosDeletePenaltyFactor(posDeleteRatio)));
+
+    int smallFileScore =
+        (int)
+            Math.ceil(
+                40 - tablePenaltyFactor * 40 * getSmallFilePenaltyFactor(averageDataFileSize));
+    int eqDeleteScore =
+        (int) Math.ceil(40 - tablePenaltyFactor * 40 * getEqDeletePenaltyFactor(eqDeleteRatio));
+    int posDeleteScore =
+        (int) Math.ceil(20 - tablePenaltyFactor * 20 * getPosDeletePenaltyFactor(posDeleteRatio));
+
+    return new HealthScoreInfo(smallFileScore, eqDeleteScore, posDeleteScore);
   }
 
   private double getEqDeletePenaltyFactor(double eqDeleteRatio) {

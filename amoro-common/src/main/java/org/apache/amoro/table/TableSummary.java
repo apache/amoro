@@ -23,6 +23,9 @@ public class TableSummary {
   private int totalFileCount = 0;
   // -1 means not calculated
   private int healthScore = -1;
+  private int smallFileScore = 0;
+  private int equalityDeleteScore = 0;
+  private int positionalDeleteScore = 0;
   private long pendingFileSize = 0L;
   private int pendingFileCount = 0;
 
@@ -31,6 +34,9 @@ public class TableSummary {
     summary.setTotalFileSize(this.totalFileSize);
     summary.setTotalFileCount(this.totalFileCount);
     summary.setHealthScore(this.healthScore);
+    summary.setSmallFileScore(this.smallFileScore);
+    summary.setEqualityDeleteScore(this.equalityDeleteScore);
+    summary.setPositionalDeleteScore(this.positionalDeleteScore);
     summary.setPendingFileSize(this.pendingFileSize);
     summary.setPendingFileCount(this.pendingFileCount);
     return summary;
@@ -58,6 +64,30 @@ public class TableSummary {
 
   public void setHealthScore(int healthScore) {
     this.healthScore = healthScore;
+  }
+
+  public int getSmallFileScore() {
+    return smallFileScore;
+  }
+
+  public void setSmallFileScore(int smallFileScore) {
+    this.smallFileScore = smallFileScore;
+  }
+
+  public int getEqualityDeleteScore() {
+    return equalityDeleteScore;
+  }
+
+  public void setEqualityDeleteScore(int equalityDeleteScore) {
+    this.equalityDeleteScore = equalityDeleteScore;
+  }
+
+  public int getPositionalDeleteScore() {
+    return positionalDeleteScore;
+  }
+
+  public void setPositionalDeleteScore(int positionalDeleteScore) {
+    this.positionalDeleteScore = positionalDeleteScore;
   }
 
   public long getPendingFileSize() {
