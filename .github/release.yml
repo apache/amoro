@@ -1,0 +1,19 @@
+# .github/release.yml
+
+changelog:
+  categories:
+    - title: Improves
+      labels:
+        - 'type:improvement'
+      exclude:
+        labels:
+          - 'type:docs'
+    - title: Bugs
+      lables:
+        - 'type:bug'      
+      exclude:
+        - exclude:
+          - 'type:docs'
+    - title: Document Improvement
+      lables:
+        - 'type:docs'
