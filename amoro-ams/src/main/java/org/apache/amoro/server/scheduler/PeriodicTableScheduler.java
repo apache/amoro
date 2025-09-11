@@ -51,7 +51,7 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
       Collections.synchronizedSet(new HashSet<>());
   private final Action action;
   private final ScheduledExecutorService executor;
-  private final TableService tableService;
+  protected final TableService tableService;
 
   protected PeriodicTableScheduler(Action action, TableService tableService, int poolSize) {
     this.action = action;
