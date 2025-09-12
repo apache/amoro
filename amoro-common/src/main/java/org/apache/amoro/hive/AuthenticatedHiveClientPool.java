@@ -83,7 +83,9 @@ public class AuthenticatedHiveClientPool extends ClientPoolImpl<HMSClient, TExce
     this.hiveConf =
         new HiveConf(tableMetaStore.getConfiguration(), AuthenticatedHiveClientPool.class);
     this.hiveConf.addResource(tableMetaStore.getConfiguration());
-    this.hiveConf.addResource(tableMetaStore.getHiveSiteLocation().orElse(null));
+    if (tableMetaStore.getHiveSiteLocation().isPresent()) {
+      this.hiveConf.addResource(tableMetaStore.getHiveSiteLocation().get());
+    }
     this.metaStore = tableMetaStore;
   }
 

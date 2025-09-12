@@ -26,6 +26,7 @@ import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.iceberg.Constants;
+import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.TableRuntimeOptimizingState;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
@@ -33,7 +34,6 @@ import org.apache.amoro.process.AmoroProcess;
 import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.process.TableProcessState;
 import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.metrics.MetricRegistry;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
@@ -44,7 +44,6 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
-import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.shaded.com.google.common.collect.Maps;
 import org.apache.amoro.table.BaseTable;
@@ -66,6 +65,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+/** Default table runtime implementation. */
 public class DefaultTableRuntime extends AbstractTableRuntime
     implements TableRuntime, SupportsProcessPlugins {
 
@@ -87,7 +87,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   public static final List<StateKey<?>> REQUIRED_STATES =
       Lists.newArrayList(OPTIMIZING_STATE_KEY, PENDING_INPUT_KEY, PROCESS_ID_KEY);
 
-  private final TableRuntimeHandler tableHandler;
   private final Map<Action, TableProcessContainer> processContainerMap = Maps.newConcurrentMap();
   private final TableOptimizingMetrics optimizingMetrics;
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
@@ -96,16 +95,13 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   private volatile OptimizingProcess optimizingProcess;
   private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
-  public DefaultTableRuntime(TableRuntimeStore store, TableRuntimeHandler tableHandler) {
+  public DefaultTableRuntime(TableRuntimeStore store) {
     super(store);
     this.optimizingMetrics =
         new TableOptimizingMetrics(store.getTableIdentifier(), store.getGroupName());
     this.orphanFilesCleaningMetrics =
         new TableOrphanFilesCleaningMetrics(store.getTableIdentifier());
     this.tableSummaryMetrics = new TableSummaryMetrics(store.getTableIdentifier());
-
-    Preconditions.checkNotNull(tableHandler, "TableRuntimeHandler must not be null.");
-    this.tableHandler = tableHandler;
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -116,6 +112,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
     this.optimizingProcess = optimizingProcess;
   }
 
+  @Override
   public void registerMetric(MetricRegistry metricRegistry) {
     // TODO: extract method to interface.
     this.optimizingMetrics.register(metricRegistry);
@@ -279,7 +276,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime
               summary.setTotalFileCount(pendingFileCount);
             })
         .commit();
-    tableHandler.handleTableChanged(this, OptimizingStatus.IDLE);
   }
 
   public void setTableSummary(AbstractOptimizingEvaluator.PendingInput tableSummary) {
@@ -288,6 +284,9 @@ public class DefaultTableRuntime extends AbstractTableRuntime
         .updateTableSummary(
             summary -> {
               summary.setHealthScore(tableSummary.getHealthScore());
+              summary.setSmallFileScore(tableSummary.getSmallFileScore());
+              summary.setEqualityDeleteScore(tableSummary.getEqualityDeleteScore());
+              summary.setPositionalDeleteScore(tableSummary.getPositionalDeleteScore());
               summary.setTotalFileCount(tableSummary.getTotalFileCount());
               summary.setTotalFileSize(tableSummary.getTotalFileSize());
             })
@@ -323,23 +322,17 @@ public class DefaultTableRuntime extends AbstractTableRuntime
               return s;
             })
         .commit();
-
-    if (configChanged) {
-      tableHandler.handleTableChanged(this, oldConfiguration);
-    }
     return this;
   }
 
   public void beginPlanning() {
     OptimizingStatus originalStatus = getOptimizingStatus();
     store().begin().updateStatusCode(code -> OptimizingStatus.PLANNING.getCode()).commit();
-    tableHandler.handleTableChanged(this, originalStatus);
   }
 
   public void planFailed() {
     OptimizingStatus originalStatus = getOptimizingStatus();
     store().begin().updateStatusCode(code -> OptimizingStatus.PENDING.getCode()).commit();
-    tableHandler.handleTableChanged(this, originalStatus);
   }
 
   public void beginProcess(OptimizingProcess optimizingProcess) {
@@ -354,8 +347,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime
                 OptimizingStatus.ofOptimizingType(optimizingProcess.getOptimizingType()).getCode())
         .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
         .commit();
-
-    tableHandler.handleTableChanged(this, originalStatus);
   }
 
   public void completeProcess(boolean success) {
@@ -383,7 +374,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime
 
     optimizingMetrics.processComplete(processType, success, optimizingProcess.getPlanTime());
     optimizingProcess = null;
-    tableHandler.handleTableChanged(this, originalStatus);
   }
 
   public void completeEmptyProcess() {
@@ -403,7 +393,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime
               })
           .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
           .commit();
-      tableHandler.handleTableChanged(this, originalStatus);
     }
   }
 
@@ -425,7 +414,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   public void beginCommitting() {
     OptimizingStatus originalStatus = getOptimizingStatus();
     store().begin().updateStatusCode(code -> OptimizingStatus.COMMITTING.getCode()).commit();
-    tableHandler.handleTableChanged(this, originalStatus);
   }
 
   @Override

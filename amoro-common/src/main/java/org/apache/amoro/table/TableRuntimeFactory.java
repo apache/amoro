@@ -16,36 +16,25 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.table;
 
-import org.apache.amoro.AmoroTable;
+import org.apache.amoro.ActivePlugin;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
-import org.apache.amoro.server.catalog.InternalCatalog;
 
-public interface TableService extends TableRuntimeHandler {
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-  void addHandlerChain(RuntimeHandlerChain handler);
+/** Table runtime factory. */
+public interface TableRuntimeFactory extends ActivePlugin {
 
-  void initialize();
+  Optional<TableRuntimeCreator> accept(
+      ServerTableIdentifier tableIdentifier, Map<String, String> tableProperties);
 
-  void dispose();
+  interface TableRuntimeCreator {
+    List<StateKey<?>> requiredStateKeys();
 
-  void onTableCreated(InternalCatalog catalog, ServerTableIdentifier identifier);
-
-  void onTableDropped(InternalCatalog catalog, ServerTableIdentifier identifier);
-
-  TableRuntime getRuntime(Long tableId);
-
-  default boolean contains(Long tableId) {
-    return getRuntime(tableId) != null;
+    TableRuntime create(TableRuntimeStore store);
   }
-
-  /**
-   * load a table via server catalog.
-   *
-   * @param identifier managed table identifier
-   * @return managed table.
-   */
-  AmoroTable<?> loadTable(ServerTableIdentifier identifier);
 }

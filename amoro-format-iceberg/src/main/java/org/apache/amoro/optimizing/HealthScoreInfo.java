@@ -16,15 +16,28 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.optimizing;
 
-import org.apache.amoro.TableRuntime;
-import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.server.optimizing.OptimizingStatus;
+public class HealthScoreInfo {
+  private final int smallFileScore;
+  private final int equalityDeleteScore;
+  private final int positionalDeleteScore;
 
-public interface TableRuntimeHandler {
+  public HealthScoreInfo(int smallFileScore, int equalityDeleteScore, int positionalDeleteScore) {
+    this.smallFileScore = smallFileScore;
+    this.equalityDeleteScore = equalityDeleteScore;
+    this.positionalDeleteScore = positionalDeleteScore;
+  }
 
-  void handleTableChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus);
+  public int getSmallFileScore() {
+    return smallFileScore;
+  }
 
-  void handleTableChanged(TableRuntime tableRuntime, TableConfiguration originalConfig);
+  public int getEqualityDeleteScore() {
+    return equalityDeleteScore;
+  }
+
+  public int getPositionalDeleteScore() {
+    return positionalDeleteScore;
+  }
 }
