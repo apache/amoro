@@ -218,10 +218,9 @@ public interface TableMetaMapper {
       @Param("tableName") String tableName);
 
   @Insert(
-      "INSERT INTO table_identifier(catalog_name, db_name, table_name, format, bucket_id) VALUES("
+      "INSERT INTO table_identifier(catalog_name, db_name, table_name, format) VALUES("
           + " #{tableIdentifier.catalog}, #{tableIdentifier.database}, #{tableIdentifier.tableName}, "
-          + " #{tableIdentifier.format, typeHandler=org.apache.amoro.server.persistence.converter.TableFormatConverter}, "
-          + "#{tableIdentifier.bucketId})")
+          + " #{tableIdentifier.format, typeHandler=org.apache.amoro.server.persistence.converter.TableFormatConverter})")
   @Options(useGeneratedKeys = true, keyProperty = "tableIdentifier.id")
   void insertTable(@Param("tableIdentifier") ServerTableIdentifier tableIdentifier);
 
@@ -237,15 +236,14 @@ public interface TableMetaMapper {
       @Param("tableName") String tableName);
 
   @Select(
-      "SELECT table_id, catalog_name, db_name, table_name, format, bucket_id FROM table_identifier"
+      "SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier"
           + " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName} AND table_name = #{tableName}")
   @Results({
     @Result(property = "id", column = "table_id"),
     @Result(property = "tableName", column = "table_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "catalog", column = "catalog_name"),
-    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class),
-    @Result(property = "bucketId", column = "bucket_id")
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   ServerTableIdentifier selectTableIdentifier(
       @Param("catalogName") String catalogName,
@@ -253,69 +251,63 @@ public interface TableMetaMapper {
       @Param("tableName") String tableName);
 
   @Select(
-      "SELECT table_id, catalog_name, db_name, table_name, format, bucket_id FROM table_identifier"
+      "SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier"
           + " WHERE catalog_name = #{catalogName} AND db_name = #{databaseName}")
   @Results({
     @Result(property = "id", column = "table_id"),
     @Result(property = "catalog", column = "catalog_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class),
-    @Result(property = "bucketId", column = "bucket_id")
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   List<ServerTableIdentifier> selectTableIdentifiersByDb(
       @Param("catalogName") String catalogName, @Param("databaseName") String databaseName);
 
   @Select(
-      "SELECT table_id, catalog_name, db_name, table_name, format, bucket_id FROM table_identifier"
+      "SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier"
           + " WHERE catalog_name = #{catalogName}")
   @Results({
     @Result(property = "id", column = "table_id"),
     @Result(property = "catalog", column = "catalog_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class),
-    @Result(property = "bucketId", column = "bucket_id")
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   List<ServerTableIdentifier> selectTableIdentifiersByCatalog(
       @Param("catalogName") String catalogName);
 
-  @Select(
-      "SELECT table_id, catalog_name, db_name, table_name, format, bucket_id FROM table_identifier")
+  @Select("SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier")
   @Results({
     @Result(property = "id", column = "table_id"),
     @Result(property = "catalog", column = "catalog_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class),
-    @Result(property = "bucketId", column = "bucket_id")
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   List<ServerTableIdentifier> selectAllTableIdentifiers();
 
   @Select(
-      "SELECT table_id, catalog_name, db_name, table_name, format, bucket_id FROM table_identifier "
+      "SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier "
           + " WHERE table_id IN (#{tableIds::number[]})")
   @Results({
     @Result(property = "id", column = "table_id"),
     @Result(property = "catalog", column = "catalog_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class),
-    @Result(property = "bucketId", column = "bucket_id")
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   @Lang(InListExtendedLanguageDriver.class)
   List<ServerTableIdentifier> selectTableIdentifiers(@Param("tableIds") List<Long> tableIds);
 
   @Select(
-      "SELECT table_id, catalog_name, db_name, table_name, format, bucket_id FROM table_identifier "
+      "SELECT table_id, catalog_name, db_name, table_name, format FROM table_identifier "
           + " WHERE table_id = #{tableId}")
   @Results({
     @Result(property = "id", column = "table_id"),
     @Result(property = "catalog", column = "catalog_name"),
     @Result(property = "database", column = "db_name"),
     @Result(property = "tableName", column = "table_name"),
-    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class),
-    @Result(property = "bucketId", column = "bucket_id")
+    @Result(property = "format", column = "format", typeHandler = TableFormatConverter.class)
   })
   ServerTableIdentifier getTableIdentifier(long tableId);
 }

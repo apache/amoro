@@ -29,6 +29,7 @@ public class TableRuntimeMeta {
   private Long tableId;
   private String groupName;
   private Integer statusCode;
+  private String bucketId;
   private long statusCodeUpdateTime = System.currentTimeMillis();
   private Map<String, String> tableConfig = new HashMap<>();
   private TableSummary tableSummary = new TableSummary();
@@ -38,6 +39,7 @@ public class TableRuntimeMeta {
     meta.setTableId(this.tableId);
     meta.setGroupName(this.groupName);
     meta.setStatusCode(this.statusCode);
+    meta.setBucketId(this.bucketId);
     meta.setStatusCodeUpdateTime(this.statusCodeUpdateTime);
     meta.setTableConfig(Maps.newHashMap(this.tableConfig));
     meta.setTableSummary(this.tableSummary.copy());
@@ -68,6 +70,10 @@ public class TableRuntimeMeta {
     return tableSummary == null ? new TableSummary() : tableSummary;
   }
 
+  public String getBucketId() {
+    return bucketId;
+  }
+
   public void setTableId(Long tableId) {
     this.tableId = tableId;
   }
@@ -79,6 +85,10 @@ public class TableRuntimeMeta {
   public void setStatusCode(Integer statusCode) {
     this.statusCode = statusCode;
     this.statusCodeUpdateTime = System.currentTimeMillis();
+  }
+
+  public void setBucketId(String bucketId) {
+    this.bucketId = bucketId;
   }
 
   public void setStatusCodeUpdateTime(long statusCodeUpdateTime) {

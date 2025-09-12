@@ -80,7 +80,6 @@ CREATE TABLE `table_identifier`
     `db_name`         varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`      varchar(256) NOT NULL COMMENT 'Table name',
     `format`          VARCHAR(32)  NOT NULL COMMENT 'Table Format',
-    `bucket_id`          VARCHAR(4)  DEFAULT NULL COMMENT 'Bucket number to which the record table belongs',
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table identifier for AMS' ROW_FORMAT=DYNAMIC;
@@ -118,6 +117,7 @@ CREATE TABLE `table_runtime`
     `status_code_update_time`       timestamp(3) default CURRENT_TIMESTAMP(3) COMMENT 'Table runtime status code update time',
     `table_config`                  mediumtext COMMENT 'table configuration cached from table.properties',
     `table_summary`                 mediumtext COMMENT 'table summary for ams',
+    `bucket_id`          VARCHAR(4)  DEFAULT NULL COMMENT 'Bucket id to which the record table belongs',
     PRIMARY KEY (`table_id`),
     INDEX idx_status_and_time (status_code, status_code_update_time DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table running information of each table' ROW_FORMAT=DYNAMIC;
