@@ -80,6 +80,7 @@ CREATE TABLE `table_identifier`
     `db_name`         varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`      varchar(256) NOT NULL COMMENT 'Table name',
     `format`          VARCHAR(32)  NOT NULL COMMENT 'Table Format',
+    `bucket_id`          VARCHAR(4)  DEFAULT NULL COMMENT 'Bucket number to which the record table belongs',
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table identifier for AMS' ROW_FORMAT=DYNAMIC;

@@ -30,6 +30,7 @@ public class ServerTableIdentifier {
   private String database;
   private String tableName;
   private TableFormat format;
+  private String bucketId;
 
   // used by the MyBatis framework.
   private ServerTableIdentifier() {}
@@ -58,6 +59,21 @@ public class ServerTableIdentifier {
     this.format = format;
   }
 
+  private ServerTableIdentifier(
+      Long id,
+      String catalog,
+      String database,
+      String tableName,
+      TableFormat format,
+      String bucketId) {
+    this.id = id;
+    this.catalog = catalog;
+    this.database = database;
+    this.tableName = tableName;
+    this.format = format;
+    this.bucketId = bucketId;
+  }
+
   public Long getId() {
     return id;
   }
@@ -78,6 +94,10 @@ public class ServerTableIdentifier {
     return this.format;
   }
 
+  public String getBucketId() {
+    return this.bucketId;
+  }
+
   public void setId(Long id) {
     this.id = id;
   }
@@ -96,6 +116,10 @@ public class ServerTableIdentifier {
 
   public void setFormat(TableFormat format) {
     this.format = format;
+  }
+
+  public void setBucketId(String bucketId) {
+    this.bucketId = bucketId;
   }
 
   @Override
@@ -135,6 +159,16 @@ public class ServerTableIdentifier {
   public static ServerTableIdentifier of(
       Long id, String catalog, String database, String tableName, TableFormat format) {
     return new ServerTableIdentifier(id, catalog, database, tableName, format);
+  }
+
+  public static ServerTableIdentifier of(
+      Long id,
+      String catalog,
+      String database,
+      String tableName,
+      TableFormat format,
+      String bucketId) {
+    return new ServerTableIdentifier(id, catalog, database, tableName, format, bucketId);
   }
 
   public TableIdentifier getIdentifier() {
