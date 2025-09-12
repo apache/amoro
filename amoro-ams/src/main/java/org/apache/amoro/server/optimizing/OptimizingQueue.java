@@ -35,8 +35,8 @@ import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.MetricManager;
-import org.apache.amoro.server.persistence.OptimizingProcessState;
 import org.apache.amoro.server.optimizing.TaskRuntime.Status;
+import org.apache.amoro.server.persistence.OptimizingProcessState;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
@@ -532,7 +532,7 @@ public class OptimizingQueue extends PersistentBase {
           return;
         }
         if (tableRuntime.isAllowPartialCommit() && needCommit) {
-            tableRuntime.beginCommitting();
+          tableRuntime.beginCommitting();
         } else {
           this.status = ProcessStatus.CLOSED;
           this.endTime = System.currentTimeMillis();
@@ -594,7 +594,7 @@ public class OptimizingQueue extends PersistentBase {
                   taskRuntime.getTaskId(),
                   processId);
               failedReason = taskRuntime.getFailReason();
-                tableRuntime.beginCommitting();
+              tableRuntime.beginCommitting();
             } else {
               LOG.info(
                   "Task {} has reached the max execute retry count. Process {} failed.",
@@ -688,7 +688,7 @@ public class OptimizingQueue extends PersistentBase {
               .collect(Collectors.toList());
       LOG.debug(
           "{} get {} tasks of {} partitions to commit",
-              tableRuntime.getTableIdentifier(),
+          tableRuntime.getTableIdentifier(),
           successTasks.size(),
           successTasks.stream()
               .map(task -> task.getTaskDescriptor().getPartition())
