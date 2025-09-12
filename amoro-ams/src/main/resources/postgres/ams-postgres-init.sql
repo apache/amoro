@@ -177,7 +177,7 @@ create table if not exists table_runtime (
     status_code_update_time timestamptz not null default now(),
     table_config        text,
     table_summary       text,
-    bucket_id          VARCHAR(4),
+    bucket_id           varchar(4)
 );
 
 create index if not exists idx_status_and_time
