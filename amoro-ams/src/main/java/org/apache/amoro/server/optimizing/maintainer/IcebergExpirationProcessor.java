@@ -35,6 +35,8 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ManifestFile;
+import org.apache.iceberg.PartitionField;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
@@ -42,6 +44,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
+import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,7 +104,7 @@ public class IcebergExpirationProcessor extends DataExpirationProcessor {
       LOG.debug(
           "{}'s last snapshot {} was maintained, there are no incremental changes, skip data expiration",
           table.name(),
-          Long.valueOf(currentSnapshot.snapshotId()));
+          currentSnapshot.snapshotId());
       return;
     }
 
@@ -128,6 +131,26 @@ public class IcebergExpirationProcessor extends DataExpirationProcessor {
               + expireTimestamp);
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  Optional<PartitionFieldInfo> findFieldInSpec(PartitionSpec spec, int sourceId) {
+    if (spec == null) {
+      return Optional.empty();
+    }
+
+    for (int i = 0; i < spec.fields().size(); i++) {
+      PartitionField f = spec.fields().get(i);
+      if (f.sourceId() == sourceId) {
+        return Optional.of(new PartitionFieldInfo(f, i, spec.specId()));
+      }
+    }
+
+    return Optional.empty();
+  }
+
+  Types.NestedField findOriginalField(PartitionSpec spec, int sourceId) {
+    return spec.schema().findField(sourceId);
   }
 
   private void expireTableFiles(long expireTimestamp, Snapshot currentSnapshot) throws IOException {
@@ -232,8 +255,9 @@ public class IcebergExpirationProcessor extends DataExpirationProcessor {
 
       List<ManifestFile.PartitionFieldSummary> partitionSummaries = manifestFile.partitions();
       ManifestFile.PartitionFieldSummary summary = partitionSummaries.get(partitionFieldInfo.index);
+      Type sourceType = table.schema().findType(partitionFieldInfo.field.sourceId());
       PartitionRange partitionRange =
-          new PartitionRange(summary, partitionFieldInfo.field, expirationField.type(), config);
+          new PartitionRange(summary, partitionFieldInfo.field, sourceType, config);
       if (partitionRange.lowerBoundGt(expireTimestamp)) {
         // this manifest's partition range is all greater than expire timestamp, skip it
         continue;

@@ -20,6 +20,7 @@ package org.apache.amoro.server.optimizing.maintainer;
 
 import static org.apache.amoro.iceberg.Constants.INVALID_SNAPSHOT_ID;
 
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.config.DataExpirationConfig;
 import org.apache.amoro.op.SnapshotSummary;
@@ -40,12 +41,16 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ManifestFile;
+import org.apache.iceberg.PartitionField;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
+import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -218,8 +223,7 @@ public class MixedExpirationProcessor extends DataExpirationProcessor {
       return;
     }
 
-    // Use the existing IcebergExpirationProcessor for unkeyed tables
-    IcebergExpirationProcessor processor = new IcebergExpirationProcessor(unkeyedTable, config);
+    UnkeyedExpirationProcessor processor = new UnkeyedExpirationProcessor(unkeyedTable, config);
     processor.process(expireInstant);
   }
 
@@ -300,6 +304,82 @@ public class MixedExpirationProcessor extends DataExpirationProcessor {
     }
   }
 
+  @Override
+  Optional<PartitionFieldInfo> findFieldInSpec(PartitionSpec spec, int sourceId) {
+    if (spec == null) {
+      return Optional.empty();
+    }
+
+    TableFormat format = mixedTable.format();
+    if (format == TableFormat.MIXED_HIVE) {
+      return findFieldInMixedHiveSpec(spec, sourceId);
+    } else {
+      for (int i = 0; i < spec.fields().size(); i++) {
+        PartitionField f = spec.fields().get(i);
+        if (f.sourceId() == sourceId) {
+          return Optional.of(new PartitionFieldInfo(f, i, spec.specId()));
+        }
+      }
+    }
+
+    return Optional.empty();
+  }
+
+  Optional<PartitionFieldInfo> findFieldInMixedHiveSpec(PartitionSpec spec, int sourceId) {
+    if (spec == null) {
+      return Optional.empty();
+    }
+
+    // In Hive, partition field names may differ from source field names due to naming
+    // conventions.
+    // We need to match based on sourceId.
+    Schema schema = spec.schema();
+    for (int i = 0; i < spec.fields().size(); i++) {
+      PartitionField field = spec.fields().get(i);
+      String partitionFieldName = field.name();
+      String sourceName = schema.findColumnName(field.sourceId());
+      String originalName = schema.findColumnName(sourceId);
+      if (partitionFieldName.equals(sourceName) && partitionFieldName.startsWith(originalName)) {
+        return Optional.of(new PartitionFieldInfo(field, i, spec.specId()));
+      }
+    }
+
+    return Optional.empty();
+  }
+
+  @Override
+  Types.NestedField findOriginalField(PartitionSpec spec, int sourceId) {
+    if (spec == null) {
+      return null;
+    }
+
+    TableFormat format = mixedTable.format();
+    Schema schema = spec.schema();
+    if (format == TableFormat.MIXED_HIVE) {
+      return findHiveOriginalField(spec, sourceId);
+    } else {
+      return schema.findField(sourceId);
+    }
+  }
+
+  Types.NestedField findHiveOriginalField(PartitionSpec spec, int sourceId) {
+    if (spec == null) {
+      return null;
+    }
+
+    Schema schema = spec.schema();
+    for (PartitionField field : spec.fields()) {
+      String partitionFieldName = field.name();
+      String sourceName = spec.schema().findColumnName(field.sourceId());
+      String originalName = spec.schema().findColumnName(sourceId);
+      if (partitionFieldName.equals(sourceName) && partitionFieldName.startsWith(originalName)) {
+        return schema.findField(field.sourceId());
+      }
+    }
+
+    return null;
+  }
+
   ManifestsCollection buildManifestsIndex(UnkeyedTable table, long expireTimestamp) {
     List<ManifestFile> manifestFiles = table.currentSnapshot().allManifests(table.io());
     ManifestsCollection manifestsCollection = new ManifestsCollection(manifestFiles.size(), config);
@@ -331,8 +411,9 @@ public class MixedExpirationProcessor extends DataExpirationProcessor {
 
       List<ManifestFile.PartitionFieldSummary> partitionSummaries = manifestFile.partitions();
       ManifestFile.PartitionFieldSummary summary = partitionSummaries.get(partitionFieldInfo.index);
+      Type sourceType = table.schema().findType(partitionFieldInfo.field.sourceId());
       PartitionRange partitionRange =
-          new PartitionRange(summary, partitionFieldInfo.field, expirationField.type(), config);
+          new PartitionRange(summary, partitionFieldInfo.field, sourceType, config);
       if (partitionRange.lowerBoundGt(expireTimestamp)) {
         // this manifest's partition range is all greater than expire timestamp, skip it
         continue;
@@ -373,6 +454,29 @@ public class MixedExpirationProcessor extends DataExpirationProcessor {
       rewriteFiles.set(
           SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.DATA_EXPIRATION.name());
       rewriteFiles.commit();
+    }
+  }
+
+  class UnkeyedExpirationProcessor extends IcebergExpirationProcessor {
+    private final TableFormat tableFormat;
+
+    public UnkeyedExpirationProcessor(UnkeyedTable table, DataExpirationConfig config) {
+      super(table, config);
+      this.tableFormat = table.format();
+    }
+
+    @Override
+    Optional<PartitionFieldInfo> findFieldInSpec(PartitionSpec spec, int sourceId) {
+      return tableFormat == TableFormat.MIXED_HIVE
+          ? findFieldInMixedHiveSpec(spec, sourceId)
+          : super.findFieldInSpec(spec, sourceId);
+    }
+
+    @Override
+    Types.NestedField findOriginalField(PartitionSpec spec, int sourceId) {
+      return tableFormat == TableFormat.MIXED_HIVE
+          ? findHiveOriginalField(spec, sourceId)
+          : super.findOriginalField(spec, sourceId);
     }
   }
 }

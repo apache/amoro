@@ -112,6 +112,10 @@ public abstract class DataExpirationProcessor {
 
   abstract Types.NestedField expirationField();
 
+  abstract Optional<PartitionFieldInfo> findFieldInSpec(PartitionSpec spec, int sourceId);
+
+  abstract Types.NestedField findOriginalField(PartitionSpec spec, int sourceId);
+
   void collectExpiredFiles(
       Table table,
       ManifestsCollection manifestsCollection,
@@ -392,7 +396,8 @@ public abstract class DataExpirationProcessor {
     int pos = 0;
     List<Boolean> compareResults = new ArrayList<>();
     PartitionSpec partitionSpec = specs.get(contentFile.specId());
-    Type type = expirationField.type();
+    Types.NestedField originalField = findOriginalField(partitionSpec, expirationField.fieldId());
+    Type type = originalField.type();
     Long sanitizedTs = sanitizeExpireTimestamp(expireTimestamp, type, config);
     Comparable<?> sanitizedValue;
     if (type.asPrimitiveType() == Types.StringType.get()) {
@@ -407,7 +412,7 @@ public abstract class DataExpirationProcessor {
     }
 
     for (PartitionField partitionField : partitionSpec.fields()) {
-      if (partitionField.sourceId() == expirationField.fieldId()) {
+      if (partitionField.sourceId() == originalField.fieldId()) {
         if (partitionField.transform().isVoid()) {
           return false;
         }
@@ -428,21 +433,6 @@ public abstract class DataExpirationProcessor {
     }
 
     return !compareResults.isEmpty() && compareResults.stream().allMatch(Boolean::booleanValue);
-  }
-
-  Optional<PartitionFieldInfo> findFieldInSpec(PartitionSpec spec, int sourceId) {
-    if (spec == null) {
-      return Optional.empty();
-    }
-
-    for (int i = 0; i < spec.fields().size(); i++) {
-      PartitionField f = spec.fields().get(i);
-      if (f.sourceId() == sourceId) {
-        return Optional.of(new PartitionFieldInfo(f, i, spec.specId()));
-      }
-    }
-
-    return Optional.empty();
   }
 
   static class ManifestsCollection {
@@ -634,16 +624,11 @@ public abstract class DataExpirationProcessor {
           }
         case "identity":
           if (sourceType == Types.StringType.get()) {
-            // for string type, we need to convert the expire timestamp to formatted string
-            DateTimeFormatter fmt =
-                DateTimeFormatter.ofPattern(config.getDateTimePattern(), Locale.getDefault());
-            LocalDateTime dt =
-                LocalDateTime.ofInstant(
-                    Instant.ofEpochMilli(expireTimestamp), defaultZoneId(sourceType));
-            return dt.toInstant(ZoneOffset.UTC).toEpochMilli();
+            Instant instant = Instant.ofEpochMilli(sanitized);
+            int days = DateTimeUtil.daysFromInstant(instant);
+            return EPOCH.plusDays(days).toInstant().toEpochMilli();
           } else {
-            throw new UnsupportedOperationException(
-                "Cannot convert expire timestamp with identity transform for type: " + sourceType);
+            return sanitized;
           }
         default:
           throw new UnsupportedOperationException(

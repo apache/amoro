@@ -27,12 +27,10 @@ import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.iceberg.data.Record;
 import org.junit.ClassRule;
-import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.math.BigDecimal;
 
-@RunWith(Parameterized.class)
 public class TestDataExpireHive extends TestDataExpire {
 
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
@@ -46,7 +44,7 @@ public class TestDataExpireHive extends TestDataExpire {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(true, false, getDefaultProp())
+        new HiveTableTestHelper(true, false, getFileLevelProp())
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
@@ -54,7 +52,7 @@ public class TestDataExpireHive extends TestDataExpire {
       },
       {
         new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, false, getDefaultProp())
+        new HiveTableTestHelper(false, false, getFileLevelProp())
       }
     };
   }

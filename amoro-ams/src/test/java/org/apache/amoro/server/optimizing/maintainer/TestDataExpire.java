@@ -250,7 +250,7 @@ public class TestDataExpire extends ExecutorTestBase {
     // expire partitions that order than 2022-01-02 18:00:00.000
     DataExpirationConfig config = parseDataExpirationConfig(keyedTable);
     MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(keyedTable, null);
-    Type type = keyedTable.schema().findField(config.getExpirationField()).type();
+    Type type = keyedTable.schema().findType(config.getExpirationField());
     tableMaintainer.expireDataFrom(
         config, parseInstantWithZone("2022-01-03T18:00:00.000", defaultZoneId(type)));
 
