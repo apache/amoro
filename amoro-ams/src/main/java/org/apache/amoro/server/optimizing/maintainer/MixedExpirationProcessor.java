@@ -307,7 +307,7 @@ public class MixedExpirationProcessor extends DataExpirationProcessor {
     Optional<PartitionFieldInfo> partitionFieldOp =
         findFieldInSpec(table.spec(), expirationField.fieldId());
 
-    if (partitionFieldOp.isPresent()) {
+    if (!partitionFieldOp.isPresent()) {
       throw new UnsupportedOperationException(
           "Expiration field " + expirationField.name() + " is not used for partitioning");
     }
@@ -321,7 +321,7 @@ public class MixedExpirationProcessor extends DataExpirationProcessor {
         // spec
         Optional<PartitionFieldInfo> manifestFieldOp =
             findFieldInSpec(table.specs().get(manifestSpecId), expirationField.fieldId());
-        if (manifestFieldOp.isPresent()) {
+        if (!manifestFieldOp.isPresent()) {
           // manifest's spec does not have the expiration field, skip it
           continue;
         }

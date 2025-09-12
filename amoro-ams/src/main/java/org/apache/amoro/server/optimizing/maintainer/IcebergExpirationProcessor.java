@@ -205,7 +205,7 @@ public class IcebergExpirationProcessor extends DataExpirationProcessor {
     Optional<PartitionFieldInfo> partitionFieldOp =
         findFieldInSpec(table.spec(), expirationField.fieldId());
 
-    if (partitionFieldOp.isPresent()) {
+    if (!partitionFieldOp.isPresent()) {
       LOG.warn(
           "Expiration field: {} is not used for partitioning, cannot extract from manifest",
           expirationField.name());
@@ -222,7 +222,7 @@ public class IcebergExpirationProcessor extends DataExpirationProcessor {
         // spec
         Optional<PartitionFieldInfo> manifestFieldOp =
             findFieldInSpec(table.specs().get(manifestSpecId), expirationField.fieldId());
-        if (manifestFieldOp.isPresent()) {
+        if (!manifestFieldOp.isPresent()) {
           // manifest's spec does not have the expiration field, skip it
           continue;
         }

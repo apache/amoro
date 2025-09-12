@@ -399,7 +399,7 @@ public abstract class DataExpirationProcessor {
       DateTimeFormatter formatter =
           DateTimeFormatter.ofPattern(config.getDateTimePattern(), Locale.getDefault());
       sanitizedValue =
-          LocalDate.ofInstant(
+          LocalDateTime.ofInstant(
                   Instant.ofEpochMilli(expireTimestamp), defaultZoneId(expirationField.type()))
               .format(formatter);
     } else {
