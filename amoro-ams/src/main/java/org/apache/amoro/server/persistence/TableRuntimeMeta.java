@@ -29,20 +29,20 @@ public class TableRuntimeMeta {
   private Long tableId;
   private String groupName;
   private Integer statusCode;
-  private String bucketId;
   private long statusCodeUpdateTime = System.currentTimeMillis();
   private Map<String, String> tableConfig = new HashMap<>();
   private TableSummary tableSummary = new TableSummary();
+  private String bucketId;
 
   public TableRuntimeMeta copy() {
     TableRuntimeMeta meta = new TableRuntimeMeta();
     meta.setTableId(this.tableId);
     meta.setGroupName(this.groupName);
     meta.setStatusCode(this.statusCode);
-    meta.setBucketId(this.bucketId);
     meta.setStatusCodeUpdateTime(this.statusCodeUpdateTime);
     meta.setTableConfig(Maps.newHashMap(this.tableConfig));
     meta.setTableSummary(this.tableSummary.copy());
+    meta.setBucketId(this.bucketId);
     return meta;
   }
 
@@ -87,10 +87,6 @@ public class TableRuntimeMeta {
     this.statusCodeUpdateTime = System.currentTimeMillis();
   }
 
-  public void setBucketId(String bucketId) {
-    this.bucketId = bucketId;
-  }
-
   public void setStatusCodeUpdateTime(long statusCodeUpdateTime) {
     this.statusCodeUpdateTime = statusCodeUpdateTime;
   }
@@ -101,5 +97,9 @@ public class TableRuntimeMeta {
 
   public void setTableSummary(TableSummary tableSummary) {
     this.tableSummary = tableSummary;
+  }
+
+  public void setBucketId(String bucketId) {
+    this.bucketId = bucketId;
   }
 }

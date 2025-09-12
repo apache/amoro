@@ -43,7 +43,7 @@ public interface TableRuntimeMapper {
           + "VALUES (#{tableId}, #{groupName}, #{statusCode}, "
           + "#{tableConfig,typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}, "
           + "#{tableSummary,typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter}, "
-          + "#{bucketId})")
+          + "#{bucketId, jdbcType=VARCHAR})")
   int insertRuntime(TableRuntimeMeta meta);
 
   /* ---------- update ---------- */
@@ -55,7 +55,7 @@ public interface TableRuntimeMapper {
           + "     status_code_update_time = #{statusCodeUpdateTime, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}, "
           + "     table_config       = #{tableConfig,typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}, "
           + "     table_summary      = #{tableSummary,typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter}, "
-          + "     bucket_id        = #{bucketId} "
+          + "     bucket_id        = #{bucketId, jdbcType=VARCHAR} "
           + " WHERE table_id = #{tableId}")
   int updateRuntime(TableRuntimeMeta meta);
 
