@@ -86,12 +86,12 @@ public class TestHiveKeyedPartitionPlan extends TestKeyedPartitionPlan {
     return new MixedHivePartitionPlan(
         getTableRuntime().getTableIdentifier(),
         getMixedTable(),
-        getTableRuntime().getOptimizingState().getOptimizingConfig(),
+        getTableRuntime().getOptimizingConfig(),
         getPartition(),
         hiveLocation,
         System.currentTimeMillis(),
-        getTableRuntime().getOptimizingState().getLastMinorOptimizingTime(),
-        getTableRuntime().getOptimizingState().getLastFullOptimizingTime());
+        getTableRuntime().getLastMinorOptimizingTime(),
+        getTableRuntime().getLastFullOptimizingTime());
   }
 
   @Test

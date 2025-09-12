@@ -31,7 +31,7 @@ import org.apache.amoro.metrics.Gauge;
 import org.apache.amoro.metrics.Metric;
 import org.apache.amoro.metrics.MetricDefine;
 import org.apache.amoro.metrics.MetricKey;
-import org.apache.amoro.server.metrics.MetricRegistry;
+import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -145,7 +145,7 @@ public class OptimizerGroupMetrics {
         (Gauge<Long>)
             () ->
                 optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
-                    .filter(t -> t.getOptimizingState().getOptimizingStatus().equals(PLANNING))
+                    .filter(t -> t.getOptimizingStatus().equals(PLANNING))
                     .count());
     registerMetric(
         registry,
@@ -153,7 +153,7 @@ public class OptimizerGroupMetrics {
         (Gauge<Long>)
             () ->
                 optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
-                    .filter(t -> t.getOptimizingState().getOptimizingStatus().equals(PENDING))
+                    .filter(t -> t.getOptimizingStatus().equals(PENDING))
                     .count());
     registerMetric(
         registry,
@@ -161,7 +161,7 @@ public class OptimizerGroupMetrics {
         (Gauge<Long>)
             () ->
                 optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
-                    .filter(t -> t.getOptimizingState().getOptimizingStatus().isProcessing())
+                    .filter(t -> t.getOptimizingStatus().isProcessing())
                     .count());
     registerMetric(
         registry,
@@ -169,7 +169,7 @@ public class OptimizerGroupMetrics {
         (Gauge<Long>)
             () ->
                 optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
-                    .filter(t -> t.getOptimizingState().getOptimizingStatus().equals(IDLE))
+                    .filter(t -> t.getOptimizingStatus().equals(IDLE))
                     .count());
     registerMetric(
         registry,
@@ -177,7 +177,7 @@ public class OptimizerGroupMetrics {
         (Gauge<Long>)
             () ->
                 optimizingQueue.getSchedulingPolicy().getTableRuntimeMap().values().stream()
-                    .filter(t -> t.getOptimizingState().getOptimizingStatus().equals(COMMITTING))
+                    .filter(t -> t.getOptimizingStatus().equals(COMMITTING))
                     .count());
 
     registerMetric(

@@ -25,6 +25,8 @@ import org.apache.amoro.server.catalog.InternalCatalog;
 
 public interface TableService extends TableRuntimeHandler {
 
+  void addHandlerChain(RuntimeHandlerChain handler);
+
   void initialize();
 
   void dispose();

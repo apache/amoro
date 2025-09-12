@@ -27,26 +27,26 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>amoro-format-mixed-flink-runtime-1.15</artifactId>
-    <name>Amoro Project Mixed Format Flink 1.15 Runtime</name>
+    <artifactId>amoro-format-mixed-flink-runtime-1.18</artifactId>
+    <name>Amoro Project Mixed Format Flink 1.18 Runtime</name>
     <url>https://amoro.apache.org</url>
 
     <properties>
-        <iceberg.version>1.4.3</iceberg.version>
-        <flink.version>1.15.3</flink.version>
+        <flink.version>1.18.1</flink.version>
+        <flink-kafka.version>3.2.0-1.18</flink-kafka.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-format-mixed-flink-1.15</artifactId>
+            <artifactId>amoro-format-mixed-flink-1.18</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-kafka</artifactId>
-            <version>${flink.version}</version>
+            <version>${flink-kafka.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.github.luben</groupId>
@@ -81,6 +81,14 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/versions/**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <includes combine.children="append">
@@ -102,6 +110,7 @@
                                     <include>org.apache.httpcomponents.core5:*</include>
                                     <include>org.apache.flink:flink-connector-kafka</include>
                                     <include>org.apache.kafka:*</include>
+                                    <include>com.github.luben:*</include>
                                     <include>com.github.luben:*</include>
                                 </includes>
                             </artifactSet>
@@ -125,12 +134,12 @@
                                     <shadedPattern>org.apache.amoro.shade.org.apache.commons
                                     </shadedPattern>
                                 </relocation>
-
+                                
                                 <relocation>
                                     <pattern>org.apache.avro</pattern>
                                     <shadedPattern>org.apache.amoro.shade.org.apache.avro</shadedPattern>
                                 </relocation>
-
+                                
                                 <relocation>
                                     <pattern>org.apache.orc</pattern>
                                     <shadedPattern>org.apache.amoro.shade.org.apache.orc</shadedPattern>

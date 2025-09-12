@@ -23,9 +23,11 @@ import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
+import org.apache.amoro.server.persistence.OptimizingProcessState;
 import org.apache.amoro.server.persistence.converter.JsonObjectConverter;
 import org.apache.amoro.server.persistence.converter.Long2TsConverter;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
+import org.apache.amoro.server.persistence.converter.MapLong2StringConverter;
 import org.apache.amoro.server.persistence.converter.Object2ByteArrayConvert;
 import org.apache.amoro.server.persistence.converter.TaskDescriptorTypeConverter;
 import org.apache.amoro.server.persistence.extension.InListExtendedLanguageDriver;
@@ -74,6 +76,23 @@ public interface OptimizingProcessMapper {
           + " WHERE process_id = #{processId}")
   void updateProcessInputFiles(
       @Param("processId") long processId, @Param("input") Map<Integer, RewriteFilesInput> input);
+
+  @Select(
+      "SELECT target_snapshot_id, target_change_snapshot_id, from_sequence, to_sequence "
+          + "FROM optimizing_process_state WHERE process_id = #{processId}")
+  @Results({
+    @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
+    @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
+    @Result(
+        property = "fromSequence",
+        column = "from_sequence",
+        typeHandler = MapLong2StringConverter.class),
+    @Result(
+        property = "toSequence",
+        column = "to_sequence",
+        typeHandler = MapLong2StringConverter.class),
+  })
+  OptimizingProcessState getProcessState(@Param("processId") long processId);
 
   /** Optimizing TaskRuntime operation below */
   @Insert({

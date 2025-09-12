@@ -22,13 +22,14 @@ public class ApiTokens {
   Integer id;
   String apikey;
   String secret;
-  String applyTime;
+  long applyTime;
 
   public ApiTokens() {}
 
   public ApiTokens(String apiKey, String secret) {
     this.apikey = apiKey;
     this.secret = secret;
+    this.applyTime = System.currentTimeMillis();
   }
 
   public Integer getId() {
@@ -55,11 +56,11 @@ public class ApiTokens {
     this.secret = secret;
   }
 
-  public String getApplyTime() {
+  public long getApplyTime() {
     return applyTime;
   }
 
-  public void setApplyTime(String applyTime) {
+  public void setApplyTime(long applyTime) {
     this.applyTime = applyTime;
   }
 }

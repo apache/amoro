@@ -39,7 +39,6 @@ import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
-import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.utils.IcebergTableUtil;
@@ -185,20 +184,17 @@ public class CompleteOptimizingFlow {
   private AbstractOptimizingPlanner planner() {
     table.refresh();
     DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
-    DefaultOptimizingState optimizingState = Mockito.mock(DefaultOptimizingState.class);
-    Mockito.when(tableRuntime.getOptimizingState()).thenReturn(optimizingState);
-    Mockito.when(optimizingState.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
-    Mockito.when(optimizingState.getCurrentChangeSnapshotId())
+
+    Mockito.when(tableRuntime.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
+    Mockito.when(tableRuntime.getCurrentChangeSnapshotId())
         .thenAnswer(f -> getCurrentChangeSnapshotId());
-    Mockito.when(optimizingState.getNewestProcessId()).thenReturn(1L);
-    Mockito.when(optimizingState.getPendingInput()).thenReturn(null);
-    Mockito.doCallRealMethod().when(optimizingState).getLastMinorOptimizingTime();
-    Mockito.doCallRealMethod().when(optimizingState).getLastMajorOptimizingTime();
-    Mockito.doCallRealMethod().when(optimizingState).getLastFullOptimizingTime();
-    Mockito.when(optimizingState.getOptimizingConfig()).thenAnswer(f -> optimizingConfig());
+    Mockito.when(tableRuntime.getProcessId()).thenReturn(1L);
+    Mockito.when(tableRuntime.getPendingInput()).thenReturn(null);
+    Mockito.when(tableRuntime.getLastMinorOptimizingTime()).thenReturn(0L);
+    Mockito.when(tableRuntime.getLastMajorOptimizingTime()).thenReturn(0L);
+    Mockito.when(tableRuntime.getLastFullOptimizingTime()).thenReturn(0L);
+    Mockito.when(tableRuntime.getOptimizingConfig()).thenAnswer(f -> optimizingConfig());
     Mockito.when(tableRuntime.getTableIdentifier())
-        .thenReturn(ServerTableIdentifier.of(1L, "a", "b", "c", table.format()));
-    Mockito.when(optimizingState.getTableIdentifier())
         .thenReturn(ServerTableIdentifier.of(1L, "a", "b", "c", table.format()));
     return IcebergTableUtil.createOptimizingPlanner(
         tableRuntime,

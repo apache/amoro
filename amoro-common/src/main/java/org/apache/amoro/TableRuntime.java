@@ -19,6 +19,7 @@
 package org.apache.amoro;
 
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.process.TableProcessState;
 
@@ -47,6 +48,9 @@ public interface TableRuntime {
    */
   List<? extends TableProcessState> getProcessStates(Action action);
 
+  /** Get the group name of the table runtime. */
+  String getGroupName();
+
   /**
    * Get the table identifier containing server side id and table format.
    *
@@ -60,6 +64,13 @@ public interface TableRuntime {
    * @return the table configuration
    */
   TableConfiguration getTableConfiguration();
+
+  /**
+   * Register the metric of the table runtime.
+   *
+   * @param metricRegistry the metric registry
+   */
+  void registerMetric(MetricRegistry metricRegistry);
 
   /** Get table format */
   default TableFormat getFormat() {
