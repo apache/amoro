@@ -393,14 +393,14 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     retryTask.schedule(optimizerThread);
     retryTask.ack(optimizerThread);
 
-    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingState().getOptimizingProcess();
+    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
     retryTask.complete(
         optimizerThread,
         buildOptimizingTaskFailed(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.FAILED, task.getStatus());
     optimizingProcess.commit();
     Assert.assertEquals(ProcessStatus.FAILED, optimizingProcess.getStatus());
-    Assert.assertNull(tableRuntime.getOptimizingState().getOptimizingProcess());
+    Assert.assertNull(tableRuntime.getOptimizingProcess());
     Assert.assertEquals(0, queue.collectTasks().size());
     queue.dispose();
   }
