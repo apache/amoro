@@ -86,7 +86,7 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
         && !tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
       OptimizingProcess optimizingProcess = defaultTableRuntime.getOptimizingProcess();
       if (optimizingProcess != null && optimizingProcess.getStatus() == ProcessStatus.RUNNING) {
-        optimizingProcess.close();
+        optimizingProcess.close(false);
       }
     }
   }

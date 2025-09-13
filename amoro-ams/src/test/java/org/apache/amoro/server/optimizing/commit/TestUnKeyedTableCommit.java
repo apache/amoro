@@ -29,6 +29,7 @@ import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.server.optimizing.TaskRuntime;
+import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.ContentFile;
@@ -282,6 +283,7 @@ public class TestUnKeyedTableCommit extends TableTestBase {
 
     TaskRuntime<RewriteStageTask> taskRuntime = Mockito.mock(TaskRuntime.class);
     RewriteStageTask task = Mockito.mock(RewriteStageTask.class);
+    Mockito.when(taskRuntime.getStatus()).thenReturn(Status.SUCCESS);
     Mockito.when(taskRuntime.getTaskDescriptor()).thenReturn(task);
     Mockito.when(task.getPartition()).thenReturn(partitionPath);
     Mockito.when(task.getInput()).thenReturn(input);
