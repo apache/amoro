@@ -218,11 +218,11 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
     return new MixedIcebergPartitionPlan(
         getTableRuntime().getTableIdentifier(),
         getMixedTable(),
-        getTableRuntime().getOptimizingState().getOptimizingConfig(),
+        getTableRuntime().getOptimizingConfig(),
         getPartition(),
         System.currentTimeMillis(),
-        getTableRuntime().getOptimizingState().getLastMinorOptimizingTime(),
-        getTableRuntime().getOptimizingState().getLastFullOptimizingTime());
+        getTableRuntime().getLastMinorOptimizingTime(),
+        getTableRuntime().getLastFullOptimizingTime());
   }
 
   @Override

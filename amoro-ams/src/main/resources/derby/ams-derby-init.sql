@@ -99,49 +99,59 @@ CREATE TABLE table_metadata (
     CONSTRAINT table_metadata_pk PRIMARY KEY (table_id)
 );
 
+
 CREATE TABLE table_runtime (
-    table_id                    BIGINT NOT NULL,
-    catalog_name                VARCHAR(64) NOT NULL,
-    db_name                     VARCHAR(128) NOT NULL,
-    table_name                  VARCHAR(256) NOT NULL,
-    current_snapshot_id         BIGINT NOT NULL DEFAULT -1,
-    current_change_snapshotId   BIGINT,
-    last_optimized_snapshotId   BIGINT NOT NULL DEFAULT -1,
-    last_optimized_change_snapshotId   BIGINT NOT NULL DEFAULT -1,
-    last_major_optimizing_time  TIMESTAMP,
-    last_minor_optimizing_time  TIMESTAMP,
-    last_full_optimizing_time   TIMESTAMP,
-    optimizing_status_code           INT DEFAULT 700,
-    optimizing_status_start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    optimizing_process_id       BIGINT NOT NULL,
-    optimizer_group             VARCHAR(64) NOT NULL,
-    table_config                CLOB(64m),
-    optimizing_config           CLOB(64m),
-    pending_input               CLOB(64m),
-    table_summary               CLOB(64m),
-    CONSTRAINT table_runtime_pk PRIMARY KEY (table_id),
-    CONSTRAINT table_runtime_table_name_idx UNIQUE (catalog_name, db_name, table_name)
+    table_id            BIGINT NOT NULL PRIMARY KEY,
+    group_name          VARCHAR(64) NOT NULL,
+    status_code         INTEGER NOT NULL DEFAULT 700,
+    status_code_update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    table_config        CLOB,
+    table_summary       CLOB
 );
 
-CREATE TABLE table_optimizing_process (
-    process_id          BIGINT NOT NULL,
-    table_id            BIGINT NOT NULL,
-    catalog_name        VARCHAR(64) NOT NULL,
-    db_name             VARCHAR(128) NOT NULL,
-    table_name          VARCHAR(256) NOT NULL,
-    target_snapshot_id  BIGINT NOT NULL,
-    target_change_snapshot_id  BIGINT NOT NULL,
-    status              VARCHAR(10) NOT NULL,
-    optimizing_type     VARCHAR(10) NOT NULL,
-    plan_time           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    end_time            TIMESTAMP DEFAULT NULL,
-    fail_reason         VARCHAR(4096),
-    rewrite_input       BLOB(64m),
-    summary             CLOB(64m),
-    from_sequence       CLOB(64m),
-    to_sequence         CLOB(64m),
-    CONSTRAINT table_optimizing_process_pk PRIMARY KEY (process_id)
+CREATE INDEX idx_status_time_desc
+    ON table_runtime (status_code, status_code_update_time DESC);
+
+CREATE TABLE table_runtime_state (
+    state_id        BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+    table_id        BIGINT NOT NULL,
+    state_key       VARCHAR(256) NOT NULL,
+    state_value     CLOB,
+    state_version   BIGINT NOT NULL DEFAULT 0,
+    create_time     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (state_id),
+    CONSTRAINT uniq_table_state_key UNIQUE (table_id, state_key)
 );
+
+CREATE UNIQUE INDEX uniq_table_state_key ON table_runtime_state (table_id, state_key);
+
+CREATE TABLE table_process (
+    process_id       BIGINT NOT NULL PRIMARY KEY,
+    table_id         BIGINT NOT NULL,
+    status           VARCHAR(64) NOT NULL,
+    process_type     VARCHAR(64) NOT NULL,
+    process_stage    VARCHAR(64) NOT NULL,
+    execution_engine VARCHAR(64) NOT NULL,
+    create_time      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    finish_time      TIMESTAMP DEFAULT NULL,
+    fail_message     CLOB,
+    summary          CLOB(64m)
+);
+CREATE INDEX table_process_table_idx ON table_process (table_id, create_time);
+
+CREATE TABLE optimizing_process_state (
+    process_id                BIGINT NOT NULL PRIMARY KEY,
+    table_id                  BIGINT NOT NULL,
+    target_snapshot_id        BIGINT NOT NULL,
+    target_change_snapshot_id BIGINT NOT NULL,
+    rewrite_input             BLOB(64m),
+    from_sequence             CLOB(64m),
+    to_sequence               CLOB(64m)
+);
+CREATE INDEX optimizing_process_state_table_idx
+    ON optimizing_process_state (table_id);
+
 
 CREATE TABLE task_runtime (
     process_id      BIGINT NOT NULL,
@@ -162,6 +172,21 @@ CREATE TABLE task_runtime (
     properties      CLOB,
     CONSTRAINT task_runtime_pk PRIMARY KEY (process_id, task_id)
 );
+
+CREATE TABLE table_process_state
+(
+    process_id                    BIGINT NOT NULL,
+    action                        VARCHAR(16) NOT NULL,
+    table_id                      BIGINT NOT NULL,
+    retry_num                     INT DEFAULT NULL,
+    status                        VARCHAR(10) NOT NULL,
+    start_time                    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time                      TIMESTAMP DEFAULT NULL,
+    fail_reason                   VARCHAR(4096) DEFAULT NULL,
+    summary                       CLOB,
+    CONSTRAINT table_process_state_pk PRIMARY KEY (process_id)
+);
+CREATE INDEX table_process_state_table_idx ON table_process_state (table_id, start_time);
 
 CREATE TABLE optimizing_task_quota (
     process_id      BIGINT NOT NULL,

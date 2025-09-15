@@ -28,10 +28,12 @@ import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.optimizer.standalone.StandaloneOptimizer;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.resource.ResourceContainer;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.catalog.ServerCatalog;
-import org.apache.amoro.server.resource.InternalContainers;
+import org.apache.amoro.server.manager.AbstractOptimizerContainer;
+import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.io.MoreFiles;
@@ -115,6 +117,10 @@ public class AmsEnvironment {
         Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath();
     FileUtils.writeStringToFile(
         new File(rootPath + "/conf/config.yaml"), getAmsConfig(), Charset.defaultCharset());
+    FileUtils.writeStringToFile(
+        new File(rootPath + "/conf/plugins/table-runtime-factories.yaml"),
+        getTableRuntimeFactoriesConfig(),
+        Charset.defaultCharset());
     System.setProperty(Environments.AMORO_HOME, rootPath);
     System.setProperty("derby.init.sql.dir", path + "../classes/sql/derby/");
     serviceContainer = new AmoroServiceContainer();
@@ -285,7 +291,15 @@ public class AmsEnvironment {
         .listOptimizers()
         .forEach(
             resource -> {
-              InternalContainers.get(resource.getContainerName()).releaseResource(resource);
+              ResourceContainer rc = Containers.get(resource.getContainerName());
+              if (!(rc instanceof AbstractOptimizerContainer)) {
+                LOG.warn(
+                    "Cannot stop optimizer on non-optimizer resource container {}.",
+                    resource.getContainerName());
+                return;
+              }
+
+              ((AbstractOptimizerContainer) rc).releaseResource(resource);
             });
   }
 
@@ -315,7 +329,8 @@ public class AmsEnvironment {
             AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT, optimizingServiceBindPort);
         serviceConfig.set(
             AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL, Duration.ofMillis(1000L));
-        serviceContainer.startService();
+        serviceContainer.startRestServices();
+        serviceContainer.startOptimizingService();
         LOG.info("Started test AMS.");
         break;
       } catch (TTransportException e) {
@@ -370,6 +385,7 @@ public class AmsEnvironment {
         + "    commit-thread-count: 10\n"
         + "    runtime-data-keep-days: 30\n"
         + "    runtime-data-expire-interval-hours: 1\n"
+        + "    break-quota-limit-enabled: true\n"
         + "\n"
         + "  database:\n"
         + "    type: \"derby\"\n"
@@ -402,5 +418,12 @@ public class AmsEnvironment {
         + "metric-reporters:\n"
         + "  - name: mocked-reporter\n"
         + "    properties:\n";
+  }
+
+  private String getTableRuntimeFactoriesConfig() {
+    return "table-runtime-factories:\n"
+        + "  - name: default\n"
+        + "    enabled: true\n"
+        + "    priority: 100\n";
   }
 }

@@ -85,10 +85,7 @@ public class TestSnapshotExpireHive extends TestSnapshotExpire {
             ? getMixedTable().asKeyedTable().baseTable().newDelete()
             : getMixedTable().asUnkeyedTable().newDelete();
 
-    getMixedTable()
-        .updateProperties()
-        .set(TableProperties.BASE_SNAPSHOT_KEEP_MINUTES, "0")
-        .commit();
+    getMixedTable().updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0").commit();
     getMixedTable().updateProperties().set(TableProperties.CHANGE_DATA_TTL, "0").commit();
 
     for (DataFile hiveFile : hiveFiles) {

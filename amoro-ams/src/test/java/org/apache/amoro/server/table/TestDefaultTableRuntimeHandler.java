@@ -41,6 +41,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.Mockito;
 
 import java.util.List;
 
@@ -48,6 +49,7 @@ import java.util.List;
 public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
 
   private DefaultTableService tableService;
+  private final TableRuntimeFactoryManager runtimeFactoryManager;
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
@@ -64,11 +66,16 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
   public TestDefaultTableRuntimeHandler(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper, false);
+    DefaultTableRuntimeFactory runtimeFactory = new DefaultTableRuntimeFactory();
+    runtimeFactoryManager = Mockito.mock(TableRuntimeFactoryManager.class);
+    Mockito.when(runtimeFactoryManager.installedPlugins())
+        .thenReturn(Lists.newArrayList(runtimeFactory));
   }
 
   @Test
   public void testInitialize() throws Exception {
-    tableService = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
+    tableService =
+        new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactoryManager);
     TestHandler handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();
@@ -87,7 +94,8 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
     Assert.assertTrue(handler.isDisposed());
 
     // initialize with a history table
-    tableService = new DefaultTableService(new Configurations(), CATALOG_MANAGER);
+    tableService =
+        new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactoryManager);
     handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();
@@ -101,7 +109,6 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
 
     mixedTable.updateProperties().set(TableProperties.ENABLE_ORPHAN_CLEAN, "true").commit();
     getDefaultTableRuntime(createTableId.getId())
-        .getOptimizingState()
         .refresh(tableService.loadTable(serverTableIdentifier()));
     Assert.assertEquals(1, handler.getConfigChangedTables().size());
     validateTableRuntime(handler.getConfigChangedTables().get(0).first());

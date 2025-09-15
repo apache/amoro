@@ -35,6 +35,11 @@ data:
         properties:
           {{ .prometheusExporter.properties | toYaml | nindent 10 | trim }}
     {{- end }}
+  table-runtime-factories.yaml: |
+    table-runtime-factories:
+      - name: default
+        enabled: true
+        priority: 100
   ## Helm chart provided Amoro configurations
   config.yaml: |
     ams:
@@ -77,6 +82,7 @@ data:
         commit-thread-count: 10
         runtime-data-keep-days: 30
         runtime-data-expire-interval-hours: 1
+        break-quota-limit-enabled: true
 
       optimizer:
         heart-beat-timeout: 1min # 60000

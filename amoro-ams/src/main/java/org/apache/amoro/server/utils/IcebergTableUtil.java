@@ -33,7 +33,6 @@ import org.apache.amoro.optimizing.plan.IcebergOptimizingPlanner;
 import org.apache.amoro.optimizing.plan.MixedIcebergOptimizingEvaluator;
 import org.apache.amoro.optimizing.plan.MixedIcebergOptimizingPlanner;
 import org.apache.amoro.scan.TableEntriesScan;
-import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.base.Predicate;
@@ -92,11 +91,10 @@ public class IcebergTableUtil {
 
   public static TableSnapshot getSnapshot(MixedTable mixedTable, DefaultTableRuntime tableRuntime) {
     if (mixedTable.isUnkeyedTable()) {
-      return new BasicTableSnapshot(tableRuntime.getOptimizingState().getCurrentSnapshotId());
+      return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
     } else {
       return new KeyedTableSnapshot(
-          tableRuntime.getOptimizingState().getCurrentSnapshotId(),
-          tableRuntime.getOptimizingState().getCurrentChangeSnapshotId());
+          tableRuntime.getCurrentSnapshotId(), tableRuntime.getCurrentChangeSnapshotId());
     }
   }
 
@@ -227,10 +225,9 @@ public class IcebergTableUtil {
       TableSnapshot snapshot,
       int maxPendingPartitions) {
     ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
-    DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
-    OptimizingConfig config = optimizingState.getOptimizingConfig();
-    long lastMinor = optimizingState.getLastMinorOptimizingTime();
-    long lastFull = optimizingState.getLastFullOptimizingTime();
+    OptimizingConfig config = tableRuntime.getOptimizingConfig();
+    long lastMinor = tableRuntime.getLastMinorOptimizingTime();
+    long lastFull = tableRuntime.getLastFullOptimizingTime();
     if (TableFormat.ICEBERG.equals(table.format())) {
       return new IcebergOptimizerEvaluator(
           identifier, config, table, snapshot, maxPendingPartitions, lastMinor, lastFull);
@@ -255,12 +252,10 @@ public class IcebergTableUtil {
       MixedTable table,
       double availableCore,
       long maxInputSizePerThread) {
-    DefaultOptimizingState optimizingState = tableRuntime.getOptimizingState();
     Expression partitionFilter =
-        optimizingState.getPendingInput() == null
+        tableRuntime.getPendingInput() == null
             ? Expressions.alwaysTrue()
-            : tableRuntime.getOptimizingState().getPendingInput().getPartitions().entrySet()
-                .stream()
+            : tableRuntime.getPendingInput().getPartitions().entrySet().stream()
                 .map(
                     entry ->
                         ExpressionUtil.convertPartitionDataToDataFilter(
@@ -269,9 +264,9 @@ public class IcebergTableUtil {
                 .orElse(Expressions.alwaysTrue());
     long processId = snowflakeIdGenerator.generateId();
     ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
-    OptimizingConfig config = optimizingState.getOptimizingConfig();
-    long lastMinor = optimizingState.getLastMinorOptimizingTime();
-    long lastFull = optimizingState.getLastFullOptimizingTime();
+    OptimizingConfig config = tableRuntime.getOptimizingConfig();
+    long lastMinor = tableRuntime.getLastMinorOptimizingTime();
+    long lastFull = tableRuntime.getLastFullOptimizingTime();
     TableSnapshot snapshot = IcebergTableUtil.getSnapshot(table, tableRuntime);
     if (TableFormat.ICEBERG.equals(table.format())) {
       return new IcebergOptimizingPlanner(

@@ -112,49 +112,57 @@ CREATE TABLE `table_metadata`
 CREATE TABLE `table_runtime`
 (
     `table_id`                      bigint(20) NOT NULL,
-    `catalog_name`                  varchar(64) NOT NULL COMMENT 'Catalog name',
-    `db_name`                       varchar(128) NOT NULL COMMENT 'Database name',
-    `table_name`                    varchar(256) NOT NULL COMMENT 'Table name',
-    `current_snapshot_id`           bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Base table current snapshot id',
-    `current_change_snapshotId`     bigint(20) DEFAULT NULL COMMENT 'Change table current snapshot id',
-    `last_optimized_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized snapshot id',
-    `last_optimized_change_snapshotId`     bigint(20) NOT NULL DEFAULT '-1' COMMENT 'last optimized change snapshot id',
-    `last_major_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Major Optimize time for all partitions',
-    `last_minor_optimizing_time`    timestamp NULL DEFAULT NULL COMMENT 'Latest Minor Optimize time for all partitions',
-    `last_full_optimizing_time`     timestamp NULL DEFAULT NULL COMMENT 'Latest Full Optimize time for all partitions',
-    `optimizing_status_code`        int DEFAULT 700 COMMENT 'Table optimize status code: 100(FULL_OPTIMIZING), 200(MAJOR_OPTIMIZING), 300(MINOR_OPTIMIZING), 400(COMMITTING), 500(PLANING), 600(PENDING), 700(IDLE)',
-    `optimizing_status_start_time`  timestamp(3) default CURRENT_TIMESTAMP(3) COMMENT 'Table optimize status start time',
-    `optimizing_process_id`         bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
-    `optimizer_group`               varchar(64) NOT NULL,
-    `table_config`                  mediumtext,
-    `optimizing_config`             mediumtext,
-    `pending_input`                 mediumtext,
-    `table_summary`                 mediumtext,
+    `group_name`                    varchar(64) NOT NULL,
+    `status_code`                   int DEFAULT 700 NOT NULL COMMENT 'Table runtime status code.',
+    `status_code_update_time`       timestamp(3) default CURRENT_TIMESTAMP(3) COMMENT 'Table runtime status code update time',
+    `table_config`                  mediumtext COMMENT 'table configuration cached from table.properties',
+    `table_summary`                 mediumtext COMMENT 'table summary for ams',
     PRIMARY KEY (`table_id`),
-    UNIQUE KEY `table_index` (`catalog_name`,`db_name`,`table_name`),
-    INDEX idx_optimizer_status_and_time (optimizing_status_code, optimizing_status_start_time DESC)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize running information of each table' ROW_FORMAT=DYNAMIC;
+    INDEX idx_status_and_time (status_code, status_code_update_time DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table running information of each table' ROW_FORMAT=DYNAMIC;
 
-CREATE TABLE `table_optimizing_process`
+
+CREATE TABLE `table_runtime_state` (
+  `state_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
+  `table_id` bigint unsigned NOT NULL COMMENT 'Table identifier id',
+  `state_key` varchar(256) NOT NULL COMMENT 'Table Runtime state key',
+  `state_value` mediumtext COMMENT 'Table Runtime state value, string type',
+  `state_version` bigint NOT NULL DEFAULT '0' COMMENT 'Table runtime state version, auto inc when update',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+  PRIMARY KEY (`state_id`),
+  UNIQUE KEY `uniq_table_state_key` (`table_id`,`state_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='State of Table Runtimes';
+
+CREATE TABLE `table_process`
+(
+    `process_id`                    bigint(20) NOT NULL COMMENT 'table process id',
+    `table_id`                      bigint(20) NOT NULL COMMENT 'table id',
+    `status`                        varchar(64) NOT NULL COMMENT 'Table optimizing status',
+    `process_type`                  varchar(64) NOT NULL COMMENT 'Process action type',
+    `process_stage`                 varchar(64) NOT NULL COMMENT 'Process current stage',
+    `execution_engine`              varchar(64) NOT NULL COMMENT 'Execution engine',
+    `create_time`                   timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
+    `finish_time`                   timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
+    `fail_message`                  mediumtext DEFAULT NULL COMMENT 'Error message after task failed',
+    `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
+    PRIMARY KEY (`process_id`),
+    KEY  `table_index` (`table_id`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
+
+
+
+CREATE TABLE `optimizing_process_state`
 (
     `process_id`                    bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
     `table_id`                      bigint(20) NOT NULL,
-    `catalog_name`                  varchar(64) NOT NULL COMMENT 'Catalog name',
-    `db_name`                       varchar(128) NOT NULL COMMENT 'Database name',
-    `table_name`                    varchar(256) NOT NULL COMMENT 'Table name',
     `target_snapshot_id`            bigint(20) NOT NULL,
     `target_change_snapshot_id`     bigint(20) NOT NULL,
-    `status`                        varchar(10) NOT NULL COMMENT 'Direct to TableOptimizingStatus',
-    `optimizing_type`               varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
-    `plan_time`                     timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
-    `end_time`                      timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
-    `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `rewrite_input`                 longblob DEFAULT NULL COMMENT 'rewrite files input',
-    `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
     `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
     `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
     PRIMARY KEY (`process_id`),
-    KEY  `table_index` (`table_id`, `plan_time`)
+    KEY  `table_index` (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
 
 CREATE TABLE `task_runtime`

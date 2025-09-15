@@ -43,8 +43,8 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,6 +52,8 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Parent class of all plugin managers, which provide the common method to help load, install, and
@@ -65,7 +67,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
 
   private final Map<String, T> installedPlugins = new ConcurrentHashMap<>();
   private final Map<String, T> foundedPlugins = new ConcurrentHashMap<>();
-  private final Map<String, PluginConfiguration> pluginConfigs = Maps.newConcurrentMap();
+  private final Map<String, PluginConfiguration> pluginConfigs = Maps.newLinkedHashMap();
   private final String pluginCategory;
   private final Class<T> pluginType;
 
@@ -81,12 +83,14 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   /** Initialize the plugin manager, and install all plugins. */
   public void initialize() {
     List<PluginConfiguration> pluginConfigs = loadPluginConfigurations();
-    pluginConfigs.forEach(
-        config -> {
-          PluginConfiguration exists = this.pluginConfigs.putIfAbsent(config.getName(), config);
-          Preconditions.checkArgument(
-              exists == null, "Duplicate plugin name found: %s", config.getName());
-        });
+    pluginConfigs.stream()
+        .sorted(Comparator.comparing(PluginConfiguration::getPriority))
+        .forEach(
+            config -> {
+              PluginConfiguration exists = this.pluginConfigs.putIfAbsent(config.getName(), config);
+              Preconditions.checkArgument(
+                  exists == null, "Duplicate plugin name found: %s", config.getName());
+            });
 
     foundAvailablePlugins();
     for (PluginConfiguration pluginConfig : pluginConfigs) {
@@ -145,7 +149,13 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
 
   @Override
   public List<T> installedPlugins() {
-    return new ArrayList<>(this.installedPlugins.values());
+    return installedPluginsStream().collect(Collectors.toList());
+  }
+
+  protected Stream<T> installedPluginsStream() {
+    return pluginConfigs.values().stream()
+        .filter(p -> installedPlugins.containsKey(p.getName()))
+        .map(p -> installedPlugins.get(p.getName()));
   }
 
   /**
@@ -182,8 +192,7 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
    * @param visitor function to visit all installed plugins.
    */
   protected void forEach(Consumer<? super T> visitor) {
-    this.installedPlugins
-        .values()
+    installedPluginsStream()
         .forEach(
             plugin -> {
               try (ClassLoaderContext ignored = new ClassLoaderContext(plugin)) {

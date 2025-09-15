@@ -28,7 +28,6 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.server.scheduler.inline.ExecutorTestBase;
-import org.apache.amoro.server.table.DefaultOptimizingState;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
@@ -397,16 +396,14 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     }
 
     DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
-    DefaultOptimizingState optimizingState = Mockito.mock(DefaultOptimizingState.class);
-    Mockito.when(tableRuntime.getOptimizingState()).thenReturn(optimizingState);
     Mockito.when(tableRuntime.getTableIdentifier())
         .thenReturn(ServerTableIdentifier.of(baseTable.id(), getTestFormat()));
-    Mockito.when(optimizingState.getTableConfiguration())
+    Mockito.when(tableRuntime.getTableConfiguration())
         .thenReturn(TableConfigurations.parseTableConfig(baseTable.properties()));
     Mockito.when(tableRuntime.getTableConfiguration())
         .thenReturn(TableConfigurations.parseTableConfig(baseTable.properties()));
 
-    Mockito.when(tableRuntime.getOptimizingState().getOrphanFilesCleaningMetrics())
+    Mockito.when(tableRuntime.getOrphanFilesCleaningMetrics())
         .thenReturn(
             new TableOrphanFilesCleaningMetrics(
                 ServerTableIdentifier.of(baseTable.id(), getTestFormat())));

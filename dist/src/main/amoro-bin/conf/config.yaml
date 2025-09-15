@@ -51,6 +51,7 @@ ams:
     runtime-data-keep-days: 30
     runtime-data-expire-interval-hours: 1
     refresh-group-interval: 30s
+    break-quota-limit-enabled: true
 
   optimizer:
     heart-beat-timeout: 1min # 60000
@@ -61,6 +62,12 @@ ams:
 
   blocker:
     timeout: 1min # 60000
+
+  # config table runtime factories
+  table-runtime-factories:
+    - name: default
+      properties:
+        ~
 
   # optional features
   expire-snapshots:

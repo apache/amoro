@@ -36,14 +36,14 @@ import org.apache.amoro.exception.TaskNotFoundException;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
-import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.ResourceMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.resource.OptimizerThread;
@@ -96,6 +96,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final long taskExecuteTimeout;
   private final int maxPlanningParallelism;
   private final long pollingTimeout;
+  private final boolean breakQuotaLimit;
   private final long refreshGroupInterval;
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
@@ -125,6 +126,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
     this.pollingTimeout =
         serviceConfig.get(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT).toMillis();
+    this.breakQuotaLimit =
+        serviceConfig.getBoolean(AmoroManagementConf.OPTIMIZING_BREAK_QUOTA_LIMIT_ENABLED);
     this.tableService = tableService;
     this.catalogManager = catalogManager;
     this.optimizerManager = optimizerManager;
@@ -146,10 +149,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
         getAs(ResourceMapper.class, ResourceMapper::selectResourceGroups);
     List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
     Map<String, List<DefaultTableRuntime>> groupToTableRuntimes =
-        tableRuntimeList.stream()
-            .collect(
-                Collectors.groupingBy(
-                    tableRuntime -> tableRuntime.getOptimizingState().getOptimizerGroup()));
+        tableRuntimeList.stream().collect(Collectors.groupingBy(TableRuntime::getGroupName));
     optimizerGroups.forEach(
         group -> {
           String groupName = group.getName();
@@ -215,7 +215,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   public OptimizingTask pollTask(String authToken, int threadId) {
     LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
-    return Optional.ofNullable(queue.pollTask(pollingTimeout))
+    return Optional.ofNullable(queue.pollTask(pollingTimeout, breakQuotaLimit))
         .map(task -> extractOptimizingTask(task, authToken, threadId, queue))
         .orElse(null);
   }
@@ -285,8 +285,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   @Override
   public boolean cancelProcess(long processId) throws TException {
-    OptimizingProcessMeta processMeta =
-        getAs(OptimizingMapper.class, m -> m.getOptimizingProcess(processId));
+    TableProcessMeta processMeta =
+        getAs(TableProcessMapper.class, m -> m.getProcessMeta(processId));
     if (processMeta == null) {
       return false;
     }
@@ -295,7 +295,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     if (tableRuntime == null) {
       return false;
     }
-    OptimizingProcess process = tableRuntime.getOptimizingState().getOptimizingProcess();
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
     if (process == null || process.getProcessId() != processId) {
       return false;
     }
@@ -382,8 +382,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
     @Override
     public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
       DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
-      if (!defaultTableRuntime.getOptimizingState().getOptimizingStatus().isProcessing()) {
-        getOptionalQueueByGroup(defaultTableRuntime.getOptimizingState().getOptimizerGroup())
+      if (!defaultTableRuntime.getOptimizingStatus().isProcessing()) {
+        getOptionalQueueByGroup(defaultTableRuntime.getGroupName())
             .ifPresent(q -> q.refreshTable(defaultTableRuntime));
       }
     }
@@ -392,24 +392,24 @@ public class DefaultOptimizingService extends StatedPersistentBase
     public void handleConfigChanged(TableRuntime runtime, TableConfiguration originalConfig) {
       DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       String originalGroup = originalConfig.getOptimizingConfig().getOptimizerGroup();
-      if (!tableRuntime.getOptimizingState().getOptimizerGroup().equals(originalGroup)) {
+      if (!tableRuntime.getGroupName().equals(originalGroup)) {
         getOptionalQueueByGroup(originalGroup).ifPresent(q -> q.releaseTable(tableRuntime));
       }
-      getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
+      getOptionalQueueByGroup(tableRuntime.getGroupName())
           .ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
     @Override
     public void handleTableAdded(AmoroTable<?> table, TableRuntime runtime) {
       DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
-      getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
+      getOptionalQueueByGroup(tableRuntime.getGroupName())
           .ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
     @Override
     public void handleTableRemoved(TableRuntime runtime) {
       DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
-      getOptionalQueueByGroup(tableRuntime.getOptimizingState().getOptimizerGroup())
+      getOptionalQueueByGroup(tableRuntime.getGroupName())
           .ifPresent(queue -> queue.releaseTable(tableRuntime));
     }
 

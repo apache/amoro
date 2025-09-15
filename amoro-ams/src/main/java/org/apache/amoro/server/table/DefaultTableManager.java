@@ -41,9 +41,14 @@ import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
-import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
+import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.persistence.mapper.TableRuntimeMapper;
+import org.apache.amoro.server.process.TableProcessMeta;
+import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -56,10 +61,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DefaultTableManager extends PersistentBase implements TableManager {
@@ -231,8 +238,13 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
   }
 
   @Override
+  public TableProcessMeta getTableProcessMeta(long processId) {
+    return getAs(TableProcessMapper.class, mapper -> mapper.getProcessMeta(processId));
+  }
+
+  @Override
   public TableRuntimeMeta getTableRuntimeMata(ServerTableIdentifier id) {
-    return getAs(TableMetaMapper.class, mapper -> mapper.getTableRuntimeMeta(id.getId()));
+    return getAs(TableRuntimeMapper.class, mapper -> mapper.selectRuntime(id.getId()));
   }
 
   @Override
@@ -251,24 +263,32 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
     try (Page<?> ignore = PageHelper.startPage(pageNumber, limit, true)) {
       ret =
           getAs(
-              TableMetaMapper.class,
+              TableRuntimeMapper.class,
               mapper ->
-                  mapper.selectTableRuntimesForOptimizerGroup(
+                  mapper.queryForGroups(
                       optimizerGroup, fuzzyDbName, fuzzyTableName, statusCodeFilters));
       PageInfo<TableRuntimeMeta> pageInfo = new PageInfo<>(ret);
       total = (int) pageInfo.getTotal();
     }
-    List<Long> processIds =
-        ret.stream()
-            .map(TableRuntimeMeta::getOptimizingProcessId)
-            .filter(i -> i != -1)
-            .collect(Collectors.toList());
+
+    if (ret.isEmpty()) {
+      return Pair.of(Collections.emptyList(), total);
+    }
+
     List<Long> tableIds =
         ret.stream().map(TableRuntimeMeta::getTableId).collect(Collectors.toList());
+    List<ServerTableIdentifier> identifiers =
+        getAs(TableMetaMapper.class, mapper -> mapper.selectTableIdentifiers(tableIds));
+    Map<Long, ServerTableIdentifier> tableId2Identifier =
+        identifiers.stream()
+            .collect(Collectors.toMap(ServerTableIdentifier::getId, Function.identity()));
+
+    List<Long> processIds =
+        getAs(TableProcessMapper.class, mapper -> mapper.selectTableMaxProcessIds(tableIds));
 
     List<OptimizingTaskMeta> taskMetas =
         getAs(
-            OptimizingMapper.class,
+            OptimizingProcessMapper.class,
             m -> {
               if (processIds.isEmpty()) {
                 return Lists.newArrayList();
@@ -282,14 +302,26 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
 
     // load quota info
     Map<Long, List<TaskRuntime.TaskQuota>> tableQuotaMap = getQuotaTime(tableIds);
+    List<OptimizerInstance> instances = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+    Map<String, Integer> optimizerThreadCountMap =
+        instances == null
+            ? Collections.emptyMap()
+            : instances.stream()
+                .collect(
+                    Collectors.groupingBy(
+                        OptimizerInstance::getGroupName,
+                        Collectors.summingInt(OptimizerInstance::getThreadCount)));
 
     List<TableOptimizingInfo> infos =
         ret.stream()
             .map(
                 meta -> {
+                  ServerTableIdentifier identifier = tableId2Identifier.get(meta.getTableId());
                   List<OptimizingTaskMeta> tasks = tableTaskMetaMap.get(meta.getTableId());
                   List<TaskRuntime.TaskQuota> quotas = tableQuotaMap.get(meta.getTableId());
-                  return OptimizingUtil.buildTableOptimizeInfo(meta, tasks, quotas);
+                  int threadCount = optimizerThreadCountMap.getOrDefault(meta.getGroupName(), 0);
+                  return OptimizingUtil.buildTableOptimizeInfo(
+                      identifier, meta, tasks, quotas, Math.max(threadCount, 1));
                 })
             .collect(Collectors.toList());
     return Pair.of(infos, total);
@@ -303,7 +335,9 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
     long calculatingStartTime = calculatingEndTime - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
     long minProcessId = SnowflakeIdGenerator.getMinSnowflakeId(calculatingStartTime);
     List<TaskRuntime.TaskQuota> quotas =
-        getAs(OptimizingMapper.class, mapper -> mapper.selectTableQuotas(tableIds, minProcessId));
+        getAs(
+            OptimizingProcessMapper.class,
+            mapper -> mapper.selectTableQuotas(tableIds, minProcessId));
 
     return quotas.stream()
         .collect(Collectors.groupingBy(TaskRuntime.TaskQuota::getTableId, Collectors.toList()));

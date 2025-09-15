@@ -304,4 +304,8 @@ public class AMSTableTestBase extends AMSServiceTestBase {
   protected void validateTableRuntime(TableRuntime tableRuntime) {
     Assert.assertEquals(serverTableIdentifier(), tableRuntime.getTableIdentifier());
   }
+
+  protected void exploreTableRuntimes() {
+    tableService().exploreTableRuntimes();
+  }
 }

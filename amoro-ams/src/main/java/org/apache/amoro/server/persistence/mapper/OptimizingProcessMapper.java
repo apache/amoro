@@ -18,16 +18,12 @@
 
 package org.apache.amoro.server.persistence.mapper;
 
-import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.optimizing.MetricsSummary;
-import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteStageTask;
-import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.StagedTaskDescriptor;
-import org.apache.amoro.server.optimizing.OptimizingProcessMeta;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
+import org.apache.amoro.server.persistence.OptimizingProcessState;
 import org.apache.amoro.server.persistence.converter.JsonObjectConverter;
 import org.apache.amoro.server.persistence.converter.Long2TsConverter;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
@@ -50,102 +46,53 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public interface OptimizingMapper {
-
-  /** OptimizingProcess operation below */
-  @Delete(
-      "DELETE FROM table_optimizing_process WHERE table_id = #{tableId} and process_id < #{expireId}")
-  void deleteOptimizingProcessBefore(
-      @Param("tableId") long tableId, @Param("expireId") long expireId);
-
+public interface OptimizingProcessMapper {
   @Insert(
-      "INSERT INTO table_optimizing_process(table_id, catalog_name, db_name, table_name ,process_id,"
-          + " target_snapshot_id, target_change_snapshot_id, status, optimizing_type, plan_time, summary, from_sequence,"
-          + " to_sequence) VALUES (#{table.id}, #{table.catalog},"
-          + " #{table.database}, #{table.tableName}, #{processId}, #{targetSnapshotId}, #{targetChangeSnapshotId},"
-          + " #{status}, #{optimizingType},"
-          + " #{planTime, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter},"
-          + " #{summary, typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
+      "INSERT INTO optimizing_process_state "
+          + "(process_id, table_id, target_snapshot_id, target_change_snapshot_id, "
+          + "from_sequence, to_sequence) "
+          + "VALUES (#{processId}, #{tableId}, #{targetSnapshotId}, #{targetChangeSnapshotId}, "
           + " #{fromSequence, typeHandler=org.apache.amoro.server.persistence.converter.MapLong2StringConverter},"
-          + " #{toSequence, typeHandler=org.apache.amoro.server.persistence.converter.MapLong2StringConverter}"
-          + ")")
-  void insertOptimizingProcess(
-      @Param("table") ServerTableIdentifier tableIdentifier,
+          + " #{toSequence, typeHandler=org.apache.amoro.server.persistence.converter.MapLong2StringConverter})")
+  void insertInternalProcessState(
+      @Param("tableId") long tableId,
       @Param("processId") long processId,
       @Param("targetSnapshotId") long targetSnapshotId,
       @Param("targetChangeSnapshotId") long targetChangeSnapshotId,
-      @Param("status") ProcessStatus status,
-      @Param("optimizingType") OptimizingType optimizingType,
-      @Param("planTime") long planTime,
-      @Param("summary") MetricsSummary summary,
       @Param("fromSequence") Map<String, Long> fromSequence,
       @Param("toSequence") Map<String, Long> toSequence);
 
+  @Delete(
+      "DELETE FROM optimizing_process_state WHERE process_id <= #{processId} AND table_id = #{tableId}")
+  void deleteProcessStateBefore(@Param("tableId") long tableId, @Param("processId") long processId);
+
+  @Select("SELECT rewrite_input FROM optimizing_process_state WHERE process_id = #{processId}")
+  @Results({@Result(column = "rewrite_input", jdbcType = JdbcType.BLOB)})
+  List<byte[]> selectProcessInputFiles(@Param("processId") long processId);
+
   @Update(
-      "UPDATE table_optimizing_process SET status = #{optimizingStatus},"
-          + " end_time = #{endTime, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}, "
-          + "summary = #{summary, typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter}, "
-          + "fail_reason = #{failedReason, jdbcType=VARCHAR}"
-          + " WHERE table_id = #{tableId} AND process_id = #{processId}")
-  void updateOptimizingProcess(
-      @Param("tableId") long tableId,
-      @Param("processId") long processId,
-      @Param("optimizingStatus") ProcessStatus status,
-      @Param("endTime") long endTime,
-      @Param("summary") MetricsSummary summary,
-      @Param("failedReason") String failedReason);
+      "UPDATE optimizing_process_state SET rewrite_input = #{input, jdbcType=BLOB,"
+          + " typeHandler=org.apache.amoro.server.persistence.converter.Object2ByteArrayConvert}"
+          + " WHERE process_id = #{processId}")
+  void updateProcessInputFiles(
+      @Param("processId") long processId, @Param("input") Map<Integer, RewriteFilesInput> input);
 
   @Select(
-      "<script>"
-          + "SELECT a.process_id, a.table_id, a.catalog_name, a.db_name, a.table_name, a.target_snapshot_id,"
-          + " a.target_change_snapshot_id, a.status, a.optimizing_type, a.plan_time, a.end_time,"
-          + " a.fail_reason, a.summary, a.from_sequence, a.to_sequence FROM table_optimizing_process a"
-          + " INNER JOIN table_identifier b ON a.table_id = b.table_id"
-          + " WHERE a.catalog_name = #{catalogName} AND a.db_name = #{dbName} AND a.table_name = #{tableName}"
-          + " AND b.catalog_name = #{catalogName} AND b.db_name = #{dbName} AND b.table_name = #{tableName}"
-          + " <if test='optimizingType != null'> AND a.optimizing_type = #{optimizingType}</if>"
-          + " <if test='optimizingStatus != null'> AND a.status = #{optimizingStatus}</if>"
-          + " ORDER BY process_id desc"
-          + "</script>")
-  @Results(
-      id = "processMeta",
-      value = {
-        @Result(property = "processId", column = "process_id"),
-        @Result(property = "tableId", column = "table_id"),
-        @Result(property = "catalogName", column = "catalog_name"),
-        @Result(property = "dbName", column = "db_name"),
-        @Result(property = "tableName", column = "table_name"),
-        @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
-        @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
-        @Result(property = "status", column = "status"),
-        @Result(property = "optimizingType", column = "optimizing_type"),
-        @Result(property = "planTime", column = "plan_time", typeHandler = Long2TsConverter.class),
-        @Result(property = "endTime", column = "end_time", typeHandler = Long2TsConverter.class),
-        @Result(property = "failReason", column = "fail_reason"),
-        @Result(property = "summary", column = "summary", typeHandler = JsonObjectConverter.class),
-        @Result(
-            property = "fromSequence",
-            column = "from_sequence",
-            typeHandler = MapLong2StringConverter.class),
-        @Result(
-            property = "toSequence",
-            column = "to_sequence",
-            typeHandler = MapLong2StringConverter.class)
-      })
-  List<OptimizingProcessMeta> selectOptimizingProcesses(
-      @Param("catalogName") String catalogName,
-      @Param("dbName") String dbName,
-      @Param("tableName") String tableName,
-      @Param("optimizingType") String optimizingType,
-      @Param("optimizingStatus") ProcessStatus optimizingStatus);
-
-  @Select(
-      "SELECT a.process_id, a.table_id, a.catalog_name, a.db_name, a.table_name, a.target_snapshot_id,"
-          + " a.target_change_snapshot_id, a.status, a.optimizing_type, a.plan_time, a.end_time,"
-          + " a.fail_reason, a.summary, a.from_sequence, a.to_sequence FROM table_optimizing_process a "
-          + " WHERE a.process_id = #{processId}")
-  @ResultMap("processMeta")
-  OptimizingProcessMeta getOptimizingProcess(@Param("processId") long processId);
+      "SELECT target_snapshot_id, target_change_snapshot_id, from_sequence, to_sequence "
+          + "FROM optimizing_process_state WHERE process_id = #{processId}")
+  @Results({
+    @Result(property = "targetSnapshotId", column = "target_snapshot_id"),
+    @Result(property = "targetChangeSnapshotId", column = "target_change_snapshot_id"),
+    @Result(
+        property = "fromSequence",
+        column = "from_sequence",
+        typeHandler = MapLong2StringConverter.class),
+    @Result(
+        property = "toSequence",
+        column = "to_sequence",
+        typeHandler = MapLong2StringConverter.class),
+  })
+  OptimizingProcessState getProcessState(@Param("processId") long processId);
 
   /** Optimizing TaskRuntime operation below */
   @Insert({
@@ -259,18 +206,6 @@ public interface OptimizingMapper {
 
   @Delete("DELETE FROM task_runtime WHERE table_id = #{tableId} AND process_id < #{expireId}")
   void deleteTaskRuntimesBefore(@Param("tableId") long tableId, @Param("expireId") long expireId);
-
-  /** Optimizing rewrite input and output operations below */
-  @Update(
-      "UPDATE table_optimizing_process SET rewrite_input = #{input, jdbcType=BLOB,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.Object2ByteArrayConvert}"
-          + " WHERE process_id = #{processId}")
-  void updateProcessInputFiles(
-      @Param("processId") long processId, @Param("input") Map<Integer, RewriteFilesInput> input);
-
-  @Select("SELECT rewrite_input FROM table_optimizing_process WHERE process_id = #{processId}")
-  @Results({@Result(column = "rewrite_input", jdbcType = JdbcType.BLOB)})
-  List<byte[]> selectProcessInputFiles(@Param("processId") long processId);
 
   /** Optimizing task quota operations below */
   @Select(

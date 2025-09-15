@@ -18,14 +18,13 @@
 
 package org.apache.amoro.server.table;
 
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 
 public interface TableRuntimeHandler {
 
-  void addHandlerChain(RuntimeHandlerChain handler);
+  void handleTableChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus);
 
-  void handleTableChanged(DefaultTableRuntime tableRuntime, OptimizingStatus originalStatus);
-
-  void handleTableChanged(DefaultTableRuntime tableRuntime, TableConfiguration originalConfig);
+  void handleTableChanged(TableRuntime tableRuntime, TableConfiguration originalConfig);
 }
