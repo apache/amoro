@@ -20,6 +20,7 @@ package org.apache.amoro.server.utils;
 
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.utils.TableFileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.io.BulkDeletionFailureException;
 import org.slf4j.Logger;
@@ -32,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RollingFileCleaner {
   private final Set<String> collectedFiles = Sets.newConcurrentHashSet();
   private final Set<String> excludeFiles;
+  private final Set<String> parentDirectories = Sets.newConcurrentHashSet();
 
   private static final int CLEANED_FILE_GROUP_SIZE = 1_000;
 
@@ -51,29 +53,37 @@ public class RollingFileCleaner {
   }
 
   public void addFile(String filePath) {
-    if (excludeFiles.isEmpty()) {
-      collectedFiles.add(filePath);
-      int fc = fileCounter.incrementAndGet();
-
-      if (fc % CLEANED_FILE_GROUP_SIZE == 0) {
-        doCleanFiles();
-      }
-    } else {
-      String uriPath = URI.create(filePath).getPath();
-      String parentPath = new Path(uriPath).getParent().toString();
-      if (!excludeFiles.contains(uriPath)
-          && !excludeFiles.contains(filePath)
-          && !excludeFiles.contains(parentPath)) {
-        collectedFiles.add(filePath);
-        int fc = fileCounter.incrementAndGet();
-
-        if (fc % CLEANED_FILE_GROUP_SIZE == 0) {
-          doCleanFiles();
-        }
-      } else {
-        LOG.debug("File {} is excluded from cleaning", filePath);
-      }
+    if (isFileExcluded(filePath)) {
+      LOG.debug("File {} is excluded from cleaning", filePath);
+      return;
     }
+
+    collectedFiles.add(filePath);
+    String parentDir = new Path(URI.create(filePath).getPath()).getParent().toString();
+    parentDirectories.add(parentDir);
+    int currentCount = fileCounter.incrementAndGet();
+
+    if (currentCount % CLEANED_FILE_GROUP_SIZE == 0) {
+      doCleanFiles();
+    }
+  }
+
+  private boolean isFileExcluded(String filePath) {
+    if (excludeFiles.isEmpty()) {
+      return false;
+    }
+
+    if (excludeFiles.contains(filePath)) {
+      return true;
+    }
+
+    String uriPath = URI.create(filePath).getPath();
+    if (excludeFiles.contains(uriPath)) {
+      return true;
+    }
+
+    String parentPath = new Path(uriPath).getParent().toString();
+    return excludeFiles.contains(parentPath);
   }
 
   private void doCleanFiles() {
@@ -98,6 +108,11 @@ public class RollingFileCleaner {
         }
       }
     }
+    // Try to delete empty parent directories
+    for (String parentDir : parentDirectories) {
+      TableFileUtil.deleteEmptyDirectory(fileIO, parentDir, excludeFiles);
+    }
+    parentDirectories.clear();
 
     LOG.debug("Cleaned expired a file group, total files: {}", collectedFiles.size());
 
