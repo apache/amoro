@@ -12,7 +12,7 @@ changelog:
       lables:
         - 'type:bug'      
       exclude:
-        - exclude:
+        lables:
           - 'type:docs'
     - title: Document Improvement
       lables:
