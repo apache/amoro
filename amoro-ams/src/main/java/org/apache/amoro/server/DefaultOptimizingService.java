@@ -360,6 +360,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
   }
 
   public void dispose() {
+    // dispose all queues
+    optimizingQueueByGroup.values().forEach(OptimizingQueue::dispose);
     optimizerKeeper.dispose();
     tableHandlerChain.dispose();
     optimizingQueueByGroup.clear();
