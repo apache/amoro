@@ -360,6 +360,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
   }
 
   public void dispose() {
+    planExecutor.shutdown();
+    // shutdown sync group first, stop syncing group
+    optimizingConfigWatcher.dispose();
     // dispose all queues
     optimizingQueueByGroup.values().forEach(OptimizingQueue::dispose);
     optimizerKeeper.dispose();
@@ -367,8 +370,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizingQueueByGroup.clear();
     optimizingQueueByToken.clear();
     authOptimizers.clear();
-    planExecutor.shutdown();
-    optimizingConfigWatcher.dispose();
   }
 
   @Override
