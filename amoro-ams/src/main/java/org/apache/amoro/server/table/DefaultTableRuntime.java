@@ -421,10 +421,15 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   }
 
   @Override
-  public void dispose() {
+  public void unregisterMetric() {
     tableSummaryMetrics.unregister();
     orphanFilesCleaningMetrics.unregister();
     optimizingMetrics.unregister();
+  }
+
+  @Override
+  public void dispose() {
+    unregisterMetric();
     store()
         .synchronizedInvoke(
             () -> {
