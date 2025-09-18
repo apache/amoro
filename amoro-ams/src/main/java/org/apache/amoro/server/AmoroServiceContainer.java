@@ -205,12 +205,13 @@ public class AmoroServiceContainer {
   }
 
   public void disposeOptimizingService() {
-    if (tableManagementServer != null && tableManagementServer.isServing()) {
-      LOG.info("Stopping table management server...");
+    if (tableManagementServer != null) {
+      LOG.info(
+          "Stopping table management server[serving:{}] ...", tableManagementServer.isServing());
       tableManagementServer.stop();
     }
-    if (optimizingServiceServer != null && optimizingServiceServer.isServing()) {
-      LOG.info("Stopping optimizing server...");
+    if (optimizingServiceServer != null) {
+      LOG.info("Stopping optimizing server[serving:{}] ...", optimizingServiceServer.isServing());
       optimizingServiceServer.stop();
     }
     if (tableService != null) {

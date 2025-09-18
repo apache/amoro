@@ -254,6 +254,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
     if (headHandler != null) {
       headHandler.dispose();
     }
+    tableRuntimeMap.values().forEach(TableRuntime::unregisterMetric);
   }
 
   @VisibleForTesting

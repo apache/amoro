@@ -72,6 +72,8 @@ public interface TableRuntime {
    */
   void registerMetric(MetricRegistry metricRegistry);
 
+  void unregisterMetric();
+
   /** Get table format */
   default TableFormat getFormat() {
     return getTableIdentifier().getFormat();
