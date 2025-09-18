@@ -175,6 +175,7 @@ public class CompleteOptimizingFlow {
       Mockito.when(taskRuntime.getTaskDescriptor().getInput())
           .thenReturn(taskDescriptor.getInput());
       Mockito.when(taskRuntime.getProperties()).thenReturn(taskDescriptor.getProperties());
+      Mockito.when(taskRuntime.getStatus()).thenReturn(TaskRuntime.Status.SUCCESS);
       list.add(taskRuntime);
     }
     return list;
