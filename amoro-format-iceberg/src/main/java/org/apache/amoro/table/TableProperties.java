@@ -125,6 +125,10 @@ public class TableProperties {
       "self-optimizing.min-plan-interval";
   public static final long SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT = 60000;
 
+  public static final String SELF_OPTIMIZING_REFRESH_EVENT_IDENTIFIER =
+      "self-optimizing.refresh-event.identifier";
+  public static final String SELF_OPTIMIZING_REFRESH_EVENT_IDENTIFIER_DEFAULT = "default";
+
   /** table clean related properties */
   public static final String ENABLE_TABLE_EXPIRE = "table-expire.enabled";
 
