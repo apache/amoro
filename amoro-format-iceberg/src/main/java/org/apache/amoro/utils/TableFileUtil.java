@@ -84,6 +84,9 @@ public class TableFileUtil {
    */
   public static void deleteEmptyDirectory(
       AuthenticatedFileIO io, String directoryPath, Set<String> exclude) {
+    if (directoryPath == null || directoryPath.isEmpty()) {
+      return;
+    }
     if (!io.exists(directoryPath)) {
       LOG.debug("The target directory {} does not exist or has been deleted", directoryPath);
       return;
