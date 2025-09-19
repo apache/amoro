@@ -28,6 +28,7 @@ import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.MixedFormatCatalogUtil;
+import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 
@@ -62,6 +63,11 @@ public class IcebergTable implements AmoroTable<UnkeyedTable> {
           @Override
           public TableFormat format() {
             return TableFormat.ICEBERG;
+          }
+
+          @Override
+          public DeleteFiles newDelete() {
+            return icebergTable.newDelete();
           }
         };
     return new IcebergTable(identifier, wrapped);
