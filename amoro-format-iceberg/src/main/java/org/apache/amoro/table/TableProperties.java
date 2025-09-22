@@ -21,6 +21,10 @@ package org.apache.amoro.table;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
 
+import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -339,4 +343,25 @@ public class TableProperties {
     WRITE_PROTECTED_PROPERTIES.add(WATERMARK_BASE_STORE);
     WRITE_PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
   }
+
+  public static final HashSet<String> DEFAULT_NON_PERSISTED_TABLE_PROPERTIES =
+      Sets.newHashSet(
+          CatalogMetaProperties.OPTIMIZE_PROPERTIES_PREFIX,
+          CatalogMetaProperties.DEPRECATED_OPTIMIZE_PROPERTIES_PREFIX,
+          CatalogMetaProperties.TABLE_EXPIRE_PREFIX,
+          CatalogMetaProperties.ORPHAN_CLEAN_PREFIX,
+          CatalogMetaProperties.DANGLING_DELETE_FILES_CLEAN_PREFIX,
+          CatalogMetaProperties.DATA_EXPIRATION_PREFIX,
+          CatalogMetaProperties.TABLE_TRASH_PREFIX,
+          CatalogMetaProperties.AUTO_CREATE_TAG_PREFIX,
+          // mixed format reading config keys
+          TableProperties.SPLIT_OPEN_FILE_COST,
+          TableProperties.SPLIT_LOOKBACK,
+          TableProperties.SPLIT_SIZE,
+          // mixed format writing config keys
+          TableProperties.UPSERT_ENABLED,
+          // mixed-hive config keys
+          HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
+          HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
+          HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED);
 }
