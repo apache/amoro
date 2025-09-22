@@ -31,9 +31,9 @@ import org.apache.amoro.hive.utils.HiveTableUtil;
 import org.apache.amoro.hive.utils.TableTypeUtil;
 import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.op.SnapshotSummary;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.utils.IcebergTableUtil;
@@ -328,7 +328,7 @@ public class UnKeyedTableCommit {
   }
 
   protected boolean needMoveFile2Hive() {
-    return OptimizingInputProperties.parse(tasks.stream().findAny().get().getProperties())
+    return TaskProperties.parse(tasks.stream().findAny().get().getProperties())
         .getMoveFile2HiveLocation();
   }
 

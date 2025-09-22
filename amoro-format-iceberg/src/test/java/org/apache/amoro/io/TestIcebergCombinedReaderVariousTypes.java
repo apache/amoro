@@ -146,7 +146,8 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
                 IdentityPartitionConverters::convertConstant,
                 false,
                 null,
-                input)
+                input,
+                "")
             .readData();
 
     Assert.assertEquals(Iterables.size(readData), 1);
@@ -197,7 +198,8 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            input);
+            input,
+            "");
     Assert.assertTrue(reader.getDeleteFilter().isFilterEqDelete());
 
     CloseableIterable<Record> readData = reader.readData();

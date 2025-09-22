@@ -20,11 +20,11 @@ package org.apache.amoro.utils.map;
 
 import java.io.Closeable;
 
-public interface SimpleMap<T, K> extends Closeable {
+public interface SimpleMap<K, V> extends Closeable {
 
-  void put(T key, K value);
+  void put(K key, V value);
 
-  void delete(T key);
+  void delete(K key);
 
-  K get(T key);
+  V get(K key);
 }

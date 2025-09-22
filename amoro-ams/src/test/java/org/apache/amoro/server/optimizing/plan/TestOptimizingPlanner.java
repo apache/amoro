@@ -25,9 +25,9 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.optimizing.MixedIcebergRewriteExecutorFactory;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.utils.IcebergTableUtil;
@@ -113,7 +113,7 @@ public class TestOptimizingPlanner extends TestOptimizingEvaluator {
   protected Map<String, String> buildTaskProperties() {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(
-        OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
+        TaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
         MixedIcebergRewriteExecutorFactory.class.getName());
     return properties;
   }

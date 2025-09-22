@@ -23,7 +23,6 @@ import org.apache.amoro.io.CloseablePredicate;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Multimap;
@@ -41,6 +40,8 @@ import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.avro.Avro;
+import org.apache.iceberg.data.BaseDeleteLoader;
+import org.apache.iceberg.data.DeleteLoader;
 import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
@@ -54,6 +55,7 @@ import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Filter;
+import org.apache.iceberg.util.StructLikeSet;
 import org.apache.iceberg.util.StructProjection;
 import org.roaringbitmap.longlong.Roaring64Bitmap;
 import org.slf4j.Logger;
@@ -62,13 +64,15 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -117,11 +121,14 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
   private final long dataRecordCnt;
   private final boolean filterEqDelete;
+  private final DeleteLoader deleteLoader;
+  private final String deleteGroup;
 
   protected CombinedDeleteFilter(
       RewriteFilesInput rewriteFilesInput,
       Schema tableSchema,
-      StructLikeCollections structLikeCollections) {
+      StructLikeCollections structLikeCollections,
+      String deleteGroup) {
     this.input = rewriteFilesInput;
     this.dataRecordCnt =
         Arrays.stream(rewriteFilesInput.dataFiles()).mapToLong(ContentFile::recordCount).sum();
@@ -157,6 +164,8 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       this.structLikeCollections = structLikeCollections;
     }
     this.filterEqDelete = filterEqDelete();
+    this.deleteGroup = deleteGroup;
+    this.deleteLoader = new CachingDeleteLoader(this::getInputFile);
   }
 
   /**
@@ -313,41 +322,23 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
     InternalRecordWrapper internalRecordWrapper =
         new InternalRecordWrapper(deleteSchema.asStruct());
-
-    CloseableIterable<RecordWithLsn> deleteRecords =
-        CloseableIterable.transform(
-            CloseableIterable.concat(
-                Iterables.transform(
-                    eqDeletes,
-                    s ->
-                        CloseableIterable.transform(
-                            openFile(s, deleteSchema),
-                            r -> new RecordWithLsn(s.dataSequenceNumber(), r)))),
-            RecordWithLsn::recordCopy);
-
     StructLikeBaseMap<Long> structLikeMap =
         structLikeCollections.createStructLikeMap(deleteSchema.asStruct());
+    structMapCloseable.add(structLikeMap);
 
-    // init map
-    try (CloseableIterable<RecordWithLsn> deletes = deleteRecords) {
-      Iterator<RecordWithLsn> it =
-          getFileIO() == null ? deletes.iterator() : getFileIO().doAs(deletes::iterator);
-      while (it.hasNext()) {
-        RecordWithLsn recordWithLsn = it.next();
-        StructLike deletePK = internalRecordWrapper.copyFor(recordWithLsn.getRecord());
+    for (DeleteFile deleteFile : eqDeletes) {
+      for (StructLike record : openEqualityDeletes(deleteFile, deleteSchema)) {
+        StructLike deletePK = internalRecordWrapper.copyFor(record);
         if (filterEqDelete && !bloomFilter.mightContain(deletePK)) {
           continue;
         }
-        Long lsn = recordWithLsn.getLsn();
+        Long lsn = deleteFile.dataSequenceNumber();
         Long old = structLikeMap.get(deletePK);
         if (old == null || old.compareTo(lsn) <= 0) {
           structLikeMap.put(deletePK, lsn);
         }
       }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     }
-    structMapCloseable.add(structLikeMap);
 
     return structForDelete -> {
       StructProjection deleteProjection =
@@ -444,6 +435,10 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     return openFile(file, POS_DELETE_SCHEMA);
   }
 
+  private StructLikeSet openEqualityDeletes(DeleteFile file, Schema deleteSchema) {
+    return deleteLoader.loadEqualityDeletes(Collections.singletonList(file), deleteSchema);
+  }
+
   private CloseableIterable<Record> openFile(ContentFile<?> contentFile, Schema deleteSchema) {
     InputFile input = getInputFile(contentFile);
     switch (contentFile.format()) {
@@ -477,26 +472,22 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     }
   }
 
-  static class RecordWithLsn {
-    private final Long lsn;
-    private Record record;
+  class CachingDeleteLoader extends BaseDeleteLoader {
+    private final DeleteCache cache;
 
-    public RecordWithLsn(Long lsn, Record record) {
-      this.lsn = lsn;
-      this.record = record;
+    public CachingDeleteLoader(Function<DeleteFile, InputFile> loadInputFile) {
+      super(loadInputFile);
+      this.cache = DeleteCache.getInstance();
     }
 
-    public Long getLsn() {
-      return lsn;
+    @Override
+    protected boolean canCache(long size) {
+      return cache != null && size < cache.maxEntrySize();
     }
 
-    public Record getRecord() {
-      return record;
-    }
-
-    public RecordWithLsn recordCopy() {
-      record = record.copy();
-      return this;
+    @Override
+    protected <V> V getOrLoad(String key, Supplier<V> valueSupplier, long valueSize) {
+      return cache.getOrLoad(CombinedDeleteFilter.this.deleteGroup, key, valueSupplier, valueSize);
     }
   }
 }

@@ -33,11 +33,6 @@ public class MixedIcebergRewriteExecutorFactory
 
   @Override
   public OptimizingExecutor<RewriteFilesOutput> createExecutor(RewriteFilesInput input) {
-    OptimizingInputProperties optimizingConfig = OptimizingInputProperties.parse(properties);
-    return new MixedIcebergRewriteExecutor(
-        input,
-        input.getTable(),
-        optimizingConfig.getStructLikeCollections(),
-        optimizingConfig.getOutputDir());
+    return new MixedIcebergRewriteExecutor(input, input.getTable(), properties);
   }
 }

@@ -27,7 +27,6 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
-import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
@@ -168,7 +167,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
   @Test
   public void readAllData() throws IOException {
     IcebergRewriteExecutor executor =
-        new IcebergRewriteExecutor(scanTask, getMixedTable(), StructLikeCollections.DEFAULT);
+        new IcebergRewriteExecutor(scanTask, getMixedTable(), Collections.emptyMap());
 
     RewriteFilesOutput output = executor.execute();
 
@@ -212,7 +211,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
   @Test
   public void readOnlyData() throws IOException {
     IcebergRewriteExecutor executor =
-        new IcebergRewriteExecutor(dataScanTask, getMixedTable(), StructLikeCollections.DEFAULT);
+        new IcebergRewriteExecutor(dataScanTask, getMixedTable(), Collections.emptyMap());
 
     RewriteFilesOutput output = executor.execute();
 

@@ -68,6 +68,7 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected final EncryptionManager encryptionManager;
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final boolean reuseContainer;
+  protected final String deleteGroup;
   protected CombinedDeleteFilter<Record> deleteFilter;
 
   protected PartitionSpec spec;
@@ -84,7 +85,8 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
       BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer,
       StructLikeCollections structLikeCollections,
-      RewriteFilesInput rewriteFilesInput) {
+      RewriteFilesInput rewriteFilesInput,
+      String deleteGroup) {
     this.tableSchema = tableSchema;
     this.spec = spec;
     this.encryptionManager = encryptionManager;
@@ -94,8 +96,9 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     this.convertConstant = convertConstant;
     this.reuseContainer = reuseContainer;
     this.input = rewriteFilesInput;
+    this.deleteGroup = deleteGroup;
     this.deleteFilter =
-        new GenericDeleteFilter(rewriteFilesInput, tableSchema, structLikeCollections);
+        new GenericDeleteFilter(rewriteFilesInput, tableSchema, structLikeCollections, deleteGroup);
   }
 
   @Override
@@ -301,8 +304,9 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     public GenericDeleteFilter(
         RewriteFilesInput rewriteFilesInput,
         Schema tableSchema,
-        StructLikeCollections structLikeCollections) {
-      super(rewriteFilesInput, tableSchema, structLikeCollections);
+        StructLikeCollections structLikeCollections,
+        String deleteGroup) {
+      super(rewriteFilesInput, tableSchema, structLikeCollections, deleteGroup);
     }
 
     @Override

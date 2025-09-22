@@ -197,7 +197,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            scanTask);
+            scanTask,
+            "");
     try (CloseableIterable<Record> records = dataReader.readData()) {
       Assert.assertEquals(1, Iterables.size(records));
       Record record = Iterables.getFirst(records, null);
@@ -219,7 +220,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            scanTask);
+            scanTask,
+            "");
     try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
       Assert.assertEquals(2, Iterables.size(records));
       Record first = Iterables.getFirst(records, null);
@@ -243,7 +245,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            dataScanTask);
+            dataScanTask,
+            "");
     try (CloseableIterable<Record> records = dataReader.readData()) {
       Assert.assertEquals(3, Iterables.size(records));
     }
@@ -263,7 +266,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            dataScanTask);
+            dataScanTask,
+            "");
     try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
       Assert.assertEquals(0, Iterables.size(records));
     }
@@ -284,7 +288,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            filterEqDeleteScanTask);
+            filterEqDeleteScanTask,
+            "");
 
     Assert.assertTrue(dataReader.getDeleteFilter().isFilterEqDelete());
 
@@ -363,7 +368,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            task2);
+            task2,
+            "");
     try (CloseableIterable<Record> readRecords = dataReader.readData()) {
       Assert.assertEquals(1, Iterables.size(readRecords));
     }
@@ -437,7 +443,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            task);
+            task,
+            "");
     try (CloseableIterable<Record> readRecords = dataReader.readData()) {
       Assert.assertEquals(0, Iterables.size(readRecords));
     }
@@ -511,7 +518,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            task);
+            task,
+            "");
 
     try (CloseableIterable<Record> readRecords = dataReader.readData()) {
       Assert.assertEquals(0, Iterables.size(readRecords));

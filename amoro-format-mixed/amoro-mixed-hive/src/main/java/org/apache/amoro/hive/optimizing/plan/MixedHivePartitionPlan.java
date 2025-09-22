@@ -24,7 +24,7 @@ import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.optimizing.MixedHiveRewriteExecutorFactory;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.optimizing.plan.CommonPartitionEvaluator;
 import org.apache.amoro.optimizing.plan.MixedIcebergPartitionPlan;
 import org.apache.amoro.optimizing.plan.PartitionEvaluator;
@@ -116,8 +116,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   }
 
   @Override
-  protected OptimizingInputProperties buildTaskProperties() {
-    OptimizingInputProperties properties = super.buildTaskProperties();
+  protected TaskProperties buildTaskProperties() {
+    TaskProperties properties = super.buildTaskProperties();
     properties.setExecutorFactoryImpl(MixedHiveRewriteExecutorFactory.class.getName());
     if (moveFiles2CurrentHiveLocation()) {
       properties.needMoveFile2HiveLocation();

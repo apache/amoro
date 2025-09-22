@@ -18,9 +18,9 @@
 
 package org.apache.amoro.server.optimizing.flow.checker;
 
-import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.flow.view.TableDataView;
@@ -45,8 +45,7 @@ public class FullOptimizingMove2HiveChecker extends AbstractHiveChecker {
       @Nullable UnKeyedTableCommit latestCommit) {
     return CollectionUtils.isNotEmpty(latestTaskDescriptors)
         && latestPlanner.getOptimizingType() == OptimizingType.FULL
-        && OptimizingInputProperties.parse(
-                latestTaskDescriptors.stream().findAny().get().getProperties())
+        && TaskProperties.parse(latestTaskDescriptors.stream().findAny().get().getProperties())
             .getMoveFile2HiveLocation();
   }
 }
