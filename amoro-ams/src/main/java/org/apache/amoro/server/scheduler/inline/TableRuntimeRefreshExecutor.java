@@ -18,25 +18,45 @@
 
 package org.apache.amoro.server.scheduler.inline;
 
-import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
+import org.apache.amoro.server.refresh.RefreshEvent;
+import org.apache.amoro.server.refresh.events.DefaultRefreshEvent;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
-import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
-import org.apache.amoro.table.MixedTable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.ServiceLoader;
 
 /** Executor that refreshes table runtimes and evaluates optimizing status periodically. */
 public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
-
+  private static final Logger logger = LoggerFactory.getLogger(TableRuntimeRefreshExecutor.class);
   // 1 minutes
   private final long interval;
   private final int maxPendingPartitions;
+  private static final Map<String, RefreshEvent> REFRESH_EVENTS = new HashMap<>();
+  private static final RefreshEvent DEFAULT_REFRESH_EVENT = new DefaultRefreshEvent();
+
+  static {
+    ServiceLoader<RefreshEvent> serviceLoader = ServiceLoader.load(RefreshEvent.class);
+    Iterator<RefreshEvent> it = serviceLoader.iterator();
+    it.forEachRemaining(
+        refreshEvent -> {
+          REFRESH_EVENTS.put(refreshEvent.getIdentifier(), refreshEvent);
+          logger.info(
+              "Load refresh event spi [{}] from {}",
+              refreshEvent.getIdentifier(),
+              refreshEvent.getClass());
+        });
+  }
 
   public TableRuntimeRefreshExecutor(
       TableService tableService, int poolSize, long interval, int maxPendingPartitions) {
@@ -52,29 +72,14 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
+    Preconditions.checkArgument(tableRuntime instanceof DefaultTableRuntime);
     DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
-    return Math.min(
-        defaultTableRuntime.getOptimizingConfig().getMinorLeastInterval() * 4L / 5, interval);
-  }
 
-  private void tryEvaluatingPendingInput(DefaultTableRuntime tableRuntime, MixedTable table) {
-    if (tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()
-        && !tableRuntime.getOptimizingStatus().isProcessing()) {
-      AbstractOptimizingEvaluator evaluator =
-          IcebergTableUtil.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
-      if (evaluator.isNecessary()) {
-        AbstractOptimizingEvaluator.PendingInput pendingInput =
-            evaluator.getOptimizingPendingInput();
-        logger.debug(
-            "{} optimizing is necessary and get pending input {}",
-            tableRuntime.getTableIdentifier(),
-            pendingInput);
-        tableRuntime.setPendingInput(pendingInput);
-      } else {
-        tableRuntime.optimizingNotNecessary();
-      }
-      tableRuntime.setTableSummary(evaluator.getPendingInput());
-    }
+    RefreshEvent refreshEvent =
+        REFRESH_EVENTS.getOrDefault(
+            defaultTableRuntime.getOptimizingConfig().getRefreshEventIdentifier(),
+            DEFAULT_REFRESH_EVENT);
+    return refreshEvent.getNextExecutingTime(tableRuntime, interval);
   }
 
   @Override
@@ -102,19 +107,16 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
       Preconditions.checkArgument(tableRuntime instanceof DefaultTableRuntime);
       DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
 
-      long lastOptimizedSnapshotId = defaultTableRuntime.getLastOptimizedSnapshotId();
-      long lastOptimizedChangeSnapshotId = defaultTableRuntime.getLastOptimizedChangeSnapshotId();
-      AmoroTable<?> table = loadTable(tableRuntime);
-      defaultTableRuntime.refresh(table);
-      MixedTable mixedTable = (MixedTable) table.originalTable();
-      if ((mixedTable.isKeyedTable()
-              && (lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId()
-                  || lastOptimizedChangeSnapshotId
-                      != defaultTableRuntime.getCurrentChangeSnapshotId()))
-          || (mixedTable.isUnkeyedTable()
-              && lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId())) {
-        tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
-      }
+      RefreshEvent refreshEvent =
+          REFRESH_EVENTS.getOrDefault(
+              defaultTableRuntime.getOptimizingConfig().getRefreshEventIdentifier(),
+              DEFAULT_REFRESH_EVENT);
+      logger.info(
+          "Enable `self-optimizing.refresh-event.identifier`=`{}`. Use refresh event {} for table {}",
+          defaultTableRuntime.getOptimizingConfig().getRefreshEventIdentifier(),
+          refreshEvent.getIdentifier(),
+          tableRuntime.getTableIdentifier());
+      refreshEvent.execute(tableRuntime, tableService, maxPendingPartitions);
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
     }
