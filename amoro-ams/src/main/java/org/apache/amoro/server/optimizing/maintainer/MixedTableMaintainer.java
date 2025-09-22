@@ -27,15 +27,10 @@ import org.apache.amoro.config.DataExpirationConfig;
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.server.utils.HiveLocationUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
-import org.apache.amoro.table.BaseTable;
-import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
@@ -43,16 +38,11 @@ import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
@@ -66,9 +56,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.LinkedTransferQueue;
 import java.util.stream.Collectors;
 
 /** Table maintainer for mixed-iceberg and mixed-hive tables. */
@@ -121,16 +109,15 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   @Override
   public void expireData() {
-    DataExpirationConfig expirationConfig =
-        tableRuntime.getTableConfiguration().getExpiringDataConfig();
     try {
-      Types.NestedField field =
-          mixedTable.schema().findField(expirationConfig.getExpirationField());
-      if (!TableConfigurations.isValidDataExpirationField(
-          expirationConfig, field, mixedTable.name())) {
+      DataExpirationConfig expirationConfig =
+          tableRuntime.getTableConfiguration().getExpiringDataConfig();
+      if (!expirationConfig.isEnabled() || expirationConfig.getRetentionTime() <= 0) {
         return;
       }
 
+      Types.NestedField field =
+          mixedTable.schema().findField(expirationConfig.getExpirationField());
       expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", mixedTable.id(), t);
@@ -157,92 +144,13 @@ public class MixedTableMaintainer implements TableMaintainer {
       return;
     }
 
-    long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
-    Types.NestedField field = mixedTable.schema().findField(expirationConfig.getExpirationField());
-    LOG.info(
-        "Expiring data older than {} in mixed table {} ",
-        Instant.ofEpochMilli(expireTimestamp)
-            .atZone(IcebergTableMaintainer.getDefaultZoneId(field))
-            .toLocalDateTime(),
-        mixedTable.name());
+    // Use the new MixedTableDataExpirationProcessor for data expiration
+    MixedExpirationProcessor processor = new MixedExpirationProcessor(mixedTable, expirationConfig);
 
-    Expression dataFilter =
-        IcebergTableMaintainer.getDataExpression(
-            mixedTable.schema(), expirationConfig, expireTimestamp);
+    Instant expireInstant = instant.minusMillis(expirationConfig.getRetentionTime());
 
-    Pair<IcebergTableMaintainer.ExpireFiles, IcebergTableMaintainer.ExpireFiles> mixedExpiredFiles =
-        mixedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp);
-
-    expireMixedFiles(mixedExpiredFiles.getLeft(), mixedExpiredFiles.getRight(), expireTimestamp);
-  }
-
-  private Pair<IcebergTableMaintainer.ExpireFiles, IcebergTableMaintainer.ExpireFiles>
-      mixedExpiredFileScan(
-          DataExpirationConfig expirationConfig, Expression dataFilter, long expireTimestamp) {
-    return mixedTable.isKeyedTable()
-        ? keyedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp)
-        : Pair.of(
-            new IcebergTableMaintainer.ExpireFiles(),
-            getBaseMaintainer().expiredFileScan(expirationConfig, dataFilter, expireTimestamp));
-  }
-
-  private Pair<IcebergTableMaintainer.ExpireFiles, IcebergTableMaintainer.ExpireFiles>
-      keyedExpiredFileScan(
-          DataExpirationConfig expirationConfig, Expression dataFilter, long expireTimestamp) {
-    Map<StructLike, IcebergTableMaintainer.DataFileFreshness> partitionFreshness =
-        Maps.newConcurrentMap();
-
-    KeyedTable keyedTable = mixedTable.asKeyedTable();
-    ChangeTable changeTable = keyedTable.changeTable();
-    BaseTable baseTable = keyedTable.baseTable();
-
-    CloseableIterable<MixedFileEntry> changeEntries =
-        CloseableIterable.transform(
-            changeMaintainer.fileScan(changeTable, dataFilter, expirationConfig, expireTimestamp),
-            e -> new MixedFileEntry(e.getFile(), e.getTsBound(), true));
-    CloseableIterable<MixedFileEntry> baseEntries =
-        CloseableIterable.transform(
-            baseMaintainer.fileScan(baseTable, dataFilter, expirationConfig, expireTimestamp),
-            e -> new MixedFileEntry(e.getFile(), e.getTsBound(), false));
-    IcebergTableMaintainer.ExpireFiles changeExpiredFiles =
-        new IcebergTableMaintainer.ExpireFiles();
-    IcebergTableMaintainer.ExpireFiles baseExpiredFiles = new IcebergTableMaintainer.ExpireFiles();
-
-    try (CloseableIterable<MixedFileEntry> entries =
-        CloseableIterable.withNoopClose(Iterables.concat(changeEntries, baseEntries))) {
-      Queue<MixedFileEntry> fileEntries = new LinkedTransferQueue<>();
-      entries.forEach(
-          e -> {
-            if (IcebergTableMaintainer.mayExpired(e, partitionFreshness, expireTimestamp)) {
-              fileEntries.add(e);
-            }
-          });
-      fileEntries
-          .parallelStream()
-          .filter(
-              e -> IcebergTableMaintainer.willNotRetain(e, expirationConfig, partitionFreshness))
-          .forEach(
-              e -> {
-                if (e.isChange()) {
-                  changeExpiredFiles.addFile(e);
-                } else {
-                  baseExpiredFiles.addFile(e);
-                }
-              });
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    return Pair.of(changeExpiredFiles, baseExpiredFiles);
-  }
-
-  private void expireMixedFiles(
-      IcebergTableMaintainer.ExpireFiles changeFiles,
-      IcebergTableMaintainer.ExpireFiles baseFiles,
-      long expireTimestamp) {
-    Optional.ofNullable(changeMaintainer)
-        .ifPresent(c -> c.expireFiles(changeFiles, expireTimestamp));
-    Optional.ofNullable(baseMaintainer).ifPresent(c -> c.expireFiles(baseFiles, expireTimestamp));
+    // Process data expiration using the new processor
+    processor.process(expireInstant);
   }
 
   @Override
@@ -502,20 +410,6 @@ public class MixedTableMaintainer implements TableMaintainer {
       } else {
         return Long.MAX_VALUE;
       }
-    }
-  }
-
-  public static class MixedFileEntry extends IcebergTableMaintainer.FileEntry {
-
-    private final boolean isChange;
-
-    MixedFileEntry(ContentFile<?> file, Literal<Long> tsBound, boolean isChange) {
-      super(file, tsBound);
-      this.isChange = isChange;
-    }
-
-    public boolean isChange() {
-      return isChange;
     }
   }
 }
