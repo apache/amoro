@@ -20,6 +20,8 @@ package org.apache.amoro.utils;
 
 import static org.apache.amoro.utils.ExpressionUtil.convertSqlFilterToIcebergExpression;
 
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.types.Type;
@@ -34,21 +36,37 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 
 public class TestExpressionUtil {
   @Test
   public void testConvertSqlToIcebergExpression() {
     List<Types.NestedField> fields = new ArrayList<>();
     fields.add(Types.NestedField.optional(1, "column_a", Types.IntegerType.get()));
-    assertEqualExpressions(
-        Expressions.isNull("column_a"),
-        convertSqlFilterToIcebergExpression("column_a IS NULL", fields));
-    assertEqualExpressions(
-        Expressions.notNull("column_a"),
-        convertSqlFilterToIcebergExpression("column_a IS NOT NULL", fields));
+    fields.add(Types.NestedField.optional(2, "pt", Types.StringType.get()));
+    fields.add(Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
+
+    Schema schema = new Schema(fields);
+
+    PartitionSpec partitionSpec = PartitionSpec.builderFor(schema)
+            .withSpecId(0)
+                    .day("ts")
+                            .build();
+
+    BiFunction<String, Integer, List<String>> func = (pt, n) -> List.of("2023-01-01", "2023-02-02");
 
     assertEqualExpressions(
-        Expressions.alwaysTrue(), convertSqlFilterToIcebergExpression("", fields));
+        Expressions.in(Expressions.day("ts"),"2023-01-01", "2023-02-02"), convertSqlFilterToIcebergExpression("pt=max(day(ts),5)", fields, partitionSpec, func));
+
+    assertEqualExpressions(
+        Expressions.isNull("column_a"),
+        convertSqlFilterToIcebergExpression("column_a IS NULL", fields, partitionSpec));
+    assertEqualExpressions(
+        Expressions.notNull("column_a"),
+        convertSqlFilterToIcebergExpression("column_a IS NOT NULL", fields, partitionSpec));
+
+    assertEqualExpressions(
+        Expressions.alwaysTrue(), convertSqlFilterToIcebergExpression("", fields, partitionSpec));
 
     testConvertSqlToIcebergExpressionByType("1", "'1'", Types.StringType.get());
     testConvertSqlToIcebergExpressionByType(1, "1", Types.IntegerType.get());

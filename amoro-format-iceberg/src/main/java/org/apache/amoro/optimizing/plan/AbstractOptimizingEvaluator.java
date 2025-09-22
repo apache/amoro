@@ -33,10 +33,7 @@ import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableSnapshot;
 import org.apache.amoro.utils.ExpressionUtil;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.SnapshotSummary;
-import org.apache.iceberg.StructLike;
+import org.apache.iceberg.*;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.Pair;
@@ -46,9 +43,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class AbstractOptimizingEvaluator {
@@ -100,7 +97,34 @@ public abstract class AbstractOptimizingEvaluator {
                 mixedTable.asKeyedTable(), ((KeyedTableSnapshot) currentSnapshot));
       }
     }
-    tableFileScanHelper.withPartitionFilter(getPartitionFilter());
+
+    Map<Integer, PartitionSpec> specMap = new HashMap<>();
+    Map<String, String> maxPartition = new HashMap<>();
+
+    // we only care about the partition column `pt`， does not support hidden partition
+    BiFunction<String, Integer, List<String>> partitionDataSupplier =
+        (pt, n) -> {
+          Set partitionValueSet = new HashSet();
+          tableFileScanHelper
+              .scan()
+              .forEach(
+                  item -> {
+                    int fileSpecId = item.file().specId();
+                    PartitionSpec fileSpec =
+                        specMap.computeIfAbsent(fileSpecId, tableFileScanHelper::getSpec);
+                    String partitionPath = fileSpec.partitionToPath(item.file().partition());
+                    // split partition path to parent and sub path;
+                    String[] subPathArr = partitionPath.split("/");
+                    String[] lastPathValue = subPathArr[subPathArr.length - 1].split("=");
+                    List<String> parentPathList = Arrays.asList(subPathArr);
+                    // 取最后一个分区列的值
+                    partitionValueSet.add(lastPathValue[1]);
+                  });
+          List result = (List)partitionValueSet.stream().sorted().collect(Collectors.toList());
+          return result.subList(0, Math.min(result.size(), n));
+        };
+
+    tableFileScanHelper.withPartitionFilter(getPartitionFilter(partitionDataSupplier));
     initPartitionPlans(tableFileScanHelper);
     isInitialized = true;
     LOG.info(
@@ -111,8 +135,12 @@ public abstract class AbstractOptimizingEvaluator {
   }
 
   protected Expression getPartitionFilter() {
+    return getPartitionFilter(null);
+  }
+
+  protected Expression getPartitionFilter(BiFunction maxPartitionFunc) {
     return ExpressionUtil.convertSqlFilterToIcebergExpression(
-        config.getFilter(), mixedTable.schema().columns());
+        config.getFilter(), mixedTable.schema().columns(), mixedTable.spec(), maxPartitionFunc);
   }
 
   private void initPartitionPlans(TableFileScanHelper tableFileScanHelper) {
