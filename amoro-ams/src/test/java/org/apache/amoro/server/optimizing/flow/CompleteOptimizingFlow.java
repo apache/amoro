@@ -32,7 +32,6 @@ import org.apache.amoro.hive.optimizing.MixedHiveRewriteExecutor;
 import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.optimizing.IcebergRewriteExecutor;
 import org.apache.amoro.optimizing.OptimizingExecutor;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
@@ -45,7 +44,6 @@ import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.amoro.utils.TablePropertyUtil;
-import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -213,13 +211,10 @@ public class CompleteOptimizingFlow {
       TaskRuntime<RewriteStageTask> taskRuntime) {
     if (table.format() == TableFormat.ICEBERG) {
       return new IcebergRewriteExecutor(
-          taskRuntime.getTaskDescriptor().getInput(), table, StructLikeCollections.DEFAULT);
+          taskRuntime.getTaskDescriptor().getInput(), table, taskRuntime.getProperties());
     } else {
       return new MixedHiveRewriteExecutor(
-          taskRuntime.getTaskDescriptor().getInput(),
-          table,
-          StructLikeCollections.DEFAULT,
-          OptimizingInputProperties.parse(taskRuntime.getProperties()).getOutputDir());
+          taskRuntime.getTaskDescriptor().getInput(), table, taskRuntime.getProperties());
     }
   }
 

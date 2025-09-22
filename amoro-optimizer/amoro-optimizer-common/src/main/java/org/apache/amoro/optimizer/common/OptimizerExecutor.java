@@ -22,8 +22,9 @@ import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingExecutorFactory;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.TableOptimizing;
+import org.apache.amoro.optimizing.TaskProperties;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.utils.ExceptionUtil;
 import org.apache.amoro.utils.SerializationUtil;
@@ -32,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 public class OptimizerExecutor extends AbstractOptimizerOperator {
 
@@ -147,23 +149,27 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
   public static OptimizingTaskResult executeTask(
       OptimizerConfig config, int threadId, OptimizingTask task, Logger logger) {
     long startTime = System.currentTimeMillis();
-    TableOptimizing.OptimizingInput input = null;
+    TableOptimizing.OptimizingInput input;
     try {
-      OptimizingInputProperties properties = OptimizingInputProperties.parse(task.getProperties());
+      Map<String, String> properties = Maps.newHashMap(task.getProperties());
+      properties.put(TaskProperties.PROCESS_ID, String.valueOf(task.getTaskId().getProcessId()));
+      if (config.isExtendDiskStorage()) {
+        properties.put(TaskProperties.EXTEND_DISK_STORAGE, "true");
+      }
+      properties.put(
+          TaskProperties.MEMORY_STORAGE_SIZE,
+          String.valueOf(config.getMemoryStorageSize() * 1024 * 1024));
+      properties.put(TaskProperties.DISK_STORAGE_PATH, config.getDiskStoragePath());
+
       input = SerializationUtil.simpleDeserialize(task.getTaskInput());
-      String executorFactoryImpl = properties.getExecutorFactoryImpl();
+      String executorFactoryImpl = properties.get(TaskProperties.TASK_EXECUTOR_FACTORY_IMPL);
       DynConstructors.Ctor<OptimizingExecutorFactory> ctor =
           DynConstructors.builder(OptimizingExecutorFactory.class)
               .impl(executorFactoryImpl)
               .buildChecked();
       OptimizingExecutorFactory factory = ctor.newInstance();
 
-      if (config.isExtendDiskStorage()) {
-        properties.enableSpillMap();
-      }
-      properties.setMaxSizeInMemory(config.getMemoryStorageSize() * 1024 * 1024);
-      properties.setSpillMapPath(config.getDiskStoragePath());
-      factory.initialize(properties.getProperties());
+      factory.initialize(properties);
 
       OptimizingExecutor executor = factory.createExecutor(input);
       TableOptimizing.OptimizingOutput output = executor.execute();

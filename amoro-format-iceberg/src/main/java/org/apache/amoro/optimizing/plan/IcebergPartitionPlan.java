@@ -21,7 +21,7 @@ package org.apache.amoro.optimizing.plan;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.optimizing.IcebergRewriteExecutorFactory;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.util.Pair;
@@ -55,8 +55,8 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   @Override
-  protected OptimizingInputProperties buildTaskProperties() {
-    OptimizingInputProperties properties = new OptimizingInputProperties();
+  protected TaskProperties buildTaskProperties() {
+    TaskProperties properties = new TaskProperties();
     properties.setExecutorFactoryImpl(IcebergRewriteExecutorFactory.class.getName());
     return properties;
   }
