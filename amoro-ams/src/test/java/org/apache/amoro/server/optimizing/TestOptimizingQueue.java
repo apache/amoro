@@ -273,9 +273,9 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     ServerTableIdentifier serverTableIdentifier =
         ServerTableIdentifier.of(
             org.apache.amoro.table.TableIdentifier.of(
-                serverTableIdentifier().getCatalog(), "db", "test_table2"),
+                serverTableIdentifier().getCatalog(), "db", "new_table"),
             TableFormat.ICEBERG);
-    serverTableIdentifier.setId(2L);
+    serverTableIdentifier.setId(100L);
     DefaultTableRuntime tableRuntime2 = createTable(serverTableIdentifier);
     queue.refreshTable(tableRuntime2);
     queue.refreshTable(tableRuntime);
@@ -351,6 +351,56 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertThrows(IllegalStateException.class, optimizingProcess::commit);
     Assert.assertEquals(ProcessStatus.SUCCESS, optimizingProcess.getStatus());
 
+    Assert.assertEquals(0, queue.collectTasks().size());
+    queue.dispose();
+  }
+
+  @Test
+  public void testCommitTaskWithFailed() {
+    DefaultTableRuntime tableRuntime = initTableWithPartitionedFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+    Assert.assertEquals(0, queue.collectTasks().size());
+
+    TaskRuntime firstTask = queue.pollTask(MAX_POLLING_TIME);
+    firstTask.schedule(optimizerThread);
+    firstTask.ack(optimizerThread);
+    Assert.assertEquals(
+        1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
+    Assert.assertNotNull(firstTask);
+    firstTask.complete(
+        optimizerThread,
+        buildOptimizingTaskResult(firstTask.getTaskId(), optimizerThread.getThreadId()));
+    Assert.assertEquals(TaskRuntime.Status.SUCCESS, firstTask.getStatus());
+
+    TaskRuntime<?> task = queue.pollTask(MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+
+    for (int i = 0; i < TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT; i++) {
+      queue.retryTask(task);
+      TaskRuntime<?> retryTask = queue.pollTask(MAX_POLLING_TIME);
+      Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
+      retryTask.schedule(optimizerThread);
+      retryTask.ack(optimizerThread);
+      retryTask.complete(
+          optimizerThread,
+          buildOptimizingTaskFailed(task.getTaskId(), optimizerThread.getThreadId()));
+      Assert.assertEquals(TaskRuntime.Status.PLANNED, task.getStatus());
+    }
+
+    queue.retryTask(task);
+    TaskRuntime<?> retryTask = queue.pollTask(MAX_POLLING_TIME);
+    Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
+    retryTask.schedule(optimizerThread);
+    retryTask.ack(optimizerThread);
+
+    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
+    retryTask.complete(
+        optimizerThread,
+        buildOptimizingTaskFailed(task.getTaskId(), optimizerThread.getThreadId()));
+    Assert.assertEquals(TaskRuntime.Status.FAILED, task.getStatus());
+    optimizingProcess.commit();
+    Assert.assertEquals(ProcessStatus.FAILED, optimizingProcess.getStatus());
+    Assert.assertNull(tableRuntime.getOptimizingProcess());
     Assert.assertEquals(0, queue.collectTasks().size());
     queue.dispose();
   }
