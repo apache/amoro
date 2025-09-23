@@ -45,8 +45,11 @@ public class FullOptimizingWrite2HiveChecker extends AbstractHiveChecker {
       @Nullable UnKeyedTableCommit latestCommit) {
     return CollectionUtils.isNotEmpty(latestTaskDescriptors)
         && latestPlanner.getOptimizingType() == OptimizingType.FULL
-        && TaskProperties.parse(latestTaskDescriptors.stream().findAny().get().getProperties())
-                .getOutputDir()
+        && latestTaskDescriptors.stream()
+                .findAny()
+                .get()
+                .getProperties()
+                .get(TaskProperties.OUTPUT_DIR)
             != null;
   }
 }

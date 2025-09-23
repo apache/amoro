@@ -116,13 +116,14 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   }
 
   @Override
-  protected TaskProperties buildTaskProperties() {
-    TaskProperties properties = super.buildTaskProperties();
-    properties.setExecutorFactoryImpl(MixedHiveRewriteExecutorFactory.class.getName());
+  protected Map<String, String> buildTaskProperties() {
+    Map<String, String> properties = super.buildTaskProperties();
+    properties.put(
+        TaskProperties.TASK_EXECUTOR_FACTORY_IMPL, MixedHiveRewriteExecutorFactory.class.getName());
     if (moveFiles2CurrentHiveLocation()) {
-      properties.needMoveFile2HiveLocation();
+      properties.put(TaskProperties.MOVE_FILE_TO_HIVE_LOCATION, "true");
     } else if (evaluator().isFullNecessary()) {
-      properties.setOutputDir(constructCustomHiveSubdirectory());
+      properties.put(TaskProperties.OUTPUT_DIR, constructCustomHiveSubdirectory());
     }
     return properties;
   }

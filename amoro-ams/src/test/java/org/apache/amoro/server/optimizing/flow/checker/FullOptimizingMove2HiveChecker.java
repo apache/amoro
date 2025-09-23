@@ -25,6 +25,7 @@ import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.optimizing.flow.view.TableDataView;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.utils.PropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 
 import javax.annotation.Nullable;
@@ -45,7 +46,9 @@ public class FullOptimizingMove2HiveChecker extends AbstractHiveChecker {
       @Nullable UnKeyedTableCommit latestCommit) {
     return CollectionUtils.isNotEmpty(latestTaskDescriptors)
         && latestPlanner.getOptimizingType() == OptimizingType.FULL
-        && TaskProperties.parse(latestTaskDescriptors.stream().findAny().get().getProperties())
-            .getMoveFile2HiveLocation();
+        && PropertyUtil.propertyAsBoolean(
+            latestTaskDescriptors.stream().findAny().get().getProperties(),
+            TaskProperties.MOVE_FILE_TO_HIVE_LOCATION,
+            false);
   }
 }

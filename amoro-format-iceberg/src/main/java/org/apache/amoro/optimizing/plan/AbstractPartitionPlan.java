@@ -24,7 +24,6 @@ import org.apache.amoro.optimizing.HealthScoreInfo;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteStageTask;
-import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -168,7 +167,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
   protected abstract TaskSplitter buildTaskSplitter();
 
-  protected abstract TaskProperties buildTaskProperties();
+  protected abstract Map<String, String> buildTaskProperties();
 
   protected void markSequence(long sequence) {
     if (fromSequence == null || fromSequence > sequence) {
@@ -305,7 +304,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       return rewritePosDataFiles;
     }
 
-    public RewriteStageTask buildTask(TaskProperties properties) {
+    public RewriteStageTask buildTask(Map<String, String> properties) {
       Set<ContentFile<?>> readOnlyDeleteFiles = Sets.newHashSet();
       Set<ContentFile<?>> rewriteDeleteFiles = Sets.newHashSet();
       for (ContentFile<?> deleteFile : deleteFiles) {
@@ -325,8 +324,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       PartitionSpec spec =
           MixedTableUtil.getMixedTablePartitionSpecById(tableObject, partition.first());
       String partitionPath = spec.partitionToPath(partition.second());
-      return new RewriteStageTask(
-          identifier.getId(), partitionPath, input, properties.getProperties());
+      return new RewriteStageTask(identifier.getId(), partitionPath, input, properties);
     }
   }
 
