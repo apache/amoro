@@ -46,9 +46,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
-import org.apache.iceberg.expressions.UnboundPredicate;
 import org.apache.iceberg.expressions.UnboundTerm;
-import org.apache.iceberg.transforms.Transform;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,10 +123,9 @@ public class ExpressionUtil {
    * @return the Iceberg {@link Expression}
    */
   public static Expression convertSqlFilterToIcebergExpression(
-          String sqlFilter, List<Types.NestedField> tableColumns) {
+      String sqlFilter, List<Types.NestedField> tableColumns) {
     return convertSqlFilterToIcebergExpression(sqlFilter, tableColumns, null, null);
   }
-
 
   public static Expression convertSqlFilterToIcebergExpression(
       String sqlFilter, List<Types.NestedField> tableColumns, PartitionSpec partitionSpec) {
@@ -136,7 +133,10 @@ public class ExpressionUtil {
   }
 
   public static Expression convertSqlFilterToIcebergExpression(
-          String sqlFilter, List<Types.NestedField> tableColumns, PartitionSpec partitionSpec, BiFunction maxPartitionFunc) {
+      String sqlFilter,
+      List<Types.NestedField> tableColumns,
+      PartitionSpec partitionSpec,
+      BiFunction maxPartitionFunc) {
     if (StringUtils.isEmpty(StringUtils.trim(sqlFilter))) {
       return Expressions.alwaysTrue();
     }
@@ -144,15 +144,71 @@ public class ExpressionUtil {
     try {
       Select statement = (Select) CCJSqlParserUtil.parse("SELECT * FROM dummy WHERE " + sqlFilter);
       PlainSelect select = statement.getPlainSelect();
-      return convertSparkExpressionToIceberg(select.getWhere(), tableColumns, partitionSpec, maxPartitionFunc);
+      return convertSparkExpressionToIceberg(
+          select.getWhere(), tableColumns, partitionSpec, maxPartitionFunc);
     } catch (Exception e) {
       throw new IllegalArgumentException("Failed to parse where condition: " + sqlFilter, e);
     }
   }
 
   private static Expression convertSparkExpressionToIceberg(
-      net.sf.jsqlparser.expression.Expression whereExpr, List<Types.NestedField> tableColumns, PartitionSpec partitionSpec) {
-    return convertSparkExpressionToIceberg(whereExpr, tableColumns, partitionSpec,null);
+      net.sf.jsqlparser.expression.Expression whereExpr,
+      List<Types.NestedField> tableColumns,
+      PartitionSpec partitionSpec) {
+    return convertSparkExpressionToIceberg(whereExpr, tableColumns, partitionSpec, null);
+  }
+
+  // TODO: support more complex expression
+
+  /**
+   * only support `max` function, like `max(pt,1)` for partition, `max(day(ts),5)` for hidden
+   * partition
+   *
+   * @param expressLeft
+   * @param func
+   * @param partitionSpec
+   * @param maxPartitionFunc
+   * @return
+   */
+  @SuppressWarnings({"cast", "rawtypes", "serial", "unchecked", "unused"})
+  private static Expression applyFunc(
+      String expressLeft,
+      net.sf.jsqlparser.expression.Function func,
+      PartitionSpec partitionSpec,
+      BiFunction<String, Integer, List<String>> maxPartitionFunc) {
+    // support function expression, like  `max(pt,1)` for partition,  `max(day(ts),5)` for hidden
+    // partition
+    String funcName = func.getName();
+    if (funcName.equals("max")) {
+      if (func.getParameters().size() > 2) {
+        // not supported.
+        LOG.warn("Do not support max function with more than 2 params.");
+        return Expressions.alwaysTrue();
+      }
+      int topN = Integer.parseInt(func.getParameters().get(1) + "");
+      List<String> values = maxPartitionFunc.apply(expressLeft, topN);
+      LOG.info("use max partition value: {} for column: {}", String.join(",", values), expressLeft);
+      // like max(transformer(pt),1)
+      if (func.getParameters().get(0) instanceof net.sf.jsqlparser.expression.Function) {
+        net.sf.jsqlparser.expression.Function transformerFunc =
+            (net.sf.jsqlparser.expression.Function) func.getParameters().get(0);
+        String ptName = transformerFunc.getParameters().get(0).toString();
+        PartitionField field =
+            partitionSpec
+                .getFieldsBySourceId(partitionSpec.schema().findField(ptName).fieldId())
+                .get(0);
+        return Expressions.in(
+            (UnboundTerm<String>) Expressions.transform(ptName, field.transform()),
+            values.toArray(new String[0]));
+      } else {
+        // like max(pt,1), and ptName should equal to 'left'
+        String ptName = func.getParameters().get(0).toString();
+        return Expressions.in(ptName, values.toArray(new String[0]));
+      }
+    } else {
+      LOG.info("unsupported function {}", funcName);
+    }
+    return Expressions.alwaysTrue();
   }
 
   private static Expression convertSparkExpressionToIceberg(
@@ -169,36 +225,14 @@ public class ExpressionUtil {
     } else if (whereExpr instanceof EqualsTo) {
       EqualsTo eq = (EqualsTo) whereExpr;
       Types.NestedField column = getColumn(eq.getLeftExpression(), tableColumns);
-      Object resExpressLeft = null;
-      // try to check if the partition column has transformer
-      String columnName = column.name();
-      resExpressLeft = columnName;
-
-      // support function expression, like  `max(pt,1)` for partition,  `max(day(ts),5)` for hidden partition
+      // support function expression, like  `max(pt,1)` for partition,  `max(day(ts),5)` for hidden
+      // partition
       if (eq.getRightExpression() instanceof net.sf.jsqlparser.expression.Function) {
-        net.sf.jsqlparser.expression.Function func =
-            (net.sf.jsqlparser.expression.Function) eq.getRightExpression();
-        // func left param is partition field
-        if (func.getName().equals("max")) {
-          if (func.getParameters().size() > 2) {
-            // not supported.
-            LOG.warn("Do not support function with more than 2 params.");
-            return Expressions.alwaysTrue();
-          }
-          if (func.getParameters().get(0) instanceof net.sf.jsqlparser.expression.Function) {
-            net.sf.jsqlparser.expression.Function transformerFunc =
-                    (net.sf.jsqlparser.expression.Function) func.getParameters().get(0);
-            int topN = Integer.parseInt(func.getParameters().get(1) + "");
-
-            String ptName = transformerFunc.getParameters().get(0).toString();
-            PartitionField field = partitionSpec.getFieldsBySourceId(partitionSpec.schema().findField(ptName).fieldId()).get(0);
-            //noinspection unchecked
-            List<String> values = maxPartitionFunc.apply(column.name(), topN);
-            LOG.info("use max partition value: {} for column: {}", String.join(",", values), column.name());
-            return Expressions.in((UnboundTerm<String>)Expressions.transform(ptName, field.transform())
-                    ,values.toArray(new String[0]));
-          }
-        }
+        return applyFunc(
+            column.name(),
+            (net.sf.jsqlparser.expression.Function) eq.getRightExpression(),
+            partitionSpec,
+            maxPartitionFunc);
       } else {
         return Expressions.equal(column.name(), getValue(eq.getRightExpression(), column));
       }
@@ -241,7 +275,8 @@ public class ExpressionUtil {
           : Expressions.in(column.name(), values);
     } else if (whereExpr instanceof NotExpression) {
       NotExpression not = (NotExpression) whereExpr;
-      return Expressions.not(convertSparkExpressionToIceberg(not.getExpression(), tableColumns, partitionSpec));
+      return Expressions.not(
+          convertSparkExpressionToIceberg(not.getExpression(), tableColumns, partitionSpec));
     } else if (whereExpr instanceof AndExpression) {
       AndExpression and = (AndExpression) whereExpr;
       return Expressions.and(
@@ -332,5 +367,22 @@ public class ExpressionUtil {
       timestampStr = ((DateTimeLiteralExpression) expr).getValue().replaceAll("^'(.*)'$", "$1");
     }
     return timestampStr;
+  }
+
+  private static class CustomFunction {
+    private String name;
+    private List<String> parameters;
+    private Function<List<Object>, Object> function;
+
+    public CustomFunction(
+        String name, List<String> parameters, Function<List<Object>, Object> function) {
+      this.name = name;
+      this.parameters = parameters;
+      this.function = function;
+    }
+
+    public Object apply(List<Object> args) {
+      return function.apply(args);
+    }
   }
 }
