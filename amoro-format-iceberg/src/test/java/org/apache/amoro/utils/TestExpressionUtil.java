@@ -48,15 +48,21 @@ public class TestExpressionUtil {
 
     Schema schema = new Schema(fields);
 
-    PartitionSpec partitionSpec = PartitionSpec.builderFor(schema)
-            .withSpecId(0)
-                    .day("ts")
-                            .build();
+    PartitionSpec partitionSpec = PartitionSpec.builderFor(schema).withSpecId(0).day("ts").build();
 
     BiFunction<String, Integer, List<String>> func = (pt, n) -> List.of("2023-01-01", "2023-02-02");
 
     assertEqualExpressions(
-        Expressions.in(Expressions.day("ts"),"2023-01-01", "2023-02-02"), convertSqlFilterToIcebergExpression("pt=max(day(ts),5)", fields, partitionSpec, func));
+        Expressions.in(Expressions.day("ts"), "2023-01-01", "2023-02-02"),
+        convertSqlFilterToIcebergExpression("pt=max(day(ts),5)", fields, partitionSpec, func));
+
+    assertEqualExpressions(
+        Expressions.alwaysTrue(),
+        convertSqlFilterToIcebergExpression("pt=max(day(ts),5, 10)", fields, partitionSpec, func));
+
+    assertEqualExpressions(
+        Expressions.in("pt", "2023-01-01", "2023-02-02"),
+        convertSqlFilterToIcebergExpression("pt=max(pt,5)", fields, partitionSpec, func));
 
     assertEqualExpressions(
         Expressions.isNull("column_a"),

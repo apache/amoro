@@ -45,7 +45,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class AbstractOptimizingEvaluator {
@@ -101,10 +100,10 @@ public abstract class AbstractOptimizingEvaluator {
     Map<Integer, PartitionSpec> specMap = new HashMap<>();
     Map<String, String> maxPartition = new HashMap<>();
 
-    // we only care about the partition column `pt`， does not support hidden partition
+    // we only care about last partition level.
     BiFunction<String, Integer, List<String>> partitionDataSupplier =
         (pt, n) -> {
-          Set partitionValueSet = new HashSet();
+          Set<String> partitionValueSet = new HashSet();
           tableFileScanHelper
               .scan()
               .forEach(
@@ -116,12 +115,11 @@ public abstract class AbstractOptimizingEvaluator {
                     // split partition path to parent and sub path;
                     String[] subPathArr = partitionPath.split("/");
                     String[] lastPathValue = subPathArr[subPathArr.length - 1].split("=");
-                    List<String> parentPathList = Arrays.asList(subPathArr);
                     // 取最后一个分区列的值
                     partitionValueSet.add(lastPathValue[1]);
                   });
-          List result = (List)partitionValueSet.stream().sorted().collect(Collectors.toList());
-          return result.subList(0, Math.min(result.size(), n));
+          return (List<String>)
+              partitionValueSet.stream().sorted().limit(n).collect(Collectors.toList());
         };
 
     tableFileScanHelper.withPartitionFilter(getPartitionFilter(partitionDataSupplier));
