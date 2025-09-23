@@ -19,11 +19,9 @@
 package org.apache.amoro.optimizing;
 
 import org.apache.amoro.OptimizerProperties;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.utils.PropertyUtil;
 import org.apache.amoro.utils.map.StructLikeCollections;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class TaskProperties {
@@ -47,16 +45,6 @@ public class TaskProperties {
 
   public static final String MOVE_FILE_TO_HIVE_LOCATION = "move-files-to-hive-location";
 
-  private final Map<String, String> properties;
-
-  private TaskProperties(Map<String, String> properties) {
-    this.properties = Maps.newHashMap(properties);
-  }
-
-  public TaskProperties() {
-    properties = new HashMap<>();
-  }
-
   public static StructLikeCollections getStructLikeCollections(Map<String, String> properties) {
     boolean enableSpillMap =
         PropertyUtil.propertyAsBoolean(
@@ -74,9 +62,5 @@ public class TaskProperties {
       processId = UNKNOWN_PROCESS_ID;
     }
     return processId;
-  }
-
-  public Map<String, String> getProperties() {
-    return properties;
   }
 }
