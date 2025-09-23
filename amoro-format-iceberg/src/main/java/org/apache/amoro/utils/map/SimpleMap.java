@@ -19,6 +19,8 @@
 package org.apache.amoro.utils.map;
 
 import java.io.Closeable;
+import java.util.Objects;
+import java.util.function.BiFunction;
 
 public interface SimpleMap<K, V> extends Closeable {
 
@@ -27,4 +29,17 @@ public interface SimpleMap<K, V> extends Closeable {
   void delete(K key);
 
   V get(K key);
+
+  default V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+    Objects.requireNonNull(remappingFunction);
+    Objects.requireNonNull(value);
+    V oldValue = get(key);
+    V newValue = (oldValue == null) ? value : remappingFunction.apply(oldValue, value);
+    if (newValue == null) {
+      delete(key);
+    } else {
+      put(key, newValue);
+    }
+    return newValue;
+  }
 }

@@ -333,10 +333,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
           continue;
         }
         Long lsn = deleteFile.dataSequenceNumber();
-        Long old = structLikeMap.get(deletePK);
-        if (old == null || old.compareTo(lsn) <= 0) {
-          structLikeMap.put(deletePK, lsn);
-        }
+        structLikeMap.merge(deletePK, lsn, Math::max);
       }
     }
 
