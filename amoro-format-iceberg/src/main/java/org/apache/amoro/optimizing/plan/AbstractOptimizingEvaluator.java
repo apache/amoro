@@ -119,7 +119,10 @@ public abstract class AbstractOptimizingEvaluator {
                     partitionValueSet.add(lastPathValue[1]);
                   });
           return (List<String>)
-              partitionValueSet.stream().sorted().limit(n).collect(Collectors.toList());
+              partitionValueSet.stream()
+                  .sorted(Comparator.reverseOrder())
+                  .limit(n)
+                  .collect(Collectors.toList());
         };
 
     tableFileScanHelper.withPartitionFilter(getPartitionFilter(partitionDataSupplier));
