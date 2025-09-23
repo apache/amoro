@@ -30,6 +30,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Multimaps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.hash.BloomFilter;
 import org.apache.amoro.utils.ContentFiles;
+import org.apache.amoro.utils.DynMethods;
 import org.apache.amoro.utils.map.StructLikeBaseMap;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.Accessor;
@@ -55,7 +56,6 @@ import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Filter;
-import org.apache.iceberg.util.StructLikeSet;
 import org.apache.iceberg.util.StructProjection;
 import org.roaringbitmap.longlong.Roaring64Bitmap;
 import org.slf4j.Logger;
@@ -64,7 +64,6 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -94,6 +93,12 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       POS_DELETE_SCHEMA.accessorForField(MetadataColumns.DELETE_FILE_PATH.fieldId());
   private static final Accessor<StructLike> POSITION_ACCESSOR =
       POS_DELETE_SCHEMA.accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
+
+  // BaseDeleteLoader#getOrReadEqDeletes is a private method, accessed it via reflection
+  private static final DynMethods.UnboundMethod READ_EQ_DELETES_METHOD =
+      DynMethods.builder("getOrReadEqDeletes")
+          .hiddenImpl(BaseDeleteLoader.class, DeleteFile.class, Schema.class)
+          .build();
 
   @VisibleForTesting public static long FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 1000000L;
 
@@ -432,8 +437,8 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     return openFile(file, POS_DELETE_SCHEMA);
   }
 
-  private StructLikeSet openEqualityDeletes(DeleteFile file, Schema deleteSchema) {
-    return deleteLoader.loadEqualityDeletes(Collections.singletonList(file), deleteSchema);
+  private Iterable<StructLike> openEqualityDeletes(DeleteFile file, Schema deleteSchema) {
+    return READ_EQ_DELETES_METHOD.invoke(deleteLoader, file, deleteSchema);
   }
 
   private CloseableIterable<Record> openFile(ContentFile<?> contentFile, Schema deleteSchema) {
