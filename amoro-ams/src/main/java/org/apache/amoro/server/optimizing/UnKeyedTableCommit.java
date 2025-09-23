@@ -43,6 +43,7 @@ import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.MixedTableUtil;
+import org.apache.amoro.utils.PropertyUtil;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -328,8 +329,13 @@ public class UnKeyedTableCommit {
   }
 
   protected boolean needMoveFile2Hive() {
-    return TaskProperties.parse(tasks.stream().findAny().get().getProperties())
-        .getMoveFile2HiveLocation();
+    return PropertyUtil.propertyAsBoolean(
+        tasks.stream()
+            .findAny()
+            .orElseThrow(() -> new RuntimeException("The tasks is empty"))
+            .getProperties(),
+        TaskProperties.MOVE_FILE_TO_HIVE_LOCATION,
+        false);
   }
 
   protected void correctHiveData(Set<DataFile> addedDataFiles, Set<DeleteFile> addedDeleteFiles)

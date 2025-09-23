@@ -90,9 +90,11 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   @Override
-  protected TaskProperties buildTaskProperties() {
-    TaskProperties properties = new TaskProperties();
-    properties.setExecutorFactoryImpl(MixedIcebergRewriteExecutorFactory.class.getName());
+  protected Map<String, String> buildTaskProperties() {
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(
+        TaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
+        MixedIcebergRewriteExecutorFactory.class.getName());
     return properties;
   }
 
