@@ -20,7 +20,9 @@ package org.apache.amoro.io.reader;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.apache.amoro.config.ConfigHelpers;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.utils.MemorySize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,9 +36,14 @@ import java.util.stream.Collectors;
 /** A common implementation of {@link org.apache.iceberg.data.DeleteLoader}. */
 public class DeleteCache {
   private static final Logger LOG = LoggerFactory.getLogger(DeleteCache.class);
-  private static final Duration DEFAULT_TIME_OUT = Duration.ofMinutes(10);
-  private static final long DEFAULT_MAX_SIZE = 64 * 1024 * 1024; // 128MB
-  private static final long DEFAULT_TOTAL_SIZE = 128 * 1024 * 1024; // 64MB
+  public static final String DELETE_CACHE_ENABLED = "delete-cache-enabled";
+  public static final String DELETE_CACHE_ENABLED_DEFAULT = "true";
+  public static final String DELETE_CACHE_MAX_ENTRY_SIZE = "delete-cache-max-entry-size";
+  public static final String DELETE_CACHE_MAX_ENTRY_SIZE_DEFAULT = "64mb";
+  public static final String DELETE_CACHE_MAX_TOTAL_SIZE = "delete-cache-max-total-size";
+  public static final String DELETE_CACHE_MAX_TOTAL_SIZE_DEFAULT = "128mb";
+  public static final String DELETE_CACHE_TIMEOUT = "delete-cache-timeout";
+  public static final String DELETE_CACHE_TIMEOUT_DEFAULT = "10min";
   private static final int MAX_GROUPS = 5;
   private static volatile DeleteCache INSTANCE;
 
@@ -54,7 +61,16 @@ public class DeleteCache {
 
   public static DeleteCache getInstance() {
     if (INSTANCE == null) {
-      initialInstance(DEFAULT_TIME_OUT, DEFAULT_MAX_SIZE, DEFAULT_TOTAL_SIZE);
+      long maxEntrySize =
+          MemorySize.parseBytes(
+              System.getProperty(DELETE_CACHE_MAX_ENTRY_SIZE, DELETE_CACHE_MAX_ENTRY_SIZE_DEFAULT));
+      long maxTotalSize =
+          MemorySize.parseBytes(
+              System.getProperty(DELETE_CACHE_MAX_TOTAL_SIZE, DELETE_CACHE_MAX_TOTAL_SIZE_DEFAULT));
+      Duration timeout =
+          ConfigHelpers.TimeUtils.parseDuration(
+              System.getProperty(DELETE_CACHE_TIMEOUT, DELETE_CACHE_TIMEOUT_DEFAULT));
+      initialInstance(timeout, maxEntrySize, maxTotalSize);
     }
     return INSTANCE;
   }

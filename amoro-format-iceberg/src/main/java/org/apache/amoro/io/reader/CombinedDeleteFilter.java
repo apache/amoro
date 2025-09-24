@@ -170,7 +170,13 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     }
     this.filterEqDelete = filterEqDelete();
     this.deleteGroup = deleteGroup;
-    this.deleteLoader = new CachingDeleteLoader(this::getInputFile);
+    if (Boolean.parseBoolean(
+        System.getProperty(
+            DeleteCache.DELETE_CACHE_ENABLED, DeleteCache.DELETE_CACHE_ENABLED_DEFAULT))) {
+      this.deleteLoader = new CachingDeleteLoader(this::getInputFile);
+    } else {
+      this.deleteLoader = new BaseDeleteLoader(this::getInputFile);
+    }
   }
 
   /**

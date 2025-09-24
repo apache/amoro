@@ -79,6 +79,30 @@ public class OptimizerConfig implements Serializable {
   @Option(name = "-id", aliases = "--" + OptimizerProperties.RESOURCE_ID, usage = "Resource id")
   private String resourceId;
 
+  @Option(
+      name = "-dce",
+      aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_ENABLED,
+      usage = "Whether enable cache, default false")
+  private boolean cacheEnabled = OptimizerProperties.OPTIMIZER_CACHE_ENABLED_DEFAULT;
+
+  @Option(
+      name = "-cmts",
+      aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_MAX_TOTAL_SIZE,
+      usage = "Max total size in cache, default 100MB")
+  private String cacheMaxTotalSize = OptimizerProperties.OPTIMIZER_CACHE_MAX_TOTAL_SIZE_DEFAULT;
+
+  @Option(
+      name = "-cmes",
+      aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_MAX_ENTRY_SIZE,
+      usage = "Max entry size in cache, default 50MB")
+  private String cacheMaxEntrySize = OptimizerProperties.OPTIMIZER_CACHE_MAX_ENTRY_SIZE_DEFAULT;
+
+  @Option(
+      name = "-ct",
+      aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_TIMEOUT,
+      usage = "Timeout in cache, default 10minutes")
+  private String cacheTimeout = OptimizerProperties.OPTIMIZER_CACHE_TIMEOUT_DEFAULT;
+
   public OptimizerConfig() {}
 
   public OptimizerConfig(String[] args) throws CmdLineException {
@@ -158,6 +182,38 @@ public class OptimizerConfig implements Serializable {
     this.resourceId = resourceId;
   }
 
+  public boolean isCacheEnabled() {
+    return cacheEnabled;
+  }
+
+  public void setCacheEnabled(boolean cacheEnabled) {
+    this.cacheEnabled = cacheEnabled;
+  }
+
+  public String getCacheMaxTotalSize() {
+    return cacheMaxTotalSize;
+  }
+
+  public void setCacheMaxTotalSize(String cacheMaxTotalSize) {
+    this.cacheMaxTotalSize = cacheMaxTotalSize;
+  }
+
+  public String getCacheMaxEntrySize() {
+    return cacheMaxEntrySize;
+  }
+
+  public void setCacheMaxEntrySize(String cacheMaxEntrySize) {
+    this.cacheMaxEntrySize = cacheMaxEntrySize;
+  }
+
+  public String getCacheTimeout() {
+    return cacheTimeout;
+  }
+
+  public void setCacheTimeout(String cacheTimeout) {
+    this.cacheTimeout = cacheTimeout;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
@@ -167,9 +223,13 @@ public class OptimizerConfig implements Serializable {
         .add("groupName", groupName)
         .add("heartBeat", heartBeat)
         .add("extendDiskStorage", extendDiskStorage)
-        .add("rocksDBBasePath", diskStoragePath)
+        .add("diskStoragePath", diskStoragePath)
         .add("memoryStorageSize", memoryStorageSize)
         .add("resourceId", resourceId)
+        .add("cacheEnabled", cacheEnabled)
+        .add("cacheMaxTotalSize", cacheMaxTotalSize)
+        .add("cacheMaxEntrySize", cacheMaxEntrySize)
+        .add("cacheTimeout", cacheTimeout)
         .toString();
   }
 }

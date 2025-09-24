@@ -20,6 +20,7 @@ package org.apache.amoro.optimizer.common;
 
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskResult;
+import org.apache.amoro.io.reader.DeleteCache;
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingExecutorFactory;
 import org.apache.amoro.optimizing.TableOptimizing;
@@ -151,26 +152,16 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     long startTime = System.currentTimeMillis();
     TableOptimizing.OptimizingInput input;
     try {
-      Map<String, String> properties = Maps.newHashMap(task.getProperties());
-      properties.put(TaskProperties.PROCESS_ID, String.valueOf(task.getTaskId().getProcessId()));
-      if (config.isExtendDiskStorage()) {
-        properties.put(TaskProperties.EXTEND_DISK_STORAGE, "true");
-      }
-      properties.put(
-          TaskProperties.MEMORY_STORAGE_SIZE,
-          String.valueOf(config.getMemoryStorageSize() * 1024 * 1024));
-      properties.put(TaskProperties.DISK_STORAGE_PATH, config.getDiskStoragePath());
-
+      Map<String, String> taskProperties = fillTaskProperties(config, task);
       input = SerializationUtil.simpleDeserialize(task.getTaskInput());
-      String executorFactoryImpl = properties.get(TaskProperties.TASK_EXECUTOR_FACTORY_IMPL);
+      String executorFactoryImpl = taskProperties.get(TaskProperties.TASK_EXECUTOR_FACTORY_IMPL);
       DynConstructors.Ctor<OptimizingExecutorFactory> ctor =
           DynConstructors.builder(OptimizingExecutorFactory.class)
               .impl(executorFactoryImpl)
               .buildChecked();
       OptimizingExecutorFactory factory = ctor.newInstance();
 
-      factory.initialize(properties);
-
+      factory.initialize(taskProperties);
       OptimizingExecutor executor = factory.createExecutor(input);
       TableOptimizing.OptimizingOutput output = executor.execute();
       ByteBuffer outputByteBuffer = SerializationUtil.simpleSerialize(output);
@@ -195,5 +186,32 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       errorResult.setErrorMessage(ExceptionUtil.getErrorMessage(t, ERROR_MESSAGE_MAX_LENGTH));
       return errorResult;
     }
+  }
+
+  private static Map<String, String> fillTaskProperties(
+      OptimizerConfig config, OptimizingTask task) {
+    if (!config.isCacheEnabled()) {
+      System.setProperty(DeleteCache.DELETE_CACHE_ENABLED, "false");
+    }
+    if (!config.getCacheMaxEntrySize().equals(DeleteCache.DELETE_CACHE_MAX_ENTRY_SIZE_DEFAULT)) {
+      System.setProperty(DeleteCache.DELETE_CACHE_MAX_ENTRY_SIZE, config.getCacheMaxEntrySize());
+    }
+    if (!config.getCacheMaxTotalSize().equals(DeleteCache.DELETE_CACHE_MAX_TOTAL_SIZE_DEFAULT)) {
+      System.setProperty(
+          DeleteCache.DELETE_CACHE_MAX_TOTAL_SIZE_DEFAULT, config.getCacheMaxTotalSize());
+    }
+    if (!config.getCacheMaxEntrySize().equals(DeleteCache.DELETE_CACHE_TIMEOUT)) {
+      System.setProperty(DeleteCache.DELETE_CACHE_TIMEOUT, config.getCacheTimeout());
+    }
+    Map<String, String> properties = Maps.newHashMap(task.getProperties());
+    properties.put(TaskProperties.PROCESS_ID, String.valueOf(task.getTaskId().getProcessId()));
+    if (config.isExtendDiskStorage()) {
+      properties.put(TaskProperties.EXTEND_DISK_STORAGE, "true");
+    }
+    properties.put(
+        TaskProperties.MEMORY_STORAGE_SIZE,
+        String.valueOf(config.getMemoryStorageSize() * 1024 * 1024));
+    properties.put(TaskProperties.DISK_STORAGE_PATH, config.getDiskStoragePath());
+    return properties;
   }
 }
