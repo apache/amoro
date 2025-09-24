@@ -93,15 +93,12 @@ public class TestOptimizingUtil extends AMSTableTestBase {
     DefaultTableRuntime tableRuntime = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
     Assert.assertEquals(0, queue.collectTasks().size());
-    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
-    task.schedule(optimizerThread);
-    task.ack(optimizerThread);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    queue.ackTask(task.getTaskId(), optimizerThread);
     Assert.assertEquals(
         1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
     Assert.assertNotNull(task);
-    task.complete(
-        optimizerThread,
-        buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
+    queue.completeTask(optimizerThread, buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
 
     List<TaskRuntime.TaskQuota> quotas = new ArrayList<>();

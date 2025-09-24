@@ -23,8 +23,10 @@ import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OptimizingTaskId;
+import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.exception.OptimizingClosedException;
 import org.apache.amoro.exception.PersistenceException;
+import org.apache.amoro.exception.TaskNotFoundException;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
@@ -44,6 +46,7 @@ import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.resource.OptimizerInstance;
+import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.blocker.TableBlocker;
@@ -90,7 +93,6 @@ public class OptimizingQueue extends PersistentBase {
 
   private final QuotaProvider quotaProvider;
   private final Queue<TableOptimizingProcess> tableQueue = new LinkedTransferQueue<>();
-  private final Queue<TaskRuntime<?>> retryTaskQueue = new LinkedTransferQueue<>();
   private final SchedulingPolicy scheduler;
   private final CatalogManager catalogManager;
   private final Executor planExecutor;
@@ -200,24 +202,23 @@ public class OptimizingQueue extends PersistentBase {
 
   private void clearProcess(OptimizingProcess optimizingProcess) {
     tableQueue.removeIf(process -> process.getProcessId() == optimizingProcess.getProcessId());
-    retryTaskQueue.removeIf(
-        taskRuntime -> taskRuntime.getTaskId().getProcessId() == optimizingProcess.getProcessId());
   }
 
-  public TaskRuntime<?> pollTask(long maxWaitTime, boolean breakQuotaLimit) {
+  public TaskRuntime<?> pollTask(
+      OptimizerThread thread, long maxWaitTime, boolean breakQuotaLimit) {
     long deadline = calculateDeadline(maxWaitTime);
-    TaskRuntime<?> task = fetchTask();
+    TaskRuntime<?> task = fetchScheduledTask(thread, true);
     while (task == null && waitTask(deadline)) {
-      task = fetchTask();
+      task = fetchScheduledTask(thread, true);
     }
     if (task == null && breakQuotaLimit && planningTables.isEmpty()) {
-      task = fetchScheduledTask(false);
+      task = fetchScheduledTask(thread, false);
     }
     return task;
   }
 
-  public TaskRuntime<?> pollTask(long maxWaitTime) {
-    return pollTask(maxWaitTime, false);
+  public TaskRuntime<?> pollTask(OptimizerThread thread, long maxWaitTime) {
+    return pollTask(thread, maxWaitTime, true);
   }
 
   private long calculateDeadline(long maxWaitTime) {
@@ -240,14 +241,9 @@ public class OptimizingQueue extends PersistentBase {
     }
   }
 
-  private TaskRuntime<?> fetchTask() {
-    TaskRuntime<?> task = retryTaskQueue.poll();
-    return task != null ? task : fetchScheduledTask(true);
-  }
-
-  private TaskRuntime<?> fetchScheduledTask(boolean needQuotaChecking) {
+  private TaskRuntime<?> fetchScheduledTask(OptimizerThread thread, boolean needQuotaChecking) {
     return tableQueue.stream()
-        .map(process -> process.poll(needQuotaChecking))
+        .map(process -> process.poll(thread, needQuotaChecking))
         .filter(Objects::nonNull)
         .findFirst()
         .orElse(null);
@@ -352,12 +348,12 @@ public class OptimizingQueue extends PersistentBase {
     }
   }
 
-  public TaskRuntime<?> getTask(OptimizingTaskId taskId) {
-    return tableQueue.stream()
-        .filter(p -> p.getProcessId() == taskId.getProcessId())
-        .findFirst()
-        .map(p -> p.getTaskMap().get(taskId))
-        .orElse(null);
+  public void ackTask(OptimizingTaskId taskId, OptimizerThread thread) {
+    findProcess(taskId).ackTask(taskId, thread);
+  }
+
+  public void completeTask(OptimizerThread thread, OptimizingTaskResult result) {
+    findProcess(result.getTaskId()).completeTask(thread, result);
   }
 
   public List<TaskRuntime<?>> collectTasks() {
@@ -374,8 +370,7 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   public void retryTask(TaskRuntime<?> taskRuntime) {
-    taskRuntime.reset();
-    retryTaskQueue.offer(taskRuntime);
+    findProcess(taskRuntime.getTaskId()).resetTask((TaskRuntime<RewriteStageTask>) taskRuntime);
   }
 
   public ResourceGroup getOptimizerGroup() {
@@ -400,6 +395,13 @@ public class OptimizingQueue extends PersistentBase {
 
   public void dispose() {
     this.metrics.unregister();
+  }
+
+  private TableOptimizingProcess findProcess(OptimizingTaskId taskId) {
+    return tableQueue.stream()
+        .filter(p -> p.getProcessId() == taskId.getProcessId())
+        .findFirst()
+        .orElseThrow(() -> new TaskNotFoundException(taskId));
   }
 
   private double getAvailableCore() {
@@ -437,7 +439,7 @@ public class OptimizingQueue extends PersistentBase {
     private Map<String, Long> toSequence = Maps.newHashMap();
     private boolean hasCommitted = false;
 
-    public TaskRuntime<?> poll(boolean needQuotaChecking) {
+    public TaskRuntime<?> poll(OptimizerThread thread, boolean needQuotaChecking) {
       if (lock.tryLock()) {
         try {
           TaskRuntime<?> task = null;
@@ -452,6 +454,7 @@ public class OptimizingQueue extends PersistentBase {
             optimizingTasksMap
                 .computeIfAbsent(tableRuntime.getTableIdentifier(), k -> new AtomicInteger(0))
                 .incrementAndGet();
+            task.schedule(thread);
           }
           return task;
         } finally {
@@ -543,6 +546,34 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
+    private void ackTask(OptimizingTaskId taskId, OptimizerThread thread) {
+      TaskRuntime<?> taskRuntime = getTaskRuntime(taskId);
+      lock.lock();
+      try {
+        taskRuntime.ack(thread);
+      } finally {
+        lock.unlock();
+      }
+    }
+
+    private void completeTask(OptimizerThread thread, OptimizingTaskResult result) {
+      TaskRuntime<?> taskRuntime = getTaskRuntime(result.getTaskId());
+      lock.lock();
+      try {
+        taskRuntime.complete(thread, result);
+      } finally {
+        lock.unlock();
+      }
+    }
+
+    private TaskRuntime<?> getTaskRuntime(OptimizingTaskId taskId) {
+      TaskRuntime<?> taskRuntime = getTaskMap().get(taskId);
+      if (taskRuntime == null) {
+        throw new TaskNotFoundException(taskId);
+      }
+      return taskRuntime;
+    }
+
     private void acceptResult(TaskRuntime<?> taskRuntime) {
       lock.lock();
       try {
@@ -607,6 +638,16 @@ public class OptimizingQueue extends PersistentBase {
             }
           }
         }
+      } finally {
+        lock.unlock();
+      }
+    }
+
+    private void resetTask(TaskRuntime<RewriteStageTask> taskRuntime) {
+      lock.lock();
+      try {
+        taskRuntime.reset();
+        taskQueue.add(taskRuntime);
       } finally {
         lock.unlock();
       }
