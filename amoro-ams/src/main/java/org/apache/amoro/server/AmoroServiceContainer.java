@@ -136,7 +136,14 @@ public class AmoroServiceContainer {
         } catch (Exception e) {
           LOG.error("AMS start error", e);
         } finally {
-          service.disposeOptimizingService();
+          try {
+            service.disposeOptimizingService();
+          } catch (Exception e) {
+            LOG.warn("AMS dispose error", e);
+          } finally {
+            // if HA enabled, make sure the dispose complete signal is sent to ZK
+            service.signalDisposeComplete();
+          }
         }
       }
     } catch (Throwable t) {
@@ -151,6 +158,10 @@ public class AmoroServiceContainer {
 
   public void waitFollowerShip() throws Exception {
     haContainer.waitFollowerShip();
+  }
+
+  public void signalDisposeComplete() {
+    haContainer.signalDisposeComplete();
   }
 
   public void startRestServices() throws Exception {

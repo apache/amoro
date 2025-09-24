@@ -26,6 +26,7 @@ public class AmsHAProperties {
   private static final String TABLE_SERVICE_MASTER_PATH = "/master";
   private static final String OPTIMIZING_SERVICE_MASTER_PATH = "/optimizing-service-master";
   private static final String NAMESPACE_DEFAULT = "default";
+  private static final String MASTER_RELEASE_CONFIRM = "/master-release-confirm";
 
   private static String getBasePath(String namespace) {
     if (Strings.isNullOrEmpty(namespace)) {
@@ -40,6 +41,10 @@ public class AmsHAProperties {
 
   public static String getOptimizingServiceMasterPath(String namespace) {
     return getBasePath(namespace) + OPTIMIZING_SERVICE_MASTER_PATH;
+  }
+
+  public static String getMasterReleaseConfirmPath(String namespace) {
+    return getBasePath(namespace) + MASTER_RELEASE_CONFIRM;
   }
 
   public static String getLeaderPath(String namespace) {
