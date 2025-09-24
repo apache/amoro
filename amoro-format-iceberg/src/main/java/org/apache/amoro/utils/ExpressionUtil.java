@@ -164,7 +164,6 @@ public class ExpressionUtil {
    * only support `max` function, like `max(pt,1)` for partition, `max(day(ts),5)` for hidden
    * partition
    *
-   * @param expressLeft
    * @param func
    * @param partitionSpec
    * @param maxPartitionFunc
@@ -172,7 +171,6 @@ public class ExpressionUtil {
    */
   @SuppressWarnings({"cast", "rawtypes", "serial", "unchecked", "unused"})
   private static Expression applyFunc(
-      String expressLeft,
       net.sf.jsqlparser.expression.Function func,
       PartitionSpec partitionSpec,
       BiFunction<String, Integer, List<String>> maxPartitionFunc) {
@@ -186,13 +184,17 @@ public class ExpressionUtil {
         return Expressions.alwaysTrue();
       }
       int topN = Integer.parseInt(func.getParameters().get(1) + "");
-      List<String> values = maxPartitionFunc.apply(expressLeft, topN);
-      LOG.info("use max partition value: {} for column: {}", String.join(",", values), expressLeft);
+
       // like max(transformer(pt),1)
       if (func.getParameters().get(0) instanceof net.sf.jsqlparser.expression.Function) {
         net.sf.jsqlparser.expression.Function transformerFunc =
             (net.sf.jsqlparser.expression.Function) func.getParameters().get(0);
         String ptName = transformerFunc.getParameters().get(0).toString();
+        List<String> values = maxPartitionFunc.apply(ptName, topN);
+        LOG.info(
+            "use max partition value: {} for column: {}",
+            String.join(",", values),
+            func.getParameters().get(0).toString());
         PartitionField field =
             partitionSpec
                 .getFieldsBySourceId(partitionSpec.schema().findField(ptName).fieldId())
@@ -203,6 +205,8 @@ public class ExpressionUtil {
       } else {
         // like max(pt,1), and ptName should equal to 'left'
         String ptName = func.getParameters().get(0).toString();
+        List<String> values = maxPartitionFunc.apply(ptName, topN);
+        LOG.info("use partition value: {} for column: {}", String.join(",", values), ptName);
         return Expressions.in(ptName, values.toArray(new String[0]));
       }
     } else {
@@ -225,18 +229,7 @@ public class ExpressionUtil {
     } else if (whereExpr instanceof EqualsTo) {
       EqualsTo eq = (EqualsTo) whereExpr;
       Types.NestedField column = getColumn(eq.getLeftExpression(), tableColumns);
-      // support function expression, like  `max(pt,1)` for partition,  `max(day(ts),5)` for hidden
-      // partition
-      if (eq.getRightExpression() instanceof net.sf.jsqlparser.expression.Function) {
-        return applyFunc(
-            column.name(),
-            (net.sf.jsqlparser.expression.Function) eq.getRightExpression(),
-            partitionSpec,
-            maxPartitionFunc);
-      } else {
-        return Expressions.equal(column.name(), getValue(eq.getRightExpression(), column));
-      }
-
+      return Expressions.equal(column.name(), getValue(eq.getRightExpression(), column));
     } else if (whereExpr instanceof NotEqualsTo) {
       NotEqualsTo ne = (NotEqualsTo) whereExpr;
       Types.NestedField column = getColumn(ne.getLeftExpression(), tableColumns);
@@ -287,6 +280,11 @@ public class ExpressionUtil {
       return Expressions.or(
           convertSparkExpressionToIceberg(or.getLeftExpression(), tableColumns, partitionSpec),
           convertSparkExpressionToIceberg(or.getRightExpression(), tableColumns, partitionSpec));
+    } else if (whereExpr instanceof net.sf.jsqlparser.expression.Function) {
+      // support function expression, like  `max(pt,1)` for partition,  `max(day(ts),5)` for hidden
+      // partition
+      return applyFunc(
+          (net.sf.jsqlparser.expression.Function) whereExpr, partitionSpec, maxPartitionFunc);
     }
     throw new UnsupportedOperationException("Unsupported expression: " + whereExpr);
   }

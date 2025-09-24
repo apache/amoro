@@ -54,15 +54,15 @@ public class TestExpressionUtil {
 
     assertEqualExpressions(
         Expressions.in(Expressions.day("ts"), "2023-01-01", "2023-02-02"),
-        convertSqlFilterToIcebergExpression("pt=max(day(ts),5)", fields, partitionSpec, func));
-
-    assertEqualExpressions(
-        Expressions.alwaysTrue(),
-        convertSqlFilterToIcebergExpression("pt=max(day(ts),5, 10)", fields, partitionSpec, func));
+        convertSqlFilterToIcebergExpression("max(day(ts),5)", fields, partitionSpec, func));
 
     assertEqualExpressions(
         Expressions.in("pt", "2023-01-01", "2023-02-02"),
-        convertSqlFilterToIcebergExpression("pt=max(pt,5)", fields, partitionSpec, func));
+        convertSqlFilterToIcebergExpression("max(pt,5)", fields, partitionSpec, func));
+
+    assertEqualExpressions(
+        Expressions.alwaysTrue(),
+        convertSqlFilterToIcebergExpression("max(day(ts),5, 10)", fields, partitionSpec, func));
 
     assertEqualExpressions(
         Expressions.isNull("column_a"),
