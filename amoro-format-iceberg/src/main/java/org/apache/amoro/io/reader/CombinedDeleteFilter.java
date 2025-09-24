@@ -331,23 +331,22 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     Schema deleteSchema = deleteSchemaEntry.getValue();
     Iterable<DeleteFile> eqDeletes = eqDeleteFilesByDeleteIds.get(ids);
 
-    InternalRecordWrapper internalRecordWrapper =
-        new InternalRecordWrapper(deleteSchema.asStruct());
     StructLikeBaseMap<Long> structLikeMap =
         structLikeCollections.createStructLikeMap(deleteSchema.asStruct());
     structMapCloseable.add(structLikeMap);
 
     for (DeleteFile deleteFile : eqDeletes) {
       for (StructLike record : openEqualityDeletes(deleteFile, deleteSchema)) {
-        StructLike deletePK = internalRecordWrapper.copyFor(record);
-        if (filterEqDelete && !bloomFilter.mightContain(deletePK)) {
+        if (filterEqDelete && !bloomFilter.mightContain(record)) {
           continue;
         }
         Long lsn = deleteFile.dataSequenceNumber();
-        structLikeMap.merge(deletePK, lsn, Math::max);
+        structLikeMap.merge(record, lsn, Math::max);
       }
     }
 
+    InternalRecordWrapper internalRecordWrapper =
+        new InternalRecordWrapper(deleteSchema.asStruct());
     return structForDelete -> {
       StructProjection deleteProjection =
           StructProjection.create(requiredSchema, deleteSchema).wrap(structForDelete.getPk());

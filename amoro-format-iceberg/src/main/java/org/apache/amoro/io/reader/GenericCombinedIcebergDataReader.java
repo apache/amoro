@@ -68,7 +68,6 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
   protected final EncryptionManager encryptionManager;
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final boolean reuseContainer;
-  protected final String deleteGroup;
   protected CombinedDeleteFilter<Record> deleteFilter;
 
   protected PartitionSpec spec;
@@ -96,7 +95,6 @@ public class GenericCombinedIcebergDataReader implements OptimizingDataReader {
     this.convertConstant = convertConstant;
     this.reuseContainer = reuseContainer;
     this.input = rewriteFilesInput;
-    this.deleteGroup = deleteGroup;
     this.deleteFilter =
         new GenericDeleteFilter(rewriteFilesInput, tableSchema, structLikeCollections, deleteGroup);
   }
