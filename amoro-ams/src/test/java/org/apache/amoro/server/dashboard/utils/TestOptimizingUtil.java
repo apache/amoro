@@ -98,7 +98,9 @@ public class TestOptimizingUtil extends AMSTableTestBase {
     Assert.assertEquals(
         1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
     Assert.assertNotNull(task);
-    queue.completeTask(optimizerThread, buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
+    queue.completeTask(
+        optimizerThread,
+        buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
 
     List<TaskRuntime.TaskQuota> quotas = new ArrayList<>();
