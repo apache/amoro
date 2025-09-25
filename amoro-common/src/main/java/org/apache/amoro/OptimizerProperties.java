@@ -40,7 +40,7 @@ public class OptimizerProperties {
   public static final String MAX_INPUT_FILE_SIZE_PER_THREAD = "max-input-file-size-per-thread";
   public static final Long MAX_INPUT_FILE_SIZE_PER_THREAD_DEFAULT = 512 * 1024 * 1024L; // 512MB
   public static final String OPTIMIZER_CACHE_ENABLED = "cache-enabled";
-  public static final boolean OPTIMIZER_CACHE_ENABLED_DEFAULT = true;
+  public static final boolean OPTIMIZER_CACHE_ENABLED_DEFAULT = false;
   public static final String OPTIMIZER_CACHE_MAX_ENTRY_SIZE = "cache-max-entry-size";
   public static final String OPTIMIZER_CACHE_MAX_ENTRY_SIZE_DEFAULT = "64mb";
   public static final String OPTIMIZER_CACHE_MAX_TOTAL_SIZE = "cache-max-total-size";
