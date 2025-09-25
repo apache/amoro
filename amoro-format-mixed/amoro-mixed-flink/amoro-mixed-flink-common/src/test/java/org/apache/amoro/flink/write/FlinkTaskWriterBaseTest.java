@@ -92,7 +92,7 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
     } else {
       records =
           recordsOfUnkeyedTable(
-              getTableLoader(getCatalogName(), getMetastoreUrl(), mixedTable),
+              getTableLoader(getCatalogName(), getMetastoreUri(), mixedTable),
               selectedSchema,
               flinkTableSchema);
     }
@@ -101,7 +101,7 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
   }
 
   /** For asserting unkeyed table records. */
-  String getMetastoreUrl();
+  String getMetastoreUri();
 
   /** For asserting unkeyed table records. */
   String getCatalogName();

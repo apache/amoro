@@ -74,16 +74,16 @@ public abstract class CatalogTestBase {
 
   protected MixedFormatCatalog getMixedFormatCatalog() {
     if (mixedFormatCatalog == null) {
-      mixedFormatCatalog = CatalogLoader.load(getCatalogUrl());
+      mixedFormatCatalog = CatalogLoader.load(getCatalogUri());
     }
     return mixedFormatCatalog;
   }
 
   protected void refreshMixedFormatCatalog() {
-    this.mixedFormatCatalog = CatalogLoader.load(getCatalogUrl());
+    this.mixedFormatCatalog = CatalogLoader.load(getCatalogUri());
   }
 
-  protected String getCatalogUrl() {
+  protected String getCatalogUri() {
     return TEST_AMS.getServerUrl() + "/" + catalogMeta.getCatalogName();
   }
 

@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink;
 
-import static org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER;
+import static org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER;
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
@@ -94,7 +94,7 @@ public class FlinkTestBase extends TableTestBase {
 
   @Rule public TestName name = new TestName();
 
-  public static String metastoreUrl;
+  public static String metastoreUri;
 
   protected static final int KAFKA_PARTITION_NUMS = 1;
 
@@ -120,14 +120,14 @@ public class FlinkTestBase extends TableTestBase {
 
   @Before
   public void before() throws Exception {
-    metastoreUrl = getCatalogUrl();
-    catalogBuilder = InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
+    metastoreUri = getCatalogUri();
+    catalogBuilder = InternalCatalogBuilder.builder().amsUri(metastoreUri);
   }
 
   public void config() {
     props = Maps.newHashMap();
-    props.put("type", LEGACY_MIXED_IDENTIFIER);
-    props.put(CatalogFactoryOptions.METASTORE_URL.key(), metastoreUrl);
+    props.put("type", MIXED_ICEBERG_IDENTIFIER);
+    props.put(CatalogFactoryOptions.AMS_URI.key(), metastoreUri);
   }
 
   public static void prepare() throws Exception {

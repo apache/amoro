@@ -222,7 +222,7 @@ CREATE TEMPORARY TABLE Customers (
     zip STRING
 ) WITH (
     'connector' = 'mixed-format',
-    'metastore.url' = '',
+    'ams.uri' = '',
     'mixed-format.catalog' = '',
     'mixed-format.database' = '',
     'mixed-format.table' = '',

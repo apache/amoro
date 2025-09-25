@@ -18,17 +18,57 @@
 
 package org.apache.amoro.flink.catalog.factories.mixed;
 
+import static org.apache.amoro.flink.table.OptionsUtil.getCatalogProperties;
+
+import org.apache.amoro.flink.InternalCatalogBuilder;
 import org.apache.amoro.flink.catalog.MixedCatalog;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
+import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.table.catalog.Catalog;
+import org.apache.flink.table.catalog.CommonCatalogOptions;
+import org.apache.flink.table.factories.CatalogFactory;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * The factory to create {@link MixedCatalog} with {@link
  * CatalogFactoryOptions#MIXED_ICEBERG_IDENTIFIER} identifier.
  */
-public class MixedIcebergCatalogFactory extends MixedCatalogFactory {
+public class MixedIcebergCatalogFactory implements CatalogFactory {
 
   @Override
   public String factoryIdentifier() {
     return CatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER;
+  }
+
+  @Override
+  public Catalog createCatalog(Context context) {
+
+    final String defaultDatabase =
+        context
+            .getOptions()
+            .getOrDefault(CommonCatalogOptions.DEFAULT_DATABASE_KEY, MixedCatalog.DEFAULT_DB);
+    final String amsUri = context.getOptions().get(CatalogFactoryOptions.AMS_URI.key());
+    final Map<String, String> catalogProperties = getCatalogProperties(context.getOptions());
+
+    final InternalCatalogBuilder catalogBuilder =
+        InternalCatalogBuilder.builder()
+            .amsUri(amsUri)
+            .catalogName(context.getName())
+            .properties(catalogProperties);
+
+    return new MixedCatalog(context.getName(), defaultDatabase, catalogBuilder);
+  }
+
+  @Override
+  public Set<ConfigOption<?>> requiredOptions() {
+    return Collections.emptySet();
+  }
+
+  @Override
+  public Set<ConfigOption<?>> optionalOptions() {
+    return Collections.emptySet();
   }
 }

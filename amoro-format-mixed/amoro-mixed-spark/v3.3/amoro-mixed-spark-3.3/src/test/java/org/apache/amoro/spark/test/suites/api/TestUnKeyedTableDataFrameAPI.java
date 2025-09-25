@@ -122,8 +122,8 @@ public class TestUnKeyedTableDataFrameAPI extends MixedTableTestBase {
                     RowFactory.create(2, "bbb", "bbb"),
                     RowFactory.create(3, "ccc", "ccc")),
                 structType);
-    df.write().format("arctic").partitionBy("day").save(tablePath);
-    df = spark().read().format("arctic").load(tablePath);
+    df.write().format(provider(format)).partitionBy("day").save(tablePath);
+    df = spark().read().format(format.name()).load(tablePath);
     Assertions.assertEquals(3, df.count());
 
     // test overwrite dynamic
@@ -136,12 +136,12 @@ public class TestUnKeyedTableDataFrameAPI extends MixedTableTestBase {
                     RowFactory.create(6, "ccc", "ccc")),
                 structType);
     df.write()
-        .format("arctic")
+        .format(provider(format))
         .partitionBy("day")
         .option("overwrite-mode", "dynamic")
         .mode(SaveMode.Overwrite)
         .save(tablePath);
-    df = spark().read().format("arctic").load(tablePath);
+    df = spark().read().format(provider(format)).load(tablePath);
     Assertions.assertEquals(5, df.count());
   }
 }
