@@ -34,7 +34,6 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestBase;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
-import org.apache.amoro.flink.table.MixedDynamicTableFactory;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
@@ -92,8 +91,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   @Parameterized.Parameters(name = "catalogFactoryType = {0}")
   public static Object[] parameters() {
     return new Object[] {
-      CatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER,
-      CatalogFactoryOptions.MIXED_HIVE_IDENTIFIER
+      CatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER, CatalogFactoryOptions.MIXED_HIVE_IDENTIFIER
     };
   }
 

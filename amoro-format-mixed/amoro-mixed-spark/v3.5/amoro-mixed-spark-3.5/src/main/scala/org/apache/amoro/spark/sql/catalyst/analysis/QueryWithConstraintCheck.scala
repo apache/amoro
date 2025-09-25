@@ -80,8 +80,8 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
   private def isCreateKeyedTable(catalog: CatalogPlugin, tableSpec: TableSpec): Boolean = {
     catalog match {
       case _: MixedFormatSparkCatalog | _: MixedFormatSparkSessionCatalog[_]
-        if tableSpec.provider.exists(isMixedFormatProvider) &&
-          tableSpec.properties.contains("primary.keys") => true
+          if tableSpec.provider.exists(isMixedFormatProvider) &&
+            tableSpec.properties.contains("primary.keys") => true
       case _ => false
     }
   }

@@ -73,9 +73,7 @@ public class FlinkUnifiedCatalogITCase extends CatalogITCaseBase {
   @Before
   public void setup() throws Exception {
     String catalog = "unified_catalog";
-    exec(
-        "CREATE CATALOG %s WITH ('type'='unified', 'ams.uri'='%s')",
-        catalog, getCatalogUri());
+    exec("CREATE CATALOG %s WITH ('type'='unified', 'ams.uri'='%s')", catalog, getCatalogUri());
     exec("USE CATALOG %s", catalog);
     exec("USE %s", tableTestHelper().id().getDatabase());
     Optional<Catalog> catalogOptional = getTableEnv().getCatalog(catalog);
