@@ -33,14 +33,14 @@ import java.util.Map;
 
 /** {@link AmsClient} implementation using client pool. */
 public class PooledAmsClient implements AmsClient {
-  private final String metastoreUri;
+  private final String metastoreUrl;
 
-  public PooledAmsClient(String metastoreUri) {
-    this.metastoreUri = metastoreUri;
+  public PooledAmsClient(String metastoreUrl) {
+    this.metastoreUrl = metastoreUrl;
   }
 
   private AmoroTableMetastore.Iface getIface() {
-    return AmsClientPools.getClientPool(metastoreUri).iface();
+    return AmsClientPools.getClientPool(metastoreUrl).iface();
   }
 
   @Override
