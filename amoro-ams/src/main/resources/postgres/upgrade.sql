@@ -212,3 +212,6 @@ SELECT table_id,'optimizing_state',
 FROM table_runtime_old;
 
 DROP TABLE IF EXISTS table_runtime_old;
+
+-- ADD bucket_id to table_runtime
+ALTER TABLE table_runtime ADD COLUMN bucket_id varchar(4);
