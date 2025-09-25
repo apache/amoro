@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 public class DeleteCache {
   private static final Logger LOG = LoggerFactory.getLogger(DeleteCache.class);
   public static final String DELETE_CACHE_ENABLED = "delete-cache-enabled";
-  public static final String DELETE_CACHE_ENABLED_DEFAULT = "true";
+  public static final String DELETE_CACHE_ENABLED_DEFAULT = "false";
   public static final String DELETE_CACHE_MAX_ENTRY_SIZE = "delete-cache-max-entry-size";
   public static final String DELETE_CACHE_MAX_ENTRY_SIZE_DEFAULT = "64mb";
   public static final String DELETE_CACHE_MAX_TOTAL_SIZE = "delete-cache-max-total-size";
@@ -136,7 +136,6 @@ public class DeleteCache {
         }
       }
     }
-
     return state;
   }
 

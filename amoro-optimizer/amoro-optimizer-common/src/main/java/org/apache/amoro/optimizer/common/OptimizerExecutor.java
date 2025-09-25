@@ -190,8 +190,8 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
   private static Map<String, String> fillTaskProperties(
       OptimizerConfig config, OptimizingTask task) {
-    if (!config.isCacheEnabled()) {
-      System.setProperty(DeleteCache.DELETE_CACHE_ENABLED, "false");
+    if (config.isCacheEnabled()) {
+      System.setProperty(DeleteCache.DELETE_CACHE_ENABLED, "true");
     }
     if (!config.getCacheMaxEntrySize().equals(DeleteCache.DELETE_CACHE_MAX_ENTRY_SIZE_DEFAULT)) {
       System.setProperty(DeleteCache.DELETE_CACHE_MAX_ENTRY_SIZE, config.getCacheMaxEntrySize());
