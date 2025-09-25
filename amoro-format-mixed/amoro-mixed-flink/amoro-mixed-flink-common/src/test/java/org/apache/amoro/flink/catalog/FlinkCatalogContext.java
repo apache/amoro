@@ -18,7 +18,7 @@
 
 package org.apache.amoro.flink.catalog;
 
-import static org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions.METASTORE_URL;
+import static org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions.AMS_URI;
 import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.TABLE_FORMAT;
 
 import org.apache.amoro.TableFormat;
@@ -114,7 +114,7 @@ public class FlinkCatalogContext {
     TEST_AMS.getAmsHandler().dropCatalog(meta.getCatalogName());
     TEST_AMS.getAmsHandler().createCatalog(meta);
 
-    factoryOptions.put(METASTORE_URL.key(), TEST_AMS.getServerUrl() + "/" + meta.getCatalogName());
+    factoryOptions.put(AMS_URI.key(), TEST_AMS.getServerUrl() + "/" + meta.getCatalogName());
     final FactoryUtil.DefaultCatalogContext context =
         new FactoryUtil.DefaultCatalogContext(
             "FLINK_" + tableFormat,

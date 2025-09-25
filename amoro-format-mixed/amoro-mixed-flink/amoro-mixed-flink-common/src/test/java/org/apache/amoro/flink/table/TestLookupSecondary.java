@@ -67,7 +67,7 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
       db = dbs.get(0);
     }
     exec(
-        "create catalog mixed_catalog with ('type'='arctic', 'metastore.url'='%s')",
+        "create catalog mixed_catalog with ('type'='mixed_iceberg', 'ams.uri'='%s')",
         getCatalogUri());
     exec(
         "create table mixed_catalog.%s.L (id int) "

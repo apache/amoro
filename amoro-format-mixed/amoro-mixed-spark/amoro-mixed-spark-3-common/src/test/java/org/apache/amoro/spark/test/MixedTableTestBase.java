@@ -67,12 +67,6 @@ public class MixedTableTestBase extends SparkTestBase {
     return catalog().loadTable(target().toAmoroIdentifier());
   }
 
-  public String provider(TableFormat format) {
-    Preconditions.checkArgument(
-        format == TableFormat.MIXED_HIVE || format == TableFormat.MIXED_ICEBERG);
-    return "arctic";
-  }
-
   public MixedTable createMixedFormatSource(Schema schema, Consumer<TableBuilder> consumer) {
     TestIdentifier identifier =
         TestIdentifier.ofDataLake(currentCatalog, catalog().name(), database(), sourceTable, true);

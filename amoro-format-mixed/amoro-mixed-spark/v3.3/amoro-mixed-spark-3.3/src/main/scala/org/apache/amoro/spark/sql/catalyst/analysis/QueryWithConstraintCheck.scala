@@ -69,26 +69,27 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
       c.copy(query = checkDataQuery)
   }
 
-  def checkDuplicatesEnabled(): Boolean = {
+  private def checkDuplicatesEnabled(): Boolean = {
     java.lang.Boolean.valueOf(spark.sessionState.conf.getConfString(
       SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE,
       SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT))
   }
 
-  def isCreateKeyedTable(catalog: CatalogPlugin, tableSpec: TableSpec): Boolean = {
+  private def isCreateKeyedTable(catalog: CatalogPlugin, tableSpec: TableSpec): Boolean = {
     catalog match {
-      case _: MixedFormatSparkCatalog =>
-        tableSpec.provider.isDefined && tableSpec.provider.get.equalsIgnoreCase(
-          "arctic") && tableSpec.properties.contains("primary.keys")
-      case _: MixedFormatSparkSessionCatalog[_] =>
-        tableSpec.provider.isDefined && tableSpec.provider.get.equalsIgnoreCase(
-          "arctic") && tableSpec.properties.contains("primary.keys")
-      case _ =>
-        false
+      case _: MixedFormatSparkCatalog | _: MixedFormatSparkSessionCatalog[_]
+        if tableSpec.provider.exists(isMixedFormatProvider) &&
+          tableSpec.properties.contains("primary.keys") => true
+      case _ => false
     }
   }
 
-  def buildValidatePrimaryKeyDuplication(
+  private def isMixedFormatProvider(provider: String): Boolean = {
+    val providerLower = provider.toLowerCase
+    providerLower == "mixed_iceberg" || providerLower == "mixed_hive"
+  }
+
+  private def buildValidatePrimaryKeyDuplication(
       r: DataSourceV2Relation,
       query: LogicalPlan): LogicalPlan = {
     r.table match {
@@ -109,7 +110,7 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
     }
   }
 
-  def buildValidatePrimaryKeyDuplicationByPrimaries(
+  private def buildValidatePrimaryKeyDuplicationByPrimaries(
       primaries: Array[String],
       query: LogicalPlan): LogicalPlan = {
     val attributes = query.output.filter(p => primaries.contains(p.name))
@@ -122,7 +123,7 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
     Filter(havingExpr, aggPlan)
   }
 
-  protected def findOutputAttr(attrs: Seq[Attribute], attrName: String): Attribute = {
+  private def findOutputAttr(attrs: Seq[Attribute], attrName: String): Attribute = {
     attrs.find(attr => resolver(attr.name, attrName)).getOrElse {
       throw new UnsupportedOperationException(s"Cannot find $attrName in $attrs")
     }

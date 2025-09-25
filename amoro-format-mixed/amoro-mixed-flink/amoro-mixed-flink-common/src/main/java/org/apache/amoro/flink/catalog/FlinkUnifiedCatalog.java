@@ -31,7 +31,8 @@ import org.apache.amoro.client.AmsThriftUrl;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.flink.catalog.factories.FlinkUnifiedCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.iceberg.IcebergFlinkCatalogFactory;
-import org.apache.amoro.flink.catalog.factories.mixed.MixedCatalogFactory;
+import org.apache.amoro.flink.catalog.factories.mixed.MixedHiveCatalogFactory;
+import org.apache.amoro.flink.catalog.factories.mixed.MixedIcebergCatalogFactory;
 import org.apache.amoro.flink.catalog.factories.paimon.PaimonFlinkCatalogFactory;
 import org.apache.amoro.flink.table.UnifiedDynamicTableFactory;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -493,8 +494,10 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   private AbstractCatalog createOriginalCatalog(
       TableIdentifier tableIdentifier, TableFormat tableFormat) {
     CatalogFactory catalogFactory;
-    if (tableFormat.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)) {
-      catalogFactory = new MixedCatalogFactory();
+    if (tableFormat.equals(TableFormat.MIXED_ICEBERG)) {
+      catalogFactory = new MixedIcebergCatalogFactory();
+    } else if (tableFormat.equals(TableFormat.MIXED_HIVE)) {
+      catalogFactory = new MixedHiveCatalogFactory();
     } else if (tableFormat.equals(TableFormat.ICEBERG)) {
       catalogFactory = new IcebergFlinkCatalogFactory(hadoopConf);
     } else if (tableFormat.equals(TableFormat.PAIMON)) {
