@@ -82,7 +82,7 @@ public class SparkTestBase {
     return ImmutableMap.of(
         "spark.sql.catalog.spark_catalog",
         SparkTestContext.SESSION_CATALOG_IMPL,
-        "spark.sql.catalog.spark_catalog.uri",
+        "spark.sql.catalog.spark_catalog.ams.uri",
         CONTEXT.amsCatalogUrl(TableFormat.MIXED_HIVE));
   }
 
@@ -131,7 +131,7 @@ public class SparkTestBase {
     try {
       uri = spark().conf().get("spark.sql.catalog." + sparkCatalog + ".ams.uri");
     } catch (NoSuchElementException e) {
-      uri = spark().conf().get("spark.sql.catalog." + sparkCatalog + ".url");
+      uri = spark().conf().get("spark.sql.catalog." + sparkCatalog + ".uri");
     }
     AmsThriftUrl catalogUri = AmsThriftUrl.parse(uri, Constants.THRIFT_TABLE_SERVICE_NAME);
     return catalogUri.catalogName();
