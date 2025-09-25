@@ -440,26 +440,31 @@ public class OptimizingQueue extends PersistentBase {
     private boolean hasCommitted = false;
 
     public TaskRuntime<?> poll(OptimizerThread thread, boolean needQuotaChecking) {
-      if (lock.tryLock()) {
-        try {
-          TaskRuntime<?> task = null;
-          if (status != ProcessStatus.KILLED && status != ProcessStatus.FAILED) {
-            int actualQuota = getActualQuota();
-            int quotaLimit = getQuotaLimit();
-            if (!needQuotaChecking || actualQuota < quotaLimit) {
-              task = taskQueue.poll();
+      try {
+        // Wait 10ms here for some light operation like poll/ack
+        if (lock.tryLock(10, TimeUnit.MILLISECONDS)) {
+          try {
+            TaskRuntime<?> task = null;
+            if (status != ProcessStatus.KILLED && status != ProcessStatus.FAILED) {
+              int actualQuota = getActualQuota();
+              int quotaLimit = getQuotaLimit();
+              if (!needQuotaChecking || actualQuota < quotaLimit) {
+                task = taskQueue.poll();
+              }
             }
+            if (task != null) {
+              optimizingTasksMap
+                  .computeIfAbsent(tableRuntime.getTableIdentifier(), k -> new AtomicInteger(0))
+                  .incrementAndGet();
+              task.schedule(thread);
+            }
+            return task;
+          } finally {
+            lock.unlock();
           }
-          if (task != null) {
-            optimizingTasksMap
-                .computeIfAbsent(tableRuntime.getTableIdentifier(), k -> new AtomicInteger(0))
-                .incrementAndGet();
-            task.schedule(thread);
-          }
-          return task;
-        } finally {
-          lock.unlock();
         }
+      } catch (InterruptedException e) {
+        // ignore it.
       }
       return null;
     }
