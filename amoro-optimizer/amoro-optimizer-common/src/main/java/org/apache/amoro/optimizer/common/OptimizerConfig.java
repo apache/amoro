@@ -80,7 +80,7 @@ public class OptimizerConfig implements Serializable {
   private String resourceId;
 
   @Option(
-      name = "-dce",
+      name = "-ce",
       aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_ENABLED,
       usage = "Whether enable cache, default false")
   private boolean cacheEnabled = OptimizerProperties.OPTIMIZER_CACHE_ENABLED_DEFAULT;
