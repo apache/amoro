@@ -110,7 +110,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   public void before() throws Exception {
     props = Maps.newHashMap();
     props.put("type", catalogFactoryType);
-    props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
+    props.put(CatalogFactoryOptions.AMS_URI.key(), getCatalogUri());
     sql("CREATE CATALOG " + catalogName + " WITH %s", toWithClause(props));
     sql("USE CATALOG " + catalogName);
     sql("CREATE DATABASE " + catalogName + "." + DB);
@@ -407,7 +407,7 @@ public class TestMixedCatalog extends CatalogTestBase {
       // create Table with compute columns under default catalog
       props = Maps.newHashMap();
       props.put("connector", MixedDynamicTableFactory.IDENTIFIER);
-      props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
+      props.put(CatalogFactoryOptions.AMS_URI.key(), getCatalogUri());
       props.put(MixedDynamicTableFactory.IDENTIFIER + ".catalog", catalogName);
       props.put(MixedDynamicTableFactory.IDENTIFIER + ".database", DB);
       props.put(MixedDynamicTableFactory.IDENTIFIER + ".table", TABLE);

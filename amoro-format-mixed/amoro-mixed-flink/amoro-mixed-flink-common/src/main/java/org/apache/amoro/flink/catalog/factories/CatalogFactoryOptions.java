@@ -22,6 +22,7 @@ import static org.apache.amoro.properties.CatalogMetaProperties.TABLE_FORMATS;
 
 import org.apache.amoro.flink.catalog.FlinkUnifiedCatalog;
 import org.apache.amoro.flink.catalog.MixedCatalog;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
@@ -31,11 +32,10 @@ import org.apache.flink.configuration.ConfigOptions;
 public class CatalogFactoryOptions {
   public static final String MIXED_ICEBERG_IDENTIFIER = "mixed_iceberg";
   public static final String MIXED_HIVE_IDENTIFIER = "mixed_hive";
-  @Deprecated public static final String LEGACY_MIXED_IDENTIFIER = "arctic";
   public static final String UNIFIED_IDENTIFIER = "unified";
 
-  public static final ConfigOption<String> METASTORE_URL =
-      ConfigOptions.key("metastore.url").stringType().noDefaultValue();
+  public static final ConfigOption<String> AMS_URI =
+      ConfigOptions.key(CatalogMetaProperties.AMS_URI).stringType().noDefaultValue();
 
   public static final ConfigOption<String> FLINK_TABLE_FORMATS =
       ConfigOptions.key(TABLE_FORMATS)

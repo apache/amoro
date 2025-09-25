@@ -129,7 +129,7 @@ public class SparkTestBase {
   protected String sparkCatalogToAMSCatalog(String sparkCatalog) {
     String uri = null;
     try {
-      uri = spark().conf().get("spark.sql.catalog." + sparkCatalog + ".uri");
+      uri = spark().conf().get("spark.sql.catalog." + sparkCatalog + ".ams.uri");
     } catch (NoSuchElementException e) {
       uri = spark().conf().get("spark.sql.catalog." + sparkCatalog + ".url");
     }

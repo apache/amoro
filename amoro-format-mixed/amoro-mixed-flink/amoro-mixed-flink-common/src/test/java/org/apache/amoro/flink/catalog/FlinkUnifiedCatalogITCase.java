@@ -75,7 +75,7 @@ public class FlinkUnifiedCatalogITCase extends CatalogITCaseBase {
     String catalog = "unified_catalog";
     exec(
         "CREATE CATALOG %s WITH ('type'='unified', 'metastore.url'='%s')",
-        catalog, getCatalogUrl());
+        catalog, getCatalogUri());
     exec("USE CATALOG %s", catalog);
     exec("USE %s", tableTestHelper().id().getDatabase());
     Optional<Catalog> catalogOptional = getTableEnv().getCatalog(catalog);

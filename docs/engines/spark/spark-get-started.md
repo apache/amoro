@@ -55,10 +55,10 @@ spark-shell --packages org.apache.amoro:amoro-mixed-spark-3.3-runtime:0.7.0
 ${SPARK_HOME}/bin/spark-sql \
     --conf spark.sql.extensions=org.apache.amoro.spark.MixedFormatSparkExtensions \
     --conf spark.sql.catalog.local_catalog=org.apache.amoro.spark.MixedFormatSparkCatalog \
-    --conf spark.sql.catalog.local_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
+    --conf spark.sql.catalog.local_catalog.ams.uri=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
 ```
 
-> Amoro manages the Catalog through AMS, and Spark catalog needs to be mapped to Amoro Catalog via URL,
+> Amoro manages the Catalog through AMS, and Spark catalog needs to be mapped to Amoro Catalog via URI,
 > in the following format:
 > `thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}`,
 > The mixed-format-spark-connector will automatically download the Hadoop site configuration file through
