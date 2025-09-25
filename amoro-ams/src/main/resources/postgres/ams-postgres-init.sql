@@ -176,7 +176,8 @@ create table if not exists table_runtime (
     status_code         int not null default 700,
     status_code_update_time timestamptz not null default now(),
     table_config        text,
-    table_summary       text
+    table_summary       text,
+    bucket_id           varchar(4)
 );
 
 create index if not exists idx_status_and_time
@@ -187,7 +188,7 @@ comment on column table_runtime.status_code is 'Table runtime status code.';
 comment on column table_runtime.status_code_update_time is 'Table runtime status code update time';
 comment on column table_runtime.table_config is 'table configuration cached from table.properties';
 comment on column table_runtime.table_summary is 'table summary for ams';
-
+comment on column table_runtime.bucket_id is 'Bucket number to which the record table belongs';
 
 create table if not exists table_runtime_state (
     state_id      bigserial primary key,
