@@ -26,6 +26,7 @@ import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.cleanup.CleanupOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +47,16 @@ public class DanglingDeleteFilesCleaningExecutor extends PeriodicTableScheduler 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
     return INTERVAL;
+  }
+
+  @Override
+  protected boolean shouldExecute(Long lastCleanupEndTime) {
+    return System.currentTimeMillis() - lastCleanupEndTime >= INTERVAL;
+  }
+
+  @Override
+  protected CleanupOperation getCleanupOperation() {
+    return CleanupOperation.DANGLING_DELETE_FILES_CLEANING;
   }
 
   @Override
