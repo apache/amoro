@@ -20,12 +20,18 @@ package org.apache.amoro.table.descriptor;
 
 import org.apache.amoro.utils.CommonUtil;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class PartitionBaseInfo {
   String partition;
   int specId;
   long fileCount = 0;
   long fileSize = 0;
   long lastCommitTime = 0;
+
+  /** detailed properties used for evaluating */
+  Map<String, Object> detailProperties = new HashMap<>();
 
   // parameters needed for front-end only
   String size;
@@ -84,5 +90,24 @@ public class PartitionBaseInfo {
 
   public String getSize() {
     return this.size;
+  }
+
+  public Object getPropertyOrDefault(String item, Object defaultValue) {
+    return detailProperties.getOrDefault(item, defaultValue);
+  }
+
+  public void setProperty(String item, Object value) {
+    detailProperties.put(item, value);
+  }
+
+  public boolean containsProperty(String item) {
+    return detailProperties.containsKey(item);
+  }
+
+  @Override
+  public String toString() {
+    return String.format(
+        "PartitionBaseInfo(partition=%s, specId=%d, fileCount=%d, fileSize=%d, lastCommitTime=%d, detailProperties=%s)",
+        partition, specId, fileCount, fileSize, lastCommitTime, detailProperties);
   }
 }
