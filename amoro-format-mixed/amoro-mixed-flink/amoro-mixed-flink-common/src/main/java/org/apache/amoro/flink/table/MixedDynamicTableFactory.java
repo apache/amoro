@@ -101,10 +101,10 @@ public class MixedDynamicTableFactory
       Preconditions.checkNotNull(
           actualCatalogName,
           String.format("%s should be set", MixedFormatValidator.MIXED_FORMAT_CATALOG.key()));
-      String metastoreUrl = options.get(CatalogFactoryOptions.METASTORE_URL);
+      String amsUri = options.get(CatalogFactoryOptions.AMS_URI);
       actualBuilder =
           InternalCatalogBuilder.builder()
-              .metastoreUrl(metastoreUrl)
+              .amsUri(amsUri)
               .catalogName(actualCatalogName)
               .properties(options.toMap());
     }
@@ -230,7 +230,7 @@ public class MixedDynamicTableFactory
     options.add(MixedFormatValidator.MIXED_FORMAT_TABLE);
     options.add(MixedFormatValidator.MIXED_FORMAT_DATABASE);
     options.add(MixedFormatValidator.DIM_TABLE_ENABLE);
-    options.add(CatalogFactoryOptions.METASTORE_URL);
+    options.add(CatalogFactoryOptions.AMS_URI);
 
     // lookup
     options.add(MixedFormatValidator.LOOKUP_CACHE_MAX_ROWS);

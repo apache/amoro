@@ -141,7 +141,7 @@ public class TestKeyedTableDataFrameAPI extends MixedTableTestBase {
         .option("overwrite-mode", "dynamic")
         .mode(SaveMode.Overwrite)
         .save(tablePath);
-    df = spark().read().format("arctic").load(tablePath);
+    df = spark().read().format(provider(format)).load(tablePath);
     Assert.assertEquals(3, df.count());
 
     df =

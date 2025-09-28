@@ -21,7 +21,6 @@ package org.apache.amoro.spark.test;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
-import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.PrimaryKeySpec;
@@ -65,12 +64,6 @@ public class MixedTableTestBase extends SparkTestBase {
 
   public MixedTable loadTable() {
     return catalog().loadTable(target().toAmoroIdentifier());
-  }
-
-  public String provider(TableFormat format) {
-    Preconditions.checkArgument(
-        format == TableFormat.MIXED_HIVE || format == TableFormat.MIXED_ICEBERG);
-    return "arctic";
   }
 
   public MixedTable createMixedFormatSource(Schema schema, Consumer<TableBuilder> consumer) {

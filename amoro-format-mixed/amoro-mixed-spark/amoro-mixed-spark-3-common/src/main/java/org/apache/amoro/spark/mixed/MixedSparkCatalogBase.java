@@ -25,6 +25,7 @@ import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 
 import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -71,12 +72,12 @@ public abstract class MixedSparkCatalogBase
     this.catalogName = name;
     Map<String, String> properties = Maps.newHashMap(options);
     if (tableMetaStore == null) {
-      String catalogUrl = options.get("url");
-      if (StringUtils.isBlank(catalogUrl)) {
-        catalogUrl = options.get("uri");
+      String catalogUri = options.get(CatalogMetaProperties.AMS_URI);
+      if (StringUtils.isBlank(catalogUri)) {
+        catalogUri = options.get("uri");
       }
-      if (catalogUrl != null) {
-        catalog = CatalogLoader.load(catalogUrl, properties);
+      if (catalogUri != null) {
+        catalog = CatalogLoader.load(catalogUri, properties);
       } else {
         Configuration localConfiguration =
             SparkUtil.hadoopConfCatalogOverrides(SparkSession.active(), name);

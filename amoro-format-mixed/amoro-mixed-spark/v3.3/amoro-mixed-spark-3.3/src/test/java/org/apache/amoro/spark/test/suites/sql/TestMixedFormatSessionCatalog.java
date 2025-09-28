@@ -58,9 +58,9 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
 
   public static Stream<Arguments> testCreateTable() {
     return Stream.of(
-        Arguments.arguments("arctic", true, "", "hive comment"),
-        Arguments.arguments("arctic", false, "pt", "hive comment"),
-        Arguments.arguments("arctic", true, "pt", "hive comment"),
+        Arguments.arguments("mixed_iceberg", true, "", "hive comment"),
+        Arguments.arguments("mixed_iceberg", false, "pt", "hive comment"),
+        Arguments.arguments("mixed_iceberg", true, "pt", "hive comment"),
         Arguments.arguments("parquet", false, "pt", null),
         Arguments.arguments("parquet", false, "dt string", null));
   }
@@ -85,7 +85,7 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
 
     sql(sqlText);
 
-    if ("arctic".equalsIgnoreCase(provider)) {
+    if ("mixed_iceberg".equalsIgnoreCase(provider)) {
       Assertions.assertTrue(tableExists());
     }
 
@@ -113,9 +113,9 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
 
   public static Stream<Arguments> testCreateTableAsSelect() {
     return Stream.of(
-        Arguments.arguments("arctic", true, "", true, "hive comment"),
-        Arguments.arguments("arctic", false, "pt", true, "hive comment"),
-        Arguments.arguments("arctic", true, "pt", false, "hive comment"),
+        Arguments.arguments("mixed_iceberg", true, "", true, "hive comment"),
+        Arguments.arguments("mixed_iceberg", false, "pt", true, "hive comment"),
+        Arguments.arguments("mixed_iceberg", true, "pt", false, "hive comment"),
         Arguments.arguments("parquet", false, "pt", false, "hive comment"),
         Arguments.arguments("parquet", false, "", false, "hive comment"));
   }
@@ -142,7 +142,7 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
     sqlText += " AS SELECT * FROM " + source();
 
     sql(sqlText);
-    if ("arctic".equalsIgnoreCase(provider)) {
+    if ("mixed_iceberg".equalsIgnoreCase(provider)) {
       Assertions.assertTrue(tableExists());
     }
 
