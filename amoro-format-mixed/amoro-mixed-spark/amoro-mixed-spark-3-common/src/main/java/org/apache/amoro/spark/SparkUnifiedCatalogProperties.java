@@ -18,9 +18,11 @@
 
 package org.apache.amoro.spark;
 
+import org.apache.amoro.properties.CatalogMetaProperties;
+
 /** Unified catalog properties. */
 public class SparkUnifiedCatalogProperties {
 
   /** AMS URI, to load unified catalog information. */
-  public static final String URI = "uri";
+  public static final String URI = CatalogMetaProperties.AMS_URI;
 }

@@ -219,13 +219,13 @@ public class SparkTestContext {
   private void addMixedSparkCatalog(
       Map<String, String> configs, String catalogName, TableFormat format) {
     configs.put("spark.sql.catalog." + catalogName, MIXED_CATALOG_IMPL);
-    configs.put("spark.sql.catalog." + catalogName + ".uri", amsCatalogUrl(format));
+    configs.put("spark.sql.catalog." + catalogName + ".ams.uri", amsCatalogUrl(format));
   }
 
   private void addUnifiedSparkCatalog(
       Map<String, String> configs, String catalogName, TableFormat format) {
     configs.put("spark.sql.catalog." + catalogName, UNIFIED_CATALOG_IMP);
-    configs.put("spark.sql.catalog." + catalogName + ".uri", amsCatalogUrl(format));
+    configs.put("spark.sql.catalog." + catalogName + ".ams.uri", amsCatalogUrl(format));
   }
 
   private boolean isSameSparkConf(Map<String, String> sparkConf) {

@@ -81,7 +81,7 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
     return future;
   }
 
-  public void complete(OptimizerThread thread, OptimizingTaskResult result) {
+  void complete(OptimizerThread thread, OptimizingTaskResult result) {
     invokeConsistency(
         () -> {
           validThread(thread);
@@ -121,7 +121,7 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
         });
   }
 
-  public void schedule(OptimizerThread thread) {
+  void schedule(OptimizerThread thread) {
     invokeConsistency(
         () -> {
           statusMachine.accept(Status.SCHEDULED);
@@ -132,7 +132,7 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
         });
   }
 
-  public void ack(OptimizerThread thread) {
+  void ack(OptimizerThread thread) {
     invokeConsistency(
         () -> {
           validThread(thread);
