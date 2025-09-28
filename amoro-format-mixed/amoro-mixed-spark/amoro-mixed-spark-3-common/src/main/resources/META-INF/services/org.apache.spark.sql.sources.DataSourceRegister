@@ -16,6 +16,5 @@
 # limitations under the License.
 #
 
-org.apache.amoro.spark.mixed.ArcticDataSource
 org.apache.amoro.spark.mixed.MixedHiveDataSource
 org.apache.amoro.spark.mixed.MixedIcebergDataSource

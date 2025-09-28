@@ -43,7 +43,7 @@ Where `<catalog_name>` is the user-defined name of the Flink catalog, and `<conf
 | Key              | Default Value | Type    | Required | Description                                                                                                                                                                                                                              |
 |------------------|---------------|---------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | type             | N/A           | String  | Yes      | Catalog type, validate values are mixed_iceberg and mixed_hive                                                                                                                                                                           |
-| metastore.url    | (none)        | String  | No       | The URL for Amoro Metastore is thrift://`<ip>`:`<port>`/`<catalog_name_in_metastore>`.<br>If high availability is enabled for AMS, it can also be specified in the form of zookeeper://{zookeeper-server}/{cluster-name}/{catalog-name}. |
+| ams.uri          | (none)        | String  | No       | The URI for Amoro Metastore is thrift://`<ip>`:`<port>`/`<catalog_name_in_metastore>`.<br>If high availability is enabled for AMS, it can also be specified in the form of zookeeper://{zookeeper-server}/{cluster-name}/{catalog-name}. |
 | default-database | default       | String  | No       | The default database to use                                                                                                                                                                                                              |
 | property-version | 1             | Integer | No       | Catalog properties version, this option is for future backward compatibility                                                                                                                                                             |
 | catalog-type     | N/A           | String  | No       | Metastore type of the catalog, validate values are hadoop, hive, rest, custom                                                                                                                                                            |
@@ -68,7 +68,7 @@ Modify the `conf/sql-client-defaults.yaml` file in the Flink directory.
 catalogs:
 - name: <catalog_name>
   type: mixed_iceberg
-  metastore.url: ...
+  ams.uri: ...
   ...
 ```
 
@@ -130,13 +130,13 @@ CREATE TABLE `test_table` (
     PRIMARY KEY (id) NOT ENFORCED
 ) WITH (
     'connector' = 'mixed-format',
-    'metastore.url' = '',
+    'ams.uri' = '',
     'mixed_format.catalog' = '',
     'mixed_format.database' = '',
     'mixed_format.table' = ''
 );
 ```
-where `<metastore.url>` is the URL of the Amoro Metastore, and `mixed_format.catalog`, `mixed_format.database` and `mixed_format.table` are the catalog name, database name and table name of this table under the AMS, respectively.
+where `<ams.uri>` is the URI of the Amoro Metastore, and `mixed_format.catalog`, `mixed_format.database` and `mixed_format.table` are the catalog name, database name and table name of this table under the AMS, respectively.
 
 ### CREATE TABLE LIKE
 Create a table with the same table structure, partitions, and table properties as an existing table. This can be achieved using CREATE TABLE LIKE.

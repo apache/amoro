@@ -57,9 +57,9 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
 
   public static Stream<Arguments> testCreateTable() {
     return Stream.of(
-        Arguments.arguments("arctic", true, ""),
-        Arguments.arguments("arctic", false, "pt"),
-        Arguments.arguments("arctic", true, "pt"),
+        Arguments.arguments("mixed_iceberg", true, ""),
+        Arguments.arguments("mixed_iceberg", false, "pt"),
+        Arguments.arguments("mixed_iceberg", true, "pt"),
         Arguments.arguments("parquet", false, "pt"),
         Arguments.arguments("parquet", false, "dt string"));
   }
@@ -80,7 +80,7 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
 
     sql(sqlText);
 
-    if ("arctic".equalsIgnoreCase(provider)) {
+    if ("mixed_iceberg".equalsIgnoreCase(provider)) {
       Assertions.assertTrue(tableExists());
     }
 
@@ -105,9 +105,9 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
 
   public static Stream<Arguments> testCreateTableAsSelect() {
     return Stream.of(
-        Arguments.arguments("arctic", true, "", true),
-        Arguments.arguments("arctic", false, "pt", true),
-        Arguments.arguments("arctic", true, "pt", false),
+        Arguments.arguments("mixed_iceberg", true, "", true),
+        Arguments.arguments("mixed_iceberg", false, "pt", true),
+        Arguments.arguments("mixed_iceberg", true, "pt", false),
         Arguments.arguments("parquet", false, "pt", false),
         Arguments.arguments("parquet", false, "", false));
   }
@@ -129,7 +129,7 @@ public class TestMixedFormatSessionCatalog extends MixedTableTestBase {
     sqlText += " AS SELECT * FROM " + source();
 
     sql(sqlText);
-    if ("arctic".equalsIgnoreCase(provider)) {
+    if ("mixed_iceberg".equalsIgnoreCase(provider)) {
       Assertions.assertTrue(tableExists());
     }
 
