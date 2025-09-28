@@ -133,6 +133,19 @@ public class TableProperties {
       "self-optimizing.min-plan-interval";
   public static final long SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT = 60000;
 
+  /** metadata-based evaluation related properties */
+  public static final String SELF_OPTIMIZING_EVALUATION_FALLBACK_INTERVAL =
+      "self-optimizing.evaluation.fallback-interval"; // fallback evaluation interval in
+  // milliseconds
+
+  public static final int SELF_OPTIMIZING_EVALUATION_FALLBACK_INTERVAL_DEFAULT =
+      -1; // metadata-based evaluation not in effect
+
+  public static final String SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE =
+      "self-optimizing.evaluation.file-size.mse-tolerance"; // Mean Squared Error (MSE) tolerance
+  // for file size evaluation
+  public static final long SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE_DEFAULT = 0;
+
   /** table clean related properties */
   public static final String ENABLE_TABLE_EXPIRE = "table-expire.enabled";
 
