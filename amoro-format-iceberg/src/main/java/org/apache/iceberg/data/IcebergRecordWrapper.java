@@ -83,7 +83,7 @@ public class IcebergRecordWrapper implements StructLike {
           }
         };
       case STRUCT:
-        InternalRecordWrapper wrapper = new InternalRecordWrapper(type.asStructType());
+        IcebergRecordWrapper wrapper = new IcebergRecordWrapper(type.asStructType());
         return struct -> wrapper.wrap((StructLike) struct);
       default:
     }
