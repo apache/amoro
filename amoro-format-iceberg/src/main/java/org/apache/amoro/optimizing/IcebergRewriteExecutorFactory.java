@@ -32,9 +32,7 @@ public class IcebergRewriteExecutorFactory implements OptimizingExecutorFactory<
   }
 
   @Override
-  public OptimizingExecutor createExecutor(RewriteFilesInput input) {
-    OptimizingInputProperties optimizingConfig = OptimizingInputProperties.parse(properties);
-    return new IcebergRewriteExecutor(
-        input, input.getTable(), optimizingConfig.getStructLikeCollections());
+  public OptimizingExecutor<RewriteFilesOutput> createExecutor(RewriteFilesInput input) {
+    return new IcebergRewriteExecutor(input, input.getTable(), properties);
   }
 }

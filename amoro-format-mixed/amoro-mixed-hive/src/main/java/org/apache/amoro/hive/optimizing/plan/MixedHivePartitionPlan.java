@@ -24,7 +24,7 @@ import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.hive.optimizing.MixedHiveRewriteExecutorFactory;
 import org.apache.amoro.hive.utils.HiveTableUtil;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.optimizing.plan.CommonPartitionEvaluator;
 import org.apache.amoro.optimizing.plan.MixedIcebergPartitionPlan;
 import org.apache.amoro.optimizing.plan.PartitionEvaluator;
@@ -116,13 +116,14 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
   }
 
   @Override
-  protected OptimizingInputProperties buildTaskProperties() {
-    OptimizingInputProperties properties = super.buildTaskProperties();
-    properties.setExecutorFactoryImpl(MixedHiveRewriteExecutorFactory.class.getName());
+  protected Map<String, String> buildTaskProperties() {
+    Map<String, String> properties = super.buildTaskProperties();
+    properties.put(
+        TaskProperties.TASK_EXECUTOR_FACTORY_IMPL, MixedHiveRewriteExecutorFactory.class.getName());
     if (moveFiles2CurrentHiveLocation()) {
-      properties.needMoveFile2HiveLocation();
+      properties.put(TaskProperties.MOVE_FILE_TO_HIVE_LOCATION, "true");
     } else if (evaluator().isFullNecessary()) {
-      properties.setOutputDir(constructCustomHiveSubdirectory());
+      properties.put(TaskProperties.OUTPUT_DIR, constructCustomHiveSubdirectory());
     }
     return properties;
   }

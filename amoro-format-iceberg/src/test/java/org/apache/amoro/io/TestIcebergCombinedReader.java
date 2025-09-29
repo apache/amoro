@@ -23,6 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.io.reader.CombinedDeleteFilter;
+import org.apache.amoro.io.reader.DeleteCache;
 import org.apache.amoro.io.reader.GenericCombinedIcebergDataReader;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
@@ -69,19 +70,35 @@ public class TestIcebergCombinedReader extends TableTestBase {
 
   private RewriteFilesInput filterEqDeleteScanTask;
 
-  public TestIcebergCombinedReader(boolean partitionedTable, FileFormat fileFormat) {
+  public TestIcebergCombinedReader(
+      boolean partitionedTable, FileFormat fileFormat, boolean deleteCacheEnabled) {
     super(
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(false, partitionedTable, buildTableProperties(fileFormat)));
     this.fileFormat = fileFormat;
+    if (deleteCacheEnabled) {
+      System.setProperty(DeleteCache.DELETE_CACHE_ENABLED, "true");
+    } else {
+      System.setProperty(DeleteCache.DELETE_CACHE_ENABLED, "false");
+    }
   }
 
-  @Parameterized.Parameters(name = "partitionedTable = {0}, fileFormat = {1}")
+  @Parameterized.Parameters(
+      name = "partitionedTable = {0}, fileFormat = {1}, deleteCacheEnabled = {2}")
   public static Object[][] parameters() {
     return new Object[][] {
-      {true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
-      {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
-      {true, FileFormat.ORC}, {false, FileFormat.ORC}
+      {true, FileFormat.PARQUET, true},
+      {false, FileFormat.PARQUET, true},
+      {true, FileFormat.AVRO, true},
+      {false, FileFormat.AVRO, true},
+      {true, FileFormat.ORC, true},
+      {false, FileFormat.ORC, true},
+      {true, FileFormat.PARQUET, false},
+      {false, FileFormat.PARQUET, false},
+      {true, FileFormat.AVRO, false},
+      {false, FileFormat.AVRO, false},
+      {true, FileFormat.ORC, false},
+      {false, FileFormat.ORC, false}
     };
   }
 
@@ -197,7 +214,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            scanTask);
+            scanTask,
+            "");
     try (CloseableIterable<Record> records = dataReader.readData()) {
       Assert.assertEquals(1, Iterables.size(records));
       Record record = Iterables.getFirst(records, null);
@@ -219,7 +237,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            scanTask);
+            scanTask,
+            "");
     try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
       Assert.assertEquals(2, Iterables.size(records));
       Record first = Iterables.getFirst(records, null);
@@ -243,7 +262,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            dataScanTask);
+            dataScanTask,
+            "");
     try (CloseableIterable<Record> records = dataReader.readData()) {
       Assert.assertEquals(3, Iterables.size(records));
     }
@@ -263,7 +283,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            dataScanTask);
+            dataScanTask,
+            "");
     try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
       Assert.assertEquals(0, Iterables.size(records));
     }
@@ -284,7 +305,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            filterEqDeleteScanTask);
+            filterEqDeleteScanTask,
+            "");
 
     Assert.assertTrue(dataReader.getDeleteFilter().isFilterEqDelete());
 
@@ -363,7 +385,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            task2);
+            task2,
+            "");
     try (CloseableIterable<Record> readRecords = dataReader.readData()) {
       Assert.assertEquals(1, Iterables.size(readRecords));
     }
@@ -437,7 +460,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            task);
+            task,
+            "");
     try (CloseableIterable<Record> readRecords = dataReader.readData()) {
       Assert.assertEquals(0, Iterables.size(readRecords));
     }
@@ -511,7 +535,8 @@ public class TestIcebergCombinedReader extends TableTestBase {
             IdentityPartitionConverters::convertConstant,
             false,
             null,
-            task);
+            task,
+            "");
 
     try (CloseableIterable<Record> readRecords = dataReader.readData()) {
       Assert.assertEquals(0, Iterables.size(readRecords));
