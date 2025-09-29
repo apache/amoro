@@ -40,7 +40,6 @@ public class AmsThriftUrl {
   public static final String PARAM_SOCKET_TIMEOUT = "socketTimeout";
   public static final int DEFAULT_SOCKET_TIMEOUT = 5000;
   public static final String ZOOKEEPER_FLAG = "zookeeper";
-  public static final String THRIFT_FLAG = "thrift";
   public static final String THRIFT_URL_FORMAT = "thrift://%s:%d/%s%s";
   public static final int MAX_RETRIES = 3;
   private static final Logger logger = LoggerFactory.getLogger(AmsThriftUrl.class);

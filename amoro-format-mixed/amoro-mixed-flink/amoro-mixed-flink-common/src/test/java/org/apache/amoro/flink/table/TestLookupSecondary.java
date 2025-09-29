@@ -67,8 +67,8 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
       db = dbs.get(0);
     }
     exec(
-        "create catalog mixed_catalog with ('type'='arctic', 'metastore.url'='%s')",
-        getCatalogUrl());
+        "create catalog mixed_catalog with ('type'='mixed_iceberg', 'ams.uri'='%s')",
+        getCatalogUri());
     exec(
         "create table mixed_catalog.%s.L (id int) "
             + "with ('scan.startup.mode'='earliest', 'monitor-interval'='1 s')",
@@ -143,8 +143,8 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
   }
 
   @Override
-  public String getMetastoreUrl() {
-    return getCatalogUrl();
+  public String getMetastoreUri() {
+    return getCatalogUri();
   }
 
   @Override

@@ -116,7 +116,7 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
         Lists.newArrayList(Expressions.greaterThan("op_time", "2022-06-20T10:10:11.0"));
     ContinuousSplitPlanner morPlanner =
         new MergeOnReadIncrementalPlanner(
-            getTableLoader(getCatalogName(), getMetastoreUrl(), keyedTable));
+            getTableLoader(getCatalogName(), getMetastoreUri(), keyedTable));
 
     FlinkKeyedMORDataReader flinkKeyedMORDataReader =
         new FlinkKeyedMORDataReader(
@@ -161,8 +161,8 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
   }
 
   @Override
-  public String getMetastoreUrl() {
-    return getCatalogUrl();
+  public String getMetastoreUri() {
+    return getCatalogUri();
   }
 
   @Override

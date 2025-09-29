@@ -32,7 +32,6 @@ import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.IllegalTaskStateException;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.exception.PluginRetryAuthException;
-import org.apache.amoro.exception.TaskNotFoundException;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
@@ -54,7 +53,6 @@ import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -214,33 +212,21 @@ public class DefaultOptimizingService extends StatedPersistentBase
   @Override
   public OptimizingTask pollTask(String authToken, int threadId) {
     LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
+    OptimizerThread optimizerThread = getAuthenticatedOptimizer(authToken).getThread(threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
-    return Optional.ofNullable(queue.pollTask(pollingTimeout, breakQuotaLimit))
-        .map(task -> extractOptimizingTask(task, authToken, threadId, queue))
-        .orElse(null);
-  }
-
-  private OptimizingTask extractOptimizingTask(
-      TaskRuntime<?> task, String authToken, int threadId, OptimizingQueue queue) {
-    try {
-      OptimizerThread optimizerThread = getAuthenticatedOptimizer(authToken).getThread(threadId);
-      task.schedule(optimizerThread);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, pollingTimeout, breakQuotaLimit);
+    if (task != null) {
       LOG.info("OptimizerThread {} polled task {}", optimizerThread, task.getTaskId());
       return task.extractProtocolTask();
-    } catch (Throwable throwable) {
-      LOG.error("Schedule task {} failed, put it to retry queue", task.getTaskId(), throwable);
-      queue.retryTask(task);
-      return null;
     }
+    return null;
   }
 
   @Override
   public void ackTask(String authToken, int threadId, OptimizingTaskId taskId) {
     LOG.info("Ack task {} by optimizer {} (threadId {})", taskId, authToken, threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
-    Optional.ofNullable(queue.getTask(taskId))
-        .orElseThrow(() -> new TaskNotFoundException(taskId))
-        .ack(getAuthenticatedOptimizer(authToken).getThread(threadId));
+    queue.ackTask(taskId, getAuthenticatedOptimizer(authToken).getThread(threadId));
   }
 
   @Override
@@ -254,9 +240,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     OptimizingQueue queue = getQueueByToken(authToken);
     OptimizerThread thread =
         getAuthenticatedOptimizer(authToken).getThread(taskResult.getThreadId());
-    Optional.ofNullable(queue.getTask(taskResult.getTaskId()))
-        .orElseThrow(() -> new TaskNotFoundException(taskResult.getTaskId()))
-        .complete(thread, taskResult);
+    queue.completeTask(thread, taskResult);
   }
 
   @Override
@@ -284,7 +268,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   }
 
   @Override
-  public boolean cancelProcess(long processId) throws TException {
+  public boolean cancelProcess(long processId) {
     TableProcessMeta processMeta =
         getAs(TableProcessMapper.class, m -> m.getProcessMeta(processId));
     if (processMeta == null) {

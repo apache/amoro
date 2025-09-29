@@ -131,7 +131,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     DefaultTableRuntime tableRuntimeMeta =
         buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntimeMeta);
-    Assert.assertNull(queue.pollTask(0));
+    Assert.assertNull(queue.pollTask(optimizerThread, 0));
     queue.dispose();
   }
 
@@ -160,11 +160,11 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
 
     // 1.poll task
-    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
 
     Assert.assertNotNull(task);
-    Assert.assertEquals(TaskRuntime.Status.PLANNED, task.getStatus());
-    Assert.assertNull(queue.pollTask(0));
+    Assert.assertEquals(TaskRuntime.Status.SCHEDULED, task.getStatus());
+    Assert.assertNull(queue.pollTask(optimizerThread, 0));
     queue.dispose();
   }
 
@@ -180,24 +180,23 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntime),
             1);
 
-    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME, false);
     Assert.assertNotNull(task);
-    Assert.assertEquals(TaskRuntime.Status.PLANNED, task.getStatus());
-    task.schedule(optimizerThread);
-    task.ack(optimizerThread);
+    Assert.assertEquals(TaskRuntime.Status.SCHEDULED, task.getStatus());
+    queue.ackTask(task.getTaskId(), optimizerThread);
     Assert.assertEquals(
         1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
     Assert.assertNotNull(task);
 
-    TaskRuntime task2 = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> task2 = queue.pollTask(optimizerThread, MAX_POLLING_TIME, false);
     Assert.assertNull(task2);
 
-    task.complete(
+    queue.completeTask(
         optimizerThread,
         buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
 
-    TaskRuntime retryTask = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> retryTask = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(retryTask);
 
     queue.dispose();
@@ -215,25 +214,24 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             Collections.singletonList(tableRuntime),
             1);
 
-    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task);
-    Assert.assertEquals(TaskRuntime.Status.PLANNED, task.getStatus());
-    task.schedule(optimizerThread);
-    task.ack(optimizerThread);
+    Assert.assertEquals(TaskRuntime.Status.SCHEDULED, task.getStatus());
+    queue.ackTask(task.getTaskId(), optimizerThread);
     Assert.assertEquals(
         1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
     Assert.assertNotNull(task);
 
-    TaskRuntime task2 = queue.pollTask(MAX_POLLING_TIME, true);
+    TaskRuntime<?> task2 = queue.pollTask(optimizerThread, MAX_POLLING_TIME, true);
     Assert.assertNotNull(task2);
 
-    task.complete(
+    queue.completeTask(
         optimizerThread,
         buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
-    TaskRuntime task4 = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> task4 = queue.pollTask(optimizerThread, MAX_POLLING_TIME, false);
     Assert.assertNull(task4);
-    TaskRuntime retryTask = queue.pollTask(MAX_POLLING_TIME, true);
+    TaskRuntime<?> retryTask = queue.pollTask(optimizerThread, MAX_POLLING_TIME, true);
     Assert.assertNotNull(retryTask);
     queue.dispose();
   }
@@ -250,14 +248,13 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             planExecutor,
             Collections.singletonList(tableRuntime),
             1);
-    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
-    task.schedule(optimizerThread);
-    task.ack(optimizerThread);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    queue.ackTask(task.getTaskId(), optimizerThread);
     Assert.assertEquals(
         1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
     Assert.assertNotNull(task);
     Assert.assertTrue(tableRuntime.getTableIdentifier().getId() == task.getTableId());
-    task.complete(
+    queue.completeTask(
         optimizerThread,
         buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
@@ -280,10 +277,10 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     queue.refreshTable(tableRuntime2);
     queue.refreshTable(tableRuntime);
 
-    TaskRuntime task2 = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> task2 = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task2);
     Assert.assertTrue(tableRuntime2.getTableIdentifier().getId() == task2.getTableId());
-    TaskRuntime task3 = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> task3 = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task3);
     Assert.assertTrue(tableRuntime.getTableIdentifier().getId() == task3.getTableId());
     queue.dispose();
@@ -296,27 +293,25 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntimeMeta);
 
     // 1.poll task
-    TaskRuntime<?> task = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task);
 
     for (int i = 0; i < TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT; i++) {
       queue.retryTask(task);
-      TaskRuntime<?> retryTask = queue.pollTask(MAX_POLLING_TIME);
+      TaskRuntime<?> retryTask = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
       Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
-      retryTask.schedule(optimizerThread);
-      retryTask.ack(optimizerThread);
-      retryTask.complete(
+      queue.ackTask(task.getTaskId(), optimizerThread);
+      queue.completeTask(
           optimizerThread,
-          buildOptimizingTaskFailed(retryTask.getTaskId(), optimizerThread.getThreadId()));
+          buildOptimizingTaskFailed(task.getTaskId(), optimizerThread.getThreadId()));
       Assert.assertEquals(TaskRuntime.Status.PLANNED, task.getStatus());
     }
 
     queue.retryTask(task);
-    TaskRuntime<?> retryTask = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> retryTask = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
-    retryTask.schedule(optimizerThread);
-    retryTask.ack(optimizerThread);
-    retryTask.complete(
+    queue.ackTask(task.getTaskId(), optimizerThread);
+    queue.completeTask(
         optimizerThread,
         buildOptimizingTaskFailed(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.FAILED, task.getStatus());
@@ -329,13 +324,12 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
     Assert.assertEquals(0, queue.collectTasks().size());
 
-    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
-    task.schedule(optimizerThread);
-    task.ack(optimizerThread);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    queue.ackTask(task.getTaskId(), optimizerThread);
     Assert.assertEquals(
         1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
     Assert.assertNotNull(task);
-    task.complete(
+    queue.completeTask(
         optimizerThread,
         buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
@@ -361,40 +355,38 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
     Assert.assertEquals(0, queue.collectTasks().size());
 
-    TaskRuntime firstTask = queue.pollTask(MAX_POLLING_TIME);
-    firstTask.schedule(optimizerThread);
-    firstTask.ack(optimizerThread);
+    TaskRuntime<?> firstTask = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    queue.ackTask(firstTask.getTaskId(), optimizerThread);
     Assert.assertEquals(
         1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
     Assert.assertNotNull(firstTask);
-    firstTask.complete(
+    queue.completeTask(
         optimizerThread,
         buildOptimizingTaskResult(firstTask.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, firstTask.getStatus());
 
-    TaskRuntime<?> task = queue.pollTask(MAX_POLLING_TIME);
+    queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task);
 
     for (int i = 0; i < TableProperties.SELF_OPTIMIZING_EXECUTE_RETRY_NUMBER_DEFAULT; i++) {
       queue.retryTask(task);
-      TaskRuntime<?> retryTask = queue.pollTask(MAX_POLLING_TIME);
+      TaskRuntime<?> retryTask = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
       Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
-      retryTask.schedule(optimizerThread);
-      retryTask.ack(optimizerThread);
-      retryTask.complete(
+      queue.ackTask(task.getTaskId(), optimizerThread);
+      queue.completeTask(
           optimizerThread,
           buildOptimizingTaskFailed(task.getTaskId(), optimizerThread.getThreadId()));
       Assert.assertEquals(TaskRuntime.Status.PLANNED, task.getStatus());
     }
 
     queue.retryTask(task);
-    TaskRuntime<?> retryTask = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> retryTask = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertEquals(retryTask.getTaskId(), task.getTaskId());
-    retryTask.schedule(optimizerThread);
-    retryTask.ack(optimizerThread);
+    queue.ackTask(retryTask.getTaskId(), optimizerThread);
 
     OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
-    retryTask.complete(
+    queue.completeTask(
         optimizerThread,
         buildOptimizingTaskFailed(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.FAILED, task.getStatus());
@@ -411,9 +403,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
     Assert.assertEquals(0, queue.collectTasks().size());
 
-    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task);
-    task.schedule(optimizerThread);
     Assert.assertEquals(1, queue.collectTasks().size());
     Assert.assertEquals(
         1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.SCHEDULED).size());
@@ -457,9 +448,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(0, idleTablesGauge.getValue().longValue());
     Assert.assertEquals(0, committingTablesGauge.getValue().longValue());
 
-    TaskRuntime task = queue.pollTask(MAX_POLLING_TIME);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task);
-    task.schedule(optimizerThread);
     Assert.assertEquals(1, queueTasksGauge.getValue().longValue());
     Assert.assertEquals(0, executingTasksGauge.getValue().longValue());
     Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
@@ -468,7 +458,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(0, idleTablesGauge.getValue().longValue());
     Assert.assertEquals(0, committingTablesGauge.getValue().longValue());
 
-    task.ack(optimizerThread);
+    queue.ackTask(task.getTaskId(), optimizerThread);
     Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
     Assert.assertEquals(1, executingTasksGauge.getValue().longValue());
     Assert.assertEquals(0, planingTablesGauge.getValue().longValue());
@@ -477,7 +467,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(0, idleTablesGauge.getValue().longValue());
     Assert.assertEquals(0, committingTablesGauge.getValue().longValue());
 
-    task.complete(
+    queue.completeTask(
         optimizerThread,
         buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(0, queueTasksGauge.getValue().longValue());
