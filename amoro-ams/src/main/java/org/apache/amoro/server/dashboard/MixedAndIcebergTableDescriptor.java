@@ -18,6 +18,17 @@
 
 package org.apache.amoro.server.dashboard;
 
+import static org.apache.amoro.table.TablePartitionDetailProperties.BASE_FILE_COUNT;
+import static org.apache.amoro.table.TablePartitionDetailProperties.BASE_FILE_COUNT_DEFAULT;
+import static org.apache.amoro.table.TablePartitionDetailProperties.EQ_DELETE_FILE_COUNT;
+import static org.apache.amoro.table.TablePartitionDetailProperties.EQ_DELETE_FILE_COUNT_DEFAULT;
+import static org.apache.amoro.table.TablePartitionDetailProperties.FILE_SIZE_SQUARED_ERROR_SUM;
+import static org.apache.amoro.table.TablePartitionDetailProperties.FILE_SIZE_SQUARED_ERROR_SUM_DEFAULT;
+import static org.apache.amoro.table.TablePartitionDetailProperties.INSERT_FILE_COUNT;
+import static org.apache.amoro.table.TablePartitionDetailProperties.INSERT_FILE_COUNT_DEFAULT;
+import static org.apache.amoro.table.TablePartitionDetailProperties.POS_DELETE_FILE_COUNT;
+import static org.apache.amoro.table.TablePartitionDetailProperties.POS_DELETE_FILE_COUNT_DEFAULT;
+
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -451,19 +462,132 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
         getTableFilesInternal(amoroTable, null, null);
     try {
       for (PartitionFileBaseInfo fileInfo : tableFiles) {
-        if (!partitionBaseInfoHashMap.containsKey(fileInfo.getPartition())) {
-          PartitionBaseInfo partitionBaseInfo = new PartitionBaseInfo();
-          partitionBaseInfo.setPartition(fileInfo.getPartition());
-          partitionBaseInfo.setSpecId(fileInfo.getSpecId());
-          partitionBaseInfoHashMap.put(fileInfo.getPartition(), partitionBaseInfo);
-        }
-        PartitionBaseInfo partitionInfo = partitionBaseInfoHashMap.get(fileInfo.getPartition());
-        partitionInfo.setFileCount(partitionInfo.getFileCount() + 1);
-        partitionInfo.setFileSize(partitionInfo.getFileSize() + fileInfo.getFileSize());
-        partitionInfo.setLastCommitTime(
-            partitionInfo.getLastCommitTime() > fileInfo.getCommitTime()
-                ? partitionInfo.getLastCommitTime()
-                : fileInfo.getCommitTime());
+        refreshPartitionBasicInfo(fileInfo, partitionBaseInfoHashMap);
+      }
+    } finally {
+      try {
+        tableFiles.close();
+      } catch (IOException e) {
+        LOG.warn("Failed to close the manifest reader.", e);
+      }
+    }
+    return new ArrayList<>(partitionBaseInfoHashMap.values());
+  }
+
+  /**
+   * Create partition base information from a PartitionFileBaseInfo instance.
+   *
+   * @param fileInfo Partition file base information, used to obtain partition information
+   * @return Returns the partition base information corresponding to the partition
+   */
+  private PartitionBaseInfo createPartitionBaseInfoFromPartitionFile(
+      PartitionFileBaseInfo fileInfo) {
+    PartitionBaseInfo partitionBaseInfo = new PartitionBaseInfo();
+    partitionBaseInfo.setPartition(fileInfo.getPartition());
+    partitionBaseInfo.setSpecId(fileInfo.getSpecId());
+    return partitionBaseInfo;
+  }
+
+  /**
+   * Refresh the basic information of a partition
+   *
+   * @param fileInfo Partition file base information
+   * @param partitionBaseInfoHashMap A hashmap containing the base information of all partitions
+   */
+  private void refreshPartitionBasicInfo(
+      PartitionFileBaseInfo fileInfo, Map<String, PartitionBaseInfo> partitionBaseInfoHashMap) {
+    // Get the partitionBaseInfo instance
+    PartitionBaseInfo partitionInfo =
+        partitionBaseInfoHashMap.computeIfAbsent(
+            fileInfo.getPartition(), key -> createPartitionBaseInfoFromPartitionFile(fileInfo));
+    // Update the number of files
+    partitionInfo.setFileCount(partitionInfo.getFileCount() + 1);
+    // Update the total file size
+    partitionInfo.setFileSize(partitionInfo.getFileSize() + fileInfo.getFileSize());
+    // Update the last commit time
+    partitionInfo.setLastCommitTime(
+        partitionInfo.getLastCommitTime() > fileInfo.getCommitTime()
+            ? partitionInfo.getLastCommitTime()
+            : fileInfo.getCommitTime());
+  }
+
+  /**
+   * Refresh and update the detailed properties of a partition based on file information.
+   *
+   * <p>This method primarily updates statistical properties of the partition, such as the sum of
+   * squared errors of file sizes, and the counts of base files, insert files, eq-delete files, and
+   * pos-delete files.</>
+   *
+   * @param fileInfo Partition file base information
+   * @param partitionBaseInfoHashMap A hashmap containing basic information about all partitions
+   * @param minTargetSize The minimum target size used to limit the file size and calculate the sum
+   *     of squared errors.
+   */
+  private void refreshPartitionDetailProperties(
+      PartitionFileBaseInfo fileInfo,
+      Map<String, PartitionBaseInfo> partitionBaseInfoHashMap,
+      long minTargetSize) {
+    PartitionBaseInfo partitionInfo =
+        partitionBaseInfoHashMap.computeIfAbsent(
+            fileInfo.getPartition(), key -> createPartitionBaseInfoFromPartitionFile(fileInfo));
+    // Update the file-size-squared-error-sum
+    long actualSize = Math.min(fileInfo.getFileSize(), minTargetSize);
+    long diff = minTargetSize - actualSize;
+    partitionInfo.setProperty(
+        FILE_SIZE_SQUARED_ERROR_SUM,
+        (double)
+                partitionInfo.getPropertyOrDefault(
+                    FILE_SIZE_SQUARED_ERROR_SUM, FILE_SIZE_SQUARED_ERROR_SUM_DEFAULT)
+            + diff * diff);
+
+    // Update the count of base files, insert files, equality delete files, and position delete
+    // files
+    switch (DataFileType.fromName(fileInfo.getFileType())) {
+      case BASE_FILE:
+        partitionInfo.setProperty(
+            BASE_FILE_COUNT,
+            (long) partitionInfo.getPropertyOrDefault(BASE_FILE_COUNT, BASE_FILE_COUNT_DEFAULT)
+                + 1);
+        break;
+      case INSERT_FILE:
+        partitionInfo.setProperty(
+            INSERT_FILE_COUNT,
+            (long) partitionInfo.getPropertyOrDefault(INSERT_FILE_COUNT, INSERT_FILE_COUNT_DEFAULT)
+                + 1);
+        break;
+      case EQ_DELETE_FILE:
+        partitionInfo.setProperty(
+            EQ_DELETE_FILE_COUNT,
+            (long)
+                    partitionInfo.getPropertyOrDefault(
+                        EQ_DELETE_FILE_COUNT, EQ_DELETE_FILE_COUNT_DEFAULT)
+                + 1);
+        break;
+      case POS_DELETE_FILE:
+        partitionInfo.setProperty(
+            POS_DELETE_FILE_COUNT,
+            (long)
+                    partitionInfo.getPropertyOrDefault(
+                        POS_DELETE_FILE_COUNT, POS_DELETE_FILE_COUNT_DEFAULT)
+                + 1);
+        break;
+    }
+  }
+
+  /**
+   * Get a list of partition information for a specific table that contains the square error sum of
+   * the partition file size. This method calculates statistics for each partition of a table,
+   * including file count, total file size, and the sum of squared errors of file sizes, for use in
+   * further operations such as table optimization.
+   */
+  public List<PartitionBaseInfo> getTablePartitionsWithDetailProperties(
+      MixedTable table, long minTargetSize) {
+    Map<String, PartitionBaseInfo> partitionBaseInfoHashMap = new HashMap<>();
+    CloseableIterable<PartitionFileBaseInfo> tableFiles = getTableFilesInternal(table, null, null);
+    try {
+      for (PartitionFileBaseInfo fileInfo : tableFiles) {
+        refreshPartitionBasicInfo(fileInfo, partitionBaseInfoHashMap);
+        refreshPartitionDetailProperties(fileInfo, partitionBaseInfoHashMap, minTargetSize);
       }
     } finally {
       try {
@@ -609,6 +733,11 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   private CloseableIterable<PartitionFileBaseInfo> getTableFilesInternal(
       AmoroTable<?> amoroTable, String partition, Integer specId) {
     MixedTable mixedTable = getTable(amoroTable);
+    return getTableFilesInternal(mixedTable, partition, specId);
+  }
+
+  private CloseableIterable<PartitionFileBaseInfo> getTableFilesInternal(
+      MixedTable mixedTable, String partition, Integer specId) {
     if (mixedTable.isKeyedTable()) {
       return CloseableIterable.concat(
           Arrays.asList(

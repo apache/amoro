@@ -22,6 +22,10 @@ import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.iceberg.FileContent;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
  * Data file type, one of:
  *
@@ -44,6 +48,9 @@ public enum DataFileType {
   private final int id;
 
   private final String shortName;
+
+  private static final Map<String, DataFileType> NAME_MAP =
+      Arrays.stream(DataFileType.values()).collect(Collectors.toMap(DataFileType::name, e -> e));
 
   DataFileType(int id, String shortName) {
     this.id = id;
@@ -88,5 +95,10 @@ public enum DataFileType {
       }
     }
     throw new IllegalArgumentException("Unknown file type short name:" + shortName);
+  }
+
+  /** get DataFileType via name string */
+  public static DataFileType fromName(String name) {
+    return NAME_MAP.get(name);
   }
 }

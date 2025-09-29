@@ -323,7 +323,12 @@ public class TableConfigurations {
             PropertyUtil.propertyAsLong(
                 properties,
                 TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL,
-                TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT));
+                TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT))
+        .setAverageFileSizeTolerance(
+            CompatiblePropertyUtil.propertyAsMemorySize(
+                properties,
+                TableProperties.SELF_OPTIMIZING_AVERAGE_FILE_SIZE_TOLERANCE,
+                TableProperties.SELF_OPTIMIZING_AVERAGE_FILE_SIZE_TOLERANCE_DEFAULT));
   }
 
   /**
