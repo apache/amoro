@@ -23,7 +23,7 @@ import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.data.InternalRecordWrapper;
+import org.apache.iceberg.data.IcebergRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.FileIO;
@@ -37,7 +37,7 @@ import org.apache.iceberg.io.PartitionedFanoutWriter;
 public class GenericIcebergPartitionedFanoutWriter extends PartitionedFanoutWriter<Record> {
 
   private final PartitionKey partitionKey;
-  private final InternalRecordWrapper wrapper;
+  private final IcebergRecordWrapper wrapper;
 
   public GenericIcebergPartitionedFanoutWriter(
       Schema schema,
@@ -49,7 +49,7 @@ public class GenericIcebergPartitionedFanoutWriter extends PartitionedFanoutWrit
       long targetFileSize) {
     super(spec, format, appenderFactory, fileFactory, io, targetFileSize);
     this.partitionKey = new PartitionKey(spec, schema);
-    this.wrapper = new InternalRecordWrapper(schema.asStruct());
+    this.wrapper = new IcebergRecordWrapper(schema.asStruct());
   }
 
   @Override
