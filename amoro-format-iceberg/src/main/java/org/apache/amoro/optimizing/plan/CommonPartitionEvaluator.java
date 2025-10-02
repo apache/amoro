@@ -398,7 +398,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     long dataFiles = getFragmentFileCount() + getSegmentFileCount();
     long dataRecords = getFragmentFileRecords() + getSegmentFileRecords();
 
-    double averageDataFileSize = dataFilesSize / dataFiles;
+    double averageDataFileSize = dataFiles > 0 ? (double) dataFilesSize / dataFiles : 0;
     double eqDeleteRatio = getNormalizedRatio(equalityDeleteFileRecords, dataRecords);
     double posDeleteRatio = getNormalizedRatio(posDeleteFileRecords, dataRecords);
 
