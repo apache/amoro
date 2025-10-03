@@ -126,7 +126,7 @@ The above text replacement command is applicable to macOS. In the Linux system, 
 
 4. Load dependencies
 
-   In the `Maven` tab,  click the `Reload All Maven Projects` botton, or right-click the imported Amoro project in the Project view and select `Maven`->`Reload project`.
+   In the `Maven` tab,  click the `Reload All Maven Projects` button, or right-click the imported Amoro project in the Project view and select `Maven`->`Reload project`.
 
 ### Start AMS
 1. Open the following file:
@@ -160,14 +160,14 @@ The above text replacement command is applicable to macOS. In the Linux system, 
 {base_dir}/amoro-optimizer/amoro-optimizer-standalone/src/main/java/org/apache/amoro/optimizer/standalone/StandaloneOptimizer.java
 `
 
-2. Click the `Run/Debug Configurations` botton in the top right corner of IntelliJ IDEA and select `Current File`.
+2. Click the `Run/Debug Configurations` button in the top right corner of IntelliJ IDEA and select `Current File`.
 3. Click `More Actions` on the right side and select `Run with Parameters...`.
 4. In `Build and run`, enter the following parameters in the `Program arguments:`:`-a thrift://127.0.0.1:1261 -p 1 -g local`
 
    The detailed description of the relevant parameters can be found in [Managing Optimizers](https://amoro.apache.org/docs/latest/managing-optimizers/).
 
 5. Click `Apply` and `Run` to start an optimizer.
-6. In the Amoro dashboard, click on `Optimizing` in the sidebar and choose `Optimizers`. If you see a newly created optimzier, the startup was successful.
+6. In the Amoro dashboard, click on `Optimizing` in the sidebar and choose `Optimizers`. If you see a newly created optimizer, the startup was successful.
 
 ### Quickstart
 To quickly explore Amoro's core features, such as self-optimizing, visit [Quickstart](https://amoro.apache.org/quick-start/).
