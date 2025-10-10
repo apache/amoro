@@ -48,6 +48,8 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.expressions.UnboundTerm;
 import org.apache.iceberg.types.Types;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -59,9 +61,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /** Utility class for working with {@link Expression}. */
 public class ExpressionUtil {
+  private static final Logger LOG = LoggerFactory.getLogger(ExpressionUtil.class);
 
   /**
    * Convert partition data to data filter.
@@ -119,6 +124,19 @@ public class ExpressionUtil {
    */
   public static Expression convertSqlFilterToIcebergExpression(
       String sqlFilter, List<Types.NestedField> tableColumns) {
+    return convertSqlFilterToIcebergExpression(sqlFilter, tableColumns, null, null);
+  }
+
+  public static Expression convertSqlFilterToIcebergExpression(
+      String sqlFilter, List<Types.NestedField> tableColumns, PartitionSpec partitionSpec) {
+    return convertSqlFilterToIcebergExpression(sqlFilter, tableColumns, partitionSpec, null);
+  }
+
+  public static Expression convertSqlFilterToIcebergExpression(
+      String sqlFilter,
+      List<Types.NestedField> tableColumns,
+      PartitionSpec partitionSpec,
+      BiFunction maxPartitionFunc) {
     if (StringUtils.isEmpty(StringUtils.trim(sqlFilter))) {
       return Expressions.alwaysTrue();
     }
@@ -126,14 +144,82 @@ public class ExpressionUtil {
     try {
       Select statement = (Select) CCJSqlParserUtil.parse("SELECT * FROM dummy WHERE " + sqlFilter);
       PlainSelect select = statement.getPlainSelect();
-      return convertSparkExpressionToIceberg(select.getWhere(), tableColumns);
+      return convertSparkExpressionToIceberg(
+          select.getWhere(), tableColumns, partitionSpec, maxPartitionFunc);
     } catch (Exception e) {
       throw new IllegalArgumentException("Failed to parse where condition: " + sqlFilter, e);
     }
   }
 
   private static Expression convertSparkExpressionToIceberg(
-      net.sf.jsqlparser.expression.Expression whereExpr, List<Types.NestedField> tableColumns) {
+      net.sf.jsqlparser.expression.Expression whereExpr,
+      List<Types.NestedField> tableColumns,
+      PartitionSpec partitionSpec) {
+    return convertSparkExpressionToIceberg(whereExpr, tableColumns, partitionSpec, null);
+  }
+
+  // TODO: support more complex expression
+
+  /**
+   * only support `max` function, like `max(pt,1)` for partition, `max(day(ts),5)` for hidden
+   * partition
+   *
+   * @param func
+   * @param partitionSpec
+   * @param maxPartitionFunc
+   * @return
+   */
+  @SuppressWarnings({"cast", "rawtypes", "serial", "unchecked", "unused"})
+  private static Expression applyFunc(
+      net.sf.jsqlparser.expression.Function func,
+      PartitionSpec partitionSpec,
+      BiFunction<String, Integer, List<String>> maxPartitionFunc) {
+    // support function expression, like  `max(pt,1)` for partition,  `max(day(ts),5)` for hidden
+    // partition
+    String funcName = func.getName();
+    if (funcName.equals("max")) {
+      if (func.getParameters().size() > 2) {
+        // not supported.
+        LOG.warn("Do not support max function with more than 2 params.");
+        return Expressions.alwaysTrue();
+      }
+      int topN = Integer.parseInt(func.getParameters().get(1) + "");
+
+      // like max(transformer(pt),1)
+      if (func.getParameters().get(0) instanceof net.sf.jsqlparser.expression.Function) {
+        net.sf.jsqlparser.expression.Function transformerFunc =
+            (net.sf.jsqlparser.expression.Function) func.getParameters().get(0);
+        String ptName = transformerFunc.getParameters().get(0).toString();
+        List<String> values = maxPartitionFunc.apply(ptName, topN);
+        LOG.info(
+            "use max partition value: {} for column: {}",
+            String.join(",", values),
+            func.getParameters().get(0).toString());
+        PartitionField field =
+            partitionSpec
+                .getFieldsBySourceId(partitionSpec.schema().findField(ptName).fieldId())
+                .get(0);
+        return Expressions.in(
+            (UnboundTerm<String>) Expressions.transform(ptName, field.transform()),
+            values.toArray(new String[0]));
+      } else {
+        // like max(pt,1), and ptName should equal to 'left'
+        String ptName = func.getParameters().get(0).toString();
+        List<String> values = maxPartitionFunc.apply(ptName, topN);
+        LOG.info("use partition value: {} for column: {}", String.join(",", values), ptName);
+        return Expressions.in(ptName, values.toArray(new String[0]));
+      }
+    } else {
+      LOG.info("unsupported function {}", funcName);
+    }
+    return Expressions.alwaysTrue();
+  }
+
+  private static Expression convertSparkExpressionToIceberg(
+      net.sf.jsqlparser.expression.Expression whereExpr,
+      List<Types.NestedField> tableColumns,
+      PartitionSpec partitionSpec,
+      BiFunction<String, Integer, List<String>> maxPartitionFunc) {
     if (whereExpr instanceof IsNullExpression) {
       IsNullExpression isNull = (IsNullExpression) whereExpr;
       Types.NestedField column = getColumn(isNull.getLeftExpression(), tableColumns);
@@ -182,17 +268,23 @@ public class ExpressionUtil {
           : Expressions.in(column.name(), values);
     } else if (whereExpr instanceof NotExpression) {
       NotExpression not = (NotExpression) whereExpr;
-      return Expressions.not(convertSparkExpressionToIceberg(not.getExpression(), tableColumns));
+      return Expressions.not(
+          convertSparkExpressionToIceberg(not.getExpression(), tableColumns, partitionSpec));
     } else if (whereExpr instanceof AndExpression) {
       AndExpression and = (AndExpression) whereExpr;
       return Expressions.and(
-          convertSparkExpressionToIceberg(and.getLeftExpression(), tableColumns),
-          convertSparkExpressionToIceberg(and.getRightExpression(), tableColumns));
+          convertSparkExpressionToIceberg(and.getLeftExpression(), tableColumns, partitionSpec),
+          convertSparkExpressionToIceberg(and.getRightExpression(), tableColumns, partitionSpec));
     } else if (whereExpr instanceof OrExpression) {
       OrExpression or = (OrExpression) whereExpr;
       return Expressions.or(
-          convertSparkExpressionToIceberg(or.getLeftExpression(), tableColumns),
-          convertSparkExpressionToIceberg(or.getRightExpression(), tableColumns));
+          convertSparkExpressionToIceberg(or.getLeftExpression(), tableColumns, partitionSpec),
+          convertSparkExpressionToIceberg(or.getRightExpression(), tableColumns, partitionSpec));
+    } else if (whereExpr instanceof net.sf.jsqlparser.expression.Function) {
+      // support function expression, like  `max(pt,1)` for partition,  `max(day(ts),5)` for hidden
+      // partition
+      return applyFunc(
+          (net.sf.jsqlparser.expression.Function) whereExpr, partitionSpec, maxPartitionFunc);
     }
     throw new UnsupportedOperationException("Unsupported expression: " + whereExpr);
   }
@@ -273,5 +365,22 @@ public class ExpressionUtil {
       timestampStr = ((DateTimeLiteralExpression) expr).getValue().replaceAll("^'(.*)'$", "$1");
     }
     return timestampStr;
+  }
+
+  private static class CustomFunction {
+    private String name;
+    private List<String> parameters;
+    private Function<List<Object>, Object> function;
+
+    public CustomFunction(
+        String name, List<String> parameters, Function<List<Object>, Object> function) {
+      this.name = name;
+      this.parameters = parameters;
+      this.function = function;
+    }
+
+    public Object apply(List<Object> args) {
+      return function.apply(args);
+    }
   }
 }
