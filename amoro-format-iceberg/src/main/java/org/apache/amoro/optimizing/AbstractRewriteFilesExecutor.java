@@ -68,6 +68,8 @@ public abstract class AbstractRewriteFilesExecutor
 
   protected final RewriteFilesInput input;
 
+  protected final Map<String, String> properties;
+
   protected MixedTable table;
 
   protected OptimizingDataReader dataReader;
@@ -77,11 +79,12 @@ public abstract class AbstractRewriteFilesExecutor
   protected StructLikeCollections structLikeCollections;
 
   public AbstractRewriteFilesExecutor(
-      RewriteFilesInput input, MixedTable table, StructLikeCollections structLikeCollections) {
+      RewriteFilesInput input, MixedTable table, Map<String, String> properties) {
     this.input = input;
     this.table = table;
     this.io = table.io();
-    this.structLikeCollections = structLikeCollections;
+    this.properties = properties;
+    this.structLikeCollections = TaskProperties.getStructLikeCollections(properties);
     dataReader = dataReader();
   }
 
