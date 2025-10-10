@@ -88,13 +88,13 @@ public class OptimizerConfig implements Serializable {
   @Option(
       name = "-cmts",
       aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_MAX_TOTAL_SIZE,
-      usage = "Max total size in cache, default 100MB")
+      usage = "Max total size in cache, default 128MB")
   private String cacheMaxTotalSize = OptimizerProperties.OPTIMIZER_CACHE_MAX_TOTAL_SIZE_DEFAULT;
 
   @Option(
       name = "-cmes",
       aliases = "--" + OptimizerProperties.OPTIMIZER_CACHE_MAX_ENTRY_SIZE,
-      usage = "Max entry size in cache, default 50MB")
+      usage = "Max entry size in cache, default 64MB")
   private String cacheMaxEntrySize = OptimizerProperties.OPTIMIZER_CACHE_MAX_ENTRY_SIZE_DEFAULT;
 
   @Option(

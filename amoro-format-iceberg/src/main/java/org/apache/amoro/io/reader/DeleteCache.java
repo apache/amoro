@@ -33,7 +33,22 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-/** A common implementation of {@link org.apache.iceberg.data.DeleteLoader}. */
+/**
+ * A cache for reducing the computation and IO overhead for iceberg delete files.
+ *
+ * <p>The cache is configured and controlled through JVM system properties. It supports both limits
+ * on the total cache size and maximum size for individual entries. Additionally, it implements
+ * automatic eviction of entries after a specified duration of inactivity.
+ *
+ * <p>The cache is accessed and populated via {@link #getOrLoad(String, String, Supplier, long)}. If
+ * the value is not present in the cache, it is computed using the provided supplier and stored in
+ * the cache, subject to the defined size constraints. When a key is added, it must be associated
+ * with a particular group ID. Once the group is no longer needed, it is recommended to explicitly
+ * invalidate its state by calling {@link #invalidate(String)} instead of relying on automatic
+ * eviction.
+ *
+ * <p>Note that this class employs the singleton pattern to ensure only one cache exists per JVM.
+ */
 public class DeleteCache {
   private static final Logger LOG = LoggerFactory.getLogger(DeleteCache.class);
   public static final String DELETE_CACHE_ENABLED = "delete-cache-enabled";
@@ -89,12 +104,14 @@ public class DeleteCache {
       LOG.debug("{} exceeds max entry size: {} > {}", key, valueSize, maxEntrySize);
       return valueSupplier.get();
     }
-    if (!groups.contains(group) && groups.size() > MAX_GROUPS) {
-      String removed = groups.remove(MAX_GROUPS - 1);
-      groups.add(group);
-      if (removed != null) {
-        invalidate(removed);
+    if (!groups.contains(group)) {
+      if (groups.size() > MAX_GROUPS) {
+        String removed = groups.remove(groups.size() - 1);
+        if (removed != null) {
+          invalidate(removed);
+        }
       }
+      groups.add(group);
     }
     String internalKey = group + "_" + key;
     CacheValue value = state().get(internalKey, loadFunc(valueSupplier, valueSize));

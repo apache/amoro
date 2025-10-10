@@ -200,7 +200,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       System.setProperty(
           DeleteCache.DELETE_CACHE_MAX_TOTAL_SIZE_DEFAULT, config.getCacheMaxTotalSize());
     }
-    if (!config.getCacheMaxEntrySize().equals(DeleteCache.DELETE_CACHE_TIMEOUT)) {
+    if (!config.getCacheTimeout().equals(DeleteCache.DELETE_CACHE_TIMEOUT)) {
       System.setProperty(DeleteCache.DELETE_CACHE_TIMEOUT, config.getCacheTimeout());
     }
     Map<String, String> properties = Maps.newHashMap(task.getProperties());
