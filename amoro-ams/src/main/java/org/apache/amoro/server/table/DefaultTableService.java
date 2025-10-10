@@ -182,13 +182,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
         continue;
       }
       List<TableRuntimeState> states = statesMap.get(tableRuntimeMeta.getTableId());
-      // if first time states will be null can't be initial table runtime
-      if (states == null) {
-        TableRuntimeState state = new TableRuntimeState();
-        state.setStateId(OptimizingStatus.IDLE.getCode());
-        state.setTableId(tableRuntimeMeta.getTableId());
-        states = Collections.singletonList(state);
-      }
       Optional<TableRuntime> tableRuntime =
           createTableRuntime(identifier, tableRuntimeMeta, states);
       if (!tableRuntime.isPresent()) {

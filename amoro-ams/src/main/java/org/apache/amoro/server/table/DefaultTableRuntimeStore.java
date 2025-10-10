@@ -68,7 +68,6 @@ public class DefaultTableRuntimeStore extends PersistentBase implements TableRun
     Preconditions.checkNotNull(tableIdentifier, "ServerTableIdentifier must not be null.");
     Preconditions.checkNotNull(meta, "TableRuntimeMeta must not be null.");
     Preconditions.checkNotNull(requiredStates, "requiredStates must not be null.");
-    Preconditions.checkNotNull(restoredStates, "restoredStates must not be null.");
     this.tableIdentifier = tableIdentifier;
     this.meta = meta;
     restoreStates(requiredStates, restoredStates);
@@ -136,37 +135,41 @@ public class DefaultTableRuntimeStore extends PersistentBase implements TableRun
 
   protected void restoreStates(
       List<StateKey<?>> requiredStates, List<TableRuntimeState> restoredStates) {
-    Map<String, TableRuntimeState> stateMap =
-        restoredStates.stream()
-            .collect(Collectors.toMap(TableRuntimeState::getStateKey, Function.identity()));
+    if (restoredStates == null) {
+      doAs(TableRuntimeMapper.class, m -> m.saveState(meta.getTableId(), null, null));
+    } else {
+      Map<String, TableRuntimeState> stateMap =
+          restoredStates.stream()
+              .collect(Collectors.toMap(TableRuntimeState::getStateKey, Function.identity()));
 
-    requiredStates.forEach(
-        key -> {
-          if (stateMap.containsKey(key.getKey())) {
-            states.put(key.getKey(), stateMap.get(key.getKey()));
-            stateMap.remove(key.getKey());
-          } else {
-            doAs(
-                TableRuntimeMapper.class,
-                mapper ->
-                    mapper.saveState(
-                        tableIdentifier.getId(), key.getKey(), key.serializeDefault()));
-            TableRuntimeState state =
-                getAs(
-                    TableRuntimeMapper.class,
-                    m -> m.getState(tableIdentifier.getId(), key.getKey()));
-            Preconditions.checkNotNull(state, "State %s initialize failed", key.getKey());
-            states.put(key.getKey(), state);
-          }
-        });
-
-    if (!stateMap.isEmpty()) {
-      LOG.warn("Found {} useless runtime states for {}", stateMap.size(), tableIdentifier);
-      stateMap.forEach(
-          (k, s) -> {
-            LOG.warn("Remove useless runtime state {} for {}", k, tableIdentifier);
-            doAs(TableRuntimeMapper.class, m -> m.removeState(s.getStateId()));
+      requiredStates.forEach(
+          key -> {
+            if (stateMap.containsKey(key.getKey())) {
+              states.put(key.getKey(), stateMap.get(key.getKey()));
+              stateMap.remove(key.getKey());
+            } else {
+              doAs(
+                  TableRuntimeMapper.class,
+                  mapper ->
+                      mapper.saveState(
+                          tableIdentifier.getId(), key.getKey(), key.serializeDefault()));
+              TableRuntimeState state =
+                  getAs(
+                      TableRuntimeMapper.class,
+                      m -> m.getState(tableIdentifier.getId(), key.getKey()));
+              Preconditions.checkNotNull(state, "State %s initialize failed", key.getKey());
+              states.put(key.getKey(), state);
+            }
           });
+
+      if (!stateMap.isEmpty()) {
+        LOG.warn("Found {} useless runtime states for {}", stateMap.size(), tableIdentifier);
+        stateMap.forEach(
+            (k, s) -> {
+              LOG.warn("Remove useless runtime state {} for {}", k, tableIdentifier);
+              doAs(TableRuntimeMapper.class, m -> m.removeState(s.getStateId()));
+            });
+      }
     }
   }
 
