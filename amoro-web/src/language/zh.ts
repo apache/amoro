@@ -21,7 +21,6 @@ export default {
   last12h: '最近 12 小时',
   last24h: '最近 24 小时',
   last7day: '最近 7 天',
-  healthScore: '健康度',
   overview: '总览',
   top10Tables: '表 TOP 10',
   latestOperations: '最近操作',
