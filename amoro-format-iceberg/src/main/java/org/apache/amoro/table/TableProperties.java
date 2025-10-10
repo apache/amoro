@@ -147,6 +147,10 @@ public class TableProperties {
   public static final String SNAPSHOT_MIN_COUNT = "snapshot.keep.min-count";
   public static final int SNAPSHOT_MIN_COUNT_DEFAULT = 1;
 
+  public static final String SNAPSHOT_FLINK_CHECKPOINT_RETENTION =
+      "snapshot.keep.flink.checkpoint-retention";
+  public static final String SNAPSHOT_FLINK_CHECKPOINT_RETENTION_DEFAULT = "7d"; // 7 Days
+
   public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
 
