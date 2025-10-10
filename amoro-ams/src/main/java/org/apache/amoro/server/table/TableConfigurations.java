@@ -75,6 +75,13 @@ public class TableConfigurations {
                 properties,
                 TableProperties.SNAPSHOT_MIN_COUNT,
                 TableProperties.SNAPSHOT_MIN_COUNT_DEFAULT))
+        .setFlinkCheckpointRetention(
+            ConfigHelpers.TimeUtils.parseDuration(
+                    CompatiblePropertyUtil.propertyAsString(
+                        properties,
+                        TableProperties.SNAPSHOT_FLINK_CHECKPOINT_RETENTION,
+                        TableProperties.SNAPSHOT_FLINK_CHECKPOINT_RETENTION_DEFAULT))
+                .toMillis())
         .setChangeDataTTLMinutes(
             CompatiblePropertyUtil.propertyAsLong(
                 properties,
