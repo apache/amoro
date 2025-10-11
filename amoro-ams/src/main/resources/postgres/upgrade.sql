@@ -203,9 +203,9 @@ INSERT INTO table_runtime_state (table_id,state_key,state_value)
 SELECT table_id,'optimizing_state',
        jsonb_build_object(
         'currentSnapshotId',current_snapshot_id,
-        'currentChangeSnapshotId',current_change_snapshot_id,
-        'lastOptimizedSnapshotId',last_optimized_snapshot_id,
-        'lastOptimizedChangeSnapshotId',last_optimized_change_snapshot_id,
+        'currentChangeSnapshotId',current_change_snapshotId,
+        'lastOptimizedSnapshotId',last_optimized_snapshotId,
+        'lastOptimizedChangeSnapshotId',last_optimized_change_snapshotId,
         'lastMajorOptimizingTime',last_major_optimizing_time,
         'lastFullOptimizingTime',last_full_optimizing_time,
         'lastMinorOptimizingTime',last_minor_optimizing_time)::text

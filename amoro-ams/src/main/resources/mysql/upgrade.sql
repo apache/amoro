@@ -19,8 +19,6 @@
 -- Update the precision from s level to ms.
 ALTER TABLE `table_runtime` MODIFY COLUMN `optimizing_status_start_time` TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Table optimize status start time';
 
-ALTER TABLE `table_runtime` ADD COLUMN `bucket_id` VARCHAR(4)  DEFAULT NULL COMMENT 'Bucket number to which the record table belongs'
-
 -- Update processId to SnowflakeId
 UPDATE `table_optimizing_process` SET `process_id` = `process_id` /10 << 13;
 UPDATE `task_runtime` SET `process_id` = `process_id` /10 << 13;
@@ -144,9 +142,9 @@ INSERT INTO table_runtime_state
 SELECT
 `table_id`, 'optimizing_state', JSON_OBJECT(
     'currentSnapshotId', `current_snapshot_id`,
-    'currentChangeSnapshotId', `current_change_snapshot_id`,
-    'lastOptimizedSnapshotId', `last_optimized_snapshot_id`,
-    'lastOptimizedChangeSnapshotId', `last_optimized_change_snapshot_id`,
+    'currentChangeSnapshotId', `current_change_snapshotId`,
+    'lastOptimizedSnapshotId', `last_optimized_snapshotId`,
+    'lastOptimizedChangeSnapshotId', `last_optimized_change_snapshotId`,
     'lastMajorOptimizingTime', `last_major_optimizing_time`,
     'lastFullOptimizingTime', `last_full_optimizing_time`,
     'lastMinorOptimizingTime', `last_minor_optimizing_time`
@@ -154,3 +152,6 @@ SELECT
 FROM table_runtime_old;
 
 DROP TABLE IF EXISTS table_runtime_old;
+
+-- ADD bucket_id to table_runtime
+ALTER TABLE `table_runtime` ADD COLUMN `bucket_id` VARCHAR(4)  DEFAULT NULL COMMENT 'Bucket number to which the record table belongs';
