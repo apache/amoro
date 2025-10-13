@@ -275,6 +275,8 @@ public class TerminalManager {
       }
     } else if (catalogType.equalsIgnoreCase(CatalogType.CUSTOM.name())) {
       return "iceberg";
+    } else if (catalogType.equalsIgnoreCase(CatalogType.REST.name())) {
+      return "iceberg";
     } else if (catalogType.equalsIgnoreCase(CatalogType.GLUE.name())) {
       return "iceberg";
     }

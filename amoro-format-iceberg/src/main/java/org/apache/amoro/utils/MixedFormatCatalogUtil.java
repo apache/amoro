@@ -90,6 +90,9 @@ public class MixedFormatCatalogUtil {
         icebergCatalogProperties.put(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
       }
     }
+    if (CatalogMetaProperties.CATALOG_TYPE_REST.equals(metastoreType)) {
+      icebergCatalogProperties.put(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
+    }
 
     if (CatalogMetaProperties.CATALOG_TYPE_CUSTOM.equalsIgnoreCase(metastoreType)) {
       Preconditions.checkArgument(
