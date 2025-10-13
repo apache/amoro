@@ -23,6 +23,7 @@ import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_CUS
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_REST;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
@@ -41,21 +42,23 @@ public class CatalogBuilder {
   private static final Map<String, Set<TableFormat>> formatSupportedMatrix =
       ImmutableMap.of(
           CATALOG_TYPE_HADOOP,
-              Sets.newHashSet(
-                  TableFormat.ICEBERG,
-                  TableFormat.MIXED_ICEBERG,
-                  TableFormat.PAIMON,
-                  TableFormat.HUDI),
-          CATALOG_TYPE_GLUE, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
-          CATALOG_TYPE_CUSTOM, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
+          Sets.newHashSet(
+              TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON, TableFormat.HUDI),
+          CATALOG_TYPE_GLUE,
+          Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
+          CATALOG_TYPE_REST,
+          Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
+          CATALOG_TYPE_CUSTOM,
+          Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
           CATALOG_TYPE_HIVE,
-              Sets.newHashSet(
-                  TableFormat.ICEBERG,
-                  TableFormat.MIXED_ICEBERG,
-                  TableFormat.MIXED_HIVE,
-                  TableFormat.PAIMON,
-                  TableFormat.HUDI),
-          CATALOG_TYPE_AMS, Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
+          Sets.newHashSet(
+              TableFormat.ICEBERG,
+              TableFormat.MIXED_ICEBERG,
+              TableFormat.MIXED_HIVE,
+              TableFormat.PAIMON,
+              TableFormat.HUDI),
+          CATALOG_TYPE_AMS,
+          Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
 
   public static ServerCatalog buildServerCatalog(
       CatalogMeta catalogMeta, Configurations serverConfiguration) {
@@ -75,6 +78,7 @@ public class CatalogBuilder {
     switch (type) {
       case CATALOG_TYPE_HADOOP:
       case CATALOG_TYPE_GLUE:
+      case CATALOG_TYPE_REST:
       case CATALOG_TYPE_CUSTOM:
       case CATALOG_TYPE_HIVE:
         return new ExternalCatalog(catalogMeta);

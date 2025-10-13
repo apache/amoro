@@ -134,6 +134,7 @@ const storeSupportFormat: { [prop: string]: string[] } = {
   hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON, tableFormatMap.HUDI],
   hadoop: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
   glue: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
+  rest: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
   custom: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
 }
 
@@ -196,6 +197,7 @@ const defaultPropertiesMap = {
   hadoop: ['warehouse'],
   custom: ['catalog-impl'],
   glue: ['warehouse', 'lock-impl', 'lock.table'],
+  rest: ['uri'],
   PAIMON: ['warehouse'],
 }
 
@@ -406,7 +408,7 @@ const storageConfigTypeHadoopS3Oss = reactive<ILableAndValue[]>([{
 
 const storageConfigTypeOps = computed(() => {
   const type = formState.catalog.type
-  if (type === 'ams' || type === 'custom') {
+  if (type === 'ams' || type === 'custom' || type === 'rest') {
     return storageConfigTypeHadoopS3Oss
   }
   else if (type === 'glue') {
