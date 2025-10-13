@@ -59,7 +59,24 @@ public class RollingFileCleaner {
     }
 
     collectedFiles.add(filePath);
-    String parentDir = new Path(URI.create(filePath).getPath()).getParent().toString();
+    // Preserve the full URI including scheme (e.g., s3://, s3a://, hdfs://) for S3 and other remote
+    // file systems
+    URI uri = URI.create(filePath);
+    String parentDir;
+    if (uri.getScheme() != null && uri.getAuthority() != null) {
+      // For URIs with scheme and authority (e.g., s3://bucket/path/file), construct full parent
+      // path
+      Path path = new Path(uri.getPath());
+      Path parent = path.getParent();
+      if (parent != null) {
+        parentDir = uri.getScheme() + "://" + uri.getAuthority() + parent;
+      } else {
+        parentDir = uri.getScheme() + "://" + uri.getAuthority();
+      }
+    } else {
+      // For local paths or paths without scheme
+      parentDir = new Path(uri.getPath()).getParent().toString();
+    }
     parentDirectories.add(parentDir);
     int currentCount = fileCounter.incrementAndGet();
 
