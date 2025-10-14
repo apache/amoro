@@ -147,6 +147,20 @@ public class TableProperties {
   public static final String SNAPSHOT_MIN_COUNT = "snapshot.keep.min-count";
   public static final int SNAPSHOT_MIN_COUNT_DEFAULT = 1;
 
+  /**
+   * The retention period for snapshots created by Flink checkpoints. Snapshots older than this
+   * duration may be cleaned up. Avoid keeping the last flink checkpoint snapshot for too long, as
+   * it may reference old data files.
+   *
+   * <p>Format: A string representing the duration, e.g., "7d" for 7 days, "12h" for 12 hours.
+   *
+   * <p>Default: "7d" (7 days)
+   */
+  public static final String SNAPSHOT_FLINK_CHECKPOINT_RETENTION =
+      "snapshot.keep.flink.checkpoint-retention";
+
+  public static final String SNAPSHOT_FLINK_CHECKPOINT_RETENTION_DEFAULT = "7d"; // 7 Days
+
   public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
 
