@@ -31,6 +31,7 @@ const Settings = () => import('@/views/settings/index.vue')
 const Terminal = () => import('@/views/terminal/index.vue')
 const Login = () => import('@/views/login/index.vue')
 const Resource = () => import('@/views/resource/index.vue')
+const Execution = () => import('@/views/execution/index.vue')
 const Overview = () => import('@/views/overview/index.vue')
 
 const routes: Array<RouteRecordRaw> = [
@@ -70,9 +71,9 @@ const routes: Array<RouteRecordRaw> = [
         ],
       },
       {
-        path: 'optimizing',
-        name: 'Optimizing',
-        component: Resource,
+        path: 'execution',
+        name: 'Execution',
+        component: Execution,
       },
       {
         path: 'settings',
