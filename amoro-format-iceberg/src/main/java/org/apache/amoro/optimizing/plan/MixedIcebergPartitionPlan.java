@@ -24,7 +24,7 @@ import org.apache.amoro.data.DataFileType;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.optimizing.MixedIcebergRewriteExecutorFactory;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -90,9 +90,11 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
   }
 
   @Override
-  protected OptimizingInputProperties buildTaskProperties() {
-    OptimizingInputProperties properties = new OptimizingInputProperties();
-    properties.setExecutorFactoryImpl(MixedIcebergRewriteExecutorFactory.class.getName());
+  protected Map<String, String> buildTaskProperties() {
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(
+        TaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
+        MixedIcebergRewriteExecutorFactory.class.getName());
     return properties;
   }
 

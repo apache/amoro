@@ -20,8 +20,8 @@ package org.apache.amoro.hive.optimizing;
 
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingExecutorFactory;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
 import java.util.Map;
@@ -38,12 +38,7 @@ public class MixedHiveRewriteExecutorFactory
   }
 
   @Override
-  public OptimizingExecutor createExecutor(RewriteFilesInput input) {
-    OptimizingInputProperties optimizingConfig = OptimizingInputProperties.parse(properties);
-    return new MixedHiveRewriteExecutor(
-        input,
-        input.getTable(),
-        optimizingConfig.getStructLikeCollections(),
-        optimizingConfig.getOutputDir());
+  public OptimizingExecutor<RewriteFilesOutput> createExecutor(RewriteFilesInput input) {
+    return new MixedHiveRewriteExecutor(input, input.getTable(), properties);
   }
 }

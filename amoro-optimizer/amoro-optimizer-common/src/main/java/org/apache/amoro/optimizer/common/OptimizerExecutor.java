@@ -20,10 +20,12 @@ package org.apache.amoro.optimizer.common;
 
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskResult;
+import org.apache.amoro.io.reader.DeleteCache;
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingExecutorFactory;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.TableOptimizing;
+import org.apache.amoro.optimizing.TaskProperties;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.utils.ExceptionUtil;
 import org.apache.amoro.utils.SerializationUtil;
@@ -32,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 public class OptimizerExecutor extends AbstractOptimizerOperator {
 
@@ -147,24 +150,18 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
   public static OptimizingTaskResult executeTask(
       OptimizerConfig config, int threadId, OptimizingTask task, Logger logger) {
     long startTime = System.currentTimeMillis();
-    TableOptimizing.OptimizingInput input = null;
+    TableOptimizing.OptimizingInput input;
     try {
-      OptimizingInputProperties properties = OptimizingInputProperties.parse(task.getProperties());
+      Map<String, String> taskProperties = fillTaskProperties(config, task);
       input = SerializationUtil.simpleDeserialize(task.getTaskInput());
-      String executorFactoryImpl = properties.getExecutorFactoryImpl();
+      String executorFactoryImpl = taskProperties.get(TaskProperties.TASK_EXECUTOR_FACTORY_IMPL);
       DynConstructors.Ctor<OptimizingExecutorFactory> ctor =
           DynConstructors.builder(OptimizingExecutorFactory.class)
               .impl(executorFactoryImpl)
               .buildChecked();
       OptimizingExecutorFactory factory = ctor.newInstance();
 
-      if (config.isExtendDiskStorage()) {
-        properties.enableSpillMap();
-      }
-      properties.setMaxSizeInMemory(config.getMemoryStorageSize() * 1024 * 1024);
-      properties.setSpillMapPath(config.getDiskStoragePath());
-      factory.initialize(properties.getProperties());
-
+      factory.initialize(taskProperties);
       OptimizingExecutor executor = factory.createExecutor(input);
       TableOptimizing.OptimizingOutput output = executor.execute();
       ByteBuffer outputByteBuffer = SerializationUtil.simpleSerialize(output);
@@ -189,5 +186,32 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       errorResult.setErrorMessage(ExceptionUtil.getErrorMessage(t, ERROR_MESSAGE_MAX_LENGTH));
       return errorResult;
     }
+  }
+
+  private static Map<String, String> fillTaskProperties(
+      OptimizerConfig config, OptimizingTask task) {
+    if (config.isCacheEnabled()) {
+      System.setProperty(DeleteCache.DELETE_CACHE_ENABLED, "true");
+    }
+    if (!config.getCacheMaxEntrySize().equals(DeleteCache.DELETE_CACHE_MAX_ENTRY_SIZE_DEFAULT)) {
+      System.setProperty(DeleteCache.DELETE_CACHE_MAX_ENTRY_SIZE, config.getCacheMaxEntrySize());
+    }
+    if (!config.getCacheMaxTotalSize().equals(DeleteCache.DELETE_CACHE_MAX_TOTAL_SIZE_DEFAULT)) {
+      System.setProperty(
+          DeleteCache.DELETE_CACHE_MAX_TOTAL_SIZE_DEFAULT, config.getCacheMaxTotalSize());
+    }
+    if (!config.getCacheTimeout().equals(DeleteCache.DELETE_CACHE_TIMEOUT)) {
+      System.setProperty(DeleteCache.DELETE_CACHE_TIMEOUT, config.getCacheTimeout());
+    }
+    Map<String, String> properties = Maps.newHashMap(task.getProperties());
+    properties.put(TaskProperties.PROCESS_ID, String.valueOf(task.getTaskId().getProcessId()));
+    if (config.isExtendDiskStorage()) {
+      properties.put(TaskProperties.EXTEND_DISK_STORAGE, "true");
+    }
+    properties.put(
+        TaskProperties.MEMORY_STORAGE_SIZE,
+        String.valueOf(config.getMemoryStorageSize() * 1024 * 1024));
+    properties.put(TaskProperties.DISK_STORAGE_PATH, config.getDiskStoragePath());
+    return properties;
   }
 }
