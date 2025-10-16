@@ -27,7 +27,7 @@ import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.hive.optimizing.MixedHiveRewriteExecutorFactory;
 import org.apache.amoro.hive.optimizing.plan.MixedHivePartitionPlan;
 import org.apache.amoro.hive.table.SupportHive;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
@@ -71,7 +71,7 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
   @Override
   protected void assertTaskProperties(Map<String, String> expect, Map<String, String> actual) {
     actual = Maps.newHashMap(actual);
-    String outputDir = actual.remove(OptimizingInputProperties.OUTPUT_DIR);
+    String outputDir = actual.remove(TaskProperties.OUTPUT_DIR);
     if (outputDir != null) {
       Assert.assertTrue(Long.parseLong(outputDir.split("_")[1]) > 0);
     }
@@ -136,8 +136,7 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
   protected Map<String, String> buildTaskProperties() {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(
-        OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
-        MixedHiveRewriteExecutorFactory.class.getName());
+        TaskProperties.TASK_EXECUTOR_FACTORY_IMPL, MixedHiveRewriteExecutorFactory.class.getName());
     return properties;
   }
 }

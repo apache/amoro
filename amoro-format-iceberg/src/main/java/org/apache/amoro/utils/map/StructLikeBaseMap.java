@@ -23,6 +23,7 @@ import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeWrapper;
 
 import java.io.IOException;
+import java.util.function.BiFunction;
 
 public abstract class StructLikeBaseMap<T> implements SimpleMap<StructLike, T> {
 
@@ -52,6 +53,12 @@ public abstract class StructLikeBaseMap<T> implements SimpleMap<StructLike, T> {
     StructLikeWrapper wrapper = wrappers.get();
     getInternalMap().delete(wrapper.set(key));
     wrapper.set(null); // don't hold a reference to the key.
+  }
+
+  @Override
+  public T merge(
+      StructLike key, T value, BiFunction<? super T, ? super T, ? extends T> remappingFunction) {
+    return getInternalMap().merge(structLikeWrapper.copyFor(key), value, remappingFunction);
   }
 
   @Override

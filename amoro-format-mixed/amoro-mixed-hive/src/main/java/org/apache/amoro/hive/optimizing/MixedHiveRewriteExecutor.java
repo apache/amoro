@@ -24,9 +24,9 @@ import org.apache.amoro.io.writer.MixedTreeNodePosDeleteWriter;
 import org.apache.amoro.optimizing.AbstractRewriteFilesExecutor;
 import org.apache.amoro.optimizing.OptimizingDataReader;
 import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.WriteOperationKind;
-import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.deletes.PositionDelete;
@@ -36,6 +36,7 @@ import org.apache.iceberg.io.FileWriter;
 import org.apache.iceberg.io.TaskWriter;
 
 import java.util.List;
+import java.util.Map;
 
 /** OptimizingExecutor form mixed format */
 public class MixedHiveRewriteExecutor extends AbstractRewriteFilesExecutor {
@@ -43,12 +44,9 @@ public class MixedHiveRewriteExecutor extends AbstractRewriteFilesExecutor {
   private final String outputDir;
 
   public MixedHiveRewriteExecutor(
-      RewriteFilesInput input,
-      MixedTable table,
-      StructLikeCollections structLikeCollections,
-      String outputDir) {
-    super(input, table, structLikeCollections);
-    this.outputDir = outputDir;
+      RewriteFilesInput input, MixedTable table, Map<String, String> properties) {
+    super(input, table, properties);
+    this.outputDir = properties.get(TaskProperties.OUTPUT_DIR);
   }
 
   @Override
