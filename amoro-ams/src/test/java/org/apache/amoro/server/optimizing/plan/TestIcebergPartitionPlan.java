@@ -24,7 +24,7 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.optimizing.IcebergRewriteExecutorFactory;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
 import org.apache.amoro.optimizing.plan.IcebergPartitionPlan;
 import org.apache.amoro.optimizing.scan.IcebergTableFileScanHelper;
@@ -95,8 +95,7 @@ public class TestIcebergPartitionPlan extends TestUnkeyedPartitionPlan {
   protected Map<String, String> buildTaskProperties() {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(
-        OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
-        IcebergRewriteExecutorFactory.class.getName());
+        TaskProperties.TASK_EXECUTOR_FACTORY_IMPL, IcebergRewriteExecutorFactory.class.getName());
     return properties;
   }
 }

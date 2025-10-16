@@ -25,8 +25,8 @@ import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.optimizing.BaseOptimizingInput;
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingExecutorFactory;
-import org.apache.amoro.optimizing.OptimizingInputProperties;
 import org.apache.amoro.optimizing.TableOptimizing;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.utils.SerializationUtil;
@@ -129,8 +129,7 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
       optimizingTask.setTaskInput(SerializationUtil.simpleSerialize(this));
       Map<String, String> inputProperties = Maps.newHashMap();
       inputProperties.put(
-          OptimizingInputProperties.TASK_EXECUTOR_FACTORY_IMPL,
-          TestOptimizingExecutorFactory.class.getName());
+          TaskProperties.TASK_EXECUTOR_FACTORY_IMPL, TestOptimizingExecutorFactory.class.getName());
       optimizingTask.setProperties(inputProperties);
       return optimizingTask;
     }

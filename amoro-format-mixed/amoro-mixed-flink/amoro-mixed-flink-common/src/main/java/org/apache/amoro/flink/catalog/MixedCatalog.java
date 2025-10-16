@@ -102,8 +102,8 @@ public class MixedCatalog extends AbstractCatalog {
   public static final String DEFAULT_DB = "default";
 
   /**
-   * To distinguish 'CREATE TABLE LIKE' by checking stack {@link
-   * org.apache.flink.table.planner.operations.SqlCreateTableConverter#lookupLikeSourceTable}
+   * To distinguish 'CREATE TABLE LIKE' by checking stack
+   * org.apache.flink.table.planner.operations.SqlCreateTableConverter#lookupLikeSourceTable
    */
   public static final String SQL_LIKE_METHOD = "lookupLikeSourceTable";
 
@@ -242,7 +242,7 @@ public class MixedCatalog extends AbstractCatalog {
     properties.put(MixedFormatValidator.MIXED_FORMAT_CATALOG.key(), tableIdentifier.getCatalog());
     properties.put(MixedFormatValidator.MIXED_FORMAT_TABLE.key(), tableIdentifier.getTableName());
     properties.put(MixedFormatValidator.MIXED_FORMAT_DATABASE.key(), tableIdentifier.getDatabase());
-    properties.put(CatalogFactoryOptions.METASTORE_URL.key(), catalogBuilder.getMetastoreUrl());
+    properties.put(CatalogFactoryOptions.AMS_URI.key(), catalogBuilder.getAmsUri());
   }
 
   private static List<String> toPartitionKeys(PartitionSpec spec, Schema icebergSchema) {

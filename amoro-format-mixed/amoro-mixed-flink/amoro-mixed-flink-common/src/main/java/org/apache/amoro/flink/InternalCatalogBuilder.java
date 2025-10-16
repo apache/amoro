@@ -50,13 +50,13 @@ import java.util.Map;
 public class InternalCatalogBuilder implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(InternalCatalogBuilder.class);
 
-  private String metastoreUrl;
+  private String amsUri;
   private Map<String, String> properties = new HashMap<>(0);
   private String catalogName;
 
   private MixedFormatCatalog createMixedFormatCatalog() {
-    if (metastoreUrl != null) {
-      return CatalogLoader.load(metastoreUrl, properties);
+    if (amsUri != null) {
+      return CatalogLoader.load(amsUri, properties);
     } else {
       Preconditions.checkArgument(catalogName != null, "Catalog name cannot be empty");
       String metastoreType = properties.get(FlinkCatalogFactory.ICEBERG_CATALOG_TYPE);
@@ -101,23 +101,25 @@ public class InternalCatalogBuilder implements Serializable {
     }
 
     if (!Strings.isNullOrEmpty(hadoopConfDir)) {
+      java.nio.file.Path hdfsSiteFile = Paths.get(hadoopConfDir, "hdfs-site.xml");
       Preconditions.checkState(
-          Files.exists(Paths.get(hadoopConfDir, "hdfs-site.xml")),
+          Files.exists(hdfsSiteFile),
           "Failed to load Hadoop configuration: missing %s",
-          Paths.get(hadoopConfDir, "hdfs-site.xml"));
+          hdfsSiteFile);
       newConf.addResource(new Path(hadoopConfDir, "hdfs-site.xml"));
+      java.nio.file.Path coreSiteFile = Paths.get(hadoopConfDir, "core-site.xml");
       Preconditions.checkState(
-          Files.exists(Paths.get(hadoopConfDir, "core-site.xml")),
+          Files.exists(coreSiteFile),
           "Failed to load Hadoop configuration: missing %s",
-          Paths.get(hadoopConfDir, "core-site.xml"));
+          coreSiteFile);
       newConf.addResource(new Path(hadoopConfDir, "core-site.xml"));
     }
 
     return newConf;
   }
 
-  public String getMetastoreUrl() {
-    return metastoreUrl;
+  public String getAmsUri() {
+    return amsUri;
   }
 
   public Map<String, String> getProperties() {
@@ -134,8 +136,8 @@ public class InternalCatalogBuilder implements Serializable {
     return createMixedFormatCatalog();
   }
 
-  public InternalCatalogBuilder metastoreUrl(String metastoreUrl) {
-    this.metastoreUrl = metastoreUrl;
+  public InternalCatalogBuilder amsUri(String amsUri) {
+    this.amsUri = amsUri;
     return this;
   }
 

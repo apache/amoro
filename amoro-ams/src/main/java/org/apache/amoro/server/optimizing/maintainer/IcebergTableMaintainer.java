@@ -332,15 +332,25 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   protected long mustOlderThan(DefaultTableRuntime tableRuntime, long now) {
-    return min(
-        // The snapshots keep time
-        now - snapshotsKeepTime(tableRuntime),
-        // The snapshot optimizing plan based should not be expired for committing
-        fetchOptimizingPlanSnapshotTime(table, tableRuntime),
-        // The latest non-optimized snapshot should not be expired for data expiring
-        fetchLatestNonOptimizedSnapshotTime(table),
-        // The latest flink committed snapshot should not be expired for recovering flink job
-        fetchLatestFlinkCommittedSnapshotTime(table));
+    long mustOlderThan =
+        min(
+            // The snapshots keep time
+            now - snapshotsKeepTime(tableRuntime),
+            // The snapshot optimizing plan based should not be expired for committing
+            fetchOptimizingPlanSnapshotTime(table, tableRuntime),
+            // The latest non-optimized snapshot should not be expired for data expiring
+            fetchLatestNonOptimizedSnapshotTime(table));
+
+    long latestFlinkCommitTime = fetchLatestFlinkCommittedSnapshotTime(table);
+    long flinkCkRetainMillis = tableRuntime.getTableConfiguration().getFlinkCheckpointRetention();
+    if ((now - latestFlinkCommitTime) > flinkCkRetainMillis) {
+      // exceed configured flink checkpoint retain time, no need to consider flink committed
+      // snapshot
+      return mustOlderThan;
+    } else {
+      // keep at least flink committed snapshot for flink job recovering
+      return min(mustOlderThan, latestFlinkCommitTime);
+    }
   }
 
   protected long snapshotsKeepTime(DefaultTableRuntime tableRuntime) {

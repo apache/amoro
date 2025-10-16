@@ -94,7 +94,7 @@ CREATE TABLE products (
 
 CREATE CATALOG amoro_catalog WITH (
     'type'='amoro',
-    'metastore.url'='thrift://<ip>:<port>/<catalog_name_in_metastore>'
+    'ams.uri'='thrift://<ip>:<port>/<catalog_name_in_metastore>'
 ); 
 
 CREATE TABLE IF NOT EXISTS `amoro_catalog`.`db`.`test_tb`(

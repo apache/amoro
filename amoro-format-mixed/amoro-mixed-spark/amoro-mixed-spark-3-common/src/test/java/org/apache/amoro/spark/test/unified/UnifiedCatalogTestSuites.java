@@ -45,7 +45,7 @@ public class UnifiedCatalogTestSuites extends SparkTestBase {
     return ImmutableMap.of(
         "spark.sql.catalog.spark_catalog",
         "org.apache.amoro.spark.SparkUnifiedSessionCatalog",
-        "spark.sql.catalog.spark_catalog.uri",
+        "spark.sql.catalog.spark_catalog.ams.uri",
         CONTEXT.amsCatalogUrl(null));
   }
 
