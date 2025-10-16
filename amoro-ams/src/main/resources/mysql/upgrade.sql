@@ -153,5 +153,16 @@ FROM table_runtime_old;
 
 DROP TABLE IF EXISTS table_runtime_old;
 
+-- ADD Table table_cleanup_process
+CREATE TABLE `table_cleanup_process` (
+    `cleanup_process_id`            bigint(20) NOT NULL COMMENT 'cleanup_process UUID',
+    `table_id`                      bigint(20) NOT NULL,
+    `catalog_name`                  varchar(64) NOT NULL COMMENT 'Catalog name',
+    `db_name`                       varchar(128) NOT NULL COMMENT 'Database name',
+    `table_name`                    varchar(256) NOT NULL COMMENT 'Table name',
+    `cleanup_operation_code` int NOT NULL COMMENT 'Cleanup operation code:OrphanFilesCleaning(11),DanglingDeleteFilesCleaning(22),DataExpiring(33),SnapshotsExpiring(44)',
+    `last_cleanup_end_time` timestamp(3) NULL DEFAULT NULL COMMENT 'Last cleanup operation end time',
+    PRIMARY KEY (`table_id`, `cleanup_operation_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of table cleanup tasks';
 -- ADD bucket_id to table_runtime
 ALTER TABLE `table_runtime` ADD COLUMN `bucket_id` VARCHAR(4)  DEFAULT NULL COMMENT 'Bucket number to which the record table belongs';
