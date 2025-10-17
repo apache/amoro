@@ -38,6 +38,7 @@ import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_CUS
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_REST;
 import static org.apache.amoro.properties.CatalogMetaProperties.KEY_WAREHOUSE;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE;
@@ -80,6 +81,7 @@ import org.apache.iceberg.aliyun.AliyunProperties;
 import org.apache.iceberg.aws.AwsClientProperties;
 import org.apache.iceberg.aws.glue.GlueCatalog;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
+import org.apache.iceberg.rest.RESTCatalog;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,6 +110,7 @@ public class CatalogController {
         CATALOG_TYPE_GLUE, Lists.newArrayList(CatalogProperties.WAREHOUSE_LOCATION));
     CATALOG_REQUIRED_PROPERTIES.put(
         CATALOG_TYPE_CUSTOM, Lists.newArrayList(CatalogProperties.CATALOG_IMPL));
+    CATALOG_REQUIRED_PROPERTIES.put(CATALOG_TYPE_REST, Lists.newArrayList(CatalogProperties.URI));
   }
 
   static {
@@ -162,6 +165,19 @@ public class CatalogController {
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(
             CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
+
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_S3, ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_S3, MIXED_ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_OSS, ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_OSS, MIXED_ICEBERG));
   }
 
   private final PlatformFileManager platformFileInfoService;
@@ -220,6 +236,7 @@ public class CatalogController {
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HIVE, displayKey, "Hive Metastore"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HADOOP, displayKey, "Filesystem"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_GLUE, displayKey, "Glue"));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_REST, displayKey, "REST"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_CUSTOM, displayKey, "Custom"));
     ctx.json(OkResponse.of(catalogTypes));
   }
@@ -414,11 +431,15 @@ public class CatalogController {
     catalogMeta.setCatalogType(info.getType());
     catalogMeta.setCatalogProperties(
         PropertiesUtil.unionCatalogProperties(info.getTableProperties(), info.getProperties()));
-    // fill catalog impl when catalog type is glue
+    // fill catalog impl when catalog type is glue or rest
     if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(info.getType())) {
       catalogMeta.putToCatalogProperties(
           CatalogProperties.CATALOG_IMPL, GlueCatalog.class.getName());
+    } else if (CatalogMetaProperties.CATALOG_TYPE_REST.equals(info.getType())) {
+      catalogMeta.putToCatalogProperties(
+          CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
     }
+
     catalogMeta.putToCatalogProperties(
         CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
         info.getOptimizerGroup());
