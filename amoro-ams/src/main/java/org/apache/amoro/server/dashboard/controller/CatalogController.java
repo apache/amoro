@@ -169,11 +169,15 @@ public class CatalogController {
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_S3, ICEBERG));
     VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_S3, MIXED_ICEBERG));
+    VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_OSS, ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_OSS, MIXED_ICEBERG));
   }
 
   private final PlatformFileManager platformFileInfoService;
@@ -427,17 +431,15 @@ public class CatalogController {
     catalogMeta.setCatalogType(info.getType());
     catalogMeta.setCatalogProperties(
         PropertiesUtil.unionCatalogProperties(info.getTableProperties(), info.getProperties()));
-    // fill catalog impl when catalog type is glue
+    // fill catalog impl when catalog type is glue or rest
     if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(info.getType())) {
       catalogMeta.putToCatalogProperties(
           CatalogProperties.CATALOG_IMPL, GlueCatalog.class.getName());
-    }
-
-    // fill catalog impl when catalog type is rest
-    if (CatalogMetaProperties.CATALOG_TYPE_REST.equals(info.getType())) {
+    } else if (CatalogMetaProperties.CATALOG_TYPE_REST.equals(info.getType())) {
       catalogMeta.putToCatalogProperties(
           CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
     }
+
     catalogMeta.putToCatalogProperties(
         CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.SELF_OPTIMIZING_GROUP,
         info.getOptimizerGroup());
