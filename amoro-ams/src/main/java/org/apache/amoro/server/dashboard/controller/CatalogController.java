@@ -232,7 +232,7 @@ public class CatalogController {
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HIVE, displayKey, "Hive Metastore"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HADOOP, displayKey, "Filesystem"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_GLUE, displayKey, "Glue"));
-    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_REST, displayKey, "Rest"));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_REST, displayKey, "REST"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_CUSTOM, displayKey, "Custom"));
     ctx.json(OkResponse.of(catalogTypes));
   }
