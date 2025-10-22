@@ -23,6 +23,7 @@ import org.apache.amoro.resource.InternalResourceContainer;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceStatus;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.utils.PropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -91,7 +92,7 @@ public abstract class AbstractOptimizerContainer implements InternalResourceCont
           .append(" -hb ")
           .append(resource.getProperties().get(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL));
     }
-    if (org.apache.iceberg.util.PropertyUtil.propertyAsBoolean(
+    if (PropertyUtil.propertyAsBoolean(
         resource.getProperties(),
         OptimizerProperties.OPTIMIZER_EXTEND_DISK_STORAGE,
         OptimizerProperties.OPTIMIZER_EXTEND_DISK_STORAGE_DEFAULT)) {
@@ -103,6 +104,33 @@ public abstract class AbstractOptimizerContainer implements InternalResourceCont
             .append(" -msz ")
             .append(
                 resource.getProperties().get(OptimizerProperties.OPTIMIZER_MEMORY_STORAGE_SIZE));
+      }
+    }
+    if (PropertyUtil.propertyAsBoolean(
+        resource.getProperties(),
+        OptimizerProperties.OPTIMIZER_CACHE_ENABLED,
+        OptimizerProperties.OPTIMIZER_CACHE_ENABLED_DEFAULT)) {
+      stringBuilder.append(" -ce ");
+      if (resource
+          .getProperties()
+          .containsKey(OptimizerProperties.OPTIMIZER_CACHE_MAX_TOTAL_SIZE)) {
+        stringBuilder
+            .append(" -cmts ")
+            .append(
+                resource.getProperties().get(OptimizerProperties.OPTIMIZER_CACHE_MAX_TOTAL_SIZE));
+      }
+      if (resource
+          .getProperties()
+          .containsKey(OptimizerProperties.OPTIMIZER_CACHE_MAX_ENTRY_SIZE)) {
+        stringBuilder
+            .append(" -cmes ")
+            .append(
+                resource.getProperties().get(OptimizerProperties.OPTIMIZER_CACHE_MAX_ENTRY_SIZE));
+      }
+      if (resource.getProperties().containsKey(OptimizerProperties.OPTIMIZER_CACHE_TIMEOUT)) {
+        stringBuilder
+            .append(" -ct ")
+            .append(resource.getProperties().get(OptimizerProperties.OPTIMIZER_CACHE_TIMEOUT));
       }
     }
     if (StringUtils.isNotEmpty(resource.getResourceId())) {

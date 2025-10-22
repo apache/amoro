@@ -28,6 +28,7 @@ public class TableConfiguration {
   private boolean expireSnapshotEnabled;
   private long snapshotTTLMinutes;
   private int snapshotMinCount;
+  private long flinkCheckpointRetention;
   private long changeDataTTLMinutes;
   private boolean cleanOrphanEnabled;
   private long orphanExistingMinutes;
@@ -86,6 +87,15 @@ public class TableConfiguration {
     return this;
   }
 
+  public long getFlinkCheckpointRetention() {
+    return flinkCheckpointRetention;
+  }
+
+  public TableConfiguration setFlinkCheckpointRetention(long flinkCheckpointRetention) {
+    this.flinkCheckpointRetention = flinkCheckpointRetention;
+    return this;
+  }
+
   public TableConfiguration setChangeDataTTLMinutes(long changeDataTTLMinutes) {
     this.changeDataTTLMinutes = changeDataTTLMinutes;
     return this;
@@ -141,6 +151,7 @@ public class TableConfiguration {
     return expireSnapshotEnabled == that.expireSnapshotEnabled
         && snapshotTTLMinutes == that.snapshotTTLMinutes
         && snapshotMinCount == that.snapshotMinCount
+        && flinkCheckpointRetention == that.flinkCheckpointRetention
         && changeDataTTLMinutes == that.changeDataTTLMinutes
         && cleanOrphanEnabled == that.cleanOrphanEnabled
         && orphanExistingMinutes == that.orphanExistingMinutes
@@ -156,6 +167,7 @@ public class TableConfiguration {
         expireSnapshotEnabled,
         snapshotTTLMinutes,
         snapshotMinCount,
+        flinkCheckpointRetention,
         changeDataTTLMinutes,
         cleanOrphanEnabled,
         orphanExistingMinutes,

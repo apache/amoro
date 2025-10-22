@@ -23,7 +23,6 @@ import org.apache.amoro.io.CloseablePredicate;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Multimap;
@@ -31,6 +30,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Multimaps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.hash.BloomFilter;
 import org.apache.amoro.utils.ContentFiles;
+import org.apache.amoro.utils.DynMethods;
 import org.apache.amoro.utils.map.StructLikeBaseMap;
 import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.Accessor;
@@ -41,6 +41,8 @@ import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.avro.Avro;
+import org.apache.iceberg.data.BaseDeleteLoader;
+import org.apache.iceberg.data.DeleteLoader;
 import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
@@ -64,11 +66,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -90,6 +93,12 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       POS_DELETE_SCHEMA.accessorForField(MetadataColumns.DELETE_FILE_PATH.fieldId());
   private static final Accessor<StructLike> POSITION_ACCESSOR =
       POS_DELETE_SCHEMA.accessorForField(MetadataColumns.DELETE_FILE_POS.fieldId());
+
+  // BaseDeleteLoader#getOrReadEqDeletes is a private method, accessed it via reflection
+  private static final DynMethods.UnboundMethod READ_EQ_DELETES_METHOD =
+      DynMethods.builder("getOrReadEqDeletes")
+          .hiddenImpl(BaseDeleteLoader.class, DeleteFile.class, Schema.class)
+          .build();
 
   @VisibleForTesting public static long FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 1000000L;
 
@@ -117,11 +126,14 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
 
   private final long dataRecordCnt;
   private final boolean filterEqDelete;
+  private final DeleteLoader deleteLoader;
+  private final String deleteGroup;
 
   protected CombinedDeleteFilter(
       RewriteFilesInput rewriteFilesInput,
       Schema tableSchema,
-      StructLikeCollections structLikeCollections) {
+      StructLikeCollections structLikeCollections,
+      String deleteGroup) {
     this.input = rewriteFilesInput;
     this.dataRecordCnt =
         Arrays.stream(rewriteFilesInput.dataFiles()).mapToLong(ContentFile::recordCount).sum();
@@ -157,6 +169,14 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
       this.structLikeCollections = structLikeCollections;
     }
     this.filterEqDelete = filterEqDelete();
+    this.deleteGroup = deleteGroup;
+    if (Boolean.parseBoolean(
+        System.getProperty(
+            DeleteCache.DELETE_CACHE_ENABLED, DeleteCache.DELETE_CACHE_ENABLED_DEFAULT))) {
+      this.deleteLoader = new CachingDeleteLoader(this::getInputFile);
+    } else {
+      this.deleteLoader = new BaseDeleteLoader(this::getInputFile);
+    }
   }
 
   /**
@@ -311,44 +331,22 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     Schema deleteSchema = deleteSchemaEntry.getValue();
     Iterable<DeleteFile> eqDeletes = eqDeleteFilesByDeleteIds.get(ids);
 
-    InternalRecordWrapper internalRecordWrapper =
-        new InternalRecordWrapper(deleteSchema.asStruct());
-
-    CloseableIterable<RecordWithLsn> deleteRecords =
-        CloseableIterable.transform(
-            CloseableIterable.concat(
-                Iterables.transform(
-                    eqDeletes,
-                    s ->
-                        CloseableIterable.transform(
-                            openFile(s, deleteSchema),
-                            r -> new RecordWithLsn(s.dataSequenceNumber(), r)))),
-            RecordWithLsn::recordCopy);
-
     StructLikeBaseMap<Long> structLikeMap =
         structLikeCollections.createStructLikeMap(deleteSchema.asStruct());
-
-    // init map
-    try (CloseableIterable<RecordWithLsn> deletes = deleteRecords) {
-      Iterator<RecordWithLsn> it =
-          getFileIO() == null ? deletes.iterator() : getFileIO().doAs(deletes::iterator);
-      while (it.hasNext()) {
-        RecordWithLsn recordWithLsn = it.next();
-        StructLike deletePK = internalRecordWrapper.copyFor(recordWithLsn.getRecord());
-        if (filterEqDelete && !bloomFilter.mightContain(deletePK)) {
-          continue;
-        }
-        Long lsn = recordWithLsn.getLsn();
-        Long old = structLikeMap.get(deletePK);
-        if (old == null || old.compareTo(lsn) <= 0) {
-          structLikeMap.put(deletePK, lsn);
-        }
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
     structMapCloseable.add(structLikeMap);
 
+    for (DeleteFile deleteFile : eqDeletes) {
+      for (StructLike record : openEqualityDeletes(deleteFile, deleteSchema)) {
+        if (filterEqDelete && !bloomFilter.mightContain(record)) {
+          continue;
+        }
+        Long lsn = deleteFile.dataSequenceNumber();
+        structLikeMap.merge(record, lsn, Math::max);
+      }
+    }
+
+    InternalRecordWrapper internalRecordWrapper =
+        new InternalRecordWrapper(deleteSchema.asStruct());
     return structForDelete -> {
       StructProjection deleteProjection =
           StructProjection.create(requiredSchema, deleteSchema).wrap(structForDelete.getPk());
@@ -444,6 +442,10 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     return openFile(file, POS_DELETE_SCHEMA);
   }
 
+  private Iterable<StructLike> openEqualityDeletes(DeleteFile file, Schema deleteSchema) {
+    return READ_EQ_DELETES_METHOD.invoke(deleteLoader, file, deleteSchema);
+  }
+
   private CloseableIterable<Record> openFile(ContentFile<?> contentFile, Schema deleteSchema) {
     InputFile input = getInputFile(contentFile);
     switch (contentFile.format()) {
@@ -477,26 +479,22 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     }
   }
 
-  static class RecordWithLsn {
-    private final Long lsn;
-    private Record record;
+  class CachingDeleteLoader extends BaseDeleteLoader {
+    private final DeleteCache cache;
 
-    public RecordWithLsn(Long lsn, Record record) {
-      this.lsn = lsn;
-      this.record = record;
+    public CachingDeleteLoader(Function<DeleteFile, InputFile> loadInputFile) {
+      super(loadInputFile);
+      this.cache = DeleteCache.getInstance();
     }
 
-    public Long getLsn() {
-      return lsn;
+    @Override
+    protected boolean canCache(long size) {
+      return cache != null && size < cache.maxEntrySize();
     }
 
-    public Record getRecord() {
-      return record;
-    }
-
-    public RecordWithLsn recordCopy() {
-      record = record.copy();
-      return this;
+    @Override
+    protected <V> V getOrLoad(String key, Supplier<V> valueSupplier, long valueSize) {
+      return cache.getOrLoad(CombinedDeleteFilter.this.deleteGroup, key, valueSupplier, valueSize);
     }
   }
 }

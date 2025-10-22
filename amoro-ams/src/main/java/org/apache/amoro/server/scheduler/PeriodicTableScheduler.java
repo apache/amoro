@@ -147,8 +147,35 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
 
   @Override
   protected void doDispose() {
-    executor.shutdownNow();
+
+    gracefulShutdown();
     logger.info("dispose thread pool for threads {}", getThreadName());
+  }
+
+  public void gracefulShutdown() {
+    if (executor == null || executor.isShutdown()) {
+      return;
+    }
+
+    try {
+      // Stop accepting new tasks.
+      executor.shutdown();
+
+      // Wait for the current task to complete, with a maximum waiting time of 30 seconds.
+      if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+        // If the timeout occurs, try to cancel the task that is currently being executed.
+        executor.shutdownNow();
+
+        // Wait again for the task response to be cancelled.
+        if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+          logger.error("The thread pool failed to close properly.");
+        }
+      }
+    } catch (InterruptedException e) {
+      // Re-cancel the interrupt status of the current thread.
+      Thread.currentThread().interrupt();
+      executor.shutdownNow();
+    }
   }
 
   protected abstract long getExecutorDelay();
