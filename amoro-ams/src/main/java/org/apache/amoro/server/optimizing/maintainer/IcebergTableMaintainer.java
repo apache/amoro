@@ -378,30 +378,28 @@ public class IcebergTableMaintainer implements TableMaintainer {
     String dataLocation = table.location() + File.separator + DATA_FOLDER_NAME;
     int expected = 0, deleted = 0;
 
-    try (AuthenticatedFileIO io = fileIO()) {
-      // listPrefix will not return the directory and the orphan file clean should clean the empty
-      // dir.
-      if (io.supportFileSystemOperations()) {
-        SupportsFileSystemOperations fio = io.asFileSystemIO();
-        Set<PathInfo> directories = new HashSet<>();
-        Set<String> filesToDelete =
-            deleteInvalidFilesInFs(fio, dataLocation, lastTime, exclude, directories);
-        expected = filesToDelete.size();
-        deleted = TableFileUtil.deleteFiles(io, filesToDelete);
-        /* delete empty directories */
-        deleteEmptyDirectories(fio, directories, lastTime, exclude);
-      } else if (io.supportPrefixOperations()) {
-        SupportsPrefixOperations pio = io.asPrefixFileIO();
-        Set<String> filesToDelete =
-            deleteInvalidFilesByPrefix(pio, dataLocation, lastTime, exclude);
-        expected = filesToDelete.size();
-        deleted = TableFileUtil.deleteFiles(io, filesToDelete);
-      } else {
-        LOG.warn(
-            String.format(
-                "Table %s doesn't support a fileIo with listDirectory or listPrefix, so skip clear files.",
-                table.name()));
-      }
+    AuthenticatedFileIO io = fileIO();
+    // listPrefix will not return the directory and the orphan file clean should clean the empty
+    // dir.
+    if (io.supportFileSystemOperations()) {
+      SupportsFileSystemOperations fio = io.asFileSystemIO();
+      Set<PathInfo> directories = new HashSet<>();
+      Set<String> filesToDelete =
+          deleteInvalidFilesInFs(fio, dataLocation, lastTime, exclude, directories);
+      expected = filesToDelete.size();
+      deleted = TableFileUtil.deleteFiles(io, filesToDelete);
+      /* delete empty directories */
+      deleteEmptyDirectories(fio, directories, lastTime, exclude);
+    } else if (io.supportPrefixOperations()) {
+      SupportsPrefixOperations pio = io.asPrefixFileIO();
+      Set<String> filesToDelete = deleteInvalidFilesByPrefix(pio, dataLocation, lastTime, exclude);
+      expected = filesToDelete.size();
+      deleted = TableFileUtil.deleteFiles(io, filesToDelete);
+    } else {
+      LOG.warn(
+          String.format(
+              "Table %s doesn't support a fileIo with listDirectory or listPrefix, so skip clear files.",
+              table.name()));
     }
 
     final int finalExpected = expected;
@@ -430,30 +428,29 @@ public class IcebergTableMaintainer implements TableMaintainer {
     String metadataLocation = table.location() + File.separator + METADATA_FOLDER_NAME;
     LOG.info("start orphan files clean in {}", metadataLocation);
 
-    try (AuthenticatedFileIO io = fileIO()) {
-      if (io.supportPrefixOperations()) {
-        SupportsPrefixOperations pio = io.asPrefixFileIO();
-        Set<String> filesToDelete =
-            deleteInvalidMetadataFile(
-                pio, metadataLocation, lastTime, validFiles, excludeFileNameRegex);
-        int deleted = TableFileUtil.deleteFiles(io, filesToDelete);
+    AuthenticatedFileIO io = fileIO();
+    if (io.supportPrefixOperations()) {
+      SupportsPrefixOperations pio = io.asPrefixFileIO();
+      Set<String> filesToDelete =
+          deleteInvalidMetadataFile(
+              pio, metadataLocation, lastTime, validFiles, excludeFileNameRegex);
+      int deleted = TableFileUtil.deleteFiles(io, filesToDelete);
 
-        runWithCondition(
-            !filesToDelete.isEmpty(),
-            () -> {
-              LOG.info(
-                  "Deleted {}/{} metadata files for table {}",
-                  deleted,
-                  filesToDelete.size(),
-                  table.name());
-              orphanFilesCleaningMetrics.completeOrphanMetadataFiles(filesToDelete.size(), deleted);
-            });
-      } else {
-        LOG.warn(
-            String.format(
-                "Table %s doesn't support a fileIo with listDirectory or listPrefix, so skip clear files.",
-                table.name()));
-      }
+      runWithCondition(
+          !filesToDelete.isEmpty(),
+          () -> {
+            LOG.info(
+                "Deleted {}/{} metadata files for table {}",
+                deleted,
+                filesToDelete.size(),
+                table.name());
+            orphanFilesCleaningMetrics.completeOrphanMetadataFiles(filesToDelete.size(), deleted);
+          });
+    } else {
+      LOG.warn(
+          String.format(
+              "Table %s doesn't support a fileIo with listDirectory or listPrefix, so skip clear files.",
+              table.name()));
     }
   }
 
