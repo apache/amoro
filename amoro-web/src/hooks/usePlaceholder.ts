@@ -31,6 +31,7 @@ export function usePlaceholder() {
   const passwordPh = computed(() => t('password')).value
   const filterDBPh = computed(() => t('database', 2)).value
   const filterTablePh = computed(() => t('table', 2)).value
+  const filterDbTblPh = computed(() => t('dbTbl', 2)).value
   const namePh = computed(() => t('name')).value
   const containerPh = computed(() => t('container')).value
   return {
@@ -48,6 +49,7 @@ export function usePlaceholder() {
     passwordPh: t('inputPlaceholder', { inputPh: passwordPh }),
     filterDBPh: t('filterPlaceholder', { inputPh: filterDBPh }),
     filterTablePh: t('filterPlaceholder', { inputPh: filterTablePh }),
+    filterDbTblPh: t('filterPlaceholder', { inputPh: filterDbTblPh }),
     groupNamePh: t('inputPlaceholder', { inputPh: namePh }),
     groupContainer: t('selectPlaceholder', { selectPh: containerPh }),
   }
