@@ -134,10 +134,6 @@ async function getTableDetails() {
   }
 }
 
-onMounted(() => {
-  getTableDetails()
-})
-
 defineExpose({ getTableDetails })
 
 const primaryColumns: ColumnProps[] = shallowReactive([
