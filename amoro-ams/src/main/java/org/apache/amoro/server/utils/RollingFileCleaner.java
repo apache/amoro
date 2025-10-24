@@ -59,7 +59,7 @@ public class RollingFileCleaner {
     }
 
     collectedFiles.add(filePath);
-    String parentDir = new Path(URI.create(filePath).getPath()).getParent().toString();
+    String parentDir = TableFileUtil.getParent(filePath);
     parentDirectories.add(parentDir);
     int currentCount = fileCounter.incrementAndGet();
 

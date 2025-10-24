@@ -19,6 +19,7 @@
 package org.apache.amoro.io;
 
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
@@ -53,10 +54,15 @@ public class AuthenticatedFileIOAdapter implements AuthenticatedFileIO {
 
   @Override
   public boolean exists(String path) {
-    if (io instanceof AuthenticatedFileIO) {
-      return ((AuthenticatedFileIO) io).exists(path);
+    try {
+      if (io instanceof AuthenticatedFileIO) {
+        return ((AuthenticatedFileIO) io).exists(path);
+      }
+
+      return AuthenticatedFileIO.super.exists(path);
+    } catch (NotFoundException e) {
+      return false;
     }
-    return AuthenticatedFileIO.super.exists(path);
   }
 
   @Override

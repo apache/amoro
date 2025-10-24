@@ -36,6 +36,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
@@ -200,5 +201,50 @@ public class TestFileUtil {
       Assert.assertTrue(io.exists(dataLocation));
       Assert.assertTrue(io.exists(metadataLocation));
     }
+  }
+
+  @Test
+  public void testGetParent() {
+    String filePath =
+        "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/"
+            + "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet";
+    String parentDir = TableFileUtil.getParent(filePath);
+    Assert.assertEquals(
+        "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/"
+            + "opt_mon=202109/opt_day=26",
+        parentDir);
+
+    // test s3 scheme
+    filePath =
+        "s3://my-bucket/user/warehouse/animal_partition_two/base/"
+            + "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet";
+    parentDir = TableFileUtil.getParent(filePath);
+    Assert.assertEquals(
+        "s3://my-bucket/user/warehouse/animal_partition_two/base/" + "opt_mon=202109/opt_day=26",
+        parentDir);
+
+    // test wrapped by URI
+    URI uri = URI.create(filePath);
+    parentDir = TableFileUtil.getParent(uri.toString());
+    Assert.assertEquals(
+        "s3://my-bucket/user/warehouse/animal_partition_two/base/" + "opt_mon=202109/opt_day=26",
+        parentDir);
+    // lose scheme when getting path from URI
+    parentDir = TableFileUtil.getParent(uri.getPath());
+    Assert.assertEquals(
+        "/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26", parentDir);
+
+    // test no scheme
+    filePath =
+        "/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26/"
+            + "00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet";
+    parentDir = TableFileUtil.getParent(filePath);
+    Assert.assertEquals(
+        "/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26", parentDir);
+
+    // test root path
+    filePath = "/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet";
+    parentDir = TableFileUtil.getParent(filePath);
+    Assert.assertEquals("/", parentDir);
   }
 }
