@@ -38,7 +38,7 @@ public class TestRollingFileCleaner {
     // generate some files
     Set<String> expiredFiles = Sets.newHashSet();
     for (int i = 0; i < 5050; i++) {
-      String filePath = "file_" + i + ".txt";
+      String filePath = "file://bucket/warehouse/date=2025-01-01/file_" + i + ".txt";
       io.addFile(filePath, ("file_content" + i).getBytes());
       expiredFiles.add(filePath);
       fileCleaner.addFile(filePath);
