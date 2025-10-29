@@ -53,6 +53,13 @@ public class AmoroManagementConf {
           .defaultValue("admin")
           .withDescription("The administrator password");
 
+  /** Enable master & slave mode, which supports horizontal scaling of AMS. */
+  public static final ConfigOption<Boolean> USE_MASTER_SLAVE_MODE =
+      ConfigOptions.key("use-master-slave-mode")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("Enable master & slave mode, which supports horizontal scaling of AMS.");
+
   public static final ConfigOption<Duration> CATALOG_META_CACHE_EXPIRATION_INTERVAL =
       ConfigOptions.key("catalog-meta-cache.expiration-interval")
           .durationType()

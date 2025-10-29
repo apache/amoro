@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server;
 
+import static org.apache.amoro.server.AmoroManagementConf.USE_MASTER_SLAVE_MODE;
+
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
@@ -99,6 +101,7 @@ public class AmoroServiceContainer {
   public static final Logger LOG = LoggerFactory.getLogger(AmoroServiceContainer.class);
 
   public static final String SERVER_CONFIG_FILENAME = "config.yaml";
+  private static boolean IS_MASTER_SLAVE_MODE = false;
 
   private final HighAvailabilityContainer haContainer;
   private DataSource dataSource;
@@ -133,23 +136,34 @@ public class AmoroServiceContainer {
                     LOG.info("AMS service has been shut down");
                   }));
       service.startRestServices();
-      while (true) {
-        try {
-          // Used to block AMS instances that have not acquired leadership
-          service.waitLeaderShip();
-          service.transitionToLeader();
-          // Used to block AMS instances that have acquired leadership
-          service.waitFollowerShip();
-        } catch (Exception e) {
-          LOG.error("AMS start error", e);
-        } finally {
-          service.transitionToFollower();
-        }
+      if (IS_MASTER_SLAVE_MODE) {
+        // Even if one does not become the master, it cannot block the subsequent logic.
+        service.registAndElect();
+        // Regardless of whether tp becomes the master, the service needs to be activated.
+        service.startOptimizingService();
+      } else {
+          while (true) {
+              try {
+                  // Used to block AMS instances that have not acquired leadership
+                  service.waitLeaderShip();
+                  service.transitionToLeader();
+                  // Used to block AMS instances that have acquired leadership
+                  service.waitFollowerShip();
+              } catch (Exception e) {
+                  LOG.error("AMS start error", e);
+              } finally {
+                  service.transitionToFollower();
+              }
+          }
       }
     } catch (Throwable t) {
       LOG.error("AMS encountered an unknown exception, will exist", t);
       System.exit(1);
     }
+  }
+
+  public void registAndElect() throws Exception {
+    haContainer.registAndElect();
   }
 
   public enum HAState {
@@ -306,6 +320,7 @@ public class AmoroServiceContainer {
   private void initConfig() throws Exception {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
+    IS_MASTER_SLAVE_MODE = serviceConfig.getBoolean(USE_MASTER_SLAVE_MODE);
   }
 
   public Configurations getServiceConfig() {
