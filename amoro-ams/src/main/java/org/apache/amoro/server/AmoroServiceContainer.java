@@ -170,7 +170,7 @@ public class AmoroServiceContainer {
         }
       }
     } catch (Throwable t) {
-      LOG.error("AMS encountered an unknown exception, will exit...", t);
+      LOG.error("AMS encountered an unknown exception, will exist", t);
       System.exit(1);
     }
   }
