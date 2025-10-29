@@ -16,14 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.ha;
+package org.apache.amoro.server;
 
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.AmsHAProperties;
-import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.transaction.CuratorOp;
@@ -32,52 +29,27 @@ import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.recipes.le
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.CreateMode;
 import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.KeeperException;
-import org.apache.amoro.utils.DynConstructors;
 import org.apache.amoro.utils.JacksonUtil;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.hadoop.security.SecurityUtil;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.login.Configuration;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, LeaderLatchListener {
+public class HighAvailabilityContainer implements LeaderLatchListener {
 
-  public static final Logger LOG = LoggerFactory.getLogger(ZkHighAvailabilityContainer.class);
+  public static final Logger LOG = LoggerFactory.getLogger(HighAvailabilityContainer.class);
 
   private final LeaderLatch leaderLatch;
   private final CuratorFramework zkClient;
-
-  // Package-private accessors for testing
-  CuratorFramework getZkClient() {
-    return zkClient;
-  }
-
-  LeaderLatch getLeaderLatch() {
-    return leaderLatch;
-  }
-
   private final String tableServiceMasterPath;
   private final String optimizingServiceMasterPath;
-  private final String nodesPath;
   private final AmsServerInfo tableServiceServerInfo;
   private final AmsServerInfo optimizingServiceServerInfo;
-  private final boolean isMasterSlaveMode;
   private volatile CountDownLatch followerLatch;
-  private String registeredNodePath;
 
-  public ZkHighAvailabilityContainer(Configurations serviceConfig) throws Exception {
-    this.isMasterSlaveMode = serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
+  public HighAvailabilityContainer(Configurations serviceConfig) throws Exception {
     if (serviceConfig.getBoolean(AmoroManagementConf.HA_ENABLE)) {
       String zkServerAddress = serviceConfig.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS);
       int zkSessionTimeout =
@@ -87,9 +59,7 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
       String haClusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
       tableServiceMasterPath = AmsHAProperties.getTableServiceMasterPath(haClusterName);
       optimizingServiceMasterPath = AmsHAProperties.getOptimizingServiceMasterPath(haClusterName);
-      nodesPath = AmsHAProperties.getNodesPath(haClusterName);
       ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3, 5000);
-      setupZookeeperAuth(serviceConfig);
       this.zkClient =
           CuratorFrameworkFactory.builder()
               .connectString(zkServerAddress)
@@ -100,7 +70,6 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
       zkClient.start();
       createPathIfNeeded(tableServiceMasterPath);
       createPathIfNeeded(optimizingServiceMasterPath);
-      createPathIfNeeded(nodesPath);
       String leaderPath = AmsHAProperties.getLeaderPath(haClusterName);
       createPathIfNeeded(leaderPath);
       leaderLatch = new LeaderLatch(zkClient, leaderPath);
@@ -121,16 +90,13 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
       zkClient = null;
       tableServiceMasterPath = null;
       optimizingServiceMasterPath = null;
-      nodesPath = null;
       tableServiceServerInfo = null;
       optimizingServiceServerInfo = null;
-      registeredNodePath = null;
       // block follower latch forever when ha is disabled
       followerLatch = new CountDownLatch(1);
     }
   }
 
-  @Override
   public void waitLeaderShip() throws Exception {
     LOG.info("Waiting to become the leader of AMS");
     if (leaderLatch != null) {
@@ -160,29 +126,10 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
     LOG.info("Became the leader of AMS");
   }
 
-  @Override
   public void registAndElect() throws Exception {
-    if (!isMasterSlaveMode) {
-      LOG.debug("Master-slave mode is not enabled, skip node registration");
-      return;
-    }
-    if (zkClient == null || nodesPath == null) {
-      LOG.warn("HA is not enabled, skip node registration");
-      return;
-    }
-    // Register node to ZK using ephemeral node
-    // The node will be automatically deleted when the session expires
-    String nodeInfo = JacksonUtil.toJSONString(tableServiceServerInfo);
-    registeredNodePath =
-        zkClient
-            .create()
-            .creatingParentsIfNeeded()
-            .withMode(CreateMode.EPHEMERAL_SEQUENTIAL)
-            .forPath(nodesPath + "/node-", nodeInfo.getBytes(StandardCharsets.UTF_8));
-    LOG.info("Registered AMS node to ZK: {}", registeredNodePath);
+    // TODO Here you can register for AMS and participate in the election.
   }
 
-  @Override
   public void waitFollowerShip() throws Exception {
     LOG.info("Waiting to become the follower of AMS");
     if (followerLatch != null) {
@@ -191,22 +138,9 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
     LOG.info("Became the follower of AMS");
   }
 
-  @Override
   public void close() {
     if (leaderLatch != null) {
       try {
-        // Unregister node from ZK
-        if (registeredNodePath != null) {
-          try {
-            zkClient.delete().forPath(registeredNodePath);
-            LOG.info("Unregistered AMS node from ZK: {}", registeredNodePath);
-          } catch (KeeperException.NoNodeException e) {
-            // Node already deleted, ignore
-            LOG.debug("Node {} already deleted", registeredNodePath);
-          } catch (Exception e) {
-            LOG.warn("Failed to unregister node from ZK: {}", registeredNodePath, e);
-          }
-        }
         this.leaderLatch.close();
         this.zkClient.close();
       } catch (IOException e) {
@@ -241,112 +175,11 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
     return amsServerInfo;
   }
 
-  /**
-   * Get list of alive nodes. Only the leader node can call this method.
-   *
-   * @return List of alive node information
-   */
-  public List<AmsServerInfo> getAliveNodes() {
-    List<AmsServerInfo> aliveNodes = new ArrayList<>();
-    if (!isMasterSlaveMode) {
-      LOG.debug("Master-slave mode is not enabled, return empty node list");
-      return aliveNodes;
-    }
-    if (zkClient == null || nodesPath == null) {
-      LOG.warn("HA is not enabled, return empty node list");
-      return aliveNodes;
-    }
-    if (!leaderLatch.hasLeadership()) {
-      LOG.warn("Only leader node can get alive nodes list");
-      return aliveNodes;
-    }
-    try {
-      List<String> nodePaths = zkClient.getChildren().forPath(nodesPath);
-      for (String nodePath : nodePaths) {
-        try {
-          String fullPath = nodesPath + "/" + nodePath;
-          byte[] data = zkClient.getData().forPath(fullPath);
-          if (data != null && data.length > 0) {
-            String nodeInfoJson = new String(data, StandardCharsets.UTF_8);
-            AmsServerInfo nodeInfo = JacksonUtil.parseObject(nodeInfoJson, AmsServerInfo.class);
-            aliveNodes.add(nodeInfo);
-          }
-        } catch (Exception e) {
-          LOG.warn("Failed to get node info for path: {}", nodePath, e);
-        }
-      }
-    } catch (KeeperException.NoNodeException e) {
-      LOG.debug("Nodes path {} does not exist", nodesPath);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-    return aliveNodes;
-  }
-
-  /**
-   * Check if current node is the leader.
-   *
-   * @return true if current node is the leader, false otherwise
-   */
-  public boolean hasLeadership() {
-    if (leaderLatch == null) {
-      return false;
-    }
-    return leaderLatch.hasLeadership();
-  }
-
   private void createPathIfNeeded(String path) throws Exception {
     try {
       zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
     } catch (KeeperException.NodeExistsException e) {
       // ignore
-    }
-  }
-
-  private static final Map<Pair<String, String>, Configuration> JAAS_CONFIGURATION_CACHE =
-      Maps.newConcurrentMap();
-
-  /** For a kerberized cluster, we dynamically set up the client's JAAS conf. */
-  public static void setupZookeeperAuth(Configurations configurations) throws IOException {
-    String zkAuthType = configurations.get(AmoroManagementConf.HA_ZOOKEEPER_AUTH_TYPE);
-    if ("KERBEROS".equalsIgnoreCase(zkAuthType) && UserGroupInformation.isSecurityEnabled()) {
-      String principal = configurations.get(AmoroManagementConf.HA_ZOOKEEPER_AUTH_PRINCIPAL);
-      String keytab = configurations.get(AmoroManagementConf.HA_ZOOKEEPER_AUTH_KEYTAB);
-      Preconditions.checkArgument(
-          StringUtils.isNoneBlank(principal, keytab),
-          "%s and %s must be provided for KERBEROS authentication",
-          AmoroManagementConf.HA_ZOOKEEPER_AUTH_PRINCIPAL.key(),
-          AmoroManagementConf.HA_ZOOKEEPER_AUTH_KEYTAB.key());
-      if (!new File(keytab).exists()) {
-        throw new IOException(
-            String.format(
-                "%s: %s does not exist",
-                AmoroManagementConf.HA_ZOOKEEPER_AUTH_KEYTAB.key(), keytab));
-      }
-      System.setProperty("zookeeper.sasl.clientconfig", "AmoroZooKeeperClient");
-      String zkClientPrincipal = SecurityUtil.getServerPrincipal(principal, "0.0.0.0");
-      Configuration jaasConf =
-          JAAS_CONFIGURATION_CACHE.computeIfAbsent(
-              Pair.of(principal, keytab),
-              pair -> {
-                // HDFS-16591 makes breaking change on JaasConfiguration
-                return DynConstructors.builder()
-                    .impl( // Hadoop 3.3.5 and above
-                        "org.apache.hadoop.security.authentication.util.JaasConfiguration",
-                        String.class,
-                        String.class,
-                        String.class)
-                    .impl( // Hadoop 3.3.4 and previous
-                        // scalastyle:off
-                        "org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager$JaasConfiguration",
-                        // scalastyle:on
-                        String.class,
-                        String.class,
-                        String.class)
-                    .<Configuration>build()
-                    .newInstance("AmoroZooKeeperClient", zkClientPrincipal, keytab);
-              });
-      Configuration.setConfiguration(jaasConf);
     }
   }
 }

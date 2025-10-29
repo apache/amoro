@@ -20,7 +20,6 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.config.ConfigOption;
 import org.apache.amoro.config.ConfigOptions;
-import org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider;
 import org.apache.amoro.utils.MemorySize;
 
 import java.time.Duration;
@@ -58,9 +57,7 @@ public class AmoroManagementConf {
       ConfigOptions.key("use-master-slave-mode")
           .booleanType()
           .defaultValue(false)
-          .withDescription(
-              "This setting controls whether to enable the AMS horizontal scaling feature, "
-                  + "which is currently under development and testing.");
+          .withDescription("Enable master & slave mode, which supports horizontal scaling of AMS.");
 
   public static final ConfigOption<Duration> CATALOG_META_CACHE_EXPIRATION_INTERVAL =
       ConfigOptions.key("catalog-meta-cache.expiration-interval")
@@ -213,48 +210,17 @@ public class AmoroManagementConf {
           .defaultValue(false)
           .withDescription("Whether to enable high availability mode.");
 
-  public static final ConfigOption<String> HA_TYPE =
-      ConfigOptions.key("ha.type")
-          .stringType()
-          .defaultValue(AmoroManagementConf.HA_TYPE_ZK)
-          .withDescription("High availability implementation type: zk or database.");
-
   public static final ConfigOption<String> HA_CLUSTER_NAME =
       ConfigOptions.key("ha.cluster-name")
           .stringType()
           .defaultValue("default")
           .withDescription("Amoro management service cluster name.");
 
-  public static final ConfigOption<java.time.Duration> HA_HEARTBEAT_INTERVAL =
-      ConfigOptions.key("ha.heartbeat-interval")
-          .durationType()
-          .defaultValue(java.time.Duration.ofSeconds(10))
-          .withDescription("HA heartbeat interval.");
-
   public static final ConfigOption<String> HA_ZOOKEEPER_ADDRESS =
       ConfigOptions.key("ha.zookeeper-address")
           .stringType()
           .defaultValue("")
           .withDescription("The Zookeeper address used for high availability.");
-
-  public static final ConfigOption<String> HA_ZOOKEEPER_AUTH_TYPE =
-      ConfigOptions.key("ha.zookeeper-auth-type")
-          .stringType()
-          .defaultValue("NONE")
-          .withDescription("The Zookeeper authentication type, NONE or KERBEROS.");
-
-  public static final ConfigOption<String> HA_ZOOKEEPER_AUTH_KEYTAB =
-      ConfigOptions.key("ha.zookeeper-auth-keytab")
-          .stringType()
-          .defaultValue("")
-          .withDescription(
-              "The Zookeeper authentication keytab file path when auth type is KERBEROS.");
-
-  public static final ConfigOption<String> HA_ZOOKEEPER_AUTH_PRINCIPAL =
-      ConfigOptions.key("ha.zookeeper-auth-principal")
-          .stringType()
-          .defaultValue("")
-          .withDescription("The Zookeeper authentication principal when auth type is KERBEROS.");
 
   public static final ConfigOption<Duration> HA_ZOOKEEPER_SESSION_TIMEOUT =
       ConfigOptions.key("ha.session-timeout")
@@ -267,12 +233,6 @@ public class AmoroManagementConf {
           .durationType()
           .defaultValue(Duration.ofSeconds(300))
           .withDescription("The Zookeeper connection timeout in milliseconds.");
-
-  public static final ConfigOption<java.time.Duration> HA_LEASE_TTL =
-      ConfigOptions.key("ha.lease-ttl")
-          .durationType()
-          .defaultValue(java.time.Duration.ofSeconds(30))
-          .withDescription("TTL of HA lease.");
 
   public static final ConfigOption<Integer> TABLE_SERVICE_THRIFT_BIND_PORT =
       ConfigOptions.key("thrift-server.table-service.bind-port")
@@ -321,63 +281,13 @@ public class AmoroManagementConf {
       ConfigOptions.key("http-server.rest-auth-type")
           .stringType()
           .defaultValue("token")
-          .withDescription("The authentication used by REST APIs, token (default), basic or jwt.");
+          .withDescription("The authentication used by REST APIs, token (default) or basic.");
 
   public static final ConfigOption<Duration> HTTP_SERVER_SESSION_TIMEOUT =
       ConfigOptions.key("http-server.session-timeout")
           .durationType()
           .defaultValue(Duration.ofDays(7))
           .withDescription("Timeout for http session.");
-
-  public static final ConfigOption<String> HTTP_SERVER_AUTH_BASIC_PROVIDER =
-      ConfigOptions.key("http-server.auth-basic-provider")
-          .stringType()
-          .defaultValue(DefaultPasswdAuthenticationProvider.class.getName())
-          .withDescription(
-              "User-defined password authentication implementation of"
-                  + " org.apache.amoro.authentication.PasswdAuthenticationProvider");
-
-  public static final ConfigOption<String> HTTP_SERVER_LOGIN_AUTH_PROVIDER =
-      ConfigOptions.key("http-server.login-auth-provider")
-          .stringType()
-          .defaultValue(DefaultPasswdAuthenticationProvider.class.getName())
-          .withDescription(
-              "User-defined login authentication implementation of"
-                  + " org.apache.amoro.authentication.PasswdAuthenticationProvider");
-
-  public static final ConfigOption<String> HTTP_SERVER_LOGIN_AUTH_LDAP_USER_PATTERN =
-      ConfigOptions.key("http-server.login-auth-ldap-user-pattern")
-          .stringType()
-          .noDefaultValue()
-          .withDescription(
-              "LDAP user pattern for authentication. The pattern defines how to construct the user's distinguished name (DN) in the LDAP directory. "
-                  + "Use {0} as a placeholder for the username. For example, 'cn={0},ou=people,dc=example,dc=com' will search for users in the specified organizational unit.");
-
-  public static final ConfigOption<String> HTTP_SERVER_LOGIN_AUTH_LDAP_URL =
-      ConfigOptions.key("http-server.login-auth-ldap-url")
-          .stringType()
-          .noDefaultValue()
-          .withDescription(
-              "LDAP connection URL(s), value could be a SPACE separated list of URLs to multiple LDAP servers for resiliency. URLs are tried in the order specified until the connection is successful");
-
-  public static final ConfigOption<String> HTTP_SERVER_AUTH_JWT_PROVIDER =
-      ConfigOptions.key("http-server.auth-jwt-provider")
-          .stringType()
-          .noDefaultValue()
-          .withDescription(
-              "User-defined JWT (JSON Web Token) authentication implementation"
-                  + " of org.apache.amoro.authentication.TokenAuthenticationProvider");
-
-  public static final ConfigOption<String> HTTP_SERVER_PROXY_CLIENT_IP_HEADER =
-      ConfigOptions.key("http-server.proxy-client-ip-header")
-          .stringType()
-          .defaultValue("X-Real-IP")
-          .withDescription(
-              "The HTTP header to record the real client IP address. If your server is behind a load"
-                  + " balancer or other proxy, the server will see this load balancer or proxy IP address as"
-                  + " the client IP address, to get around this common issue, most load balancers or proxies"
-                  + " offer the ability to record the real remote IP address in an HTTP header that will be"
-                  + " added to the request for other devices to use.");
 
   public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
       ConfigOptions.key("self-optimizing.commit-thread-count")
@@ -585,10 +495,6 @@ public class AmoroManagementConf {
   public static final String DB_TYPE_DERBY = "derby";
   public static final String DB_TYPE_MYSQL = "mysql";
   public static final String DB_TYPE_POSTGRES = "postgres";
-
-  // HA config
-  public static final String HA_TYPE_ZK = "zk";
-  public static final String HA_TYPE_DATABASE = "database";
 
   // terminal config
   public static final List<String> TERMINAL_BACKEND_VALUES =
