@@ -611,7 +611,7 @@
                                         ${project.build.directory}/generated-sources/openapi/src/main/java
                                     </classesDirectory>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <finalName>sdk</finalName>
+                                    <finalName>amoro-openapi-${project.version}</finalName>
                                 </configuration>
                             </execution>
                         </executions>
