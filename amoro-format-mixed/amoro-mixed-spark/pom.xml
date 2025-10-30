@@ -33,9 +33,7 @@
 
     <modules>
         <module>amoro-mixed-spark-3-common</module>
-        <module>v3.3/amoro-mixed-spark-3.3</module>
-        <module>v3.3/amoro-mixed-spark-runtime-3.3</module>
-        <module>v3.5/amoro-mixed-spark-3.5</module>
-        <module>v3.5/amoro-mixed-spark-runtime-3.5</module>
+        <module>v${spark.binary.version}/amoro-mixed-spark-${spark.binary.version}</module>
+        <module>v${spark.binary.version}/amoro-mixed-spark-runtime-${spark.binary.version}</module>
     </modules>
 </project>
