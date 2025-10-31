@@ -1480,6 +1480,7 @@
                 <jdk>[17,)</jdk>
             </activation>
             <properties>
+                <java.source.version>17</java.source.version>
                 <java.target.version>17</java.target.version>
             </properties>
         </profile>
