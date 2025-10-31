@@ -1497,6 +1497,7 @@
             <properties>
                 <spark.version>3.5.3</spark.version>
                 <spark.major.version>3.5</spark.major.version>
+                <scala.version>2.12.18</scala.version>
             </properties>
         </profile>
     </profiles>
