@@ -1485,7 +1485,6 @@
             <properties>
                 <java.source.version>17</java.source.version>
                 <java.target.version>17</java.target.version>
-                <iceberg.version>1.10.0</iceberg.version>
             </properties>
         </profile>
         <profile>
