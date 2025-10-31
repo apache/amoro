@@ -25,6 +25,7 @@ import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.refresh.event.MetricBasedRefreshEvent;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
@@ -115,7 +116,11 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
                       != defaultTableRuntime.getCurrentChangeSnapshotId()))
           || (mixedTable.isUnkeyedTable()
               && lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId())) {
-        tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
+        if (!defaultTableRuntime.getOptimizingConfig().isEventBasedTriggerEnabled()
+            || MetricBasedRefreshEvent.isEvaluatingPendingInputNecessary(
+                defaultTableRuntime, mixedTable)) {
+          tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
+        }
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
