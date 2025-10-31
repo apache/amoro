@@ -74,7 +74,7 @@ public class SparkContextUtil {
           sparkCatalogPrefix = "spark.sql.catalog.spark_catalog";
           catalogClassName = MIXED_FORMAT_SESSION_CATALOG;
         }
-        sparkConf.put(sparkCatalogPrefix + ".url", catalogUrlBase + "/" + catalog);
+        sparkConf.put(sparkCatalogPrefix + ".ams.uri", catalogUrlBase + "/" + catalog);
       } else if ("unified".equalsIgnoreCase(connector)) {
         catalogClassName = UNIFIED_CATALOG;
         String type =
@@ -86,7 +86,7 @@ public class SparkContextUtil {
           sparkCatalogPrefix = "spark.sql.catalog.spark_catalog";
           catalogClassName = UNIFIED_SESSION_CATALOG;
         }
-        sparkConf.put(sparkCatalogPrefix + ".uri", catalogUrlBase + "/" + catalog);
+        sparkConf.put(sparkCatalogPrefix + ".ams.uri", catalogUrlBase + "/" + catalog);
       } else {
         catalogClassName = "iceberg".equalsIgnoreCase(connector) ? ICEBERG_CATALOG : PAIMON_CATALOG;
         Map<String, String> properties =
