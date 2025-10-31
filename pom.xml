@@ -1481,9 +1481,7 @@
                 <jdk>17</jdk>
             </activation>
             <properties>
-                <java.source.version>8</java.source.version>
-                <java.target.version>8</java.target.version>
-                <maven.compiler.release>8</maven.compiler.release>
+                <maven.compiler.release>11</maven.compiler.release>
             </properties>
         </profile>
         <profile>
