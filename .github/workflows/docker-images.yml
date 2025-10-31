@@ -49,6 +49,7 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
           cache: maven
+          check-latest: false
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -86,7 +87,7 @@ jobs:
           echo "MVN_HADOOP=-Phadoop2" >> $GITHUB_ENV
 
       - name: Build dist module with Maven
-        run: mvn clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats
+        run: build/mvn clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats
 
       - name: Build and Push Amoro Docker Image
         uses: docker/build-push-action@v4
@@ -112,6 +113,7 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
           cache: maven
+          check-latest: false
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -162,7 +164,7 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
+        run: build/mvn clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
 
       - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4
@@ -193,6 +195,7 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
           cache: maven
+          check-latest: false
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -237,7 +240,7 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${OPTIMIZER_SPARK} -DskipTests -B -ntp
+        run: build/mvn clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${OPTIMIZER_SPARK} -DskipTests -B -ntp
 
       - name: Build and Push Spark Optimizer Docker Image
         uses: docker/build-push-action@v4
