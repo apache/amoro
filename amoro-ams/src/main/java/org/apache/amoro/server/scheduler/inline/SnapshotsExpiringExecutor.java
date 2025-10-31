@@ -25,6 +25,7 @@ import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.cleanup.CleanupOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +54,16 @@ public class SnapshotsExpiringExecutor extends PeriodicTableScheduler {
   @Override
   public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
     scheduleIfNecessary(tableRuntime, getStartDelay());
+  }
+
+  @Override
+  protected boolean shouldExecute(Long lastCleanupEndTime) {
+    return System.currentTimeMillis() - lastCleanupEndTime >= INTERVAL;
+  }
+
+  @Override
+  protected CleanupOperation getCleanupOperation() {
+    return CleanupOperation.SNAPSHOTS_EXPIRING;
   }
 
   @Override
