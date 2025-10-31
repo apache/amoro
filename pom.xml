@@ -1480,9 +1480,6 @@
             <activation>
                 <jdk>17</jdk>
             </activation>
-            <properties>
-                <maven.compiler.release>11</maven.compiler.release>
-            </properties>
         </profile>
         <profile>
             <id>spark-3.3</id>
@@ -1496,7 +1493,6 @@
             <properties>
                 <spark.version>3.5.3</spark.version>
                 <spark.major.version>3.5</spark.major.version>
-                <scala.version>2.12.18</scala.version>
             </properties>
         </profile>
     </profiles>
