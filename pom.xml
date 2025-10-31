@@ -1468,7 +1468,7 @@
         <profile>
             <id>java11</id>
             <activation>
-                <jdk>[11,17)</jdk>
+                <jdk>[11,)</jdk>
             </activation>
             <properties>
                 <java.source.version>11</java.source.version>
@@ -1478,11 +1478,12 @@
         <profile>
             <id>java17</id>
             <activation>
-                <jdk>[17,)</jdk>
+                <jdk>17</jdk>
             </activation>
             <properties>
-                <java.source.version>17</java.source.version>
-                <java.target.version>17</java.target.version>
+                <java.source.version>8</java.source.version>
+                <java.target.version>8</java.target.version>
+                <maven.compiler.release>8</maven.compiler.release>
             </properties>
         </profile>
         <profile>
