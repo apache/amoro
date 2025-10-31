@@ -38,12 +38,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
+          check-latest: false
 
       - name: Validate checkstyle first
-        run: mvn validate -P format-mixed-format-trino
+        run: build/mvn validate -P format-mixed-format-trino
 
       - name: Build trino module with Maven
-        run: mvn clean install -pl 'amoro-format-mixed/amoro-mixed-trino' -am -B -P hadoop2,format-mixed-format-trino,build-mixed-format-trino
+        run: build/mvn clean install -pl 'amoro-format-mixed/amoro-mixed-trino' -am -B -P hadoop2,format-mixed-format-trino,build-mixed-format-trino
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
