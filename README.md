@@ -118,20 +118,20 @@ Amoro contains modules as below:
 
 Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixed/amoro-mixed-trino` module).
 
-* Build all modules without `amoro-mixed-trino`: `mvn clean package`
-* Build and skip tests: `mvn clean package -DskipTests`
-* Build and skip dashboard: `mvn clean package -Pskip-dashboard-build`
-* Build and disable disk storage, RocksDB will NOT be introduced to avoid memory overflow: `mvn clean package -DskipTests -Pno-extented-disk-storage`
-* Build and enable aliyun-oss-sdk: `mvn clean package -DskipTests -Paliyun-oss-sdk`
-* Build with hadoop 2.x(the default is 3.x) dependencies: `mvn clean package -DskipTests -Phadoop2`
-* Specify Flink version for Flink optimizer(the default is 1.20.0): `mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.20.0`
-  * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-optimizer-pre-1.15` parameter: `mvn clean package -DskipTests -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
-* Specify Spark version for Spark optimizer(the default is 3.3.3): `mvn clean package -DskipTests -Dspark-optimizer.spark-version=3.3.3`
-* Build `amoro-mixed-trino` module under JDK 17: `mvn clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-mixed-trino' -am`.
-* Build all modules: `mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
-* Build a distribution package with all formats integrated: `mvn clean package -Psupport-all-formats`
-  * Build a distribution package with Apache Paimon format: `mvn clean package -Psupport-paimon-format`
-  * Build a distribution package with Apache Hudi format: `mvn clean package -Psupport-hudi-format`
+* Build all modules without `amoro-mixed-trino`: `build/mvn clean package`
+* Build and skip tests: `build/mvn clean package -DskipTests`
+* Build and skip dashboard: `build/mvn clean package -Pskip-dashboard-build`
+* Build and disable disk storage, RocksDB will NOT be introduced to avoid memory overflow: `build/mvn clean package -DskipTests -Pno-extented-disk-storage`
+* Build and enable aliyun-oss-sdk: `build/mvn clean package -DskipTests -Paliyun-oss-sdk`
+* Build with hadoop 2.x(the default is 3.x) dependencies: `build/mvn clean package -DskipTests -Phadoop2`
+* Specify Flink version for Flink optimizer(the default is 1.20.0): `build/mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.20.0`
+  * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-optimizer-pre-1.15` parameter: `build/mvn clean package -DskipTests -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
+* Specify Spark version for Spark optimizer(the default is 3.3.3): `build/mvn clean package -DskipTests -Dspark-optimizer.spark-version=3.3.3`
+* Build `amoro-mixed-trino` module under JDK 17: `build/mvn clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-mixed-trino' -am`.
+* Build all modules: `build/mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
+* Build a distribution package with all formats integrated: `build/mvn clean package -Psupport-all-formats`
+  * Build a distribution package with Apache Paimon format: `build/mvn clean package -Psupport-paimon-format`
+  * Build a distribution package with Apache Hudi format: `build/mvn clean package -Psupport-hudi-format`
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
