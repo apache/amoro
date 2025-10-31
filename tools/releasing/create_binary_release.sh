@@ -21,7 +21,9 @@
 ## Variables with defaults (if not overwritten by environment)
 ##
 SKIP_GPG=${SKIP_GPG:-false}
-MVN=${MVN:-mvn}
+
+PROJECT_HOME=$(cd "$(dirname "$0")"/../.. || exit; pwd)
+MVN="${PROJECT_HOME}/build/mvn"
 
 if [ -z "${RELEASE_VERSION:-}" ]; then
     echo "RELEASE_VERSION was not set."
