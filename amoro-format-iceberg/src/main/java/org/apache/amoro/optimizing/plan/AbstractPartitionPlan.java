@@ -263,7 +263,9 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   /**
    * When splitTask has only one undersized segment file, it needs to be triggered again to
    * determine whether to rewrite pos. If needed, add it to rewritePosDataFiles and bin-packing
-   * together, else reserved delete files.
+   * together. If it doesn't need to rewrite pos delete, add it to rewriteDataFiles so it can be
+   * merged with fragment files or other files during the second bin-packing, which prevents file
+   * loss and ensures proper file consolidation.
    */
   protected void disposeUndersizedSegmentFile(SplitTask splitTask) {
     Optional<DataFile> dataFile = splitTask.getRewriteDataFiles().stream().findFirst();
@@ -273,7 +275,10 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       if (evaluator().segmentShouldRewritePos(rewriteDataFile, deletes)) {
         rewritePosDataFiles.put(rewriteDataFile, deletes);
       } else {
-        reservedDeleteFiles(deletes);
+        // Add to rewriteDataFiles so it can be merged with other files (fragment files, etc.)
+        // during the second bin-packing. This prevents file loss and ensures files can be
+        // consolidated when possible.
+        rewriteDataFiles.put(rewriteDataFile, deletes);
       }
     }
   }
