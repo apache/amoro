@@ -1462,7 +1462,7 @@
         <profile>
             <id>spark-3.5</id>
             <properties>
-                <spark.version>3.5.3</spark.version>
+                <spark.version>3.5.7</spark.version>
                 <spark.major.version>3.5</spark.major.version>
             </properties>
         </profile>
