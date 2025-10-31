@@ -38,6 +38,7 @@
         <httpmime.version>4.5.13</httpmime.version>
         <openapi-generator-maven-plugin.version>6.0.0</openapi-generator-maven-plugin.version>
         <swagger-ui.version>5.17.14</swagger-ui.version>
+        <swagger-annorations.version>1.6.16</swagger-annorations.version>
         <git-commit-id-plugin.fail-on-no-git-dir>false</git-commit-id-plugin.fail-on-no-git-dir>
     </properties>
 
@@ -410,6 +411,12 @@
             <version>${swagger-ui.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>${swagger-annorations.version}</version>
+        </dependency>
+
         <!-- testcontainers dependencies -->
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -578,9 +585,9 @@
                                     <inputSpec>${project.basedir}/src/main/resources/openapi/openapi.yaml</inputSpec>
                                     <generatorName>java</generatorName>
                                     <output>${project.build.directory}/generated-sources/openapi</output>
-                                    <apiPackage>com.amoro.sdk.api</apiPackage>
-                                    <modelPackage>com.amoro.sdk.model</modelPackage>
-                                    <invokerPackage>com.amoro.sdk.invoker</invokerPackage>
+                                    <apiPackage>org.apache.amoro.openapi.api</apiPackage>
+                                    <modelPackage>org.apache.amoro.openapi.model</modelPackage>
+                                    <invokerPackage>org.apache.amoro.openapi.invoker</invokerPackage>
                                     <configOptions>
                                         <library>apache-httpclient</library>
                                     </configOptions>
@@ -604,7 +611,7 @@
                                         ${project.build.directory}/generated-sources/openapi/src/main/java
                                     </classesDirectory>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <finalName>sdk</finalName>
+                                    <finalName>amoro-openapi-${project.version}</finalName>
                                 </configuration>
                             </execution>
                         </executions>
