@@ -45,7 +45,7 @@ jobs:
           - '3.3'
           - '3.5'
         exclude:
-          - jdk: 8
+          - jdk: 17
             spark: '3.5'
           - jdk: 11
             spark: '3.5'
