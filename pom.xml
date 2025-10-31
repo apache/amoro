@@ -162,7 +162,6 @@
 
         <!-- for JDK-17 test-->
         <extraJavaTestArgs>-XX:+IgnoreUnrecognizedVMOptions
-            --add-exports=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED
             --add-opens=java.base/java.lang=ALL-UNNAMED
             --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
             --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
@@ -172,12 +171,15 @@
             --add-opens=java.base/java.util=ALL-UNNAMED
             --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
             --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
-            --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED
+            --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
             --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
             --add-opens=java.base/sun.nio.cs=ALL-UNNAMED
             --add-opens=java.base/sun.security.action=ALL-UNNAMED
+            --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
+            --add-opens=java.base/sun.security.x509=ALL-UNNAMED
             --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
-            --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED</extraJavaTestArgs>
+            -Djdk.reflect.useDirectMethodHandle=false
+            -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
     </properties>
 
     <dependencies>
@@ -1480,6 +1482,10 @@
             <activation>
                 <jdk>17</jdk>
             </activation>
+            <properties>
+                <java.source.version>17</java.source.version>
+                <java.target.version>17</java.target.version>
+            </properties>
         </profile>
         <profile>
             <id>spark-3.3</id>
