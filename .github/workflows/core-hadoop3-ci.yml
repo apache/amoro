@@ -37,8 +37,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        jdk: [ '8', '11' ]
+        jdk: [ 8, 11, 17 ]
         spark: [ '3.3', '3.5' ]
+        exclude:
+          - jdk: 8
+            spark: '3.5'
+          - jdk: 11
+            spark: '3.5'
+          - jdk: 17
+            spark: '3.3'
     name: Build Amoro with JDK ${{ matrix.jdk }} Spark-${{ matrix.spark }}
     steps:
       - uses: actions/checkout@v3
@@ -47,7 +54,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.jdk }}
-          distribution: 'temurin'
+          distribution: 'zulu'
           cache: maven
 
       - name: Validate checkstyle first
