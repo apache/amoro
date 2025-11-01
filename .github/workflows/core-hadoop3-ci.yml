@@ -44,10 +44,10 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Set up JDK ${{ matrix.jdk }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.jdk }}
-          distribution: 'temurin'
+          distribution: 'zulu'
           cache: maven
 
       - name: Validate checkstyle first
