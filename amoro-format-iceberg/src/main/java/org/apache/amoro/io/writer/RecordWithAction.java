@@ -21,7 +21,10 @@ package org.apache.amoro.io.writer;
 import org.apache.amoro.data.ChangeAction;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.DateTimeUtil;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 public class RecordWithAction implements Record {
@@ -65,6 +68,17 @@ public class RecordWithAction implements Record {
 
   @Override
   public <T> T get(int pos, Class<T> javaClass) {
+    Object value = get(pos);
+    if (value instanceof LocalDateTime && javaClass == Long.class) {
+      @SuppressWarnings("unchecked")
+      T result = (T) (Long) DateTimeUtil.microsFromTimestamp((LocalDateTime) value);
+      return result;
+    } else if (value instanceof OffsetDateTime && javaClass == Long.class) {
+      @SuppressWarnings("unchecked")
+      T result =
+          (T) (Long) DateTimeUtil.microsFromTimestamp(((OffsetDateTime) value).toLocalDateTime());
+      return result;
+    }
     return record.get(pos, javaClass);
   }
 
