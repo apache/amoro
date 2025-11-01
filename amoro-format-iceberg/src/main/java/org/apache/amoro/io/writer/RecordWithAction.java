@@ -22,6 +22,8 @@ import org.apache.amoro.data.ChangeAction;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 public class RecordWithAction implements Record {
@@ -63,8 +65,27 @@ public class RecordWithAction implements Record {
     return record.get(pos);
   }
 
+  private static int count = 0;
+
   @Override
   public <T> T get(int pos, Class<T> javaClass) {
+    if (System.getProperty("record_debug") != null && count < 1000) {
+      Object value = record.get(pos);
+      if (value instanceof Long
+          || value instanceof LocalDateTime
+          || value instanceof OffsetDateTime) {
+        System.out.println(
+            "record_debug: pos:"
+                + pos
+                + ", value:"
+                + value
+                + ", actualClass:"
+                + value.getClass().getName()
+                + ", expectJavaClass:"
+                + javaClass.getName());
+        count++;
+      }
+    }
     return record.get(pos, javaClass);
   }
 
