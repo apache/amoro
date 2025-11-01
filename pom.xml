@@ -106,6 +106,8 @@
         <paimon.version>1.2.0</paimon.version>
         <hive.version>3.1.3</hive.version>
         <hadoop.version>3.4.0</hadoop.version>
+        <hadoop-client-api.artifact>hadoop-client-api</hadoop-client-api.artifact>
+        <hadoop-client-runtime.artifact>hadoop-client-runtime</hadoop-client-runtime.artifact>
         <kerby.version>2.0.3</kerby.version>
         <scala.version>2.12.15</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
@@ -114,9 +116,12 @@
         <log4j.version>2.20.0</log4j.version>
         <junit4.version>4.13.2</junit4.version>
         <junit5.version>5.9.1</junit5.version>
+        <commons-beanutils.version>1.11.0</commons-beanutils.version>
+        <commons-codec.version>1.17.2</commons-codec.version>
+        <commons-compress.version>1.23.0</commons-compress.version>
         <commons-pool2.version>2.12.0</commons-pool2.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
-        <commons-beanutils.version>1.11.0</commons-beanutils.version>
+        <commons-net.version>3.12.0</commons-net.version>
         <cglib.version>2.2.2</cglib.version>
         <curator.version>5.7.0</curator.version>
         <mockito.version>4.11.0</mockito.version>
@@ -218,6 +223,30 @@
                 <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-shade-thrift</artifactId>
                 <version>${amoro-shade-thrift.version}-${amoro-shade.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${commons-codec.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-net</groupId>
+                <artifactId>commons-net</artifactId>
+                <version>${commons-net.version}</version>
             </dependency>
 
             <dependency>
@@ -377,6 +406,12 @@
                 <artifactId>hadoop-aliyun</artifactId>
                 <version>${hadoop.version}</version>
                 <scope>${aliyun-sdk-dependency-scope}</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-common</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -387,7 +422,7 @@
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-auth</artifactId>
+                <artifactId>${hadoop-client-runtime.artifact}</artifactId>
                 <version>${hadoop.version}</version>
                 <exclusions>
                     <exclusion>
@@ -423,7 +458,7 @@
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-client</artifactId>
+                <artifactId>${hadoop-client-api.artifact}</artifactId>
                 <version>${hadoop.version}</version>
                 <exclusions>
                     <exclusion>
@@ -504,6 +539,10 @@
                         <groupId>org.jline</groupId>
                         <artifactId>jline</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>com.nimbusds</groupId>
+                        <artifactId>nimbus-jose-jwt</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -513,6 +552,10 @@
                 <version>${hadoop.version}</version>
                 <!-- Exclude aws bundles, we have declared the dependencies of AWS separately. -->
                 <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-common</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>software.amazon.awssdk</groupId>
                         <artifactId>bundle</artifactId>
@@ -988,6 +1031,14 @@
                 <version>${hive.version}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.apache.curator</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-common</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-hdfs</artifactId>
                     </exclusion>
@@ -1248,12 +1299,6 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -1773,6 +1818,8 @@
                 <hadoop.version>2.10.2</hadoop.version>
                 <spark.version>3.3.4</spark.version>
                 <spark.major.version>3.3</spark.major.version>
+                <hadoop-client-api.artifact>hadoop-client</hadoop-client-api.artifact>
+                <hadoop-client-runtime.artifact>hadoop-auth</hadoop-client-runtime.artifact>
             </properties>
         </profile>
         <profile>
