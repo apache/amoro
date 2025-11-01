@@ -77,15 +77,6 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
 
   @Test
   public void run() throws Exception {
-    try {
-      System.setProperty("record_debug", "true");
-      internalRun();
-    } finally {
-      System.clearProperty("record_debug");
-    }
-  }
-
-  public void internalRun() throws Exception {
     MixedTable table = getMixedTable();
 
     int partitionCount = 2;
