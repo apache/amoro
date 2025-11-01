@@ -41,7 +41,7 @@ jobs:
         spark: [ '3.3', '3.5' ]
     name: Build Amoro with JDK ${{ matrix.jdk }} Spark-${{ matrix.spark }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up JDK ${{ matrix.jdk }}
         uses: actions/setup-java@v4

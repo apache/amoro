@@ -40,7 +40,7 @@ jobs:
         jdk: [ '8', '11' ]
     name: Build Amoro with JDK ${{ matrix.jdk }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up JDK ${{ matrix.jdk }}
         uses: actions/setup-java@v4
