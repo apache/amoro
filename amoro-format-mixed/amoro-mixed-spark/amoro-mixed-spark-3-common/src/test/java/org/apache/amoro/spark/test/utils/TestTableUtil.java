@@ -56,11 +56,13 @@ import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
 import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.types.StructType;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Method;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -103,7 +105,28 @@ public class TestTableUtil {
   public static InternalRow recordToInternalRow(Schema schema, Record record) {
     StructType structType = SparkSchemaUtil.convert(schema);
     Row row = recordToRow(record);
-    return RowEncoder.apply(structType).createSerializer().apply(row);
+    try {
+      // for spark-3.5
+      Method rowEncoderEncoderForMethod =
+          RowEncoder.class.getDeclaredMethod("encoderFor", StructType.class);
+      Method expressionEncoderApply =
+          ExpressionEncoder.class.getDeclaredMethod(
+              "apply", Class.forName("org.apache.spark.sql.catalyst.encoders.AgnosticEncoder"));
+      ExpressionEncoder encoder =
+          (ExpressionEncoder)
+              expressionEncoderApply.invoke(
+                  null, rowEncoderEncoderForMethod.invoke(null, structType));
+      return encoder.createSerializer().apply(row);
+    } catch (Exception ignore) {
+      try {
+        // for spark-3.3
+        Method rowApplyMethod = RowEncoder.class.getDeclaredMethod("apply", StructType.class);
+        ExpressionEncoder encoder = (ExpressionEncoder) rowApplyMethod.invoke(null, structType);
+        return encoder.createSerializer().apply(row);
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   public static Record rowToRecord(Row row, Types.StructType type) {

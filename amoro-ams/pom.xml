@@ -38,6 +38,7 @@
         <httpmime.version>4.5.13</httpmime.version>
         <openapi-generator-maven-plugin.version>6.0.0</openapi-generator-maven-plugin.version>
         <swagger-ui.version>5.17.14</swagger-ui.version>
+        <swagger-annorations.version>1.6.16</swagger-annorations.version>
         <git-commit-id-plugin.fail-on-no-git-dir>false</git-commit-id-plugin.fail-on-no-git-dir>
     </properties>
 
@@ -72,7 +73,7 @@
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_2.12</artifactId>
-            <version>${terminal.spark.version}</version>
+            <version>${spark.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.parquet</groupId>
@@ -81,6 +82,14 @@
                 <exclusion>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j2-impl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -112,7 +121,7 @@
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_2.12</artifactId>
-            <version>${terminal.spark.version}</version>
+            <version>${spark.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.parquet</groupId>
@@ -138,13 +147,17 @@
                     <groupId>org.apache.arrow</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-hive_2.12</artifactId>
-            <version>${terminal.spark.version}</version>
+            <version>${spark.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.hive</groupId>
@@ -185,6 +198,10 @@
                 <exclusion>
                     <groupId>org.codehaus.jackson</groupId>
                     <artifactId>jackson-mapper-asl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -321,7 +338,7 @@
         <!-- runtime dependencies -->
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-format-mixed-spark-${terminal.spark.major.version}</artifactId>
+            <artifactId>amoro-format-mixed-spark-${spark.major.version}</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
@@ -408,6 +425,12 @@
             <groupId>org.webjars</groupId>
             <artifactId>swagger-ui</artifactId>
             <version>${swagger-ui.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>${swagger-annorations.version}</version>
         </dependency>
 
         <!-- testcontainers dependencies -->
@@ -578,9 +601,9 @@
                                     <inputSpec>${project.basedir}/src/main/resources/openapi/openapi.yaml</inputSpec>
                                     <generatorName>java</generatorName>
                                     <output>${project.build.directory}/generated-sources/openapi</output>
-                                    <apiPackage>com.amoro.sdk.api</apiPackage>
-                                    <modelPackage>com.amoro.sdk.model</modelPackage>
-                                    <invokerPackage>com.amoro.sdk.invoker</invokerPackage>
+                                    <apiPackage>org.apache.amoro.openapi.api</apiPackage>
+                                    <modelPackage>org.apache.amoro.openapi.model</modelPackage>
+                                    <invokerPackage>org.apache.amoro.openapi.invoker</invokerPackage>
                                     <configOptions>
                                         <library>apache-httpclient</library>
                                     </configOptions>
@@ -604,7 +627,7 @@
                                         ${project.build.directory}/generated-sources/openapi/src/main/java
                                     </classesDirectory>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <finalName>sdk</finalName>
+                                    <finalName>amoro-openapi-${project.version}</finalName>
                                 </configuration>
                             </execution>
                         </executions>

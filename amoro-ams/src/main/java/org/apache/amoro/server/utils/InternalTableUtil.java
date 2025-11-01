@@ -111,7 +111,7 @@ public class InternalTableUtil {
             TableProperties.METADATA_COMPRESSION, TableProperties.METADATA_COMPRESSION_DEFAULT);
     String fileExtension = TableMetadataParser.getFileExtension(codecName);
     return genMetadataFileLocation(
-        meta, String.format("v%05d-%s%s", newVersion, UUID.randomUUID(), fileExtension));
+        meta, String.format("%05d-%s%s", newVersion, UUID.randomUUID(), fileExtension));
   }
 
   /**
