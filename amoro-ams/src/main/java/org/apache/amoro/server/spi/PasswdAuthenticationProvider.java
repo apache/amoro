@@ -22,9 +22,9 @@ import org.apache.amoro.exception.SignatureCheckException;
 
 public interface PasswdAuthenticationProvider {
   /**
-   * The authenticate method is called by the amoro authentication layer to authenticate password
-   * credential for their requests. If a credential is to be granted, return nothing/throw nothing.
-   * When a credential is to be disallowed, throw an appropriate [[SignatureCheckException]].
+   * The authenticate method is called by the amoro Server authentication layer to authenticate
+   * users for their requests. If a user is to be granted, return nothing/throw nothing. When a user
+   * is to be disallowed, throw an appropriate [[SignatureCheckException]].
    *
    * @param user The username received over the connection request
    * @param password The password received over the connection request
