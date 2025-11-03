@@ -178,6 +178,7 @@
             --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
             --add-opens=java.base/sun.security.x509=ALL-UNNAMED
             --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+            --add-opens=jdk.proxy2/jdk.proxy2=ALL-UNNAMED
             -Djdk.reflect.useDirectMethodHandle=false
             -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
     </properties>
