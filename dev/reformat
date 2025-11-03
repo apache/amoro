@@ -20,6 +20,5 @@ set -x
 
 PROJECT_HOME="$(cd "`dirname "$0"`/.."; pwd)"
 
-PROFILES="-Psupport-all-formats,spark-3.5,spark-3.3"
-
-$PROJECT_HOME/build/mvn spotless:apply $PROFILES
+$PROJECT_HOME/build/mvn spotless:apply "-Psupport-all-formats,spark-3.5"
+$PROJECT_HOME/build/mvn spotless:apply "-Pspark-3.3"
