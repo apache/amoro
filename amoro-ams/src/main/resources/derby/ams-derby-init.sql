@@ -127,17 +127,6 @@ CREATE TABLE table_runtime_state (
 
 CREATE UNIQUE INDEX uniq_table_state_key ON table_runtime_state (table_id, state_key);
 
-CREATE TABLE table_cleanup_process (
-    cleanup_process_id            BIGINT NOT NULL,
-    table_id                      BIGINT NOT NULL,
-    catalog_name                  VARCHAR(64) NOT NULL,
-    db_name                       VARCHAR(128) NOT NULL,
-    table_name                    VARCHAR(256) NOT NULL,
-    cleanup_operation_code        INT NOT NULL,
-    last_cleanup_end_time         TIMESTAMP,
-    PRIMARY KEY (table_id, cleanup_operation_code)
-);
-
 CREATE TABLE table_process (
     process_id       BIGINT NOT NULL PRIMARY KEY,
     table_id         BIGINT NOT NULL,
