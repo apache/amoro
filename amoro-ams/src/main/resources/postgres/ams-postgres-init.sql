@@ -212,25 +212,6 @@ comment on column table_runtime_state.state_version is 'Table runtime state vers
 comment on column table_runtime_state.create_time is 'create time';
 comment on column table_runtime_state.update_time is 'update time';
 
-CREATE TABLE table_cleanup_process (
-    cleanup_process_id            BIGINT NOT NULL,
-    table_id                      BIGINT NOT NULL,
-    catalog_name                  VARCHAR(64) NOT NULL,
-    db_name                       VARCHAR(128) NOT NULL,
-    table_name                    VARCHAR(256) NOT NULL,
-    cleanup_operation_code        INTEGER NOT NULL,
-    last_cleanup_end_time         TIMESTAMP(3) NULL DEFAULT NULL,
-    PRIMARY KEY (table_id, cleanup_operation_code)
-);
-
-COMMENT ON TABLE table_cleanup_process IS 'History of table cleanup tasks';
-COMMENT ON COLUMN table_cleanup_process.cleanup_process_id IS 'cleanup_process UUID';
-COMMENT ON COLUMN table_cleanup_process.catalog_name IS 'Catalog name';
-COMMENT ON COLUMN table_cleanup_process.db_name IS 'Database name';
-COMMENT ON COLUMN table_cleanup_process.table_name IS 'Table name';
-COMMENT ON COLUMN table_cleanup_process.cleanup_operation_code IS 'Cleanup operation code:OrphanFilesCleaning(11),DanglingDeleteFilesCleaning(22),DataExpiring(33),SnapshotsExpiring(44)';
-COMMENT ON COLUMN table_cleanup_process.last_cleanup_end_time IS 'Last cleanup operation end time';
-
 CREATE TABLE table_process (
     process_id      bigserial PRIMARY KEY,
     table_id        bigint NOT NULL,

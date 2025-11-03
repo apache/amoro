@@ -18,36 +18,13 @@
 
 package org.apache.amoro.server.table.cleanup;
 
-/**
- * Table cleanup operation enum. Defines different operation types for table cleanup tasks and their
- * corresponding codes. Each operation type has a unique code, which is used to identify the
- * operation type when persisting the cleanup process record in the table_cleanup_process table.
- */
+/** Table cleanup operation enum. Defines different operation types for table cleanup tasks. */
 public enum CleanupOperation {
-  DANGLING_DELETE_FILES_CLEANING(11),
-  ORPHAN_FILES_CLEANING(22),
-  DATA_EXPIRING(33),
-  SNAPSHOTS_EXPIRING(44),
-  //  NONE(-1) indicates operation types where no cleanup process records are
-  //  saved in the table_cleanup_process table.
-  NONE(-1);
-
-  private final int code;
-
-  CleanupOperation(int code) {
-    this.code = code;
-  }
-
-  public int getCode() {
-    return code;
-  }
-
-  public static CleanupOperation fromCode(int code) {
-    for (CleanupOperation op : values()) {
-      if (op.code == code) {
-        return op;
-      }
-    }
-    return NONE;
-  }
+  DANGLING_DELETE_FILES_CLEANING,
+  ORPHAN_FILES_CLEANING,
+  DATA_EXPIRING,
+  SNAPSHOTS_EXPIRING,
+  //  NONE indicates operation types where no cleanup process records are
+  //  saved in the table_runtime_state table.
+  NONE;
 }
