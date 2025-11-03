@@ -75,6 +75,7 @@
         <java.target.version>11</java.target.version>
         <maven.compiler.source>${java.source.version}</maven.compiler.source>
         <maven.compiler.target>${java.target.version}</maven.compiler.target>
+        <maven.version>3.9.9</maven.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.build.outputTimestamp>2024-06-27T08:00:00Z</project.build.outputTimestamp>
@@ -107,6 +108,7 @@
         <hive.version>3.1.3</hive.version>
         <hadoop.version>3.4.0</hadoop.version>
         <kerby.version>2.0.3</kerby.version>
+        <scala.version>2.12.15</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
         <slf4j.version>1.7.30</slf4j.version>
@@ -1498,7 +1500,7 @@
         <profile>
             <id>spark-3.5</id>
             <properties>
-                <spark.version>3.5.3</spark.version>
+                <spark.version>3.5.7</spark.version>
                 <spark.major.version>3.5</spark.major.version>
             </properties>
         </profile>

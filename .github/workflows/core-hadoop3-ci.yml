@@ -56,12 +56,13 @@ jobs:
           java-version: ${{ matrix.jdk }}
           distribution: 'temurin'
           cache: maven
+          check-latest: false
 
       - name: Validate checkstyle first
-        run: mvn validate
+        run: build/mvn validate
 
       - name: Build all modules with Maven
-        run: mvn clean install -Djacoco.flink.skip=true -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
+        run: build/mvn clean install -Djacoco.flink.skip=true -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
