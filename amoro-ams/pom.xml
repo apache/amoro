@@ -332,7 +332,7 @@
         <!-- runtime dependencies -->
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-format-mixed-spark-${spark.major.version}</artifactId>
+            <artifactId>amoro-format-mixed-spark-${spark.major.version}_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>

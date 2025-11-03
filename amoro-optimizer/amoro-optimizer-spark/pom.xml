@@ -26,7 +26,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>amoro-optimizer-spark</artifactId>
+    <artifactId>amoro-optimizer-spark-${spark.major.version}_${scala.binary.version}</artifactId>
     <name>Amoro Project AMS Spark Optimizer</name>
     <url>https://amoro.apache.org</url>
 
