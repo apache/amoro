@@ -39,14 +39,12 @@ import org.apache.amoro.server.optimizing.flow.checker.OptimizingCountChecker;
 import org.apache.amoro.server.optimizing.flow.view.KeyedTableDataView;
 import org.apache.amoro.table.MixedTable;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.List;
 
-@Ignore
 @RunWith(Parameterized.class)
 public class TestKeyedContinuousOptimizing extends TableTestBase {
 
