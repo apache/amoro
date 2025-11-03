@@ -14,7 +14,7 @@
 
 # gradle build
 .gradle
-build
+build/apache-maven*
 gradle/
 out
 gradle/wrapper/gradle-wrapper.jar
