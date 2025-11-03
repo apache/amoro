@@ -108,6 +108,7 @@
         <hive.version>3.1.3</hive.version>
         <hadoop.version>3.4.0</hadoop.version>
         <kerby.version>2.0.3</kerby.version>
+        <scala.version>2.12.15</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
         <slf4j.version>1.7.30</slf4j.version>
