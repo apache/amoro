@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.spi;
+package org.apache.amoro.spi;
 
 import org.apache.amoro.exception.SignatureCheckException;
 

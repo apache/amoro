@@ -52,10 +52,10 @@ import org.apache.amoro.server.dashboard.controller.TerminalController;
 import org.apache.amoro.server.dashboard.controller.VersionController;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.resource.OptimizerManager;
-import org.apache.amoro.server.spi.PasswdAuthenticationProvider;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.spi.PasswdAuthenticationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
