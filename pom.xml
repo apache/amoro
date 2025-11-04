@@ -115,6 +115,7 @@
         <log4j.version>2.20.0</log4j.version>
         <junit4.version>4.13.2</junit4.version>
         <junit5.version>5.9.1</junit5.version>
+        <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <commons-pool2.version>2.12.0</commons-pool2.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
@@ -296,6 +297,12 @@
                 <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-shade-thrift</artifactId>
                 <version>${amoro-shade-thrift.version}-${amoro-shade.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
             </dependency>
 
             <dependency>
