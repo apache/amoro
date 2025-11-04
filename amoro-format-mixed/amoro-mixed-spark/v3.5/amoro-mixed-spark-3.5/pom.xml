@@ -498,7 +498,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludes>
-                                <!-- no paimon-spark on scala-2.13 released so far -->
+                                <!-- TODO: remove it after paimon-spark on scala-2.13 released -->
                                 <exclude>**/TestUnifiedCatalog.java</exclude>
                             </excludes>
                         </configuration>
