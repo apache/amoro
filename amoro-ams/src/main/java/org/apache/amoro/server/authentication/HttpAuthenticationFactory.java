@@ -19,7 +19,7 @@
 package org.apache.amoro.server.authentication;
 
 import org.apache.amoro.config.Configurations;
-import org.apache.amoro.spi.PasswdAuthenticationProvider;
+import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
 import org.apache.amoro.utils.DynConstructors;
 
 public class HttpAuthenticationFactory {

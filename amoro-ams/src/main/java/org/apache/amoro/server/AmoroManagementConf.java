@@ -289,7 +289,7 @@ public class AmoroManagementConf {
           .defaultValue(DefaultPasswdAuthenticationProvider.class.getName())
           .withDescription(
               "User-defined password authentication implementation of"
-                  + " org.apache.amoro.server.spi.PasswdAuthenticationProvider");
+                  + " org.apache.amoro.spi.authentication.PasswdAuthenticationProvider");
 
   public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
       ConfigOptions.key("self-optimizing.commit-thread-count")

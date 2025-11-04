@@ -21,7 +21,8 @@ package org.apache.amoro.server.authentication;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.spi.PasswdAuthenticationProvider;
+import org.apache.amoro.spi.authentication.BasicPrincipal;
+import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
 
 public class DefaultPasswdAuthenticationProvider implements PasswdAuthenticationProvider {
   private String basicAuthUser;
@@ -33,9 +34,10 @@ public class DefaultPasswdAuthenticationProvider implements PasswdAuthentication
   }
 
   @Override
-  public void authenticate(String user, String password) throws SignatureCheckException {
+  public BasicPrincipal authenticate(String user, String password) throws SignatureCheckException {
     if (!(basicAuthUser.equals(user) && basicAuthPassword.equals(password))) {
       throw new SignatureCheckException("Failed to authenticate via basic authentication");
     }
+    return new BasicPrincipal(user);
   }
 }

@@ -55,7 +55,7 @@ import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
-import org.apache.amoro.spi.PasswdAuthenticationProvider;
+import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +65,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -400,7 +401,13 @@ public class DashboardServer {
     }
     if (null != basicAuthProvider) {
       BasicAuthCredentials cred = ctx.basicAuthCredentials();
-      basicAuthProvider.authenticate(cred.component1(), cred.component2());
+      Principal authPrincipal =
+          basicAuthProvider.authenticate(cred.component1(), cred.component2());
+      LOG.info(
+          "Authenticated principal: {}, URI: {}",
+          authPrincipal != null ? authPrincipal.getName() : "null",
+          uriPath);
+      LOG.info("");
     } else {
       apiTokenController.checkApiToken(ctx);
     }

@@ -16,9 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spi;
+package org.apache.amoro.spi.authentication;
 
 import org.apache.amoro.exception.SignatureCheckException;
+
+import java.security.Principal;
 
 public interface PasswdAuthenticationProvider {
   /**
@@ -28,7 +30,8 @@ public interface PasswdAuthenticationProvider {
    *
    * @param user The username received over the connection request
    * @param password The password received over the connection request
+   * @return The identifier associated with the credential
    * @throws SignatureCheckException When a user is found to be invalid by the implementation
    */
-  void authenticate(String user, String password) throws SignatureCheckException;
+  Principal authenticate(String user, String password) throws SignatureCheckException;
 }
