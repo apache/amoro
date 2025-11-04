@@ -19,6 +19,9 @@ gradle/
 out
 gradle/wrapper/gradle-wrapper.jar
 
+.mvn/wrapper/*.jar
+.mvn/maven.config
+
 __pycache__/
 *.py[cod]
 .eggs/
