@@ -500,7 +500,8 @@ public class CatalogController {
           STORAGE_CONFIGS_KEY_S3_ENDPOINT,
           S3FileIOProperties.ENDPOINT);
     } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_OSS)) {
-      if (TableFormat.valueOf(tableFormats) == TableFormat.ICEBERG) {
+      if (Arrays.asList(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG)
+          .contains(TableFormat.valueOf(tableFormats))) {
         CatalogUtil.copyProperty(
             info.getStorageConfig(),
             catalogMeta.getCatalogProperties(),
