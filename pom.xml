@@ -1468,5 +1468,11 @@
                 <spark.major.version>3.5</spark.major.version>
             </properties>
         </profile>
+        <profile>
+            <id>openapi-sdk</id>
+            <modules>
+                <module>amoro-openapi-sdk</module>
+            </modules>
+        </profile>
     </profiles>
 </project>
