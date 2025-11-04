@@ -51,10 +51,10 @@ jobs:
           check-latest: false
 
       - name: Validate checkstyle first
-        run: build/mvn validate
+        run: ./mvnw validate
 
       - name: Build all modules with Maven
-        run: build/mvn clean install -Djacoco.flink.skip=true -B -ntp -Phadoop2 -Pjava${{ matrix.jdk }}
+        run: ./mvnw clean install -Djacoco.flink.skip=true -B -ntp -Phadoop2 -Pjava${{ matrix.jdk }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
