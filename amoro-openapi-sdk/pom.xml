@@ -38,8 +38,10 @@
     <properties>
         <openapi-generator-maven-plugin.version>6.0.0</openapi-generator-maven-plugin.version>
         <swagger-annorations.version>1.6.16</swagger-annorations.version>
+        <commons-logging.version>1.3.5</commons-logging.version>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <httpclient.version>4.5.14</httpclient.version>
+        <httpcore.version>4.4.16</httpcore.version>
         <jackson.version>2.13.5</jackson.version>
         <jakarta.annotation-api.version>1.3.5</jakarta.annotation-api.version>
         <wiremock.version>2.35.2</wiremock.version>
@@ -51,6 +53,12 @@
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
             <version>${swagger-annorations.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>${commons-logging.version}</version>
         </dependency>
 
         <!-- @Nullable annotation -->
@@ -70,6 +78,11 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpmime</artifactId>
             <version>${httpclient.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>${httpcore.version}</version>
         </dependency>
 
         <!-- JSON processing: jackson -->
@@ -140,6 +153,7 @@
                             <modelPackage>org.apache.amoro.openapi.model</modelPackage>
                             <invokerPackage>org.apache.amoro.openapi.invoker</invokerPackage>
                             <generateApiTests>false</generateApiTests>
+                            <generateModelTests>false</generateModelTests>
                             <configOptions>
                                 <library>apache-httpclient</library>
                             </configOptions>
@@ -219,19 +233,21 @@
                                     <shadedPattern>${shading.prefix}.javax.annotation</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.apache.http</pattern>
-                                    <shadedPattern>${shading.prefix}.org.apache.http</shadedPattern>
+                                    <pattern>org.apache.commons</pattern>
+                                    <shadedPattern>${shading.prefix}.org.apache.commons</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.slf4j</pattern>
-                                    <shadedPattern>${shading.prefix}.org.slf4j</shadedPattern>
+                                    <pattern>org.apache.http</pattern>
+                                    <shadedPattern>${shading.prefix}.org.apache.http</shadedPattern>
                                 </relocation>
                             </relocations>
                             <artifactSet>
                                 <includes>
                                     <include>io.swagger:swagger-annotations</include>
+                                    <include>commons-logging:commons-logging</include>
                                     <include>com.google.code.findbugs:jsr305</include>
                                     <include>org.apache.httpcomponents:httpclient</include>
+                                    <include>org.apache.httpcomponents:httpcore</include>
                                     <include>org.apache.httpcomponents:httpmime</include>
                                     <include>com.fasterxml.jackson.core:jackson-annotations</include>
                                     <include>com.fasterxml.jackson.core:jackson-core</include>
@@ -239,7 +255,6 @@
                                     <include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310</include>
                                     <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</include>
                                     <include>jakarta.annotation:jakarta.annotation-api</include>
-                                    <include>org.slf4j:slf4j-api</include>
                                 </includes>
                             </artifactSet>
                             <filters>

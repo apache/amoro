@@ -64,6 +64,7 @@ public class OpenAPITest {
     HealthApi api = new HealthApi(apiClient);
     Response healthResponse = api.apiAmsV1HealthStatusGet();
     assert healthResponse.getCode() == 0;
+    assert healthResponse.getMessage().equals("");
     assert healthResponse.getResult() instanceof java.util.Map;
     assert ((java.util.Map<?, ?>) healthResponse.getResult()).isEmpty();
   }
