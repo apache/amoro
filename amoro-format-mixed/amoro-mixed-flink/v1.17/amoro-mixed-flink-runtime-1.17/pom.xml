@@ -32,7 +32,7 @@
     <url>https://amoro.apache.org</url>
 
     <properties>
-        <flink.version>1.17.1</flink.version>
+        <flink.version>1.17.2</flink.version>
     </properties>
 
     <dependencies>
