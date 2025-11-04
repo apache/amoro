@@ -127,8 +127,7 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
       if (isExecutable(tableRuntime)) {
         execute(tableRuntime);
         // Different tables take different amounts of time to execute the end of execute(),
-        // so you need to perform the save or update lastCleanEndTime operation separately for each
-        // table.
+        // so you need to perform the update operation separately for each table.
         persistUpdatingCleanupTime(tableRuntime);
       }
     } finally {
@@ -157,17 +156,7 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
 
   private void persistUpdatingCleanupTime(TableRuntime tableRuntime) {
     CleanupOperation cleanupOperation = getCleanupOperation();
-    if (cleanupOperation == CleanupOperation.NONE) {
-      logger.debug(
-          "No cleanup operation found for table {}, skipping cleanup time update",
-          tableRuntime.getTableIdentifier().getTableName());
-      return;
-    }
-
-    if (!(tableRuntime instanceof DefaultTableRuntime)) {
-      logger.warn(
-          "Table runtime is not DefaultTableRuntime, skipping cleanup time check for table {}",
-          tableRuntime.getTableIdentifier().getTableName());
+    if (shouldSkipOperation(tableRuntime, cleanupOperation)) {
       return;
     }
 
@@ -176,12 +165,12 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
       ((DefaultTableRuntime) tableRuntime).updateLastCleanTime(cleanupOperation, currentTime);
 
       logger.debug(
-          "Update lastCleanupTime for table {} with cleanup operation {}",
+          "Update lastCleanTime for table {} with cleanup operation {}",
           tableRuntime.getTableIdentifier().getTableName(),
           cleanupOperation);
     } catch (Exception e) {
       logger.error(
-          "Failed to update lastCleanupTime for table {}",
+          "Failed to update lastCleanTime for table {}",
           tableRuntime.getTableIdentifier().getTableName(),
           e);
     }
@@ -199,17 +188,7 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
 
   protected boolean shouldExecuteTask(
       TableRuntime tableRuntime, CleanupOperation cleanupOperation) {
-    if (cleanupOperation == CleanupOperation.NONE) {
-      logger.debug(
-          "No cleanup operation specified, executing task for table {}",
-          tableRuntime.getTableIdentifier().getTableName());
-      return true;
-    }
-
-    if (!(tableRuntime instanceof DefaultTableRuntime)) {
-      logger.warn(
-          "Table runtime is not DefaultTableRuntime, skipping cleanup time check for table {}",
-          tableRuntime.getTableIdentifier().getTableName());
+    if (shouldSkipOperation(tableRuntime, cleanupOperation)) {
       return true;
     }
 
@@ -236,6 +215,32 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
         cleanupOperation);
 
     return result;
+  }
+
+  /**
+   * Check if the operation should be skipped based on common conditions.
+   *
+   * @param tableRuntime the table runtime to check
+   * @param cleanupOperation the cleanup operation to perform
+   * @return true if the operation should be skipped, false otherwise
+   */
+  private boolean shouldSkipOperation(
+      TableRuntime tableRuntime, CleanupOperation cleanupOperation) {
+    if (cleanupOperation == CleanupOperation.NONE) {
+      logger.debug(
+          "No cleanup operation specified, skipping cleanup time check for table {}",
+          tableRuntime.getTableIdentifier().getTableName());
+      return true;
+    }
+
+    if (!(tableRuntime instanceof DefaultTableRuntime)) {
+      logger.debug(
+          "Table runtime is not DefaultTableRuntime, skipping cleanup time check for table {}",
+          tableRuntime.getTableIdentifier().getTableName());
+      return true;
+    }
+
+    return false;
   }
 
   protected String getThreadName() {
