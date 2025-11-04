@@ -16,17 +16,15 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>amoro-mixed-spark</artifactId>
         <groupId>org.apache.amoro</groupId>
+        <artifactId>amoro-mixed-spark</artifactId>
         <version>0.9-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>amoro-format-mixed-spark-runtime-3.3</artifactId>
     <packaging>jar</packaging>
@@ -49,10 +47,10 @@
                 <executions>
                     <execution>
                         <id>shade-amoro</id>
-                        <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <phase>package</phase>
                         <configuration>
                             <shadedArtifactAttached>false</shadedArtifactAttached>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
@@ -134,43 +132,31 @@
                                 <!-- relocation required dependencies -->
                                 <relocation>
                                     <pattern>org.apache.orc</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.orc
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.orc</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.avro</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.avro
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.avro</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.avro</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.parquet.avro
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.parquet.avro</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.column</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.parquet.column
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.parquet.column</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.hadoop</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.parquet.hadoop
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.parquet.hadoop</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.common</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.parquet.common
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.parquet.common</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.format</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.parquet.format
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.parquet.format</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>shaded.parquet</pattern>
@@ -178,272 +164,144 @@
                                 </relocation>
                                 <relocation>
                                     <pattern>shaded.parquet.it</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.parquet.it
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.parquet.it</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet.crypto</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.parquet.crypto
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.parquet.crypto</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.parquet</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.parquet
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.parquet</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.commons.pool2</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.commons.pool2
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.commons.pool2</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.github.ben-manes</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.com.github.ben-manes
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.com.github.ben-manes</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.commons.lang3</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.commons.lang3
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.commons.lang3</shadedPattern>
                                 </relocation>
 
                                 <!-- relocation iceberg -->
                                 <relocation>
                                     <pattern>org.apache.iceberg</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.iceberg
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.iceberg</shadedPattern>
                                     <excludes>
                                         <exclude>org.apache.iceberg.mr.hive.*</exclude>
                                     </excludes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.connector.iceberg</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.spark.sql.connector.iceberg
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.spark.sql.connector.iceberg</shadedPattern>
                                     <excludes>
-                                        <exclude>
-                                            org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog
-                                        </exclude>
-                                        <exclude>
-                                            org.apache.spark.sql.connector.iceberg.catalog.Procedure
-                                        </exclude>
-                                        <exclude>
-                                            org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameter
-                                        </exclude>
-                                        <exclude>
-                                            org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameterImpl
-                                        </exclude>
-                                        <exclude>
-                                            org.apache.spark.sql.connector.iceberg.write.*
-                                        </exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog</exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.Procedure</exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameter</exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameterImpl</exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.write.*</exclude>
                                     </excludes>
                                 </relocation>
 
                                 <!-- relocation iceberg-spark3-extensions -->
                                 <relocation>
                                     <pattern>org.apache.spark.sql.execution.datasources.v2</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.spark.sql.execution.datasources.v2
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.spark.sql.execution.datasources.v2</shadedPattern>
                                     <includes>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.AddPartitionFieldExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.CallExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.DropIdentifierFields*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.DropPartitionFieldExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.DynamicFileFilterExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.DynamicFileFilterWithCardinalityCheckExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ExtendedBatchScanExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Implicits*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Strategy*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.MixedFormatExtendedDataSourceV2Strategy*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.MergeIntoExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ReplaceDataExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ReplacePartitionFieldExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.SetIdentifierFieldsExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.SetWriteDistributionAndOrderingExec*
-                                        </include>
-                                        <inlucde>
-                                            org.apache.spark.sql.execution.datasources.v2.MergeRowsExec*
-                                        </inlucde>
-                                        <inlucde>
-                                            org.apache.spark.sql.execution.datasources.v2.CreateOrReplaceBranchExec*
-                                        </inlucde>
-                                        <inlucde>
-                                            org.apache.spark.sql.execution.datasources.v2.CreateOrReplaceTagExec*
-                                        </inlucde>
-                                        <inlucde>
-                                            org.apache.spark.sql.execution.datasources.v2.DropBranchExec*
-                                        </inlucde>
-                                        <inlucde>
-                                            org.apache.spark.sql.execution.datasources.v2.DropTagExec*
-                                        </inlucde>
-                                        <inlucde>
-                                            org.apache.spark.sql.execution.datasources.v2.DropIdentifierFieldsExec*
-                                        </inlucde>
-                                        <inlucde>
-                                        org.apache.spark.sql.execution.datasources.v2.WriteDeltaExec*
-                                        </inlucde>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.AddPartitionFieldExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.CallExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.DropIdentifierFields*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.DropPartitionFieldExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.DynamicFileFilterExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.DynamicFileFilterWithCardinalityCheckExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.ExtendedBatchScanExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Implicits*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Strategy*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.MixedFormatExtendedDataSourceV2Strategy*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.MergeIntoExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.ReplaceDataExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.ReplacePartitionFieldExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.SetIdentifierFieldsExec*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.SetWriteDistributionAndOrderingExec*</include>
+                                        <inlucde>org.apache.spark.sql.execution.datasources.v2.MergeRowsExec*</inlucde>
+                                        <inlucde>org.apache.spark.sql.execution.datasources.v2.CreateOrReplaceBranchExec*</inlucde>
+                                        <inlucde>org.apache.spark.sql.execution.datasources.v2.CreateOrReplaceTagExec*</inlucde>
+                                        <inlucde>org.apache.spark.sql.execution.datasources.v2.DropBranchExec*</inlucde>
+                                        <inlucde>org.apache.spark.sql.execution.datasources.v2.DropTagExec*</inlucde>
+                                        <inlucde>org.apache.spark.sql.execution.datasources.v2.DropIdentifierFieldsExec*</inlucde>
+                                        <inlucde>org.apache.spark.sql.execution.datasources.v2.WriteDeltaExec*</inlucde>
                                     </includes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.execution.datasources</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.spark.sql.execution.datasources
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.spark.sql.execution.datasources</shadedPattern>
                                     <includes>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.SparkExpressionConverter*
-                                        </include>
+                                        <include>org.apache.spark.sql.execution.datasources.SparkExpressionConverter*</include>
                                     </includes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.analysis</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst.analysis
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.spark.sql.catalyst.analysis</shadedPattern>
                                     <includes>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.analysis.AlignRowLevelOperations*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.analysis.AssignmentAlignmentSupport*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.analysis.ProcedureArgumentCoercion*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.analysis.ResolveProcedures*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.analysis.RowLevelOperationsPredicateCheck*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.analysis.AlignRowLevelOperations*</include>
+                                        <include>org.apache.spark.sql.catalyst.analysis.AssignmentAlignmentSupport*</include>
+                                        <include>org.apache.spark.sql.catalyst.analysis.ProcedureArgumentCoercion*</include>
+                                        <include>org.apache.spark.sql.catalyst.analysis.ResolveProcedures*</include>
+                                        <include>org.apache.spark.sql.catalyst.analysis.RowLevelOperationsPredicateCheck*</include>
                                     </includes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.expressions</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst.expressions
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.spark.sql.catalyst.expressions</shadedPattern>
                                     <includes>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.expressions.AccumulateFiles*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.expressions.Iceberg*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.expressions.AccumulateFiles*</include>
+                                        <include>org.apache.spark.sql.catalyst.expressions.Iceberg*</include>
                                     </includes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.optimizer</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst.optimizer
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.spark.sql.catalyst.optimizer</shadedPattern>
                                     <includes>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.optimizer.OptimizeConditionsInRowLevelOperations*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.optimizer.PullupCorrelatedPredicatesInRowLevelOperations*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.optimizer.RewriteDelete*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.optimizer.RewriteMergeInto*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.optimizer.RewriteUpdate*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.optimizer.ExtendedSimplifyConditionalsInPredicate*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.optimizer.ExtendedReplaceNullWithFalseInPredicate*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.optimizer.OptimizeConditionsInRowLevelOperations*</include>
+                                        <include>org.apache.spark.sql.catalyst.optimizer.PullupCorrelatedPredicatesInRowLevelOperations*</include>
+                                        <include>org.apache.spark.sql.catalyst.optimizer.RewriteDelete*</include>
+                                        <include>org.apache.spark.sql.catalyst.optimizer.RewriteMergeInto*</include>
+                                        <include>org.apache.spark.sql.catalyst.optimizer.RewriteUpdate*</include>
+                                        <include>org.apache.spark.sql.catalyst.optimizer.ExtendedSimplifyConditionalsInPredicate*</include>
+                                        <include>org.apache.spark.sql.catalyst.optimizer.ExtendedReplaceNullWithFalseInPredicate*</include>
                                     </includes>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.apache.spark.sql.catalyst.parser.extensions
-                                    </pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst.parser.extensions
-                                    </shadedPattern>
+                                    <pattern>org.apache.spark.sql.catalyst.parser.extensions</pattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.spark.sql.catalyst.parser.extensions</shadedPattern>
                                     <includes>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.parser.extensions.Iceberg*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.parser.extensions.UpperCaseCharStream*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.parser.extensions.Iceberg*</include>
+                                        <include>org.apache.spark.sql.catalyst.parser.extensions.UpperCaseCharStream*</include>
                                     </includes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.utils</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.spark.sql.catalyst.utils
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.spark.sql.catalyst.utils</shadedPattern>
                                     <includes>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.utils.DistributionAndOrderingUtils*
-                                        </include>
-                                        <include>org.apache.spark.sql.catalyst.utils.PlanUtils*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.utils.RewriteRowLevelOperationHelper*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.catalyst.utils.SetAccumulator*
-                                        </include>
+                                        <include>org.apache.spark.sql.catalyst.utils.DistributionAndOrderingUtils*</include>
+                                        <include>org.apache.spark.sql.catalyst.utils.PlanUtils*</include>
+                                        <include>org.apache.spark.sql.catalyst.utils.RewriteRowLevelOperationHelper*</include>
+                                        <include>org.apache.spark.sql.catalyst.utils.SetAccumulator*</include>
                                     </includes>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.hc</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.hc
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.hc</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.spark.sql.execution.dynamicpruning</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.spark.sql.execution.dynamicpruning
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.spark.sql.execution.dynamicpruning</shadedPattern>
                                     <includes>
-                                        <include>
-                                            org.apache.spark.sql.execution.dynamicpruning.RowLevelCommandDynamicPruning*
-                                        </include>
+                                        <include>org.apache.spark.sql.execution.dynamicpruning.RowLevelCommandDynamicPruning*</include>
                                     </includes>
                                 </relocation>
                             </relocations>
