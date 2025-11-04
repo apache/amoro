@@ -48,7 +48,7 @@ You can build based on the master branch without compiling Trino. The compilatio
 $ git clone https://github.com/apache/amoro.git
 $ cd amoro
 $ base_dir=$(pwd) 
-$ mvnw clean package -DskipTests
+$ ./mvnw clean package -DskipTests
 $ cd dist/target/
 $ ls
 amoro-x.y.z-bin.zip # AMS release package
