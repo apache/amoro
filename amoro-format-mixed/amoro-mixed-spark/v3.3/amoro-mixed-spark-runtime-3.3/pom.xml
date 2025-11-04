@@ -20,8 +20,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>amoro-mixed-spark_${scala.binary.version}</artifactId>
         <groupId>org.apache.amoro</groupId>
+        <artifactId>amoro-mixed-spark_${scala.binary.version}</artifactId>
         <version>0.9-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>

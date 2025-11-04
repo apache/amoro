@@ -40,7 +40,7 @@ class SparkInternalRowCastWrapper(
   def getSchema: StructType = schema
 
   override protected def genericGet(ordinal: Int): Any = {
-    row.get(ordinal, schema.apply(ordinal).dataType)
+    row.get(ordinal, dataTypeList(ordinal))
   }
 
   override def toSeq(fieldTypes: Seq[DataType]): Seq[Any] = {
