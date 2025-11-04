@@ -21,7 +21,7 @@ CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 PROJECT_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
 export PROJECT_HOME
 
-MVN="${PROJECT_HOME}/build/mvn"
+MVN="${PROJECT_HOME}/mvnw"
 
 cd $CURRENT_DIR
 
