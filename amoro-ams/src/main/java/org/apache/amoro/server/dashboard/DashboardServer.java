@@ -407,7 +407,6 @@ public class DashboardServer {
           "Authenticated principal: {}, URI: {}",
           authPrincipal != null ? authPrincipal.getName() : "null",
           uriPath);
-      LOG.info("");
     } else {
       apiTokenController.checkApiToken(ctx);
     }
