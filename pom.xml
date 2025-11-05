@@ -135,6 +135,7 @@
         <mybatis.version>3.5.15</mybatis.version>
         <postgres-jdbc.version>42.7.2</postgres-jdbc.version>
         <derby-jdbc.version>10.14.2.0</derby-jdbc.version>
+        <sqlite-jdbc.version>3.50.3.0</sqlite-jdbc.version>
         <commons-dbcp2.version>2.9.0</commons-dbcp2.version>
         <netty.version>4.1.128.Final</netty.version>
         <javalin.version>4.6.8</javalin.version>

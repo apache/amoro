@@ -231,6 +231,7 @@ org.apache.thrift:libthrift
 org.apache.yetus:audience-annotations
 org.apache.zookeeper:zookeeper
 org.apache.zookeeper:zookeeper-jute
+org.xerial:sqlite-jdbc
 ch.qos.reload4j:reload4j
 com.carrotsearch:hppc
 com.clearspring.analytics:stream

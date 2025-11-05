@@ -20,7 +20,7 @@ package org.apache.amoro.server.table;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.server.AMSManagerTestBase;
+import org.apache.amoro.server.AbstractAMSManagerTestBase;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.TableRuntimeState;
@@ -38,7 +38,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TestDefaultTableRuntimeStore extends AMSManagerTestBase {
+public class TestDefaultTableRuntimeStore extends AbstractAMSManagerTestBase {
 
   StateKey<String> key1 = StateKey.stateKey("key1").stringType().defaultValue("default1");
   StateKey<String> key2 = StateKey.stateKey("key2").stringType().defaultValue("default2");

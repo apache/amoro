@@ -26,16 +26,16 @@ import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.resource.DefaultOptimizerManager;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.table.DefaultTableManager;
-import org.apache.amoro.server.table.SQLitePersistence;
 import org.apache.amoro.server.table.TableManager;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 
-public abstract class AMSManagerTestBase {
-
-  @ClassRule public static SQLitePersistence SQLITE = new SQLitePersistence();
+/**
+ * Abstract base class for AMS Manager tests that provides the common functionality for both Derby
+ * and SQLite persistence implementations.
+ */
+public abstract class AbstractAMSManagerTestBase {
 
   protected static DefaultCatalogManager CATALOG_MANAGER = null;
   protected static DefaultTableManager TABLE_MANAGER = null;

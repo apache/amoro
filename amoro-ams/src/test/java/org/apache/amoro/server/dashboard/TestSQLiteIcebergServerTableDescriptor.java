@@ -52,11 +52,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/** Similar to TestIcebergServerTableDescriptor but uses SQLite for persistence. */
 @RunWith(Parameterized.class)
-public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor {
+public class TestSQLiteIcebergServerTableDescriptor extends TestServerTableDescriptor {
   @Rule public SQLitePersistence sqlitePersistence = new SQLitePersistence();
 
-  public TestIcebergServerTableDescriptor(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
+  public TestSQLiteIcebergServerTableDescriptor(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
     super(amoroCatalogTestHelper);
   }
 
@@ -219,6 +220,7 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
             identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName());
     doReturn(tableIdentifier).when(table).id();
 
+    // Test with SQLite persistence
     Pair<List<OptimizingProcessInfo>, Integer> res =
         descriptor.getOptimizingProcessesInfo(table, null, null, 4, 4);
     Integer expectReturnItemSizeForNoTypeNoStatusOffset0Limit5 = 4;
