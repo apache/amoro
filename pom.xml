@@ -1442,13 +1442,6 @@
         </profile>
 
         <profile>
-            <id>java8</id>
-            <properties>
-                <java.target.version>8</java.target.version>
-                <java.source.version>8</java.source.version>
-            </properties>
-        </profile>
-        <profile>
             <id>java11</id>
             <activation>
                 <jdk>[11,)</jdk>
