@@ -21,6 +21,7 @@ package org.apache.amoro.flink.table;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
 import org.apache.amoro.TestAms;
+import org.apache.amoro.flink.MiniClusterResource;
 import org.apache.amoro.formats.AmoroCatalogTestBase;
 import org.apache.amoro.formats.AmoroCatalogTestHelper;
 import org.apache.amoro.hive.TestHMS;
@@ -36,7 +37,6 @@ import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.test.util.MiniClusterWithClientResource;
-import org.apache.iceberg.flink.MiniClusterResource;
 import org.junit.ClassRule;
 
 import java.io.IOException;

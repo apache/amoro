@@ -30,7 +30,7 @@ You can choose to download the stable release package from [download page](../..
 
 ## System requirements
 
-- Java 11 is required.
+- Java 8 is required.
 - Optional: A RDBMS (PostgreSQL 14.x or higher, MySQL 5.5 or higher)
 - Optional: ZooKeeper 3.4.x or higher
 

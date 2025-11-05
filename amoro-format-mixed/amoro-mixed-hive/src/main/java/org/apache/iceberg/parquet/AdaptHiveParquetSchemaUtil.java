@@ -21,7 +21,6 @@ package org.apache.iceberg.parquet;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.mapping.NameMapping;
-import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.MessageType;
@@ -74,12 +73,6 @@ public class AdaptHiveParquetSchemaUtil {
     return new Schema(
         ParquetTypeVisitor.visit(parquetSchema, converter).asNestedType().fields(),
         converter.getAliases());
-  }
-
-  public static MessageType pruneColumns(MessageType fileSchema, Schema expectedSchema) {
-    // column order must match the incoming type, so it doesn't matter that the ids are unordered
-    Set<Integer> selectedIds = TypeUtil.getProjectedIds(expectedSchema);
-    return (MessageType) ParquetTypeVisitor.visit(fileSchema, new PruneColumns(selectedIds));
   }
 
   /**

@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG FLINK_VERSION=1.20.0-java11
+ARG FLINK_VERSION=1.20.0-java8
 
 FROM flink:${FLINK_VERSION}
 
