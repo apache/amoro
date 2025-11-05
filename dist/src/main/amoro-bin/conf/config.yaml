@@ -115,7 +115,7 @@ ams:
   database:
     type: sqlite
     jdbc-driver-class: org.sqlite.JDBC
-    url: jdbc:sqlite:/tmp/amoro/sqlite.db;create=true
+    url: jdbc:sqlite:/tmp/amoro/sqlite.db
     connection-pool-max-total: 20
     connection-pool-max-idle: 16
     connection-pool-max-wait-millis: 30000

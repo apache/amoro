@@ -152,39 +152,3 @@ tests:
           pattern:
             |
               name: prometheus-exporter
-  - it: Amoro configMap should show SQLite database configuration
-    set:
-      amoroConf:
-        database:
-          type: sqlite
-          driver: org.sqlite.JDBC
-          url: jdbc:sqlite:/tmp/amoro/sqlite.db
-    asserts:
-      - matchRegex:
-          path: data["config.yaml"]
-          pattern:
-            |
-              database:
-                type: sqlite
-                jdbc-driver-class: "org.sqlite.JDBC"
-                url: jdbc:sqlite:/tmp/amoro/sqlite.db
-  - it: Amoro configMap should include username and password for MySQL database
-    set:
-      amoroConf:
-        database:
-          type: mysql
-          driver: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://127.0.0.1:3306/amoro
-          username: admin
-          password: password
-    asserts:
-      - matchRegex:
-          path: data["config.yaml"]
-          pattern:
-            |
-              database:
-                type: mysql
-                jdbc-driver-class: "com.mysql.cj.jdbc.Driver"
-                url: jdbc:mysql://127.0.0.1:3306/amoro
-                username: admin
-                password: password

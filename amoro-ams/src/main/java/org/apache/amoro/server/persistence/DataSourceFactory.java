@@ -44,9 +44,9 @@ import java.time.Duration;
 /** Factory to help create data source */
 public class DataSourceFactory {
   private static final Logger LOG = LoggerFactory.getLogger(DataSourceFactory.class);
+  private static final String SQLITE_INIT_SQL_SCRIPT = "sqlite/ams-sqlite-init.sql";
   private static final String MYSQL_INIT_SQL_SCRIPT = "mysql/ams-mysql-init.sql";
   private static final String POSTGRES_INIT_SQL_SCRIPT = "postgres/ams-postgres-init.sql";
-  private static final String SQLITE_INIT_SQL_SCRIPT = "sqlite/ams-sqlite-init.sql";
 
   public static DataSource createDataSource(Configurations config) {
     BasicDataSource dataSource = new BasicDataSource();
