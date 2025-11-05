@@ -230,6 +230,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.45.1.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-dbcp2</artifactId>
         </dependency>
@@ -529,6 +535,7 @@
                         <exclude>derby/**</exclude>
                         <exclude>mysql/**</exclude>
                         <exclude>postgres/**</exclude>
+                        <exclude>sqlite/**</exclude>
                     </excludes>
                 </configuration>
             </plugin>

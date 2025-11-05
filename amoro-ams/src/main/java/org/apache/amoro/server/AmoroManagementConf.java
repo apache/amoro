@@ -331,7 +331,8 @@ public class AmoroManagementConf {
       ConfigOptions.key("database.url")
           .stringType()
           .defaultValue("jdbc:derby:/tmp/amoro/derby;create=true")
-          .withDescription("Database connection address");
+          .withDescription(
+              "Database connection address. For SQLite, use format like: jdbc:sqlite:/tmp/amoro/sqlite.db");
 
   public static final ConfigOption<Boolean> DB_AUTO_CREATE_TABLES =
       ConfigOptions.key("database.auto-create-tables")
@@ -343,7 +344,8 @@ public class AmoroManagementConf {
       ConfigOptions.key("database.jdbc-driver-class")
           .stringType()
           .defaultValue("org.apache.derby.jdbc.EmbeddedDriver")
-          .withDescription("The JDBC driver class name for connecting to the database.");
+          .withDescription(
+              "The JDBC driver class name for connecting to the database. For SQLite, use org.sqlite.JDBC");
 
   public static final ConfigOption<String> DB_USER_NAME =
       ConfigOptions.key("database.username")
@@ -488,6 +490,7 @@ public class AmoroManagementConf {
   public static final String DB_TYPE_DERBY = "derby";
   public static final String DB_TYPE_MYSQL = "mysql";
   public static final String DB_TYPE_POSTGRES = "postgres";
+  public static final String DB_TYPE_SQLITE = "sqlite";
 
   // terminal config
   public static final List<String> TERMINAL_BACKEND_VALUES =
