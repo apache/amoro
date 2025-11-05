@@ -136,7 +136,7 @@
         <postgres-jdbc.version>42.7.2</postgres-jdbc.version>
         <derby-jdbc.version>10.14.2.0</derby-jdbc.version>
         <commons-dbcp2.version>2.9.0</commons-dbcp2.version>
-        <netty.version>4.1.124.Final</netty.version>
+        <netty.version>4.1.128.Final</netty.version>
         <javalin.version>4.6.8</javalin.version>
         <kyuubi-hive-jdbc-shaded.version>1.10.2</kyuubi-hive-jdbc-shaded.version>
         <rocksdb.version>7.10.2</rocksdb.version>
@@ -145,7 +145,7 @@
         <lucene.version>8.11.2</lucene.version>
         <bitmap.version>1.0.1</bitmap.version>
         <prometheus.version>0.16.0</prometheus.version>
-        <flink.version>1.20.0</flink.version>
+        <flink.version>1.20.3</flink.version>
         <fabric8-kubernetes-client.version.version>6.13.3</fabric8-kubernetes-client.version.version>
         <amoro-shade.version>0.7.0-incubating</amoro-shade.version>
         <amoro-shade-guava.version>32.1.1-jre</amoro-shade-guava.version>
@@ -1467,6 +1467,12 @@
                 <spark.version>3.5.7</spark.version>
                 <spark.major.version>3.5</spark.major.version>
             </properties>
+        </profile>
+        <profile>
+            <id>openapi-sdk</id>
+            <modules>
+                <module>amoro-openapi-sdk</module>
+            </modules>
         </profile>
     </profiles>
 </project>

@@ -54,4 +54,4 @@ jobs:
           check-latest: false
 
       - name: Build OpenAPI SDK
-        run: ./mvnw clean package -DskipTests -Pgenerate-sdk -pl amoro-ams -am
+        run: ./mvnw clean package -pl amoro-openapi-sdk -am -Popenapi-sdk
