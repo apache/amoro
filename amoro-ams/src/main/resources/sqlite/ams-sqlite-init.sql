@@ -97,6 +97,7 @@ CREATE TABLE table_metadata (
     CONSTRAINT table_metadata_pk PRIMARY KEY (table_id)
 );
 
+
 CREATE TABLE table_runtime (
     table_id            INTEGER NOT NULL PRIMARY KEY,
     group_name          VARCHAR(64) NOT NULL,
@@ -148,6 +149,7 @@ CREATE TABLE optimizing_process_state (
 );
 CREATE INDEX optimizing_process_state_table_idx
     ON optimizing_process_state (table_id);
+
 
 CREATE TABLE task_runtime (
     process_id      INTEGER NOT NULL,
