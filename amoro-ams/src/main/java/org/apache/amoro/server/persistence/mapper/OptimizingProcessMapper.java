@@ -40,7 +40,6 @@ import org.apache.ibatis.annotations.ResultMap;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
-import org.apache.ibatis.type.JdbcType;
 
 import java.util.Collection;
 import java.util.List;
@@ -67,7 +66,12 @@ public interface OptimizingProcessMapper {
   void deleteProcessStateBefore(@Param("tableId") long tableId, @Param("processId") long processId);
 
   @Select("SELECT rewrite_input FROM optimizing_process_state WHERE process_id = #{processId}")
-  @Results({@Result(column = "rewrite_input", jdbcType = JdbcType.BLOB)})
+  @Results({
+    @Result(
+        column = "rewrite_input",
+        javaType = byte[].class,
+        typeHandler = org.apache.ibatis.type.ByteArrayTypeHandler.class)
+  })
   List<byte[]> selectProcessInputFiles(@Param("processId") long processId);
 
   @Update(
