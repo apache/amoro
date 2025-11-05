@@ -663,6 +663,7 @@
                 <groupId>org.apache.derby</groupId>
                 <artifactId>derby</artifactId>
                 <version>${derby-jdbc.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>

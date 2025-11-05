@@ -77,8 +77,6 @@ public class SqlSessionFactoryProvider {
     PageInterceptor interceptor = new PageInterceptor();
     Properties interceptorProperties = new Properties();
     interceptorProperties.setProperty("reasonable", "false");
-    interceptorProperties.setProperty(
-        "helperDialect", "postgresql"); // Force PostgreSQL dialect for pagination
     interceptor.setProperties(interceptorProperties);
     configuration.addInterceptor(interceptor);
 

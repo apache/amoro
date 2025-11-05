@@ -150,12 +150,12 @@ amoroConf:
     identifier: ~
     sensitiveKeywords: ~
 
-  ## AMS database properties, default value is derby. For production environment, suggest to use mysql
+  ## AMS database properties, default value is sqlite. For production environment, suggest to use mysql or postgres
   ##
   database:
-    type: derby
-    driver: org.apache.derby.jdbc.EmbeddedDriver
-    url: jdbc:derby:/tmp/amoro/derby;create=true
+    type: sqlite
+    driver: org.sqlite.JDBC
+    url: jdbc:sqlite:/tmp/amoro/sqlite.db
 
   ## e.g:
   ##    type: mysql

@@ -122,7 +122,6 @@ public class AmsEnvironment {
         getTableRuntimeFactoriesConfig(),
         Charset.defaultCharset());
     System.setProperty(Environments.AMORO_HOME, rootPath);
-    System.setProperty("derby.init.sql.dir", path + "../classes/sql/derby/");
     serviceContainer = new AmoroServiceContainer();
     TemporaryFolder hiveDir = new TemporaryFolder();
     hiveDir.create();

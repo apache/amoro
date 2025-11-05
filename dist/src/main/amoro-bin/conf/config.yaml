@@ -113,9 +113,9 @@ ams:
     max-size: 3360                # Keep 7 days history by default, 7 * 24 * 60 / 3 = 3360
 
   database:
-    type: derby
-    jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
-    url: jdbc:derby:/tmp/amoro/derby;create=true
+    type: sqlite
+    jdbc-driver-class: org.sqlite.JDBC
+    url: jdbc:sqlite:/tmp/amoro/sqlite.db;create=true
     connection-pool-max-total: 20
     connection-pool-max-idle: 16
     connection-pool-max-wait-millis: 30000

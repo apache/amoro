@@ -85,8 +85,8 @@
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
-            <directory>../amoro-ams/src/main/resources/derby</directory>
-            <outputDirectory>conf/derby</outputDirectory>
+            <directory>../amoro-ams/src/main/resources/sqlite</directory>
+            <outputDirectory>conf/sqlite</outputDirectory>
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>

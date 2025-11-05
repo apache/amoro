@@ -143,17 +143,43 @@ ingress:
 
 ### Configure the database.
 
-AMS uses embedded [Apache Derby](https://db.apache.org/derby/) as its backend storage by default.
-In production environments, we recommend using a RDBMS(Relational Database Management System) with higher availability guarantees as the storage for system data, you can ref to [Database Configuration](/deployment/#configure-system-database) for more detail.
+AMS uses embedded [SQLite](https://www.sqlite.org/) as its backend storage by default.
+In production environments, we recommend using a RDBMS (Relational Database Management System) with higher availability guarantees as the storage for system data, you can refer to [Database Configuration](/deployment/#configure-system-database) for more detail.
+
+{{< hint info >}}
+In versions prior to 0.9, AMS used [Apache Derby](https://db.apache.org/derby/) as the default database. Starting from version 0.9, SQLite is used as the default embedded database for improved stability and performance.
+{{< /hint >}}
 
 ```yaml
-amoroConf: 
+amoroConf:
   database:
     type: ${your_database_type}
     driver: ${your_database_driver}
     url: ${your_jdbc_url}
-    username: ${your_username}
-    password: ${your_password}
+    username: ${your_username} # not needed for sqlite
+    password: ${your_password} # not needed for sqlite
+```
+
+#### Example configurations:
+
+##### SQLite (default)
+```yaml
+amoroConf:
+  database:
+    type: sqlite
+    driver: org.sqlite.JDBC
+    url: jdbc:sqlite:/tmp/amoro/sqlite.db
+```
+
+##### MySQL
+```yaml
+amoroConf:
+  database:
+    type: mysql
+    driver: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://mysql-host:3306/amoro?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useSSL=false
+    username: amoro_user
+    password: your_password
 ```
 
 
