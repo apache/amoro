@@ -23,7 +23,6 @@ import static com.github.pagehelper.page.PageAutoDialect.registerDialectAlias;
 import com.github.pagehelper.PageInterceptor;
 import com.github.pagehelper.dialect.helper.MySqlDialect;
 import com.github.pagehelper.dialect.helper.PostgreSqlDialect;
-import com.github.pagehelper.dialect.helper.SqlServer2012Dialect;
 import org.apache.amoro.server.persistence.mapper.ApiTokensMapper;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
@@ -78,6 +77,8 @@ public class SqlSessionFactoryProvider {
     PageInterceptor interceptor = new PageInterceptor();
     Properties interceptorProperties = new Properties();
     interceptorProperties.setProperty("reasonable", "false");
+    interceptorProperties.setProperty(
+        "helperDialect", "postgresql"); // Force PostgreSQL dialect for pagination
     interceptor.setProperties(interceptorProperties);
     configuration.addInterceptor(interceptor);
 
@@ -85,7 +86,7 @@ public class SqlSessionFactoryProvider {
     Properties properties = new Properties();
     properties.setProperty("MySQL", "mysql");
     properties.setProperty("PostgreSQL", "postgres");
-    properties.setProperty("Derby", "derby");
+    properties.setProperty("SQLite", "sqlite");
     provider.setProperties(properties);
     configuration.setDatabaseId(provider.getDatabaseId(dataSource));
     if (sqlSessionFactory == null) {
@@ -100,7 +101,9 @@ public class SqlSessionFactoryProvider {
   private void registerDialectAliases() {
     registerDialectAlias("postgres", PostgreSqlDialect.class);
     registerDialectAlias("mysql", MySqlDialect.class);
-    registerDialectAlias("derby", SqlServer2012Dialect.class);
+    registerDialectAlias(
+        "sqlite",
+        PostgreSqlDialect.class); // Using PostgreSQL dialect for SQLite as it's more compatible
   }
 
   public SqlSessionFactory get() {
