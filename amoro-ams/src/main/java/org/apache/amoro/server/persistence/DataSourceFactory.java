@@ -44,7 +44,6 @@ import java.time.Duration;
 /** Factory to help create data source */
 public class DataSourceFactory {
   private static final Logger LOG = LoggerFactory.getLogger(DataSourceFactory.class);
-  private static final String DERBY_INIT_SQL_SCRIPT = "derby/ams-derby-init.sql";
   private static final String MYSQL_INIT_SQL_SCRIPT = "mysql/ams-mysql-init.sql";
   private static final String POSTGRES_INIT_SQL_SCRIPT = "postgres/ams-postgres-init.sql";
   private static final String SQLITE_INIT_SQL_SCRIPT = "sqlite/ams-sqlite-init.sql";
@@ -93,8 +92,8 @@ public class DataSourceFactory {
 
     try (Connection connection = ds.getConnection();
         Statement statement = connection.createStatement()) {
-      if (AmoroManagementConf.DB_TYPE_DERBY.equals(dbTypeConfig)) {
-        query = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = 'CATALOG_METADATA'";
+      if (AmoroManagementConf.DB_TYPE_SQLITE.equals(dbTypeConfig)) {
+        query = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='catalog_metadata'";
       } else if (AmoroManagementConf.DB_TYPE_MYSQL.equals(dbTypeConfig)) {
         query =
             String.format(
@@ -105,8 +104,6 @@ public class DataSourceFactory {
             String.format(
                 "SELECT 1 FROM information_schema.tables WHERE table_schema = %s AND table_name = '%s'",
                 "current_schema()", "catalog_metadata");
-      } else if (AmoroManagementConf.DB_TYPE_SQLITE.equals(dbTypeConfig)) {
-        query = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='catalog_metadata'";
       }
       LOG.info("Start check table creation, using query: {}", query);
       try (ResultSet rs = statement.executeQuery(query)) {
@@ -130,12 +127,10 @@ public class DataSourceFactory {
     String scriptPath = null;
     if (type.equals(AmoroManagementConf.DB_TYPE_MYSQL)) {
       scriptPath = MYSQL_INIT_SQL_SCRIPT;
-    } else if (type.equals(AmoroManagementConf.DB_TYPE_DERBY)) {
-      scriptPath = DERBY_INIT_SQL_SCRIPT;
-    } else if (type.equals(AmoroManagementConf.DB_TYPE_POSTGRES)) {
-      scriptPath = POSTGRES_INIT_SQL_SCRIPT;
     } else if (type.equals(AmoroManagementConf.DB_TYPE_SQLITE)) {
       scriptPath = SQLITE_INIT_SQL_SCRIPT;
+    } else if (type.equals(AmoroManagementConf.DB_TYPE_POSTGRES)) {
+      scriptPath = POSTGRES_INIT_SQL_SCRIPT;
     }
     URL scriptUrl = ClassLoader.getSystemResource(scriptPath);
     if (scriptUrl == null) {

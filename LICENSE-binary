@@ -219,7 +219,6 @@ org.apache.kerby:kerby-*
 org.apache.logging.log4j:log4j-*
 org.apache.paimon:paimon-*
 org.apache.spark:spark-*
-org.apache.derby:derby
 org.apache.httpcomponents:httpclient
 org.apache.httpcomponents:httpcore
 org.apache.httpcomponents.client5:httpclient5
