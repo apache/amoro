@@ -31,7 +31,7 @@ You can choose to download the stable release package from [download page](../..
 ## System requirements
 
 - Java 8 is required.
-- Optional: A RDBMS (PostgreSQL 14.x or higher, MySQL 5.5 or higher)
+- Optional: A RDBMS (SQLite 3.x or higher, PostgreSQL 14.x or higher, MySQL 5.5 or higher)
 - Optional: ZooKeeper 3.4.x or higher
 
 ## Download the distribution
@@ -99,16 +99,35 @@ Make sure the port is not used before configuring it.
 
 ### Configure system database
 
-AMS uses embedded [Apache Derby](https://db.apache.org/derby/) as the backend storage by default, so you can use `Derby` directly without any additional configuration.
+AMS uses embedded [SQLite](https://www.sqlite.org/) as the backend storage by default, so you can use `SQLite` directly without any additional configuration.
 
-You can also configure a relational backend storage as you needed.
+{{< hint info >}}
+In versions prior to 0.9, AMS used [Apache Derby](https://db.apache.org/derby/) as the default database. Starting from version 0.9, SQLite is used as the default embedded database for improved stability and performance.
+{{< /hint >}}
+
+#### Migrating from Derby to SQLite
+
+If you're upgrading from a Derby-based installation to SQLite, follow these steps:
+
+1. Backup your existing Derby database
+2. Update your `config.yaml` to use SQLite:
+   ```yaml
+   ams:
+     database:
+       type: sqlite
+       jdbc-driver-class: org.sqlite.JDBC
+       url: jdbc:sqlite:/path/to/your/sqlite.db
+   ```
+3. Start the server and verify that the tables are automatically created in SQLite
+
+You can also configure other relational backend storage as needed.
 
 > If you would like to use MySQL as the system database, you need to manually download the [MySQL JDBC Connector](https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.1.0/mysql-connector-j-8.1.0.jar)
 and move it into the `${AMORO_HOME}/lib/` directory.
 
-You need to create an empty database in the RDBMS before to start the server, then AMS will automatically create tables in the database when it first started.
+You need to create an empty database in the RDBMS before starting the server, then AMS will automatically create tables in the database when it first starts.
 
-One thing you need to do is adding configuration under `config.yaml` of Ams:
+One thing you need to do is add the configuration under `config.yaml` of Ams:
 
 ```yaml
 ams:
@@ -314,6 +333,10 @@ $ bin/ams.sh stop
 
 You can find all the upgrade SQL scripts under `${AMORO_HOME}/conf/${db_type}/` with name pattern `upgrade-a.b.c-to-x.y.z.sql`.
 Execute the upgrade SQL scripts one by one to your system database based on your starting and target versions.
+
+{{< hint warning >}}
+If you are upgrading to version 0.9 or later, note that the default embedded database has changed from Derby to SQLite. If you were using the default Derby database, refer to the [Migrating from Derby to SQLite](#migrating-from-derby-to-sqlite) section for migration steps. If you were using MySQL or PostgreSQL, no migration is needed.
+{{< /hint >}}
 
 ### Replace all libs and plugins
 
