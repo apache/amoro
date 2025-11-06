@@ -1500,6 +1500,8 @@
             <properties>
                 <scala.version>2.13.8</scala.version>
                 <scala.binary.version>2.13</scala.binary.version>
+                <!-- paimon-1.2.0 does not support scala-2.13 and datasource lookup will cause UT failre -->
+                <paimon.version>1.1.1</paimon.version>
             </properties>
         </profile>
         <profile>
