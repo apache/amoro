@@ -56,6 +56,7 @@ import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
+import org.apache.amoro.spi.authentication.TokenAuthenticationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,6 +75,7 @@ public class DashboardServer {
   public static final Logger LOG = LoggerFactory.getLogger(DashboardServer.class);
 
   private static final String AUTH_TYPE_BASIC = "basic";
+  private static final String AUTH_TYPE_BEARER = "bearer";
   private static final String X_REQUEST_SOURCE_HEADER = "X-Request-Source";
   private static final String X_REQUEST_SOURCE_WEB = "Web";
   private final CatalogController catalogController;
@@ -90,6 +92,7 @@ public class DashboardServer {
   private final ApiTokenController apiTokenController;
 
   private final PasswdAuthenticationProvider basicAuthProvider;
+  private final TokenAuthenticationProvider bearerAuthProvider;
 
   public DashboardServer(
       Configurations serviceConfig,
@@ -121,6 +124,12 @@ public class DashboardServer {
         AUTH_TYPE_BASIC.equalsIgnoreCase(authType)
             ? HttpAuthenticationFactory.getPasswordAuthenticationProvider(
                 serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_BASIC_PROVIDER),
+                serviceConfig)
+            : null;
+    this.bearerAuthProvider =
+        AUTH_TYPE_BEARER.equalsIgnoreCase(authType)
+            ? HttpAuthenticationFactory.getTokenAuthenticationProvider(
+                serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_BEARER_PROVIDER),
                 serviceConfig)
             : null;
   }
@@ -399,10 +408,16 @@ public class DashboardServer {
       }
       return;
     }
-    if (null != basicAuthProvider) {
-      BasicAuthCredentials cred = ctx.basicAuthCredentials();
-      Principal authPrincipal =
-          basicAuthProvider.authenticate(cred.component1(), cred.component2());
+    if (null != basicAuthProvider || null != bearerAuthProvider) {
+      Principal authPrincipal;
+      if (null != basicAuthProvider) {
+        BasicAuthCredentials cred = ctx.basicAuthCredentials();
+        authPrincipal = basicAuthProvider.authenticate(cred.component1(), cred.component2());
+      } else {
+        authPrincipal =
+            bearerAuthProvider.authenticate(
+                HttpAuthenticationFactory.getBearerTokenCredential(ctx));
+      }
       LOG.info(
           "Authenticated principal: {}, URI: {}",
           authPrincipal != null ? authPrincipal.getName() : "null",

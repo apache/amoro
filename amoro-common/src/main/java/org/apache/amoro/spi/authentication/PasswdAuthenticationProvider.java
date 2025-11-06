@@ -25,8 +25,8 @@ import java.security.Principal;
 public interface PasswdAuthenticationProvider {
   /**
    * The authenticate method is called by the amoro Server authentication layer to authenticate
-   * users for their requests. If a user is to be granted, return the identifier. When a user
-   * is to be disallowed, throw an appropriate [[SignatureCheckException]].
+   * users for their requests. If a user is to be granted, return the identifier. When a user is to
+   * be disallowed, throw an appropriate [[SignatureCheckException]].
    *
    * @param user The username received over the connection request
    * @param password The password received over the connection request

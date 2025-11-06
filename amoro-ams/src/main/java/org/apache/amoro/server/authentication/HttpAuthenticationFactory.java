@@ -18,12 +18,18 @@
 
 package org.apache.amoro.server.authentication;
 
+import static org.apache.amoro.spi.authentication.TokenCredential.CLIENT_IP_KEY;
+
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
 import org.apache.amoro.spi.authentication.TokenAuthenticationProvider;
+import org.apache.amoro.spi.authentication.TokenCredential;
 import org.apache.amoro.utils.DynConstructors;
+
+import java.util.Collections;
+import java.util.Map;
 
 public class HttpAuthenticationFactory {
   public static final String BEARER_TOKEN_SCHEMA = "BEARER";
@@ -34,7 +40,7 @@ public class HttpAuthenticationFactory {
   }
 
   public static TokenAuthenticationProvider getTokenAuthenticationProvider(
-          String providerClass, Configurations conf) {
+      String providerClass, Configurations conf) {
     return createAuthenticationProvider(providerClass, TokenAuthenticationProvider.class, conf);
   }
 
@@ -51,7 +57,11 @@ public class HttpAuthenticationFactory {
     }
   }
 
-  public static String getBearerToken(Context context) {
+  public static TokenCredential getBearerTokenCredential(Context context) {
+    return new DefaultTokenCredential(getBearerToken(context), getCredentialExtraInfo(context));
+  }
+
+  private static String getBearerToken(Context context) {
     String authorization = context.header(Header.AUTHORIZATION);
     if (authorization != null) {
       String[] parts = authorization.trim().split("\\s+", 2);
@@ -60,5 +70,9 @@ public class HttpAuthenticationFactory {
       }
     }
     return null;
+  }
+
+  private static Map<String, String> getCredentialExtraInfo(Context context) {
+    return Collections.singletonMap(CLIENT_IP_KEY, context.ip());
   }
 }
