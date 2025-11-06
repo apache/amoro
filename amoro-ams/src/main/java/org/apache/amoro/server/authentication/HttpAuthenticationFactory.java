@@ -30,6 +30,7 @@ import org.apache.amoro.utils.DynConstructors;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 public class HttpAuthenticationFactory {
   public static final String BEARER_TOKEN_SCHEMA = "BEARER";
@@ -57,8 +58,10 @@ public class HttpAuthenticationFactory {
     }
   }
 
-  public static TokenCredential getBearerTokenCredential(Context context) {
-    return new DefaultTokenCredential(getBearerToken(context), getCredentialExtraInfo(context));
+  public static TokenCredential getBearerTokenCredential(
+      Context context, String proxyClientIpHeader) {
+    return new DefaultTokenCredential(
+        getBearerToken(context), getCredentialExtraInfo(context, proxyClientIpHeader));
   }
 
   private static String getBearerToken(Context context) {
@@ -72,7 +75,10 @@ public class HttpAuthenticationFactory {
     return null;
   }
 
-  private static Map<String, String> getCredentialExtraInfo(Context context) {
-    return Collections.singletonMap(CLIENT_IP_KEY, context.ip());
+  private static Map<String, String> getCredentialExtraInfo(
+      Context context, String proxyClientIpHeader) {
+    return Collections.singletonMap(
+        CLIENT_IP_KEY,
+        Optional.ofNullable(context.header(proxyClientIpHeader)).orElse(context.ip()));
   }
 }

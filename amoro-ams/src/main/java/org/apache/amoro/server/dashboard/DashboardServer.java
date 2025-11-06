@@ -93,6 +93,7 @@ public class DashboardServer {
 
   private final PasswdAuthenticationProvider basicAuthProvider;
   private final TokenAuthenticationProvider bearerAuthProvider;
+  private final String proxyClientIpHeader;
 
   public DashboardServer(
       Configurations serviceConfig,
@@ -132,6 +133,8 @@ public class DashboardServer {
                 serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_BEARER_PROVIDER),
                 serviceConfig)
             : null;
+    this.proxyClientIpHeader =
+        serviceConfig.get(AmoroManagementConf.HTTP_SERVER_PROXY_CLIENT_IP_HEADER);
   }
 
   private volatile String indexHtml = null;
@@ -416,7 +419,7 @@ public class DashboardServer {
       } else {
         authPrincipal =
             bearerAuthProvider.authenticate(
-                HttpAuthenticationFactory.getBearerTokenCredential(ctx));
+                HttpAuthenticationFactory.getBearerTokenCredential(ctx, proxyClientIpHeader));
       }
       LOG.info(
           "Authenticated principal: {}, URI: {}",
