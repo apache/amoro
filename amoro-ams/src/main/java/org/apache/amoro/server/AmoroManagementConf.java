@@ -20,6 +20,7 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.config.ConfigOption;
 import org.apache.amoro.config.ConfigOptions;
+import org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider;
 import org.apache.amoro.utils.MemorySize;
 
 import java.time.Duration;
@@ -281,6 +282,14 @@ public class AmoroManagementConf {
           .durationType()
           .defaultValue(Duration.ofDays(7))
           .withDescription("Timeout for http session.");
+
+  public static final ConfigOption<String> HTTP_SERVER_AUTH_BASIC_PROVIDER =
+      ConfigOptions.key("http-server.auth-basic-provider")
+          .stringType()
+          .defaultValue(DefaultPasswdAuthenticationProvider.class.getName())
+          .withDescription(
+              "User-defined password authentication implementation of"
+                  + " org.apache.amoro.spi.authentication.PasswdAuthenticationProvider");
 
   public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
       ConfigOptions.key("self-optimizing.commit-thread-count")
