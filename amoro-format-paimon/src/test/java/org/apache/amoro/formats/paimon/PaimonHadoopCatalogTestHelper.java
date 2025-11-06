@@ -45,6 +45,7 @@ public class PaimonHadoopCatalogTestHelper extends AbstractFormatCatalogTestHelp
           .primaryKey("id", "age")
           .partitionKeys("age")
           .option("amoro.test.key", "amoro.test.value")
+          .option("alter-column-null-to-not-null.disabled", "false")
           .build();
 
   public PaimonHadoopCatalogTestHelper(String catalogName, Map<String, String> catalogProperties) {
