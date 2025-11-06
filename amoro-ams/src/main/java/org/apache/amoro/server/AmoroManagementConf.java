@@ -309,8 +309,7 @@ public class AmoroManagementConf {
                   + " balancer or other proxy, the server will see this load balancer or proxy IP address as"
                   + " the client IP address, to get around this common issue, most load balancers or proxies"
                   + " offer the ability to record the real remote IP address in an HTTP header that will be"
-                  + " added to the request for other devices to use. Note that, because the header value can"
-                  + " be specified to any IP address, so it will not be used for authentication.");
+                  + " added to the request for other devices to use.");
 
   public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
       ConfigOptions.key("self-optimizing.commit-thread-count")
