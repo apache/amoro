@@ -262,6 +262,12 @@
 
             <dependency>
                 <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-flink</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
                 <artifactId>iceberg-hive-metastore</artifactId>
                 <version>${iceberg.version}</version>
             </dependency>

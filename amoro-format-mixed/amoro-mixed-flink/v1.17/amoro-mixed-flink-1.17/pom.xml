@@ -49,7 +49,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-flink-runtime-1.17</artifactId>
+            <artifactId>iceberg-flink-1.17</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
