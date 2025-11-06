@@ -129,7 +129,7 @@ public class DashboardServer {
             : null;
     this.bearerAuthProvider =
         AUTH_TYPE_BEARER.equalsIgnoreCase(authType)
-            ? HttpAuthenticationFactory.getTokenAuthenticationProvider(
+            ? HttpAuthenticationFactory.getBearerAuthenticationProvider(
                 serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_BEARER_PROVIDER),
                 serviceConfig)
             : null;

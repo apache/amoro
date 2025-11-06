@@ -40,7 +40,7 @@ public class HttpAuthenticationFactory {
     return createAuthenticationProvider(providerClass, PasswdAuthenticationProvider.class, conf);
   }
 
-  public static TokenAuthenticationProvider getTokenAuthenticationProvider(
+  public static TokenAuthenticationProvider getBearerAuthenticationProvider(
       String providerClass, Configurations conf) {
     return createAuthenticationProvider(providerClass, TokenAuthenticationProvider.class, conf);
   }

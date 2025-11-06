@@ -24,7 +24,11 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
+import org.apache.amoro.spi.authentication.TokenAuthenticationProvider;
+import org.apache.amoro.spi.authentication.TokenCredential;
 import org.junit.jupiter.api.Test;
+
+import java.util.Collections;
 
 public class HttpAuthenticationFactoryTest {
   @Test
@@ -55,6 +59,36 @@ public class HttpAuthenticationFactoryTest {
         SignatureCheckException.class,
         () -> {
           passwdAuthenticationProvider.authenticate("nonAdmin", "password");
+        });
+  }
+
+  @Test
+  public void testBearerTokenAuthenticationProvider() {
+    Configurations conf = new Configurations();
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          HttpAuthenticationFactory.getBearerAuthenticationProvider(
+              "NonExistentProviderClass", conf);
+        });
+
+    TokenAuthenticationProvider tokenAuthenticationProvider =
+        HttpAuthenticationFactory.getBearerAuthenticationProvider(
+            UserDefinedTokenAuthenticationProviderImpl.class.getName(), conf);
+
+    assert tokenAuthenticationProvider
+        .authenticate(
+            new DefaultTokenCredential(
+                "token", Collections.singletonMap(TokenCredential.CLIENT_IP_KEY, "localhost")))
+        .getName()
+        .equals("user");
+    assertThrows(
+        SignatureCheckException.class,
+        () -> {
+          tokenAuthenticationProvider.authenticate(
+              new DefaultTokenCredential(
+                  "invalidToken",
+                  Collections.singletonMap(TokenCredential.CLIENT_IP_KEY, "localhost")));
         });
   }
 }

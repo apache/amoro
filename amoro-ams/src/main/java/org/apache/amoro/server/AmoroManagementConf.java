@@ -297,8 +297,8 @@ public class AmoroManagementConf {
           .stringType()
           .noDefaultValue()
           .withDescription(
-              "User-defined Bearer token such as JWT (JSON Web Token) authentication implementation" +
-                      " of org.apache.amoro.spi.authentication.TokenAuthenticationProvider");
+              "User-defined Bearer token such as JWT (JSON Web Token) authentication implementation"
+                  + " of org.apache.amoro.spi.authentication.TokenAuthenticationProvider");
 
   public static final ConfigOption<String> HTTP_SERVER_PROXY_CLIENT_IP_HEADER =
       ConfigOptions.key("http-server.proxy-client-ip-header")
