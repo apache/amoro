@@ -48,10 +48,13 @@ jobs:
       - name: Validate checkstyle first
         run: ./mvnw validate
 
+      - name: Build all modules with Maven
+        run: ./mvnw clean install -Djacoco.flink.skip=true -DskipTests -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
+
       - name: Build amoro-mixed-spark module
         run: |
           cd amoro-format-mixed/amoro-mixed-spark
-          ../../mvnw clean package -am -DskipTests -Dspotless.check.skip=true -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
+          ../../mvnw clean package -am -Dspotless.check.skip=true -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
