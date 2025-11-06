@@ -16,8 +16,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -76,10 +75,10 @@
                 <executions>
                     <execution>
                         <id>shade-amoro</id>
-                        <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <phase>package</phase>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
@@ -122,8 +121,7 @@
 
                                 <relocation>
                                     <pattern>org.apache.commons</pattern>
-                                    <shadedPattern>org.apache.amoro.shade.org.apache.commons
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.commons</shadedPattern>
                                 </relocation>
 
                                 <relocation>
@@ -163,9 +161,7 @@
 
                                 <relocation>
                                     <pattern>com.github.benmanes.caffeine</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.com.github.benmanes.caffeine
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.com.github.benmanes.caffeine</shadedPattern>
                                 </relocation>
 
                                 <relocation>
@@ -201,47 +197,27 @@
                                 <!-- flink-sql-connector-kafka  -->
                                 <relocation>
                                     <pattern>org.apache.flink.connector.kafka</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.flink.connector.kafka
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.flink.connector.kafka</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.flink.streaming.connectors.kafka</pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.flink.streaming.connectors.kafka
-                                    </shadedPattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.flink.streaming.connectors.kafka</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>
-                                        org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema
-                                    </pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema
-                                    </shadedPattern>
+                                    <pattern>org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema</pattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.flink.streaming.util.serialization.JSONKeyValueDeserializationSchema</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>
-                                        org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema
-                                    </pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema
-                                    </shadedPattern>
+                                    <pattern>org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema</pattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>
-                                        org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
-                                    </pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.flink.streaming.util.serialization.KeyedSerializationSchema
-                                    </shadedPattern>
+                                    <pattern>org.apache.flink.streaming.util.serialization.KeyedSerializationSchema</pattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.flink.streaming.util.serialization.KeyedSerializationSchema</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>
-                                        org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema
-                                    </pattern>
-                                    <shadedPattern>
-                                        org.apache.amoro.shade.org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema
-                                    </shadedPattern>
+                                    <pattern>org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema</pattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.flink.streaming.util.serialization.TypeInformationKeyValueSerializationSchema</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
