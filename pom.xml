@@ -124,7 +124,7 @@
         <parquet-jackson.version>1.13.1</parquet-jackson.version>
         <parquet-avro.version>1.15.2</parquet-avro.version>
         <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
-        <orc-core.version>1.8.3</orc-core.version>
+        <orc-core.version>1.9.7</orc-core.version>
         <awssdk.version>2.24.12</awssdk.version>
         <aliyun-sdk-oss.version>3.10.2</aliyun-sdk-oss.version>
         <spark.version>3.3.4</spark.version>
