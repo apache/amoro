@@ -37,20 +37,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - jdk: '8'
-            spark: '3.3'
-            scala: '2.12'
-          - jdk: '11'
-            spark: '3.3'
-            scala: '2.13'
-          - jdk: '11'
-            spark: '3.5'
-            scala: '2.12'
-          - jdk: '11'
-            spark: '3.5'
-            scala: '2.13'
-    name: Build Amoro with JDK ${{ matrix.jdk }} Spark-${{ matrix.spark }} Scala-${{ matrix.scala }}
+        jdk: [ '8', '11' ]
+        spark: [ '3.3', '3.5' ]
+    name: Build Amoro with JDK ${{ matrix.jdk }} Spark-${{ matrix.spark }}
     steps:
       - uses: actions/checkout@v3
 
@@ -66,7 +55,7 @@ jobs:
         run: ./mvnw validate
 
       - name: Build all modules with Maven
-        run: ./mvnw clean install -Djacoco.flink.skip=true -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }} -Pscala-${{ matrix.scala }}
+        run: ./mvnw clean install -Djacoco.flink.skip=true -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
