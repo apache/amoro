@@ -292,6 +292,14 @@ public class AmoroManagementConf {
               "User-defined password authentication implementation of"
                   + " org.apache.amoro.spi.authentication.PasswdAuthenticationProvider");
 
+  public static final ConfigOption<String> HTTP_SERVER_AUTH_BEARER_PROVIDER =
+      ConfigOptions.key("http-server.auth-bearer-provider")
+          .stringType()
+          .noDefaultValue()
+          .withDescription(
+              "User-defined Bearer token such as JWT (JSON Web Token) authentication implementation" +
+                      " of org.apache.amoro.spi.authentication.TokenAuthenticationProvider");
+
   public static final ConfigOption<String> HTTP_SERVER_PROXY_CLIENT_IP_HEADER =
       ConfigOptions.key("http-server.proxy-client-ip-header")
           .stringType()
@@ -303,14 +311,6 @@ public class AmoroManagementConf {
                   + " offer the ability to record the real remote IP address in an HTTP header that will be"
                   + " added to the request for other devices to use. Note that, because the header value can"
                   + " be specified to any IP address, so it will not be used for authentication.");
-
-  public static final ConfigOption<String> HTTP_SERVER_AUTH_BEARER_PROVIDER =
-      ConfigOptions.key("http-server.auth-bearer-provider")
-          .stringType()
-          .noDefaultValue()
-          .withDescription(
-              "User-defined bearer token authentication implementation of"
-                  + " org.apache.amoro.spi.authentication.TokenAuthenticationProvider");
 
   public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
       ConfigOptions.key("self-optimizing.commit-thread-count")
