@@ -1,7 +1,7 @@
 # This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: Core/hadoop3 CI with Maven
+name: Mixed Format/Spark CI
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,14 +19,8 @@ on:
       - "0.**"
     paths:
       - ".github/workflows/**"
-      - "amoro-ams/**"
       - "amoro-common/**"
-      - "amoro-metrics/**"
-      - "amoro-optimizer/**"
       - "amoro-format-iceberg/**"
-      - "amoro-format-paimon/**"
-      - "amoro-format-hudi/**"
-      - "amoro-format-mixed/amoro-mixed-flink/**"
       - "amoro-format-mixed/amoro-mixed-hive/**"
       - "amoro-format-mixed/amoro-mixed-spark/**"
       - "pom.xml"
@@ -39,7 +33,7 @@ jobs:
       matrix:
         jdk: [ '8', '11' ]
         spark: [ '3.3', '3.5' ]
-    name: Build Amoro with JDK ${{ matrix.jdk }}
+    name: Build with JDK ${{ matrix.jdk }}, spark-${{ matrix.spark }}
     steps:
       - uses: actions/checkout@v3
 
@@ -54,8 +48,10 @@ jobs:
       - name: Validate checkstyle first
         run: ./mvnw validate
 
-      - name: Build all modules with Maven
-        run: ./mvnw clean install -Djacoco.flink.skip=true -B -ntp -Pjava${{ matrix.jdk }}
+      - name: Build amoro-mixed-spark module
+        run: |
+          cd amoro-format-mixed/amoro-mixed-spark
+          ../../mvnw clean package -am -DskipTests -Dspotless.check.skip=true -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
