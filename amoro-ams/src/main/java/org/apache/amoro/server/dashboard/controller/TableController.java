@@ -83,7 +83,6 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.SnapshotRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.reflect.internal.util.StatisticsStatics;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -680,9 +679,10 @@ public class TableController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
     int offset = (page - 1) * pageSize;
     StatisticsBaseInfo statisticsStatics =
-            tableDescriptor.getTableStatistic(
-                    TableIdentifier.of(catalog, database, table).buildTableIdentifier());
-    PageResult<StatisticsBaseInfo> amsPageResult = PageResult.of(Collections.singletonList(statisticsStatics), offset, pageSize);
+        tableDescriptor.getTableStatistic(
+            TableIdentifier.of(catalog, database, table).buildTableIdentifier());
+    PageResult<StatisticsBaseInfo> amsPageResult =
+        PageResult.of(Collections.singletonList(statisticsStatics), offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
 

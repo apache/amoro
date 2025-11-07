@@ -272,8 +272,9 @@ public class DashboardServer {
             get(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/consumers",
                 tableController::getTableConsumerInfos);
-            get("/catalogs/{catalog}/dbs/{db}/tables/{table}/statistics",
-                 tableController::getTableStatistics);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/statistics",
+                tableController::getTableStatistics);
             post(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/cancel",
                 tableController::cancelOptimizingProcess);

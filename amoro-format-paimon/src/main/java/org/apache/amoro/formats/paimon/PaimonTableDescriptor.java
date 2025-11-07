@@ -590,12 +590,11 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     }
     Statistics statistics = table.statistics().get();
     return new PaimonStatisticInfo(
-            statistics.snapshotId(),
-            statistics.schemaId(),
-            statistics.mergedRecordCount().getAsLong(),
-            statistics.mergedRecordSize().getAsLong(),
-            Collections.emptyMap()
-            );
+        statistics.snapshotId(),
+        statistics.schemaId(),
+        statistics.mergedRecordCount().getAsLong(),
+        statistics.mergedRecordSize().getAsLong(),
+        Collections.emptyMap());
   }
 
   private AmoroSnapshotsOfTable manifestListInfo(

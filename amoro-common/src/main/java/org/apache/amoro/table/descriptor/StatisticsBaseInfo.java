@@ -20,52 +20,53 @@ package org.apache.amoro.table.descriptor;
 
 public class StatisticsBaseInfo {
 
-    private Long snapshotId;
+  private Long snapshotId;
 
-    private Long schemaId;
+  private Long schemaId;
 
-    private Long mergedRecordCount;
+  private Long mergedRecordCount;
 
-    private Long mergedRecordSize;
+  private Long mergedRecordSize;
 
-    public StatisticsBaseInfo() {}
+  public StatisticsBaseInfo() {}
 
-    public StatisticsBaseInfo(Long snapshotId, Long schemaId, Long mergedRecordCount, Long mergedRecordSize) {
-        this.snapshotId = snapshotId;
-        this.schemaId = schemaId;
-        this.mergedRecordCount = mergedRecordCount;
-        this.mergedRecordSize = mergedRecordSize;
-    }
+  public StatisticsBaseInfo(
+      Long snapshotId, Long schemaId, Long mergedRecordCount, Long mergedRecordSize) {
+    this.snapshotId = snapshotId;
+    this.schemaId = schemaId;
+    this.mergedRecordCount = mergedRecordCount;
+    this.mergedRecordSize = mergedRecordSize;
+  }
 
-    public long getSnapshotId() {
-        return snapshotId;
-    }
+  public long getSnapshotId() {
+    return snapshotId;
+  }
 
-    public void setSnapshotId(Long snapshotId) {
-        this.snapshotId = snapshotId;
-    }
+  public void setSnapshotId(Long snapshotId) {
+    this.snapshotId = snapshotId;
+  }
 
-    public long getSchemaId() {
-        return schemaId;
-    }
+  public long getSchemaId() {
+    return schemaId;
+  }
 
-    public void setSchemaId(Long schemaId) {
-        this.schemaId = schemaId;
-    }
+  public void setSchemaId(Long schemaId) {
+    this.schemaId = schemaId;
+  }
 
-    public Long getMergedRecordCount() {
-        return mergedRecordCount;
-    }
+  public Long getMergedRecordCount() {
+    return mergedRecordCount;
+  }
 
-    public void setMergedRecordCount(Long mergedRecordCount) {
-        this.mergedRecordCount = mergedRecordCount;
-    }
+  public void setMergedRecordCount(Long mergedRecordCount) {
+    this.mergedRecordCount = mergedRecordCount;
+  }
 
-    public Long getMergedRecordSize() {
-        return mergedRecordSize;
-    }
+  public Long getMergedRecordSize() {
+    return mergedRecordSize;
+  }
 
-    public void setMergedRecordSize(Long mergedRecordSize) {
-        this.mergedRecordSize = mergedRecordSize;
-    }
+  public void setMergedRecordSize(Long mergedRecordSize) {
+    this.mergedRecordSize = mergedRecordSize;
+  }
 }
