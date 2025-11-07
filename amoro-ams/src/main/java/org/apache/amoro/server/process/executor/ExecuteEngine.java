@@ -18,9 +18,21 @@
 
 package org.apache.amoro.server.process.executor;
 
+import org.apache.amoro.ActivePlugin;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
+import org.apache.amoro.process.TableProcessState;
 
-public interface ExecuteEngine {
+public interface ExecuteEngine extends ActivePlugin {
 
-  public BaseEngineActionExecutor acceptTableProcess(TableProcess tableProcess);
+  EngineType engineType();
+
+  /**
+   * Submit a table process to engine.
+   *
+   * <p>This method must returned when process status is not Pending.
+   */
+  String submitTableProcess(TableProcess<TableProcessState> tableProcess);
+
+  ProcessStatus getStatus(String processIdentifier);
 }

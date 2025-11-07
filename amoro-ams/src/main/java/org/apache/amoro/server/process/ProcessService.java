@@ -18,126 +18,185 @@
 
 package org.apache.amoro.server.process;
 
-import org.apache.amoro.Action;
-import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.server.catalog.CatalogManager;
-import org.apache.amoro.server.process.coordinator.ActionScheduleCoordinator;
-import org.apache.amoro.server.process.service.BaseService;
-import org.apache.amoro.server.process.service.ExecutorService;
-import org.apache.amoro.server.process.service.MonitorService;
-import org.apache.amoro.server.process.service.RetryService;
-import org.apache.amoro.server.process.service.SubmitService;
-import org.apache.amoro.server.resource.DefaultOptimizerManager;
+import org.apache.amoro.process.TableProcessState;
+import org.apache.amoro.server.manager.AbstractPluginManager;
+import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.persistence.PersistentBase;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.executor.EngineType;
+import org.apache.amoro.server.process.executor.ExecuteEngine;
+import org.apache.amoro.server.process.executor.TableProcessExecutor;
+import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-public class ProcessService {
-  private static final int START_SERVICE_MAX_RETRIES = 16;
+public class ProcessService extends PersistentBase {
+  private static final Logger LOG = LoggerFactory.getLogger(ProcessService.class);
+  private static final int PROCESS_MAX_RETRY_NUMBER = 3;
+  private final TableService tableService;
 
-  private int serverPort;
-  private Configurations serviceConfig;
-  private CatalogManager catalogManager;
-  private TableService tableService;
+  private final Map<String, ActionCoordinatorScheduler> actionCoordinators =
+      new ConcurrentHashMap<>();
+  private final Map<EngineType, ExecuteEngine> executeEngines = new ConcurrentHashMap<>();
 
-  private List<BaseService> services = new ArrayList<>();
-  private List<ActionScheduleCoordinator> actionCoordinators = new ArrayList<>();
+  private final ActionCoordinatorManager actionCoordinatorManager = new ActionCoordinatorManager();
+  private final ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
+  private final ProcessRuntimeHandler tableRuntimeHandler = new ProcessRuntimeHandler();
+  private final ThreadPoolExecutor processExecutionPool =
+      new ThreadPoolExecutor(10, 100, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
 
-  private Map<ServerTableIdentifier, TableRuntime> tableRuntimeMap = new HashMap<>();
-
-  public ProcessService(
-      Configurations serviceConfig, CatalogManager catalogManager, TableService tableService) {
-    this.serviceConfig = serviceConfig;
-    this.catalogManager = catalogManager;
+  public ProcessService(Configurations serviceConfig, TableService tableService) {
     this.tableService = tableService;
   }
 
-  public void init() {
-    ActionScheduleCoordinator actionScheduleCoordinator =
-        new ActionScheduleCoordinator(
-            new DefaultOptimizerManager(serviceConfig, catalogManager),
-            null,
-            new Action(new TableFormat[] {TableFormat.PAIMON}, 0, "default"),
-            tableService,
-            -1);
-    registerActionCoordinator(actionScheduleCoordinator);
-
-    ExecutorService executorService = new ExecutorService();
-    SubmitService submitService = new SubmitService(executorService);
-    RetryService retryService = new RetryService();
-    MonitorService monitorService = new MonitorService();
-    registerService(executorService);
-    registerService(submitService);
-    registerService(retryService);
-    registerService(monitorService);
-
-    restore();
+  public RuntimeHandlerChain getTableHandlerChain() {
+    return tableRuntimeHandler;
   }
 
-  private void restore() {}
-
-  public void start() {
-      for (BaseService service : services) {
-          service.startService();
-      }
+  public void register(TableProcess<TableProcessState> process) {
+    TableProcessMeta processMeta = persistentProcess(process);
+    executeOrTraceProcess(process, processMeta);
   }
 
-  public void close() {
+  public void dispose() {
+    // TODO: dispose
+  }
 
-    for (ActionScheduleCoordinator actionScheduleCoordinator : actionCoordinators) {
-      unregisterActionCoordinator(actionScheduleCoordinator);
+  private void initialize(List<TableRuntime> tableRuntimes) {
+    LOG.info("Initializing process service");
+    actionCoordinatorManager.initialize();
+    actionCoordinatorManager
+        .installedPlugins()
+        .forEach(
+            actionCoordinator -> {
+              actionCoordinators.put(
+                  actionCoordinator.action().getName(),
+                  new ActionCoordinatorScheduler(
+                      actionCoordinator, tableService, ProcessService.this));
+            });
+    executeEngineManager.initialize();
+    executeEngineManager
+        .installedPlugins()
+        .forEach(
+            executeEngine -> {
+              executeEngines.put(executeEngine.engineType(), executeEngine);
+            });
+    actionCoordinators.values().forEach(s -> s.initialize(tableRuntimes));
+    recoverProcesses(tableRuntimes);
+  }
+
+  private void executeOrTraceProcess(
+      TableProcess<TableProcessState> process, TableProcessMeta processMeta) {
+    ExecuteEngine executeEngine =
+        executeEngines.get(EngineType.valueOf(processMeta.getExecutionEngine()));
+    TableProcessExecutor executor = new TableProcessExecutor(process, executeEngine);
+    executor.onProcessFinished(
+        () -> {
+          if (process.getStatus() == ProcessStatus.FAILED
+              && process.getState().getRetryNumber() < PROCESS_MAX_RETRY_NUMBER) {
+            process.getState().addRetryNumber();
+            // TODO persist process
+            // rerun process
+            executeOrTraceProcess(process, processMeta);
+          }
+        });
+
+    processExecutionPool.execute(new TableProcessExecutor(process, executeEngine));
+    LOG.info(
+        "Submit table process {} to engine {}, process id:{}",
+        process,
+        executeEngine.engineType(),
+        process.getId());
+  }
+
+  private TableProcessMeta persistentProcess(TableProcess<TableProcessState> process) {
+    // TODO: persistent a process
+    return new TableProcessMeta();
+  }
+
+  private void recoverProcesses(List<TableRuntime> tableRuntimes) {
+    Map<Long, TableRuntime> tableIdToRuntimes =
+        tableRuntimes.stream()
+            .collect(Collectors.toMap(t -> t.getTableIdentifier().getId(), t -> t));
+    List<TableProcessMeta> activeProcesses =
+        getAs(TableProcessMapper.class, TableProcessMapper::selectAllActiveProcesses);
+    activeProcesses.forEach(
+        processMeta -> {
+          TableRuntime tableRuntime = tableIdToRuntimes.get(processMeta.getTableId());
+          ActionCoordinatorScheduler scheduler =
+              actionCoordinators.get(processMeta.getProcessType());
+          if (tableRuntime != null && scheduler != null) {
+            TableProcess<TableProcessState> process =
+                scheduler.getCoordinator().recoverTableProcess(tableRuntime, processMeta);
+            executeOrTraceProcess(process, processMeta);
+          }
+        });
+  }
+
+  private class ProcessRuntimeHandler extends RuntimeHandlerChain {
+
+    @Override
+    protected boolean formatSupported(TableFormat format) {
+      return true;
     }
 
-    for (BaseService service : services) {
-      unregisterService(service);
+    @Override
+    protected void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+      actionCoordinators.values().forEach(s -> s.handleStatusChanged(tableRuntime, originalStatus));
     }
 
-    dispose();
+    @Override
+    protected void handleConfigChanged(
+        TableRuntime tableRuntime, TableConfiguration originalConfig) {
+      actionCoordinators.values().forEach(s -> s.handleConfigChanged(tableRuntime, originalConfig));
+    }
+
+    @Override
+    protected void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
+      actionCoordinators.values().forEach(s -> s.handleTableAdded(table, tableRuntime));
+    }
+
+    @Override
+    protected void handleTableRemoved(TableRuntime tableRuntime) {
+      actionCoordinators.values().forEach(s -> s.handleTableRemoved(tableRuntime));
+    }
+
+    @Override
+    protected void initHandler(List<TableRuntime> tableRuntimeList) {
+      ProcessService.this.initialize(tableRuntimeList);
+    }
+
+    @Override
+    protected void doDispose() {
+      actionCoordinators.values().forEach(RuntimeHandlerChain::dispose);
+    }
   }
 
-  public void dispose() {}
-
-  private void registerService(BaseService service) {
-    service.init();
-    services.add(service);
+  public static class ActionCoordinatorManager extends AbstractPluginManager<ActionCoordinator> {
+    public ActionCoordinatorManager() {
+      super("action-coordinators");
+    }
   }
 
-  private void unregisterService(BaseService service) {
-    service.stop();
-    services.remove(service);
-  }
-
-  private void registerActionCoordinator(ActionScheduleCoordinator actionCoordinator) {
-    // TODO: Support remove handler chain
-    tableService.addHandlerChain(actionCoordinator);
-    actionCoordinators.add(actionCoordinator);
-  }
-
-  private void unregisterActionCoordinator(ActionScheduleCoordinator actionCoordinator) {
-    actionCoordinator.dispose();
-    actionCoordinators.add(actionCoordinator);
-  }
-
-  public List<TableProcess> listTableProcess() {
-    return null;
-  }
-
-  public Map<ServerTableIdentifier, TableRuntime> getTableRuntimeMap() {
-    return tableRuntimeMap;
-  }
-
-  public List<BaseService> getServices() {
-    return services;
-  }
-
-  public List<ActionScheduleCoordinator> getActionCoordinators() {
-    return actionCoordinators;
+  public static class ExecuteEngineManager extends AbstractPluginManager<ExecuteEngine> {
+    public ExecuteEngineManager() {
+      super("execute-engines");
+    }
   }
 }

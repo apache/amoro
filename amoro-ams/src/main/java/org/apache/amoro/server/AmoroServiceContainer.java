@@ -179,11 +179,12 @@ public class AmoroServiceContainer {
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
 
-    processService = new ProcessService(serviceConfig, catalogManager, tableService);
+    processService = new ProcessService(serviceConfig, tableService);
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
     addHandlerChain(optimizingService.getTableRuntimeHandler());
+    addHandlerChain(processService.getTableHandlerChain());
     addHandlerChain(InlineTableExecutors.getInstance().getDataExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getSnapshotsExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
@@ -197,10 +198,6 @@ public class AmoroServiceContainer {
     tableService.initialize();
     LOG.info("AMS table service have been initialized");
     tableManager.setTableService(tableService);
-
-    processService.init();
-    processService.start();
-    LOG.info("AMS process service have been started");
 
     initThriftService();
     startThriftService();
@@ -234,7 +231,7 @@ public class AmoroServiceContainer {
     }
     if (processService != null) {
       LOG.info("Stopping process server...");
-      processService.close();
+      processService.dispose();
     }
   }
 

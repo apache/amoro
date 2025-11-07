@@ -16,26 +16,33 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.process.resource;
+package org.apache.amoro.server.process;
 
+import org.apache.amoro.Action;
+import org.apache.amoro.ActivePlugin;
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.TableProcess;
+import org.apache.amoro.process.TableProcessState;
 
-import java.util.concurrent.ConcurrentHashMap;
+public interface ActionCoordinator extends ActivePlugin {
 
-/** A manager to manage all running instances. */
-public class RunningInstanceManager {
+  String PROPERTY_PARALLELISM = "parallelism";
 
-  private final ConcurrentHashMap<Long, Boolean> executingInstances = new ConcurrentHashMap<>();
+  boolean formatSupported(TableFormat format);
 
-  public void addInstance(TableProcess tableProcess) {
-    this.executingInstances.put(tableProcess.getId(), true);
-  }
+  int parallelism();
 
-  public void removeInstance(TableProcess tableProcess) {
-    this.executingInstances.remove(tableProcess.getId());
-  }
+  Action action();
 
-  public int getExecutionNum() {
-    return executingInstances.size();
-  }
+  long getNextExecutingTime(TableRuntime tableRuntime);
+
+  boolean enabled(TableRuntime tableRuntime);
+
+  long getExecutorDelay();
+
+  TableProcess<TableProcessState> createTableProcess(TableRuntime tableRuntime);
+
+  TableProcess<TableProcessState> recoverTableProcess(
+      TableRuntime tableRuntime, TableProcessMeta meta);
 }
