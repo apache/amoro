@@ -72,6 +72,7 @@ import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
 import org.apache.amoro.table.descriptor.PartitionBaseInfo;
 import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
+import org.apache.amoro.table.descriptor.StatisticsBaseInfo;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
 import org.apache.amoro.utils.CatalogUtil;
@@ -82,6 +83,7 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.SnapshotRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.reflect.internal.util.StatisticsStatics;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -667,6 +669,20 @@ public class TableController {
             TableIdentifier.of(catalog, database, table).buildTableIdentifier());
     int offset = (page - 1) * pageSize;
     PageResult<ConsumerInfo> amsPageResult = PageResult.of(consumerInfos, offset, pageSize);
+    ctx.json(OkResponse.of(amsPageResult));
+  }
+
+  public void getTableStatistics(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    int offset = (page - 1) * pageSize;
+    StatisticsBaseInfo statisticsStatics =
+            tableDescriptor.getTableStatistic(
+                    TableIdentifier.of(catalog, database, table).buildTableIdentifier());
+    PageResult<StatisticsBaseInfo> amsPageResult = PageResult.of(Collections.singletonList(statisticsStatics), offset, pageSize);
     ctx.json(OkResponse.of(amsPageResult));
   }
 

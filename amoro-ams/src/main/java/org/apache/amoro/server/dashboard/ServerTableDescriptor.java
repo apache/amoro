@@ -37,6 +37,7 @@ import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
 import org.apache.amoro.table.descriptor.PartitionBaseInfo;
 import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
+import org.apache.amoro.table.descriptor.StatisticsBaseInfo;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.util.ThreadPools;
@@ -126,6 +127,12 @@ public class ServerTableDescriptor extends PersistentBase {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTableConsumerInfos(amoroTable);
+  }
+
+  public StatisticsBaseInfo getTableStatistic(TableIdentifier tableIdentifier) {
+    AmoroTable<?> amoroTable = loadTable(tableIdentifier);
+    FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
+    return formatTableDescriptor.getTableStatistics(amoroTable);
   }
 
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(

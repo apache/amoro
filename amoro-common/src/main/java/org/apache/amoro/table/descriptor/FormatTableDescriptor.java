@@ -79,4 +79,7 @@ public interface FormatTableDescriptor {
 
   /** Get the consumer information of the {@link AmoroTable}. */
   List<ConsumerInfo> getTableConsumerInfos(AmoroTable<?> amoroTable);
+
+  /** Get the partition information of the {@link AmoroTable}. */
+  StatisticsBaseInfo getTableStatistics(AmoroTable<?> amoroTable);
 }

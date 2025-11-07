@@ -23,6 +23,7 @@ import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
+import org.apache.amoro.formats.paimon.info.PaimonStatisticInfo;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -42,6 +43,7 @@ import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
 import org.apache.amoro.table.descriptor.PartitionBaseInfo;
 import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
+import org.apache.amoro.table.descriptor.StatisticsBaseInfo;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
 import org.apache.amoro.utils.CommonUtil;
@@ -58,6 +60,7 @@ import org.apache.paimon.manifest.ManifestEntry;
 import org.apache.paimon.manifest.ManifestFile;
 import org.apache.paimon.manifest.ManifestFileMeta;
 import org.apache.paimon.manifest.ManifestList;
+import org.apache.paimon.stats.Statistics;
 import org.apache.paimon.table.DataTable;
 import org.apache.paimon.table.FileStoreTable;
 import org.apache.paimon.utils.BranchManager;
@@ -577,6 +580,22 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
       throw new RuntimeException(e);
     }
     return consumerInfos;
+  }
+
+  @Override
+  public StatisticsBaseInfo getTableStatistics(AmoroTable<?> amoroTable) {
+    FileStoreTable table = getTable(amoroTable);
+    if (!table.statistics().isPresent()) {
+      return new PaimonStatisticInfo();
+    }
+    Statistics statistics = table.statistics().get();
+    return new PaimonStatisticInfo(
+            statistics.snapshotId(),
+            statistics.schemaId(),
+            statistics.mergedRecordCount().getAsLong(),
+            statistics.mergedRecordSize().getAsLong(),
+            Collections.emptyMap()
+            );
   }
 
   private AmoroSnapshotsOfTable manifestListInfo(
