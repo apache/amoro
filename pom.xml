@@ -145,6 +145,7 @@
         <bitmap.version>1.0.1</bitmap.version>
         <prometheus.version>0.16.0</prometheus.version>
         <flink.version>1.20.3</flink.version>
+        <flink.scala.binary.version>2.12</flink.scala.binary.version>
         <fabric8-kubernetes-client.version.version>6.13.5</fabric8-kubernetes-client.version.version>
         <amoro-shade.version>0.7.0-incubating</amoro-shade.version>
         <amoro-shade-guava.version>32.1.1-jre</amoro-shade-guava.version>
@@ -546,6 +547,22 @@
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>paimon-s3</artifactId>
                 <version>${paimon.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.paimon</groupId>
+                <artifactId>paimon-spark-${spark.major.version}</artifactId>
+                <version>${paimon.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.spark</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -1469,6 +1486,22 @@
             <properties>
                 <spark.version>3.5.7</spark.version>
                 <spark.major.version>3.5</spark.major.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>scala-2.12</id>
+            <properties>
+                <scala.version>2.12.15</scala.version>
+                <scala.binary.version>2.12</scala.binary.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>scala-2.13</id>
+            <properties>
+                <scala.version>2.13.8</scala.version>
+                <scala.binary.version>2.13</scala.binary.version>
+                <!-- paimon-1.2.0 does not support scala-2.13 and datasource lookup will cause UT failre -->
+                <paimon.version>1.1.1</paimon.version>
             </properties>
         </profile>
         <profile>
