@@ -33,7 +33,8 @@ jobs:
       matrix:
         jdk: [ '8', '11' ]
         spark: [ '3.3', '3.5' ]
-    name: Build with JDK ${{ matrix.jdk }}, spark-${{ matrix.spark }}
+        scala: [ '2.12', '2.13' ]
+    name: Build with JDK ${{ matrix.jdk }}, spark-${{ matrix.spark }}, scala-${{ matrix.scala }}
     steps:
       - uses: actions/checkout@v3
 
@@ -48,13 +49,13 @@ jobs:
       - name: Validate checkstyle first
         run: ./mvnw validate
 
-      - name: Build all modules with Maven
-        run: ./mvnw clean install -Djacoco.flink.skip=true -DskipTests -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
+      - name: Install module dependencies
+        run: ./mvnw clean install -Djacoco.flink.skip=true -DskipTests -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }} -Pscala-${{ matrix.scala }}
 
       - name: Build amoro-mixed-spark module
         run: |
           cd amoro-format-mixed/amoro-mixed-spark
-          ../../mvnw clean package -am -Dspotless.check.skip=true -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
+          ../../mvnw clean package -am -Dspotless.check.skip=true -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }} -Pscala-${{ matrix.scala }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
