@@ -187,6 +187,7 @@ jobs:
     strategy:
       matrix:
         spark: [ "3.3.3" ]
+        scala: [ '2.12.15' ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11
@@ -227,9 +228,15 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set optimizer spark version
+        shell: bash
         run: |
-          OPTIMIZER_SPARK=${{ matrix.spark }} && \
-          echo "OPTIMIZER_SPARK=-Dspark-optimizer.spark-version${OPTIMIZER_SPARK}" >> $GITHUB_ENV
+          SPARK_VERSION_FULL="${{ matrix.spark }}"
+          SCALA_VERSION_FULL="${{ matrix.scala }}"
+          SPARK_MAJOR_VERSION="${SPARK_VERSION_FULL%%.*}"
+          SCALA_BINARY_VERSION="${SCALA_VERSION_FULL%%.*}"
+          echo "SPARK_VERSION=-Dspark.version=${SPARK_VERSION_FULL}" >> "$GITHUB_ENV"
+          echo "SPARK_MAJOR_VERSION=${SPARK_MAJOR_VERSION}" >> "$GITHUB_ENV"
+          echo "SCALA_BINARY_VERSION=${SCALA_BINARY_VERSION}" >> "$GITHUB_ENV"
 
       - name: Set ENV Amoro version
         id: version
@@ -240,7 +247,7 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${OPTIMIZER_SPARK} -DskipTests -B -ntp
+        run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${SPARK_VERSION} -DskipTests -B -ntp
 
       - name: Build and Push Spark Optimizer Docker Image
         uses: docker/build-push-action@v4
@@ -254,6 +261,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             SPARK_VERSION=${{ matrix.spark }}
-            OPTIMIZER_JOB=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
+            OPTIMIZER_JOB=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${{ env.SPARK_MAJOR_VERSION }}_${{ env.SCALA_BINARY_VERSION }}-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
 
 
