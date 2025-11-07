@@ -28,158 +28,14 @@ on:
     tags:
       - "v*"
 
+  pull_request:
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  docker-amoro:
-    name: Push Amoro Docker Image to Docker Hub
-    runs-on: ubuntu-latest
-    if: ${{ startsWith(github.repository, 'apache/') }}
-    strategy:
-      matrix:
-        hadoop: [ "v2", "v3" ]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK 11
-        uses: actions/setup-java@v3
-        with:
-          java-version: '11'
-          distribution: 'temurin'
-          cache: maven
-          check-latest: false
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Set up Docker tags
-        uses: docker/metadata-action@v5
-        id: meta
-        with:
-          flavor: |
-            latest=false
-          images: |
-            name=apache/amoro
-          tags: |
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},suffix=-snapshot-hadoop2
-            type=raw,enable=${{ matrix.hadoop == 'v3' && startsWith(github.ref, 'refs/tags/v') }},value=latest
-            type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}
-            type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}, suffix=-hadoop3
-            type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}, suffix=-hadoop2
-
-      - name: Print tags
-        run: echo '${{ steps.meta.outputs.tags }}'
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Set Maven Build Properties
-        if: ${{ matrix.hadoop == 'v2' }}
-        run: |
-          echo "MVN_HADOOP=-Phadoop2" >> $GITHUB_ENV
-
-      - name: Build dist module with Maven
-        run: ./mvnw clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats
-
-      - name: Build and Push Amoro Docker Image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          file: docker/amoro/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-
-  docker-optimizer-flink:
-    name: Push Amoro Optimizer-Flink Docker Image to Docker Hub
-    runs-on: ubuntu-latest
-    if: ${{ startsWith(github.repository, 'apache/') }}
-    strategy:
-      matrix:
-        flink: [ "1.14.6", "1.20.0" ]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK 11
-        uses: actions/setup-java@v3
-        with:
-          java-version: '11'
-          distribution: 'temurin'
-          cache: maven
-          check-latest: false
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Set up Docker tags
-        uses: docker/metadata-action@v5
-        id: meta
-        with:
-          flavor: |
-            latest=false
-          images: |
-            name=apache/amoro-flink-optimizer
-          tags: |
-            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot-flink1.14
-            type=ref,event=branch,enable=${{ matrix.flink == '1.20.0' }},suffix=-snapshot-flink1.20
-            type=raw,enable=${{ matrix.hadoop == '1.14.6' && startsWith(github.ref, 'refs/tags/v') }},value=latest
-            type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}
-            type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}, suffix=-flink1.14
-            type=semver,enable=${{ matrix.flink == '1.20.0' }},pattern={{version}}, suffix=-flink1.20
-
-      - name: Print tags
-        run: echo '${{ steps.meta.outputs.tags }}'
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Set optimizer flink version
-        run: |
-          OPTIMIZER_FLINK=${{ matrix.flink }} && \
-          echo "OPTIMIZER_FLINK=-Dflink-optimizer.flink-version${OPTIMIZER_FLINK}" >> $GITHUB_ENV
-          if [[ "$OPTIMIZER_FLINK" < "1.15" ]]; then
-            echo "Adding -Pflink-optimizer-pre-1.15 for Flink version less than 1.15"
-            echo "OPTIMIZER_FLINK=-Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=${OPTIMIZER_FLINK}" >> $GITHUB_ENV
-          fi
-
-      - name: Set ENV Amoro version
-        id: version
-        run: |
-          AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
-          && echo "$AMORO_VERSION" \
-          && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_ENV \
-          && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Build optimizer module with Maven
-        run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
-
-      - name: Build and Push Flink Optimizer Docker Image
-        uses: docker/build-push-action@v4
-        env:
-          AMORO_VERSION: ${{ steps.version.outputs.AMORO_VERSION }}
-        with:
-          context: .
-          push: true
-          file: docker/optimizer-flink/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          build-args: |
-            FLINK_VERSION=${{ matrix.flink }}
-            OPTIMIZER_JOB=amoro-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
-
   docker-optimizer-spark:
     name: Push Amoro Optimizer-Spark Docker Image to Docker Hub
     runs-on: ubuntu-latest
@@ -220,12 +76,6 @@ jobs:
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set optimizer spark version and extract versions
         id: versions
