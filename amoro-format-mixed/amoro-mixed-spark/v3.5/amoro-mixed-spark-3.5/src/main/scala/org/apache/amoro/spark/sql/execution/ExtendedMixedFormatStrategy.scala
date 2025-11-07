@@ -30,6 +30,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.amoro.spark.sql.MixedFormatExtensionUtils.{isMixedFormatTable, MixedFormatTableHelper}
 import org.apache.amoro.spark.sql.catalyst.plans._
+import org.apache.amoro.spark.sql.execution.{MergeRowsExec => AmoroMergeRowsExec}
 
 case class ExtendedMixedFormatStrategy(spark: SparkSession) extends Strategy with PredicateHelper {
 
@@ -71,7 +72,7 @@ case class ExtendedMixedFormatStrategy(spark: SparkSession) extends Strategy wit
           emitNotMatchedTargetRows,
           output,
           child) =>
-      MergeRowsExec(
+      AmoroMergeRowsExec(
         isSourceRowPresent,
         isTargetRowPresent,
         matchedConditions,

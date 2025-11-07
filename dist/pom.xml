@@ -52,7 +52,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-optimizer-spark</artifactId>
+            <artifactId>amoro-optimizer-spark-${spark.major.version}_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>

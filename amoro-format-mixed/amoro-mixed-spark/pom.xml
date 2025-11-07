@@ -25,7 +25,7 @@
         <version>0.9-SNAPSHOT</version>
     </parent>
 
-    <artifactId>amoro-mixed-spark</artifactId>
+    <artifactId>amoro-mixed-spark_${scala.binary.version}</artifactId>
     <packaging>pom</packaging>
     <name>Amoro Project Mixed Format Spark Parent</name>
     <url>https://amoro.apache.org</url>

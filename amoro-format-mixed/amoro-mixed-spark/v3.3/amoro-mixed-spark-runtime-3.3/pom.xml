@@ -21,12 +21,12 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.amoro</groupId>
-        <artifactId>amoro-mixed-spark</artifactId>
+        <artifactId>amoro-mixed-spark_${scala.binary.version}</artifactId>
         <version>0.9-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>amoro-format-mixed-spark-runtime-3.3</artifactId>
+    <artifactId>amoro-format-mixed-spark-runtime-3.3_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Amoro Project Mixed Format Spark 3.3 Runtime</name>
     <url>https://amoro.apache.org</url>
@@ -34,7 +34,7 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-format-mixed-spark-3.3</artifactId>
+            <artifactId>amoro-format-mixed-spark-3.3_${scala.binary.version}</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
@@ -56,8 +56,8 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <includes>
-                                    <include>org.apache.amoro:amoro-format-mixed-spark-3-common</include>
-                                    <include>org.apache.amoro:amoro-format-mixed-spark-3.3</include>
+                                    <include>org.apache.amoro:amoro-format-mixed-spark-3-common_${scala.binary.version}</include>
+                                    <include>org.apache.amoro:amoro-format-mixed-spark-3.3_${scala.binary.version}</include>
                                     <include>org.apache.amoro:amoro-common</include>
                                     <include>org.apache.amoro:amoro-format-iceberg</include>
                                     <include>org.apache.amoro:amoro-mixed-hive</include>
@@ -72,7 +72,7 @@
                                     <include>org.apache.zookeeper:zookeeper-jute</include>
                                     <include>org.apache.iceberg:iceberg-core</include>
                                     <include>org.apache.iceberg:iceberg-api</include>
-                                    <include>org.apache.iceberg:iceberg-spark-3.3_2.12</include>
+                                    <include>org.apache.iceberg:iceberg-spark-3.3_${scala.binary.version}</include>
                                     <include>org.apache.iceberg:iceberg-common</include>
                                     <include>org.apache.iceberg:iceberg-data</include>
                                     <include>org.apache.iceberg:iceberg-orc</include>
@@ -89,7 +89,7 @@
                                     <include>org.apache.iceberg:iceberg-arrow</include>
                                     <include>org.apache.iceberg:iceberg-hive-metastore</include>
                                     <include>org.apache.iceberg:iceberg-spark</include>
-                                    <include>org.apache.iceberg:iceberg-spark-extensions-3.3_2.12</include>
+                                    <include>org.apache.iceberg:iceberg-spark-extensions-3.3_${scala.binary.version}</include>
                                     <include>org.apache.iceberg:iceberg-bundled-guava</include>
                                     <include>org.apache.orc:*</include>
                                     <include>org.apache.thrift:libthrift</include>
@@ -116,7 +116,7 @@
                                     </excludes>
                                 </filter>
                                 <filter combine.children="append">
-                                    <artifact>org.apache.iceberg:iceberg-spark-3.3_2.12</artifact>
+                                    <artifact>org.apache.iceberg:iceberg-spark-3.3_${scala.binary.version}</artifact>
                                     <excludes>
                                         <exclude>META-INF/services/org.apache.spark.sql.sources.DataSourceRegister</exclude>
                                     </excludes>
