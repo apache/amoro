@@ -101,12 +101,25 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   @Override
   protected long targetSize() {
     long targetSize = super.targetSize();
-    long inputSize =
-        Arrays.stream(input.rewrittenDataFiles()).mapToLong(DataFile::fileSizeInBytes).sum();
-    // When the input files’ total size is below targetSize, remove the output file size limit to
+    DataFile[] rewrittenDataFiles = input.rewrittenDataFiles();
+    if (rewrittenDataFiles == null || rewrittenDataFiles.length == 0) {
+      return targetSize;
+    }
+    long inputSize = Arrays.stream(rewrittenDataFiles).mapToLong(DataFile::fileSizeInBytes).sum();
+    // When the input files' total size is below targetSize, remove the output file size limit to
     // avoid outputting multiple files.
     // For more details, please refer to: https://github.com/apache/amoro/issues/3645
-    return inputSize < targetSize ? Long.MAX_VALUE : targetSize;
+    if (inputSize < targetSize) {
+      return Long.MAX_VALUE;
+    }
+    // Even if total size >= targetSize, if average file size is small (less than targetSize),
+    // we should still merge files to avoid outputting too many small files.
+    // This ensures that many small files can be merged effectively.
+    long averageFileSize = inputSize / rewrittenDataFiles.length;
+    if (averageFileSize < targetSize) {
+      return Long.MAX_VALUE;
+    }
+    return targetSize;
   }
 
   private PartitionSpec fileSpec() {
