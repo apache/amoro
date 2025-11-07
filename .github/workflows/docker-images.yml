@@ -80,13 +80,13 @@ jobs:
       - name: Set optimizer spark version
         shell: bash
         run: |
-          SPARK_VERSION_FULL="${{ matrix.spark }}"
-          SCALA_VERSION_FULL="${{ matrix.scala }}"
-          SPARK_MAJOR_VERSION="${SPARK_VERSION_FULL%%.*}"
-          SCALA_BINARY_VERSION="${SCALA_VERSION_FULL%%.*}"
-          echo "SPARK_VERSION=-Dspark.version=${SPARK_VERSION_FULL}" >> "$GITHUB_ENV"
-          echo "SPARK_MAJOR_VERSION=${SPARK_MAJOR_VERSION}" >> "$GITHUB_ENV"
-          echo "SCALA_BINARY_VERSION=${SCALA_BINARY_VERSION}" >> "$GITHUB_ENV"
+          SPARK_VERSION="${{ matrix.spark }}"
+          SCALA_VERSION="${{ matrix.scala }}"
+          SPARK_MAJOR_VERSION="${SPARK_VERSION%.*}"
+          SCALA_BINARY_VERSION="${SCALA_VERSION%.*}"
+          echo "SPARK_VERSION=-Dspark.version=${SPARK_VERSION}" >> "$GITHUB_ENV"
+          echo "SPARK_MAJOR_VERSION=${SPARK_MAJOR_VERSION}"     >> "$GITHUB_ENV"
+          echo "SCALA_BINARY_VERSION=${SCALA_BINARY_VERSION}"   >> "$GITHUB_ENV"
 
       - name: Set ENV Amoro version
         id: version
