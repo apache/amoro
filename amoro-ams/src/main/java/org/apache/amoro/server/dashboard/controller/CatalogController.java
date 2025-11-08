@@ -368,7 +368,7 @@ public class CatalogController {
   }
 
   private Map<String, Object> extractStorageConfigsFromCatalogMeta(
-      String catalogName, CatalogMeta catalogMeta, String storageType) {
+      String catalogName, CatalogMeta catalogMeta, String storageType, List<String> tableFormats) {
     Map<String, Object> storageConfig = new HashMap<>();
     storageConfig.put(STORAGE_CONFIGS_KEY_TYPE, storageType);
     if (STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equals(storageType)) {
@@ -410,16 +410,20 @@ public class CatalogController {
           S3FileIOProperties.ENDPOINT,
           STORAGE_CONFIGS_KEY_S3_ENDPOINT);
     } else if (STORAGE_CONFIGS_VALUE_TYPE_OSS.equals(storageType)) {
-      CatalogUtil.copyProperty(
-          catalogMeta.getStorageConfigs(),
-          catalogMeta.getCatalogProperties(),
-          AliyunProperties.OSS_ENDPOINT,
-          STORAGE_CONFIGS_KEY_OSS_ENDPOINT);
-      CatalogUtil.copyProperty(
-          catalogMeta.getStorageConfigs(),
-          catalogMeta.getCatalogProperties(),
-          "fs.oss.endpoint",
-          STORAGE_CONFIGS_KEY_OSS_ENDPOINT);
+      if (tableFormats.contains(ICEBERG.name()) || tableFormats.contains(MIXED_ICEBERG.name())) {
+        CatalogUtil.copyProperty(
+            catalogMeta.getCatalogProperties(),
+            storageConfig,
+            AliyunProperties.OSS_ENDPOINT,
+            STORAGE_CONFIGS_KEY_OSS_ENDPOINT);
+      }
+      if (tableFormats.contains(PAIMON.name())) {
+        CatalogUtil.copyProperty(
+            catalogMeta.getCatalogProperties(),
+            storageConfig,
+            "fs.oss.endpoint",
+            STORAGE_CONFIGS_KEY_OSS_ENDPOINT);
+      }
     }
     return storageConfig;
   }
@@ -500,14 +504,15 @@ public class CatalogController {
           STORAGE_CONFIGS_KEY_S3_ENDPOINT,
           S3FileIOProperties.ENDPOINT);
     } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_OSS)) {
-      if (Arrays.asList(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG)
-          .contains(TableFormat.valueOf(tableFormats))) {
+      if (info.getTableFormatList().contains(ICEBERG.name())
+          || info.getTableFormatList().contains(MIXED_ICEBERG.name())) {
         CatalogUtil.copyProperty(
             info.getStorageConfig(),
             catalogMeta.getCatalogProperties(),
             STORAGE_CONFIGS_KEY_OSS_ENDPOINT,
             AliyunProperties.OSS_ENDPOINT);
-      } else if (TableFormat.valueOf(tableFormats) == PAIMON) {
+      }
+      if (info.getTableFormatList().contains(PAIMON.name())) {
         CatalogUtil.copyProperty(
             info.getStorageConfig(),
             catalogMeta.getCatalogProperties(),
@@ -624,10 +629,7 @@ public class CatalogController {
       } else {
         info.setType(catalogMeta.getCatalogType());
       }
-      String storageType = CatalogUtil.getCompatibleStorageType(catalogMeta.getStorageConfigs());
-      info.setAuthConfig(extractAuthConfigsFromCatalogMeta(catalogName, catalogMeta, storageType));
-      info.setStorageConfig(
-          extractStorageConfigsFromCatalogMeta(catalogName, catalogMeta, storageType));
+
       // we put the table format single
       String tableFormat =
           catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
@@ -639,6 +641,13 @@ public class CatalogController {
         }
       }
       info.setTableFormatList(Arrays.asList(tableFormat.split(",")));
+
+      String storageType = CatalogUtil.getCompatibleStorageType(catalogMeta.getStorageConfigs());
+      info.setAuthConfig(extractAuthConfigsFromCatalogMeta(catalogName, catalogMeta, storageType));
+      info.setStorageConfig(
+          extractStorageConfigsFromCatalogMeta(
+              catalogName, catalogMeta, storageType, info.getTableFormatList()));
+
       info.setProperties(
           PropertiesUtil.extractCatalogMetaProperties(catalogMeta.getCatalogProperties()));
       info.setTableProperties(
