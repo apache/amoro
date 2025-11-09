@@ -1232,6 +1232,7 @@
                             <exclude>**/pnpm-lock.yaml</exclude>
                             <exclude>**/components.d.ts</exclude>
                             <exclude>**/Chart.lock</exclude>
+                            <exclude>dev/deps/**</exclude>
                             <!-- artifacts created during release process -->
                             <exclude>release/**</exclude>
                         </excludes>

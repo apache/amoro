@@ -1,0 +1,45 @@
+# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Deps CI with Maven
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - "master"
+      - "0.**"
+
+  pull_request:
+    branches:
+      - "master"
+      - "0.**"
+    paths:
+      - ".github/workflows/**"
+      - "dev/dep**"
+      - "**/pom.xml"
+      - "pom.xml"
+      - "tools/maven/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        jdk: [ '11' ]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK ${{ matrix.jdk }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ matrix.jdk }}
+          distribution: 'temurin'
+          cache: maven
+          check-latest: false
+
+      - name: Maven Check dependency list
+        run: ./dev/dependencies.sh --check
