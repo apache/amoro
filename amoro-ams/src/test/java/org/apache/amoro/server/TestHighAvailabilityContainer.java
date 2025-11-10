@@ -110,9 +110,9 @@ public class TestHighAvailabilityContainer {
     haContainer.registerAndElect();
 
     // Wait a bit for ZK operation to complete
-    Thread.sleep(300);
+    Thread.sleep(500);
 
-    // Verify node was registered using testZkClient to avoid connection issues
+    // Verify node was registered using haContainer's zkClient
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
     List<String> children = mockZkState.getChildren(nodesPath);
     Assert.assertEquals("One node should be registered", 1, children.size());
@@ -263,9 +263,9 @@ public class TestHighAvailabilityContainer {
     haContainer.registerAndElect();
 
     // Wait a bit for registration
-    Thread.sleep(300);
+    Thread.sleep(500);
 
-    // Verify node was registered using testZkClient
+    // Verify node was registered using haContainer's zkClient
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
     List<String> children = mockZkState.getChildren(nodesPath);
     Assert.assertEquals("One node should be registered", 1, children.size());
