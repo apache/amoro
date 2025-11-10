@@ -190,15 +190,21 @@ public class TestHighAvailabilityContainer {
     // Register first node
     haContainer.registAndElect();
 
-    // Register second node manually in mock state
+    // Verify first node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
+    List<String> childrenAfterFirst = mockZkState.getChildren(nodesPath);
+    Assert.assertEquals("First node should be registered", 1, childrenAfterFirst.size());
+
+    // Register second node manually in mock state
+    // Use createNode with sequential path to get the correct sequence number
     AmsServerInfo nodeInfo2 = new AmsServerInfo();
     nodeInfo2.setHost("127.0.0.2");
     nodeInfo2.setThriftBindPort(1262);
     nodeInfo2.setRestBindPort(1631);
     String nodeInfo2Json = JacksonUtil.toJSONString(nodeInfo2);
-    mockZkState.createNode(
-        nodesPath + "/node-0000000001", nodeInfo2Json.getBytes(StandardCharsets.UTF_8));
+    // Use sequential path ending with "-" to let createNode generate the sequence number
+    // This ensures the second node gets the correct sequence number (0000000001)
+    mockZkState.createNode(nodesPath + "/node-", nodeInfo2Json.getBytes(StandardCharsets.UTF_8));
 
     // Get alive nodes
     List<AmsServerInfo> aliveNodes = haContainer.getAliveNodes();
@@ -260,9 +266,10 @@ public class TestHighAvailabilityContainer {
 
   /** Create HighAvailabilityContainer with mocked ZK components using reflection. */
   private HighAvailabilityContainer createContainerWithMockZk() throws Exception {
-    HighAvailabilityContainer container = new HighAvailabilityContainer(serviceConfig);
+    // Create container without ZK connection to avoid any connection attempts
+    HighAvailabilityContainer container = createContainerWithoutZk();
 
-    // Use reflection to inject mock ZK client and leader latch
+    // Inject mock ZK client and leader latch
     java.lang.reflect.Field zkClientField =
         HighAvailabilityContainer.class.getDeclaredField("zkClient");
     zkClientField.setAccessible(true);
@@ -273,7 +280,86 @@ public class TestHighAvailabilityContainer {
     leaderLatchField.setAccessible(true);
     leaderLatchField.set(container, mockLeaderLatch);
 
+    // Note: We don't need to create the paths themselves as nodes in ZK
+    // ZK paths are logical containers, not actual nodes
+    // The createPathIfNeeded() calls will be handled by the mock when needed
+
     return container;
+  }
+
+  /**
+   * Create a HighAvailabilityContainer without initializing ZK connection. This is used when we
+   * want to completely avoid ZK connection attempts.
+   */
+  private HighAvailabilityContainer createContainerWithoutZk() throws Exception {
+    // Use reflection to create container without calling constructor
+    java.lang.reflect.Constructor<HighAvailabilityContainer> constructor =
+        HighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
+
+    // Create a minimal config that disables HA to avoid ZK connection
+    Configurations tempConfig = new Configurations(serviceConfig);
+    tempConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
+
+    HighAvailabilityContainer container = constructor.newInstance(tempConfig);
+
+    // Now set all required fields using reflection
+    java.lang.reflect.Field isMasterSlaveModeField =
+        HighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
+    isMasterSlaveModeField.setAccessible(true);
+    isMasterSlaveModeField.set(
+        container, serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE));
+
+    if (serviceConfig.getBoolean(AmoroManagementConf.HA_ENABLE)) {
+      String haClusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
+
+      java.lang.reflect.Field tableServiceMasterPathField =
+          HighAvailabilityContainer.class.getDeclaredField("tableServiceMasterPath");
+      tableServiceMasterPathField.setAccessible(true);
+      tableServiceMasterPathField.set(
+          container, AmsHAProperties.getTableServiceMasterPath(haClusterName));
+
+      java.lang.reflect.Field optimizingServiceMasterPathField =
+          HighAvailabilityContainer.class.getDeclaredField("optimizingServiceMasterPath");
+      optimizingServiceMasterPathField.setAccessible(true);
+      optimizingServiceMasterPathField.set(
+          container, AmsHAProperties.getOptimizingServiceMasterPath(haClusterName));
+
+      java.lang.reflect.Field nodesPathField =
+          HighAvailabilityContainer.class.getDeclaredField("nodesPath");
+      nodesPathField.setAccessible(true);
+      nodesPathField.set(container, AmsHAProperties.getNodesPath(haClusterName));
+
+      java.lang.reflect.Field tableServiceServerInfoField =
+          HighAvailabilityContainer.class.getDeclaredField("tableServiceServerInfo");
+      tableServiceServerInfoField.setAccessible(true);
+      AmsServerInfo tableServiceServerInfo =
+          buildServerInfo(
+              serviceConfig.getString(AmoroManagementConf.SERVER_EXPOSE_HOST),
+              serviceConfig.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT),
+              serviceConfig.getInteger(AmoroManagementConf.HTTP_SERVER_PORT));
+      tableServiceServerInfoField.set(container, tableServiceServerInfo);
+
+      java.lang.reflect.Field optimizingServiceServerInfoField =
+          HighAvailabilityContainer.class.getDeclaredField("optimizingServiceServerInfo");
+      optimizingServiceServerInfoField.setAccessible(true);
+      AmsServerInfo optimizingServiceServerInfo =
+          buildServerInfo(
+              serviceConfig.getString(AmoroManagementConf.SERVER_EXPOSE_HOST),
+              serviceConfig.getInteger(AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT),
+              serviceConfig.getInteger(AmoroManagementConf.HTTP_SERVER_PORT));
+      optimizingServiceServerInfoField.set(container, optimizingServiceServerInfo);
+    }
+
+    return container;
+  }
+
+  /** Helper method to build AmsServerInfo (copied from HighAvailabilityContainer). */
+  private AmsServerInfo buildServerInfo(String host, Integer thriftPort, Integer httpPort) {
+    AmsServerInfo serverInfo = new AmsServerInfo();
+    serverInfo.setHost(host);
+    serverInfo.setThriftBindPort(thriftPort);
+    serverInfo.setRestBindPort(httpPort);
+    return serverInfo;
   }
 
   /** Create a mock CuratorFramework that uses MockZkState for storage. */
@@ -309,36 +395,50 @@ public class TestHighAvailabilityContainer {
               return mockZkState.getData(path);
             });
 
-    // Mock create() - use Answer to handle the entire fluent API chain
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    // Mock create() - manually create the entire fluent API chain to ensure consistency
     org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.CreateBuilder createBuilder =
         mock(
             org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.CreateBuilder.class);
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.CreateBuilderMain
-        createBuilderMain =
+
+    @SuppressWarnings("unchecked")
+    org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api
+                .ProtectACLCreateModeStatPathAndBytesable<
+            String>
+        pathAndBytesable =
             mock(
-                org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.CreateBuilderMain
-                    .class);
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.PathAndBytesable
-        createPathAndBytesable =
-            mock(
-                org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.PathAndBytesable
-                    .class);
+                org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api
+                    .ProtectACLCreateModeStatPathAndBytesable.class);
 
     when(mockClient.create()).thenReturn(createBuilder);
-    // Use Answer to handle type mismatch in fluent API
-    doAnswer(invocation -> createBuilderMain).when(createBuilder).creatingParentsIfNeeded();
-    doAnswer(invocation -> createPathAndBytesable)
-        .when(createBuilderMain)
-        .withMode(any(CreateMode.class));
-    when(createPathAndBytesable.forPath(anyString(), any(byte[].class)))
+
+    // Mock the chain: creatingParentsIfNeeded() -> withMode() -> forPath()
+    // Use the same mock object for the entire chain
+    when(createBuilder.creatingParentsIfNeeded()).thenReturn(pathAndBytesable);
+    when(pathAndBytesable.withMode(any(CreateMode.class))).thenReturn(pathAndBytesable);
+
+    // Mock forPath(path, data) - used by registAndElect()
+    when(pathAndBytesable.forPath(anyString(), any(byte[].class)))
         .thenAnswer(
             invocation -> {
               String path = invocation.getArgument(0);
               byte[] data = invocation.getArgument(1);
               return mockZkState.createNode(path, data);
+            });
+
+    // Mock forPath(path) - used by createPathIfNeeded()
+    // Note: createPathIfNeeded() creates paths without data, but we still need to store them
+    // so that getChildren() can work correctly
+    when(pathAndBytesable.forPath(anyString()))
+        .thenAnswer(
+            invocation -> {
+              String path = invocation.getArgument(0);
+              // Create the path as an empty node (this simulates ZK path creation)
+              // In real ZK, paths are logical containers, but we need to store them
+              // to make getChildren() work correctly
+              if (mockZkState.exists(path) == null) {
+                mockZkState.createNode(path, new byte[0]);
+              }
+              return null;
             });
 
     // Mock delete()
@@ -409,13 +509,18 @@ public class TestHighAvailabilityContainer {
       List<String> children = new ArrayList<>();
       String prefix = path.endsWith("/") ? path : path + "/";
       for (String nodePath : nodes.keySet()) {
+        // Only include direct children (not the path itself, and not nested paths)
         if (nodePath.startsWith(prefix) && !nodePath.equals(path)) {
           String relativePath = nodePath.substring(prefix.length());
+          // Only add direct children (no additional slashes)
+          // This means the path should be exactly: prefix + relativePath
           if (!relativePath.contains("/")) {
             children.add(relativePath);
           }
         }
       }
+      // Sort to ensure consistent ordering
+      children.sort(String::compareTo);
       return children;
     }
 
