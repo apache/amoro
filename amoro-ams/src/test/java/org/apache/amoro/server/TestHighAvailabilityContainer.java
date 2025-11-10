@@ -23,6 +23,7 @@ import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.AmsHAProperties;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
+import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -101,22 +102,34 @@ public class TestHighAvailabilityContainer {
     haContainer.registAndElect();
 
     // Wait a bit for ZK operation to complete
-    Thread.sleep(300);
+    Thread.sleep(500);
 
-    // Verify node was registered using testZkClient to avoid connection issues
+    // Verify node was registered using haContainer's zkClient
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
-    // Wait for path to be created
+    CuratorFramework zkClient = haContainer.getZkClient();
+
+    // Wait for path to be created and retry on ConnectionLoss
     int retries = 0;
-    while (testZkClient.checkExists().forPath(nodesPath) == null && retries < 10) {
-      Thread.sleep(100);
-      retries++;
+    List<String> children = null;
+    while (retries < 20) {
+      try {
+        children = zkClient.getChildren().forPath(nodesPath);
+        break;
+      } catch (Exception e) {
+        if (retries >= 19) {
+          throw e;
+        }
+        Thread.sleep(100);
+        retries++;
+      }
     }
-    List<String> children = testZkClient.getChildren().forPath(nodesPath);
+
+    Assert.assertNotNull("Children list should not be null", children);
     Assert.assertEquals("One node should be registered", 1, children.size());
 
     // Verify node data
     String nodePath = nodesPath + "/" + children.get(0);
-    byte[] data = testZkClient.getData().forPath(nodePath);
+    byte[] data = zkClient.getData().forPath(nodePath);
     Assert.assertNotNull("Node data should not be null", data);
     Assert.assertTrue("Node data should not be empty", data.length > 0);
   }
@@ -262,17 +275,29 @@ public class TestHighAvailabilityContainer {
     haContainer.registAndElect();
 
     // Wait a bit for registration
-    Thread.sleep(300);
+    Thread.sleep(500);
 
-    // Verify node was registered using testZkClient
+    // Verify node was registered using haContainer's zkClient
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
-    // Wait for path to exist
+    CuratorFramework zkClient = haContainer.getZkClient();
+
+    // Wait for path to exist and retry on ConnectionLoss
     int retries = 0;
-    while (testZkClient.checkExists().forPath(nodesPath) == null && retries < 10) {
-      Thread.sleep(100);
-      retries++;
+    List<String> children = null;
+    while (retries < 20) {
+      try {
+        children = zkClient.getChildren().forPath(nodesPath);
+        break;
+      } catch (Exception e) {
+        if (retries >= 19) {
+          throw e;
+        }
+        Thread.sleep(100);
+        retries++;
+      }
     }
-    List<String> children = testZkClient.getChildren().forPath(nodesPath);
+
+    Assert.assertNotNull("Children list should not be null", children);
     Assert.assertEquals("One node should be registered", 1, children.size());
 
     // Close container (this will close the zkClient and delete ephemeral node)
@@ -281,17 +306,36 @@ public class TestHighAvailabilityContainer {
 
     // Wait longer for ZK session to expire and ephemeral node to be auto-deleted
     // Ephemeral nodes are deleted when session closes
-    Thread.sleep(1000);
+    Thread.sleep(1500);
 
     // Verify node was unregistered using testZkClient
     // The ephemeral node should be automatically deleted when session closes
-    try {
-      List<String> childrenAfterClose = testZkClient.getChildren().forPath(nodesPath);
-      Assert.assertEquals(
-          "No nodes should be registered after close", 0, childrenAfterClose.size());
-    } catch (Exception e) {
-      // If path doesn't exist anymore, that's also fine
-      Assert.assertTrue("Path should be empty or not exist", true);
+    retries = 0;
+    while (retries < 20) {
+      try {
+        List<String> childrenAfterClose = testZkClient.getChildren().forPath(nodesPath);
+        Assert.assertEquals(
+            "No nodes should be registered after close", 0, childrenAfterClose.size());
+        break;
+      } catch (KeeperException.NoNodeException e) {
+        // Path doesn't exist anymore, which is fine - ephemeral node was deleted
+        break;
+      } catch (Exception e) {
+        if (retries >= 19) {
+          // If still failing, check if path exists
+          try {
+            if (testZkClient.checkExists().forPath(nodesPath) == null) {
+              // Path doesn't exist, which is acceptable
+              break;
+            }
+          } catch (Exception ex) {
+            // Ignore and continue
+          }
+          throw e;
+        }
+        Thread.sleep(100);
+        retries++;
+      }
     }
   }
 
