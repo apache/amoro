@@ -121,7 +121,6 @@
         <commons-pool2.version>2.12.0</commons-pool2.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <commons-net.version>3.12.0</commons-net.version>
-        <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <cglib.version>2.2.2</cglib.version>
         <curator.version>5.7.0</curator.version>
         <mockito.version>4.11.0</mockito.version>

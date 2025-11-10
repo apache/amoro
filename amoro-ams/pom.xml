@@ -310,6 +310,16 @@
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
+            <artifactId>${hadoop-client-api.artifact}</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>${hadoop-client-runtime.artifact}</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-aws</artifactId>
         </dependency>
 
@@ -422,6 +432,12 @@
         </dependency>
 
         <!-- testcontainers dependencies -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
