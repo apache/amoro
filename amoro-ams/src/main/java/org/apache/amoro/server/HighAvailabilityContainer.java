@@ -45,16 +45,6 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
 
   private final LeaderLatch leaderLatch;
   private final CuratorFramework zkClient;
-
-  // Package-private accessors for testing
-  CuratorFramework getZkClient() {
-    return zkClient;
-  }
-
-  LeaderLatch getLeaderLatch() {
-    return leaderLatch;
-  }
-
   private final String tableServiceMasterPath;
   private final String optimizingServiceMasterPath;
   private final String nodesPath;
