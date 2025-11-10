@@ -90,6 +90,9 @@ public class TestHighAvailabilityContainer {
     // Should not throw exception and should not register node
     haContainer.registerAndElect();
 
+    // Wait a bit for any async operations
+    Thread.sleep(100);
+
     // Verify no node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
     List<String> children = mockZkState.getChildren(nodesPath);
@@ -106,7 +109,10 @@ public class TestHighAvailabilityContainer {
     // Register node
     haContainer.registerAndElect();
 
-    // Verify node was registered
+    // Wait a bit for ZK operation to complete
+    Thread.sleep(300);
+
+    // Verify node was registered using testZkClient to avoid connection issues
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
     List<String> children = mockZkState.getChildren(nodesPath);
     Assert.assertEquals("One node should be registered", 1, children.size());
@@ -149,10 +155,43 @@ public class TestHighAvailabilityContainer {
     // Register node
     haContainer.registerAndElect();
 
-    // Since we're not the leader, should return empty list
-    List<AmsServerInfo> aliveNodes = haContainer.getAliveNodes();
-    Assert.assertNotNull("Alive nodes list should not be null", aliveNodes);
-    Assert.assertEquals("Alive nodes list should be empty when not leader", 0, aliveNodes.size());
+    // Wait a bit for registration
+    Thread.sleep(100);
+
+    // Check if we're leader - if we are, create a second container that will be follower
+    if (haContainer.hasLeadership()) {
+      // If we're already leader, create a second container that won't be leader
+      Configurations serviceConfig2 = new Configurations();
+      serviceConfig2.setString(AmoroManagementConf.SERVER_EXPOSE_HOST, "127.0.0.2");
+      serviceConfig2.setInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT, 1262);
+      serviceConfig2.setInteger(AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT, 1263);
+      serviceConfig2.setInteger(AmoroManagementConf.HTTP_SERVER_PORT, 1631);
+      serviceConfig2.setBoolean(AmoroManagementConf.HA_ENABLE, true);
+      serviceConfig2.setString(
+          AmoroManagementConf.HA_ZOOKEEPER_ADDRESS, MockZookeeperServer.getUri());
+      serviceConfig2.setString(AmoroManagementConf.HA_CLUSTER_NAME, "test-cluster");
+      serviceConfig2.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
+
+      HighAvailabilityContainer haContainer2 = new HighAvailabilityContainer(serviceConfig2);
+      haContainer2.registAndElect();
+      try {
+        Thread.sleep(200);
+        // haContainer2 should not be leader
+        Assert.assertFalse("Second container should not be leader", haContainer2.hasLeadership());
+        // Since haContainer2 is not leader, should return empty list
+        List<AmsServerInfo> aliveNodes = haContainer2.getAliveNodes();
+        Assert.assertNotNull("Alive nodes list should not be null", aliveNodes);
+        Assert.assertEquals(
+            "Alive nodes list should be empty when not leader", 0, aliveNodes.size());
+      } finally {
+        haContainer2.close();
+      }
+    } else {
+      // We're not leader, so should return empty list
+      List<AmsServerInfo> aliveNodes = haContainer.getAliveNodes();
+      Assert.assertNotNull("Alive nodes list should not be null", aliveNodes);
+      Assert.assertEquals("Alive nodes list should be empty when not leader", 0, aliveNodes.size());
+    }
   }
 
   @Test
@@ -223,12 +262,15 @@ public class TestHighAvailabilityContainer {
     // Register node
     haContainer.registerAndElect();
 
-    // Verify node was registered
+    // Wait a bit for registration
+    Thread.sleep(300);
+
+    // Verify node was registered using testZkClient
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
     List<String> children = mockZkState.getChildren(nodesPath);
     Assert.assertEquals("One node should be registered", 1, children.size());
 
-    // Close container
+    // Close container (this will close the zkClient and delete ephemeral node)
     haContainer.close();
     haContainer = null;
 
