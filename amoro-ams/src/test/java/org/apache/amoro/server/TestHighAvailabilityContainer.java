@@ -90,9 +90,6 @@ public class TestHighAvailabilityContainer {
     // Should not throw exception and should not register node
     haContainer.registerAndElect();
 
-    // Wait a bit for any async operations
-    Thread.sleep(100);
-
     // Verify no node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
     List<String> children = mockZkState.getChildren(nodesPath);
@@ -109,10 +106,7 @@ public class TestHighAvailabilityContainer {
     // Register node
     haContainer.registerAndElect();
 
-    // Wait a bit for ZK operation to complete
-    Thread.sleep(500);
-
-    // Verify node was registered using haContainer's zkClient
+    // Verify node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
     List<String> children = mockZkState.getChildren(nodesPath);
     Assert.assertEquals("One node should be registered", 1, children.size());
@@ -155,43 +149,10 @@ public class TestHighAvailabilityContainer {
     // Register node
     haContainer.registerAndElect();
 
-    // Wait a bit for registration
-    Thread.sleep(100);
-
-    // Check if we're leader - if we are, create a second container that will be follower
-    if (haContainer.hasLeadership()) {
-      // If we're already leader, create a second container that won't be leader
-      Configurations serviceConfig2 = new Configurations();
-      serviceConfig2.setString(AmoroManagementConf.SERVER_EXPOSE_HOST, "127.0.0.2");
-      serviceConfig2.setInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT, 1262);
-      serviceConfig2.setInteger(AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT, 1263);
-      serviceConfig2.setInteger(AmoroManagementConf.HTTP_SERVER_PORT, 1631);
-      serviceConfig2.setBoolean(AmoroManagementConf.HA_ENABLE, true);
-      serviceConfig2.setString(
-          AmoroManagementConf.HA_ZOOKEEPER_ADDRESS, MockZookeeperServer.getUri());
-      serviceConfig2.setString(AmoroManagementConf.HA_CLUSTER_NAME, "test-cluster");
-      serviceConfig2.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
-
-      HighAvailabilityContainer haContainer2 = new HighAvailabilityContainer(serviceConfig2);
-      haContainer2.registAndElect();
-      try {
-        Thread.sleep(200);
-        // haContainer2 should not be leader
-        Assert.assertFalse("Second container should not be leader", haContainer2.hasLeadership());
-        // Since haContainer2 is not leader, should return empty list
-        List<AmsServerInfo> aliveNodes = haContainer2.getAliveNodes();
-        Assert.assertNotNull("Alive nodes list should not be null", aliveNodes);
-        Assert.assertEquals(
-            "Alive nodes list should be empty when not leader", 0, aliveNodes.size());
-      } finally {
-        haContainer2.close();
-      }
-    } else {
-      // We're not leader, so should return empty list
-      List<AmsServerInfo> aliveNodes = haContainer.getAliveNodes();
-      Assert.assertNotNull("Alive nodes list should not be null", aliveNodes);
-      Assert.assertEquals("Alive nodes list should be empty when not leader", 0, aliveNodes.size());
-    }
+    // Since we're not the leader, should return empty list
+    List<AmsServerInfo> aliveNodes = haContainer.getAliveNodes();
+    Assert.assertNotNull("Alive nodes list should not be null", aliveNodes);
+    Assert.assertEquals("Alive nodes list should be empty when not leader", 0, aliveNodes.size());
   }
 
   @Test
@@ -262,15 +223,12 @@ public class TestHighAvailabilityContainer {
     // Register node
     haContainer.registerAndElect();
 
-    // Wait a bit for registration
-    Thread.sleep(500);
-
-    // Verify node was registered using haContainer's zkClient
+    // Verify node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
     List<String> children = mockZkState.getChildren(nodesPath);
     Assert.assertEquals("One node should be registered", 1, children.size());
 
-    // Close container (this will close the zkClient and delete ephemeral node)
+    // Close container
     haContainer.close();
     haContainer = null;
 
@@ -565,6 +523,202 @@ public class TestHighAvailabilityContainer {
       }
       // Sort to ensure consistent ordering
       children.sort(String::compareTo);
+      return children;
+    }
+
+    public byte[] getData(String path) throws KeeperException {
+      byte[] data = nodes.get(path);
+      if (data == null) {
+        throw new KeeperException.NoNodeException(path);
+      }
+      return data;
+    }
+
+    public String createNode(String path, byte[] data) {
+      // Handle sequential nodes
+      if (path.endsWith("-")) {
+        int seq = sequenceCounter.incrementAndGet();
+        path = path + String.format("%010d", seq);
+      }
+      nodes.put(path, data);
+      return path;
+    }
+
+    public void deleteNode(String path) throws KeeperException {
+      if (!nodes.containsKey(path)) {
+        throw new KeeperException.NoNodeException(path);
+      }
+      nodes.remove(path);
+    }
+
+    public Stat exists(String path) {
+      return nodes.containsKey(path) ? new Stat() : null;
+    }
+
+    public void clear() {
+      nodes.clear();
+      sequenceCounter.set(0);
+    }
+  }
+
+  /** Create HighAvailabilityContainer with mocked ZK components using reflection. */
+  private HighAvailabilityContainer createContainerWithMockZk() throws Exception {
+    HighAvailabilityContainer container = new HighAvailabilityContainer(serviceConfig);
+
+    // Use reflection to inject mock ZK client and leader latch
+    java.lang.reflect.Field zkClientField =
+        HighAvailabilityContainer.class.getDeclaredField("zkClient");
+    zkClientField.setAccessible(true);
+    zkClientField.set(container, mockZkClient);
+
+    java.lang.reflect.Field leaderLatchField =
+        HighAvailabilityContainer.class.getDeclaredField("leaderLatch");
+    leaderLatchField.setAccessible(true);
+    leaderLatchField.set(container, mockLeaderLatch);
+
+    return container;
+  }
+
+  /** Create a mock CuratorFramework that uses MockZkState for storage. */
+  @SuppressWarnings("unchecked")
+  private CuratorFramework createMockZkClient() throws Exception {
+    CuratorFramework mockClient = mock(CuratorFramework.class);
+
+    // Mock getChildren() - create a chain of mocks
+    org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.GetChildrenBuilder
+        getChildrenBuilder =
+            mock(
+                org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api
+                    .GetChildrenBuilder.class);
+    when(mockClient.getChildren()).thenReturn(getChildrenBuilder);
+    when(getChildrenBuilder.forPath(anyString()))
+        .thenAnswer(
+            invocation -> {
+              String path = invocation.getArgument(0);
+              return mockZkState.getChildren(path);
+            });
+
+    // Mock getData()
+    org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.GetDataBuilder
+        getDataBuilder =
+            mock(
+                org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.GetDataBuilder
+                    .class);
+    when(mockClient.getData()).thenReturn(getDataBuilder);
+    when(getDataBuilder.forPath(anyString()))
+        .thenAnswer(
+            invocation -> {
+              String path = invocation.getArgument(0);
+              return mockZkState.getData(path);
+            });
+
+    // Mock create() - use Answer to handle the entire fluent API chain
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.CreateBuilder createBuilder =
+        mock(
+            org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.CreateBuilder.class);
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.CreateBuilderMain
+        createBuilderMain =
+            mock(
+                org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.CreateBuilderMain
+                    .class);
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.PathAndBytesable
+        createPathAndBytesable =
+            mock(
+                org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.PathAndBytesable
+                    .class);
+
+    when(mockClient.create()).thenReturn(createBuilder);
+    // Use Answer to handle type mismatch in fluent API
+    doAnswer(invocation -> createBuilderMain).when(createBuilder).creatingParentsIfNeeded();
+    doAnswer(invocation -> createPathAndBytesable)
+        .when(createBuilderMain)
+        .withMode(any(CreateMode.class));
+    when(createPathAndBytesable.forPath(anyString(), any(byte[].class)))
+        .thenAnswer(
+            invocation -> {
+              String path = invocation.getArgument(0);
+              byte[] data = invocation.getArgument(1);
+              return mockZkState.createNode(path, data);
+            });
+
+    // Mock delete()
+    org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.DeleteBuilder deleteBuilder =
+        mock(
+            org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.DeleteBuilder.class);
+    when(mockClient.delete()).thenReturn(deleteBuilder);
+    doAnswer(
+            invocation -> {
+              String path = invocation.getArgument(0);
+              mockZkState.deleteNode(path);
+              return null;
+            })
+        .when(deleteBuilder)
+        .forPath(anyString());
+
+    // Mock checkExists()
+    @SuppressWarnings("unchecked")
+    org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.ExistsBuilder
+        checkExistsBuilder =
+            mock(
+                org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.ExistsBuilder
+                    .class);
+    when(mockClient.checkExists()).thenReturn(checkExistsBuilder);
+    when(checkExistsBuilder.forPath(anyString()))
+        .thenAnswer(
+            invocation -> {
+              String path = invocation.getArgument(0);
+              return mockZkState.exists(path);
+            });
+
+    // Mock start() and close()
+    doAnswer(invocation -> null).when(mockClient).start();
+    doAnswer(invocation -> null).when(mockClient).close();
+
+    return mockClient;
+  }
+
+  /** Create a mock LeaderLatch. */
+  private LeaderLatch createMockLeaderLatch() throws Exception {
+    return createMockLeaderLatch(true);
+  }
+
+  /** Create a mock LeaderLatch with specified leadership status. */
+  private LeaderLatch createMockLeaderLatch(boolean hasLeadership) throws Exception {
+    LeaderLatch mockLatch = mock(LeaderLatch.class);
+    when(mockLatch.hasLeadership()).thenReturn(hasLeadership);
+    doAnswer(invocation -> null).when(mockLatch).addListener(any());
+    doAnswer(invocation -> null).when(mockLatch).start();
+    doAnswer(invocation -> null).when(mockLatch).close();
+    // Mock await() - it throws IOException and InterruptedException
+    doAnswer(
+            invocation -> {
+              // Mock implementation - doesn't actually wait
+              return null;
+            })
+        .when(mockLatch)
+        .await();
+    return mockLatch;
+  }
+
+  /** In-memory ZK state simulator. */
+  private static class MockZkState {
+    private final Map<String, byte[]> nodes = new HashMap<>();
+    private final AtomicInteger sequenceCounter = new AtomicInteger(0);
+
+    public List<String> getChildren(String path) throws KeeperException {
+      List<String> children = new ArrayList<>();
+      String prefix = path.endsWith("/") ? path : path + "/";
+      for (String nodePath : nodes.keySet()) {
+        if (nodePath.startsWith(prefix) && !nodePath.equals(path)) {
+          String relativePath = nodePath.substring(prefix.length());
+          if (!relativePath.contains("/")) {
+            children.add(relativePath);
+          }
+        }
+      }
       return children;
     }
 
