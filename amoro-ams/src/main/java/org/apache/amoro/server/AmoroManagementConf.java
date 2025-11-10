@@ -116,6 +116,27 @@ public class AmoroManagementConf {
               "This setting controls whether to enable the AMS horizontal scaling feature, "
                   + "which is currently under development and testing.");
 
+  public static final ConfigOption<Integer> BUCKET_ID_TOTAL_COUNT =
+      ConfigOptions.key("bucket-id.total-count")
+          .intType()
+          .defaultValue(100)
+          .withDescription(
+              "Total count of bucket IDs for assignment. Bucket IDs range from 1 to this value.");
+
+  public static final ConfigOption<Duration> NODE_OFFLINE_TIMEOUT =
+      ConfigOptions.key("node-offline.timeout")
+          .durationType()
+          .defaultValue(Duration.ofMinutes(5))
+          .withDescription(
+              "Timeout duration to determine if a node is offline. After this duration, the node's bucket IDs will be reassigned.");
+
+  public static final ConfigOption<Duration> ASSIGN_INTERVAL =
+      ConfigOptions.key("bucket-assign.interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(60))
+          .withDescription(
+              "Interval for bucket assignment service to detect node changes and redistribute bucket IDs.");
+
   public static final ConfigOption<Duration> CATALOG_META_CACHE_EXPIRATION_INTERVAL =
       ConfigOptions.key("catalog-meta-cache.expiration-interval")
           .durationType()

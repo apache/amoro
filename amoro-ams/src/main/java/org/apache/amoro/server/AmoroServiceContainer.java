@@ -272,6 +272,18 @@ public class AmoroServiceContainer {
 
     List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
 
+    // In master-slave mode, create BucketAssignStore and AmsAssignService
+    BucketAssignStore bucketAssignStore = null;
+    if (IS_MASTER_SLAVE_MODE && haContainer != null && haContainer.getZkClient() != null) {
+      String clusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
+      bucketAssignStore = new ZkBucketAssignStore(haContainer.getZkClient(), clusterName);
+      // Create and start AmsAssignService for bucket assignment
+      amsAssignService =
+          new AmsAssignService(haContainer, serviceConfig, haContainer.getZkClient());
+      amsAssignService.start();
+      LOG.info("AmsAssignService started for master-slave mode");
+    }
+
     tableService =
         new DefaultTableService(
             serviceConfig, catalogManager, defaultRuntimeFactory, haContainer, bucketAssignStore);
