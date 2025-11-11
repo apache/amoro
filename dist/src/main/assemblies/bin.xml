@@ -38,7 +38,7 @@
         </file>
         <file>
             <source>
-                ../amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${project.version}-jar-with-dependencies.jar
+                ../amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${spark.major.version}_${scala.binary.version}-${project.version}-jar-with-dependencies.jar
             </source>
             <outputDirectory>plugin/optimizer/spark</outputDirectory>
             <destName>optimizer-job.jar</destName>

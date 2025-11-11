@@ -16,16 +16,43 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spark.test.utils;
+package org.apache.amoro.spi.authentication;
 
-import scala.collection.JavaConverters;
-import scala.collection.Seq;
+import java.security.Principal;
+import java.util.Objects;
 
-import java.util.List;
+public class BasicPrincipal implements Principal {
+  private final String name;
 
-public class ScalaTestUtil {
+  public BasicPrincipal(String name) {
+    this.name = name;
+    Objects.requireNonNull(name, "Principal name cannot be null");
+  }
 
-  public static <T> Seq<T> seq(List<T> values) {
-    return JavaConverters.asScalaBuffer(values).toSeq();
+  @Override
+  public String getName() {
+    return name;
+  }
+
+  @Override
+  public String toString() {
+    return name;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    BasicPrincipal that = (BasicPrincipal) o;
+    return name.equals(that.name);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(name);
   }
 }

@@ -1240,7 +1240,7 @@ class MixedFormatSqlExtendAstBuilder()
   }
 
   override def visitIdentifierSeq(ctx: IdentifierSeqContext): Seq[String] = withOrigin(ctx) {
-    ctx.ident.asScala.map(_.getText)
+    ctx.ident.asScala.map(_.getText).toSeq
   }
 
   /**
