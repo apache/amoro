@@ -23,7 +23,6 @@ import org.apache.amoro.properties.AmsHAProperties;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
-import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.CreateMode;
 import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.KeeperException;
 import org.apache.amoro.utils.JacksonUtil;
@@ -52,13 +51,10 @@ public class ZkBucketAssignStore implements BucketAssignStore {
 
   private final CuratorFramework zkClient;
   private final String assignmentsBasePath;
-  private final LeaderLatch leaderLatch;
 
-  public ZkBucketAssignStore(
-      CuratorFramework zkClient, String clusterName, LeaderLatch leaderLatch) {
+  public ZkBucketAssignStore(CuratorFramework zkClient, String clusterName) {
     this.zkClient = zkClient;
     this.assignmentsBasePath = AmsHAProperties.getBucketAssignmentsPath(clusterName);
-    this.leaderLatch = leaderLatch;
     try {
       createPathIfNeeded(assignmentsBasePath);
     } catch (Exception e) {
@@ -69,10 +65,6 @@ public class ZkBucketAssignStore implements BucketAssignStore {
 
   @Override
   public void saveAssignments(AmsServerInfo nodeInfo, List<String> bucketIds) throws Exception {
-    if (!leaderLatch.hasLeadership()) {
-      LOG.warn("Only leader node can save bucket assignments");
-      return;
-    }
     String nodeKey = getNodeKey(nodeInfo);
     String assignmentsPath = assignmentsBasePath + "/" + nodeKey + ASSIGNMENTS_SUFFIX;
     String assignmentsJson = JacksonUtil.toJSONString(bucketIds);
@@ -120,10 +112,6 @@ public class ZkBucketAssignStore implements BucketAssignStore {
 
   @Override
   public void removeAssignments(AmsServerInfo nodeInfo) throws Exception {
-    if (!leaderLatch.hasLeadership()) {
-      LOG.warn("Only leader node can remove bucket assignments");
-      return;
-    }
     String nodeKey = getNodeKey(nodeInfo);
     String nodePath = assignmentsBasePath + "/" + nodeKey;
     try {
@@ -190,9 +178,6 @@ public class ZkBucketAssignStore implements BucketAssignStore {
 
   @Override
   public void updateLastUpdateTime(AmsServerInfo nodeInfo) throws Exception {
-    if (!leaderLatch.hasLeadership()) {
-      return;
-    }
     String nodeKey = getNodeKey(nodeInfo);
     String timePath = assignmentsBasePath + "/" + nodeKey + LAST_UPDATE_TIME_SUFFIX;
     long currentTime = System.currentTimeMillis();

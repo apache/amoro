@@ -73,6 +73,13 @@ public class AmoroManagementConf {
           .withDescription(
               "Timeout duration to determine if a node is offline. After this duration, the node's bucket IDs will be reassigned.");
 
+  public static final ConfigOption<Duration> ASSIGN_INTERVAL =
+      ConfigOptions.key("bucket-assign.interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(60))
+          .withDescription(
+              "Interval for bucket assignment service to detect node changes and redistribute bucket IDs.");
+
   public static final ConfigOption<Duration> CATALOG_META_CACHE_EXPIRATION_INTERVAL =
       ConfigOptions.key("catalog-meta-cache.expiration-interval")
           .durationType()
