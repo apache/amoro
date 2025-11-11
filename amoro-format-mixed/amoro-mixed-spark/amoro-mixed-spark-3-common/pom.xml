@@ -16,18 +16,17 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.amoro</groupId>
-        <artifactId>amoro-mixed-spark</artifactId>
+        <artifactId>amoro-mixed-spark_${scala.binary.version}</artifactId>
         <version>0.9-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>amoro-format-mixed-spark-3-common</artifactId>
+    <artifactId>amoro-format-mixed-spark-3-common_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
     <name>Amoro Project Mixed Format Spark 3 Common</name>
     <url>https://amoro.apache.org</url>
@@ -150,7 +149,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
 
         <!-- ================== tests dependencies begins ============== -->
         <!-- junit5 -->

@@ -20,5 +20,5 @@ set -x
 
 PROJECT_HOME="$(cd "`dirname "$0"`/.."; pwd)"
 
-$PROJECT_HOME/mvnw spotless:apply "-Psupport-all-formats,spark-3.5"
+$PROJECT_HOME/mvnw spotless:apply "-Psupport-all-formats,openapi-sdk,spark-3.5"
 $PROJECT_HOME/mvnw spotless:apply "-Pspark-3.3"
