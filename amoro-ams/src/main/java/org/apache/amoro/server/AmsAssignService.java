@@ -22,7 +22,6 @@ import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
-import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 public class AmsAssignService {
 
   private static final Logger LOG = LoggerFactory.getLogger(AmsAssignService.class);
-  private static final long ASSIGN_INTERVAL_SECONDS = 30;
 
   private final ScheduledExecutorService assignScheduler =
       Executors.newSingleThreadScheduledExecutor(
@@ -56,6 +54,7 @@ public class AmsAssignService {
   private final Configurations serviceConfig;
   private final int bucketIdTotalCount;
   private final long nodeOfflineTimeoutMs;
+  private final long assignIntervalSeconds;
   private volatile boolean running = false;
 
   // Package-private accessors for testing
@@ -74,15 +73,16 @@ public class AmsAssignService {
   public AmsAssignService(
       HighAvailabilityContainer haContainer,
       Configurations serviceConfig,
-      CuratorFramework zkClient,
-      LeaderLatch leaderLatch) {
+      CuratorFramework zkClient) {
     this.haContainer = haContainer;
     this.serviceConfig = serviceConfig;
     this.bucketIdTotalCount = serviceConfig.getInteger(AmoroManagementConf.BUCKET_ID_TOTAL_COUNT);
     this.nodeOfflineTimeoutMs =
         serviceConfig.get(AmoroManagementConf.NODE_OFFLINE_TIMEOUT).toMillis();
+    this.assignIntervalSeconds =
+        serviceConfig.get(AmoroManagementConf.ASSIGN_INTERVAL).getSeconds();
     String clusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
-    this.assignStore = new ZkBucketAssignStore(zkClient, clusterName, leaderLatch);
+    this.assignStore = new ZkBucketAssignStore(zkClient, clusterName);
   }
 
   /**
@@ -99,8 +99,8 @@ public class AmsAssignService {
     }
     running = true;
     assignScheduler.scheduleWithFixedDelay(
-        this::doAssign, 10, ASSIGN_INTERVAL_SECONDS, TimeUnit.SECONDS);
-    LOG.info("Bucket assignment service started");
+        this::doAssign, 10, assignIntervalSeconds, TimeUnit.SECONDS);
+    LOG.info("Bucket assignment service started with interval: {} seconds", assignIntervalSeconds);
   }
 
   /** Stop the assignment service. */

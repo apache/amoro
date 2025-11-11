@@ -46,7 +46,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TestZkBucketAssignStore {
 
   private CuratorFramework mockZkClient;
-  private LeaderLatch mockLeaderLatch;
   private ZkBucketAssignStore assignStore;
   private AmsServerInfo node1;
   private AmsServerInfo node2;
@@ -56,9 +55,8 @@ public class TestZkBucketAssignStore {
   public void setUp() throws Exception {
     mockZkState = new MockZkState();
     mockZkClient = createMockZkClient();
-    mockLeaderLatch = createMockLeaderLatch(true); // Is leader by default
 
-    assignStore = new ZkBucketAssignStore(mockZkClient, "test-cluster", mockLeaderLatch);
+    assignStore = new ZkBucketAssignStore(mockZkClient, "test-cluster");
 
     node1 = new AmsServerInfo();
     node1.setHost("127.0.0.1");

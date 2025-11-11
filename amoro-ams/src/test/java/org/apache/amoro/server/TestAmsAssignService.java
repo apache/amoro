@@ -542,8 +542,7 @@ public class TestAmsAssignService {
   /** Create AmsAssignService with mock BucketAssignStore. */
   private AmsAssignService createAssignServiceWithMockStore(HighAvailabilityContainer container)
       throws Exception {
-    AmsAssignService service =
-        new AmsAssignService(container, serviceConfig, mockZkClient, mockLeaderLatch);
+    AmsAssignService service = new AmsAssignService(container, serviceConfig, mockZkClient);
 
     // Use reflection to inject mock assign store
     java.lang.reflect.Field assignStoreField =
