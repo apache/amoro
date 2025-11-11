@@ -662,6 +662,9 @@
         </profile>
         <profile>
             <id>format-mixed-format-trino</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
