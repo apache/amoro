@@ -11,12 +11,10 @@ on:
   push:
     branches:
       - "master"
-      - "0.**"
 
   pull_request:
     branches:
       - "master"
-      - "0.**"
     paths:
       - ".github/workflows/**"
       - "dev/dep**"
