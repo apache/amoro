@@ -135,23 +135,66 @@ public class AmsAssignService {
       }
 
       Map<AmsServerInfo, List<String>> currentAssignments = assignStore.getAllAssignments();
-      Set<AmsServerInfo> currentAssignedNodes = new HashSet<>(currentAssignments.keySet());
+
+      // Create a mapping from stored nodes (may have null restBindPort) to alive nodes (complete
+      // info)
+      // Use host:thriftBindPort as the key for matching
+      Map<String, AmsServerInfo> aliveNodeMap = new java.util.HashMap<>();
+      for (AmsServerInfo node : aliveNodes) {
+        String key = getNodeKey(node);
+        aliveNodeMap.put(key, node);
+      }
+
+      // Normalize current assignments: map stored nodes to their corresponding alive nodes
+      Map<AmsServerInfo, List<String>> normalizedAssignments = new java.util.HashMap<>();
+      Set<AmsServerInfo> currentAssignedNodes = new HashSet<>();
+      for (Map.Entry<AmsServerInfo, List<String>> entry : currentAssignments.entrySet()) {
+        AmsServerInfo storedNode = entry.getKey();
+        String nodeKey = getNodeKey(storedNode);
+        AmsServerInfo aliveNode = aliveNodeMap.get(nodeKey);
+        if (aliveNode != null) {
+          // Node is alive, use the complete node info from aliveNodes
+          normalizedAssignments.put(aliveNode, entry.getValue());
+          currentAssignedNodes.add(aliveNode);
+        } else {
+          // Node is not in alive list, keep the stored node info for offline detection
+          normalizedAssignments.put(storedNode, entry.getValue());
+          currentAssignedNodes.add(storedNode);
+        }
+      }
+
       Set<AmsServerInfo> aliveNodeSet = new HashSet<>(aliveNodes);
 
       // Detect new nodes and offline nodes
       Set<AmsServerInfo> newNodes = new HashSet<>(aliveNodeSet);
       newNodes.removeAll(currentAssignedNodes);
 
-      Set<AmsServerInfo> offlineNodes = new HashSet<>(currentAssignedNodes);
-      offlineNodes.removeAll(aliveNodeSet);
+      Set<AmsServerInfo> offlineNodes = new HashSet<>();
+      for (AmsServerInfo storedNode : currentAssignments.keySet()) {
+        String nodeKey = getNodeKey(storedNode);
+        if (!aliveNodeMap.containsKey(nodeKey)) {
+          offlineNodes.add(storedNode);
+        }
+      }
 
       // Check for nodes that haven't updated for a long time
       long currentTime = System.currentTimeMillis();
+      Set<String> aliveNodeKeys = new HashSet<>();
+      for (AmsServerInfo node : aliveNodes) {
+        aliveNodeKeys.add(getNodeKey(node));
+      }
       for (AmsServerInfo node : currentAssignedNodes) {
-        if (aliveNodeSet.contains(node)) {
+        String nodeKey = getNodeKey(node);
+        if (aliveNodeKeys.contains(nodeKey)) {
           long lastUpdateTime = assignStore.getLastUpdateTime(node);
           if (lastUpdateTime > 0 && (currentTime - lastUpdateTime) > nodeOfflineTimeoutMs) {
-            offlineNodes.add(node);
+            // Find the stored node for this alive node to add to offlineNodes
+            for (AmsServerInfo storedNode : currentAssignments.keySet()) {
+              if (getNodeKey(storedNode).equals(nodeKey)) {
+                offlineNodes.add(storedNode);
+                break;
+              }
+            }
             LOG.warn(
                 "Node {} is considered offline due to timeout. Last update: {}",
                 node,
@@ -196,13 +239,24 @@ public class AmsAssignService {
         // Step 3: Incremental reassignment
         // Keep existing assignments for nodes that are still alive
         Map<AmsServerInfo, List<String>> newAssignments = new java.util.HashMap<>();
+        Set<String> offlineNodeKeys = new HashSet<>();
+        for (AmsServerInfo offlineNode : offlineNodes) {
+          offlineNodeKeys.add(getNodeKey(offlineNode));
+        }
         for (AmsServerInfo node : aliveNodes) {
-          List<String> existingBuckets = currentAssignments.get(node);
-          if (existingBuckets != null && !offlineNodes.contains(node)) {
-            // Keep existing buckets for alive nodes (not offline)
-            newAssignments.put(node, new ArrayList<>(existingBuckets));
+          String nodeKey = getNodeKey(node);
+          if (!offlineNodeKeys.contains(nodeKey)) {
+            // Node is alive and not offline, check if it has existing assignments
+            List<String> existingBuckets = normalizedAssignments.get(node);
+            if (existingBuckets != null && !existingBuckets.isEmpty()) {
+              // Keep existing buckets for alive nodes (not offline)
+              newAssignments.put(node, new ArrayList<>(existingBuckets));
+            } else {
+              // New node
+              newAssignments.put(node, new ArrayList<>());
+            }
           } else {
-            // New node or node that was offline
+            // Node was offline, start with empty assignment
             newAssignments.put(node, new ArrayList<>());
           }
         }
@@ -399,5 +453,13 @@ public class AmsAssignService {
       bucketIds.add(String.valueOf(i));
     }
     return bucketIds;
+  }
+
+  /**
+   * Get node key for matching nodes. Uses host:thriftBindPort format, consistent with
+   * ZkBucketAssignStore.getNodeKey().
+   */
+  private String getNodeKey(AmsServerInfo nodeInfo) {
+    return nodeInfo.getHost() + ":" + nodeInfo.getThriftBindPort();
   }
 }
