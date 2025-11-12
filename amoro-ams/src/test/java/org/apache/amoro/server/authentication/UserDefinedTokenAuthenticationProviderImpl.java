@@ -36,7 +36,7 @@ public class UserDefinedTokenAuthenticationProviderImpl implements TokenAuthenti
   public Principal authenticate(TokenCredential credential) throws SignatureCheckException {
     String clientIp = credential.extraInfo().get(TokenCredential.CLIENT_IP_KEY);
     if (VALID_TOKEN.equals(credential.token())) {
-      LOG.info("Success log in of token: {} with clientIp: {}", credential.token(), clientIp);
+      LOG.info("Success login with clientIp: {}", clientIp);
       return new BasicPrincipal("user");
     } else {
       throw new SignatureCheckException("Token is not valid!");
