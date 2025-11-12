@@ -376,18 +376,16 @@ public class DefaultTableService extends PersistentBase implements TableService 
     if (!isMasterSlaveMode || haContainer == null || bucketAssignStore == null) {
       return;
     }
-    LOG.info("## syncBucketTables run once ...");
     try {
       updateAssignedBucketIds();
       if (assignedBucketIds.isEmpty()) {
         // In master-slave mode, if no bucketIds are assigned yet, it's normal during startup
         // The AmsAssignService will assign bucketIds later
-        LOG.info(
-            "## No bucketIds assigned to this node yet, skip syncing tables (will retry later)");
+        LOG.debug("No bucketIds assigned to this node yet, skip syncing tables (will retry later)");
         return;
       }
 
-      LOG.info("## syncBucketTables assignedBucketIds:{}", assignedBucketIds);
+      LOG.info("syncBucketTables assignedBucketIds:{}", assignedBucketIds);
       // Load tables from database for assigned bucketIds
       List<TableRuntimeMeta> tableRuntimeMetaList =
           getAs(
@@ -566,101 +564,12 @@ public class DefaultTableService extends PersistentBase implements TableService 
     }
   }
 
-  /**
-   * Assign bucketIds to existing tables that don't have bucketId assigned yet. This method uses
-   * min-heap strategy to ensure even distribution. This is mainly for upgrade scenarios where
-   * existing tables may not have bucketId assigned. Once a table is assigned a bucketId, it will
-   * not change. Only leader node in master-slave mode will actually perform the assignment.
-   *
-   * <p>Note: This method should be called from exploreTableRuntimes() to ensure it runs after
-   * leader election is complete, as leader election is asynchronous and may not be finished during
-   * initialization.
-   */
-  private void assignBucketIdsToExistingTables() {
-    if (!isMasterSlaveMode || haContainer == null || !haContainer.hasLeadership()) {
-      return;
-    }
-
-    try {
-      // Get all tables that don't have bucketId assigned
-      List<TableRuntimeMeta> allRuntimes =
-          getAs(TableRuntimeMapper.class, TableRuntimeMapper::selectAllRuntimes);
-
-      List<TableRuntimeMeta> unassignedTables = new ArrayList<>();
-      for (TableRuntimeMeta meta : allRuntimes) {
-        if (meta.getBucketId() == null || meta.getBucketId().trim().isEmpty()) {
-          unassignedTables.add(meta);
-        }
-      }
-
-      if (unassignedTables.isEmpty()) {
-        LOG.debug("No tables need bucketId assignment");
-        return;
-      }
-
-      LOG.info(
-          "Found {} tables without bucketId, assigning bucketIds using min-heap strategy",
-          unassignedTables.size());
-
-      // Count current tables per bucketId
-      Map<String, Integer> bucketTableCount = new ConcurrentHashMap<>();
-      int bucketIdTotalCount =
-          serverConfiguration.getInteger(AmoroManagementConf.BUCKET_ID_TOTAL_COUNT);
-      for (int i = 1; i <= bucketIdTotalCount; i++) {
-        bucketTableCount.put(String.valueOf(i), 0);
-      }
-
-      for (TableRuntimeMeta meta : allRuntimes) {
-        String bucketId = meta.getBucketId();
-        if (bucketId != null && !bucketId.trim().isEmpty()) {
-          bucketTableCount.put(bucketId, bucketTableCount.getOrDefault(bucketId, 0) + 1);
-        }
-      }
-
-      // Assign bucketId to each unassigned table using min-heap strategy
-      int assignedCount = 0;
-      for (TableRuntimeMeta meta : unassignedTables) {
-        // Rebuild min-heap for each assignment to ensure we always pick the bucket with minimum
-        // count
-        PriorityQueue<Map.Entry<String, Integer>> minHeap =
-            new PriorityQueue<>(
-                Comparator.<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue)
-                    .thenComparing(Map.Entry::getKey));
-
-        for (Map.Entry<String, Integer> entry : bucketTableCount.entrySet()) {
-          minHeap.offer(entry);
-        }
-
-        if (!minHeap.isEmpty()) {
-          Map.Entry<String, Integer> selected = minHeap.poll();
-          String assignedBucketId = selected.getKey();
-          meta.setBucketId(assignedBucketId);
-
-          // Update in database
-          doAs(TableRuntimeMapper.class, mapper -> mapper.updateRuntime(meta));
-
-          // Update local count for next iteration
-          bucketTableCount.put(assignedBucketId, selected.getValue() + 1);
-
-          assignedCount++;
-          LOG.debug(
-              "Assigned bucketId {} to existing table {} (table count for this bucket: {})",
-              assignedBucketId,
-              meta.getTableId(),
-              bucketTableCount.get(assignedBucketId));
-        }
-      }
-
-      LOG.info("Successfully assigned bucketIds to {} existing tables", assignedCount);
-    } catch (Exception e) {
-      LOG.error("Failed to assign bucketIds to existing tables", e);
-    }
-  }
-
   @VisibleForTesting
   void exploreTableRuntimes() {
-    if (!haContainer.hasLeadership()) {
-      LOG.debug("not the leader node do nothing!");
+    // In master-slave mode, only leader node should explore table runtimes
+    if (isMasterSlaveMode && haContainer != null && !haContainer.hasLeadership()) {
+      LOG.debug("Not the leader node in master-slave mode, skip exploring table runtimes");
+      return;
     }
     if (!initialized.isDone()) {
       throw new IllegalStateException("TableService is not initialized");
