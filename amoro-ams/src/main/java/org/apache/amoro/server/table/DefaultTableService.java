@@ -659,7 +659,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   @VisibleForTesting
   void exploreTableRuntimes() {
-    if(!haContainer.hasLeadership()) {
+    if (!haContainer.hasLeadership()) {
       LOG.debug("not the leader node do nothing!");
     }
     if (!initialized.isDone()) {
