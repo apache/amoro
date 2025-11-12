@@ -64,6 +64,10 @@ public class HttpAuthenticationFactory {
         getBearerToken(context), getCredentialExtraInfo(context, proxyClientIpHeader));
   }
 
+  /**
+   * Extracts the Bearer token from the HTTP Authorization header in the request context. Returns
+   * the token string if present and valid, otherwise returns null.
+   */
   private static String getBearerToken(Context context) {
     String authorization = context.header(Header.AUTHORIZATION);
     if (authorization != null) {
