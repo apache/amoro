@@ -113,6 +113,7 @@ public class AmoroServiceContainer {
   private TServer optimizingServiceServer;
   private Javalin httpServer;
   private AmsServiceMetrics amsServiceMetrics;
+  private AmsAssignService amsAssignService;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
@@ -185,6 +186,18 @@ public class AmoroServiceContainer {
     TableRuntimeFactoryManager tableRuntimeFactoryManager = new TableRuntimeFactoryManager();
     tableRuntimeFactoryManager.initialize();
 
+    // In master-slave mode, create BucketAssignStore and AmsAssignService
+    BucketAssignStore bucketAssignStore = null;
+    if (IS_MASTER_SLAVE_MODE && haContainer != null && haContainer.getZkClient() != null) {
+      String clusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
+      bucketAssignStore = new ZkBucketAssignStore(haContainer.getZkClient(), clusterName);
+      // Create and start AmsAssignService for bucket assignment
+      amsAssignService =
+          new AmsAssignService(haContainer, serviceConfig, haContainer.getZkClient());
+      amsAssignService.start();
+      LOG.info("AmsAssignService started for master-slave mode");
+    }
+
     tableService =
         new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
 
@@ -227,6 +240,11 @@ public class AmoroServiceContainer {
     if (optimizingServiceServer != null) {
       LOG.info("Stopping optimizing server[serving:{}] ...", optimizingServiceServer.isServing());
       optimizingServiceServer.stop();
+    }
+    if (amsAssignService != null) {
+      LOG.info("Stopping AmsAssignService...");
+      amsAssignService.stop();
+      amsAssignService = null;
     }
     if (tableService != null) {
       LOG.info("Stopping table service...");

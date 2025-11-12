@@ -266,6 +266,24 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     return leaderLatch.hasLeadership();
   }
 
+  /**
+   * Get the current node's table service server info.
+   *
+   * @return The current node's server info, null if HA is not enabled
+   */
+  public AmsServerInfo getTableServiceServerInfo() {
+    return tableServiceServerInfo;
+  }
+
+  /**
+   * Get the ZooKeeper client. This is used for creating BucketAssignStore.
+   *
+   * @return The ZooKeeper client, null if HA is not enabled
+   */
+  public CuratorFramework getZkClient() {
+    return zkClient;
+  }
+
   private void createPathIfNeeded(String path) throws Exception {
     try {
       zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
