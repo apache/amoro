@@ -20,12 +20,15 @@ package org.apache.amoro.server.authentication;
 
 import static org.apache.amoro.authentication.TokenCredential.CLIENT_IP_KEY;
 
+import io.javalin.core.security.BasicAuthCredentials;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.apache.amoro.authentication.PasswdAuthenticationProvider;
+import org.apache.amoro.authentication.PasswordCredential;
 import org.apache.amoro.authentication.TokenAuthenticationProvider;
 import org.apache.amoro.authentication.TokenCredential;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.utils.DynConstructors;
 
 import java.util.Collections;
@@ -58,10 +61,22 @@ public class HttpAuthenticationFactory {
     }
   }
 
+  public static PasswordCredential getPasswordCredential(
+      Context context, String proxyClientIpHeader) {
+    BasicAuthCredentials cred = context.basicAuthCredentials();
+    Preconditions.checkNotNull(cred, "BasicAuthCredentials must not be null");
+    return new DefaultPasswordCredential(
+        cred.getUsername(),
+        cred.getPassword(),
+        getCredentialExtraInfo(context, proxyClientIpHeader));
+  }
+
   public static TokenCredential getBearerTokenCredential(
       Context context, String proxyClientIpHeader) {
+    String bearerToken = getBearerToken(context);
+    Preconditions.checkNotNull(bearerToken, "Bearer token must not be null");
     return new DefaultTokenCredential(
-        getBearerToken(context), getCredentialExtraInfo(context, proxyClientIpHeader));
+        bearerToken, getCredentialExtraInfo(context, proxyClientIpHeader));
   }
 
   /**

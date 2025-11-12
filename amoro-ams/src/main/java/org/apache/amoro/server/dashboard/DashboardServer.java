@@ -25,7 +25,6 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
 import io.javalin.apibuilder.EndpointGroup;
-import io.javalin.core.security.BasicAuthCredentials;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
@@ -414,8 +413,9 @@ public class DashboardServer {
     if (null != basicAuthProvider || null != bearerAuthProvider) {
       Principal authPrincipal;
       if (null != basicAuthProvider) {
-        BasicAuthCredentials cred = ctx.basicAuthCredentials();
-        authPrincipal = basicAuthProvider.authenticate(cred.component1(), cred.component2());
+        authPrincipal =
+            basicAuthProvider.authenticate(
+                HttpAuthenticationFactory.getPasswordCredential(ctx, proxyClientIpHeader));
       } else {
         authPrincipal =
             bearerAuthProvider.authenticate(

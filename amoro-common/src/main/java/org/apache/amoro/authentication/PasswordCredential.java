@@ -16,29 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.authentication;
+package org.apache.amoro.authentication;
 
-import org.apache.amoro.authentication.TokenCredential;
-
-import java.util.Collections;
 import java.util.Map;
 
-public class DefaultTokenCredential implements TokenCredential {
-  private String token;
-  private Map<String, String> extraInfo;
+public interface PasswordCredential {
+  String username();
 
-  public DefaultTokenCredential(String token, Map<String, String> extraInfo) {
-    this.token = token;
-    this.extraInfo = extraInfo;
-  }
+  String password();
 
-  @Override
-  public String token() {
-    return token;
-  }
-
-  @Override
-  public Map<String, String> extraInfo() {
-    return null == extraInfo ? Collections.emptyMap() : extraInfo;
-  }
+  Map<String, String> extraInfo();
 }

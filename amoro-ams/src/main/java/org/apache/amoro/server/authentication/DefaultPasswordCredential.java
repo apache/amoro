@@ -18,23 +18,35 @@
 
 package org.apache.amoro.server.authentication;
 
-import org.apache.amoro.authentication.TokenCredential;
+import org.apache.amoro.authentication.PasswordCredential;
 
 import java.util.Collections;
 import java.util.Map;
 
-public class DefaultTokenCredential implements TokenCredential {
-  private String token;
+public class DefaultPasswordCredential implements PasswordCredential {
+  private String username;
+  private String password;
   private Map<String, String> extraInfo;
 
-  public DefaultTokenCredential(String token, Map<String, String> extraInfo) {
-    this.token = token;
+  public DefaultPasswordCredential(
+      String username, String password, Map<String, String> extraInfo) {
+    this.username = username;
+    this.password = password;
     this.extraInfo = extraInfo;
   }
 
+  public DefaultPasswordCredential(String username, String password) {
+    this(username, password, Collections.emptyMap());
+  }
+
   @Override
-  public String token() {
-    return token;
+  public String username() {
+    return username;
+  }
+
+  @Override
+  public String password() {
+    return password;
   }
 
   @Override

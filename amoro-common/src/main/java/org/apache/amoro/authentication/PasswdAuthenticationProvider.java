@@ -28,10 +28,9 @@ public interface PasswdAuthenticationProvider {
    * users for their requests. If a user is to be granted, return the identifier. When a user is to
    * be disallowed, throw an appropriate [[SignatureCheckException]].
    *
-   * @param user The username received over the connection request
-   * @param password The password received over the connection request
+   * @param credential The credential received over the connection request
    * @return The identifier associated with the credential
    * @throws SignatureCheckException When a user is found to be invalid by the implementation
    */
-  Principal authenticate(String user, String password) throws SignatureCheckException;
+  Principal authenticate(PasswordCredential credential) throws SignatureCheckException;
 }

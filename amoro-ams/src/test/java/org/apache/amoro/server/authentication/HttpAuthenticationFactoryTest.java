@@ -48,17 +48,22 @@ public class HttpAuthenticationFactoryTest {
         HttpAuthenticationFactory.getPasswordAuthenticationProvider(
             DefaultPasswdAuthenticationProvider.class.getName(), conf);
 
-    assert passwdAuthenticationProvider.authenticate("admin", "password").getName().equals("admin");
+    assert passwdAuthenticationProvider
+        .authenticate(new DefaultPasswordCredential("admin", "password"))
+        .getName()
+        .equals("admin");
 
     assertThrows(
         SignatureCheckException.class,
         () -> {
-          passwdAuthenticationProvider.authenticate("admin", "invalidPassword");
+          passwdAuthenticationProvider.authenticate(
+              new DefaultPasswordCredential("admin", "invalidPassword"));
         });
     assertThrows(
         SignatureCheckException.class,
         () -> {
-          passwdAuthenticationProvider.authenticate("nonAdmin", "password");
+          passwdAuthenticationProvider.authenticate(
+              new DefaultPasswordCredential("nonAdmin", "password"));
         });
   }
 
