@@ -30,6 +30,7 @@ public class ServerTableIdentifier {
   private String database;
   private String tableName;
   private TableFormat format;
+  private String bucketId;
 
   // used by the MyBatis framework.
   private ServerTableIdentifier() {}
