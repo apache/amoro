@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server.authentication;
 
-import org.apache.amoro.spi.authentication.TokenCredential;
+import org.apache.amoro.authentication.TokenCredential;
 
 import java.util.Map;
 

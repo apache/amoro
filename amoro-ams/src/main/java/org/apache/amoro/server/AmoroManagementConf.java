@@ -290,7 +290,7 @@ public class AmoroManagementConf {
           .defaultValue(DefaultPasswdAuthenticationProvider.class.getName())
           .withDescription(
               "User-defined password authentication implementation of"
-                  + " org.apache.amoro.spi.authentication.PasswdAuthenticationProvider");
+                  + " org.apache.amoro.authentication.PasswdAuthenticationProvider");
 
   public static final ConfigOption<String> HTTP_SERVER_AUTH_BEARER_PROVIDER =
       ConfigOptions.key("http-server.auth-bearer-provider")
@@ -298,7 +298,7 @@ public class AmoroManagementConf {
           .noDefaultValue()
           .withDescription(
               "User-defined Bearer token such as JWT (JSON Web Token) authentication implementation"
-                  + " of org.apache.amoro.spi.authentication.TokenAuthenticationProvider");
+                  + " of org.apache.amoro.authentication.TokenAuthenticationProvider");
 
   public static final ConfigOption<String> HTTP_SERVER_PROXY_CLIENT_IP_HEADER =
       ConfigOptions.key("http-server.proxy-client-ip-header")

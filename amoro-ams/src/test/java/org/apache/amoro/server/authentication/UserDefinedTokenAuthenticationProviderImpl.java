@@ -18,10 +18,10 @@
 
 package org.apache.amoro.server.authentication;
 
+import org.apache.amoro.authentication.BasicPrincipal;
+import org.apache.amoro.authentication.TokenAuthenticationProvider;
+import org.apache.amoro.authentication.TokenCredential;
 import org.apache.amoro.exception.SignatureCheckException;
-import org.apache.amoro.spi.authentication.BasicPrincipal;
-import org.apache.amoro.spi.authentication.TokenAuthenticationProvider;
-import org.apache.amoro.spi.authentication.TokenCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

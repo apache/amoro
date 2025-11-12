@@ -31,6 +31,8 @@ import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.http.staticfiles.StaticFileConfig;
+import org.apache.amoro.authentication.PasswdAuthenticationProvider;
+import org.apache.amoro.authentication.TokenAuthenticationProvider;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.SignatureCheckException;
@@ -55,8 +57,6 @@ import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
-import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
-import org.apache.amoro.spi.authentication.TokenAuthenticationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

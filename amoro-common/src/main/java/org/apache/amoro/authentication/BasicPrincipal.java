@@ -16,14 +16,43 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spi.authentication;
+package org.apache.amoro.authentication;
 
-import java.util.Map;
+import java.security.Principal;
+import java.util.Objects;
 
-public interface TokenCredential {
-  String CLIENT_IP_KEY = "clientIp";
+public class BasicPrincipal implements Principal {
+  private final String name;
 
-  String token();
+  public BasicPrincipal(String name) {
+    this.name = name;
+    Objects.requireNonNull(name, "Principal name cannot be null");
+  }
 
-  Map<String, String> extraInfo();
+  @Override
+  public String getName() {
+    return name;
+  }
+
+  @Override
+  public String toString() {
+    return name;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    BasicPrincipal that = (BasicPrincipal) o;
+    return name.equals(that.name);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(name);
+  }
 }

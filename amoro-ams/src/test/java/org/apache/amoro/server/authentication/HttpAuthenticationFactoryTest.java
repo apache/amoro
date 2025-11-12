@@ -20,12 +20,12 @@ package org.apache.amoro.server.authentication;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.apache.amoro.authentication.PasswdAuthenticationProvider;
+import org.apache.amoro.authentication.TokenAuthenticationProvider;
+import org.apache.amoro.authentication.TokenCredential;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
-import org.apache.amoro.spi.authentication.TokenAuthenticationProvider;
-import org.apache.amoro.spi.authentication.TokenCredential;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;

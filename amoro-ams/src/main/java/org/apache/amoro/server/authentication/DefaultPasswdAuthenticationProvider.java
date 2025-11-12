@@ -18,11 +18,11 @@
 
 package org.apache.amoro.server.authentication;
 
+import org.apache.amoro.authentication.BasicPrincipal;
+import org.apache.amoro.authentication.PasswdAuthenticationProvider;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.spi.authentication.BasicPrincipal;
-import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
 
 public class DefaultPasswdAuthenticationProvider implements PasswdAuthenticationProvider {
   private String basicAuthUser;

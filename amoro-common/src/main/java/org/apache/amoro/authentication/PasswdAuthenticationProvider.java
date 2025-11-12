@@ -16,22 +16,22 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spi.authentication;
+package org.apache.amoro.authentication;
 
 import org.apache.amoro.exception.SignatureCheckException;
 
 import java.security.Principal;
 
-public interface TokenAuthenticationProvider {
+public interface PasswdAuthenticationProvider {
   /**
-   * TokenAuthenticationProvider is used by the Amoro server authentication layer to validate Bearer
-   * tokens, such as JWT (JSON Web Token), provided in client requests. If the token is invalid,
-   * expired, or fails signature verification, a {@link SignatureCheckException} should be thrown to
-   * deny access.
+   * The authenticate method is called by the amoro Server authentication layer to authenticate
+   * users for their requests. If a user is to be granted, return the identifier. When a user is to
+   * be disallowed, throw an appropriate [[SignatureCheckException]].
    *
-   * @param credential The Bearer token credential (e.g., JWT) received in the connection request
-   * @return The {@link Principal} associated with the authenticated token
-   * @throws SignatureCheckException If the token is invalid, expired, or fails verification
+   * @param user The username received over the connection request
+   * @param password The password received over the connection request
+   * @return The identifier associated with the credential
+   * @throws SignatureCheckException When a user is found to be invalid by the implementation
    */
-  Principal authenticate(TokenCredential credential) throws SignatureCheckException;
+  Principal authenticate(String user, String password) throws SignatureCheckException;
 }

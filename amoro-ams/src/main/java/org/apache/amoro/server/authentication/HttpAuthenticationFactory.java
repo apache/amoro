@@ -18,14 +18,14 @@
 
 package org.apache.amoro.server.authentication;
 
-import static org.apache.amoro.spi.authentication.TokenCredential.CLIENT_IP_KEY;
+import static org.apache.amoro.authentication.TokenCredential.CLIENT_IP_KEY;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import org.apache.amoro.authentication.PasswdAuthenticationProvider;
+import org.apache.amoro.authentication.TokenAuthenticationProvider;
+import org.apache.amoro.authentication.TokenCredential;
 import org.apache.amoro.config.Configurations;
-import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
-import org.apache.amoro.spi.authentication.TokenAuthenticationProvider;
-import org.apache.amoro.spi.authentication.TokenCredential;
 import org.apache.amoro.utils.DynConstructors;
 
 import java.util.Collections;
