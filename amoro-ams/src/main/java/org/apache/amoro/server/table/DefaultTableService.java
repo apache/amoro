@@ -240,6 +240,10 @@ public class DefaultTableService extends PersistentBase implements TableService 
         continue;
       }
       List<TableRuntimeState> states = statesMap.get(tableRuntimeMeta.getTableId());
+      // Use empty list if states is null to avoid NullPointerException
+      if (states == null) {
+        states = Collections.emptyList();
+      }
       Optional<TableRuntime> tableRuntime =
           createTableRuntime(identifier, tableRuntimeMeta, states);
       if (!tableRuntime.isPresent()) {
@@ -549,6 +553,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
     if (!initialized.isDone()) {
       throw new IllegalStateException("TableService is not initialized");
     }
+
     long start = System.currentTimeMillis();
     List<ServerCatalog> externalCatalogs = catalogManager.getServerCatalogs();
     List<String> externalCatalogNames =
