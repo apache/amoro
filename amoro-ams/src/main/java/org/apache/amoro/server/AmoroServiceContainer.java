@@ -199,7 +199,12 @@ public class AmoroServiceContainer {
     }
 
     tableService =
-        new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
+        new DefaultTableService(
+            serviceConfig,
+            catalogManager,
+            tableRuntimeFactoryManager,
+            haContainer,
+            bucketAssignStore);
 
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);

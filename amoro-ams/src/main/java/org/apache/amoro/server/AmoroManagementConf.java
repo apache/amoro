@@ -80,6 +80,13 @@ public class AmoroManagementConf {
           .withDescription(
               "Interval for bucket assignment service to detect node changes and redistribute bucket IDs.");
 
+  public static final ConfigOption<Duration> BUCKET_TABLE_SYNC_INTERVAL =
+      ConfigOptions.key("bucket-table-sync.interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(60))
+          .withDescription(
+              "Interval for syncing tables assigned to bucket IDs in master-slave mode. Each node periodically loads tables from database based on its assigned bucket IDs.");
+
   public static final ConfigOption<Duration> CATALOG_META_CACHE_EXPIRATION_INTERVAL =
       ConfigOptions.key("catalog-meta-cache.expiration-interval")
           .durationType()
