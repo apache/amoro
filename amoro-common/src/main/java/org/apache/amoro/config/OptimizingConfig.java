@@ -21,6 +21,7 @@ package org.apache.amoro.config;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.apache.amoro.utils.MemorySize;
 
 /** Configuration for optimizing process scheduling and executing. */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -90,6 +91,12 @@ public class OptimizingConfig {
 
   // self-optimizing.min-plan-interval
   private long minPlanInterval;
+
+  // self-optimizing.evaluation.average-file-size.tolerance
+  private MemorySize averageFileSizeTolerance;
+
+  // self-optimizing.evaluation.fallback.interval
+  private long evaluationFallbackInterval;
 
   public OptimizingConfig() {}
 
@@ -290,6 +297,32 @@ public class OptimizingConfig {
     return this;
   }
 
+  public MemorySize getAverageFileSizeTolerance() {
+    return averageFileSizeTolerance;
+  }
+
+  public OptimizingConfig setAverageFileSizeTolerance(MemorySize averageFileSizeTolerance) {
+    // average partition file size tolerance should between 0 and target size
+    this.averageFileSizeTolerance =
+        averageFileSizeTolerance.getBytes() < targetSize
+            ? averageFileSizeTolerance
+            : new MemorySize(targetSize);
+    return this;
+  }
+
+  public boolean isEventBasedTriggerEnabled() {
+    return averageFileSizeTolerance.getBytes() < targetSize;
+  }
+
+  public long getEvaluationFallbackInterval() {
+    return evaluationFallbackInterval;
+  }
+
+  public OptimizingConfig setEvaluationFallbackInterval(long evaluationFallbackInterval) {
+    this.evaluationFallbackInterval = evaluationFallbackInterval;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -320,7 +353,9 @@ public class OptimizingConfig {
         && baseRefreshInterval == that.baseRefreshInterval
         && hiveRefreshInterval == that.hiveRefreshInterval
         && Objects.equal(optimizerGroup, that.optimizerGroup)
-        && Objects.equal(minPlanInterval, that.minPlanInterval);
+        && Objects.equal(minPlanInterval, that.minPlanInterval)
+        && Objects.equal(averageFileSizeTolerance, that.averageFileSizeTolerance)
+        && Objects.equal(evaluationFallbackInterval, that.evaluationFallbackInterval);
   }
 
   @Override
@@ -347,7 +382,9 @@ public class OptimizingConfig {
         baseHashBucket,
         baseRefreshInterval,
         hiveRefreshInterval,
-        minPlanInterval);
+        minPlanInterval,
+        averageFileSizeTolerance,
+        evaluationFallbackInterval);
   }
 
   @Override
@@ -373,6 +410,8 @@ public class OptimizingConfig {
         .add("baseHashBucket", baseHashBucket)
         .add("baseRefreshInterval", baseRefreshInterval)
         .add("hiveRefreshInterval", hiveRefreshInterval)
+        .add("averageFileSizeTolerance", averageFileSizeTolerance)
+        .add("evaluationFallbackInterval", evaluationFallbackInterval)
         .toString();
   }
 }
