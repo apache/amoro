@@ -55,7 +55,7 @@ jobs:
         run: ./mvnw validate
 
       - name: Build all modules with Maven
-        run: ./mvnw clean install -Djacoco.flink.skip=true -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
+        run: ./mvnw clean install -Djacoco.flink.skip=true -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}  -Dsurefire.printSummary=true -DtrimStackTrace=false -e -X
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
