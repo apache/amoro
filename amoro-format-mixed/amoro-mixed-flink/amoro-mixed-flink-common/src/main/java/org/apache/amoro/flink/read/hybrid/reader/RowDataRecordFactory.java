@@ -57,6 +57,14 @@ class RowDataRecordFactory implements RecordFactory<RowData> {
     // Clone method will allocate a new GenericRowData object
     // if the target object is NOT a GenericRowData.
     // So we should always set the clone return value back to the array.
-    batch[position] = RowDataUtil.clone(from, batch[position], rowType, fieldSerializers);
+    RowData.FieldGetter[] fieldGetters = new RowData.FieldGetter[rowType.getFieldCount()];
+    for (int i = 0; i < rowType.getFieldCount(); ++i) {
+      if (!from.isNullAt(i)) {
+        fieldGetters[i] = RowData.createFieldGetter(rowType.getTypeAt(i), i);
+      }
+    }
+
+    batch[position] =
+        RowDataUtil.clone(from, batch[position], rowType, fieldSerializers, fieldGetters);
   }
 }

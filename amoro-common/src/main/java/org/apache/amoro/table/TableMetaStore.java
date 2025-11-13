@@ -243,6 +243,7 @@ public class TableMetaStore implements Serializable {
     return Objects.requireNonNull(getUGI()).doAs((PrivilegedAction<T>) () -> call(callable));
   }
 
+
   /**
    * Login with configured catalog user and create a proxy user ugi. Then the operations are
    * performed within the doAs method of this proxy user ugi.
