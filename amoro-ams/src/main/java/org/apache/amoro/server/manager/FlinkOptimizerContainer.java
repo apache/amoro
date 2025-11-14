@@ -275,13 +275,14 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
    */
   private Map<String, String> loadFlinkConfig() {
     try {
+      Map<String, Object> configDocument;
       Path flinkConfPath = Paths.get(flinkConfDir + FLINK_CONFIG_YAML);
       if (!Files.exists(flinkConfPath, LinkOption.NOFOLLOW_LINKS)) {
         flinkConfPath = Paths.get(flinkConfDir + LEGACY_FLINK_CONFIG_YAML);
-        return new Yaml().load(Files.newInputStream(flinkConfPath));
+        configDocument = new Yaml().load(Files.newInputStream(flinkConfPath));
+      } else {
+        configDocument = YamlParserUtils.loadYamlFile(new File(flinkConfPath.toUri()));
       }
-      Map<String, Object> configDocument =
-          YamlParserUtils.loadYamlFile(new File(flinkConfPath.toUri()));
       return Maps.transformValues(
           flatten(configDocument, ""), value -> value == null ? null : value.toString());
     } catch (Exception e) {
