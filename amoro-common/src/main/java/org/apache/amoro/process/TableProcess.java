@@ -41,6 +41,12 @@ public abstract class TableProcess<T extends TableProcessState> implements Amoro
     return tableRuntime;
   }
 
+  public String getExternalProcessIdentifier() {
+    // TODO: Add a new field to process meta to store external process identifier.(e.g. flink job id
+    // or yarn app id)
+    return null;
+  }
+
   @Override
   public T getState() {
     return state;

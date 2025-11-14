@@ -123,4 +123,7 @@ public interface TableProcessMapper {
           + "GROUP BY table_id ")
   @Lang(InListExtendedLanguageDriver.class)
   List<Long> selectTableMaxProcessIds(@Param("tables") Collection<Long> tables);
+
+  // TODO: query all active processes
+  List<TableProcessMeta> selectAllActiveProcesses();
 }
