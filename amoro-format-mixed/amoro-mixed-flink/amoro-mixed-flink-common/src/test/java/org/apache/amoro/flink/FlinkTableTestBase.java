@@ -98,12 +98,11 @@ public interface FlinkTableTestBase {
   }
 
   default MixedFormatTableLoader getTableLoader(
-      String catalogName, String metastoreUrl, MixedTable mixedTable) {
+      String catalogName, String amsUri, MixedTable mixedTable) {
     TableIdentifier identifier =
         TableIdentifier.of(
             catalogName, mixedTable.id().getDatabase(), mixedTable.id().getTableName());
-    InternalCatalogBuilder internalCatalogBuilder =
-        InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
+    InternalCatalogBuilder internalCatalogBuilder = InternalCatalogBuilder.builder().amsUri(amsUri);
     return MixedFormatTableLoader.of(identifier, internalCatalogBuilder, mixedTable.properties());
   }
 }

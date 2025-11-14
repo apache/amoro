@@ -402,6 +402,7 @@ public class TableOptimizingMetrics extends AbstractTableMetrics {
       totalCounter.inc();
     }
     if (!success && failedCounter != null) {
+      processFailedCount.inc();
       failedCounter.inc();
     }
   }

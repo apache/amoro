@@ -38,7 +38,7 @@ import org.apache.iceberg.common.DynConstructors;
 import java.util.Map;
 import java.util.Set;
 
-/** Catalogs, create mixed-format catalog from metastore thrift url. */
+/** Catalogs, create mixed-format catalog from metastore thrift uri. */
 public class CatalogLoader {
 
   public static final String INTERNAL_CATALOG_IMPL = InternalMixedIcebergCatalog.class.getName();
@@ -48,27 +48,27 @@ public class CatalogLoader {
   /**
    * Entrypoint for loading Catalog.
    *
-   * @param catalogUrl mixed-format catalog url, thrift://ams-host:port/catalog_name
+   * @param catalogUri mixed-format catalog uri, thrift://ams-host:port/catalog_name
    * @param properties client side catalog configs
    * @return mixed-format catalog object
    */
-  public static MixedFormatCatalog load(String catalogUrl, Map<String, String> properties) {
-    AmsThriftUrl url = AmsThriftUrl.parse(catalogUrl, Constants.THRIFT_TABLE_SERVICE_NAME);
+  public static MixedFormatCatalog load(String catalogUri, Map<String, String> properties) {
+    AmsThriftUrl url = AmsThriftUrl.parse(catalogUri, Constants.THRIFT_TABLE_SERVICE_NAME);
     if (url.catalogName() == null || url.catalogName().contains("/")) {
       throw new IllegalArgumentException("invalid catalog name " + url.catalogName());
     }
 
-    return loadCatalog(catalogUrl, url.catalogName(), properties);
+    return loadCatalog(catalogUri, url.catalogName(), properties);
   }
 
   /**
    * Entrypoint for loading catalog.
    *
-   * @param catalogUrl mixed-format catalog url, thrift://ams-host:port/catalog_name
+   * @param catalogUri mixed-format catalog uri, thrift://ams-host:port/catalog_name
    * @return mixed-format catalog object
    */
-  public static MixedFormatCatalog load(String catalogUrl) {
-    return load(catalogUrl, Maps.newHashMap());
+  public static MixedFormatCatalog load(String catalogUri) {
+    return load(catalogUri, Maps.newHashMap());
   }
 
   /**
@@ -83,6 +83,7 @@ public class CatalogLoader {
     switch (metastoreType) {
       case CatalogMetaProperties.CATALOG_TYPE_HADOOP:
       case CatalogMetaProperties.CATALOG_TYPE_GLUE:
+      case CatalogMetaProperties.CATALOG_TYPE_REST:
       case CatalogMetaProperties.CATALOG_TYPE_CUSTOM:
         catalogImpl = MIXED_ICEBERG_CATALOG_IMP;
         break;
@@ -106,15 +107,15 @@ public class CatalogLoader {
   /**
    * Load catalog meta from metastore.
    *
-   * @param catalogUrl - catalog url
+   * @param catalogUri - catalog uri
    * @return catalog meta
    */
-  public static CatalogMeta loadMeta(String catalogUrl) {
-    AmsThriftUrl url = AmsThriftUrl.parse(catalogUrl, Constants.THRIFT_TABLE_SERVICE_NAME);
+  public static CatalogMeta loadMeta(String catalogUri) {
+    AmsThriftUrl url = AmsThriftUrl.parse(catalogUri, Constants.THRIFT_TABLE_SERVICE_NAME);
     if (url.catalogName() == null || url.catalogName().contains("/")) {
       throw new IllegalArgumentException("invalid catalog name " + url.catalogName());
     }
-    AmsClient client = new PooledAmsClient(catalogUrl);
+    AmsClient client = new PooledAmsClient(catalogUri);
     try {
       return client.getCatalog(url.catalogName());
     } catch (TException e) {
@@ -125,18 +126,18 @@ public class CatalogLoader {
   /**
    * Entrypoint for loading catalog
    *
-   * @param metaStoreUrl mixed-format metastore url
+   * @param metaStoreUri mixed-format metastore uri
    * @param catalogName mixed-format catalog name
    * @param properties client side catalog configs
    * @return mixed-format catalog object
    */
   private static MixedFormatCatalog loadCatalog(
-      String metaStoreUrl, String catalogName, Map<String, String> properties) {
-    AmsClient client = new PooledAmsClient(metaStoreUrl);
+      String metaStoreUri, String catalogName, Map<String, String> properties) {
+    AmsClient client = new PooledAmsClient(metaStoreUri);
     try {
       CatalogMeta catalogMeta = client.getCatalog(catalogName);
       String type = catalogMeta.getCatalogType();
-      catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, metaStoreUrl);
+      catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, metaStoreUri);
       MixedFormatCatalogUtil.mergeCatalogProperties(catalogMeta, properties);
       return createCatalog(
           catalogName,

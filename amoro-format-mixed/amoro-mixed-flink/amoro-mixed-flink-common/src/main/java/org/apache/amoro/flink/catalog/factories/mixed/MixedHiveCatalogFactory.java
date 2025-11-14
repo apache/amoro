@@ -25,7 +25,7 @@ import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
  * The factory to create {@link MixedCatalog} with {@link
  * CatalogFactoryOptions#MIXED_HIVE_IDENTIFIER} identifier.
  */
-public class MixedHiveCatalogFactory extends MixedCatalogFactory {
+public class MixedHiveCatalogFactory extends MixedIcebergCatalogFactory {
 
   @Override
   public String factoryIdentifier() {

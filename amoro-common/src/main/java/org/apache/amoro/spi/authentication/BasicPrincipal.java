@@ -16,18 +16,43 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spark.mixed;
+package org.apache.amoro.spi.authentication;
 
-/**
- * Mixed-format DataSource register
- *
- * @deprecated using {@link MixedHiveDataSource} or {@link MixedIcebergDataSource} instead.
- */
-@Deprecated
-public class ArcticDataSource extends MixedSourceBase {
+import java.security.Principal;
+import java.util.Objects;
+
+public class BasicPrincipal implements Principal {
+  private final String name;
+
+  public BasicPrincipal(String name) {
+    this.name = name;
+    Objects.requireNonNull(name, "Principal name cannot be null");
+  }
 
   @Override
-  public String shortName() {
-    return "arctic";
+  public String getName() {
+    return name;
+  }
+
+  @Override
+  public String toString() {
+    return name;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    BasicPrincipal that = (BasicPrincipal) o;
+    return name.equals(that.name);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(name);
   }
 }

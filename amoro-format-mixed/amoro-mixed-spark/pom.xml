@@ -16,8 +16,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -26,16 +25,14 @@
         <version>0.9-SNAPSHOT</version>
     </parent>
 
-    <artifactId>amoro-mixed-spark</artifactId>
+    <artifactId>amoro-mixed-spark_${scala.binary.version}</artifactId>
     <packaging>pom</packaging>
     <name>Amoro Project Mixed Format Spark Parent</name>
     <url>https://amoro.apache.org</url>
 
     <modules>
         <module>amoro-mixed-spark-3-common</module>
-        <module>v3.3/amoro-mixed-spark-3.3</module>
-        <module>v3.3/amoro-mixed-spark-runtime-3.3</module>
-        <module>v3.5/amoro-mixed-spark-3.5</module>
-        <module>v3.5/amoro-mixed-spark-runtime-3.5</module>
+        <module>v${spark.major.version}/amoro-mixed-spark-${spark.major.version}</module>
+        <module>v${spark.major.version}/amoro-mixed-spark-runtime-${spark.major.version}</module>
     </modules>
 </project>

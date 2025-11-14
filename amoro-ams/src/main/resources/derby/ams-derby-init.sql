@@ -106,7 +106,8 @@ CREATE TABLE table_runtime (
     status_code         INTEGER NOT NULL DEFAULT 700,
     status_code_update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     table_config        CLOB,
-    table_summary       CLOB
+    table_summary       CLOB,
+    bucket_id          VARCHAR(4)
 );
 
 CREATE INDEX idx_status_time_desc

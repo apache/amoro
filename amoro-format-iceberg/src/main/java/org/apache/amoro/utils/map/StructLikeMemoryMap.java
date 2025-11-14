@@ -23,6 +23,7 @@ import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeWrapper;
 
 import java.util.HashMap;
+import java.util.function.BiFunction;
 
 /** Map implementation for {@link StructLikeWrapper} as the key based on memory. */
 public class StructLikeMemoryMap<T> extends StructLikeBaseMap<T> {
@@ -60,6 +61,14 @@ public class StructLikeMemoryMap<T> extends StructLikeBaseMap<T> {
     @Override
     public T get(StructLikeWrapper key) {
       return map.get(key);
+    }
+
+    @Override
+    public T merge(
+        StructLikeWrapper key,
+        T value,
+        BiFunction<? super T, ? super T, ? extends T> remappingFunction) {
+      return map.merge(key, value, remappingFunction);
     }
 
     @Override

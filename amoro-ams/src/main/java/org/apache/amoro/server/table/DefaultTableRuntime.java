@@ -247,6 +247,10 @@ public class DefaultTableRuntime extends AbstractTableRuntime
     return (double) getQuotaTime() / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME / targetQuotaLimit;
   }
 
+  public boolean isAllowPartialCommit() {
+    return getOptimizingConfig().isAllowPartialCommit();
+  }
+
   public void setPendingInput(AbstractOptimizingEvaluator.PendingInput pendingInput) {
     long pendingFileSize =
         pendingInput.getDataFileSize()
@@ -303,7 +307,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
     if (!Objects.equals(
         getGroupName(), newConfiguration.getOptimizingConfig().getOptimizerGroup())) {
       if (optimizingProcess != null) {
-        optimizingProcess.close();
+        optimizingProcess.close(false);
       }
       this.optimizingMetrics.optimizerGroupChanged(getGroupName());
     }
@@ -417,14 +421,19 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   }
 
   @Override
-  public void dispose() {
+  public void unregisterMetric() {
     tableSummaryMetrics.unregister();
     orphanFilesCleaningMetrics.unregister();
     optimizingMetrics.unregister();
+  }
+
+  @Override
+  public void dispose() {
+    unregisterMetric();
     store()
         .synchronizedInvoke(
             () -> {
-              Optional.ofNullable(optimizingProcess).ifPresent(OptimizingProcess::close);
+              Optional.ofNullable(optimizingProcess).ifPresent(process -> process.close(false));
             });
     super.dispose();
   }

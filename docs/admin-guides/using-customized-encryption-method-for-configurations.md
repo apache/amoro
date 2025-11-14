@@ -107,7 +107,7 @@ com.example.shade.Base64CustomConfigShade
 ### Build the JAR
 Package your implementation into a JAR file using Maven:
 ```shell
-mvn clean package
+./mvnw clean package
 ```
 
 ## Deploy the Custom Implementation

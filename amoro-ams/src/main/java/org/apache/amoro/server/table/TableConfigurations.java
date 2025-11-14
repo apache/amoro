@@ -75,6 +75,13 @@ public class TableConfigurations {
                 properties,
                 TableProperties.SNAPSHOT_MIN_COUNT,
                 TableProperties.SNAPSHOT_MIN_COUNT_DEFAULT))
+        .setFlinkCheckpointRetention(
+            ConfigHelpers.TimeUtils.parseDuration(
+                    CompatiblePropertyUtil.propertyAsString(
+                        properties,
+                        TableProperties.SNAPSHOT_FLINK_CHECKPOINT_RETENTION,
+                        TableProperties.SNAPSHOT_FLINK_CHECKPOINT_RETENTION_DEFAULT))
+                .toMillis())
         .setChangeDataTTLMinutes(
             CompatiblePropertyUtil.propertyAsLong(
                 properties,
@@ -225,6 +232,11 @@ public class TableConfigurations {
                 properties,
                 TableProperties.ENABLE_SELF_OPTIMIZING,
                 TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT))
+        .setAllowPartialCommit(
+            CompatiblePropertyUtil.propertyAsBoolean(
+                properties,
+                TableProperties.SELF_OPTIMIZING_ALLOW_PARTIAL_COMMIT,
+                TableProperties.SELF_OPTIMIZING_ALLOW_PARTIAL_COMMIT_DEFAULT))
         .setMaxExecuteRetryCount(
             CompatiblePropertyUtil.propertyAsInt(
                 properties,

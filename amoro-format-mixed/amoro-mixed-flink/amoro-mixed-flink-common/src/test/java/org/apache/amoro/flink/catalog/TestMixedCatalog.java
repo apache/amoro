@@ -34,7 +34,6 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestBase;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
-import org.apache.amoro.flink.table.MixedDynamicTableFactory;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
@@ -92,9 +91,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   @Parameterized.Parameters(name = "catalogFactoryType = {0}")
   public static Object[] parameters() {
     return new Object[] {
-      CatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER,
-      CatalogFactoryOptions.MIXED_HIVE_IDENTIFIER,
-      CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER
+      CatalogFactoryOptions.MIXED_ICEBERG_IDENTIFIER, CatalogFactoryOptions.MIXED_HIVE_IDENTIFIER
     };
   }
 
@@ -110,7 +107,7 @@ public class TestMixedCatalog extends CatalogTestBase {
   public void before() throws Exception {
     props = Maps.newHashMap();
     props.put("type", catalogFactoryType);
-    props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
+    props.put(CatalogFactoryOptions.AMS_URI.key(), getCatalogUri());
     sql("CREATE CATALOG " + catalogName + " WITH %s", toWithClause(props));
     sql("USE CATALOG " + catalogName);
     sql("CREATE DATABASE " + catalogName + "." + DB);
@@ -378,63 +375,6 @@ public class TestMixedCatalog extends CatalogTestBase {
     Assert.assertEquals(1, rows.size());
 
     sql("DROP TABLE default_catalog.default_database." + TABLE);
-  }
-
-  @Test
-  public void testDefaultCatalogDDLWithVirtualColumn() {
-    // this test only for LEGACY_MIXED_IDENTIFIER
-    if (catalogFactoryType.equals(CatalogFactoryOptions.LEGACY_MIXED_IDENTIFIER)) {
-      // create mixed-format table with only physical columns
-      sql(
-          "CREATE TABLE "
-              + catalogName
-              + "."
-              + DB
-              + "."
-              + TABLE
-              + " ("
-              + " id INT,"
-              + " t TIMESTAMP(6),"
-              + " PRIMARY KEY (id) NOT ENFORCED "
-              + ") PARTITIONED BY(t) "
-              + " WITH ("
-              + " 'connector' = 'mixed-format'"
-              + ")");
-
-      // insert values into mixed-format table
-      insertValue();
-
-      // create Table with compute columns under default catalog
-      props = Maps.newHashMap();
-      props.put("connector", MixedDynamicTableFactory.IDENTIFIER);
-      props.put(CatalogFactoryOptions.METASTORE_URL.key(), getCatalogUrl());
-      props.put(MixedDynamicTableFactory.IDENTIFIER + ".catalog", catalogName);
-      props.put(MixedDynamicTableFactory.IDENTIFIER + ".database", DB);
-      props.put(MixedDynamicTableFactory.IDENTIFIER + ".table", TABLE);
-
-      sql(
-          "CREATE TABLE default_catalog.default_database."
-              + TABLE
-              + " ("
-              + " id INT,"
-              + " t TIMESTAMP(6),"
-              + " compute_id as id+5 ,"
-              + " proc as PROCTIME(), "
-              + " PRIMARY KEY (id) NOT ENFORCED "
-              + ") PARTITIONED BY(t) "
-              + "WITH %s",
-          toWithClause(props));
-
-      // select from mixed-format table with compute columns under default catalog
-      List<Row> rows =
-          sql(
-              "SELECT * FROM default_catalog.default_database."
-                  + TABLE
-                  + " /*+ OPTIONS("
-                  + "'streaming'='false'"
-                  + ") */");
-      checkRows(rows);
-    }
   }
 
   private void checkRows(List<Row> rows) {

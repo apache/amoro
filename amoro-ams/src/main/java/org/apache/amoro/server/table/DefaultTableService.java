@@ -217,9 +217,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
                   .setDaemon(true)
                   .build());
     }
+    initialized.complete(true);
     tableExplorerScheduler.scheduleAtFixedRate(
         this::exploreTableRuntimes, 0, externalCatalogRefreshingInterval, TimeUnit.MILLISECONDS);
-    initialized.complete(true);
   }
 
   @Override
@@ -254,6 +254,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
     if (headHandler != null) {
       headHandler.dispose();
     }
+    tableRuntimeMap.values().forEach(TableRuntime::unregisterMetric);
   }
 
   @VisibleForTesting

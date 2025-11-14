@@ -22,7 +22,6 @@ import org.apache.amoro.io.reader.GenericCombinedIcebergDataReader;
 import org.apache.amoro.io.writer.GenericIcebergPartitionedFanoutWriter;
 import org.apache.amoro.io.writer.IcebergFanoutPosDeleteWriter;
 import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.TableProperties;
@@ -37,18 +36,19 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.UnpartitionedWriter;
 
 import java.util.Arrays;
+import java.util.Map;
 import java.util.UUID;
 
 /** OptimizingExecutor for iceberg format. */
 public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
-
   public IcebergRewriteExecutor(
-      RewriteFilesInput input, MixedTable table, StructLikeCollections structLikeCollections) {
-    super(input, table, structLikeCollections);
+      RewriteFilesInput input, MixedTable table, Map<String, String> properties) {
+    super(input, table, properties);
   }
 
   @Override
   protected OptimizingDataReader dataReader() {
+    String processId = TaskProperties.getProcessId(properties);
     return new GenericCombinedIcebergDataReader(
         io,
         table.schema(),
@@ -59,7 +59,8 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
         IdentityPartitionConverters::convertConstant,
         false,
         structLikeCollections,
-        input);
+        input,
+        processId);
   }
 
   @Override

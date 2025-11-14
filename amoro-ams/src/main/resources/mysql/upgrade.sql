@@ -142,9 +142,9 @@ INSERT INTO table_runtime_state
 SELECT
 `table_id`, 'optimizing_state', JSON_OBJECT(
     'currentSnapshotId', `current_snapshot_id`,
-    'currentChangeSnapshotId', `current_change_snapshot_id`,
-    'lastOptimizedSnapshotId', `last_optimized_snapshot_id`,
-    'lastOptimizedChangeSnapshotId', `last_optimized_change_snapshot_id`,
+    'currentChangeSnapshotId', `current_change_snapshotId`,
+    'lastOptimizedSnapshotId', `last_optimized_snapshotId`,
+    'lastOptimizedChangeSnapshotId', `last_optimized_change_snapshotId`,
     'lastMajorOptimizingTime', `last_major_optimizing_time`,
     'lastFullOptimizingTime', `last_full_optimizing_time`,
     'lastMinorOptimizingTime', `last_minor_optimizing_time`
@@ -152,3 +152,6 @@ SELECT
 FROM table_runtime_old;
 
 DROP TABLE IF EXISTS table_runtime_old;
+
+-- ADD bucket_id to table_runtime
+ALTER TABLE `table_runtime` ADD COLUMN `bucket_id` VARCHAR(4)  DEFAULT NULL COMMENT 'Bucket number to which the record table belongs';

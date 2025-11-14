@@ -23,5 +23,6 @@ public enum CatalogType {
   HIVE,
   HADOOP,
   GLUE,
+  REST,
   CUSTOM
 }

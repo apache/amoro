@@ -20,7 +20,8 @@
 ##
 ## Variables with defaults (if not overwritten by environment)
 ##
-MVN=${MVN:-mvn}
+PROJECT_HOME=$(cd "$(dirname "$0")"/../.. || exit; pwd)
+MVN="${PROJECT_HOME}/mvnw"
 
 if [ -z "${RELEASE_VERSION:-}" ]; then
     echo "RELEASE_VERSION was not set."

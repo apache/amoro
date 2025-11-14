@@ -54,7 +54,7 @@ Flink Connector includes:
 
 The Amoro project can be self-compiled to obtain the runtime jar.
 
-`mvn clean package -pl ':amoro-mixed-flink-runtime-1.15' -am -DskipTests`
+`./mvnw clean package -pl ':amoro-mixed-flink-runtime-1.15' -am -DskipTests`
 
 The Flink Runtime Jar is located in the `amoro-format-mixed/amoro-format-mixed-flink/v1.15/amoro-format-mixed-flink-runtime-1.15/target` directory.
 

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
   ~ Licensed to the Apache Software Foundation (ASF) under one
   ~ or more contributor license agreements.  See the NOTICE file
@@ -17,9 +16,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -35,8 +32,6 @@
     <url>https://amoro.apache.org</url>
 
     <properties>
-        <httpmime.version>4.5.13</httpmime.version>
-        <openapi-generator-maven-plugin.version>6.0.0</openapi-generator-maven-plugin.version>
         <swagger-ui.version>5.17.14</swagger-ui.version>
         <git-commit-id-plugin.fail-on-no-git-dir>false</git-commit-id-plugin.fail-on-no-git-dir>
     </properties>
@@ -71,8 +66,8 @@
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.12</artifactId>
-            <version>${terminal.spark.version}</version>
+            <artifactId>spark-core_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.parquet</groupId>
@@ -81,6 +76,14 @@
                 <exclusion>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j2-impl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -111,8 +114,8 @@
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_2.12</artifactId>
-            <version>${terminal.spark.version}</version>
+            <artifactId>spark-sql_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.parquet</groupId>
@@ -138,13 +141,21 @@
                     <groupId>org.apache.arrow</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-hive_2.12</artifactId>
-            <version>${terminal.spark.version}</version>
+            <artifactId>spark-hive_${scala.binary.version}</artifactId>
+            <version>${spark.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.hive</groupId>
@@ -161,6 +172,10 @@
                 <exclusion>
                     <groupId>org.apache.avro</groupId>
                     <artifactId>avro</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.thrift</groupId>
@@ -185,6 +200,10 @@
                 <exclusion>
                     <groupId>org.codehaus.jackson</groupId>
                     <artifactId>jackson-mapper-asl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -292,10 +311,10 @@
             <artifactId>url-connection-client</artifactId>
         </dependency>
 
-	    <dependency>
+        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3-transfer-manager</artifactId>
-	    </dependency>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -321,7 +340,7 @@
         <!-- runtime dependencies -->
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-format-mixed-spark-${terminal.spark.major.version}</artifactId>
+            <artifactId>amoro-format-mixed-spark-${spark.major.version}_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
@@ -354,8 +373,8 @@
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-hive</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
             <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -369,8 +388,8 @@
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-format-paimon</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
             <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -446,7 +465,6 @@
             <scope>test</scope>
         </dependency>
 
-
     </dependencies>
 
     <build>
@@ -455,6 +473,19 @@
                 <groupId>pl.project13.maven</groupId>
                 <artifactId>git-commit-id-plugin</artifactId>
                 <version>4.0.0</version>
+                <configuration>
+                    <failOnNoGitDirectory>${git-commit-id-plugin.fail-on-no-git-dir}</failOnNoGitDirectory>
+                    <failOnUnableToExtractRepoInfo>${git-commit-id-plugin.fail-on-no-git-dir}</failOnUnableToExtractRepoInfo>
+                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <generateGitPropertiesFilename>${project.build.outputDirectory}/amoro/git.properties</generateGitPropertiesFilename>
+                    <includeOnlyProperties>
+                        <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
+                        <includeOnlyProperty>^git.commit.id.(abbrev|full)$</includeOnlyProperty>
+                        <includeOnlyProperty>^git.commit.time$</includeOnlyProperty>
+                    </includeOnlyProperties>
+                    <commitIdGenerationMode>full</commitIdGenerationMode>
+                </configuration>
                 <executions>
                     <execution>
                         <id>get-the-git-infos</id>
@@ -464,21 +495,6 @@
                         <phase>initialize</phase>
                     </execution>
                 </executions>
-                <configuration>
-                    <failOnNoGitDirectory>${git-commit-id-plugin.fail-on-no-git-dir}</failOnNoGitDirectory>
-                    <failOnUnableToExtractRepoInfo>${git-commit-id-plugin.fail-on-no-git-dir}</failOnUnableToExtractRepoInfo>
-                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
-                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
-                    <generateGitPropertiesFilename>
-                        ${project.build.outputDirectory}/amoro/git.properties
-                    </generateGitPropertiesFilename>
-                    <includeOnlyProperties>
-                        <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
-                        <includeOnlyProperty>^git.commit.id.(abbrev|full)$</includeOnlyProperty>
-                        <includeOnlyProperty>^git.commit.time$</includeOnlyProperty>
-                    </includeOnlyProperties>
-                    <commitIdGenerationMode>full</commitIdGenerationMode>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -486,14 +502,12 @@
                 <executions>
                     <execution>
                         <id>copy</id>
-                        <phase>package</phase>
                         <goals>
                             <goal>copy-dependencies</goal>
                         </goals>
+                        <phase>package</phase>
                         <configuration>
-                            <outputDirectory>
-                                ${project.build.directory}/amoro-ams-dependency/lib
-                            </outputDirectory>
+                            <outputDirectory>${project.build.directory}/amoro-ams-dependency/lib</outputDirectory>
                             <includeScope>runtime</includeScope>
                         </configuration>
                     </execution>
@@ -558,92 +572,6 @@
             <properties>
                 <git-commit-id-plugin.fail-on-no-git-dir>true</git-commit-id-plugin.fail-on-no-git-dir>
             </properties>
-        </profile>
-        <profile>
-            <id>generate-sdk</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.openapitools</groupId>
-                        <artifactId>openapi-generator-maven-plugin</artifactId>
-                        <version>${openapi-generator-maven-plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>generate-sdk</id>
-                                <goals>
-                                    <goal>generate</goal>
-                                </goals>
-                                <phase>generate-sources</phase>
-                                <configuration>
-                                    <inputSpec>${project.basedir}/src/main/resources/openapi/openapi.yaml</inputSpec>
-                                    <generatorName>java</generatorName>
-                                    <output>${project.build.directory}/generated-sources/openapi</output>
-                                    <apiPackage>com.amoro.sdk.api</apiPackage>
-                                    <modelPackage>com.amoro.sdk.model</modelPackage>
-                                    <invokerPackage>com.amoro.sdk.invoker</invokerPackage>
-                                    <configOptions>
-                                        <library>apache-httpclient</library>
-                                    </configOptions>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-jar-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>package-sdk</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                                <phase>package</phase>
-                                <configuration>
-                                    <classifier>sdk</classifier>
-                                    <classesDirectory>
-                                        ${project.build.directory}/generated-sources/openapi/src/main/java
-                                    </classesDirectory>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <finalName>sdk</finalName>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpmime</artifactId>
-                    <version>${httpmime.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>generate-doc</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.openapitools</groupId>
-                        <artifactId>openapi-generator-maven-plugin</artifactId>
-                        <version>${openapi-generator-maven-plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>generate-doc</id>
-                                <goals>
-                                    <goal>generate</goal>
-                                </goals>
-                                <phase>generate-sources</phase>
-                                <configuration>
-                                    <inputSpec>${project.basedir}/src/main/resources/openapi/openapi.yaml</inputSpec>
-                                    <generatorName>html2</generatorName>
-                                    <output>${project.build.directory}/generated-docs/openapi</output>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
 </project>

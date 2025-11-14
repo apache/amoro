@@ -36,6 +36,7 @@ import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.RestCatalogService;
+import org.apache.amoro.server.authentication.HttpAuthenticationFactory;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.controller.ApiTokenController;
 import org.apache.amoro.server.dashboard.controller.CatalogController;
@@ -54,6 +55,7 @@ import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +65,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -86,9 +89,7 @@ public class DashboardServer {
   private final OverviewController overviewController;
   private final ApiTokenController apiTokenController;
 
-  private final String authType;
-  private final String basicAuthUser;
-  private final String basicAuthPassword;
+  private final PasswdAuthenticationProvider basicAuthProvider;
 
   public DashboardServer(
       Configurations serviceConfig,
@@ -115,9 +116,13 @@ public class DashboardServer {
     APITokenManager apiTokenManager = new APITokenManager();
     this.apiTokenController = new ApiTokenController(apiTokenManager);
 
-    this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
-    this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
-    this.basicAuthPassword = serviceConfig.get(AmoroManagementConf.ADMIN_PASSWORD);
+    String authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
+    this.basicAuthProvider =
+        AUTH_TYPE_BASIC.equalsIgnoreCase(authType)
+            ? HttpAuthenticationFactory.getPasswordAuthenticationProvider(
+                serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_BASIC_PROVIDER),
+                serviceConfig)
+            : null;
   }
 
   private volatile String indexHtml = null;
@@ -394,13 +399,14 @@ public class DashboardServer {
       }
       return;
     }
-    if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
+    if (null != basicAuthProvider) {
       BasicAuthCredentials cred = ctx.basicAuthCredentials();
-      if (!(basicAuthUser.equals(cred.component1())
-          && basicAuthPassword.equals(cred.component2()))) {
-        throw new SignatureCheckException(
-            "Failed to authenticate via basic authentication for url:" + uriPath);
-      }
+      Principal authPrincipal =
+          basicAuthProvider.authenticate(cred.component1(), cred.component2());
+      LOG.info(
+          "Authenticated principal: {}, URI: {}",
+          authPrincipal != null ? authPrincipal.getName() : "null",
+          uriPath);
     } else {
       apiTokenController.checkApiToken(ctx);
     }

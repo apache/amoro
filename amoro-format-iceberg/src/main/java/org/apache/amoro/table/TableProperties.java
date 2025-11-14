@@ -21,6 +21,10 @@ package org.apache.amoro.table;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
 
+import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.properties.HiveTableProperties;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -71,6 +75,10 @@ public class TableProperties {
   public static final String ENABLE_SELF_OPTIMIZING = "self-optimizing.enabled";
 
   public static final boolean ENABLE_SELF_OPTIMIZING_DEFAULT = true;
+
+  public static final String SELF_OPTIMIZING_ALLOW_PARTIAL_COMMIT =
+      "self-optimizing.allow-partial-commit";
+  public static final boolean SELF_OPTIMIZING_ALLOW_PARTIAL_COMMIT_DEFAULT = false;
 
   public static final String SELF_OPTIMIZING_GROUP = "self-optimizing.group";
   public static final String SELF_OPTIMIZING_GROUP_DEFAULT = "default";
@@ -138,6 +146,20 @@ public class TableProperties {
 
   public static final String SNAPSHOT_MIN_COUNT = "snapshot.keep.min-count";
   public static final int SNAPSHOT_MIN_COUNT_DEFAULT = 1;
+
+  /**
+   * The retention period for snapshots created by Flink checkpoints. Snapshots older than this
+   * duration may be cleaned up. Avoid keeping the last flink checkpoint snapshot for too long, as
+   * it may reference old data files.
+   *
+   * <p>Format: A string representing the duration, e.g., "7d" for 7 days, "12h" for 12 hours.
+   *
+   * <p>Default: "7d" (7 days)
+   */
+  public static final String SNAPSHOT_FLINK_CHECKPOINT_RETENTION =
+      "snapshot.keep.flink.checkpoint-retention";
+
+  public static final String SNAPSHOT_FLINK_CHECKPOINT_RETENTION_DEFAULT = "7d"; // 7 Days
 
   public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
@@ -335,4 +357,25 @@ public class TableProperties {
     WRITE_PROTECTED_PROPERTIES.add(WATERMARK_BASE_STORE);
     WRITE_PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
   }
+
+  public static final HashSet<String> DEFAULT_NON_PERSISTED_TABLE_PROPERTIES =
+      Sets.newHashSet(
+          CatalogMetaProperties.OPTIMIZE_PROPERTIES_PREFIX,
+          CatalogMetaProperties.DEPRECATED_OPTIMIZE_PROPERTIES_PREFIX,
+          CatalogMetaProperties.TABLE_EXPIRE_PREFIX,
+          CatalogMetaProperties.ORPHAN_CLEAN_PREFIX,
+          CatalogMetaProperties.DANGLING_DELETE_FILES_CLEAN_PREFIX,
+          CatalogMetaProperties.DATA_EXPIRATION_PREFIX,
+          CatalogMetaProperties.TABLE_TRASH_PREFIX,
+          CatalogMetaProperties.AUTO_CREATE_TAG_PREFIX,
+          // mixed format reading config keys
+          TableProperties.SPLIT_OPEN_FILE_COST,
+          TableProperties.SPLIT_LOOKBACK,
+          TableProperties.SPLIT_SIZE,
+          // mixed format writing config keys
+          TableProperties.UPSERT_ENABLED,
+          // mixed-hive config keys
+          HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
+          HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
+          HiveTableProperties.HIVE_CONSISTENT_WRITE_ENABLED);
 }

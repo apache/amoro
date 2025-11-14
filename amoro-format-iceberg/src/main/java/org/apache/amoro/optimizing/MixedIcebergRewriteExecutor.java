@@ -22,7 +22,6 @@ import org.apache.amoro.data.PrimaryKeyedFile;
 import org.apache.amoro.io.writer.GenericTaskWriters;
 import org.apache.amoro.io.writer.MixedTreeNodePosDeleteWriter;
 import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.utils.map.StructLikeCollections;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.deletes.PositionDelete;
 import org.apache.iceberg.io.DeleteWriteResult;
@@ -31,15 +30,13 @@ import org.apache.iceberg.io.FileWriter;
 import org.apache.iceberg.io.TaskWriter;
 
 import java.util.List;
+import java.util.Map;
 
 public class MixedIcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   public MixedIcebergRewriteExecutor(
-      RewriteFilesInput input,
-      MixedTable table,
-      StructLikeCollections structLikeCollections,
-      String outputDir) {
-    super(input, table, structLikeCollections);
+      RewriteFilesInput input, MixedTable table, Map<String, String> properties) {
+    super(input, table, properties);
   }
 
   @Override

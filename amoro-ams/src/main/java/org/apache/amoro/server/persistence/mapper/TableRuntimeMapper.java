@@ -39,10 +39,11 @@ public interface TableRuntimeMapper {
   @Insert(
       "INSERT INTO "
           + TABLE_NAME
-          + " (table_id, group_name, status_code, table_config, table_summary) "
+          + " (table_id, group_name, status_code, table_config, table_summary, bucket_id) "
           + "VALUES (#{tableId}, #{groupName}, #{statusCode}, "
           + "#{tableConfig,typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}, "
-          + "#{tableSummary,typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter})")
+          + "#{tableSummary,typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter}, "
+          + "#{bucketId, jdbcType=VARCHAR})")
   int insertRuntime(TableRuntimeMeta meta);
 
   /* ---------- update ---------- */
@@ -53,7 +54,8 @@ public interface TableRuntimeMapper {
           + "     status_code        = #{statusCode}, "
           + "     status_code_update_time = #{statusCodeUpdateTime, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}, "
           + "     table_config       = #{tableConfig,typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}, "
-          + "     table_summary      = #{tableSummary,typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter} "
+          + "     table_summary      = #{tableSummary,typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter}, "
+          + "     bucket_id        = #{bucketId, jdbcType=VARCHAR} "
           + " WHERE table_id = #{tableId}")
   int updateRuntime(TableRuntimeMeta meta);
 
@@ -64,7 +66,7 @@ public interface TableRuntimeMapper {
   /* ---------- select ---------- */
   @Select(
       "SELECT table_id, group_name, status_code, status_code_update_time, "
-          + "       table_config, table_summary "
+          + "       table_config, table_summary, bucket_id "
           + "FROM "
           + TABLE_NAME
           + " WHERE table_id = #{tableId}")
@@ -73,7 +75,6 @@ public interface TableRuntimeMapper {
       value = {
         @Result(column = "group_name", property = "groupName"),
         @Result(column = "status_code", property = "statusCode"),
-        @Result(column = "table_id", property = "tableId"),
         @Result(
             column = "status_code_update_time",
             property = "statusCodeUpdateTime",
@@ -88,12 +89,14 @@ public interface TableRuntimeMapper {
             column = "table_summary",
             property = "tableSummary",
             typeHandler = org.apache.amoro.server.persistence.converter.JsonObjectConverter.class,
-            jdbcType = JdbcType.VARCHAR)
+            jdbcType = JdbcType.VARCHAR),
+        @Result(column = "table_id", property = "tableId"),
+        @Result(column = "bucket_id", property = "bucketId")
       })
   TableRuntimeMeta selectRuntime(@Param("tableId") Long tableId);
 
   String SELECT_COLS =
-      " table_id, group_name, status_code, status_code_update_time, table_config, table_summary ";
+      " table_id, group_name, status_code, status_code_update_time, table_config, table_summary, bucket_id ";
 
   @Select("SELECT " + SELECT_COLS + "FROM " + TABLE_NAME)
   @ResultMap("tableRuntimeMeta")
@@ -104,7 +107,7 @@ public interface TableRuntimeMapper {
           + "<bind name=\"isMySQL\" value=\"_databaseId == 'mysql'\" />"
           + "<bind name=\"isPostgreSQL\" value=\"_databaseId == 'postgres'\" />"
           + "<bind name=\"isDerby\" value=\"_databaseId == 'derby'\" />"
-          + "SELECT r.table_id, group_name, status_code, status_code_update_time, table_config, table_summary FROM "
+          + "SELECT r.table_id, group_name, status_code, status_code_update_time, table_config, table_summary, bucket_id FROM "
           + TABLE_NAME
           + " r JOIN table_identifier i "
           + " ON r.table_id = i.table_id "
