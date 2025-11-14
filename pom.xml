@@ -157,7 +157,7 @@
         <hudi.version>0.14.1</hudi.version>
         <pagehelper.version>6.1.0</pagehelper.version>
         <jsqlparser.version>4.7</jsqlparser.version>
-        <jackson.version>2.14.2</jackson.version>
+        <fasterxml.jackson.version>2.14.2</fasterxml.jackson.version>
 
         <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
         <lucene-dependency-scope>compile</lucene-dependency-scope>
@@ -302,43 +302,43 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
+                <version>${fasterxml.jackson.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
+                <version>${fasterxml.jackson.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
+                <version>${fasterxml.jackson.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.version}</version>
+                <version>${fasterxml.jackson.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>${jackson.version}</version>
+                <version>${fasterxml.jackson.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.fasterxml.jackson.jaxrs</groupId>
                 <artifactId>jackson-jaxrs-base</artifactId>
-                <version>${jackson.version}</version>
+                <version>${fasterxml.jackson.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.fasterxml.jackson.jaxrs</groupId>
                 <artifactId>jackson-jaxrs-json-provider</artifactId>
-                <version>${jackson.version}</version>
+                <version>${fasterxml.jackson.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>jakarta.activation</groupId>
@@ -350,13 +350,13 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-jaxb-annotations</artifactId>
-                <version>${jackson.version}</version>
+                <version>${fasterxml.jackson.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-scala_${scala.binary.version}</artifactId>
-                <version>${jackson.version}</version>
+                <version>${fasterxml.jackson.version}</version>
             </dependency>
 
             <dependency>
