@@ -471,7 +471,7 @@ public class TestDataExpire extends ExecutorTestBase {
 
   @Test
   public void testExpireByPartitionWhenMetricsModeIsNone() {
-    assumeTrue(getMixedTable().format().in(TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG));
+    assumeTrue(getTestFormat().in(TableFormat.MIXED_ICEBERG, TableFormat.ICEBERG));
 
     getMixedTable()
         .updateProperties()
