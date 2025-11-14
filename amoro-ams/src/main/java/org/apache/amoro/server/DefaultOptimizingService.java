@@ -565,6 +565,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void run() {
+      // Use 1/2 of optimizerTouchTimeout as sync interval (default ~30 seconds),used for master
+      // slave mode.
+      long syncInterval = Math.max(5000, optimizerTouchTimeout / 2);
       while (!stopped) {
         try {
           T keepingTask = suspendingQueue.take();
