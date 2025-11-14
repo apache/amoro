@@ -352,6 +352,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-exec</artifactId>
+            <classifier>core</classifier>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- test dependencies -->
         <dependency>
             <groupId>org.apache.amoro</groupId>
