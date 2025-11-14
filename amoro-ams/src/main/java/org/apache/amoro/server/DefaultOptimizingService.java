@@ -60,6 +60,8 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -106,12 +108,23 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final TableService tableService;
   private final RuntimeHandlerChain tableHandlerChain;
   private final ExecutorService planExecutor;
+  private final HighAvailabilityContainer haContainer;
+  private final boolean isMasterSlaveMode;
 
   public DefaultOptimizingService(
       Configurations serviceConfig,
       CatalogManager catalogManager,
       OptimizerManager optimizerManager,
       TableService tableService) {
+    this(serviceConfig, catalogManager, optimizerManager, tableService, null);
+  }
+
+  public DefaultOptimizingService(
+      Configurations serviceConfig,
+      CatalogManager catalogManager,
+      OptimizerManager optimizerManager,
+      TableService tableService,
+      HighAvailabilityContainer haContainer) {
     this.optimizerTouchTimeout =
         serviceConfig.get(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT).toMillis();
     this.taskAckTimeout =
@@ -129,6 +142,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
     this.tableService = tableService;
     this.catalogManager = catalogManager;
     this.optimizerManager = optimizerManager;
+    this.haContainer = haContainer;
+    this.isMasterSlaveMode =
+        haContainer != null && serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
     this.planExecutor =
         Executors.newCachedThreadPool(
@@ -485,28 +501,125 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void run() {
+      // Use 1/2 of optimizerTouchTimeout as sync interval (default ~30 seconds),used for master
+      // slave mode.
+      long syncInterval = Math.max(5000, optimizerTouchTimeout / 2);
       while (!stopped) {
         try {
-          OptimizerKeepingTask keepingTask = suspendingQueue.take();
-          String token = keepingTask.getToken();
-          boolean isExpired = !keepingTask.tryKeeping();
-          Optional.ofNullable(keepingTask.getQueue())
-              .ifPresent(
-                  queue ->
-                      queue
-                          .collectTasks(buildSuspendingPredication(authOptimizers.keySet()))
-                          .forEach(task -> retryTask(task, queue)));
-          if (isExpired) {
-            LOG.info("Optimizer {} has been expired, unregister it", keepingTask.getOptimizer());
-            unregisterOptimizer(token);
+          // In master-slave mode, check leadership before processing
+          if (isMasterSlaveMode && (haContainer == null || !haContainer.hasLeadership())) {
+            // Not leader anymore, sync from database and wait before next check
+            loadOptimizersFromDatabase();
+            // Sleep for a reasonable interval to avoid frequent database queries
+            Thread.sleep(syncInterval);
           } else {
-            LOG.debug("Optimizer {} is being touched, keep it", keepingTask.getOptimizer());
-            keepInTouch(keepingTask.getOptimizer());
+            OptimizerKeepingTask keepingTask = suspendingQueue.take();
+            String token = keepingTask.getToken();
+            boolean isExpired = !keepingTask.tryKeeping();
+            Optional.ofNullable(keepingTask.getQueue())
+                .ifPresent(
+                    queue ->
+                        queue
+                            .collectTasks(buildSuspendingPredication(authOptimizers.keySet()))
+                            .forEach(task -> retryTask(task, queue)));
+            if (isExpired) {
+              LOG.info("Optimizer {} has been expired, unregister it", keepingTask.getOptimizer());
+              unregisterOptimizer(token);
+            } else {
+              LOG.debug("Optimizer {} is being touched, keep it", keepingTask.getOptimizer());
+              keepInTouch(keepingTask.getOptimizer());
+            }
           }
         } catch (InterruptedException ignored) {
         } catch (Throwable t) {
           LOG.error("OptimizerKeeper has encountered a problem.", t);
         }
+      }
+    }
+
+    /**
+     * Load optimizer information from database. This is used in master-slave mode for follower
+     * nodes to sync optimizer state from database. This method performs incremental updates by
+     * comparing database state with local authOptimizers, only adding new optimizers and removing
+     * missing ones.
+     */
+    private void loadOptimizersFromDatabase() {
+      try {
+        List<OptimizerInstance> dbOptimizers =
+            getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+
+        // Build map of optimizers from database by token
+        Map<String, OptimizerInstance> dbOptimizersByToken = new HashMap<>();
+        for (OptimizerInstance optimizer : dbOptimizers) {
+          String token = optimizer.getToken();
+          if (token != null) {
+            dbOptimizersByToken.put(token, optimizer);
+          }
+        }
+
+        // Find optimizers to add (in database but not in local authOptimizers)
+        Set<String> localTokens = new HashSet<>(authOptimizers.keySet());
+        Set<String> dbTokens = new HashSet<>(dbOptimizersByToken.keySet());
+        Set<String> tokensToAdd = new HashSet<>(dbTokens);
+        tokensToAdd.removeAll(localTokens);
+
+        // Find optimizers to remove (in local authOptimizers but not in database)
+        Set<String> tokensToRemove = new HashSet<>(localTokens);
+        tokensToRemove.removeAll(dbTokens);
+
+        // Add new optimizers
+        for (String token : tokensToAdd) {
+          OptimizerInstance optimizer = dbOptimizersByToken.get(token);
+          if (optimizer != null) {
+            registerOptimizerWithoutPersist(optimizer);
+            LOG.debug("Added optimizer {} from database", token);
+          }
+        }
+
+        // Remove missing optimizers
+        for (String token : tokensToRemove) {
+          removeOptimizerFromLocal(token);
+          LOG.debug("Removed optimizer {} (not in database)", token);
+        }
+
+        LOG.info(
+            "Synced optimizers from database: total={}, added={}, removed={}, current={}",
+            dbOptimizersByToken.size(),
+            tokensToAdd.size(),
+            tokensToRemove.size(),
+            authOptimizers.size());
+      } catch (Exception e) {
+        LOG.error("Failed to load optimizers from database", e);
+      }
+    }
+
+    /**
+     * Register optimizer without persisting to database. Used for follower nodes to sync optimizer
+     * state from database.
+     */
+    private void registerOptimizerWithoutPersist(OptimizerInstance optimizer) {
+      OptimizingQueue optimizingQueue = optimizingQueueByGroup.get(optimizer.getGroupName());
+      if (optimizingQueue == null) {
+        LOG.warn(
+            "Cannot register optimizer {}: optimizing queue for group {} not found",
+            optimizer.getToken(),
+            optimizer.getGroupName());
+        return;
+      }
+      optimizingQueue.addOptimizer(optimizer);
+      authOptimizers.put(optimizer.getToken(), optimizer);
+      optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue);
+      // Note: Don't call optimizerKeeper.keepInTouch() in follower mode
+    }
+
+    /**
+     * Remove optimizer from local cache without deleting from database. Used for follower nodes.
+     */
+    private void removeOptimizerFromLocal(String token) {
+      OptimizingQueue optimizingQueue = optimizingQueueByToken.remove(token);
+      OptimizerInstance optimizer = authOptimizers.remove(token);
+      if (optimizingQueue != null && optimizer != null) {
+        optimizingQueue.removeOptimizer(optimizer);
       }
     }
 

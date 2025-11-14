@@ -207,7 +207,8 @@ public class AmoroServiceContainer {
             bucketAssignStore);
 
     optimizingService =
-        new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
+        new DefaultOptimizingService(
+            serviceConfig, catalogManager, optimizerManager, tableService, haContainer);
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
