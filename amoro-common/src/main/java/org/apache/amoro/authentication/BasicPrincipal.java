@@ -16,22 +16,43 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spi.authentication;
-
-import org.apache.amoro.exception.SignatureCheckException;
+package org.apache.amoro.authentication;
 
 import java.security.Principal;
+import java.util.Objects;
 
-public interface PasswdAuthenticationProvider {
-  /**
-   * The authenticate method is called by the amoro Server authentication layer to authenticate
-   * users for their requests. If a user is to be granted, return nothing/throw nothing. When a user
-   * is to be disallowed, throw an appropriate [[SignatureCheckException]].
-   *
-   * @param user The username received over the connection request
-   * @param password The password received over the connection request
-   * @return The identifier associated with the credential
-   * @throws SignatureCheckException When a user is found to be invalid by the implementation
-   */
-  Principal authenticate(String user, String password) throws SignatureCheckException;
+public class BasicPrincipal implements Principal {
+  private final String name;
+
+  public BasicPrincipal(String name) {
+    this.name = name;
+    Objects.requireNonNull(name, "Principal name cannot be null");
+  }
+
+  @Override
+  public String getName() {
+    return name;
+  }
+
+  @Override
+  public String toString() {
+    return name;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    BasicPrincipal that = (BasicPrincipal) o;
+    return name.equals(that.name);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(name);
+  }
 }

@@ -16,43 +16,41 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spi.authentication;
+package org.apache.amoro.server.authentication;
 
-import java.security.Principal;
-import java.util.Objects;
+import org.apache.amoro.authentication.PasswordCredential;
 
-public class BasicPrincipal implements Principal {
-  private final String name;
+import java.util.Collections;
+import java.util.Map;
 
-  public BasicPrincipal(String name) {
-    this.name = name;
-    Objects.requireNonNull(name, "Principal name cannot be null");
+public class DefaultPasswordCredential implements PasswordCredential {
+  private String username;
+  private String password;
+  private Map<String, String> extraInfo;
+
+  public DefaultPasswordCredential(
+      String username, String password, Map<String, String> extraInfo) {
+    this.username = username;
+    this.password = password;
+    this.extraInfo = extraInfo;
+  }
+
+  public DefaultPasswordCredential(String username, String password) {
+    this(username, password, Collections.emptyMap());
   }
 
   @Override
-  public String getName() {
-    return name;
+  public String username() {
+    return username;
   }
 
   @Override
-  public String toString() {
-    return name;
+  public String password() {
+    return password;
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    BasicPrincipal that = (BasicPrincipal) o;
-    return name.equals(that.name);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(name);
+  public Map<String, String> extraInfo() {
+    return null == extraInfo ? Collections.emptyMap() : extraInfo;
   }
 }
