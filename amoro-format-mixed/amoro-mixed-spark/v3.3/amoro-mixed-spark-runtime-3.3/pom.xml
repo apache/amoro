@@ -134,6 +134,11 @@
                                     <pattern>org.apache.orc</pattern>
                                     <shadedPattern>org.apache.amoro.shade.org.apache.orc</shadedPattern>
                                 </relocation>
+                                <!-- classed in orc-core -->
+                                <relocation>
+                                    <pattern>org.threeten</pattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.threeten</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>org.apache.avro</pattern>
                                     <shadedPattern>org.apache.amoro.shade.org.apache.avro</shadedPattern>
@@ -185,6 +190,18 @@
                                 <relocation>
                                     <pattern>org.apache.commons.lang3</pattern>
                                     <shadedPattern>org.apache.amoro.shade.org.apache.commons.lang3</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.io</pattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.commons.io</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.thrift</pattern>
+                                    <shadedPattern>org.apache.amoro.shade.org.apache.thrift</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.github.benmanes</pattern>
+                                    <shadedPattern>org.apache.amoro.shade.com.github.benmanes</shadedPattern>
                                 </relocation>
 
                                 <!-- relocation iceberg -->
