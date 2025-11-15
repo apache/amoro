@@ -120,6 +120,23 @@
                                         <exclude>META-INF/services/org.apache.spark.sql.sources.DataSourceRegister</exclude>
                                     </excludes>
                                 </filter>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>**/log4j.properties</exclude>
+                                        <exclude>META-INF/DEPENDENCIES</exclude>
+                                        <exclude>META-INF/*LICENSE*</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>META-INF/*NOTICE*</exclude>
+                                        <exclude>META-INF/**/module-info.class</exclude>
+                                        <exclude>LICENSE.txt</exclude>
+                                        <exclude>NOTICE.txt</exclude>
+                                        <exclude>mozilla/*.txt</exclude>
+                                    </excludes>
+                                </filter>
                             </filters>
                             <relocations>
                                 <!-- relocation amoro spark packages -->
@@ -133,7 +150,7 @@
                                     <pattern>org.apache.orc</pattern>
                                     <shadedPattern>org.apache.amoro.shade.org.apache.orc</shadedPattern>
                                 </relocation>
-                                <!-- classed in orc-core -->
+                                <!-- classes in orc-core -->
                                 <relocation>
                                     <pattern>org.threeten</pattern>
                                     <shadedPattern>org.apache.amoro.shade.org.threeten</shadedPattern>
