@@ -34,6 +34,20 @@ COMMENT ON COLUMN catalog_metadata.storage_configs IS 'Base64 code of storage co
 COMMENT ON COLUMN catalog_metadata.auth_configs IS 'Base64 code of authentication configurations';
 COMMENT ON COLUMN catalog_metadata.catalog_properties IS 'Catalog properties';
 
+CREATE TABLE storage_config_metadata (
+    config_id serial PRIMARY KEY,
+    config_name varchar(64) NOT NULL,
+    storage_type varchar(64) NOT NULL,
+    storage_configs text
+);
+CREATE UNIQUE INDEX config_name_index ON storage_config_metadata (config_name);
+
+COMMENT ON TABLE storage_config_metadata IS 'Storage config metadata';
+COMMENT ON COLUMN storage_config_metadata.config_id IS 'Config id';
+COMMENT ON COLUMN storage_config_metadata.config_name IS 'Config name';
+COMMENT ON COLUMN storage_config_metadata.storage_type IS 'Storage type';
+COMMENT ON COLUMN storage_config_metadata.storage_configs IS 'Base64 code of storage configs';
+
 CREATE TABLE database_metadata
 (
     catalog_name varchar(64) NOT NULL,

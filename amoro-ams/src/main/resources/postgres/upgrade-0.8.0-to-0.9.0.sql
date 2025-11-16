@@ -13,13 +13,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+-- If you have any changes to the AMS database, please record them in this file.
+-- We will confirm the corresponding version of these upgrade scripts when releasing.
+
 -- STORAGE CONFIG SHARED ACROSS CATALOGS
-CREATE TABLE `storage_config_metadata`
-(
-    `config_id`  int(11) NOT NULL AUTO_INCREMENT,
-    `config_name` varchar(64) NOT NULL COMMENT 'config name',
-    `storage_type` varchar(64) NOT NULL  COMMENT 'storage type',
-    `storage_configs`        mediumtext COMMENT 'base64 code of storage configs',
-    PRIMARY KEY (`config_id`),
-    UNIQUE KEY `config_name_index` (`config_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'storage config metadata';
+CREATE TABLE storage_config_metadata (
+    config_id serial PRIMARY KEY,
+    config_name varchar(64) NOT NULL,
+    storage_type varchar(64) NOT NULL,
+    storage_configs text
+);
+CREATE UNIQUE INDEX config_name_index ON storage_config_metadata (config_name);
+
+COMMENT ON TABLE storage_config_metadata IS 'Storage config metadata';
+COMMENT ON COLUMN storage_config_metadata.config_id IS 'Config id';
+COMMENT ON COLUMN storage_config_metadata.config_name IS 'Config name';
+COMMENT ON COLUMN storage_config_metadata.storage_type IS 'Storage type';
+COMMENT ON COLUMN storage_config_metadata.storage_configs IS 'Base64 code of storage configs';

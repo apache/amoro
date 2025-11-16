@@ -26,6 +26,15 @@ CREATE TABLE catalog_metadata (
     CONSTRAINT catalog_name_index UNIQUE (catalog_name)
 );
 
+CREATE TABLE storage_config_metadata (
+     config_id        INT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+     config_name      VARCHAR(64) NOT NULL, -- config name
+     storage_type     VARCHAR(64) NOT NULL, -- storage type
+     storage_configs  CLOB(64m),            -- base64 code of storage configs
+     PRIMARY KEY (config_id),
+     CONSTRAINT config_name_index UNIQUE (config_name)
+);
+
 CREATE TABLE database_metadata (
     catalog_name           VARCHAR(64) NOT NULL,
     db_name                VARCHAR(128) NOT NULL,
