@@ -467,6 +467,7 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-minikdc</artifactId>
                 <version>${hadoop.version}</version>
+                <scope>test</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -478,7 +479,7 @@
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.directory.jdbm</groupId>
-                        <artifactId>*</artifactId>
+                        <artifactId>apacheds-jdbm1</artifactId>
                     </exclusion>
                     <!-- HADOOP-19024: replace bcprov-jdk15on with bcprov-jdk18on -->
                     <exclusion>
@@ -486,6 +487,13 @@
                         <artifactId>bcprov-jdk15on</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.directory.jdbm</groupId>
+                <artifactId>apacheds-jdbm1</artifactId>
+                <version>2.0.0-M2</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
