@@ -27,6 +27,16 @@ CREATE TABLE `catalog_metadata`
     UNIQUE KEY `catalog_name_index` (`catalog_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'catalog metadata';
 
+CREATE TABLE `storage_config_metadata`
+(
+    `config_id`  int(11) NOT NULL AUTO_INCREMENT,
+    `config_name` varchar(64) NOT NULL COMMENT 'config name',
+    `storage_type` varchar(64) NOT NULL  COMMENT 'storage type',
+    `storage_configs`        mediumtext COMMENT 'base64 code of storage configs',
+    PRIMARY KEY (`config_id`),
+    UNIQUE KEY `config_name_index` (`config_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'storage config metadata';
+
 CREATE TABLE `database_metadata`
 (
     `catalog_name`           varchar(64) NOT NULL COMMENT 'catalog name',
