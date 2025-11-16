@@ -41,6 +41,32 @@ public class AmoroManagementConf {
           .defaultValue("")
           .withDescription("The exposed host of the server.");
 
+  public static final ConfigOption<String> SERVER_KEYTAB =
+      ConfigOptions.key("server-keytab")
+          .stringType()
+          .defaultValue("")
+          .withDescription("Location of Amoro server's keytab");
+
+  public static final ConfigOption<String> SERVER_PRINCIPAL =
+      ConfigOptions.key("server-principal")
+          .stringType()
+          .defaultValue("")
+          .withDescription("Name of the Amoro server's keytab kerberos principal.");
+
+  public static final ConfigOption<Duration> SERVER_KINIT_INTERVAL =
+      ConfigOptions.key("server-kinit-interval")
+          .durationType()
+          .defaultValue(Duration.ofHours(1))
+          .withDescription(
+              "How often will the Amoro server run `kinit -kt [keytab] [principal]` to renew "
+                  + " the local Kerberos credentials cache.");
+
+  public static final ConfigOption<Integer> SERVER_KINIT_MAX_ATTEMPTS =
+      ConfigOptions.key("server-kinit-max-attempts")
+          .intType()
+          .defaultValue(10)
+          .withDescription("How many times will `kinit` process retry.");
+
   public static final ConfigOption<String> ADMIN_USERNAME =
       ConfigOptions.key("admin-username")
           .stringType()
