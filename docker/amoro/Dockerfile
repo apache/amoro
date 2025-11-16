@@ -44,6 +44,11 @@ FROM eclipse-temurin:11-jdk-jammy
 
 ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 
+RUN set -ex; \
+    apt-get update; \
+    apt-get install -y krb5-user; \
+    rm -rf /var/lib/apt/lists/*
+
 ENV AMORO_HOME /usr/local/amoro
 ENV AMORO_CONF_DIR ${AMORO_HOME}/conf
 ENV LOG_LEVEL info
