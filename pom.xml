@@ -489,7 +489,7 @@
                 </exclusions>
             </dependency>
 
-            <!-- apacheds-jdbm1 is required by Hadoop MiniKdc testing -->
+            <!-- apacheds-jdbm1 is required by hadoop-minikdc testing -->
             <dependency>
                 <groupId>org.apache.directory.jdbm</groupId>
                 <artifactId>apacheds-jdbm1</artifactId>
