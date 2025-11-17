@@ -573,6 +573,12 @@ public class AmoroServiceContainer {
           containerProperties.putIfAbsent(
               OptimizerProperties.AMS_OPTIMIZER_URI,
               AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
+          // Add master-slave mode flag to container properties
+          // Read from serviceConfig directly since IS_MASTER_SLAVE_MODE is set after
+          // initContainerConfig()
+          if (serviceConfig.getBoolean(USE_MASTER_SLAVE_MODE)) {
+            containerProperties.put(OptimizerProperties.OPTIMIZER_MASTER_SLAVE_MODE, "true");
+          }
           // put addition system properties
           container.setProperties(containerProperties);
           containerList.add(container);

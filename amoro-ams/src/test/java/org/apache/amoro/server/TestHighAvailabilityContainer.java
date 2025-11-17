@@ -120,7 +120,7 @@ public class TestHighAvailabilityContainer {
     AmsServerInfo nodeInfo = JacksonUtil.parseObject(nodeInfoJson, AmsServerInfo.class);
     Assert.assertEquals("Host should match", "127.0.0.1", nodeInfo.getHost());
     Assert.assertEquals(
-        "Thrift port should match", Integer.valueOf(1260), nodeInfo.getThriftBindPort());
+        "Thrift port should match", Integer.valueOf(1261), nodeInfo.getThriftBindPort());
   }
 
   @Test
@@ -175,7 +175,7 @@ public class TestHighAvailabilityContainer {
     AmsServerInfo nodeInfo = aliveNodes.get(0);
     Assert.assertEquals("Host should match", "127.0.0.1", nodeInfo.getHost());
     Assert.assertEquals(
-        "Thrift port should match", Integer.valueOf(1260), nodeInfo.getThriftBindPort());
+        "Thrift port should match", Integer.valueOf(1261), nodeInfo.getThriftBindPort());
     Assert.assertEquals(
         "HTTP port should match", Integer.valueOf(1630), nodeInfo.getRestBindPort());
   }

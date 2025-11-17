@@ -115,14 +115,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
       Configurations serviceConfig,
       CatalogManager catalogManager,
       OptimizerManager optimizerManager,
-      TableService tableService) {
-    this(serviceConfig, catalogManager, optimizerManager, tableService, null);
-  }
-
-  public DefaultOptimizingService(
-      Configurations serviceConfig,
-      CatalogManager catalogManager,
-      OptimizerManager optimizerManager,
       TableService tableService,
       HighAvailabilityContainer haContainer) {
     this.optimizerTouchTimeout =
@@ -501,18 +493,39 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void run() {
-      // Use 1/2 of optimizerTouchTimeout as sync interval (default ~30 seconds),used for master
+      // Use 1/4 of optimizerTouchTimeout as sync interval (default ~30 seconds),used for master
       // slave mode.
-      long syncInterval = Math.max(5000, optimizerTouchTimeout / 2);
+      long syncInterval = Math.max(5000, optimizerTouchTimeout / 4);
+      long lastSyncTime = 0;
       while (!stopped) {
         try {
           // In master-slave mode, check leadership before processing
           if (isMasterSlaveMode && (haContainer == null || !haContainer.hasLeadership())) {
-            // Not leader anymore, sync from database and wait before next check
-            loadOptimizersFromDatabase();
-            // Sleep for a reasonable interval to avoid frequent database queries
-            Thread.sleep(syncInterval);
+            // Not leader anymore, periodically sync from database
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastSyncTime >= syncInterval) {
+              loadOptimizersFromDatabase();
+              lastSyncTime = currentTime;
+            }
+            // Use poll with timeout to allow periodic sync even when queue is empty
+            OptimizerKeepingTask keepingTask =
+                suspendingQueue.poll(syncInterval, TimeUnit.MILLISECONDS);
+            if (keepingTask != null) {
+              // Process any pending tasks, but don't update optimizer state in follower mode
+              Optional.ofNullable(keepingTask.getQueue())
+                  .ifPresent(
+                      queue ->
+                          queue
+                              .collectTasks(buildSuspendingPredication(authOptimizers.keySet()))
+                              .forEach(task -> retryTask(task, queue)));
+              // In follower mode, we don't update optimizer touch time or unregister optimizers
+              // as these operations should only be done by the leader
+              LOG.debug(
+                  "Follower node: processed keeping task for optimizer {}, but not updating touch time",
+                  keepingTask.getOptimizer());
+            }
           } else {
+            // Leader mode: process optimizer keeping tasks normally
             OptimizerKeepingTask keepingTask = suspendingQueue.take();
             String token = keepingTask.getToken();
             boolean isExpired = !keepingTask.tryKeeping();
@@ -567,12 +580,26 @@ public class DefaultOptimizingService extends StatedPersistentBase
         Set<String> tokensToRemove = new HashSet<>(localTokens);
         tokensToRemove.removeAll(dbTokens);
 
+        // Find existing optimizers (in both local and database)
+        Set<String> tokensToUpdate = new HashSet<>(localTokens);
+        tokensToUpdate.retainAll(dbTokens);
+
         // Add new optimizers
         for (String token : tokensToAdd) {
           OptimizerInstance optimizer = dbOptimizersByToken.get(token);
           if (optimizer != null) {
             registerOptimizerWithoutPersist(optimizer);
-            LOG.debug("Added optimizer {} from database", token);
+            LOG.info("Added optimizer {} from database", token);
+          }
+        }
+
+        // Update touch time for existing optimizers to prevent them from being expired
+        // after master-slave switch
+        for (String token : tokensToUpdate) {
+          OptimizerInstance localOptimizer = authOptimizers.get(token);
+          if (localOptimizer != null) {
+            localOptimizer.touch();
+            LOG.debug("Updated touch time for existing optimizer {}", token);
           }
         }
 
@@ -583,9 +610,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
         }
 
         LOG.info(
-            "Synced optimizers from database: total={}, added={}, removed={}, current={}",
+            "Synced optimizers from database: total={}, added={}, updated={}, removed={}, current={}",
             dbOptimizersByToken.size(),
             tokensToAdd.size(),
+            tokensToUpdate.size(),
             tokensToRemove.size(),
             authOptimizers.size());
       } catch (Exception e) {

@@ -187,22 +187,47 @@ public class TestAmsAssignService {
 
       // Check that node2's buckets are redistributed
       Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
-      Assert.assertEquals("Should have 1 node after offline", 1, newAssignments.size());
+      Assert.assertFalse(
+          "Should have at least 1 node after offline, but got: " + newAssignments.size(),
+          newAssignments.isEmpty());
+      Assert.assertEquals(
+          "Should have 1 node after offline, but got: " + newAssignments.size(),
+          1,
+          newAssignments.size());
 
       // Verify node1 got all buckets
-      // Find node1 in the assignments (since parseNodeKey doesn't set restBindPort,
-      // we need to match by host and thriftBindPort)
-      List<String> node1Buckets = null;
-      for (Map.Entry<AmsServerInfo, List<String>> entry : newAssignments.entrySet()) {
-        AmsServerInfo node = entry.getKey();
-        if (node1.getHost().equals(node.getHost())
-            && node1.getThriftBindPort().equals(node.getThriftBindPort())) {
-          node1Buckets = entry.getValue();
-          break;
-        }
-      }
-      Assert.assertNotNull("Node1 should have assignments", node1Buckets);
-      Assert.assertEquals("Node1 should have all buckets", 100, node1Buckets.size());
+      // Since there's only one node left after node2 goes offline, it should be node1
+      // Get the only entry from assignments
+      Map.Entry<AmsServerInfo, List<String>> onlyEntry =
+          newAssignments.entrySet().iterator().next();
+      AmsServerInfo remainingNode = onlyEntry.getKey();
+      List<String> node1Buckets = onlyEntry.getValue();
+
+      // Verify it's node1 by matching host and thriftBindPort
+      Assert.assertEquals(
+          "Remaining node should be node1 (host match). Expected: "
+              + node1.getHost()
+              + ", Got: "
+              + remainingNode.getHost(),
+          node1.getHost(),
+          remainingNode.getHost());
+      Assert.assertEquals(
+          "Remaining node should be node1 (thriftBindPort match). Expected: "
+              + (node1.getThriftBindPort() + 1)
+              + ", Got: "
+              + remainingNode.getThriftBindPort(),
+          (Integer) (node1.getThriftBindPort() + 1),
+          remainingNode.getThriftBindPort());
+
+      // Verify node1 got all buckets
+      Assert.assertNotNull(
+          "Node1 should have assignments, but got null. Remaining node: " + remainingNode,
+          node1Buckets);
+      Assert.assertEquals(
+          "Node1 should have all buckets. Expected: 100, Got: "
+              + (node1Buckets != null ? node1Buckets.size() : "null"),
+          100,
+          node1Buckets != null ? node1Buckets.size() : 0);
     } finally {
       try {
         haContainer2.close();
@@ -221,7 +246,18 @@ public class TestAmsAssignService {
     // Initial assignment - all buckets to node1
     assignService.doAssignForTest();
     Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
-    List<String> node1InitialBuckets = initialAssignments.get(node1);
+    Assert.assertEquals("Should have 1 node initially", 1, initialAssignments.size());
+
+    // Find node1 in assignments by matching host and port
+    List<String> node1InitialBuckets = null;
+    for (Map.Entry<AmsServerInfo, List<String>> entry : initialAssignments.entrySet()) {
+      AmsServerInfo node = entry.getKey();
+      if (node1.getHost().equals(node.getHost())
+          && node1.getThriftBindPort().equals(node.getThriftBindPort() - 1)) {
+        node1InitialBuckets = entry.getValue();
+        break;
+      }
+    }
     Assert.assertNotNull("Node1 should have assignments", node1InitialBuckets);
     Assert.assertEquals("Node1 should have all buckets initially", 100, node1InitialBuckets.size());
 
@@ -241,7 +277,15 @@ public class TestAmsAssignService {
       Assert.assertEquals("Should have 2 nodes", 2, newAssignments.size());
 
       // Verify incremental assignment - node1 should keep most of its buckets
-      List<String> node1NewBuckets = newAssignments.get(node1);
+      List<String> node1NewBuckets = null;
+      for (Map.Entry<AmsServerInfo, List<String>> entry : newAssignments.entrySet()) {
+        AmsServerInfo node = entry.getKey();
+        if (node1.getHost().equals(node.getHost())
+            && node1.getThriftBindPort().equals(node.getThriftBindPort() - 1)) {
+          node1NewBuckets = entry.getValue();
+          break;
+        }
+      }
       Assert.assertNotNull("Node1 should still have assignments", node1NewBuckets);
 
       // Node1 should have kept most buckets (incremental assignment)

@@ -354,7 +354,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
       return;
     }
     try {
-      AmsServerInfo currentServerInfo = haContainer.getTableServiceServerInfo();
+      AmsServerInfo currentServerInfo = haContainer.getOptimizingServiceServerInfo();
       if (currentServerInfo == null) {
         LOG.warn("Cannot get current server info, skip updating assigned bucketIds");
         return;
@@ -373,9 +373,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
    * Sync tables for assigned bucket IDs. This method is called periodically in master-slave mode.
    */
   private void syncBucketTables() {
-    if (!isMasterSlaveMode || haContainer == null || bucketAssignStore == null) {
-      return;
-    }
     try {
       updateAssignedBucketIds();
       if (assignedBucketIds.isEmpty()) {
@@ -417,7 +414,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
       // Add new tables
       for (TableRuntimeMeta tableRuntimeMeta : tableRuntimeMetaList) {
         Long tableId = tableRuntimeMeta.getTableId();
-        if (!currentTableIds.contains(tableId)) {
+        // Double-check to avoid race condition: check again after creating TableRuntime
+        if (!currentTableIds.contains(tableId) && !tableRuntimeMap.containsKey(tableId)) {
           ServerTableIdentifier identifier = identifierMap.get(tableId);
           if (identifier == null) {
             LOG.warn("No available table identifier found for table runtime meta id={}", tableId);
@@ -432,8 +430,15 @@ public class DefaultTableService extends PersistentBase implements TableService 
               createTableRuntime(identifier, tableRuntimeMeta, states);
           if (tableRuntime.isPresent()) {
             TableRuntime runtime = tableRuntime.get();
+            // Final check before registering metrics to avoid duplicate registration
+            TableRuntime existing = tableRuntimeMap.putIfAbsent(tableId, runtime);
+            if (existing != null) {
+              // Another thread already added this table, skip registration
+              LOG.debug("Table {} already exists in tableRuntimeMap, skip adding", tableId);
+              continue;
+            }
+            // Register metrics only after successfully adding to map
             runtime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
-            tableRuntimeMap.put(tableId, runtime);
             if (headHandler != null) {
               AmoroTable<?> table = loadTable(identifier);
               if (table != null) {

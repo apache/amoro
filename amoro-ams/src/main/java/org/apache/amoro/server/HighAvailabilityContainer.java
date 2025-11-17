@@ -147,7 +147,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     }
     // Register node to ZK using ephemeral node
     // The node will be automatically deleted when the session expires
-    String nodeInfo = JacksonUtil.toJSONString(tableServiceServerInfo);
+    String nodeInfo = JacksonUtil.toJSONString(optimizingServiceServerInfo);
     registeredNodePath =
         zkClient
             .create()
@@ -271,8 +271,8 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
    *
    * @return The current node's server info, null if HA is not enabled
    */
-  public AmsServerInfo getTableServiceServerInfo() {
-    return tableServiceServerInfo;
+  public AmsServerInfo getOptimizingServiceServerInfo() {
+    return optimizingServiceServerInfo;
   }
 
   /**
