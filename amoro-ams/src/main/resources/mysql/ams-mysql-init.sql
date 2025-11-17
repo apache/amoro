@@ -139,13 +139,16 @@ CREATE TABLE `table_process`
 (
     `process_id`                    bigint(20) NOT NULL COMMENT 'table process id',
     `table_id`                      bigint(20) NOT NULL COMMENT 'table id',
+    `external_process_identifier`   varchar(256) DEFAULT NULL COMMENT 'Table optimizing external processidentifier',
     `status`                        varchar(64) NOT NULL COMMENT 'Table optimizing status',
     `process_type`                  varchar(64) NOT NULL COMMENT 'Process action type',
     `process_stage`                 varchar(64) NOT NULL COMMENT 'Process current stage',
     `execution_engine`              varchar(64) NOT NULL COMMENT 'Execution engine',
+    `retry_number`                  int(11) NOT NULL DEFAULT 0 COMMENT 'Retry times',
     `create_time`                   timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
     `finish_time`                   timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
     `fail_message`                  mediumtext DEFAULT NULL COMMENT 'Error message after task failed',
+    `process_parameters`            mediumtext COMMENT 'Table process parameters',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
     PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`, `create_time`)

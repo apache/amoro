@@ -21,18 +21,42 @@ package org.apache.amoro.server.process.executor;
 import org.apache.amoro.ActivePlugin;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.process.TableProcessState;
 
 public interface ExecuteEngine extends ActivePlugin {
 
+  /**
+   * Get engine type of this execute engine.
+   *
+   * @return engine type
+   */
   EngineType engineType();
+
+  /**
+   * Get the status from engine by external process identifier.
+   *
+   * @param processIdentifier external process identifier
+   * @return current status in engine
+   */
+  ProcessStatus getStatus(String processIdentifier);
 
   /**
    * Submit a table process to engine.
    *
-   * <p>This method must returned when process status is not Pending.
+   * <p>This method must return when process status is not Pending.
+   *
+   * @param tableProcess table process to submit
+   * @return external process identifier in engine
    */
-  String submitTableProcess(TableProcess<TableProcessState> tableProcess);
+  String submitTableProcess(TableProcess tableProcess);
 
-  ProcessStatus getStatus(String processIdentifier);
+  /**
+   * Cancel a table process in engine.
+   *
+   * <p>This method must return a readable process status or throw exception.
+   *
+   * @param tableProcess table process to cancel
+   * @param processIdentifier external process identifier
+   * @return status after cancel attempt
+   */
+  ProcessStatus tryCancelTableProcess(TableProcess tableProcess, String processIdentifier);
 }

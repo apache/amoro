@@ -18,7 +18,73 @@
 
 package org.apache.amoro.server.process.executor;
 
-public enum EngineType {
-  FLINK,
-  SPARK
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+
+import java.util.Objects;
+
+/** EngineType models a simple execution engine identifier used by process executors. */
+public final class EngineType {
+
+  private static final int MAX_NAME_LENGTH = 16;
+
+  private final String engineName;
+
+  /**
+   * Construct with the given engine name.
+   *
+   * @param engineName engine name
+   */
+  public EngineType(String engineName) {
+    Preconditions.checkArgument(
+        engineName.length() <= MAX_NAME_LENGTH,
+        "EngineType name length should be less than " + MAX_NAME_LENGTH);
+    this.engineName = engineName;
+  }
+
+  /**
+   * Get engine name.
+   *
+   * @return engine name
+   */
+  public String getEngineName() {
+    return engineName;
+  }
+
+  /**
+   * Create an EngineType from string name.
+   *
+   * @param engineType engine name
+   * @return EngineType
+   */
+  public static EngineType of(String engineType) {
+    return new EngineType(engineType);
+  }
+
+  /**
+   * Compare equality by engine name.
+   *
+   * @param o other object
+   * @return true if same engine name
+   */
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    EngineType engineType = (EngineType) o;
+    return Objects.equals(engineName, engineType.getEngineName());
+  }
+
+  /**
+   * Hash code based on engine name.
+   *
+   * @return hash code
+   */
+  @Override
+  public int hashCode() {
+    return Objects.hash(engineName);
+  }
 }

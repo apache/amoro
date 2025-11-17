@@ -23,26 +23,102 @@ import org.apache.amoro.ActivePlugin;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.process.TableProcessState;
+import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 
+/**
+ * Coordinator for a specific {@link org.apache.amoro.Action} to manage table processes. Provides
+ * scheduling parameters and lifecycle hooks to create/recover/cancel/retry table processes.
+ */
 public interface ActionCoordinator extends ActivePlugin {
 
   String PROPERTY_PARALLELISM = "parallelism";
 
+  SnowflakeIdGenerator SNOWFLAKE_ID_GENERATOR = new SnowflakeIdGenerator();
+
+  /**
+   * Check whether the given table format is supported by this coordinator.
+   *
+   * @param format table format
+   * @return true if supported, false otherwise
+   */
   boolean formatSupported(TableFormat format);
 
+  /**
+   * Get the maximum parallelism for scheduling table processes.
+   *
+   * @return max parallelism
+   */
   int parallelism();
 
+  /**
+   * Get the {@link Action} managed by this coordinator.
+   *
+   * @return action type
+   */
   Action action();
 
+  /**
+   * Get the execution engine name used by this coordinator.
+   *
+   * @return execution engine name
+   */
+  String executionEngine();
+
+  /**
+   * Calculate the next executing time for the given table runtime.
+   *
+   * @param tableRuntime table runtime
+   * @return next executing timestamp in milliseconds
+   */
   long getNextExecutingTime(TableRuntime tableRuntime);
 
+  /**
+   * Determine whether scheduling is enabled for the given table runtime.
+   *
+   * @param tableRuntime table runtime
+   * @return true if enabled, false otherwise
+   */
   boolean enabled(TableRuntime tableRuntime);
 
+  /**
+   * Get the delay (in milliseconds) before executor polls or runs tasks.
+   *
+   * @return executor delay in milliseconds
+   */
   long getExecutorDelay();
 
-  TableProcess<TableProcessState> createTableProcess(TableRuntime tableRuntime);
+  /**
+   * Create a new {@link TableProcess} instance for the given table runtime.
+   *
+   * @param tableRuntime table runtime
+   * @return a new table process
+   */
+  TableProcess createTableProcess(TableRuntime tableRuntime);
 
-  TableProcess<TableProcessState> recoverTableProcess(
-      TableRuntime tableRuntime, TableProcessMeta meta);
+  /**
+   * Recover a {@link TableProcess} from persisted store.
+   *
+   * @param tableRuntime table runtime
+   * @param processStore persisted process store
+   * @return recovered table process
+   */
+  TableProcess recoverTableProcess(TableRuntime tableRuntime, TableProcessStore processStore);
+
+  /**
+   * Prepare a {@link TableProcess} for cancellation.
+   *
+   * @param tableRuntime table runtime
+   * @param process table process to cancel
+   * @return the process instance to be canceled
+   */
+  TableProcess cancelTableProcess(TableRuntime tableRuntime, TableProcess process);
+
+  /**
+   * Prepare a {@link TableProcess} for retrying.
+   *
+   * @param process table process to retry
+   * @return the process instance to be retried
+   */
+  TableProcess retryTableProcess(TableProcess process);
 }
