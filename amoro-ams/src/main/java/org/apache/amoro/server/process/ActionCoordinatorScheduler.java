@@ -21,11 +21,16 @@ package org.apache.amoro.server.process;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.process.TableProcessState;
+import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.TableService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ActionCoordinatorScheduler extends PeriodicTableScheduler {
+
+  public static final Logger LOG = LoggerFactory.getLogger(ActionCoordinatorScheduler.class);
+  public static final int PROCESS_MAX_RETRY_NUMBER = 3;
 
   private final ActionCoordinator coordinator;
   private final ProcessService processService;
@@ -58,8 +63,18 @@ public class ActionCoordinatorScheduler extends PeriodicTableScheduler {
 
   @Override
   protected void execute(TableRuntime tableRuntime) {
-    TableProcess<TableProcessState> process = coordinator.createTableProcess(tableRuntime);
-    processService.register(process);
+    TableProcess process = coordinator.createTableProcess(tableRuntime);
+    processService.register(tableRuntime, process);
+  }
+
+  protected void recover(TableRuntime tableRuntime, TableProcessStore processStore) {
+    TableProcess process = coordinator.recoverTableProcess(tableRuntime, processStore);
+    processService.recover(tableRuntime, process);
+  }
+
+  protected void retry(TableProcess process) {
+    process = coordinator.retryTableProcess(process);
+    processService.retry(process);
   }
 
   @Override

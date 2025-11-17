@@ -18,24 +18,22 @@
 
 package org.apache.amoro.server.process.executor;
 
-import org.apache.amoro.Action;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.process.TableProcessState;
 import org.apache.amoro.server.persistence.PersistentBase;
+import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TableProcessExecutor extends PersistentBase implements Runnable {
   private static final Logger LOG = LoggerFactory.getLogger(TableProcessExecutor.class);
 
+  private static final long DEFAULT_POLL_INTERVAL_MS = 5000L;
   public ExecuteEngine executeEngine;
-  public Action action;
-  protected TableProcess<TableProcessState> tableProcess;
+  protected TableProcess tableProcess;
   private Runnable finishedCallback;
 
-  public TableProcessExecutor(
-      TableProcess<TableProcessState> tableProcess, ExecuteEngine executeEngine) {
+  public TableProcessExecutor(TableProcess tableProcess, ExecuteEngine executeEngine) {
     this.tableProcess = tableProcess;
     this.executeEngine = executeEngine;
   }
@@ -43,28 +41,65 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
   @Override
   public void run() {
     String externalProcessIdentifier = null;
-    if (tableProcess.getStatus() == ProcessStatus.PENDING) {
-      externalProcessIdentifier = executeEngine.submitTableProcess(tableProcess);
+    ProcessStatus status;
+    String message = "";
+
+    if (isTableProcessCanceling(tableProcess.getStatus())) {
       LOG.info(
-          "Submit table process {} to engine {} success, external process identifier is {}",
+          "Table process {} with identifier {} may have been in canceling, exit submit process.",
           tableProcess.getId(),
-          executeEngine.engineType(),
           externalProcessIdentifier);
-    } else {
-      externalProcessIdentifier = tableProcess.getExternalProcessIdentifier();
+      return;
     }
 
-    ProcessStatus status = executeEngine.getStatus(externalProcessIdentifier);
-    while (status != ProcessStatus.RUNNING) {
-      try {
-        Thread.sleep(5000);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+    try {
+      if (tableProcess.getStatus() == ProcessStatus.PENDING
+          || Strings.isNullOrEmpty(tableProcess.getExternalProcessIdentifier())) {
+        externalProcessIdentifier = executeEngine.submitTableProcess(tableProcess);
+        LOG.info(
+            "Submit table process {} to engine {} success, external process identifier is {}",
+            tableProcess.getId(),
+            executeEngine.engineType(),
+            externalProcessIdentifier);
+      } else {
+        externalProcessIdentifier = tableProcess.getExternalProcessIdentifier();
       }
+
+      validateIdentifier(externalProcessIdentifier);
+
       status = executeEngine.getStatus(externalProcessIdentifier);
+      tableProcess.updateExternalProcessIdentifier(status, externalProcessIdentifier);
+
+      while (isTableProcessExecuting(status)) {
+        if (isTableProcessCanceling(tableProcess.getStatus())) {
+          LOG.info(
+              "Table process {} with identifier {} may have been in canceling, exit submit process.",
+              tableProcess.getId(),
+              externalProcessIdentifier);
+          return;
+        }
+        try {
+          Thread.sleep(DEFAULT_POLL_INTERVAL_MS);
+        } catch (InterruptedException e) {
+          throw e;
+        }
+        status = executeEngine.getStatus(externalProcessIdentifier);
+      }
+    } catch (Throwable t) {
+      if (t instanceof InterruptedException) {
+        LOG.info(
+            "Table process {} with identifier {} may have been interrupted by process service disposing, exit submit process.",
+            tableProcess.getId(),
+            externalProcessIdentifier);
+        return;
+      } else {
+        status = ProcessStatus.FAILED;
+        message = t.getMessage();
+      }
     }
+
     LOG.info("The process {} is finished with status {}", tableProcess, status);
-    persistentTableProcess(status);
+    tableProcess.updateTableProcessStatus(status, message);
     if (finishedCallback != null) {
       finishedCallback.run();
     }
@@ -74,8 +109,23 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
     this.finishedCallback = runnable;
   }
 
-  private void persistentTableProcess(ProcessStatus status) {
-    // TODO: persist table process status to db.
-    // TODO: move this method to TableProcess to trigger complete future.
+  private void validateIdentifier(String externalProcessIdentifier) {
+    if (Strings.isNullOrEmpty(externalProcessIdentifier)) {
+      LOG.warn(
+          "The process {} is un-accessible with null or empty external process identifier.",
+          tableProcess);
+      throw new IllegalStateException(
+          String.format(
+              "The process %s is submitted or recovered from a illegal external process identifier.",
+              tableProcess));
+    }
+  }
+
+  private boolean isTableProcessCanceling(ProcessStatus status) {
+    return (status == ProcessStatus.CANCELING || status == ProcessStatus.CANCELED);
+  }
+
+  private boolean isTableProcessExecuting(ProcessStatus status) {
+    return (status == ProcessStatus.RUNNING || status == ProcessStatus.SUBMITTED);
   }
 }

@@ -18,39 +18,20 @@
 
 package org.apache.amoro.server.process;
 
-import org.apache.amoro.Action;
-import org.apache.amoro.ActivePlugin;
-import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
-import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 
-public interface ActionCoordinator extends ActivePlugin {
+public class MockTableProcess extends TableProcess {
 
-  String PROPERTY_PARALLELISM = "parallelism";
+  MockTableProcess(TableRuntime tableRuntime) {
+    super(tableRuntime);
+  }
 
-  SnowflakeIdGenerator SNOWFLAKE_ID_GENERATOR = new SnowflakeIdGenerator();
+  MockTableProcess(TableRuntime tableRuntime, TableProcessStore tableProcessStore) {
+    super(tableRuntime, tableProcessStore);
+  }
 
-  boolean formatSupported(TableFormat format);
-
-  int parallelism();
-
-  Action action();
-
-  String executionEngine();
-
-  long getNextExecutingTime(TableRuntime tableRuntime);
-
-  boolean enabled(TableRuntime tableRuntime);
-
-  long getExecutorDelay();
-
-  TableProcess createTableProcess(TableRuntime tableRuntime);
-
-  TableProcess recoverTableProcess(TableRuntime tableRuntime, TableProcessStore processStore);
-
-  TableProcess cancelTableProcess(TableRuntime tableRuntime, TableProcess process);
-
-  TableProcess retryTableProcess(TableProcess process);
+  @Override
+  protected void closeInternal() {}
 }
