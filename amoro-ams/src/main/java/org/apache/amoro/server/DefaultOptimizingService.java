@@ -124,14 +124,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
       Configurations serviceConfig,
       CatalogManager catalogManager,
       OptimizerManager optimizerManager,
-      TableService tableService) {
-    this(serviceConfig, catalogManager, optimizerManager, tableService, null);
-  }
-
-  public DefaultOptimizingService(
-      Configurations serviceConfig,
-      CatalogManager catalogManager,
-      OptimizerManager optimizerManager,
       TableService tableService,
       BucketAssignStore bucketAssignStore) {
     this.optimizerTouchTimeout =
@@ -565,9 +557,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void run() {
-      // Use 1/2 of optimizerTouchTimeout as sync interval (default ~30 seconds),used for master
+      // Use 1/4 of optimizerTouchTimeout as sync interval (default ~30 seconds),used for master
       // slave mode.
-      long syncInterval = Math.max(5000, optimizerTouchTimeout / 2);
+      long syncInterval = Math.max(5000, optimizerTouchTimeout / 4);
+      long lastSyncTime = 0;
       while (!stopped) {
         try {
           T keepingTask = suspendingQueue.take();
