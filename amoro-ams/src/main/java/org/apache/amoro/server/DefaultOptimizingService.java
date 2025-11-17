@@ -682,7 +682,17 @@ public class DefaultOptimizingService extends StatedPersistentBase
           OptimizerInstance optimizer = dbOptimizersByToken.get(token);
           if (optimizer != null) {
             registerOptimizerWithoutPersist(optimizer);
-            LOG.debug("Added optimizer {} from database", token);
+            LOG.info("Added optimizer {} from database", token);
+          }
+        }
+
+        // Update touch time for existing optimizers to prevent them from being expired
+        // after master-slave switch
+        for (String token : tokensToUpdate) {
+          OptimizerInstance localOptimizer = authOptimizers.get(token);
+          if (localOptimizer != null) {
+            localOptimizer.touch();
+            LOG.debug("Updated touch time for existing optimizer {}", token);
           }
         }
 
@@ -695,6 +705,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
             "Synced optimizers from database: total={}, added={}, removed={}, current={}",
             dbOptimizersByToken.size(),
             tokensToAdd.size(),
+            tokensToUpdate.size(),
             tokensToRemove.size(),
             authOptimizers.size());
       } catch (Exception e) {

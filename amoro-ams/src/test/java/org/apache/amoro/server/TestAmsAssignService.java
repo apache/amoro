@@ -190,7 +190,13 @@ public class TestAmsAssignService {
 
       // Check that node2's buckets are redistributed
       Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
-      Assert.assertEquals("Should have 1 node after offline", 1, newAssignments.size());
+      Assert.assertFalse(
+          "Should have at least 1 node after offline, but got: " + newAssignments.size(),
+          newAssignments.isEmpty());
+      Assert.assertEquals(
+          "Should have 1 node after offline, but got: " + newAssignments.size(),
+          1,
+          newAssignments.size());
 
       // The only remaining node (node1) should have all buckets. ZK stores
       // optimizingServiceServerInfo (thrift port 1261), not table port (1260), so we
