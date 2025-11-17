@@ -37,6 +37,8 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public class OptimizerExecutor extends AbstractOptimizerOperator {
 
@@ -65,10 +67,23 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
   /** Start in master-slave mode: get node list and process tasks from each AMS node. */
   private void startMasterSlaveMode() {
+    // Dynamic polling interval control
+    long basePollInterval = TimeUnit.SECONDS.toMillis(1); // Base interval: 1 second
+    long maxPollInterval = TimeUnit.SECONDS.toMillis(30); // Max interval: 10 seconds
+    int consecutiveEmptyPolls = 0; // Track consecutive empty polls
+    final int emptyPollThreshold = 5; // Start increasing interval after 5 empty polls
+    final Random random = new Random();
+
     while (isStarted()) {
       // Get current AMS node list at the beginning of each iteration
       List<String> amsUrls = getAmsNodeList();
-      LOG.info("## startMasterSlaveMode amsUrls: " + amsUrls);
+
+      // Shuffle amsUrls to prevent all optimizers from hitting the same AMS node simultaneously
+      if (amsUrls.size() > 1) {
+        Collections.shuffle(amsUrls, random);
+      }
+
+      boolean hasTask = false; // Track if any task was polled in this iteration
 
       // Process tasks from each AMS node
       for (String amsUrl : amsUrls) {
@@ -82,6 +97,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
           OptimizingTask task = pollTask(amsUrl);
           if (task != null && ackTask(amsUrl, task)) {
             ackTask = task;
+            hasTask = true; // Mark that we got a task
             result = executeTask(task);
           }
         } catch (Throwable t) {
@@ -106,10 +122,38 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
         }
       }
 
-      // If no nodes available, wait a bit before retrying
-      if (amsUrls.isEmpty()) {
-        waitAShortTime();
+      // Dynamic polling interval: adjust based on whether tasks were found
+      if (hasTask) {
+        // Reset counter and use base interval when tasks are found
+        consecutiveEmptyPolls = 0;
+      } else {
+        // Increase consecutive empty polls counter
+        consecutiveEmptyPolls++;
       }
+
+      // Calculate wait time based on consecutive empty polls
+      long waitTime;
+      if (amsUrls.isEmpty()) {
+        // No nodes available, use base interval
+        waitTime = basePollInterval;
+      } else if (consecutiveEmptyPolls >= emptyPollThreshold) {
+        // Gradually increase interval when no tasks found
+        // Exponential backoff: min(maxInterval, baseInterval * 2^(consecutiveEmptyPolls -
+        // threshold))
+        int backoffFactor = consecutiveEmptyPolls - emptyPollThreshold + 1;
+        waitTime = Math.min(maxPollInterval, basePollInterval * (1L << Math.min(backoffFactor, 3)));
+        LOG.debug(
+            "Optimizer executor[{}] no tasks found for {} consecutive polls, using increased interval: {}ms",
+            threadId,
+            consecutiveEmptyPolls,
+            waitTime);
+      } else {
+        // Use base interval when tasks are found or empty polls are below threshold
+        waitTime = basePollInterval;
+      }
+
+      // Wait before next iteration
+      waitAShortTime(waitTime);
     }
   }
 
