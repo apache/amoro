@@ -282,7 +282,8 @@ public class AmoroManagementConf {
       ConfigOptions.key("http-server.rest-auth-type")
           .stringType()
           .defaultValue("token")
-          .withDescription("The authentication used by REST APIs, token (default) or basic.");
+          .withDescription(
+              "The authentication used by REST APIs, token (default), basic or bearer.");
 
   public static final ConfigOption<Duration> HTTP_SERVER_SESSION_TIMEOUT =
       ConfigOptions.key("http-server.session-timeout")
@@ -296,7 +297,26 @@ public class AmoroManagementConf {
           .defaultValue(DefaultPasswdAuthenticationProvider.class.getName())
           .withDescription(
               "User-defined password authentication implementation of"
-                  + " org.apache.amoro.spi.authentication.PasswdAuthenticationProvider");
+                  + " org.apache.amoro.authentication.PasswdAuthenticationProvider");
+
+  public static final ConfigOption<String> HTTP_SERVER_AUTH_BEARER_PROVIDER =
+      ConfigOptions.key("http-server.auth-bearer-provider")
+          .stringType()
+          .noDefaultValue()
+          .withDescription(
+              "User-defined Bearer token such as JWT (JSON Web Token) authentication implementation"
+                  + " of org.apache.amoro.authentication.TokenAuthenticationProvider");
+
+  public static final ConfigOption<String> HTTP_SERVER_PROXY_CLIENT_IP_HEADER =
+      ConfigOptions.key("http-server.proxy-client-ip-header")
+          .stringType()
+          .defaultValue("X-Real-IP")
+          .withDescription(
+              "The HTTP header to record the real client IP address. If your server is behind a load"
+                  + " balancer or other proxy, the server will see this load balancer or proxy IP address as"
+                  + " the client IP address, to get around this common issue, most load balancers or proxies"
+                  + " offer the ability to record the real remote IP address in an HTTP header that will be"
+                  + " added to the request for other devices to use.");
 
   public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
       ConfigOptions.key("self-optimizing.commit-thread-count")
