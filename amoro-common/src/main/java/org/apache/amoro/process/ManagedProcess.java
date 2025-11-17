@@ -23,7 +23,7 @@ package org.apache.amoro.process;
  *
  * @param <T>
  */
-public interface ManagedProcess<T extends ProcessState> extends AmoroProcess<T> {
+public interface ManagedProcess<T extends ProcessState> extends AmoroProcess {
 
   /** Submit this process to ResourceContainer. */
   void submit();

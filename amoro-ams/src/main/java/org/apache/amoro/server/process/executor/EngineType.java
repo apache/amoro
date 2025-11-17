@@ -19,6 +19,7 @@
 package org.apache.amoro.server.process.executor;
 
 public enum EngineType {
+  DEFAULT,
   FLINK,
   SPARK
 }

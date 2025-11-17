@@ -20,12 +20,17 @@ package org.apache.amoro.server.process;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.process.TableProcessState;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.TableService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ActionCoordinatorScheduler extends PeriodicTableScheduler {
+
+  public static final Logger LOG = LoggerFactory.getLogger(ActionCoordinatorScheduler.class);
+  public static final int PROCESS_MAX_RETRY_NUMBER = 3;
 
   private final ActionCoordinator coordinator;
   private final ProcessService processService;
@@ -58,12 +63,90 @@ public class ActionCoordinatorScheduler extends PeriodicTableScheduler {
 
   @Override
   protected void execute(TableRuntime tableRuntime) {
-    TableProcess<TableProcessState> process = coordinator.createTableProcess(tableRuntime);
-    processService.register(process);
+    if (hasAliveTableProcess(tableRuntime)) {
+      TableProcess process =
+          processService
+              .getTableProcessTracker()
+              .getTableProcessInstance(tableRuntime.getTableIdentifier());
+      LOG.warn(
+          "Detect table process: {} with status: {} exists for table runtime: {}, skip schedule {} action this time.",
+          process.getId(),
+          process.getStatus(),
+          tableRuntime.getTableIdentifier(),
+          getAction());
+    } else {
+      TableProcess process = coordinator.createTableProcess(tableRuntime);
+      processService.register(tableRuntime, process);
+    }
+  }
+
+  protected void recover(TableRuntime tableRuntime, TableProcessMeta processMeta) {
+    if (hasAliveTableProcess(tableRuntime)) {
+      TableProcess process =
+          processService
+              .getTableProcessTracker()
+              .getTableProcessInstance(tableRuntime.getTableIdentifier());
+      LOG.warn(
+          "Detect table process: {} with status: {} exists for table runtime: {}, skip recover {} action this time.",
+          process.getId(),
+          process.getStatus(),
+          tableRuntime.getTableIdentifier(),
+          getAction());
+    } else {
+      TableProcess process = coordinator.recoverTableProcess(tableRuntime, processMeta);
+      processService.recover(tableRuntime, process);
+    }
+  }
+
+  protected void retry(TableRuntime tableRuntime, TableProcess process) {
+    TableProcess existProcess =
+        processService
+            .getTableProcessTracker()
+            .getTableProcessInstance(tableRuntime.getTableIdentifier());
+    if (existProcess != null && existProcess.getId() == process.getId()) {
+      process = coordinator.retryTableProcess(process);
+      processService.retry(process);
+    } else {
+      LOG.warn(
+          "Detect no table process exists or exist table process id is different from retry process for table runtime: {}, skip retry {} action this time.",
+          tableRuntime.getTableIdentifier(),
+          getAction());
+    }
+  }
+
+  protected void cancel(TableRuntime tableRuntime, TableProcess process) {
+    process = coordinator.cancelTableProcess(tableRuntime, process);
+    processService.cancel(process);
+  }
+
+  protected boolean hasAliveTableProcess(TableRuntime tableRuntime) {
+    TableProcess process =
+        processService
+            .getTableProcessTracker()
+            .getTableProcessInstance(tableRuntime.getTableIdentifier());
+    if (process != null
+        && (process.getStatus() == ProcessStatus.RUNNING
+            || process.getStatus() == ProcessStatus.SUBMITTED
+            || process.getStatus() == ProcessStatus.PENDING)) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   @Override
   protected long getExecutorDelay() {
     return coordinator.getExecutorDelay();
+  }
+
+  @Override
+  public void handleTableRemoved(TableRuntime tableRuntime) {
+    TableProcess process =
+        processService
+            .getTableProcessTracker()
+            .getTableProcessInstance(tableRuntime.getTableIdentifier());
+    if (process != null) {
+      cancel(tableRuntime, process);
+    }
   }
 }

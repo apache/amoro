@@ -23,11 +23,13 @@ import org.apache.amoro.ActivePlugin;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.process.TableProcessState;
+import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 
 public interface ActionCoordinator extends ActivePlugin {
 
   String PROPERTY_PARALLELISM = "parallelism";
+
+  SnowflakeIdGenerator SNOWFLAKE_ID_GENERATOR = new SnowflakeIdGenerator();
 
   boolean formatSupported(TableFormat format);
 
@@ -35,14 +37,19 @@ public interface ActionCoordinator extends ActivePlugin {
 
   Action action();
 
+  String executionEngine();
+
   long getNextExecutingTime(TableRuntime tableRuntime);
 
   boolean enabled(TableRuntime tableRuntime);
 
   long getExecutorDelay();
 
-  TableProcess<TableProcessState> createTableProcess(TableRuntime tableRuntime);
+  TableProcess createTableProcess(TableRuntime tableRuntime);
 
-  TableProcess<TableProcessState> recoverTableProcess(
-      TableRuntime tableRuntime, TableProcessMeta meta);
+  TableProcess recoverTableProcess(TableRuntime tableRuntime, TableProcessMeta meta);
+
+  TableProcess cancelTableProcess(TableRuntime tableRuntime, TableProcess process);
+
+  TableProcess retryTableProcess(TableProcess process);
 }

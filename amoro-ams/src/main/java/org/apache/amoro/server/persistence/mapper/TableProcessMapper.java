@@ -124,6 +124,10 @@ public interface TableProcessMapper {
   @Lang(InListExtendedLanguageDriver.class)
   List<Long> selectTableMaxProcessIds(@Param("tables") Collection<Long> tables);
 
-  // TODO: query all active processes
+  @Select(
+      "SELECT process_id, table_id, status, process_type, process_stage, execution_engine, "
+          + "create_time, finish_time, fail_message, summary "
+          + "FROM table_process WHERE status in ('SUBMITTED', 'RUNNING')")
+  @ResultMap("tableProcessMap")
   List<TableProcessMeta> selectAllActiveProcesses();
 }
