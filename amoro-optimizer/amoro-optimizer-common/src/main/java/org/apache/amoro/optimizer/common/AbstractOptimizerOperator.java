@@ -41,21 +41,48 @@ public class AbstractOptimizerOperator implements Serializable {
   private final OptimizerConfig config;
   private final AtomicReference<String> token = new AtomicReference<>();
   private volatile boolean stopped = false;
+  private volatile AmsNodeManager amsNodeManager;
 
   public AbstractOptimizerOperator(OptimizerConfig config) {
     Preconditions.checkNotNull(config);
     this.config = config;
+    // Initialize AmsNodeManager if in master-slave mode
+    if (config.isMasterSlaveMode() && config.getAmsUrl().startsWith("zookeeper://")) {
+      try {
+        this.amsNodeManager = new AmsNodeManager(config.getAmsUrl());
+        LOG.info("Initialized AmsNodeManager for master-slave mode");
+      } catch (Exception e) {
+        LOG.warn("Failed to initialize AmsNodeManager, will use single AMS URL", e);
+      }
+    }
+  }
+
+  /** Get the AmsNodeManager instance if available. */
+  protected AmsNodeManager getAmsNodeManager() {
+    return amsNodeManager;
   }
 
   protected <T> T callAms(AmsCallOperation<T> operation) throws TException {
+    return callAms(getConfig().getAmsUrl(), operation);
+  }
+
+  /**
+   * Call AMS with a specific AMS URL.
+   *
+   * @param amsUrl The AMS node URL to call
+   * @param operation The operation to execute
+   * @return The result of the operation
+   * @throws TException If the operation fails
+   */
+  protected <T> T callAms(String amsUrl, AmsCallOperation<T> operation) throws TException {
     while (isStarted()) {
       try {
-        return operation.call(OptimizingClientPools.getClient(config.getAmsUrl()));
+        return operation.call(OptimizingClientPools.getClient(amsUrl));
       } catch (Throwable t) {
         if (shouldReturnNull(t)) {
           return null;
         } else if (shouldRetryLater(t)) {
-          LOG.error("Call ams got an error and will try again later", t);
+          LOG.error("Call ams {} got an error and will try again later", amsUrl, t);
           waitAShortTime();
         } else {
           throw t;
@@ -86,25 +113,79 @@ public class AbstractOptimizerOperator implements Serializable {
     return false;
   }
 
-  protected <T> T callAuthenticatedAms(AmsAuthenticatedCallOperation<T> operation)
+  /**
+   * Call authenticated AMS with a specific AMS URL.
+   *
+   * @param amsUrl The AMS node URL to call
+   * @param operation The operation to execute
+   * @return The result of the operation
+   * @throws TException If the operation fails
+   */
+  protected <T> T callAuthenticatedAms(String amsUrl, AmsAuthenticatedCallOperation<T> operation)
       throws TException {
+    // Maximum retry time window for auth errors in master-slave mode (30 seconds)
+    long maxAuthRetryTimeWindow = TimeUnit.SECONDS.toMillis(90);
+    Long firstAuthErrorTime = null;
+
     while (isStarted()) {
       if (tokenIsReady()) {
         String token = getToken();
         try {
-          return operation.call(OptimizingClientPools.getClient(config.getAmsUrl()), token);
+          // Reset retry time on successful call
+          firstAuthErrorTime = null;
+          return operation.call(OptimizingClientPools.getClient(amsUrl), token);
         } catch (Throwable t) {
           if (t instanceof AmoroException
               && ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE == ((AmoroException) (t)).getErrorCode()) {
-            // Reset the token when got a authorization error
-            LOG.error(
-                "Got a authorization error while calling ams, reset token and wait for a new one",
-                t);
-            resetToken(token);
+            // In master-slave mode, the slave node may not have completed optimizer
+            // auto-registration
+            // yet, so we should retry within a time window before resetting the token
+            boolean isMasterSlaveMode = config.isMasterSlaveMode() && amsNodeManager != null;
+            long currentTime = System.currentTimeMillis();
+
+            if (isMasterSlaveMode) {
+              if (firstAuthErrorTime == null) {
+                // First auth error, record the time
+                firstAuthErrorTime = currentTime;
+              }
+
+              long elapsedTime = currentTime - firstAuthErrorTime;
+              if (elapsedTime < maxAuthRetryTimeWindow) {
+                // Still within retry time window, retry after waiting
+                LOG.warn(
+                    "Got an authorization error while calling ams {} in master-slave mode (elapsed: {}ms/{}ms). "
+                        + "This may be because the slave node hasn't completed optimizer auto-registration yet. "
+                        + "Will retry after waiting.",
+                    amsUrl,
+                    elapsedTime,
+                    maxAuthRetryTimeWindow,
+                    t);
+                waitAShortTime();
+              } else {
+                // Exceeded retry time window, reset token
+                LOG.error(
+                    "Got authorization errors from ams {} in master-slave mode for {}ms, exceeded retry time window ({}ms). "
+                        + "Reset token and wait for a new one",
+                    amsUrl,
+                    elapsedTime,
+                    maxAuthRetryTimeWindow,
+                    t);
+                resetToken(token);
+                firstAuthErrorTime = null;
+              }
+            } else {
+              // Non-master-slave mode, reset token immediately
+              LOG.error(
+                  "Got a authorization error while calling ams {}, reset token and wait for a new one",
+                  amsUrl,
+                  t);
+              resetToken(token);
+              firstAuthErrorTime = null;
+            }
           } else if (shouldReturnNull(t)) {
             return null;
           } else if (shouldRetryLater(t)) {
-            LOG.error("Call ams got an error and will try again later", t);
+            LOG.error("Call ams {} got an error and will try again later", amsUrl, t);
             waitAShortTime();
           } else {
             throw t;
@@ -116,6 +197,12 @@ public class AbstractOptimizerOperator implements Serializable {
       }
     }
     throw new IllegalStateException("Operator is stopped");
+  }
+
+  /** Legacy method for backward compatibility. Uses the configured AMS URL. */
+  protected <T> T callAuthenticatedAms(AmsAuthenticatedCallOperation<T> operation)
+      throws TException {
+    return callAuthenticatedAms(getConfig().getAmsUrl(), operation);
   }
 
   public static void setCallAmsInterval(long callAmsInterval) {
