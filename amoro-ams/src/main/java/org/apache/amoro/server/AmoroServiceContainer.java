@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server;
 
+import static org.apache.amoro.server.AmoroManagementConf.USE_MASTER_SLAVE_MODE;
+
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
@@ -96,6 +98,7 @@ public class AmoroServiceContainer {
   public static final Logger LOG = LoggerFactory.getLogger(AmoroServiceContainer.class);
 
   public static final String SERVER_CONFIG_FILENAME = "config.yaml";
+  private static boolean IS_MASTER_SLAVE_MODE = false;
 
   private final HighAvailabilityContainer haContainer;
   private DataSource dataSource;
@@ -110,6 +113,7 @@ public class AmoroServiceContainer {
   private TServer optimizingServiceServer;
   private Javalin httpServer;
   private AmsServiceMetrics amsServiceMetrics;
+  private AmsAssignService amsAssignService;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
@@ -128,21 +132,32 @@ public class AmoroServiceContainer {
                     LOG.info("AMS service has been shut down");
                   }));
       service.startRestServices();
-      while (true) {
-        try {
-          service.waitLeaderShip();
-          service.startOptimizingService();
-          service.waitFollowerShip();
-        } catch (Exception e) {
-          LOG.error("AMS start error", e);
-        } finally {
-          service.disposeOptimizingService();
+      if (IS_MASTER_SLAVE_MODE) {
+        // Even if one does not become the master, it cannot block the subsequent logic.
+        service.registAndElect();
+        // Regardless of whether tp becomes the master, the service needs to be activated.
+        service.startOptimizingService();
+      } else {
+        while (true) {
+          try {
+            service.waitLeaderShip();
+            service.startOptimizingService();
+            service.waitFollowerShip();
+          } catch (Exception e) {
+            LOG.error("AMS start error", e);
+          } finally {
+            service.disposeOptimizingService();
+          }
         }
       }
     } catch (Throwable t) {
       LOG.error("AMS encountered an unknown exception, will exist", t);
       System.exit(1);
     }
+  }
+
+  public void registAndElect() throws Exception {
+    haContainer.registAndElect();
   }
 
   public void waitLeaderShip() throws Exception {
@@ -171,11 +186,29 @@ public class AmoroServiceContainer {
     TableRuntimeFactoryManager tableRuntimeFactoryManager = new TableRuntimeFactoryManager();
     tableRuntimeFactoryManager.initialize();
 
+    // In master-slave mode, create BucketAssignStore and AmsAssignService
+    BucketAssignStore bucketAssignStore = null;
+    if (IS_MASTER_SLAVE_MODE && haContainer != null && haContainer.getZkClient() != null) {
+      String clusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
+      bucketAssignStore = new ZkBucketAssignStore(haContainer.getZkClient(), clusterName);
+      // Create and start AmsAssignService for bucket assignment
+      amsAssignService =
+          new AmsAssignService(haContainer, serviceConfig, haContainer.getZkClient());
+      amsAssignService.start();
+      LOG.info("AmsAssignService started for master-slave mode");
+    }
+
     tableService =
-        new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
+        new DefaultTableService(
+            serviceConfig,
+            catalogManager,
+            tableRuntimeFactoryManager,
+            haContainer,
+            bucketAssignStore);
 
     optimizingService =
-        new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
+        new DefaultOptimizingService(
+            serviceConfig, catalogManager, optimizerManager, tableService, haContainer);
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
@@ -213,6 +246,11 @@ public class AmoroServiceContainer {
     if (optimizingServiceServer != null) {
       LOG.info("Stopping optimizing server[serving:{}] ...", optimizingServiceServer.isServing());
       optimizingServiceServer.stop();
+    }
+    if (amsAssignService != null) {
+      LOG.info("Stopping AmsAssignService...");
+      amsAssignService.stop();
+      amsAssignService = null;
     }
     if (tableService != null) {
       LOG.info("Stopping table service...");
@@ -256,6 +294,7 @@ public class AmoroServiceContainer {
   private void initConfig() throws Exception {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
+    IS_MASTER_SLAVE_MODE = serviceConfig.getBoolean(USE_MASTER_SLAVE_MODE);
   }
 
   private void startThriftService() {
