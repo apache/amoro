@@ -103,6 +103,12 @@ public class OptimizerConfig implements Serializable {
       usage = "Timeout in cache, default 10minutes")
   private String cacheTimeout = OptimizerProperties.OPTIMIZER_CACHE_TIMEOUT_DEFAULT;
 
+  @Option(
+      name = "-msm",
+      aliases = "--" + OptimizerProperties.OPTIMIZER_MASTER_SLAVE_MODE,
+      usage = "Enable master-slave mode")
+  private boolean masterSlaveMode = false;
+
   public OptimizerConfig() {}
 
   public OptimizerConfig(String[] args) throws CmdLineException {
@@ -212,6 +218,14 @@ public class OptimizerConfig implements Serializable {
 
   public void setCacheTimeout(String cacheTimeout) {
     this.cacheTimeout = cacheTimeout;
+  }
+
+  public boolean isMasterSlaveMode() {
+    return masterSlaveMode;
+  }
+
+  public void setMasterSlaveMode(boolean masterSlaveMode) {
+    this.masterSlaveMode = masterSlaveMode;
   }
 
   @Override

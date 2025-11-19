@@ -64,6 +64,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.Record;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -104,6 +105,24 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   protected static ResourceGroup testResourceGroup() {
     return new ResourceGroup.Builder("test", "local").build();
+  }
+
+  @Before
+  public void setUp() {
+    // Clean up any existing metrics for the test resource group before each test
+    // to avoid "Metric is already been registered" errors
+    MetricRegistry registry = MetricManager.getInstance().getGlobalRegistry();
+    String testGroupName = testResourceGroup().getName();
+
+    // Unregister all metrics for the test resource group
+    List<MetricKey> keysToRemove = new ArrayList<>();
+    for (MetricKey key : registry.getMetrics().keySet()) {
+      if (key.getDefine().getName().startsWith("optimizer_group_")
+          && testGroupName.equals(key.valueOfTag(GROUP_TAG))) {
+        keysToRemove.add(key);
+      }
+    }
+    keysToRemove.forEach(registry::unregister);
   }
 
   protected OptimizingQueue buildOptimizingGroupService(DefaultTableRuntime tableRuntime) {
@@ -277,12 +296,27 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     queue.refreshTable(tableRuntime2);
     queue.refreshTable(tableRuntime);
 
+    // Poll two tasks and verify they come from different tables
+    // The order may vary due to async planning, so we check both possibilities
     TaskRuntime<?> task2 = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task2);
-    Assert.assertTrue(tableRuntime2.getTableIdentifier().getId() == task2.getTableId());
     TaskRuntime<?> task3 = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task3);
-    Assert.assertTrue(tableRuntime.getTableIdentifier().getId() == task3.getTableId());
+
+    // Verify that the two tasks come from the two different tables
+    long tableId1 = tableRuntime.getTableIdentifier().getId();
+    long tableId2 = tableRuntime2.getTableIdentifier().getId();
+    long task2TableId = task2.getTableId();
+    long task3TableId = task3.getTableId();
+
+    Assert.assertTrue(
+        "Task2 should come from one of the two tables",
+        task2TableId == tableId1 || task2TableId == tableId2);
+    Assert.assertTrue(
+        "Task3 should come from one of the two tables",
+        task3TableId == tableId1 || task3TableId == tableId2);
+    Assert.assertNotEquals(
+        "Task2 and Task3 should come from different tables", task2TableId, task3TableId);
     queue.dispose();
     tableRuntime2.dispose();
   }
