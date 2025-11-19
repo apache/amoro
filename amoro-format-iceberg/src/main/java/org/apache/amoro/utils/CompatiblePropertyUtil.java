@@ -51,13 +51,4 @@ public class CompatiblePropertyUtil {
       Map<String, String> properties, String property, String defaultValue) {
     return PropertyUtil.propertyAsString(properties, property, defaultValue);
   }
-
-  public static MemorySize propertyAsMemorySize(
-      Map<String, String> properties, String property, MemorySize defaultValue) {
-    String value = properties.get(property);
-    if (value != null) {
-      return MemorySize.parse(value);
-    }
-    return defaultValue;
-  }
 }

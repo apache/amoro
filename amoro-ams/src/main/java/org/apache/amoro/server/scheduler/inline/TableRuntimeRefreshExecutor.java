@@ -21,11 +21,11 @@ package org.apache.amoro.server.scheduler.inline;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.optimizing.evaluation.MetricBasedEvaluationEvent;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.refresh.event.MetricBasedRefreshEvent;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
@@ -63,6 +63,16 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
     // only evaluate pending input when optimizing is enabled and in idle state
     if (tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()
         && tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
+
+      if (tableRuntime.getTableConfiguration().getOptimizingConfig().isEventBasedTriggerEnabled()
+          && !MetricBasedEvaluationEvent.isEvaluatingNecessary(
+              tableRuntime.getOptimizingConfig(), table, tableRuntime.getLastPlanTime())) {
+        logger.debug(
+            "{} optimizing is not necessary due to event based trigger",
+            tableRuntime.getTableIdentifier());
+        return;
+      }
+
       AbstractOptimizingEvaluator evaluator =
           IcebergTableUtil.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
       if (evaluator.isNecessary()) {
@@ -116,11 +126,7 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
                       != defaultTableRuntime.getCurrentChangeSnapshotId()))
           || (mixedTable.isUnkeyedTable()
               && lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId())) {
-        if (!defaultTableRuntime.getOptimizingConfig().isEventBasedTriggerEnabled()
-            || MetricBasedRefreshEvent.isEvaluatingPendingInputNecessary(
-                defaultTableRuntime, mixedTable)) {
-          tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
-        }
+        tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);

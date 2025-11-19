@@ -22,6 +22,7 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.optimizing.HealthScoreInfo;
 import org.apache.amoro.optimizing.OptimizingType;
+import org.apache.amoro.optimizing.evaluation.MetricBasedEvaluationEvent;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -80,6 +81,9 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   protected long posDeleteFileSize = 0L;
   protected long posDeleteFileRecords = 0L;
 
+  // mse stat
+  protected long fileSizeSquaredErrorSum = 0L;
+
   private long cost = -1;
   private Boolean necessary = null;
   private OptimizingType optimizingType = null;
@@ -128,6 +132,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     if (!config.isEnabled()) {
       return false;
     }
+    if (config.isEventBasedTriggerEnabled() && config.getEvaluationMseTolerance() > 0) {
+      // Update the file size squared error sum
+      updateFileSizeSquaredErrorSum(dataFile);
+    }
+
     if (isFragmentFile(dataFile)) {
       return addFragmentFile(dataFile, deletes);
     } else if (isUndersizedSegmentFile(dataFile)) {
@@ -206,6 +215,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     }
 
     return false;
+  }
+
+  private void updateFileSizeSquaredErrorSum(DataFile dataFile) {
+    long diffSize = minTargetSize - Math.min(dataFile.fileSizeInBytes(), minTargetSize);
+    fileSizeSquaredErrorSum += diffSize * diffSize;
   }
 
   protected boolean fileShouldFullOptimizing(DataFile dataFile, List<ContentFile<?>> deleteFiles) {
@@ -288,6 +302,17 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public boolean isNecessary() {
     if (necessary == null) {
+      long lastPlanTime = Math.max(lastMinorOptimizingTime, lastFullOptimizingTime);
+      if (config.isEventBasedTriggerEnabled()
+          && !MetricBasedEvaluationEvent.isReachFallbackInterval(config, lastPlanTime)) {
+        long fileCount = fragmentFileCount + undersizedSegmentFileCount;
+        if (!MetricBasedEvaluationEvent.isPartitionPendingNecessary(
+            config, fileSizeSquaredErrorSum, fileCount)) {
+          LOG.debug("{} not necessary due to event-based evaluation, {}", name(), this);
+          necessary = false;
+          return false;
+        }
+      }
       if (isFullOptimizing()) {
         necessary = isFullNecessary();
       } else {
@@ -507,6 +532,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   @Override
   public long getPosDeleteFileRecords() {
     return posDeleteFileRecords;
+  }
+
+  public long getFileSizeSquaredErrorSum() {
+    return fileSizeSquaredErrorSum;
   }
 
   public static class Weight implements PartitionEvaluator.Weight {

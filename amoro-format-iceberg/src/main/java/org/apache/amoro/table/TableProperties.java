@@ -24,7 +24,6 @@ import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
-import org.apache.amoro.utils.MemorySize;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -135,17 +134,16 @@ public class TableProperties {
   public static final long SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT = 60000;
 
   /** metric-based evaluation related properties */
-  public static final String SELF_OPTIMIZING_EVALUATION_AVERAGE_FILE_SIZE_TOLERANCE =
-      "self-optimizing.evaluation.average-file-size.tolerance"; // the minimum tolerance value for
-  // the average
-  // partition file size (between 0 and (self-optimizing.target-size))
-  public static final MemorySize SELF_OPTIMIZING_EVALUATION_AVERAGE_FILE_SIZE_TOLERANCE_DEFAULT =
-      MemorySize.MAX_VALUE;
-
   public static final String SELF_OPTIMIZING_EVALUATION_FALLBACK_INTERVAL =
-      "self-optimizing.evaluation.fallback.interval"; // fallback evaluation interval in
+      "self-optimizing.evaluation.fallback-interval"; // fallback evaluation interval in
   // milliseconds
-  public static final int SELF_OPTIMIZING_EVALUATION_FALLBACK_INTERVAL_DEFAULT = 43200000; // 12 h
+
+  public static final int SELF_OPTIMIZING_EVALUATION_FALLBACK_INTERVAL_DEFAULT =
+      -1; // event-based evaluation not in effect
+
+  public static final String SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE =
+      "self-optimizing.evaluation.file-size.mse-tolerance";
+  public static final long SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE_DEFAULT = 0;
 
   /** table clean related properties */
   public static final String ENABLE_TABLE_EXPIRE = "table-expire.enabled";

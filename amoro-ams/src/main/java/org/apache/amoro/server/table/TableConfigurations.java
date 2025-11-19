@@ -331,16 +331,16 @@ public class TableConfigurations {
                 properties,
                 TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL,
                 TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT))
-        .setAverageFileSizeTolerance(
-            CompatiblePropertyUtil.propertyAsMemorySize(
-                properties,
-                TableProperties.SELF_OPTIMIZING_EVALUATION_AVERAGE_FILE_SIZE_TOLERANCE,
-                TableProperties.SELF_OPTIMIZING_EVALUATION_AVERAGE_FILE_SIZE_TOLERANCE_DEFAULT))
         .setEvaluationFallbackInterval(
             PropertyUtil.propertyAsLong(
                 properties,
                 TableProperties.SELF_OPTIMIZING_EVALUATION_FALLBACK_INTERVAL,
-                TableProperties.SELF_OPTIMIZING_EVALUATION_FALLBACK_INTERVAL_DEFAULT));
+                TableProperties.SELF_OPTIMIZING_EVALUATION_FALLBACK_INTERVAL_DEFAULT))
+        .setEvaluationMseTolerance(
+            PropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE,
+                TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE_DEFAULT));
   }
 
   /**
