@@ -41,7 +41,7 @@ public class AbstractOptimizerOperator implements Serializable {
   private final OptimizerConfig config;
   private final AtomicReference<String> token = new AtomicReference<>();
   private volatile boolean stopped = false;
-  private volatile AmsNodeManager amsNodeManager;
+  private transient volatile AmsNodeManager amsNodeManager;
 
   public AbstractOptimizerOperator(OptimizerConfig config) {
     Preconditions.checkNotNull(config);
