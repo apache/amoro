@@ -184,16 +184,13 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
       }
     } else {
       String startUpArgs = this.buildOptimizerStartupArgsString(resource);
-      Runtime runtime = Runtime.getRuntime();
       try {
         String exportCmd = String.join(" && ", exportSystemProperties());
         String startUpCmd = String.format("%s && %s", exportCmd, startUpArgs);
         String[] cmd = {"/bin/sh", "-c", startUpCmd};
         Map<String, String> envs = getContainerExportEnvs();
         LOG.info("Starting flink optimizer using command : {}, envs: {}", startUpCmd, envs);
-        ProcessBuilder processBuilder = new ProcessBuilder(cmd);
-        processBuilder.environment().putAll(envs);
-        Process exec = processBuilder.redirectErrorStream(true).start();
+        Process exec = ExecUtil.startProcess(cmd, envs);
         Map<String, String> startUpStatesMap = Maps.newHashMap();
         switch (target) {
           case YARN_PER_JOB:

@@ -113,9 +113,7 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
       String[] cmd = {"/bin/sh", "-c", startUpCmd};
       Map<String, String> envs = getContainerExportEnvs();
       LOG.info("Starting spark optimizer using command : {}, envs: {}", startUpCmd, envs);
-      ProcessBuilder processBuilder = new ProcessBuilder(cmd);
-      processBuilder.environment().putAll(envs);
-      Process exec = processBuilder.redirectErrorStream(true).start();
+      Process exec = ExecUtil.startProcess(cmd, envs);
       Map<String, String> startUpStatesMap = Maps.newHashMap();
       if (deployedOnKubernetes()) {
         SparkOptimizerContainer.SparkConf sparkConf =

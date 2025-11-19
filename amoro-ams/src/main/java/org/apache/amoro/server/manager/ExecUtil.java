@@ -26,10 +26,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ExecUtil {
   private static final Logger LOG = LoggerFactory.getLogger(ExecUtil.class);
+
+  public static Process startProcess(String[] command, Map<String, String> envs)
+      throws IOException {
+    ProcessBuilder processBuilder = new ProcessBuilder(command);
+    processBuilder.environment().putAll(envs);
+    return processBuilder.redirectErrorStream(true).start();
+  }
 
   public static int exec(String[] command, List<String> output) {
     Runtime runtime = Runtime.getRuntime();
