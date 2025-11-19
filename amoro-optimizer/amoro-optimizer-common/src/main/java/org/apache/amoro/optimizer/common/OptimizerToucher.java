@@ -32,7 +32,7 @@ import java.util.Map;
 public class OptimizerToucher extends AbstractOptimizerOperator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerToucher.class);
 
-  private TokenChangeListener tokenChangeListener;
+  private transient TokenChangeListener tokenChangeListener;
   private final Map<String, String> registerProperties = Maps.newHashMap();
   private final long startTime;
 

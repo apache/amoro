@@ -26,6 +26,7 @@ import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.client.ZKClientCon
 import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.data.Stat;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /** Provides ZooKeeper clients and operations. */
 public class ZookeeperService {
@@ -90,6 +91,10 @@ public class ZookeeperService {
 
   public String getData(String path) throws Exception {
     return new String(zkClient.getData().forPath(path), StandardCharsets.UTF_8);
+  }
+
+  public List<String> getChildren(String path) throws Exception {
+    return zkClient.getChildren().forPath(path);
   }
 
   public void delete(String path) throws Exception {
