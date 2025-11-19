@@ -204,6 +204,7 @@ public class TestFlinkOptimizerContainer {
     containerProperties.put("taskmanager.memory.process.size", "10240 MB");
     containerProperties.put("flink-conf.key1", "value1");
     containerProperties.put("key2", "value2");
+    containerProperties.put("export.JAVA_HOME", "/apache/java");
 
     ResourceGroup resourceGroup =
         new ResourceGroup.Builder("default", "flinkContainer")
@@ -221,5 +222,6 @@ public class TestFlinkOptimizerContainer {
     Assert.assertTrue(startUpArgs.contains("-Dkey1=\"value1\""));
     Assert.assertTrue(startUpArgs.contains("-Djobmanager.memory.process.size=\"100 mb\""));
     Assert.assertTrue(startUpArgs.contains("-Dtaskmanager.memory.process.size=\"10 gb\""));
+    Assert.assertTrue(container.getContainerExportEnvs().get("JAVA_HOME").equals("/apache/java"));
   }
 }

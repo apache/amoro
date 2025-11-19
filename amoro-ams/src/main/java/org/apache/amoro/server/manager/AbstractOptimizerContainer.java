@@ -28,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -76,6 +77,18 @@ public abstract class AbstractOptimizerContainer implements InternalResourceCont
 
   public Map<String, String> getContainerProperties() {
     return containerProperties;
+  }
+
+  public Map<String, String> getContainerExportEnvs() {
+    Map<String, String> envs = new HashMap<>();
+    for (Map.Entry<String, String> properties : containerProperties.entrySet()) {
+      String key = properties.getKey();
+      if (key.startsWith(OptimizerProperties.EXPORT_PROPERTY_PREFIX)) {
+        String envKey = key.substring(OptimizerProperties.EXPORT_PROPERTY_PREFIX.length());
+        envs.put(envKey, properties.getValue());
+      }
+    }
+    return envs;
   }
 
   protected String buildOptimizerStartupArgsString(Resource resource) {

@@ -41,6 +41,7 @@ public class TestSparkOptimizerContainer {
     containerProperties.put("spark-conf.key1", "value1");
     containerProperties.put("spark-conf.key2", "value2");
     containerProperties.put("key3", "value3"); // non "spark-conf." property
+    containerProperties.put("export.JAVA_HOME", "/apache/java");
 
     // Create some optimizing group properties
     Map<String, String> groupProperties = new HashMap<>();
@@ -57,5 +58,9 @@ public class TestSparkOptimizerContainer {
     Assert.assertTrue(sparkOptions.contains("--conf key1=value1"));
     Assert.assertTrue(sparkOptions.contains("--conf key2=value4"));
     Assert.assertTrue(sparkOptions.contains("--conf key5=value5"));
+
+    SparkOptimizerContainer container = new SparkOptimizerContainer();
+    container.init("test", containerProperties);
+    Assert.assertTrue(container.getContainerExportEnvs().get("JAVA_HOME").equals("/apache/java"));
   }
 }
