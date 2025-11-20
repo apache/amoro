@@ -212,7 +212,6 @@ comment on column table_runtime_state.state_version is 'Table runtime state vers
 comment on column table_runtime_state.create_time is 'create time';
 comment on column table_runtime_state.update_time is 'update time';
 
-
 CREATE TABLE table_process (
     process_id      bigserial PRIMARY KEY,
     table_id        bigint NOT NULL,
