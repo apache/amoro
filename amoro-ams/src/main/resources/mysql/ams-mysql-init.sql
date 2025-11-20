@@ -151,8 +151,6 @@ CREATE TABLE `table_process`
     KEY  `table_index` (`table_id`, `create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
 
-
-
 CREATE TABLE `optimizing_process_state`
 (
     `process_id`                    bigint(20) NOT NULL COMMENT 'optimizing_procedure UUID',
