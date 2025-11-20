@@ -376,7 +376,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     }
     return anyDeleteExist()
         || fragmentFileCount >= 2
-        || undersizedSegmentFileCount >= 2
+        || enoughContent()
         || rewriteSegmentFileCount > 0
         || rewritePosSegmentFileCount > 0;
   }
