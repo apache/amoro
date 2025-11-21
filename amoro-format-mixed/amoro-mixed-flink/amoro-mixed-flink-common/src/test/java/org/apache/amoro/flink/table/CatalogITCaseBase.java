@@ -23,6 +23,7 @@ import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
+import org.apache.amoro.flink.MiniClusterResource;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.StateBackend;
@@ -35,7 +36,6 @@ import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.test.util.MiniClusterWithClientResource;
-import org.apache.iceberg.flink.MiniClusterResource;
 import org.junit.ClassRule;
 
 public abstract class CatalogITCaseBase extends TableTestBase {

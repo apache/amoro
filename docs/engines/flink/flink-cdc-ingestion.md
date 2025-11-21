@@ -34,7 +34,7 @@ The following example will show how [MySQL CDC](https://nightlies.apache.org/fli
 
 **Requirements**
 
-Please add [Flink SQL Connector MySQL CDC](https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc) and [Iceberg](https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-1.18/1.6.0/iceberg-flink-1.18-1.6.0.jar) Jars to the lib directory of the Flink engine package.
+Please add [Flink SQL Connector MySQL CDC](https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc) and [Iceberg](https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-runtime-1.18/1.6.0/iceberg-flink-runtime-1.18-1.6.0.jar) Jars to the lib directory of the Flink engine package.
 
 ```sql
 CREATE TABLE products (
@@ -114,7 +114,7 @@ The following example will show how to write CDC data from multiple MySQL tables
 **Requirements**
 
 Please add [Flink Connector MySQL CDC](https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc/3.1.1)
-and [Iceberg](https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-flink-1.18/1.6.0) dependencies to your 
+and [Iceberg](https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-flink-runtime-1.18/1.6.0) dependencies to your 
 Maven project's pom.xml file.
 
 ```java
