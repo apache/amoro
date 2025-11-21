@@ -74,7 +74,7 @@ public class DashboardServer {
   public static final Logger LOG = LoggerFactory.getLogger(DashboardServer.class);
 
   private static final String AUTH_TYPE_BASIC = "basic";
-  private static final String AUTH_TYPE_BEARER = "bearer";
+  private static final String AUTH_TYPE_JWT = "jwt";
   private static final String X_REQUEST_SOURCE_HEADER = "X-Request-Source";
   private static final String X_REQUEST_SOURCE_WEB = "Web";
   private final CatalogController catalogController;
@@ -91,7 +91,7 @@ public class DashboardServer {
   private final ApiTokenController apiTokenController;
 
   private final PasswdAuthenticationProvider basicAuthProvider;
-  private final TokenAuthenticationProvider bearerAuthProvider;
+  private final TokenAuthenticationProvider jwtAuthProvider;
   private final String proxyClientIpHeader;
 
   public DashboardServer(
@@ -126,11 +126,10 @@ public class DashboardServer {
                 serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_BASIC_PROVIDER),
                 serviceConfig)
             : null;
-    this.bearerAuthProvider =
-        AUTH_TYPE_BEARER.equalsIgnoreCase(authType)
+    this.jwtAuthProvider =
+        AUTH_TYPE_JWT.equalsIgnoreCase(authType)
             ? HttpAuthenticationFactory.getBearerAuthenticationProvider(
-                serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_BEARER_PROVIDER),
-                serviceConfig)
+                serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_JWT_PROVIDER), serviceConfig)
             : null;
     this.proxyClientIpHeader =
         serviceConfig.get(AmoroManagementConf.HTTP_SERVER_PROXY_CLIENT_IP_HEADER);
@@ -410,7 +409,7 @@ public class DashboardServer {
       }
       return;
     }
-    if (null != basicAuthProvider || null != bearerAuthProvider) {
+    if (null != basicAuthProvider || null != jwtAuthProvider) {
       Principal authPrincipal;
       if (null != basicAuthProvider) {
         authPrincipal =
@@ -418,7 +417,7 @@ public class DashboardServer {
                 HttpAuthenticationFactory.getPasswordCredential(ctx, proxyClientIpHeader));
       } else {
         authPrincipal =
-            bearerAuthProvider.authenticate(
+            jwtAuthProvider.authenticate(
                 HttpAuthenticationFactory.getBearerTokenCredential(ctx, proxyClientIpHeader));
       }
       LOG.info(
