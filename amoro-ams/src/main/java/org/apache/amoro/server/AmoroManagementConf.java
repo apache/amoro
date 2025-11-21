@@ -282,8 +282,7 @@ public class AmoroManagementConf {
       ConfigOptions.key("http-server.rest-auth-type")
           .stringType()
           .defaultValue("token")
-          .withDescription(
-              "The authentication used by REST APIs, token (default), basic or bearer.");
+          .withDescription("The authentication used by REST APIs, token (default), basic or jwt.");
 
   public static final ConfigOption<Duration> HTTP_SERVER_SESSION_TIMEOUT =
       ConfigOptions.key("http-server.session-timeout")
@@ -299,12 +298,12 @@ public class AmoroManagementConf {
               "User-defined password authentication implementation of"
                   + " org.apache.amoro.authentication.PasswdAuthenticationProvider");
 
-  public static final ConfigOption<String> HTTP_SERVER_AUTH_BEARER_PROVIDER =
-      ConfigOptions.key("http-server.auth-bearer-provider")
+  public static final ConfigOption<String> HTTP_SERVER_AUTH_JWT_PROVIDER =
+      ConfigOptions.key("http-server.auth-jwt-provider")
           .stringType()
           .noDefaultValue()
           .withDescription(
-              "User-defined Bearer token such as JWT (JSON Web Token) authentication implementation"
+              "User-defined JWT (JSON Web Token) authentication implementation"
                   + " of org.apache.amoro.authentication.TokenAuthenticationProvider");
 
   public static final ConfigOption<String> HTTP_SERVER_PROXY_CLIENT_IP_HEADER =
