@@ -25,7 +25,6 @@ import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.resource.ResourceType;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.manager.AbstractOptimizerContainer;
-import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerManager;
@@ -97,14 +96,5 @@ public class OptimizerController {
 
     optimizerManager.createResource(resource);
     ctx.json(OkResponse.of("success to create optimizer"));
-  }
-
-  /** check if optimizerGroup can be deleted url = /optimize/containers/get */
-  public void getContainers(Context ctx) {
-    ctx.json(
-        OkResponse.of(
-            Containers.getMetadataList().stream()
-                .map(ContainerMetadata::getName)
-                .collect(Collectors.toList())));
   }
 }

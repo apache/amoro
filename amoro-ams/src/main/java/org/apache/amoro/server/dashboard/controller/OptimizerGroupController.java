@@ -184,38 +184,6 @@ public class OptimizerGroupController {
     ctx.json(OkResponse.of(optimizerResourceInfo));
   }
 
-  /**
-   * release optimizer.
-   *
-   * @pathParam jobId
-   */
-  public void releaseOptimizer(Context ctx) {
-    String resourceId = ctx.pathParam("jobId");
-    Preconditions.checkArgument(
-        !resourceId.isEmpty(), "resource id can not be empty, maybe it's a external optimizer");
-
-    List<OptimizerInstance> optimizerInstances =
-        optimizerManager.listOptimizers().stream()
-            .filter(e -> resourceId.equals(e.getResourceId()))
-            .collect(Collectors.toList());
-    Preconditions.checkState(
-        !optimizerInstances.isEmpty(),
-        String.format(
-            "The resource ID %s has not been indexed" + " to any optimizer.", resourceId));
-    Resource resource = optimizerManager.getResource(resourceId);
-    resource.getProperties().putAll(optimizerInstances.get(0).getProperties());
-    ResourceContainer rc = Containers.get(resource.getContainerName());
-    Preconditions.checkState(
-        rc instanceof AbstractOptimizerContainer,
-        "Cannot release optimizer on non-optimizer resource container %s.",
-        resource.getContainerName());
-    ((AbstractOptimizerContainer) rc).releaseResource(resource);
-
-    optimizerManager.deleteResource(resourceId);
-    optimizerManager.deleteOptimizer(resource.getGroupName(), resourceId);
-    ctx.json(OkResponse.of("Success to release optimizer"));
-  }
-
   /** scale out optimizers, url:/optimizerGroups/{optimizerGroup}/optimizers. */
   public void scaleOutOptimizer(Context ctx) {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
