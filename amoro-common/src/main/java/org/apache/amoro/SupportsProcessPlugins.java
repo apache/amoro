@@ -20,7 +20,6 @@ package org.apache.amoro;
 
 import org.apache.amoro.process.AmoroProcess;
 import org.apache.amoro.process.ProcessFactory;
-import org.apache.amoro.process.TableProcessState;
 
 public interface SupportsProcessPlugins {
 
@@ -30,7 +29,7 @@ public interface SupportsProcessPlugins {
    * @param action
    * @return created table process
    */
-  AmoroProcess<? extends TableProcessState> trigger(Action action);
+  AmoroProcess trigger(Action action);
 
   /**
    * Install a process factory for an action.
@@ -38,7 +37,7 @@ public interface SupportsProcessPlugins {
    * @param action action type
    * @param processFactory process factory
    */
-  void install(Action action, ProcessFactory<? extends TableProcessState> processFactory);
+  void install(Action action, ProcessFactory processFactory);
 
   /**
    * Check if an action is enabled.

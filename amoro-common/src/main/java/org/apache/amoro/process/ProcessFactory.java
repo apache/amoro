@@ -26,7 +26,7 @@ import org.apache.amoro.TableRuntime;
  * and used by default scheduler. Meanwhile, user could extend external ProcessFactory to run jobs
  * on external resources like Yarn.
  */
-public interface ProcessFactory<T extends ProcessState> {
+public interface ProcessFactory {
 
   /**
    * Create a process for the action.
@@ -35,7 +35,7 @@ public interface ProcessFactory<T extends ProcessState> {
    * @param action action type
    * @return target process which has not been submitted yet.
    */
-  AmoroProcess<T> create(TableRuntime tableRuntime, Action action);
+  AmoroProcess create(TableRuntime tableRuntime, Action action);
 
   /**
    * Recover a process for the action from a state.
@@ -44,5 +44,5 @@ public interface ProcessFactory<T extends ProcessState> {
    * @param state state of the process
    * @return target process which has not been submitted yet.
    */
-  AmoroProcess<T> recover(TableRuntime tableRuntime, T state);
+  AmoroProcess recover(TableRuntime tableRuntime, TableProcessState state);
 }

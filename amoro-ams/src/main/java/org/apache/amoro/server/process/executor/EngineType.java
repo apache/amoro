@@ -16,22 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.process;
+package org.apache.amoro.server.process.executor;
 
-/** Status of any {@link AmoroProcess}. */
-public enum ProcessStatus {
-  UNKNOWN,
-  PENDING,
-  SUBMITTED,
-  RUNNING,
-  CANCELING,
-  SUCCESS,
-  CANCELED,
-  CLOSED,
-  KILLED,
-  FAILED;
-
-  public ProcessStage toStage() {
-    return new ProcessStage(name(), ordinal());
-  }
+public enum EngineType {
+  DEFAULT,
+  FLINK,
+  SPARK
 }

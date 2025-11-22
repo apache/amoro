@@ -21,7 +21,7 @@ package org.apache.amoro;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.process.ProcessFactory;
-import org.apache.amoro.process.TableProcessState;
+import org.apache.amoro.process.TableProcessStore;
 
 import java.util.List;
 
@@ -38,7 +38,7 @@ public interface TableRuntime {
    *
    * @return the list of arbitrary process states
    */
-  List<? extends TableProcessState> getProcessStates();
+  List<? extends TableProcessStore> getProcessStates();
 
   /**
    * Get the list of process states. which belong to all running table processes. There could be
@@ -46,7 +46,7 @@ public interface TableRuntime {
    *
    * @return the list of arbitrary process states
    */
-  List<? extends TableProcessState> getProcessStates(Action action);
+  List<? extends TableProcessStore> getProcessStates(Action action);
 
   /** Get the group name of the table runtime. */
   String getGroupName();

@@ -16,22 +16,22 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.process;
+package org.apache.amoro.server.process;
 
-/** Status of any {@link AmoroProcess}. */
-public enum ProcessStatus {
-  UNKNOWN,
-  PENDING,
-  SUBMITTED,
-  RUNNING,
-  CANCELING,
-  SUCCESS,
-  CANCELED,
-  CLOSED,
-  KILLED,
-  FAILED;
+import org.apache.amoro.TableRuntime;
+import org.apache.amoro.process.TableProcess;
+import org.apache.amoro.process.TableProcessStore;
 
-  public ProcessStage toStage() {
-    return new ProcessStage(name(), ordinal());
+public class TestTableProcess extends TableProcess {
+
+  TestTableProcess(TableRuntime tableRuntime) {
+    super(tableRuntime);
   }
+
+  TestTableProcess(TableRuntime tableRuntime, TableProcessStore tableProcessStore) {
+    super(tableRuntime, tableProcessStore);
+  }
+
+  @Override
+  protected void closeInternal() {}
 }
