@@ -25,6 +25,7 @@ import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.cleanup.CleanupOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +44,16 @@ public class OrphanFilesCleaningExecutor extends PeriodicTableScheduler {
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
     return interval.toMillis();
+  }
+
+  @Override
+  protected boolean shouldExecute(Long lastCleanupEndTime) {
+    return System.currentTimeMillis() - lastCleanupEndTime >= interval.toMillis();
+  }
+
+  @Override
+  protected CleanupOperation getCleanupOperation() {
+    return CleanupOperation.ORPHAN_FILES_CLEANING;
   }
 
   @Override

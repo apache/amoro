@@ -18,14 +18,34 @@
 
 package org.apache.amoro.server.authentication;
 
+import static org.apache.amoro.authentication.TokenCredential.CLIENT_IP_KEY;
+
+import io.javalin.core.security.BasicAuthCredentials;
+import io.javalin.core.util.Header;
+import io.javalin.http.Context;
+import org.apache.amoro.authentication.PasswdAuthenticationProvider;
+import org.apache.amoro.authentication.PasswordCredential;
+import org.apache.amoro.authentication.TokenAuthenticationProvider;
+import org.apache.amoro.authentication.TokenCredential;
 import org.apache.amoro.config.Configurations;
-import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.utils.DynConstructors;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+
 public class HttpAuthenticationFactory {
+  public static final String BEARER_TOKEN_SCHEMA = "BEARER";
+
   public static PasswdAuthenticationProvider getPasswordAuthenticationProvider(
       String providerClass, Configurations conf) {
     return createAuthenticationProvider(providerClass, PasswdAuthenticationProvider.class, conf);
+  }
+
+  public static TokenAuthenticationProvider getBearerAuthenticationProvider(
+      String providerClass, Configurations conf) {
+    return createAuthenticationProvider(providerClass, TokenAuthenticationProvider.class, conf);
   }
 
   private static <T> T createAuthenticationProvider(
@@ -39,5 +59,45 @@ public class HttpAuthenticationFactory {
     } catch (Exception e) {
       throw new IllegalStateException(className + " must extend of " + expected.getName());
     }
+  }
+
+  public static PasswordCredential getPasswordCredential(
+      Context context, String proxyClientIpHeader) {
+    BasicAuthCredentials cred = context.basicAuthCredentials();
+    Preconditions.checkNotNull(cred, "BasicAuthCredentials must not be null");
+    return new DefaultPasswordCredential(
+        cred.getUsername(),
+        cred.getPassword(),
+        getCredentialExtraInfo(context, proxyClientIpHeader));
+  }
+
+  public static TokenCredential getBearerTokenCredential(
+      Context context, String proxyClientIpHeader) {
+    String bearerToken = getBearerToken(context);
+    Preconditions.checkNotNull(bearerToken, "Bearer token must not be null");
+    return new DefaultTokenCredential(
+        bearerToken, getCredentialExtraInfo(context, proxyClientIpHeader));
+  }
+
+  /**
+   * Extracts the Bearer token from the HTTP Authorization header in the request context. Returns
+   * the token string if present and valid, otherwise returns null.
+   */
+  private static String getBearerToken(Context context) {
+    String authorization = context.header(Header.AUTHORIZATION);
+    if (authorization != null) {
+      String[] parts = authorization.trim().split("\\s+", 2);
+      if (parts.length == 2 && BEARER_TOKEN_SCHEMA.equalsIgnoreCase(parts[0])) {
+        return parts[1].trim();
+      }
+    }
+    return null;
+  }
+
+  private static Map<String, String> getCredentialExtraInfo(
+      Context context, String proxyClientIpHeader) {
+    return Collections.singletonMap(
+        CLIENT_IP_KEY,
+        Optional.ofNullable(context.header(proxyClientIpHeader)).orElse(context.ip()));
   }
 }

@@ -493,8 +493,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
     meta.setStatusCode(OptimizingStatus.IDLE.getCode());
     meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
     meta.setTableSummary(new TableSummary());
-    meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
-    meta.setTableSummary(new TableSummary());
     doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
 
     Optional<TableRuntime> tableRuntimeOpt =

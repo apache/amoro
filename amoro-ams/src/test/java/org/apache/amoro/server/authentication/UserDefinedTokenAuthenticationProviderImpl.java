@@ -19,27 +19,27 @@
 package org.apache.amoro.server.authentication;
 
 import org.apache.amoro.authentication.BasicPrincipal;
-import org.apache.amoro.authentication.PasswdAuthenticationProvider;
-import org.apache.amoro.authentication.PasswordCredential;
-import org.apache.amoro.config.Configurations;
+import org.apache.amoro.authentication.TokenAuthenticationProvider;
+import org.apache.amoro.authentication.TokenCredential;
 import org.apache.amoro.exception.SignatureCheckException;
-import org.apache.amoro.server.AmoroManagementConf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class DefaultPasswdAuthenticationProvider implements PasswdAuthenticationProvider {
-  private String basicAuthUser;
-  private String basicAuthPassword;
+import java.security.Principal;
 
-  public DefaultPasswdAuthenticationProvider(Configurations conf) {
-    this.basicAuthUser = conf.get(AmoroManagementConf.ADMIN_USERNAME);
-    this.basicAuthPassword = conf.get(AmoroManagementConf.ADMIN_PASSWORD);
-  }
+public class UserDefinedTokenAuthenticationProviderImpl implements TokenAuthenticationProvider {
+  private static final Logger LOG =
+      LoggerFactory.getLogger(UserDefinedTokenAuthenticationProviderImpl.class);
+  public static final String VALID_TOKEN = "token";
 
   @Override
-  public BasicPrincipal authenticate(PasswordCredential credential) throws SignatureCheckException {
-    if (!(basicAuthUser.equals(credential.username())
-        && basicAuthPassword.equals(credential.password()))) {
-      throw new SignatureCheckException("Failed to authenticate via basic authentication");
+  public Principal authenticate(TokenCredential credential) throws SignatureCheckException {
+    String clientIp = credential.extraInfo().get(TokenCredential.CLIENT_IP_KEY);
+    if (VALID_TOKEN.equals(credential.token())) {
+      LOG.info("Success login with clientIp: {}", clientIp);
+      return new BasicPrincipal("user");
+    } else {
+      throw new SignatureCheckException("Token is not valid!");
     }
-    return new BasicPrincipal(credential.username());
   }
 }

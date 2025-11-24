@@ -16,43 +16,15 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.spi.authentication;
+package org.apache.amoro.server.table.cleanup;
 
-import java.security.Principal;
-import java.util.Objects;
-
-public class BasicPrincipal implements Principal {
-  private final String name;
-
-  public BasicPrincipal(String name) {
-    this.name = name;
-    Objects.requireNonNull(name, "Principal name cannot be null");
-  }
-
-  @Override
-  public String getName() {
-    return name;
-  }
-
-  @Override
-  public String toString() {
-    return name;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    BasicPrincipal that = (BasicPrincipal) o;
-    return name.equals(that.name);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(name);
-  }
+/** Table cleanup operation enum. Defines different operation types for table cleanup tasks. */
+public enum CleanupOperation {
+  DANGLING_DELETE_FILES_CLEANING,
+  ORPHAN_FILES_CLEANING,
+  DATA_EXPIRING,
+  SNAPSHOTS_EXPIRING,
+  //  NONE indicates operation types where no cleanup process records are
+  //  saved in the table_runtime_state table.
+  NONE;
 }
