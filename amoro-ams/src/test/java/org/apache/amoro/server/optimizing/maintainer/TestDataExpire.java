@@ -725,9 +725,20 @@ public class TestDataExpire extends ExecutorTestBase {
 
     List<Record> result = readSortedBaseRecords(getMixedTable());
 
-    List<Record> expected =
-        Lists.newArrayList(
-            createRecord(4, "444", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"));
+    List<Record> expected;
+    if (getMixedTable().spec().isPartitioned()) {
+      expected =
+          Lists.newArrayList(
+              createRecord(4, "444", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"));
+
+    } else {
+      expected =
+          Lists.newArrayList(
+              createRecord(1, "111", parseMillis("2022-01-03T00:00:00"), "2022-01-03T00:00:00"),
+              createRecord(2, "222", parseMillis("2022-01-03T00:00:01"), "2022-01-03T00:00:01"),
+              createRecord(3, "333", parseMillis("2022-01-03T23:59:59"), "2022-01-03T23:59:59"),
+              createRecord(4, "444", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"));
+    }
 
     Assert.assertEquals(expected, result);
   }
@@ -784,12 +795,8 @@ public class TestDataExpire extends ExecutorTestBase {
     getMaintainerAndExpire(config, "2022-01-05T12:00:00.000");
 
     List<Record> result = readSortedBaseRecords(getMixedTable());
-    List<Record> expected =
-        Lists.newArrayList(
-            createRecord(3, "333", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"),
-            createRecord(4, "444", parseMillis("2022-01-04T23:59:59"), "2022-01-04T23:59:59"));
 
-    Assert.assertEquals(expected, result);
+    Assert.assertEquals(result.size(), 0);
   }
 
   @Test
@@ -815,20 +822,30 @@ public class TestDataExpire extends ExecutorTestBase {
             .writeChangeStore(keyedTable, 1L, ChangeAction.INSERT, changeRecords, false));
 
     DataExpirationConfig config = parseDataExpirationConfig(keyedTable);
-    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(keyedTable);
+    MixedTableMaintainer tableMaintainer = new MixedTableMaintainer(keyedTable, null);
     tableMaintainer.expireDataFrom(
         config,
-        LocalDateTime.parse("2022-01-05T12:00:00.000")
+        LocalDateTime.parse("2022-01-04T12:00:00.000")
             .atZone(
                 IcebergTableMaintainer.getDefaultZoneId(
                     keyedTable.schema().findField(config.getExpirationField())))
             .toInstant());
 
     List<Record> records = readSortedKeyedRecords(keyedTable);
-    List<Record> expected =
-        Lists.newArrayList(
-            createRecord(2, "222", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"),
-            createRecord(4, "444", parseMillis("2022-01-04T00:00:01"), "2022-01-04T00:00:01"));
+    List<Record> expected;
+    if (getMixedTable().spec().isPartitioned()) {
+      expected =
+          Lists.newArrayList(
+              createRecord(2, "222", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"),
+              createRecord(4, "444", parseMillis("2022-01-04T00:00:01"), "2022-01-04T00:00:01"));
+    } else {
+      expected =
+          Lists.newArrayList(
+              createRecord(1, "111", parseMillis("2022-01-03T00:00:00"), "2022-01-03T00:00:00"),
+              createRecord(2, "222", parseMillis("2022-01-04T00:00:00"), "2022-01-04T00:00:00"),
+              createRecord(3, "333", parseMillis("2022-01-03T23:59:59"), "2022-01-03T23:59:59"),
+              createRecord(4, "444", parseMillis("2022-01-04T00:00:01"), "2022-01-04T00:00:01"));
+    }
 
     Assert.assertEquals(expected, records);
   }
@@ -857,10 +874,7 @@ public class TestDataExpire extends ExecutorTestBase {
     getMaintainerAndExpire(config, "2022-02-02T12:00:00.000");
 
     List<Record> result = readSortedBaseRecords(getMixedTable());
-    List<Record> expected =
-        Lists.newArrayList(
-            createRecord(2, "222", parseMillis("2022-02-01T00:00:00"), "2022-02-01T00:00:00"));
 
-    Assert.assertEquals(expected, result);
+    Assert.assertEquals(result.size(), 0);
   }
 }
