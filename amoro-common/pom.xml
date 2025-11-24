@@ -168,7 +168,7 @@
                 </executions>
             </plugin>
 
-            <!--Compile thrift api with commend: ./mvnw -pl amoro-common thrift:compile antrun:run@relocate-thrift-package-->
+            <!--Compile thrift api with commend: ./mvnw -pl amoro-common thrift:compile antrun:run@relocate-thrift-package -->
             <plugin>
                 <groupId>org.apache.thrift.tools</groupId>
                 <artifactId>maven-thrift-plugin</artifactId>
