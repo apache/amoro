@@ -168,7 +168,7 @@
                 </executions>
             </plugin>
 
-            <!--Compile thrift api with commend: mvnw thrift:compile -pl amoro-common-->
+            <!--Compile thrift api with commend: ./mvnw -pl amoro-common thrift:compile antrun:run@relocate-thrift-package-->
             <plugin>
                 <groupId>org.apache.thrift.tools</groupId>
                 <artifactId>maven-thrift-plugin</artifactId>
@@ -178,6 +178,20 @@
                     <thriftSourceRoot>src/main/thrift</thriftSourceRoot>
                     <generator>java</generator>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!-- Rewrite generated Thrift code to use Amoro's shaded Thrift package instead of the original org.apache.thrift. -->
+                        <id>relocate-thrift-package</id>
+                        <configuration>
+                            <target>
+                                <replace dir="src/main/gen-java" includes="**/*.java" token="org.apache.thrift" value="org.apache.amoro.shade.thrift.org.apache.thrift"></replace>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
