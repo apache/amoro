@@ -412,6 +412,41 @@ public class DashboardServer {
 
   public void preHandleRequest(Context ctx) {
     String uriPath = ctx.path();
+
+    // Check if request should be forwarded to leader node
+    if (requestForwarder != null && requestForwarder.shouldForward(ctx)) {
+      try {
+        // forwardRequest will throw RequestForwardedException if forwarding is successful
+        boolean forwarded = requestForwarder.forwardRequest(ctx);
+        // If we reach here, forwarding was skipped (e.g., circuit breaker open)
+        LOG.warn("Request forwarding was skipped for path: {}", uriPath);
+      } catch (RequestForwardedException e) {
+        // Request was successfully forwarded, response is already set by RequestForwarder
+        // Re-throw the exception to ensure no further local processing occurs
+        LOG.info("Request successfully forwarded to leader node for path: {}", uriPath);
+        // Re-throw to completely stop all subsequent processing
+        throw e;
+      } catch (IOException e) {
+        LOG.error("Failed to forward request to leader node: {}", uriPath, e);
+
+        // Enhanced error handling for forwarding failures
+        String errorMessage = "Failed to forward request to leader node: " + e.getMessage();
+
+        // Check if circuit breaker is open
+        if (requestForwarder.isCircuitBreakerOpenForMonitoring()) {
+          errorMessage += " (Circuit breaker is open due to repeated failures)";
+        }
+
+        ctx.json(
+            new ErrorResponse(
+                HttpCode.INTERNAL_SERVER_ERROR,
+                errorMessage,
+                "Please try again later or contact administrator if the issue persists"));
+        // Return immediately to prevent further processing
+        return;
+      }
+    }
+
     if (inWhiteList(uriPath)) {
       return;
     }

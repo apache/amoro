@@ -111,10 +111,15 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   private final CatalogManager catalogManager;
   private final InternalTableManager tableManager;
+  private final org.apache.amoro.server.dashboard.RequestForwarder requestForwarder;
 
-  public RestCatalogService(CatalogManager catalogManager, InternalTableManager tableManager) {
+  public RestCatalogService(
+      CatalogManager catalogManager,
+      InternalTableManager tableManager,
+      org.apache.amoro.server.dashboard.RequestForwarder requestForwarder) {
     this.catalogManager = catalogManager;
     this.tableManager = tableManager;
+    this.requestForwarder = requestForwarder;
     ObjectMapper objectMapper = jsonMapper();
     this.jsonMapper = new JavalinJackson(objectMapper);
   }
@@ -225,6 +230,9 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   /** POST PREFIX/{catalog}/v1/namespaces */
   public void createNamespace(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     handleCatalog(
         ctx,
         catalog -> {
@@ -248,6 +256,9 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   /** DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace} */
   public void dropNamespace(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     String catalog = ctx.pathParam("catalog");
     String ns = ctx.pathParam("namespace");
     Preconditions.checkNotNull(ns, "namespace is null");
@@ -258,6 +269,9 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   /** POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/properties */
   public void setNamespaceProperties(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     throw new UnsupportedOperationException("namespace properties is not supported");
   }
 
@@ -277,6 +291,9 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   /** POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables */
   public void createTable(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     handleNamespace(
         ctx,
         (catalog, database) -> {
@@ -322,6 +339,9 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   /** POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table} */
   public void commitTable(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     handleTable(
         ctx,
         handler -> {
@@ -345,6 +365,9 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   /** DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table} */
   public void deleteTable(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     handleTable(
         ctx,
         handler -> {
@@ -366,6 +389,9 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   /** POST PREFIX/v1/catalogs/{catalog}/tables/rename */
   public void renameTable(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     throw new UnsupportedOperationException("rename is not supported now.");
   }
 
