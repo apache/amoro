@@ -49,6 +49,7 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
           cache: maven
+          check-latest: false
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -86,7 +87,7 @@ jobs:
           echo "MVN_HADOOP=-Phadoop2" >> $GITHUB_ENV
 
       - name: Build dist module with Maven
-        run: mvn clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats
+        run: ./mvnw clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats
 
       - name: Build and Push Amoro Docker Image
         uses: docker/build-push-action@v4
@@ -112,6 +113,7 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
           cache: maven
+          check-latest: false
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -162,7 +164,7 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
+        run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
 
       - name: Build and Push Flink Optimizer Docker Image
         uses: docker/build-push-action@v4
@@ -185,6 +187,7 @@ jobs:
     strategy:
       matrix:
         spark: [ "3.3.3" ]
+        scala: [ "2.12.15" ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11
@@ -193,6 +196,7 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
           cache: maven
+          check-latest: false
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -223,10 +227,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set optimizer spark version
+      - name: Set optimizer spark version and extract versions
+        id: versions
         run: |
-          OPTIMIZER_SPARK=${{ matrix.spark }} && \
-          echo "OPTIMIZER_SPARK=-Dspark-optimizer.spark-version${OPTIMIZER_SPARK}" >> $GITHUB_ENV
+          echo "SPARK_VERSION=-Dspark.version=${{ matrix.spark }}" >> $GITHUB_ENV && \
+          SPARK_MAJOR_VERSION=$(echo "${{ matrix.spark }}" | cut -d. -f1-2) && \
+          echo "SPARK_MAJOR_VERSION=${SPARK_MAJOR_VERSION}" >> $GITHUB_OUTPUT && \
+          SCALA_BINARY_VERSION=$(echo "${{ matrix.scala }}" | cut -d. -f1-2) && \
+          echo "SCALA_BINARY_VERSION=${SCALA_BINARY_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Set ENV Amoro version
         id: version
@@ -237,12 +245,14 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: mvn clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${OPTIMIZER_SPARK} -DskipTests -B -ntp
+        run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${SPARK_VERSION} -DskipTests -B -ntp
 
       - name: Build and Push Spark Optimizer Docker Image
         uses: docker/build-push-action@v4
         env:
           AMORO_VERSION: ${{ steps.version.outputs.AMORO_VERSION }}
+          SPARK_MAJOR_VERSION: ${{ steps.versions.outputs.SPARK_MAJOR_VERSION }}
+          SCALA_BINARY_VERSION: ${{ steps.versions.outputs.SCALA_BINARY_VERSION }}
         with:
           context: .
           push: true
@@ -251,6 +261,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             SPARK_VERSION=${{ matrix.spark }}
-            OPTIMIZER_JOB=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
+            OPTIMIZER_JOB=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${{ env.SPARK_MAJOR_VERSION}}_${{ env.SCALA_BINARY_VERSION}}-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
 
 

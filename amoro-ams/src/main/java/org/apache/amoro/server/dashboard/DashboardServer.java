@@ -25,17 +25,19 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
 import io.javalin.apibuilder.EndpointGroup;
-import io.javalin.core.security.BasicAuthCredentials;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.http.staticfiles.StaticFileConfig;
+import org.apache.amoro.authentication.PasswdAuthenticationProvider;
+import org.apache.amoro.authentication.TokenAuthenticationProvider;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.RestCatalogService;
+import org.apache.amoro.server.authentication.HttpAuthenticationFactory;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.controller.ApiTokenController;
 import org.apache.amoro.server.dashboard.controller.CatalogController;
@@ -63,6 +65,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -71,6 +74,7 @@ public class DashboardServer {
   public static final Logger LOG = LoggerFactory.getLogger(DashboardServer.class);
 
   private static final String AUTH_TYPE_BASIC = "basic";
+  private static final String AUTH_TYPE_JWT = "jwt";
   private static final String X_REQUEST_SOURCE_HEADER = "X-Request-Source";
   private static final String X_REQUEST_SOURCE_WEB = "Web";
   private final CatalogController catalogController;
@@ -86,9 +90,9 @@ public class DashboardServer {
   private final OverviewController overviewController;
   private final ApiTokenController apiTokenController;
 
-  private final String authType;
-  private final String basicAuthUser;
-  private final String basicAuthPassword;
+  private final PasswdAuthenticationProvider basicAuthProvider;
+  private final TokenAuthenticationProvider jwtAuthProvider;
+  private final String proxyClientIpHeader;
   private final RequestForwarder requestForwarder;
 
   public DashboardServer(
@@ -117,10 +121,21 @@ public class DashboardServer {
     APITokenManager apiTokenManager = new APITokenManager();
     this.apiTokenController = new ApiTokenController(apiTokenManager);
 
-    this.authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
-    this.basicAuthUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
-    this.basicAuthPassword = serviceConfig.get(AmoroManagementConf.ADMIN_PASSWORD);
-    this.requestForwarder = requestForwarder;
+    String authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
+    this.basicAuthProvider =
+        AUTH_TYPE_BASIC.equalsIgnoreCase(authType)
+            ? HttpAuthenticationFactory.getPasswordAuthenticationProvider(
+                serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_BASIC_PROVIDER),
+                serviceConfig)
+            : null;
+    this.jwtAuthProvider =
+        AUTH_TYPE_JWT.equalsIgnoreCase(authType)
+            ? HttpAuthenticationFactory.getBearerAuthenticationProvider(
+                serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_JWT_PROVIDER), serviceConfig)
+            : null;
+    this.proxyClientIpHeader =
+        serviceConfig.get(AmoroManagementConf.HTTP_SERVER_PROXY_CLIENT_IP_HEADER);
+      this.requestForwarder = requestForwarder;
   }
 
   private volatile String indexHtml = null;
@@ -432,13 +447,21 @@ public class DashboardServer {
       }
       return;
     }
-    if (AUTH_TYPE_BASIC.equalsIgnoreCase(authType)) {
-      BasicAuthCredentials cred = ctx.basicAuthCredentials();
-      if (!(basicAuthUser.equals(cred.component1())
-          && basicAuthPassword.equals(cred.component2()))) {
-        throw new SignatureCheckException(
-            "Failed to authenticate via basic authentication for url:" + uriPath);
+    if (null != basicAuthProvider || null != jwtAuthProvider) {
+      Principal authPrincipal;
+      if (null != basicAuthProvider) {
+        authPrincipal =
+            basicAuthProvider.authenticate(
+                HttpAuthenticationFactory.getPasswordCredential(ctx, proxyClientIpHeader));
+      } else {
+        authPrincipal =
+            jwtAuthProvider.authenticate(
+                HttpAuthenticationFactory.getBearerTokenCredential(ctx, proxyClientIpHeader));
       }
+      LOG.info(
+          "Authenticated principal: {}, URI: {}",
+          authPrincipal != null ? authPrincipal.getName() : "null",
+          uriPath);
     } else {
       apiTokenController.checkApiToken(ctx);
     }

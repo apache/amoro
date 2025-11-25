@@ -21,6 +21,8 @@ CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 PROJECT_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
 export PROJECT_HOME
 
+MVN="${PROJECT_HOME}/mvnw"
+
 cd $CURRENT_DIR
 
 AMORO_VERSION=`cat $PROJECT_HOME/pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
@@ -160,7 +162,7 @@ function build_optimizer_flink() {
     OPTIMIZER_JOB=${FLINK_OPTIMIZER_JOB}
 
     if [ ! -f "${OPTIMIZER_JOB}" ]; then
-      BUILD_CMD="mvn clean package -pl amoro-optimizer/amoro-optimizer-flink -am -e -DskipTests"
+      BUILD_CMD="$MVN clean package -pl amoro-optimizer/amoro-optimizer-flink -am -e -DskipTests"
       echo "flink optimizer job not exists in ${OPTIMIZER_JOB}"
       echo "please check the file or run '${BUILD_CMD}' first. "
       exit  1
@@ -183,7 +185,7 @@ function build_optimizer_spark() {
     OPTIMIZER_JOB=${SPARK_OPTIMIZER_JOB}
 
     if [ ! -f "${OPTIMIZER_JOB}" ]; then
-      BUILD_CMD="mvn clean package -pl amoro-optimizer/amoro-optimizer-spark -am -e -DskipTests"
+      BUILD_CMD="$MVN clean package -pl amoro-optimizer/amoro-optimizer-spark -am -e -DskipTests -Pspark-${SPARK_MAJOR_VERSION}"
       echo "spark optimizer job not exists in ${OPTIMIZER_JOB}"
       echo "please check the file or run '${BUILD_CMD}' first. "
       exit  1
@@ -206,7 +208,7 @@ function build_amoro() {
   local DIST_FILE=${PROJECT_HOME}/dist/target/apache-amoro-${AMORO_VERSION}-bin.tar.gz
 
   if [ ! -f "${DIST_FILE}" ]; then
-    local BUILD_CMD="mvn clean package -am -e -pl dist -DskipTests "
+    local BUILD_CMD="$MVN clean package -am -e -pl dist -DskipTests -Pspark-${SPARK_MAJOR_VERSION}"
     echo "Amoro dist package is not exists in ${DIST_FILE}"
     echo "please check file or run '$BUILD_CMD' first"
     exit 1

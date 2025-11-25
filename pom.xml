@@ -16,8 +16,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -59,10 +58,10 @@
     </modules>
 
     <scm>
-        <url>scm:git:https://github.com/apache/amoro</url>
         <connection>scm:git:git@github.com:apache/amoro.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/amoro.git</developerConnection>
         <tag>HEAD</tag>
+        <url>scm:git:https://github.com/apache/amoro</url>
     </scm>
 
     <issueManagement>
@@ -75,6 +74,7 @@
         <java.target.version>11</java.target.version>
         <maven.compiler.source>${java.source.version}</maven.compiler.source>
         <maven.compiler.target>${java.target.version}</maven.compiler.target>
+        <maven.version>3.9.11</maven.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.build.outputTimestamp>2024-06-27T08:00:00Z</project.build.outputTimestamp>
@@ -103,10 +103,11 @@
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 
         <iceberg.version>1.6.1</iceberg.version>
-        <paimon.version>1.1.1</paimon.version>
+        <paimon.version>1.2.0</paimon.version>
         <hive.version>3.1.3</hive.version>
         <hadoop.version>3.4.0</hadoop.version>
         <kerby.version>2.0.3</kerby.version>
+        <scala.version>2.12.15</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
         <slf4j.version>1.7.30</slf4j.version>
@@ -122,11 +123,11 @@
         <parquet-jackson.version>1.13.1</parquet-jackson.version>
         <parquet-avro.version>1.15.2</parquet-avro.version>
         <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
-        <orc-core.version>1.8.3</orc-core.version>
+        <orc-core.version>1.9.7</orc-core.version>
         <awssdk.version>2.24.12</awssdk.version>
         <aliyun-sdk-oss.version>3.10.2</aliyun-sdk-oss.version>
-        <terminal.spark.version>3.3.4</terminal.spark.version>
-        <terminal.spark.major.version>3.3</terminal.spark.major.version>
+        <spark.version>3.3.4</spark.version>
+        <spark.major.version>3.3</spark.major.version>
         <dropwizard.metrics.version>4.2.19</dropwizard.metrics.version>
         <caffeine.version>2.9.3</caffeine.version>
         <snakeyaml.version>2.2</snakeyaml.version>
@@ -134,7 +135,7 @@
         <postgres-jdbc.version>42.7.2</postgres-jdbc.version>
         <derby-jdbc.version>10.14.2.0</derby-jdbc.version>
         <commons-dbcp2.version>2.9.0</commons-dbcp2.version>
-        <netty.version>4.1.124.Final</netty.version>
+        <netty.version>4.1.128.Final</netty.version>
         <javalin.version>4.6.8</javalin.version>
         <kyuubi-hive-jdbc-shaded.version>1.10.2</kyuubi-hive-jdbc-shaded.version>
         <rocksdb.version>7.10.2</rocksdb.version>
@@ -143,8 +144,9 @@
         <lucene.version>8.11.2</lucene.version>
         <bitmap.version>1.0.1</bitmap.version>
         <prometheus.version>0.16.0</prometheus.version>
-        <flink.version>1.20.0</flink.version>
-        <fabric8-kubernetes-client.version.version>6.13.3</fabric8-kubernetes-client.version.version>
+        <flink.version>1.20.3</flink.version>
+        <flink.scala.binary.version>2.12</flink.scala.binary.version>
+        <fabric8-kubernetes-client.version.version>6.13.5</fabric8-kubernetes-client.version.version>
         <amoro-shade.version>0.7.0-incubating</amoro-shade.version>
         <amoro-shade-guava.version>32.1.1-jre</amoro-shade-guava.version>
         <amoro-shade-jackson.version>2.14.2</amoro-shade-jackson.version>
@@ -160,85 +162,6 @@
         <lucene-dependency-scope>compile</lucene-dependency-scope>
         <aliyun-sdk-dependency-scope>provided</aliyun-sdk-dependency-scope>
     </properties>
-
-    <dependencies>
-        <!-- Root dependencies for all projects -->
-        <!-- Logging API -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-
-        <!-- test dependencies -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- tests will have log4j as the default logging framework available -->
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <!-- API bridge between log4j 1 and 2 -->
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-1.2-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
 
     <dependencyManagement>
         <dependencies>
@@ -418,6 +341,22 @@
                         <groupId>org.apache.kerby</groupId>
                         <artifactId>kerb-simplekdc</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.curator</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jline</groupId>
+                        <artifactId>jline</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jline</groupId>
+                        <artifactId>jline</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -451,6 +390,14 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.jline</groupId>
+                        <artifactId>jline</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jline</groupId>
+                        <artifactId>jline</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.eclipse.jetty.orbit</groupId>
                         <artifactId>javax.servlet</artifactId>
                     </exclusion>
@@ -466,6 +413,18 @@
                         <groupId>org.apache.kerby</groupId>
                         <artifactId>kerb-simplekdc</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>com.zaxxer</groupId>
+                        <artifactId>HikariCP-java7</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.curator</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -479,6 +438,12 @@
                 <groupId>org.apache.kerby</groupId>
                 <artifactId>kerb-simplekdc</artifactId>
                 <version>${kerby.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jline</groupId>
+                        <artifactId>jline</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -588,9 +553,9 @@
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>url-connection-client</artifactId>
                 <version>${awssdk.version}</version>
-	    </dependency>
+            </dependency>
 
-	    <dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>s3-transfer-manager</artifactId>
                 <version>${awssdk.version}</version>
@@ -624,6 +589,22 @@
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>paimon-s3</artifactId>
                 <version>${paimon.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.paimon</groupId>
+                <artifactId>paimon-spark-${spark.major.version}</artifactId>
+                <version>${paimon.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.spark</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -731,6 +712,183 @@
 
             <dependency>
                 <groupId>org.apache.hive</groupId>
+                <artifactId>hive-exec</artifactId>
+                <version>${hive.version}</version>
+                <classifier>core</classifier>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.pentaho</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.jackson</groupId>
+                        <artifactId>jackson-mapper-asl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.curator</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.orc</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.janino</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-metastore</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-shims</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-ant</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-vector-code-gen</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>spark-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ant</groupId>
+                        <artifactId>ant</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.ant</groupId>
+                        <artifactId>ant</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.esotericsoftware.kryo</groupId>
+                        <artifactId>kryo</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-codec</groupId>
+                        <artifactId>commons-codec</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.avro</groupId>
+                        <artifactId>avro-mapred</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.calcite</groupId>
+                        <artifactId>calcite-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.calcite</groupId>
+                        <artifactId>calcite-avatica</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.thrift</groupId>
+                        <artifactId>libthrift</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.thrift</groupId>
+                        <artifactId>libfb303</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-compress</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-httpclient</groupId>
+                        <artifactId>commons-httpclient</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.code.gson</groupId>
+                        <artifactId>gson</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-all</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jline</groupId>
+                        <artifactId>jline</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.json</groupId>
+                        <artifactId>json</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-llap-tez</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.calcite</groupId>
+                        <artifactId>calcite-druid</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.calcite.avatica</groupId>
+                        <artifactId>avatica</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.hydromatic</groupId>
+                        <artifactId>eigenbase-properties</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.hydromatic</groupId>
+                        <artifactId>aggdesigner-algorithm</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>stax</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.antlr</groupId>
+                        <artifactId>ST4</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hive</groupId>
                 <artifactId>hive-metastore</artifactId>
                 <version>${hive.version}</version>
                 <exclusions>
@@ -769,6 +927,10 @@
                     <exclusion>
                         <groupId>javax.servlet</groupId>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jline</groupId>
+                        <artifactId>jline</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>com.sun.jersey</groupId>
@@ -816,6 +978,14 @@
                     </exclusion>
                     <exclusion>
                         <groupId>co.cask.tephra</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.curator</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
@@ -958,6 +1128,84 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <dependencies>
+        <!-- Root dependencies for all projects -->
+        <!-- Logging API -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- test dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- tests will have log4j as the default logging framework available -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <!-- API bridge between log4j 1 and 2 -->
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <repositories>
         <repository>
@@ -1114,8 +1362,7 @@
                             </goals>
                             <phase>test</phase>
                             <configuration>
-                                <outputDirectory>${project.build.directory}/codecov
-                                </outputDirectory>
+                                <outputDirectory>${project.build.directory}/codecov</outputDirectory>
                             </configuration>
                         </execution>
                     </executions>
@@ -1124,21 +1371,12 @@
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
                     <version>${maven-spotless-plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <id>spotless-check</id>
-                            <phase>validate</phase>
-                            <goals>
-                                <goal>check</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                     <configuration>
                         <java>
                             <googleJavaFormat>
                                 <version>1.7</version>
                             </googleJavaFormat>
-                            <removeUnusedImports/>
+                            <removeUnusedImports></removeUnusedImports>
                             <importOrder>
                                 <order>,javax,java,\\#</order>
                             </importOrder>
@@ -1155,7 +1393,27 @@
                                 <file>tools/maven/copyright.txt</file>
                             </licenseHeader>
                         </scala>
+                        <pom>
+                            <includes>
+                                <include>pom.xml</include>
+                            </includes>
+                            <sortPom>
+                                <encoding>${project.build.sourceEncoding}</encoding>
+                                <expandEmptyElements>true</expandEmptyElements>
+                                <indentSchemaLocation>true</indentSchemaLocation>
+                                <nrOfIndentSpace>4</nrOfIndentSpace>
+                            </sortPom>
+                        </pom>
                     </configuration>
+                    <executions>
+                        <execution>
+                            <id>spotless-check</id>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <phase>validate</phase>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.rat</groupId>
@@ -1166,8 +1424,7 @@
                         <excludeSubProjects>false</excludeSubProjects>
                         <numUnapprovedLicenses>0</numUnapprovedLicenses>
                         <licenseFamilies>
-                            <licenseFamily
-                                    implementation="org.apache.rat.license.SimpleLicenseFamily">
+                            <licenseFamily implementation="org.apache.rat.license.SimpleLicenseFamily">
                                 <familyName>Apache License 2.0</familyName>
                             </licenseFamily>
                         </licenseFamilies>
@@ -1206,6 +1463,7 @@
                             <exclude>**/pnpm-lock.yaml</exclude>
                             <exclude>**/components.d.ts</exclude>
                             <exclude>**/Chart.lock</exclude>
+                            <exclude>dev/deps/**</exclude>
                             <!-- artifacts created during release process -->
                             <exclude>release/**</exclude>
                         </excludes>
@@ -1233,10 +1491,10 @@
                     <executions>
                         <execution>
                             <id>validate</id>
-                            <phase>validate</phase>
                             <goals>
                                 <goal>check</goal>
                             </goals>
+                            <phase>validate</phase>
                         </execution>
                     </executions>
                 </plugin>
@@ -1278,18 +1536,14 @@
                                     <exclude>**/*.proto</exclude>
                                     <exclude>hbase-webapps/**</exclude>
                                     <exclude>org/codehaus/mojo/animal_sniffer/**</exclude>
-                                    <exclude>
-                                        org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**
-                                    </exclude>
-                                    <exclude>
-                                        org/apache/hadoop/hive/ql/security/authorization/AuthorizationPreEventListener**
-                                    </exclude>
+                                    <exclude>org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**</exclude>
+                                    <exclude>org/apache/hadoop/hive/ql/security/authorization/AuthorizationPreEventListener**</exclude>
                                 </excludes>
                             </filter>
                         </filters>
                         <transformers>
                             <!-- The service transformer is needed to merge META-INF/services files -->
-                            <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"></transformer>
                             <!-- The ApacheNoticeResourceTransformer collects and aggregates NOTICE files -->
                             <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer">
                                 <projectName>Apache Amoro (incubating)</projectName>
@@ -1418,8 +1672,8 @@
                 <!-- Do not use Hive 2.3.9 for Hive 4 Metastore support due to incompatible API changes. -->
                 <hive.version>2.3.8</hive.version>
                 <hadoop.version>2.10.2</hadoop.version>
-                <terminal.spark.version>3.3.4</terminal.spark.version>
-                <terminal.spark.major.version>3.3</terminal.spark.major.version>
+                <spark.version>3.3.4</spark.version>
+                <spark.major.version>3.3</spark.major.version>
             </properties>
         </profile>
         <profile>
@@ -1451,6 +1705,42 @@
             <properties>
                 <java.target.version>11</java.target.version>
             </properties>
+        </profile>
+        <profile>
+            <id>spark-3.3</id>
+            <properties>
+                <spark.version>3.3.4</spark.version>
+                <spark.major.version>3.3</spark.major.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>spark-3.5</id>
+            <properties>
+                <spark.version>3.5.7</spark.version>
+                <spark.major.version>3.5</spark.major.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>scala-2.12</id>
+            <properties>
+                <scala.version>2.12.15</scala.version>
+                <scala.binary.version>2.12</scala.binary.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>scala-2.13</id>
+            <properties>
+                <scala.version>2.13.8</scala.version>
+                <scala.binary.version>2.13</scala.binary.version>
+                <!-- paimon-1.2.0 does not support scala-2.13 and datasource lookup will cause UT failre -->
+                <paimon.version>1.1.1</paimon.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>openapi-sdk</id>
+            <modules>
+                <module>amoro-openapi-sdk</module>
+            </modules>
         </profile>
     </profiles>
 </project>

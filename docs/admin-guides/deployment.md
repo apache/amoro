@@ -48,7 +48,7 @@ You can build based on the master branch without compiling Trino. The compilatio
 $ git clone https://github.com/apache/amoro.git
 $ cd amoro
 $ base_dir=$(pwd) 
-$ mvn clean package -DskipTests
+$ ./mvnw clean package -DskipTests
 $ cd dist/target/
 $ ls
 amoro-x.y.z-bin.zip # AMS release package
@@ -75,7 +75,10 @@ If you want to use AMS in a production environment, it is recommended to modify 
 - The `ams.thrift-server.table-service.bind-port` configuration specifies the binding port of the Thrift Server that provides the table service. The compute engines access AMS through this port, and the default value is 1260.
 - The `ams.thrift-server.optimizing-service.bind-port` configuration specifies the binding port of the Thrift Server that provides the optimizing service. The optimizers access AMS through this port, and the default value is 1261.
 - The `ams.http-server.bind-port` configuration specifies the port to which the HTTP service is bound. The Dashboard and Open API are bound to this port, and the default value is 1630.
-- The `ams.http-server.rest-auth-type` configuration specifies the REST API auth type, which could be token(default) or basic. The basic auth would reuse `ams.admin-username` and `ams.admin-password` for authentication. 
+- The `ams.http-server.rest-auth-type` configuration specifies the REST API auth type, which could be token(default), basic or jwt (JSON Web Token).
+- The `ams.http-server.auth-basic-provider` configuration specifies the REST API basic authentication provider. By default, it uses `ams.admin-username` and `ams.admin-password` for authentication. You can also specify a custom implementation by providing the fully qualified class name of a class that implements the `org.apache.amoro.authentication.PasswdAuthenticationProvider` interface.
+- The `ams.http-server.auth-jwt-provider` configuration specifies the REST API JWT authentication provider. Set this to the fully qualified class name of your custom provider implementing the `org.apache.amoro.authentication.TokenAuthenticationProvider` interface. This is required when `ams.http-server.rest-auth-type` is set to `jwt`.
+- The `ams.http-server.proxy-client-ip-header` configuration specifies the HTTP header to use for extracting the real client IP address when AMS is deployed behind a reverse proxy (such as Nginx or a load balancer). Common values include `X-Forwarded-For` or `X-Real-IP`. If not set, AMS will use the remote address from the connection.
 
 ```yaml
 ams:

@@ -829,46 +829,45 @@ public class DefaultTableService extends PersistentBase implements TableService 
     meta.setStatusCode(OptimizingStatus.IDLE.getCode());
     meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
     meta.setTableSummary(new TableSummary());
-    meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
-    meta.setTableSummary(new TableSummary());
+    doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
 
-    // In master-slave mode, assign bucketId to the table if it's not assigned yet
-    // Only leader node should assign bucketIds
-    String assignedBucketId = null;
-    if (isMasterSlaveMode) {
-      assignedBucketId = assignBucketIdForTable();
-      if (assignedBucketId != null) {
-        meta.setBucketId(assignedBucketId);
-        LOG.info("Assigned bucketId {} to table {}", assignedBucketId, serverTableIdentifier);
-      } else {
-        LOG.warn(
-            "Failed to assign bucketId to table {}, will be assigned later", serverTableIdentifier);
-      }
-    }
-
-    try {
-      doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
-      // After successful save, decrease pending count since the assignment is now persisted in DB
-      if (assignedBucketId != null) {
-        synchronized (bucketIdAssignmentLock) {
-          int pendingCount = pendingBucketIdCounts.getOrDefault(assignedBucketId, 0);
-          if (pendingCount > 0) {
-            pendingBucketIdCounts.put(assignedBucketId, pendingCount - 1);
-            if (pendingBucketIdCounts.get(assignedBucketId) == 0) {
-              pendingBucketIdCounts.remove(assignedBucketId);
-            }
+      // In master-slave mode, assign bucketId to the table if it's not assigned yet
+      // Only leader node should assign bucketIds
+      String assignedBucketId = null;
+      if (isMasterSlaveMode) {
+          assignedBucketId = assignBucketIdForTable();
+          if (assignedBucketId != null) {
+              meta.setBucketId(assignedBucketId);
+              LOG.info("Assigned bucketId {} to table {}", assignedBucketId, serverTableIdentifier);
+          } else {
+              LOG.warn(
+                      "Failed to assign bucketId to table {}, will be assigned later", serverTableIdentifier);
           }
-        }
       }
-    } catch (Exception e) {
-      // If save fails, keep the pending count so the bucketId assignment is still tracked
-      // This ensures the count remains accurate even if the save operation fails
-      throw e;
-    }
 
-    if (isMasterSlaveMode) {
-      return true;
-    }
+      try {
+          doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
+          // After successful save, decrease pending count since the assignment is now persisted in DB
+          if (assignedBucketId != null) {
+              synchronized (bucketIdAssignmentLock) {
+                  int pendingCount = pendingBucketIdCounts.getOrDefault(assignedBucketId, 0);
+                  if (pendingCount > 0) {
+                      pendingBucketIdCounts.put(assignedBucketId, pendingCount - 1);
+                      if (pendingBucketIdCounts.get(assignedBucketId) == 0) {
+                          pendingBucketIdCounts.remove(assignedBucketId);
+                      }
+                  }
+              }
+          }
+      } catch (Exception e) {
+          // If save fails, keep the pending count so the bucketId assignment is still tracked
+          // This ensures the count remains accurate even if the save operation fails
+          throw e;
+      }
+
+      if (isMasterSlaveMode) {
+          return true;
+      }
 
     Optional<TableRuntime> tableRuntimeOpt =
         createTableRuntime(serverTableIdentifier, meta, Collections.emptyList());

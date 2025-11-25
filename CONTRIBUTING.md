@@ -181,7 +181,7 @@ Amoro uses [Spotless](https://github.com/diffplug/spotless/tree/main/plugin-mave
 [google-java-format](https://github.com/google/google-java-format) to format the Java code. For
 Scala, it uses Spotless with [scalafmt](https://scalameta.org/scalafmt/).
 
-You can format your code by executing the command `mvn spotless:apply` in the root directory of
+You can format your code by executing the command `dev/reformat` in the root directory of
 project.
 
 Or you can configure your IDEA to automatically format your code. Then you will need to install
