@@ -532,4 +532,48 @@ public class AmoroManagementConf {
   public static final String METRIC_REPORTERS = "metric-reports";
 
   public static final String EVENT_LISTENERS = "event-listeners";
+
+  public static final ConfigOption<Duration> REQUEST_FORWARDER_TIMEOUT =
+      ConfigOptions.key("request-forwarder.timeout")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(30))
+          .withDescription("Timeout duration for request forwarding to leader node.");
+
+  public static final ConfigOption<Integer> REQUEST_FORWARDER_MAX_RETRIES =
+      ConfigOptions.key("request-forwarder.max-retries")
+          .intType()
+          .defaultValue(3)
+          .withDescription("Maximum number of retry attempts for request forwarding.");
+
+  public static final ConfigOption<Duration> REQUEST_FORWARDER_RETRY_BACKOFF =
+      ConfigOptions.key("request-forwarder.retry-backoff")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(1))
+          .withDescription("Backoff duration between retry attempts for request forwarding.");
+
+  public static final ConfigOption<Integer> REQUEST_FORWARDER_CIRCUIT_BREAKER_THRESHOLD =
+      ConfigOptions.key("request-forwarder.circuit-breaker.threshold")
+          .intType()
+          .defaultValue(5)
+          .withDescription("Number of consecutive failures before opening the circuit breaker.");
+
+  public static final ConfigOption<Duration> REQUEST_FORWARDER_CIRCUIT_BREAKER_TIMEOUT =
+      ConfigOptions.key("request-forwarder.circuit-breaker.timeout")
+          .durationType()
+          .defaultValue(Duration.ofMinutes(1))
+          .withDescription(
+              "Timeout duration for circuit breaker to remain open before attempting to close.");
+
+  public static final ConfigOption<Integer> REQUEST_FORWARDER_MAX_CONNECTIONS =
+      ConfigOptions.key("request-forwarder.max-connections")
+          .intType()
+          .defaultValue(100)
+          .withDescription("Maximum number of connections for request forwarding HTTP client.");
+
+  public static final ConfigOption<Integer> REQUEST_FORWARDER_MAX_CONNECTIONS_PER_ROUTE =
+      ConfigOptions.key("request-forwarder.max-connections-per-route")
+          .intType()
+          .defaultValue(20)
+          .withDescription(
+              "Maximum number of connections per route for request forwarding HTTP client.");
 }

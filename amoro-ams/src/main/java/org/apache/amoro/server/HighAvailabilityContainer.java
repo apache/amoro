@@ -284,6 +284,39 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     return zkClient;
   }
 
+  /**
+   * Get the leader node's table service server info from ZooKeeper.
+   *
+   * @return The leader node's server info, null if HA is not enabled or leader info is not
+   *     available
+   */
+  public AmsServerInfo getLeaderNodeInfo() {
+    if (zkClient == null || tableServiceMasterPath == null) {
+      return null;
+    }
+    try {
+      byte[] data = zkClient.getData().forPath(tableServiceMasterPath);
+      if (data != null && data.length > 0) {
+        String nodeInfoJson = new String(data, StandardCharsets.UTF_8);
+        return JacksonUtil.parseObject(nodeInfoJson, AmsServerInfo.class);
+      }
+    } catch (KeeperException.NoNodeException e) {
+      LOG.debug("Leader node info not found in ZooKeeper path: {}", tableServiceMasterPath);
+    } catch (Exception e) {
+      LOG.warn("Failed to get leader node info from ZooKeeper", e);
+    }
+    return null;
+  }
+
+  /**
+   * Check if master-slave mode is enabled.
+   *
+   * @return true if master-slave mode is enabled, false otherwise
+   */
+  public boolean isMasterSlaveMode() {
+    return isMasterSlaveMode;
+  }
+
   private void createPathIfNeeded(String path) throws Exception {
     try {
       zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
