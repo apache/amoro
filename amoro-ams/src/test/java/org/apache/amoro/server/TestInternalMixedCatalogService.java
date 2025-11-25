@@ -165,6 +165,16 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       MixedFormatCatalog catalog = loadMixedIcebergCatalog();
       Assertions.assertEquals(
           InternalMixedIcebergCatalog.class.getName(), catalog.getClass().getName());
+
+      // Clean up any existing database from previous test runs
+      if (catalog.listDatabases().contains(database)) {
+        try {
+          catalog.dropDatabase(database);
+        } catch (Exception e) {
+          LOG.warn("Failed to drop existing database during cleanup", e);
+        }
+      }
+
       Assertions.assertTrue(catalog.listDatabases().isEmpty());
 
       catalog.createDatabase(database);
@@ -183,6 +193,18 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
 
     @BeforeEach
     public void before() {
+      // Clean up any existing database from previous test runs
+      if (catalog.listDatabases().contains(database)) {
+        try {
+          // Drop tables first if they exist
+          if (catalog.tableExists(tableIdentifier)) {
+            catalog.dropTable(tableIdentifier, true);
+          }
+          catalog.dropDatabase(database);
+        } catch (Exception e) {
+          LOG.warn("Failed to drop existing database during cleanup", e);
+        }
+      }
       catalog.createDatabase(database);
     }
 
@@ -252,6 +274,18 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
 
     @BeforeEach
     public void before() {
+      // Clean up any existing database from previous test runs
+      if (catalog.listDatabases().contains(database)) {
+        try {
+          // Drop tables first if they exist
+          if (catalog.tableExists(tableIdentifier)) {
+            catalog.dropTable(tableIdentifier, true);
+          }
+          catalog.dropDatabase(database);
+        } catch (Exception e) {
+          LOG.warn("Failed to drop existing database during cleanup", e);
+        }
+      }
       catalog.createDatabase(database);
     }
 
@@ -315,12 +349,64 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       catalog.initialize(
           meta.getCatalogName(), meta.getCatalogProperties(), CatalogUtil.buildMetaStore(meta));
       this.historicalCatalog = catalog;
+
+      // Clean up any existing database from previous test runs
+      if (this.historicalCatalog.listDatabases().contains(database)) {
+        try {
+          // Drop tables first if they exist
+          if (this.historicalCatalog.tableExists(tableIdentifier)) {
+            this.historicalCatalog.dropTable(tableIdentifier, true);
+          }
+          this.historicalCatalog.dropDatabase(database);
+        } catch (Exception e) {
+          LOG.warn("Failed to drop existing database during cleanup", e);
+        }
+      }
+
+      // Also clean up in the main catalog
+      if (TestInternalMixedCatalogService.this.catalog.listDatabases().contains(database)) {
+        try {
+          if (TestInternalMixedCatalogService.this.catalog.tableExists(tableIdentifier)) {
+            TestInternalMixedCatalogService.this.catalog.dropTable(tableIdentifier, true);
+          }
+          TestInternalMixedCatalogService.this.catalog.dropDatabase(database);
+        } catch (Exception e) {
+          LOG.warn("Failed to drop existing database in main catalog during cleanup", e);
+        }
+      }
+
       this.historicalCatalog.createDatabase(database);
     }
 
     @AfterEach
     public void cleanDatabase() {
-      catalog.dropDatabase(database);
+      // Clean up tables first if they exist
+      try {
+        if (catalog.tableExists(tableIdentifier)) {
+          catalog.dropTable(tableIdentifier, true);
+        }
+      } catch (Exception e) {
+        LOG.warn("Failed to drop table during cleanup", e);
+      }
+
+      try {
+        if (historicalCatalog != null && historicalCatalog.listDatabases().contains(database)) {
+          if (historicalCatalog.tableExists(tableIdentifier)) {
+            historicalCatalog.dropTable(tableIdentifier, true);
+          }
+          historicalCatalog.dropDatabase(database);
+        }
+      } catch (Exception e) {
+        LOG.warn("Failed to drop historical catalog database during cleanup", e);
+      }
+
+      try {
+        if (catalog.listDatabases().contains(database)) {
+          catalog.dropDatabase(database);
+        }
+      } catch (Exception e) {
+        LOG.warn("Failed to drop database during cleanup", e);
+      }
     }
 
     @ParameterizedTest(name = "Test-NewCatalog-Load-HistoricalTable[withPrimaryKey={0}]")
