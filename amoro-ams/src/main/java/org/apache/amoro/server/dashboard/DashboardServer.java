@@ -135,7 +135,7 @@ public class DashboardServer {
             : null;
     this.proxyClientIpHeader =
         serviceConfig.get(AmoroManagementConf.HTTP_SERVER_PROXY_CLIENT_IP_HEADER);
-      this.requestForwarder = requestForwarder;
+    this.requestForwarder = requestForwarder;
   }
 
   private volatile String indexHtml = null;
