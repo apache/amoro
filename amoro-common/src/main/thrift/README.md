@@ -41,5 +41,5 @@ export PATH="/usr/local/opt/thrift@0.20.0/bin:$PATH"
 ### Compile Thrift
 
 ```shell
-./mvnw -pl amoro-common thrift:compile antrun:run@relocate-thrift-package
+./mvnw -pl amoro-common -Pthrift-gen generate-sources
 ```

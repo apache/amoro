@@ -184,7 +184,7 @@
     </build>
 
     <profiles>
-        <!--Compile thrift api with commend: ./mvnw -pl amoro-common -Pthrift-gen -->
+        <!--Compile thrift api with commend: ./mvnw -pl amoro-common -Pthrift-gen generate-sources -->
         <profile>
             <id>thrift-gen</id>
             <build>
@@ -226,10 +226,8 @@
                             </execution>
                         </executions>
                     </plugin>
-
                 </plugins>
             </build>
         </profile>
     </profiles>
-
 </project>
