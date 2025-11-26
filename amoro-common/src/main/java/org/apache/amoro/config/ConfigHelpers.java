@@ -217,6 +217,7 @@ public class ConfigHelpers {
     } else if (o instanceof Map) {
       return ((Map<?, ?>) o)
           .entrySet().stream()
+              .filter(e -> e.getKey() != null && e.getValue() != null)
               .map(
                   e -> {
                     String escapedKey =
