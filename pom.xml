@@ -157,6 +157,7 @@
         <hudi.version>0.14.1</hudi.version>
         <pagehelper.version>6.1.0</pagehelper.version>
         <jsqlparser.version>4.7</jsqlparser.version>
+        <snappy-java.version>1.1.10.1</snappy-java.version>
 
         <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
         <lucene-dependency-scope>compile</lucene-dependency-scope>
@@ -432,6 +433,12 @@
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
                 <version>${commons-beanutils.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>${snappy-java.version}</version>
             </dependency>
 
             <dependency>
