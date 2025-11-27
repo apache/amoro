@@ -1672,8 +1672,8 @@
                 <!-- Do not use Hive 2.3.9 for Hive 4 Metastore support due to incompatible API changes. -->
                 <hive.version>2.3.8</hive.version>
                 <hadoop.version>2.10.2</hadoop.version>
-                <spark.version>3.5.7</spark.version>
-                <spark.major.version>3.5</spark.major.version>
+                <spark.version>3.3.4</spark.version>
+                <spark.major.version>3.3</spark.major.version>
             </properties>
         </profile>
         <profile>
