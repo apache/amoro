@@ -126,7 +126,7 @@ Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixe
 * Build with hadoop 2.x(the default is 3.x) dependencies: `./mvnw clean package -DskipTests -Phadoop2`
 * Specify Flink version for Flink optimizer(the default is 1.20.0): `./mvnw clean package -DskipTests -Dflink-optimizer.flink-version=1.20.0`
   * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-optimizer-pre-1.15` parameter: `./mvnw clean package -DskipTests -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
-* Specify Spark version for Spark optimizer(the default is 3.5.7): `./mvnw clean package -DskipTests -Dspark-optimizer.spark-version=3.5.7`
+* Specify Spark version for Spark optimizer(the default is 3.5.7): `./mvnw clean package -DskipTests -Dspark.version=3.5.7`
 * Build `amoro-mixed-trino` module under JDK 17: `./mvnw clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-mixed-trino' -am`.
 * Build all modules: `./mvnw clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
 * Build a distribution package with all formats integrated: `./mvnw clean package -Psupport-all-formats`
