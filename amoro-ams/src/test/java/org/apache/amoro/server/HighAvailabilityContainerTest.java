@@ -21,8 +21,8 @@ package org.apache.amoro.server;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.amoro.config.Configurations;
-import org.apache.amoro.server.util.KerberizedTestHelper;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Map;
 
-public class HighAvailabilityContainerTest extends KerberizedTestHelper {
+public class HighAvailabilityContainerTest {
   @Test
   public void setupKerberosAuth() throws Exception {
     tryWithSecurityEnabled(
@@ -44,10 +44,10 @@ public class HighAvailabilityContainerTest extends KerberizedTestHelper {
             File keytab = File.createTempFile("amoro", ".keytab");
             String principal = "amoro/_HOST@apache.org";
 
+            conf.set(AmoroManagementConf.HA_ZOOKEEPER_AUTH_TYPE, "KERBEROS");
             conf.set(
                 AmoroManagementConf.HA_ZOOKEEPER_AUTH_KEYTAB, keytab.getCanonicalPath().toString());
             conf.set(AmoroManagementConf.HA_ZOOKEEPER_AUTH_PRINCIPAL, principal);
-            conf.set(AmoroManagementConf.HA_ZOOKEEPER_AUTH_TYPE, "KERBEROS");
 
             HighAvailabilityContainer.setupZookeeperAuth(conf);
             Configuration configuration = Configuration.getConfiguration();
@@ -72,5 +72,23 @@ public class HighAvailabilityContainerTest extends KerberizedTestHelper {
             throw new RuntimeException(e);
           }
         });
+  }
+
+  private static void tryWithSecurityEnabled(Runnable block) throws Exception {
+    org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+    Assertions.assertFalse(UserGroupInformation.isSecurityEnabled());
+    UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
+    String authType = "hadoop.security.authentication";
+    try {
+      conf.set(authType, "KERBEROS");
+      UserGroupInformation.setConfiguration(conf);
+      Assertions.assertTrue(UserGroupInformation.isSecurityEnabled());
+      block.run();
+    } finally {
+      conf.unset(authType);
+      UserGroupInformation.setLoginUser(currentUser);
+      UserGroupInformation.setConfiguration(conf);
+      Assertions.assertFalse(UserGroupInformation.isSecurityEnabled());
+    }
   }
 }
