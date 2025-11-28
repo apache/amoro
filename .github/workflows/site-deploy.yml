@@ -1,4 +1,4 @@
-name: Deploy Documentation Site
+name: Deploy Site
 
 on:
   push:
@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
@@ -49,11 +51,6 @@ jobs:
         with:
           hugo-version: 'latest'
           extended: true
-
-      - name: Create content directory
-        run: |
-          mkdir -p site/amoro-docs/content
-          cp -r docs/* site/amoro-docs/content/
 
       - name: Build
         run: cd site/amoro-docs && hugo -b https://amoro.apache.org/docs/latest -d ../../output/docs/latest
@@ -94,11 +91,6 @@ jobs:
         with:
           hugo-version: 'latest'
           extended: true
-
-      - name: Create content directory
-        run: |
-          mkdir -p site/amoro-docs/content
-          cp -r docs/* site/amoro-docs/content/
 
       - name: Build
         run: cd site/amoro-docs && hugo -b https://amoro.apache.org/docs/${{ steps.vars.outputs.branch_name }}/ -d ../../output/docs/${{ steps.vars.outputs.branch_name }}
