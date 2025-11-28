@@ -11,10 +11,10 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+-incubating'
+  pull_request:
 
 jobs:
   deploy-site-page:
-    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -41,7 +41,6 @@ jobs:
 
   deploy-latest-docs-page:
     needs: deploy-site-page
-    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -65,7 +64,6 @@ jobs:
           keep_files: true
 
   deploy-versioned-docs-page:
-    if: (github.ref != 'refs/heads/master' && (startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/')))
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
