@@ -1464,6 +1464,7 @@
                             <exclude>**/components.d.ts</exclude>
                             <exclude>**/Chart.lock</exclude>
                             <exclude>dev/deps/**</exclude>
+                            <exclude>site/**</exclude>
                             <!-- artifacts created during release process -->
                             <exclude>release/**</exclude>
                         </excludes>
