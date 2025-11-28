@@ -44,51 +44,63 @@ public interface TableProcessMapper {
 
   @Insert(
       "INSERT INTO table_process "
-          + "(process_id, table_id, status, process_type, process_stage, execution_engine, "
-          + "create_time, summary) "
-          + "VALUES (#{processId}, #{tableId}, #{status}, #{processType}, #{processStage}, "
-          + "#{executionEngine}, "
+          + "(process_id, table_id, external_process_identifier, status, process_type, process_stage, execution_engine, retry_number, "
+          + "create_time, process_parameters, summary) "
+          + "VALUES (#{processId}, #{tableId}, #{externalProcessIdentifier}, #{status}, #{processType}, #{processStage}, "
+          + "#{executionEngine}, #{retryNumber}, "
           + "#{createTime, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}, "
+          + "#{processParameters, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}, "
           + "#{summary, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter})")
   void insertProcess(
       @Param("tableId") long tableId,
       @Param("processId") long processId,
+      @Param("externalProcessIdentifier") String externalProcessIdentifier,
       @Param("status") ProcessStatus status,
       @Param("processType") String processType,
       @Param("processStage") String processStage,
       @Param("executionEngine") String executionEngine,
+      @Param("retryNumber") int retryNumber,
       @Param("createTime") long createTime,
+      @Param("processParameters") Map<String, String> processParameters,
       @Param("summary") Map<String, String> summary);
 
   @Update(
-      "UPDATE table_process SET status = #{status}, "
+      "UPDATE table_process SET external_process_identifier = #{externalProcessIdentifier},"
+          + "status = #{status}, "
           + "process_stage = #{processStage}, "
+          + "retry_number = #{retryNumber}, "
           + "finish_time = #{finishTime, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}, "
           + "fail_message = #{failMessage, jdbcType=VARCHAR}, "
+          + "process_parameters = #{processParameters, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}, "
           + "summary = #{summary, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter} "
           + "WHERE process_id = #{processId} AND table_id = #{tableId}")
   void updateProcess(
       @Param("tableId") long tableId,
       @Param("processId") long processId,
+      @Param("externalProcessIdentifier") String externalProcessIdentifier,
       @Param("status") ProcessStatus status,
       @Param("processStage") String processStage,
+      @Param("retryNumber") int retryNumber,
       @Param("finishTime") long finishTime,
       @Param("failMessage") String failMessage,
+      @Param("processParameters") Map<String, String> processParameters,
       @Param("summary") Map<String, String> summary);
 
   @Select(
-      "SELECT process_id, table_id, status, process_type, process_stage, execution_engine, "
-          + "create_time, finish_time, fail_message, summary "
+      "SELECT process_id, table_id, external_process_identifier, status, process_type, process_stage, execution_engine, retry_number, "
+          + "create_time, finish_time, fail_message, process_parameters, summary "
           + "FROM table_process WHERE process_id = #{processId}")
   @Results(
       id = "tableProcessMap",
       value = {
         @Result(column = "process_id", property = "processId"),
         @Result(column = "table_id", property = "tableId"),
+        @Result(column = "external_process_identifier", property = "externalProcessIdentifier"),
         @Result(column = "status", property = "status"),
         @Result(column = "process_type", property = "processType"),
         @Result(column = "process_stage", property = "processStage"),
         @Result(column = "execution_engine", property = "executionEngine"),
+        @Result(column = "retry_number", property = "retryNumber"),
         @Result(
             column = "create_time",
             property = "createTime",
@@ -98,14 +110,18 @@ public interface TableProcessMapper {
             property = "finishTime",
             typeHandler = Long2TsConverter.class),
         @Result(column = "fail_message", property = "failMessage"),
+        @Result(
+            column = "process_parameters",
+            property = "processParameters",
+            typeHandler = Map2StringConverter.class),
         @Result(column = "summary", property = "summary", typeHandler = Map2StringConverter.class)
       })
   TableProcessMeta getProcessMeta(@Param("processId") long processId);
 
   @Select(
       "<script>"
-          + "SELECT process_id, table_id, status, process_type, process_stage, execution_engine, "
-          + "create_time, finish_time, fail_message, summary "
+          + "SELECT process_id, table_id, external_process_identifier, status, process_type, process_stage, execution_engine, retry_number, "
+          + "create_time, finish_time, fail_message, process_parameters, summary "
           + "FROM table_process WHERE table_id = #{tableId} "
           + " <if test='processType != null'> AND process_type = #{processType}</if>"
           + " <if test='status != null'> AND status = #{status}</if>"
@@ -123,4 +139,11 @@ public interface TableProcessMapper {
           + "GROUP BY table_id ")
   @Lang(InListExtendedLanguageDriver.class)
   List<Long> selectTableMaxProcessIds(@Param("tables") Collection<Long> tables);
+
+  @Select(
+      "SELECT process_id, table_id, external_process_identifier, status, process_type, process_stage, execution_engine, retry_number, "
+          + "create_time, finish_time, fail_message, process_parameters, summary "
+          + "FROM table_process WHERE status in ('SUBMITTED', 'RUNNING')")
+  @ResultMap("tableProcessMap")
+  List<TableProcessMeta> selectAllActiveProcesses();
 }

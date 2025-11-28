@@ -16,22 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.process;
+package org.apache.amoro.server.process.executor;
 
-/** Status of any {@link AmoroProcess}. */
-public enum ProcessStatus {
-  UNKNOWN,
-  PENDING,
-  SUBMITTED,
-  RUNNING,
-  CANCELING,
-  SUCCESS,
-  CANCELED,
-  CLOSED,
-  KILLED,
-  FAILED;
+import org.apache.amoro.ActivePlugin;
+import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.process.TableProcess;
 
-  public ProcessStage toStage() {
-    return new ProcessStage(name(), ordinal());
-  }
+public interface ExecuteEngine extends ActivePlugin {
+
+  EngineType engineType();
+
+  ProcessStatus getStatus(String processIdentifier);
+
+  /**
+   * Submit a table process to engine.
+   *
+   * <p>This method must return when process status is not Pending.
+   */
+  String submitTableProcess(TableProcess tableProcess);
+
+  /**
+   * Cancel a table process in engine.
+   *
+   * <p>This method must return a readable process status or throw exception.
+   */
+  /** Cancel a table process in engine. */
+  ProcessStatus tryCancelTableProcess(TableProcess tableProcess, String processIdentifier);
 }

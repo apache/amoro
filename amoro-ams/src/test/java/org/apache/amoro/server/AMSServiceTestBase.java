@@ -22,6 +22,9 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.process.MockActionCoordinator;
+import org.apache.amoro.server.process.MockExecuteEngine;
+import org.apache.amoro.server.process.ProcessService;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.DefaultTableRuntimeFactory;
 import org.apache.amoro.server.table.DefaultTableService;
@@ -37,8 +40,11 @@ import java.time.Duration;
 public abstract class AMSServiceTestBase extends AMSManagerTestBase {
   private static DefaultTableService TABLE_SERVICE = null;
   private static DefaultOptimizingService OPTIMIZING_SERVICE = null;
+  private static ProcessService PROCESS_SERVICE = null;
 
   private static TableRuntimeFactoryManager tableRuntimeFactoryManager = null;
+  private static ProcessService.ActionCoordinatorManager actionCoordinatorManager = null;
+  private static ProcessService.ExecuteEngineManager executeEngineManager = null;
 
   @BeforeClass
   public static void initTableService() {
@@ -46,6 +52,16 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
     tableRuntimeFactoryManager = Mockito.mock(TableRuntimeFactoryManager.class);
     Mockito.when(tableRuntimeFactoryManager.installedPlugins())
         .thenReturn(Lists.newArrayList(runtimeFactory));
+
+    MockActionCoordinator mockActionCoordinator = new MockActionCoordinator();
+    actionCoordinatorManager = Mockito.mock(ProcessService.ActionCoordinatorManager.class);
+    Mockito.when(actionCoordinatorManager.installedPlugins())
+        .thenReturn(Lists.newArrayList(mockActionCoordinator));
+
+    MockExecuteEngine mockExecuteEngine = new MockExecuteEngine();
+    executeEngineManager = Mockito.mock(ProcessService.ExecuteEngineManager.class);
+    Mockito.when(executeEngineManager.installedPlugins())
+        .thenReturn(Lists.newArrayList(mockExecuteEngine));
     try {
       Configurations configurations = new Configurations();
       configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, Duration.ofMillis(800L));
@@ -57,7 +73,12 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
       OPTIMIZING_SERVICE =
           new DefaultOptimizingService(
               configurations, CATALOG_MANAGER, OPTIMIZER_MANAGER, TABLE_SERVICE);
+      PROCESS_SERVICE =
+          new ProcessService(
+              configurations, TABLE_SERVICE, actionCoordinatorManager, executeEngineManager);
+
       TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
+      TABLE_SERVICE.addHandlerChain(PROCESS_SERVICE.getTableHandlerChain());
       TABLE_SERVICE.initialize();
       try {
         ResourceGroup group = defaultResourceGroup();
@@ -88,6 +109,10 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
 
   protected DefaultOptimizingService optimizingService() {
     return OPTIMIZING_SERVICE;
+  }
+
+  protected ProcessService processServiceService() {
+    return PROCESS_SERVICE;
   }
 
   protected static ResourceGroup defaultResourceGroup() {
