@@ -1,0 +1,112 @@
+name: Deploy Documentation Site
+
+on:
+  push:
+    branches:
+      - master
+      - '[0-9]+.[0-9]+.[0-9]+'
+    paths:
+      - 'site/**'
+      - 'docs/**'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-incubating'
+
+jobs:
+  deploy-site-page:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Build
+        run: cd site/amoro-site && hugo -b https://amoro.apache.org/ -d ../../output
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
+          publish_branch: asf-site
+          destination_dir: ./output
+          keep_files: true
+
+  deploy-latest-docs-page:
+    needs: deploy-site-page
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Create content directory
+        run: |
+          mkdir -p site/amoro-docs/content
+          cp -r docs/* site/amoro-docs/content/
+
+      - name: Build
+        run: cd site/amoro-docs && hugo -b https://amoro.apache.org/docs/latest -d ../../output/docs/latest
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output/docs/latest
+          publish_branch: asf-site
+          destination_dir: ./output/docs/latest
+          keep_files: true
+
+  deploy-versioned-docs-page:
+    if: (github.ref != 'refs/heads/master' && (startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/')))
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set output
+        id: vars
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            # For tags, remove the 'v' prefix if present
+            VERSION=${GITHUB_REF#refs/tags/}
+            VERSION=${VERSION#v}
+            # Remove -incubating suffix if present
+            VERSION=${VERSION%-incubating}
+            echo "branch_name=${VERSION}" >> $GITHUB_OUTPUT
+          else
+            # For branches, use the branch name
+            echo "branch_name=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Create content directory
+        run: |
+          mkdir -p site/amoro-docs/content
+          cp -r docs/* site/amoro-docs/content/
+
+      - name: Build
+        run: cd site/amoro-docs && hugo -b https://amoro.apache.org/docs/${{ steps.vars.outputs.branch_name }}/ -d ../../output/docs/${{ steps.vars.outputs.branch_name }}
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output/docs/${{ steps.vars.outputs.branch_name }}
+          publish_branch: asf-site
+          destination_dir: ./output/docs/${{ steps.vars.outputs.branch_name }}
