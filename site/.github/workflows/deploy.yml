@@ -1,0 +1,81 @@
+name: Deploy pages
+
+on: [push]
+
+jobs:
+  deploy-site-page:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Build
+        run: cd amoro-site && hugo -b https://amoro.apache.org/ -d ../output
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
+          publish_branch: asf-site
+          destination_dir: ./output
+          keep_files: true
+
+  deploy-latest-docs-page:
+    needs: deploy-site-page
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Build
+        run: cd amoro-docs && hugo -b https://amoro.apache.org/docs/latest -d ../output/docs/latest
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output/docs/latest
+          publish_branch: asf-site
+          destination_dir: ./output/docs/latest
+          keep_files: true
+
+  deploy-versioned-docs-page:
+    if: github.ref != 'refs/heads/master'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=branch_name::${GITHUB_REF#refs/*/}
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Build
+        run: cd amoro-docs && hugo -b https://amoro.apache.org/docs/${{ steps.vars.outputs.branch_name }}/ -d ../output/docs/${{ steps.vars.outputs.branch_name }}
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output/docs/${{ steps.vars.outputs.branch_name }}
+          publish_branch: asf-site
+          destination_dir: ./output/docs/${{ steps.vars.outputs.branch_name }}
