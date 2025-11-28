@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server;
 
+import static org.apache.amoro.server.AmoroManagementConf.USE_MASTER_SLAVE_MODE;
+
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
@@ -33,6 +35,7 @@ import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.server.dashboard.JavalinJsonMapper;
+import org.apache.amoro.server.dashboard.RequestForwardedException;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
@@ -96,6 +99,7 @@ public class AmoroServiceContainer {
   public static final Logger LOG = LoggerFactory.getLogger(AmoroServiceContainer.class);
 
   public static final String SERVER_CONFIG_FILENAME = "config.yaml";
+  private static boolean IS_MASTER_SLAVE_MODE = false;
 
   private final HighAvailabilityContainer haContainer;
   private DataSource dataSource;
@@ -110,6 +114,7 @@ public class AmoroServiceContainer {
   private TServer optimizingServiceServer;
   private Javalin httpServer;
   private AmsServiceMetrics amsServiceMetrics;
+  private AmsAssignService amsAssignService;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
@@ -128,21 +133,32 @@ public class AmoroServiceContainer {
                     LOG.info("AMS service has been shut down");
                   }));
       service.startRestServices();
-      while (true) {
-        try {
-          service.waitLeaderShip();
-          service.startOptimizingService();
-          service.waitFollowerShip();
-        } catch (Exception e) {
-          LOG.error("AMS start error", e);
-        } finally {
-          service.disposeOptimizingService();
+      if (IS_MASTER_SLAVE_MODE) {
+        // Even if one does not become the master, it cannot block the subsequent logic.
+        service.registAndElect();
+        // Regardless of whether tp becomes the master, the service needs to be activated.
+        service.startOptimizingService();
+      } else {
+        while (true) {
+          try {
+            service.waitLeaderShip();
+            service.startOptimizingService();
+            service.waitFollowerShip();
+          } catch (Exception e) {
+            LOG.error("AMS start error", e);
+          } finally {
+            service.disposeOptimizingService();
+          }
         }
       }
     } catch (Throwable t) {
       LOG.error("AMS encountered an unknown exception, will exist", t);
       System.exit(1);
     }
+  }
+
+  public void registAndElect() throws Exception {
+    haContainer.registAndElect();
   }
 
   public void waitLeaderShip() throws Exception {
@@ -171,11 +187,29 @@ public class AmoroServiceContainer {
     TableRuntimeFactoryManager tableRuntimeFactoryManager = new TableRuntimeFactoryManager();
     tableRuntimeFactoryManager.initialize();
 
+    // In master-slave mode, create BucketAssignStore and AmsAssignService
+    BucketAssignStore bucketAssignStore = null;
+    if (IS_MASTER_SLAVE_MODE && haContainer != null && haContainer.getZkClient() != null) {
+      String clusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
+      bucketAssignStore = new ZkBucketAssignStore(haContainer.getZkClient(), clusterName);
+      // Create and start AmsAssignService for bucket assignment
+      amsAssignService =
+          new AmsAssignService(haContainer, serviceConfig, haContainer.getZkClient());
+      amsAssignService.start();
+      LOG.info("AmsAssignService started for master-slave mode");
+    }
+
     tableService =
-        new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
+        new DefaultTableService(
+            serviceConfig,
+            catalogManager,
+            tableRuntimeFactoryManager,
+            haContainer,
+            bucketAssignStore);
 
     optimizingService =
-        new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
+        new DefaultOptimizingService(
+            serviceConfig, catalogManager, optimizerManager, tableService, haContainer);
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
@@ -213,6 +247,11 @@ public class AmoroServiceContainer {
     if (optimizingServiceServer != null) {
       LOG.info("Stopping optimizing server[serving:{}] ...", optimizingServiceServer.isServing());
       optimizingServiceServer.stop();
+    }
+    if (amsAssignService != null) {
+      LOG.info("Stopping AmsAssignService...");
+      amsAssignService.stop();
+      amsAssignService = null;
     }
     if (tableService != null) {
       LOG.info("Stopping table service...");
@@ -256,6 +295,7 @@ public class AmoroServiceContainer {
   private void initConfig() throws Exception {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
+    IS_MASTER_SLAVE_MODE = serviceConfig.getBoolean(USE_MASTER_SLAVE_MODE);
   }
 
   private void startThriftService() {
@@ -271,10 +311,58 @@ public class AmoroServiceContainer {
   }
 
   private void initHttpService() {
+    // Create request forwarder for master-slave mode
+    org.apache.amoro.server.dashboard.RequestForwarder requestForwarder = null;
+    if (haContainer != null && haContainer.isMasterSlaveMode()) {
+      // Get configuration values for request forwarder
+      int timeoutMs =
+          (int) serviceConfig.get(AmoroManagementConf.REQUEST_FORWARDER_TIMEOUT).toMillis();
+      int maxRetries = serviceConfig.getInteger(AmoroManagementConf.REQUEST_FORWARDER_MAX_RETRIES);
+      int retryBackoffMs =
+          (int) serviceConfig.get(AmoroManagementConf.REQUEST_FORWARDER_RETRY_BACKOFF).toMillis();
+      int circuitBreakerThreshold =
+          serviceConfig.getInteger(AmoroManagementConf.REQUEST_FORWARDER_CIRCUIT_BREAKER_THRESHOLD);
+      long circuitBreakerTimeoutMs =
+          serviceConfig
+              .get(AmoroManagementConf.REQUEST_FORWARDER_CIRCUIT_BREAKER_TIMEOUT)
+              .toMillis();
+      int maxConnections =
+          serviceConfig.getInteger(AmoroManagementConf.REQUEST_FORWARDER_MAX_CONNECTIONS);
+      int maxConnectionsPerRoute =
+          serviceConfig.getInteger(AmoroManagementConf.REQUEST_FORWARDER_MAX_CONNECTIONS_PER_ROUTE);
+
+      requestForwarder =
+          new org.apache.amoro.server.dashboard.RequestForwarder(
+              haContainer,
+              timeoutMs,
+              maxRetries,
+              retryBackoffMs,
+              circuitBreakerThreshold,
+              circuitBreakerTimeoutMs);
+
+      LOG.info(
+          "Request forwarder initialized with configuration: timeout={}ms, maxRetries={}, "
+              + "retryBackoff={}ms, circuitBreakerThreshold={}, circuitBreakerTimeout={}ms, "
+              + "maxConnections={}, maxConnectionsPerRoute={}",
+          timeoutMs,
+          maxRetries,
+          retryBackoffMs,
+          circuitBreakerThreshold,
+          circuitBreakerTimeoutMs,
+          maxConnections,
+          maxConnectionsPerRoute);
+    }
+
     DashboardServer dashboardServer =
         new DashboardServer(
-            serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager);
-    RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
+            serviceConfig,
+            catalogManager,
+            tableManager,
+            optimizerManager,
+            terminalManager,
+            requestForwarder);
+    RestCatalogService restCatalogService =
+        new RestCatalogService(catalogManager, tableManager, requestForwarder);
 
     httpServer =
         Javalin.create(
@@ -304,6 +392,79 @@ public class AmoroServiceContainer {
             dashboardServer.preHandleRequest(ctx);
           }
         });
+
+    // Handle RequestForwardedException - request was successfully forwarded to leader
+    // This must be registered before the generic Exception handler
+    httpServer.exception(
+        RequestForwardedException.class,
+        (e, ctx) -> {
+          // Request was forwarded, response data is stored in the exception
+          // Re-apply response data to ensure it's not lost during exception handling
+          if (e.hasResponseData()) {
+            // Set status code
+            ctx.status(e.getStatusCode());
+
+            // Set response body
+            byte[] responseBody = e.getResponseBody();
+            if (responseBody != null) {
+              // For 204/304, don't set body
+              if (e.getStatusCode() != 204 && e.getStatusCode() != 304) {
+                ctx.result(responseBody);
+              }
+            } else if (e.getStatusCode() != 204
+                && e.getStatusCode() != 304
+                && ctx.path().startsWith("/api/")) {
+              // Fallback: set empty JSON if body is null for API endpoints
+              ctx.result("{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+
+            // Set content type
+            String contentType = e.getContentType();
+            if (contentType != null && !contentType.isEmpty()) {
+              ctx.contentType(contentType);
+            } else if (e.getStatusCode() != 204
+                && e.getStatusCode() != 304
+                && ctx.path().startsWith("/api/")) {
+              ctx.contentType("application/json");
+            }
+
+            // Set response headers
+            if (e.getResponseHeaders() != null) {
+              for (java.util.Map.Entry<String, String> entry : e.getResponseHeaders().entrySet()) {
+                ctx.header(entry.getKey(), entry.getValue());
+              }
+            }
+
+            LOG.debug(
+                "RequestForwardedException handled: restored response status {}, body-size: {}, content-type: {} for path: {}",
+                e.getStatusCode(),
+                responseBody != null ? responseBody.length : 0,
+                contentType,
+                ctx.path());
+          } else {
+            // Response data not available in exception, check if it was set in context
+            int currentStatus = ctx.status();
+            if (currentStatus > 0) {
+              LOG.debug(
+                  "RequestForwardedException caught: response already set in context, status: {} for path: {}",
+                  currentStatus,
+                  ctx.path());
+            } else {
+              LOG.error(
+                  "RequestForwardedException caught but no response data available! Path: {}",
+                  ctx.path());
+              // Set a proper error response
+              ctx.status(io.javalin.http.HttpCode.INTERNAL_SERVER_ERROR);
+              ctx.contentType("application/json");
+              ctx.json(
+                  new org.apache.amoro.server.dashboard.response.ErrorResponse(
+                      io.javalin.http.HttpCode.INTERNAL_SERVER_ERROR,
+                      "Request forwarding completed but response was not properly set",
+                      ""));
+            }
+          }
+        });
+
     httpServer.exception(
         Exception.class,
         (e, ctx) -> {
@@ -534,6 +695,12 @@ public class AmoroServiceContainer {
           containerProperties.putIfAbsent(
               OptimizerProperties.AMS_OPTIMIZER_URI,
               AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
+          // Add master-slave mode flag to container properties
+          // Read from serviceConfig directly since IS_MASTER_SLAVE_MODE is set after
+          // initContainerConfig()
+          if (serviceConfig.getBoolean(USE_MASTER_SLAVE_MODE)) {
+            containerProperties.put(OptimizerProperties.OPTIMIZER_MASTER_SLAVE_MODE, "true");
+          }
           // put addition system properties
           container.setProperties(containerProperties);
           containerList.add(container);
