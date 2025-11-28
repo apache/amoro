@@ -19,7 +19,7 @@
 
 # Apache Amoro Documentation Site
 
-This directory contains the documentation site for [Apache Amoro](https://github.com/apache/amoro).
+This directory contains the documentation site infrastructure for Apache Amoro.
 It's built with [Hugo](https://gohugo.io/) and hosted at https://amoro.apache.org.
 
 # Structure
@@ -50,26 +50,26 @@ The Amoro documentation site consists of both versioned and non-versioned conten
     └── README.md
 ```
 
-## Relationship to the Apache Amoro Repository
+## Organization of Documentation Content
 
 The documentation is organized into versioned and non-versioned content:
 
-- **Versioned Content** (`/docs`): All markdown pages specific to an Amoro version are maintained in the main repository. These include user guides, admin guides, concepts, and other technical documentation.
+- **Versioned Content** (`/docs`): All markdown pages specific to an Amoro version are maintained in the main repository's `/docs` directory. These include user guides, admin guides, concepts, and other technical documentation.
 
-- **Non-versioned Content** (`/site`): The website infrastructure and common pages shared across all versions are maintained in the site directory, which includes:
+- **Non-versioned Content** (`/site`): The website infrastructure and common pages shared across all versions are maintained in the `/site` directory, which includes:
   - `amoro-site`: Contains the landing page and common content
-  - `amoro-docs`: Contains the documentation site that renders versioned content
+  - `amoro-docs`: Contains the documentation site that renders versioned content (via symlink to `/docs`)
   - `amoro-theme`: Contains the Hugo theme used by both sites
 
 During each new release, the release manager will:
-1. Create a branch in this repo from master named for the release version
+1. Create a branch from master named for the release version
 2. Update the latest branch HEAD to point to the release branch HEAD
 
 # How to Contribute
 
 ## Submitting Pull Requests
 
-- **Version-specific content**: Changes to the markdown contents for version-specific pages should be submitted to the `/docs` directory in the main repository.
+- **Version-specific content**: Changes to the markdown contents for version-specific pages should be submitted to the `/docs` directory.
 
 - **Non-versioned content**: Changes to common pages, website appearance (HTML, CSS), etc. should be submitted to the `/site` directory.
 
@@ -84,9 +84,7 @@ All issues related to the doc website should be submitted to the [Amoro reposito
 To run the website locally:
 
 ```shell
-# Clone the repository if you haven't already
-git clone git@github.com:apache/amoro.git
-cd amoro
+# From the root of the repository
 ```
 
 To start the site page locally, run:
