@@ -138,6 +138,8 @@ public class AmsEnvironment {
       return;
     }
 
+    MoreFiles.deleteRecursively(
+        Paths.get(rootPath + "/derby"), RecursiveDeleteOption.ALLOW_INSECURE);
     testHMS.start();
     startAms();
     DynFields.UnboundField<DefaultCatalogManager> amsCatalogManagerField =
