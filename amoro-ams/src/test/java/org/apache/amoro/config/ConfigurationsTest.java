@@ -20,8 +20,8 @@ package org.apache.amoro.config;
 
 import org.apache.amoro.config.shade.utils.ConfigShadeUtils;
 import org.apache.amoro.server.AmoroManagementConf;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -251,7 +251,7 @@ public class ConfigurationsTest {
     } else {
       // Verify mode: compare with existing golden file
       if (!Files.exists(goldenFile)) {
-        Assert.fail(
+        Assertions.fail(
             String.format("%s does not exist. Generate it with:\n%s", goldenFile, UPDATE_CMD));
       }
 
@@ -261,10 +261,11 @@ public class ConfigurationsTest {
               "\n%s is out of date, please update the golden file with:\n\n%s\n",
               goldenFile, UPDATE_CMD);
 
-      Assert.assertEquals(hint + "Number of lines mismatch", expected.size(), output.size());
+      Assertions.assertEquals(expected.size(), output.size(), hint + "Number of lines mismatch");
 
       for (int i = 0; i < expected.size(); i++) {
-        Assert.assertEquals(hint + "Line " + (i + 1) + " mismatch", expected.get(i), output.get(i));
+        Assertions.assertEquals(
+            expected.get(i), output.get(i), hint + "Line " + (i + 1) + " mismatch");
       }
     }
   }
