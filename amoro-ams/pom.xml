@@ -324,7 +324,6 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>${hadoop-client-runtime.artifact}</artifactId>
-            <scope>runtime</scope>
         </dependency>
 
         <dependency>
