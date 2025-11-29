@@ -1,3 +1,4 @@
+<!-- This file is auto-generated. To update, run: UPDATE=1 ./mvnw test -pl amoro-ams -am -Dtest=ConfigurationsTest -->
 ---
 title: AMS Configuration
 url: ams-config

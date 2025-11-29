@@ -39,7 +39,7 @@ import java.util.Optional;
 /**
  * End-to-end test cases for configuration documentation.
  *
- * <p>The golden result file is "docs/admin-guides/ams-config.md".
+ * <p>The golden result file is "docs/configuration/".
  *
  * <p>To run the test suite:
  *
@@ -55,6 +55,8 @@ import java.util.Optional;
  */
 public class ConfigurationsTest {
   public static String CONFIGURATION_DOCS_PATH = "docs/configuration";
+  public static String UPDATE_CMD =
+      "UPDATE=1 ./mvnw test -pl amoro-ams -am -Dtest=ConfigurationsTest";
 
   @Test
   public void testAmoroManagementConfDocumentation() throws Exception {
@@ -87,6 +89,7 @@ public class ConfigurationsTest {
     Path markdownFile = getMarkdownFilePath(CONFIGURATION_DOCS_PATH + "/" + markdown);
     List<String> output = new ArrayList<>();
 
+    output.add("<!-- This file is auto-generated. To update, run: " + UPDATE_CMD + " -->");
     appendFrontHeader(output, title, markdown, weight);
     appendLicenseHeader(output);
     output.add("");
@@ -246,18 +249,17 @@ public class ConfigurationsTest {
           StandardOpenOption.TRUNCATE_EXISTING);
       System.out.println("Updated golden file: " + goldenFile);
     } else {
-      String updateCmd = "UPDATE=1 ./mvnw test -pl amoro-ams -am -Dtest=ConfigurationsTest";
       // Verify mode: compare with existing golden file
       if (!Files.exists(goldenFile)) {
         Assert.fail(
-            String.format("%s does not exist. Generate it with:\n%s", goldenFile, updateCmd));
+            String.format("%s does not exist. Generate it with:\n%s", goldenFile, UPDATE_CMD));
       }
 
       List<String> expected = Files.readAllLines(goldenFile, StandardCharsets.UTF_8);
       String hint =
           String.format(
               "\n%s is out of date, please update the golden file with:\n\n%s\n",
-              goldenFile, updateCmd);
+              goldenFile, UPDATE_CMD);
 
       Assert.assertEquals(hint + "Number of lines mismatch", expected.size(), output.size());
 
