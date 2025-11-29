@@ -118,6 +118,7 @@
         <junit5.version>5.9.1</junit5.version>
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <commons-codec.version>1.17.2</commons-codec.version>
+        <commons-compress.version>1.23.0</commons-compress.version>
         <commons-pool2.version>2.12.0</commons-pool2.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <commons-net.version>3.12.0</commons-net.version>
@@ -233,6 +234,12 @@
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>${commons-codec.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
             </dependency>
 
             <dependency>
@@ -470,6 +477,10 @@
                     <exclusion>
                         <groupId>org.jline</groupId>
                         <artifactId>jline</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.nimbusds</groupId>
+                        <artifactId>nimbus-jose-jwt</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
