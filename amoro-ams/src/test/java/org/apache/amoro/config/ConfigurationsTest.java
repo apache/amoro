@@ -89,9 +89,9 @@ public class ConfigurationsTest {
     Path markdownFile = getMarkdownFilePath(CONFIGURATION_DOCS_PATH + "/" + markdown);
     List<String> output = new ArrayList<>();
 
-    output.add("<!-- This file is auto-generated. To update, run: " + UPDATE_CMD + " -->");
     appendFrontHeader(output, title, markdown, weight);
     appendLicenseHeader(output);
+    output.add("<!-- This file is auto-generated. To update, run: " + UPDATE_CMD + " -->");
     output.add("");
     output.add("# " + title);
     output.add("");
@@ -151,7 +151,10 @@ public class ConfigurationsTest {
 
         ConfigOptionInfo info = new ConfigOptionInfo();
         info.key = configOption.key();
-        info.defaultValue = formatDefaultValue(configOption.defaultValue());
+        info.defaultValue =
+            Optional.ofNullable(configOption.defaultValue())
+                .map(ConfigHelpers::convertToString)
+                .orElse("<undefined>");
         info.description = configOption.description();
 
         options.add(info);
@@ -161,21 +164,6 @@ public class ConfigurationsTest {
     }
 
     return options;
-  }
-
-  private String formatDefaultValue(Object defaultVal) {
-    if (defaultVal instanceof List) {
-      return String.join(
-          ",", ((List<?>) defaultVal).stream().map(String::valueOf).toArray(String[]::new));
-    } else if (defaultVal instanceof java.util.Map) {
-      return ((java.util.Map<?, ?>) defaultVal)
-          .entrySet().stream()
-              .map(e -> e.getKey() + ":" + e.getValue())
-              .reduce((a, b) -> a + ";" + b)
-              .orElse("");
-    } else {
-      return Optional.ofNullable(defaultVal).map(Object::toString).orElse("<undefined>");
-    }
   }
 
   private String escape(String s) {
