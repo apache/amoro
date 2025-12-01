@@ -71,7 +71,10 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | ha.cluster-name | default | Amoro management service cluster name. |
 | ha.connection-timeout | 5 min | The Zookeeper connection timeout in milliseconds. |
 | ha.enabled | false | Whether to enable high availability mode. |
+| ha.heartbeat-interval | 10 s | HA heartbeat interval. |
+| ha.lease-ttl | 30 s | TTL of HA lease. |
 | ha.session-timeout | 30 s | The Zookeeper session timeout in milliseconds. |
+| ha.type | zk | High availability implementation type: zk or database. |
 | ha.zookeeper-address |  | The Zookeeper address used for high availability. |
 | ha.zookeeper-auth-keytab |  | The Zookeeper authentication keytab file path when auth type is KERBEROS. |
 | ha.zookeeper-auth-principal |  | The Zookeeper authentication principal when auth type is KERBEROS. |

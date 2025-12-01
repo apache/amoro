@@ -21,6 +21,7 @@ package org.apache.amoro.server;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.server.ha.ZkHighAvailabilityContainer;
 import org.apache.amoro.server.util.KerberizedTestHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
@@ -49,7 +50,7 @@ public class HighAvailabilityContainerTest extends KerberizedTestHelper {
             conf.set(AmoroManagementConf.HA_ZOOKEEPER_AUTH_PRINCIPAL, principal);
             conf.set(AmoroManagementConf.HA_ZOOKEEPER_AUTH_TYPE, "KERBEROS");
 
-            HighAvailabilityContainer.setupZookeeperAuth(conf);
+            ZkHighAvailabilityContainer.setupZookeeperAuth(conf);
             Configuration configuration = Configuration.getConfiguration();
             AppConfigurationEntry[] entries =
                 configuration.getAppConfigurationEntry("AmoroZooKeeperClient");
@@ -66,7 +67,7 @@ public class HighAvailabilityContainerTest extends KerberizedTestHelper {
             conf.set(AmoroManagementConf.HA_ZOOKEEPER_AUTH_KEYTAB, keytab.getName());
             IOException e =
                 assertThrows(
-                    IOException.class, () -> HighAvailabilityContainer.setupZookeeperAuth(conf));
+                    IOException.class, () -> ZkHighAvailabilityContainer.setupZookeeperAuth(conf));
             Assertions.assertTrue(e.getMessage().contains("does not exist"));
           } catch (IOException e) {
             throw new RuntimeException(e);

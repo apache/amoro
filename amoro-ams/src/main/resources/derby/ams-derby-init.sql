@@ -250,3 +250,18 @@ CREATE TABLE http_session (
     data_store    BLOB,
     PRIMARY KEY(session_id, context_path, virtual_host)
 );
+
+CREATE TABLE ha_lease (
+  cluster_name       VARCHAR(64)    NOT NULL,
+  service_name       VARCHAR(64)    NOT NULL,
+  node_id            VARCHAR(256),
+  node_ip            VARCHAR(64),
+  server_info_json   VARCHAR(32672),
+  lease_expire_ts    BIGINT,
+  version            INT            NOT NULL DEFAULT 0,
+  updated_at         BIGINT         NOT NULL,
+  PRIMARY KEY (cluster_name, service_name)
+);
+
+CREATE INDEX idx_ha_lease_expire ON ha_lease (lease_expire_ts);
+CREATE INDEX idx_ha_lease_node   ON ha_lease (node_id);
