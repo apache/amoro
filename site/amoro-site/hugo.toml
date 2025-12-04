@@ -1,0 +1,91 @@
+baseURL = ""
+languageCode = "en-us"
+title = "Apache Amoro™"
+theme = "amoro-theme"
+sectionPagesMenu = "main"
+
+[params]
+  siteType = "landing-page"
+  search = true
+  projectName = "Apache Amoro™"
+  description = "Management system for Lakehouse"
+  docsBaseURL = ""
+  githuburl = "https://github.com/apache/amoro"
+
+[[params.social]]
+  title = "Github"
+  icon = "github-fill"
+  url = "https://github.com/apache/amoro"
+[[params.social]]
+  title = "Issue Tracking"
+  icon = "slack-square-fill"
+  url = "https://github.com/apache/amoro/issues"
+[[params.social]]
+  title = "Wechat"
+  icon = "wechat-fill"
+  url = "javascript:void();"
+
+[[params.features]]
+  title = "Self-optimizing"
+  desc = "Continuously optimizing tables, including compacting small files, change files, regularly delete expired files to keep high query performance and reducing storage costs."
+  icon = "Self-managed"
+[[params.features]]
+  title = "Multiple Formats"
+  desc = "Support different table formats such as Iceberg, Paimon, Mixed-Iceberg and Mixed-Hive to meet different scenario requirements and provide them with unified management capabilities."
+  icon = "Multiple-Formats"
+[[params.features]]
+  title = "Catalog Service"
+  desc = "Provide an unified catalog service for all computing engines, which can also used with existing metadata store service such as Hive Metastore and AWS Glue."
+  icon = "Catalog-Service"
+[[params.features]]
+  title = "Rich Plugins"
+  desc = "Provide various plugins to integrate with other systems, like continuously optimizing with Flink and data analysis with Spark and Kyuubi."
+  icon = "Rich-Plugins"
+[[params.features]]
+  title = "Management Tools"
+  desc = "Provide a variety of management tools, including WEB UI and standard SQL command line, to help you get started faster and integrate with other systems more easily."
+  icon = "Management-tools"
+[[params.features]]
+  title = "Infrastructure Independent"
+  desc = "Can be easily deployed and used in private environments, cloud environments, hybrid cloud environments, and multi-cloud environments."
+  icon = "Infrastructure-Idependent"
+
+[outputFormats.SearchIndex]
+baseName = "landingpagesearch"
+mediaType = "application/json"
+
+[outputs]
+home = [ "HTML", "RSS", "SearchIndex" ]
+
+[menu]
+
+  topnav = [
+    { name = "Quickstart", url = "/quick-start/", weight = 100 },
+    { name = "Docs", weight = 200 },
+    { name = "latest", parent = "Docs", url = "/docs/latest/", weight = 201 },
+    { name = "0.8.1-incubating", parent = "Docs", url = "/docs/0.8.1/", weight = 202 },
+    { name = "0.8.0-incubating", parent = "Docs", url = "/docs/0.8.0/", weight = 203 },
+    { name = "0.7.1-incubating", parent = "Docs", url = "/docs/0.7.1/", weight = 204 },
+    { name = "0.7.0-incubating", parent = "Docs", url = "/docs/0.7.0/", weight = 205 },
+    { name = "0.6.1", parent = "Docs", url = "/docs/0.6.1/", weight = 206 },
+    { name = "Benchmark", weight = 300 },
+    { name = "Benchmark Report", parent = "Benchmark", url = "/benchmark-report/", weight = 301 },
+    { name = "Benchmark Guide", parent = "Benchmark", url = "/benchmark-guide/", weight = 302 },
+    { name = "Download", url = "/download/", weight = 400 },
+    { name = "Blogs", url = "/blogs/", weight = 500 },
+    { name = "Community", weight = 600 },
+    { name = "Join Community", parent = "Community", url = "/join-community/", weight = 601 },
+    { name = "How to contribute", parent = "Community", url = "/how-to-contribute/", weight = 602 },
+    { name = "Release guide", parent = "Community", url = "/release-guide/", weight = 603 },
+    { name = "Validate release", parent = "Community", url = "/validate-release/", weight = 604 },
+    { name = "ASF", weight = 700 },
+    { name = "Foundation", identifier = "_foundation", parent = "ASF", url = "https://www.apache.org/", weight = 701 },
+    { name = "License", identifier = "_license", parent = "ASF", url = "https://www.apache.org/licenses/", weight = 702 },
+    { name = "Donate", identifier = "_donate", parent = "ASF", url = "https://www.apache.org/foundation/sponsorship.html", weight = 703 },
+    { name = "Sponsors", identifier = "_sponsors", parent = "ASF", url = "https://www.apache.org/foundation/thanks.html", weight = 704 },
+    { name = "Security", identifier = "_security", parent = "ASF", url = "https://www.apache.org/security/", weight = 705 },
+    { name = "Privacy", identifier = "_privacy", parent = "ASF", url = "https://privacy.apache.org/policies/privacy-policy-public.html", weight = 706 }
+  ]
+
+[markup.goldmark.renderer]
+unsafe= true

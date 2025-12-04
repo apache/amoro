@@ -42,6 +42,8 @@ import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
+import org.apache.amoro.server.table.cleanup.CleanupOperation;
+import org.apache.amoro.server.table.cleanup.TableRuntimeCleanupState;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -81,11 +83,17 @@ public class DefaultTableRuntime extends AbstractTableRuntime
           .jsonType(AbstractOptimizingEvaluator.PendingInput.class)
           .defaultValue(new AbstractOptimizingEvaluator.PendingInput());
 
+  private static final StateKey<TableRuntimeCleanupState> CLEANUP_STATE_KEY =
+      StateKey.stateKey("cleanup_state")
+          .jsonType(TableRuntimeCleanupState.class)
+          .defaultValue(new TableRuntimeCleanupState());
+
   private static final StateKey<Long> PROCESS_ID_KEY =
       StateKey.stateKey("process_id").longType().defaultValue(0L);
 
   public static final List<StateKey<?>> REQUIRED_STATES =
-      Lists.newArrayList(OPTIMIZING_STATE_KEY, PENDING_INPUT_KEY, PROCESS_ID_KEY);
+      Lists.newArrayList(
+          OPTIMIZING_STATE_KEY, PENDING_INPUT_KEY, PROCESS_ID_KEY, CLEANUP_STATE_KEY);
 
   private final Map<Action, TableProcessContainer> processContainerMap = Maps.newConcurrentMap();
   private final TableOptimizingMetrics optimizingMetrics;
@@ -350,6 +358,47 @@ public class DefaultTableRuntime extends AbstractTableRuntime
             code ->
                 OptimizingStatus.ofOptimizingType(optimizingProcess.getOptimizingType()).getCode())
         .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
+        .commit();
+  }
+
+  public long getLastCleanTime(CleanupOperation operation) {
+    TableRuntimeCleanupState state = store().getState(CLEANUP_STATE_KEY);
+    switch (operation) {
+      case ORPHAN_FILES_CLEANING:
+        return state.getLastOrphanFilesCleanTime();
+      case DANGLING_DELETE_FILES_CLEANING:
+        return state.getLastDanglingDeleteFilesCleanTime();
+      case DATA_EXPIRING:
+        return state.getLastDataExpiringTime();
+      case SNAPSHOTS_EXPIRING:
+        return state.getLastSnapshotsExpiringTime();
+      default:
+        return 0L;
+    }
+  }
+
+  public void updateLastCleanTime(CleanupOperation operation, long time) {
+    store()
+        .begin()
+        .updateState(
+            CLEANUP_STATE_KEY,
+            state -> {
+              switch (operation) {
+                case ORPHAN_FILES_CLEANING:
+                  state.setLastOrphanFilesCleanTime(time);
+                  break;
+                case DANGLING_DELETE_FILES_CLEANING:
+                  state.setLastDanglingDeleteFilesCleanTime(time);
+                  break;
+                case DATA_EXPIRING:
+                  state.setLastDataExpiringTime(time);
+                  break;
+                case SNAPSHOTS_EXPIRING:
+                  state.setLastSnapshotsExpiringTime(time);
+                  break;
+              }
+              return state;
+            })
         .commit();
   }
 

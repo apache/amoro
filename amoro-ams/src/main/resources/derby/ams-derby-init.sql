@@ -215,7 +215,7 @@ CREATE TABLE api_tokens (
 CREATE TABLE platform_file (
     id                 INT GENERATED ALWAYS AS IDENTITY,
     file_name          VARCHAR(100) NOT NULL,
-    file_content_b64   LONG VARCHAR NOT NULL,
+    file_content_b64   CLOB NOT NULL,
     file_path          VARCHAR(100),
     add_time           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT platform_file_pk PRIMARY KEY (id)
