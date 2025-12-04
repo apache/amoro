@@ -92,6 +92,10 @@ spark distribution package will be installed to here*/ -}}
 - name: spark-install
   mountPath: /opt/spark
 {{- end -}}
+{{- /* additional volume mounts from values */ -}}
+{{- with .Values.volumeMounts }}
+{{- tpl (toYaml .) $ | nindent 0 }}
+{{- end -}}
 {{- end -}}
 {{- /* define amoro.pod.container.mounts end */ -}}
 
@@ -112,6 +116,10 @@ spark distribution package will be installed to here*/ -}}
 {{- if .Values.optimizer.spark.enabled }}
 - name: spark-install
   emptyDir: {}
+{{- end -}}
+{{- /* additional volumes from values */ -}}
+{{- with .Values.volumes }}
+{{- tpl (toYaml .) $ | nindent 0 }}
 {{- end -}}
 {{- end -}}
 {{- /* define "amoro.pod.volumes" end */ -}}

@@ -1,0 +1,63 @@
+baseURL = ""
+canonifyURLs = "true"
+relativeURLs = "true"
+languageCode = "en-us"
+title = "Amoro"
+theme= "amoro-theme"
+
+[params]
+  siteType = "docs"
+  search = true
+  versions.iceberg = "" # This is populated by the github deploy workflow and is equal to the branch name
+  versions.nessie = "0.59.0"
+  latestVersions.iceberg = "0.5.0"  # This is used for the version badge on the "latest" site version
+  BookSection='docs' # This determines which directory will inform the left navigation menu
+  disableHome=true
+
+[outputFormats.SearchIndex]
+baseName = "search"
+mediaType = "application/json"
+
+[outputs]
+home = [ "HTML", "RSS", "SearchIndex" ]
+
+[menu]
+
+  topnav = [
+    { name = "Quickstart", pre = "relative", url = "../../quick-start/", weight = 100 },
+    { name = "Docs", weight = 200 },
+    { name = "latest", parent = "Docs", pre = "relative", url = "../../docs/latest/", weight = 201 },
+    { name = "0.8.1-incubating", parent = "Docs", pre = "relative", url = "../../docs/0.8.1/", weight = 202 },
+    { name = "0.8.0-incubating", parent = "Docs", pre = "relative", url = "../../docs/0.8.0/", weight = 203 },
+    { name = "0.7.1-incubating", parent = "Docs", pre = "relative", url = "../../docs/0.7.1/", weight = 204 },
+    { name = "0.7.0-incubating", parent = "Docs", pre = "relative", url = "../../docs/0.7.0/", weight = 205 },
+    { name = "0.6.1", parent = "Docs", pre = "relative", url = "../../docs/0.6.1/", weight = 206 },
+    { name = "Benchmark", weight = 300 },
+    { name = "Benchmark Report", parent = "Benchmark", pre = "relative", url = "../../benchmark-report/", weight = 301 },
+    { name = "Benchmark Guide", parent = "Benchmark", pre = "relative", url = "../../benchmark-guide/", weight = 302 },
+    { name = "Download", pre = "relative", url = "../../download/", weight = 400 },
+    { name = "blogs", pre = "relative", url = "../../blogs/", weight = 500 },
+    { name = "Community", weight = 600 },
+    { name = "Join Community", parent = "Community", pre = "relative", url = "../../join-community/", weight = 601 },
+    { name = "How to contribute", parent = "Community", pre = "relative", url = "../../how-to-contribute/", weight = 602 },
+    { name = "ASF", weight = 700 },
+    { name = "Foundation", identifier = "_foundation", parent = "ASF", url = "https://www.apache.org/", weight = 701 },
+    { name = "License", identifier = "_license", parent = "ASF", url = "https://www.apache.org/licenses/", weight = 702 },
+    { name = "Donate", identifier = "_donate", parent = "ASF", url = "https://www.apache.org/foundation/sponsorship.html", weight = 703 },
+    { name = "Sponsors", identifier = "_sponsors", parent = "ASF", url = "https://www.apache.org/foundation/thanks.html", weight = 704 },
+    { name = "Security", identifier = "_security", parent = "ASF", url = "https://www.apache.org/security/", weight = 705 },
+    { name = "Privacy", identifier = "_privacy", parent = "ASF", url = "https://privacy.apache.org/policies/privacy-policy-public.html", weight = 706 }
+  ]
+
+  main = [ # Main menu, docs site left nav
+    { name = "Introduction", url = "/", weight = 1},
+    { name = "Concepts", weight = 100 },
+    { name = "Admin Guides", weight = 200},
+    { name = "User Guides", weight = 300},
+    { name = "Formats", weight = 400 },
+    { name = "Flink", weight = 500},
+    { name = "Spark", weight = 600},
+  ]
+
+[markup.goldmark.renderer]
+unsafe= true
