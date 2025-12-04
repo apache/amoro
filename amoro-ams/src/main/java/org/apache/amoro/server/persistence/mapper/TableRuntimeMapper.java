@@ -107,6 +107,7 @@ public interface TableRuntimeMapper {
           + "<bind name=\"isMySQL\" value=\"_databaseId == 'mysql'\" />"
           + "<bind name=\"isPostgreSQL\" value=\"_databaseId == 'postgres'\" />"
           + "<bind name=\"isDerby\" value=\"_databaseId == 'derby'\" />"
+          + "<bind name=\"isDerby\" value=\"_databaseId == 'dameng'\" />"
           + "SELECT r.table_id, group_name, status_code, status_code_update_time, table_config, table_summary, bucket_id FROM "
           + TABLE_NAME
           + " r JOIN table_identifier i "

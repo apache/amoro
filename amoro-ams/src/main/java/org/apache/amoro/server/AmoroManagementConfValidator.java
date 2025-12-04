@@ -35,15 +35,17 @@ public class AmoroManagementConfValidator {
         AmsUtil.lookForBindHost(configurations.getString(AmoroManagementConf.SERVER_EXPOSE_HOST));
     configurations.setString(AmoroManagementConf.SERVER_EXPOSE_HOST, inetAddress.getHostAddress());
 
-    // mysql or postgres config
+    // mysql or postgres or dameng config
     if (AmoroManagementConf.DB_TYPE_MYSQL.equalsIgnoreCase(
             configurations.getString(AmoroManagementConf.DB_TYPE))
         || AmoroManagementConf.DB_TYPE_POSTGRES.equalsIgnoreCase(
+            configurations.getString(AmoroManagementConf.DB_TYPE))
+        || AmoroManagementConf.DB_TYPE_DAMENG.equalsIgnoreCase(
             configurations.getString(AmoroManagementConf.DB_TYPE))) {
       if ("".equals(configurations.getString(AmoroManagementConf.DB_PASSWORD))
           || "".equals(configurations.getString(AmoroManagementConf.DB_USER_NAME))) {
         throw new IllegalArgumentException(
-            "username and password must be configured if the database type is mysql or postgres");
+            "username and password must be configured if the database type is mysql or postgres or dameng ");
       }
     }
 

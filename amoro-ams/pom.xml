@@ -229,6 +229,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.dameng</groupId>
+            <artifactId>DmJdbcDriver18</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <scope>provided</scope>
@@ -564,6 +570,7 @@
                         <exclude>derby/**</exclude>
                         <exclude>mysql/**</exclude>
                         <exclude>postgres/**</exclude>
+                        <exclude>dameng/**</exclude>
                     </excludes>
                 </configuration>
             </plugin>
