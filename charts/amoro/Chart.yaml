@@ -19,7 +19,13 @@ apiVersion: v2
 name: amoro
 description: A Helm chart for Amoro
 type: application
+
+# Chart version (follows Semantic Versioning: https://semver.org/)
+# Increment when chart templates or configuration change
 version: 0.1.0
+
+# Application version (the version of Amoro being deployed)
+# Should match the actual Amoro release version
 appVersion: "0.9-SNAPSHOT"
 home: https://amoro.apache.org/
 icon: https://amoro.apache.org/img/amoro-logo-icon.png
