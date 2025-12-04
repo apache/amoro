@@ -18,12 +18,8 @@
 
 package org.apache.amoro.process;
 
-/**
- * ManagedProcess is the interface for AMS modules to manage process.
- *
- * @param <T>
- */
-public interface ManagedProcess<T extends ProcessState> extends AmoroProcess<T> {
+/** ManagedProcess is the interface for AMS modules to manage process. */
+public interface ManagedProcess extends AmoroProcess {
 
   /** Submit this process to ResourceContainer. */
   void submit();
