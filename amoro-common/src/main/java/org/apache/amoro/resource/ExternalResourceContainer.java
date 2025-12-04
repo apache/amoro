@@ -19,7 +19,6 @@
 package org.apache.amoro.resource;
 
 import org.apache.amoro.process.AmoroProcess;
-import org.apache.amoro.process.TableProcessState;
 
 /**
  * ExternalResourceContainer is the key interface for the AMS framework to interact with the
@@ -34,7 +33,7 @@ public interface ExternalResourceContainer extends ResourceContainer {
    * @param process
    * @return the resource
    */
-  Resource submit(AmoroProcess<? extends TableProcessState> process);
+  Resource submit(AmoroProcess process);
 
   /**
    * Release a resource by resource id manually, usually means a killing operation
