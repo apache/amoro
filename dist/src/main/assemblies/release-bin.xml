@@ -90,6 +90,11 @@
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>
+            <directory>../amoro-ams/src/main/resources/dameng</directory>
+            <outputDirectory>conf/dameng</outputDirectory>
+            <fileMode>0644</fileMode>
+        </fileSet>
+        <fileSet>
             <directory>../amoro-ams/target/amoro-ams-dependency/lib</directory>
             <outputDirectory>lib/</outputDirectory>
             <fileMode>0644</fileMode>
