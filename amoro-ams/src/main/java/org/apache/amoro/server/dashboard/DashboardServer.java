@@ -25,12 +25,13 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
 import io.javalin.apibuilder.EndpointGroup;
-import io.javalin.core.security.BasicAuthCredentials;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.http.staticfiles.StaticFileConfig;
+import org.apache.amoro.authentication.PasswdAuthenticationProvider;
+import org.apache.amoro.authentication.TokenAuthenticationProvider;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.SignatureCheckException;
@@ -55,7 +56,6 @@ import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
-import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,6 +74,7 @@ public class DashboardServer {
   public static final Logger LOG = LoggerFactory.getLogger(DashboardServer.class);
 
   private static final String AUTH_TYPE_BASIC = "basic";
+  private static final String AUTH_TYPE_JWT = "jwt";
   private static final String X_REQUEST_SOURCE_HEADER = "X-Request-Source";
   private static final String X_REQUEST_SOURCE_WEB = "Web";
   private final CatalogController catalogController;
@@ -90,6 +91,8 @@ public class DashboardServer {
   private final ApiTokenController apiTokenController;
 
   private final PasswdAuthenticationProvider basicAuthProvider;
+  private final TokenAuthenticationProvider jwtAuthProvider;
+  private final String proxyClientIpHeader;
 
   public DashboardServer(
       Configurations serviceConfig,
@@ -123,6 +126,13 @@ public class DashboardServer {
                 serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_BASIC_PROVIDER),
                 serviceConfig)
             : null;
+    this.jwtAuthProvider =
+        AUTH_TYPE_JWT.equalsIgnoreCase(authType)
+            ? HttpAuthenticationFactory.getBearerAuthenticationProvider(
+                serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_JWT_PROVIDER), serviceConfig)
+            : null;
+    this.proxyClientIpHeader =
+        serviceConfig.get(AmoroManagementConf.HTTP_SERVER_PROXY_CLIENT_IP_HEADER);
   }
 
   private volatile String indexHtml = null;
@@ -402,10 +412,17 @@ public class DashboardServer {
       }
       return;
     }
-    if (null != basicAuthProvider) {
-      BasicAuthCredentials cred = ctx.basicAuthCredentials();
-      Principal authPrincipal =
-          basicAuthProvider.authenticate(cred.component1(), cred.component2());
+    if (null != basicAuthProvider || null != jwtAuthProvider) {
+      Principal authPrincipal;
+      if (null != basicAuthProvider) {
+        authPrincipal =
+            basicAuthProvider.authenticate(
+                HttpAuthenticationFactory.getPasswordCredential(ctx, proxyClientIpHeader));
+      } else {
+        authPrincipal =
+            jwtAuthProvider.authenticate(
+                HttpAuthenticationFactory.getBearerTokenCredential(ctx, proxyClientIpHeader));
+      }
       LOG.info(
           "Authenticated principal: {}, URI: {}",
           authPrincipal != null ? authPrincipal.getName() : "null",
