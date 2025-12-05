@@ -16,22 +16,35 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.process;
+package org.apache.amoro.server.process;
 
-/** Status of any {@link AmoroProcess}. */
-public enum ProcessStatus {
-  UNKNOWN,
-  PENDING,
-  SUBMITTED,
-  RUNNING,
-  CANCELING,
-  SUCCESS,
-  CANCELED,
-  CLOSED,
-  KILLED,
-  FAILED;
+import org.apache.amoro.TableRuntime;
+import org.apache.amoro.process.TableProcess;
+import org.apache.amoro.process.TableProcessStore;
 
-  public ProcessStage toStage() {
-    return new ProcessStage(name(), ordinal());
+/** Mock table process for tests. */
+public class MockTableProcess extends TableProcess {
+
+  /**
+   * Construct with runtime only.
+   *
+   * @param tableRuntime table runtime
+   */
+  MockTableProcess(TableRuntime tableRuntime) {
+    super(tableRuntime);
   }
+
+  /**
+   * Construct with runtime and store.
+   *
+   * @param tableRuntime table runtime
+   * @param tableProcessStore process store
+   */
+  MockTableProcess(TableRuntime tableRuntime, TableProcessStore tableProcessStore) {
+    super(tableRuntime, tableProcessStore);
+  }
+
+  /** Close mock process. */
+  @Override
+  protected void closeInternal() {}
 }
