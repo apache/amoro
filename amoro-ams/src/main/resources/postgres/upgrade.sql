@@ -215,3 +215,9 @@ DROP TABLE IF EXISTS table_runtime_old;
 
 -- ADD bucket_id to table_runtime
 ALTER TABLE table_runtime ADD COLUMN bucket_id varchar(4);
+
+-- ADD external_process_identifier, retry_number, process_parameters to table_runtime
+ALTER TABLE table_process
+ADD COLUMN external_process_identifier varchar(256) DEFAULT NULL,
+ADD COLUMN retry_number int NOT NULL,
+ADD COLUMN process_parameters text;

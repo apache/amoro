@@ -28,11 +28,14 @@ import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.SimpleFuture;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessState;
+import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.resource.ExternalResourceContainer;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceManager;
 import org.apache.amoro.server.persistence.PersistentBase;
-import org.apache.amoro.server.persistence.mapper.ProcessStateMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.DefaultTableProcessStore;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
@@ -43,7 +46,7 @@ public abstract class PeriodicExternalScheduler extends PeriodicTableScheduler {
 
   private final ExternalResourceContainer resourceContainer;
   private final ResourceManager resourceManager;
-  private final ProcessFactory<? extends TableProcessState> processFactory;
+  private final ProcessFactory processFactory;
 
   public PeriodicExternalScheduler(
       ResourceManager resourceManager,
@@ -81,10 +84,9 @@ public abstract class PeriodicExternalScheduler extends PeriodicTableScheduler {
     SupportsProcessPlugins runtimeSupportProcessPlugin = (SupportsProcessPlugins) tableRuntime;
     // Trigger a table process and check conflicts by table runtime
     // Update process state after process completed, the callback must be register first
-    AmoroProcess<? extends TableProcessState> process =
-        runtimeSupportProcessPlugin.trigger(getAction());
+    AmoroProcess process = runtimeSupportProcessPlugin.trigger(getAction());
     process.getCompleteFuture().whenCompleted(() -> persistTableProcess(process));
-    ManagedProcess<? extends TableProcessState> managedProcess = new ManagedTableProcess<>(process);
+    ManagedProcess managedProcess = new ManagedTableProcess(process);
 
     // Submit the table process to resource manager, this is a sync operation
     // update process completed and delete related resources
@@ -98,80 +100,100 @@ public abstract class PeriodicExternalScheduler extends PeriodicTableScheduler {
     return 1;
   }
 
-  protected abstract void trace(AmoroProcess<? extends TableProcessState> process);
+  protected abstract void trace(AmoroProcess process);
 
-  protected ProcessFactory<? extends TableProcessState> generateProcessFactory() {
+  protected ProcessFactory generateProcessFactory() {
     return new ExternalProcessFactory();
   }
 
-  protected void persistTableProcess(AmoroProcess<? extends TableProcessState> process) {
-    TableProcessState state = process.getState();
-    if (state.getStatus() == ProcessStatus.SUBMITTED) {
-      new PersistencyHelper().createProcessState(state);
-    } else if (state.getStatus() == ProcessStatus.RUNNING) {
-      new PersistencyHelper().updateProcessRunning(state);
-    } else if (state.getStatus() == ProcessStatus.SUCCESS) {
-      new PersistencyHelper().updateProcessCompleted(state);
-    } else if (state.getStatus() == ProcessStatus.FAILED) {
-      new PersistencyHelper().updateProcessFailed(state);
+  protected void persistTableProcess(AmoroProcess process) {
+    TableProcessStore store = process.store();
+    if (store.getStatus() == ProcessStatus.SUBMITTED) {
+      new PersistencyHelper().createProcessState(store);
+    } else {
+      new PersistencyHelper().updateProcessStatus(store);
     }
   }
 
   private static class PersistencyHelper extends PersistentBase {
 
-    void createProcessState(TableProcessState state) {
-      doAs(ProcessStateMapper.class, mapper -> mapper.createProcessState(state));
+    void createProcessState(TableProcessStore store) {
+      TableProcessMeta meta = TableProcessMeta.fromTableProcessStore(store);
+      doAs(
+          TableProcessMapper.class,
+          mapper ->
+              mapper.updateProcess(
+                  meta.getTableId(),
+                  meta.getProcessId(),
+                  meta.getExternalProcessIdentifier(),
+                  meta.getStatus(),
+                  meta.getProcessStage(),
+                  meta.getRetryNumber(),
+                  meta.getFinishTime(),
+                  meta.getFailMessage(),
+                  meta.getProcessParameters(),
+                  meta.getSummary()));
     }
 
-    void updateProcessRunning(TableProcessState state) {
-      doAs(ProcessStateMapper.class, mapper -> mapper.updateProcessRunning(state));
-    }
-
-    void updateProcessCompleted(TableProcessState state) {
-      doAs(ProcessStateMapper.class, mapper -> mapper.updateProcessCompleted(state));
-    }
-
-    void updateProcessFailed(TableProcessState state) {
-      doAs(ProcessStateMapper.class, mapper -> mapper.updateProcessFailed(state));
+    void updateProcessStatus(TableProcessStore store) {
+      TableProcessMeta meta = TableProcessMeta.fromTableProcessStore(store);
+      doAs(
+          TableProcessMapper.class,
+          mapper ->
+              mapper.updateProcess(
+                  meta.getTableId(),
+                  meta.getProcessId(),
+                  meta.getExternalProcessIdentifier(),
+                  meta.getStatus(),
+                  meta.getProcessStage(),
+                  meta.getRetryNumber(),
+                  meta.getFinishTime(),
+                  meta.getFailMessage(),
+                  meta.getProcessParameters(),
+                  meta.getSummary()));
     }
   }
 
-  private class ExternalTableProcess extends TableProcess<TableProcessState> {
+  private class ExternalTableProcess extends TableProcess {
 
     ExternalTableProcess(TableRuntime tableRuntime) {
       super(
-          new TableProcessState(
-              PeriodicExternalScheduler.this.getAction(), tableRuntime.getTableIdentifier()),
-          tableRuntime);
+          tableRuntime,
+          new DefaultTableProcessStore(
+              tableRuntime, new TableProcessMeta(), PeriodicExternalScheduler.this.getAction()));
     }
 
     ExternalTableProcess(TableRuntime tableRuntime, TableProcessState state) {
-      super(state, tableRuntime);
+      super(
+          tableRuntime,
+          new DefaultTableProcessStore(
+              tableRuntime,
+              TableProcessMeta.fromTableProcessState(state),
+              PeriodicExternalScheduler.this.getAction()));
     }
 
     @Override
     protected void closeInternal() {}
   }
 
-  private class ExternalProcessFactory implements ProcessFactory<TableProcessState> {
+  private class ExternalProcessFactory implements ProcessFactory {
 
     @Override
-    public AmoroProcess<TableProcessState> create(TableRuntime tableRuntime, Action action) {
+    public AmoroProcess create(TableRuntime tableRuntime, Action action) {
       return new ExternalTableProcess(tableRuntime);
     }
 
     @Override
-    public AmoroProcess<TableProcessState> recover(
-        TableRuntime tableRuntime, TableProcessState state) {
+    public AmoroProcess recover(TableRuntime tableRuntime, TableProcessState state) {
       return new ExternalTableProcess(tableRuntime, state);
     }
   }
 
-  protected class ManagedTableProcess<T extends TableProcessState> implements ManagedProcess<T> {
+  protected class ManagedTableProcess implements ManagedProcess {
 
-    private final AmoroProcess<T> process;
+    private final AmoroProcess process;
 
-    ManagedTableProcess(AmoroProcess<T> process) {
+    ManagedTableProcess(AmoroProcess process) {
       this.process = process;
     }
 
@@ -187,36 +209,54 @@ public abstract class PeriodicExternalScheduler extends PeriodicTableScheduler {
           .whenCompleted(
               () -> {
                 resourceManager.deleteResource(resource.getResourceId());
-                if (getState().getStatus() == ProcessStatus.FAILED
-                    && getState().getRetryNumber() < getMaxRetryNumber()) {
+                if (store().getStatus() == ProcessStatus.FAILED
+                    && store().getRetryNumber() < getMaxRetryNumber()) {
                   retry();
                 }
               });
-      getState().setSubmitted();
+      store().begin().updateTableProcessStatus(ProcessStatus.SUBMITTED).commit();
       getSubmitFuture().complete();
     }
 
     @Override
     public void complete() {
-      process.getState().setCompleted();
+      store()
+          .begin()
+          .updateTableProcessStatus(ProcessStatus.SUCCESS)
+          .updateFinishTime(System.currentTimeMillis())
+          .commit();
       process.getCompleteFuture().complete();
     }
 
     @Override
     public void complete(String failedReason) {
-      process.getState().setCompleted(failedReason);
+      store()
+          .begin()
+          .updateTableProcessStatus(ProcessStatus.FAILED)
+          .updateTableProcessFailMessage(failedReason)
+          .updateFinishTime(System.currentTimeMillis())
+          .commit();
       process.getCompleteFuture().complete();
     }
 
     @Override
     public void retry() {
-      process.getState().addRetryNumber();
+      store()
+          .begin()
+          .updateTableProcessStatus(ProcessStatus.PENDING)
+          .updateRetryNumber(store().getRetryNumber() + 1)
+          .updateExternalProcessIdentifier("")
+          .commit();
       submit();
     }
 
     @Override
     public void kill() {
-      process.getState().setKilled();
+      store()
+          .begin()
+          .updateTableProcessStatus(ProcessStatus.KILLED)
+          .updateFinishTime(System.currentTimeMillis())
+          .commit();
       process.getCompleteFuture().complete();
     }
 
@@ -231,8 +271,8 @@ public abstract class PeriodicExternalScheduler extends PeriodicTableScheduler {
     }
 
     @Override
-    public T getState() {
-      return process.getState();
+    public TableProcessStore store() {
+      return process.store();
     }
   }
 }
