@@ -18,13 +18,27 @@
 
 package org.apache.amoro.server.dashboard.controller;
 
+import static org.apache.amoro.server.AmsServiceMetrics.AMS_ACTIVE_TAG;
+
 import io.javalin.http.Context;
+import org.apache.amoro.server.AmoroServiceContainer;
 import org.apache.amoro.server.dashboard.response.OkResponse;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /** The controller that handles health check requests. */
 public class HealthCheckController {
 
+  private AmoroServiceContainer ams;
+
+  public HealthCheckController(AmoroServiceContainer ams) {
+    this.ams = ams;
+  }
+
   public void healthCheck(Context ctx) {
-    ctx.json(OkResponse.of(null));
+    Map<String, String> healthCheckResult = new HashMap<>(4);
+    healthCheckResult.put(AMS_ACTIVE_TAG, ams.getHaState().toString());
+    ctx.json(OkResponse.of(healthCheckResult));
   }
 }

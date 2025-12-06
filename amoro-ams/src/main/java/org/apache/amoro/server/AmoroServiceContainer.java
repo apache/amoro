@@ -112,6 +112,7 @@ public class AmoroServiceContainer {
   private TServer optimizingServiceServer;
   private Javalin httpServer;
   private AmsServiceMetrics amsServiceMetrics;
+  private HAState haState = HAState.STANDBY;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
@@ -132,12 +133,16 @@ public class AmoroServiceContainer {
       service.startRestServices();
       while (true) {
         try {
+          // Used to block AMS instances that have not acquired leadership
           service.waitLeaderShip();
           service.startOptimizingService();
+          service.haState = HAState.ACTIVE;
+          // Used to block AMS instances that have acquired leadership
           service.waitFollowerShip();
         } catch (Exception e) {
           LOG.error("AMS start error", e);
         } finally {
+          service.haState = HAState.STANDBY;
           service.disposeOptimizingService();
         }
       }
@@ -145,6 +150,25 @@ public class AmoroServiceContainer {
       LOG.error("AMS encountered an unknown exception, will exist", t);
       System.exit(1);
     }
+  }
+
+  public static enum HAState {
+    ACTIVE(1),
+    STANDBY(0);
+
+    private int code;
+
+    HAState(int code) {
+      this.code = code;
+    }
+
+    public int getCode() {
+      return code;
+    }
+  }
+
+  public HAState getHaState() {
+    return haState;
   }
 
   public void waitLeaderShip() throws Exception {
@@ -267,6 +291,10 @@ public class AmoroServiceContainer {
     new ConfigurationHelper().init();
   }
 
+  public Configurations getServiceConfig() {
+    return serviceConfig;
+  }
+
   private void startThriftService() {
     startThriftServer(tableManagementServer, "thrift-table-management-server-thread");
     startThriftServer(optimizingServiceServer, "thrift-optimizing-server-thread");
@@ -282,7 +310,7 @@ public class AmoroServiceContainer {
   private void initHttpService() {
     DashboardServer dashboardServer =
         new DashboardServer(
-            serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager);
+            serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager, this);
     RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
 
     httpServer =
@@ -358,7 +386,8 @@ public class AmoroServiceContainer {
   }
 
   private void registerAmsServiceMetric() {
-    amsServiceMetrics = new AmsServiceMetrics(MetricManager.getInstance().getGlobalRegistry());
+    amsServiceMetrics =
+        new AmsServiceMetrics(MetricManager.getInstance().getGlobalRegistry(), this);
     amsServiceMetrics.register();
   }
 
