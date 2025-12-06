@@ -207,8 +207,8 @@ public class ConfigHelpers {
     if (o.getClass() == String.class) {
       return (String) o;
     } else if (o.getClass() == Duration.class) {
-      // return duration in ISO-8601 format
-      return o.toString();
+      Duration duration = (Duration) o;
+      return String.format("%d ns", duration.toNanos());
     } else if (o instanceof List) {
       return ((List<?>) o)
           .stream()
@@ -318,40 +318,26 @@ public class ConfigHelpers {
     }
 
     /**
-     * Parse the given string to a java {@link Duration}.
-     *
-     * <p>The string can be either:
-     *
-     * <ul>
-     *   <li>An ISO-8601 duration string (e.g. "PT1D", "PT1H", "PT1H30M", "PT30M", "PT30S",
-     *       "PT0.001S", see {@link Duration#parse(CharSequence)})
-     *   <li>Or a custom format "{length value}{time unit label}", e.g. "123ms", "321 s". If no time
-     *       unit label is specified, it will be considered as milliseconds.
-     * </ul>
+     * Parse the given string to a java {@link Duration}. The string is in format "{length
+     * value}{time unit label}", e.g. "123ms", "321 s". If no time unit label is specified, it will
+     * be considered as milliseconds.
      *
      * <p>Supported time unit labels are:
      *
      * <ul>
-     *   <li>DAYS: "d", "day"
-     *   <li>HOURS: "h", "hour"
-     *   <li>MINUTES: "min", "minute"
-     *   <li>SECONDS: "s", "sec", "second"
-     *   <li>MILLISECONDS: "ms", "milli", "millisecond"
-     *   <li>MICROSECONDS: "µs", "micro", "microsecond"
-     *   <li>NANOSECONDS: "ns", "nano", "nanosecond"
+     *   <li>DAYS： "d", "day"
+     *   <li>HOURS： "h", "hour"
+     *   <li>MINUTES： "min", "minute"
+     *   <li>SECONDS： "s", "sec", "second"
+     *   <li>MILLISECONDS： "ms", "milli", "millisecond"
+     *   <li>MICROSECONDS： "µs", "micro", "microsecond"
+     *   <li>NANOSECONDS： "ns", "nano", "nanosecond"
      * </ul>
      *
-     * @param text string to parse, either ISO-8601 duration or custom format
+     * @param text string to parse.
      */
     public static Duration parseDuration(String text, ChronoUnit defaultUnit) {
       checkNotNull(text);
-
-      // first try to parse as ISO-8601 duration
-      try {
-        return Duration.parse(text);
-      } catch (Exception ignored) {
-        // ignored
-      }
 
       final String trimmed = text.trim();
       checkArgument(!trimmed.isEmpty(), "argument is an empty- or whitespace-only string");
