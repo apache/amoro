@@ -439,7 +439,8 @@ public class ConfigHelpers {
                       return orderedUnits.get(idx - 1);
                     }
                   })
-              .orElse(TimeUnit.MILLISECONDS);
+              // Use the largest unit if all divide evenly
+              .orElse(orderedUnits.get(orderedUnits.size() - 1));
 
       return String.format(
           "%d %s",

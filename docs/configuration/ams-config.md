@@ -52,10 +52,10 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | clean-dangling-delete-files.enabled | true | Enable dangling delete files cleaning. |
 | clean-dangling-delete-files.thread-count | 10 | The number of threads used for dangling delete files cleaning. |
 | clean-orphan-files.enabled | true | Enable orphan files cleaning. |
-| clean-orphan-files.interval | 86400000 ms | Interval for cleaning orphan files. |
+| clean-orphan-files.interval | 1 d | Interval for cleaning orphan files. |
 | clean-orphan-files.thread-count | 10 | The number of threads used for orphan files cleaning. |
 | data-expiration.enabled | true | Enable data expiration |
-| data-expiration.interval | 86400000 ms | Execute interval for data expiration |
+| data-expiration.interval | 1 d | Execute interval for data expiration |
 | data-expiration.thread-count | 10 | The number of threads used for data expiring |
 | database.auto-create-tables | true | Auto init table schema when started |
 | database.connection-pool-max-idle | 16 | Max idle connect count of database connect pool. |
@@ -78,7 +78,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | http-server.bind-port | 19090 | Port that the Http server is bound to. |
 | http-server.proxy-client-ip-header | X-Real-IP | The HTTP header to record the real client IP address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use. |
 | http-server.rest-auth-type | token | The authentication used by REST APIs, token (default), basic or jwt. |
-| http-server.session-timeout | 604800000 ms | Timeout for http session. |
+| http-server.session-timeout | 7 d | Timeout for http session. |
 | optimizer.heart-beat-timeout | 1 min | Timeout duration for Optimizer heartbeat. |
 | optimizer.max-planning-parallelism | 1 | Max planning parallelism in one optimizer group. |
 | optimizer.polling-timeout | 3 s | Optimizer polling task timeout. |
