@@ -76,11 +76,21 @@ public class AmsServiceMetrics {
           .withTags(GARBAGE_COLLECTOR_TAG)
           .build();
 
+  public static final String AMS_ACTIVE_TAG = "active";
+  public static final MetricDefine AMS_HA_STATE =
+      defineGauge("ams_ha_state")
+          .withDescription("The HA state of the AMS")
+          .withTags(AMS_ACTIVE_TAG)
+          .build();
+
   private final MetricRegistry registry;
   private List<MetricKey> registeredMetricKeys = Lists.newArrayList();
 
-  public AmsServiceMetrics(MetricRegistry registry) {
+  private AmoroServiceContainer ams;
+
+  public AmsServiceMetrics(MetricRegistry registry, AmoroServiceContainer ams) {
     this.registry = registry;
+    this.ams = ams;
   }
 
   public void register() {
@@ -88,6 +98,7 @@ public class AmsServiceMetrics {
     registerThreadMetric();
     registerCPuMetric();
     registerGarbageCollectorMetrics();
+    registerHAStateMetrics();
   }
 
   public void unregister() {
@@ -138,6 +149,15 @@ public class AmsServiceMetrics {
           ImmutableMap.of(GARBAGE_COLLECTOR_TAG, garbageCollector.getName()),
           (Gauge<Long>) () -> garbageCollector.getCollectionTime());
     }
+  }
+
+  private void registerHAStateMetrics() {
+    String host = ams.getServiceConfig().get(AmoroManagementConf.SERVER_EXPOSE_HOST);
+    registerMetric(
+        registry,
+        AMS_HA_STATE,
+        ImmutableMap.of(AMS_ACTIVE_TAG, host),
+        (Gauge<Integer>) () -> ams.getHaState().getCode());
   }
 
   private void registerMetric(MetricRegistry registry, MetricDefine define, Metric metric) {
