@@ -45,17 +45,17 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | admin-password | admin | The administrator password |
 | admin-username | admin | The administrator account name. |
 | auto-create-tags.enabled | true | Enable creating tags. |
-| auto-create-tags.interval | 60000000000 ns | Interval for creating tags. |
+| auto-create-tags.interval | 1 min | Interval for creating tags. |
 | auto-create-tags.thread-count | 3 | The number of threads used for creating tags. |
-| blocker.timeout | 60000000000 ns | Session timeout. Default unit is milliseconds if not specified. |
-| catalog-meta-cache.expiration-interval | 60000000000 ns | TTL for catalog metadata. |
+| blocker.timeout | 1 min | Session timeout. Default unit is milliseconds if not specified. |
+| catalog-meta-cache.expiration-interval | 1 min | TTL for catalog metadata. |
 | clean-dangling-delete-files.enabled | true | Enable dangling delete files cleaning. |
 | clean-dangling-delete-files.thread-count | 10 | The number of threads used for dangling delete files cleaning. |
 | clean-orphan-files.enabled | true | Enable orphan files cleaning. |
-| clean-orphan-files.interval | 86400000000000 ns | Interval for cleaning orphan files. |
+| clean-orphan-files.interval | 1 d | Interval for cleaning orphan files. |
 | clean-orphan-files.thread-count | 10 | The number of threads used for orphan files cleaning. |
 | data-expiration.enabled | true | Enable data expiration |
-| data-expiration.interval | 86400000000000 ns | Execute interval for data expiration |
+| data-expiration.interval | 1 d | Execute interval for data expiration |
 | data-expiration.thread-count | 10 | The number of threads used for data expiring |
 | database.auto-create-tables | true | Auto init table schema when started |
 | database.connection-pool-max-idle | 16 | Max idle connect count of database connect pool. |
@@ -69,34 +69,34 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | expire-snapshots.enabled | true | Enable snapshots expiring. |
 | expire-snapshots.thread-count | 10 | The number of threads used for snapshots expiring. |
 | ha.cluster-name | default | Amoro management service cluster name. |
-| ha.connection-timeout | 300000000000 ns | The Zookeeper connection timeout in milliseconds. |
+| ha.connection-timeout | 5 min | The Zookeeper connection timeout in milliseconds. |
 | ha.enabled | false | Whether to enable high availability mode. |
-| ha.session-timeout | 30000000000 ns | The Zookeeper session timeout in milliseconds. |
+| ha.session-timeout | 30 s | The Zookeeper session timeout in milliseconds. |
 | ha.zookeeper-address |  | The Zookeeper address used for high availability. |
 | http-server.auth-basic-provider | org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider | User-defined password authentication implementation of org.apache.amoro.authentication.PasswdAuthenticationProvider |
 | http-server.auth-jwt-provider | &lt;undefined&gt; | User-defined JWT (JSON Web Token) authentication implementation of org.apache.amoro.authentication.TokenAuthenticationProvider |
 | http-server.bind-port | 19090 | Port that the Http server is bound to. |
 | http-server.proxy-client-ip-header | X-Real-IP | The HTTP header to record the real client IP address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use. |
 | http-server.rest-auth-type | token | The authentication used by REST APIs, token (default), basic or jwt. |
-| http-server.session-timeout | 604800000000000 ns | Timeout for http session. |
-| optimizer.heart-beat-timeout | 60000000000 ns | Timeout duration for Optimizer heartbeat. |
+| http-server.session-timeout | 7 d | Timeout for http session. |
+| optimizer.heart-beat-timeout | 1 min | Timeout duration for Optimizer heartbeat. |
 | optimizer.max-planning-parallelism | 1 | Max planning parallelism in one optimizer group. |
-| optimizer.polling-timeout | 3000000000 ns | Optimizer polling task timeout. |
-| optimizer.task-ack-timeout | 30000000000 ns | Timeout duration for task acknowledgment. |
-| optimizer.task-execute-timeout | 3600000000000 ns | Timeout duration for task execution, default to 1 hour. |
+| optimizer.polling-timeout | 3 s | Optimizer polling task timeout. |
+| optimizer.task-ack-timeout | 30 s | Timeout duration for task acknowledgment. |
+| optimizer.task-execute-timeout | 1 h | Timeout duration for task execution, default to 1 hour. |
 | overview-cache.max-size | 3360 | Max size of overview cache. |
-| overview-cache.refresh-interval | 180000000000 ns | Interval for refreshing overview cache. |
-| refresh-external-catalogs.interval | 180000000000 ns | Interval to refresh the external catalog. |
+| overview-cache.refresh-interval | 3 min | Interval for refreshing overview cache. |
+| refresh-external-catalogs.interval | 3 min | Interval to refresh the external catalog. |
 | refresh-external-catalogs.queue-size | 1000000 | The queue size of the executors of the external catalog explorer. |
 | refresh-external-catalogs.thread-count | 10 | The number of threads used for discovering tables in external catalogs. |
-| refresh-tables.interval | 60000000000 ns | Interval for refreshing table metadata. |
+| refresh-tables.interval | 1 min | Interval for refreshing table metadata. |
 | refresh-tables.max-pending-partition-count | 100 | Filters will not be used beyond that number of partitions. |
 | refresh-tables.thread-count | 10 | The number of threads used for refreshing tables. |
 | self-optimizing.break-quota-limit-enabled | true | Allow the table to break the quota limit when the resource is sufficient. |
 | self-optimizing.commit-manifest-io-thread-count | 10 | Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent commit operations. |
 | self-optimizing.commit-thread-count | 10 | The number of threads that self-optimizing uses to submit results. |
 | self-optimizing.plan-manifest-io-thread-count | 10 | Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent planning operations. |
-| self-optimizing.refresh-group-interval | 30000000000 ns | Optimizer group refresh interval. |
+| self-optimizing.refresh-group-interval | 30 s | Optimizer group refresh interval. |
 | self-optimizing.runtime-data-expire-interval-hours | 1 | The number of hours that self-optimizing runtime data expire interval. |
 | self-optimizing.runtime-data-keep-days | 30 | The number of days that self-optimizing runtime data keeps the runtime. |
 | server-bind-host | 0.0.0.0 | The host bound to the server. |
@@ -108,7 +108,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | terminal.factory | &lt;undefined&gt; | Session factory implement of terminal, `terminal.backend` must be `custom` if this is set. |
 | terminal.result.limit | 1000 | Row limit of result-set |
 | terminal.sensitive-conf-keys |  | Comma-separated list of sensitive conf keys used to desensitize related value. |
-| terminal.session.timeout | 1800000000000 ns | Session timeout. Default unit is milliseconds if not specified (** Note: default units are minutes when version &lt; 0.8). |
+| terminal.session.timeout | 30 min | Session timeout. Default unit is milliseconds if not specified (** Note: default units are minutes when version &lt; 0.8). |
 | terminal.stop-on-error | false | When a statement fails to execute, stop execution or continue executing the remaining statements. |
 | thrift-server.max-message-size | 100 mb | Maximum message size that the Thrift server can accept. Default unit is bytes if not specified. |
 | thrift-server.optimizing-service.bind-port | 1261 | Port that the optimizing service thrift server is bound to. |
