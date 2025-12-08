@@ -73,6 +73,9 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | ha.enabled | false | Whether to enable high availability mode. |
 | ha.session-timeout | 30 s | The Zookeeper session timeout in milliseconds. |
 | ha.zookeeper-address |  | The Zookeeper address used for high availability. |
+| ha.zookeeper-auth-keytab |  | The Zookeeper authentication keytab file path when auth type is KERBEROS. |
+| ha.zookeeper-auth-principal |  | The Zookeeper authentication principal when auth type is KERBEROS. |
+| ha.zookeeper-auth-type | NONE | The Zookeeper authentication type, NONE or KERBEROS. |
 | http-server.auth-basic-provider | org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider | User-defined password authentication implementation of org.apache.amoro.authentication.PasswdAuthenticationProvider |
 | http-server.auth-jwt-provider | &lt;undefined&gt; | User-defined JWT (JSON Web Token) authentication implementation of org.apache.amoro.authentication.TokenAuthenticationProvider |
 | http-server.bind-port | 19090 | Port that the Http server is bound to. |
