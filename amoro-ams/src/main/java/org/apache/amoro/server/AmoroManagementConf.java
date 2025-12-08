@@ -223,6 +223,25 @@ public class AmoroManagementConf {
           .defaultValue("")
           .withDescription("The Zookeeper address used for high availability.");
 
+  public static final ConfigOption<String> HA_ZOOKEEPER_AUTH_TYPE =
+      ConfigOptions.key("ha.zookeeper-auth-type")
+          .stringType()
+          .defaultValue("NONE")
+          .withDescription("The Zookeeper authentication type, NONE or KERBEROS.");
+
+  public static final ConfigOption<String> HA_ZOOKEEPER_AUTH_KEYTAB =
+      ConfigOptions.key("ha.zookeeper-auth-keytab")
+          .stringType()
+          .defaultValue("")
+          .withDescription(
+              "The Zookeeper authentication keytab file path when auth type is KERBEROS.");
+
+  public static final ConfigOption<String> HA_ZOOKEEPER_AUTH_PRINCIPAL =
+      ConfigOptions.key("ha.zookeeper-auth-principal")
+          .stringType()
+          .defaultValue("")
+          .withDescription("The Zookeeper authentication principal when auth type is KERBEROS.");
+
   public static final ConfigOption<Duration> HA_ZOOKEEPER_SESSION_TIMEOUT =
       ConfigOptions.key("ha.session-timeout")
           .durationType()
