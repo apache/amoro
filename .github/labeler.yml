@@ -40,6 +40,9 @@
   - "*.md"
   - "docs/**/*"
 
+"type:site":
+  - "site/**/*"
+
 "module:common":
   - "amoro-common/**/*"
 
