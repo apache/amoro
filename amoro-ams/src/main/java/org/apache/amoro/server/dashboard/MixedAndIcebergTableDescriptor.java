@@ -567,7 +567,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
    * @param table The Iceberg table to scan
    * @return List of partition information
    */
-  private List<PartitionBaseInfo> collectPartitionsFromFileScan(Table table) {
+  protected List<PartitionBaseInfo> collectPartitionsFromFileScan(Table table) {
     Map<String, PartitionBaseInfo> partitionMap = new HashMap<>();
 
     IcebergFindFiles manifestReader =

@@ -120,6 +120,39 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
   }
 
   @Test
+  public void testGetTablePartitionsFallback() {
+    // Test the fallback path by using a custom descriptor that forces fallback
+    org.apache.iceberg.Table icebergTable = getTable();
+    Assert.assertTrue("Test table should be partitioned", icebergTable.spec().isPartitioned());
+
+    // Add data file
+    org.apache.iceberg.DataFile file1 =
+        org.apache.iceberg.DataFiles.builder(icebergTable.spec())
+            .withPath("/path/to/fallback-data.parquet")
+            .withFileSizeInBytes(200)
+            .withRecordCount(20)
+            .build();
+    icebergTable.newAppend().appendFile(file1).commit();
+
+    // Use the fallback method directly
+    TestMixedAndIcebergTableDescriptor testDescriptor = new TestMixedAndIcebergTableDescriptor();
+    List<org.apache.amoro.table.descriptor.PartitionBaseInfo> partitions =
+        testDescriptor.testCollectPartitionsFromFileScan(icebergTable);
+
+    // Verify fallback works correctly
+    Assert.assertNotNull(partitions);
+    Assert.assertTrue("Fallback should return at least 1 partition", partitions.size() > 0);
+
+    // Verify file count
+    long totalFiles = partitions.stream().mapToLong(p -> p.getFileCount()).sum();
+    Assert.assertEquals("Fallback should count files correctly", 1, totalFiles);
+
+    // Verify fallback calculates actual values (not 0 like PARTITIONS table)
+    long totalSize = partitions.stream().mapToLong(p -> p.getFileSize()).sum();
+    Assert.assertTrue("Fallback should calculate actual file size (not 0)", totalSize > 0);
+  }
+
+  @Test
   public void testOptimizingProcess() {
     TestMixedAndIcebergTableDescriptor descriptor = new TestMixedAndIcebergTableDescriptor();
 
@@ -333,6 +366,11 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
 
   /** Test descriptor class, add insert table/optimizing process methods for test. */
   private static class TestMixedAndIcebergTableDescriptor extends MixedAndIcebergTableDescriptor {
+
+    public List<org.apache.amoro.table.descriptor.PartitionBaseInfo>
+        testCollectPartitionsFromFileScan(Table table) {
+      return collectPartitionsFromFileScan(table);
+    }
 
     public void insertTable(ServerTableIdentifier identifier) {
       doAs(TableMetaMapper.class, mapper -> mapper.insertTable(identifier));
