@@ -18,19 +18,22 @@
 
 package org.apache.amoro.table.descriptor;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.apache.amoro.AmoroCatalog;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.formats.AmoroCatalogTestHelper;
 import org.apache.amoro.hive.TestHMS;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.Executors;
 
@@ -40,9 +43,9 @@ public abstract class TestServerTableDescriptor {
 
   protected static final String TEST_TABLE = "test_table";
 
-  @Rule public TemporaryFolder temp = new TemporaryFolder();
+  @TempDir Path tempDir;
 
-  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
+  protected static TestHMS TEST_HMS;
 
   private final AmoroCatalogTestHelper<?> amoroCatalogTestHelper;
   private AmoroCatalog amoroCatalog;
@@ -52,9 +55,22 @@ public abstract class TestServerTableDescriptor {
     this.amoroCatalogTestHelper = amoroCatalogTestHelper;
   }
 
-  @Before
-  public void before() throws IOException {
-    String path = temp.newFolder().getPath();
+  @BeforeAll
+  static void setupTestHMS() throws Exception {
+    TEST_HMS = new TestHMS();
+    TEST_HMS.before();
+  }
+
+  @AfterAll
+  static void teardownTestHMS() {
+    if (TEST_HMS != null) {
+      TEST_HMS.after();
+    }
+  }
+
+  @BeforeEach
+  void before() throws IOException {
+    String path = tempDir.toFile().getAbsolutePath();
     amoroCatalogTestHelper.initWarehouse(path);
     amoroCatalogTestHelper.initHiveConf(TEST_HMS.getHiveConf());
     this.amoroCatalog = amoroCatalogTestHelper.amoroCatalog();
@@ -68,8 +84,8 @@ public abstract class TestServerTableDescriptor {
     }
   }
 
-  @After
-  public void after() throws IOException {
+  @AfterEach
+  void after() throws IOException {
     try {
       this.amoroCatalogTestHelper.amoroCatalog().dropTable(TEST_DB, TEST_TABLE, true);
       this.amoroCatalogTestHelper.amoroCatalog().dropDatabase(TEST_DB);
@@ -79,7 +95,7 @@ public abstract class TestServerTableDescriptor {
   }
 
   @Test
-  public void tableOperations() throws Exception {
+  void tableOperations() throws Exception {
     FormatTableDescriptor tableDescriptor = getTableDescriptor();
     tableDescriptor.withIoExecutor(Executors.newSingleThreadExecutor());
 
@@ -111,44 +127,44 @@ public abstract class TestServerTableDescriptor {
 
     List<DDLInfo> tableOperations = tableDescriptor.getTableOperations(table);
 
-    Assert.assertEquals(
-        tableOperations.get(0).getDdl(), "ALTER TABLE test_table SET TBLPROPERTIES ('k1' = 'v1')");
+    assertEquals(
+        "ALTER TABLE test_table SET TBLPROPERTIES ('k1' = 'v1')", tableOperations.get(0).getDdl());
 
-    Assert.assertEquals(
-        tableOperations.get(1).getDdl(), "ALTER TABLE test_table UNSET TBLPROPERTIES ('k1')");
+    assertEquals(
+        "ALTER TABLE test_table UNSET TBLPROPERTIES ('k1')", tableOperations.get(1).getDdl());
 
-    Assert.assertTrue(
+    assertTrue(
         tableOperations
             .get(2)
             .getDdl()
             .equalsIgnoreCase("ALTER TABLE test_table ADD COLUMNS (new_col int)"));
 
-    Assert.assertTrue(
+    assertTrue(
         tableOperations
             .get(3)
             .getDdl()
             .equalsIgnoreCase("ALTER TABLE test_table RENAME COLUMN new_col TO renamed_col"));
 
-    Assert.assertTrue(
+    assertTrue(
         tableOperations
             .get(4)
             .getDdl()
             .equalsIgnoreCase("ALTER TABLE test_table ALTER COLUMN renamed_col TYPE BIGINT"));
 
-    Assert.assertTrue(
+    assertTrue(
         tableOperations
             .get(5)
             .getDdl()
             .equalsIgnoreCase(
                 "ALTER TABLE test_table ALTER COLUMN renamed_col COMMENT 'new comment'"));
 
-    Assert.assertTrue(
+    assertTrue(
         tableOperations
             .get(6)
             .getDdl()
             .equalsIgnoreCase("ALTER TABLE test_table ALTER COLUMN renamed_col DROP NOT NULL"));
 
-    Assert.assertTrue(
+    assertTrue(
         tableOperations
             .get(7)
             .getDdl()

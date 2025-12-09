@@ -19,13 +19,11 @@
 package org.apache.amoro.utils;
 
 import static org.apache.amoro.utils.MemorySize.MemoryUnit.MEGA_BYTES;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -68,9 +66,13 @@ public class MemorySizeTest {
     assertEquals(expectedTebiBytes, memorySize.getTebiBytes());
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void testInvalid() {
-    new MemorySize(-1);
+  @Test
+  void testInvalid() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          new MemorySize(-1);
+        });
   }
 
   @ParameterizedTest
@@ -81,7 +83,7 @@ public class MemorySizeTest {
     "'1234bytes', 1234",
     "'1234 bytes', 1234"
   })
-  public void testParseBytes(String input, long expected) {
+  void testParseBytes(String input, long expected) {
     assertEquals(expected, MemorySize.parseBytes(input));
   }
 
@@ -94,7 +96,7 @@ public class MemorySizeTest {
     "667766kibibytes, 667766",
     "667766 kibibytes, 667766"
   })
-  public void testParseKibiBytes(String input, int expected) {
+  void testParseKibiBytes(String input, int expected) {
     assertEquals(expected, MemorySize.parse(input).getKibiBytes());
   }
 
@@ -107,7 +109,7 @@ public class MemorySizeTest {
     "7657623mebibytes, 7657623",
     "7657623 mebibytes, 7657623"
   })
-  public void testParseMebiBytes(String input, int expected) {
+  void testParseMebiBytes(String input, int expected) {
     assertEquals(expected, MemorySize.parse(input).getMebiBytes());
   }
 
@@ -120,7 +122,7 @@ public class MemorySizeTest {
     "987654gibibytes, 987654",
     "987654 gibibytes, 987654"
   })
-  public void testParseGibiBytes(String input, int expected) {
+  void testParseGibiBytes(String input, int expected) {
     assertEquals(expected, MemorySize.parse(input).getGibiBytes());
   }
 
@@ -133,12 +135,12 @@ public class MemorySizeTest {
     "1234567tebibytes, 1234567",
     "1234567 tebibytes, 1234567"
   })
-  public void testParseTebiBytes(String input, int expected) {
+  void testParseTebiBytes(String input, int expected) {
     assertEquals(expected, MemorySize.parse(input).getTebiBytes());
   }
 
   @Test
-  public void testUpperCase() {
+  void testUpperCase() {
     assertEquals(1L, MemorySize.parse("1 B").getBytes());
     assertEquals(1L, MemorySize.parse("1 K").getKibiBytes());
     assertEquals(1L, MemorySize.parse("1 M").getMebiBytes());
@@ -147,75 +149,83 @@ public class MemorySizeTest {
   }
 
   @Test
-  public void testTrimBeforeParse() {
+  void testTrimBeforeParse() {
     assertEquals(155L, MemorySize.parseBytes("      155      "));
     assertEquals(155L, MemorySize.parseBytes("      155      bytes   "));
   }
 
   @Test
-  public void testParseInvalid() {
+  void testParseInvalid() {
     // null
-    try {
-      MemorySize.parseBytes(null);
-      fail("exception expected");
-    } catch (IllegalArgumentException ignored) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          MemorySize.parseBytes(null);
+        });
 
     // empty
-    try {
-      MemorySize.parseBytes("");
-      fail("exception expected");
-    } catch (IllegalArgumentException ignored) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          MemorySize.parseBytes("");
+        });
 
     // blank
-    try {
-      MemorySize.parseBytes("     ");
-      fail("exception expected");
-    } catch (IllegalArgumentException ignored) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          MemorySize.parseBytes("     ");
+        });
 
     // no number
-    try {
-      MemorySize.parseBytes("foobar or fubar or foo bazz");
-      fail("exception expected");
-    } catch (IllegalArgumentException ignored) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          MemorySize.parseBytes("foobar or fubar or foo bazz");
+        });
 
     // wrong unit
-    try {
-      MemorySize.parseBytes("16 gjah");
-      fail("exception expected");
-    } catch (IllegalArgumentException ignored) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          MemorySize.parseBytes("16 gjah");
+        });
 
     // multiple numbers
-    try {
-      MemorySize.parseBytes("16 16 17 18 bytes");
-      fail("exception expected");
-    } catch (IllegalArgumentException ignored) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          MemorySize.parseBytes("16 16 17 18 bytes");
+        });
 
     // negative number
-    try {
-      MemorySize.parseBytes("-100 bytes");
-      fail("exception expected");
-    } catch (IllegalArgumentException ignored) {
-    }
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testParseNumberOverflow() {
-    MemorySize.parseBytes("100000000000000000000000000000000 bytes");
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testParseNumberTimeUnitOverflow() {
-    MemorySize.parseBytes("100000000000000 tb");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          MemorySize.parseBytes("-100 bytes");
+        });
   }
 
   @Test
-  public void testParseWithDefaultUnit() {
+  void testParseNumberOverflow() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          MemorySize.parseBytes("100000000000000000000000000000000 bytes");
+        });
+  }
+
+  @Test
+  void testParseNumberTimeUnitOverflow() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          MemorySize.parseBytes("100000000000000 tb");
+        });
+  }
+
+  @Test
+  void testParseWithDefaultUnit() {
     assertEquals(7, MemorySize.parse("7", MEGA_BYTES).getMebiBytes());
     assertNotEquals(7, MemorySize.parse("7340032", MEGA_BYTES));
     assertEquals(7, MemorySize.parse("7m", MEGA_BYTES).getMebiBytes());
@@ -229,15 +239,19 @@ public class MemorySizeTest {
   }
 
   @Test
-  public void testDivideByLong() {
+  void testDivideByLong() {
     final MemorySize memory = new MemorySize(100L);
-    assertThat(memory.divide(23), is(new MemorySize(4L)));
+    assertEquals(new MemorySize(4L), memory.divide(23));
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void testDivideByNegativeLong() {
+  @Test
+  void testDivideByNegativeLong() {
     final MemorySize memory = new MemorySize(100L);
-    memory.divide(-23L);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          memory.divide(-23L);
+        });
   }
 
   static Stream<Arguments> testToHumanReadableStringProvider() {
@@ -255,7 +269,7 @@ public class MemorySizeTest {
 
   @ParameterizedTest
   @MethodSource("testToHumanReadableStringProvider")
-  public void testToHumanReadableString(long bytes, String expected) {
-    assertThat(new MemorySize(bytes).toHumanReadableString(), is(expected));
+  void testToHumanReadableString(long bytes, String expected) {
+    assertEquals(expected, new MemorySize(bytes).toHumanReadableString());
   }
 }

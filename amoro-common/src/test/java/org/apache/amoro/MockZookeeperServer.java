@@ -22,7 +22,7 @@ import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFra
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.TestingServer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Random;
@@ -64,7 +64,7 @@ public class MockZookeeperServer {
   }
 
   @Test
-  public void testFoobar() throws Exception {
+  void testFoobar() throws Exception {
     System.out.println("client: " + client);
     getClient().create().forPath("/test", "test-data".getBytes());
 

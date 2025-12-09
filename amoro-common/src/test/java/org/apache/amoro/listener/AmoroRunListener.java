@@ -18,18 +18,18 @@
 
 package org.apache.amoro.listener;
 
-import org.junit.Assert;
 import org.junit.Ignore;
+import org.junit.jupiter.api.Assertions;
+import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
-import org.junit.runner.notification.RunListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.PriorityQueue;
 
-public class AmoroRunListener extends RunListener {
+public class AmoroRunListener implements TestExecutionListener {
   private static final Logger LOG = LoggerFactory.getLogger(AmoroRunListener.class);
   private long startTime;
   private long singleTestStartTime;
@@ -55,7 +55,7 @@ public class AmoroRunListener extends RunListener {
     LOG.info("Print the top cost test case method name:");
     for (int i = 0; i < printNum; i++) {
       TestCase testCase = testCaseQueue.poll();
-      Assert.assertNotNull(testCase);
+      Assertions.assertNotNull(testCase);
       LOG.info("NO-{}, cost: {}ms, methodName:{}", i + 1, testCase.cost, testCase.methodName);
     }
   }
@@ -103,7 +103,7 @@ public class AmoroRunListener extends RunListener {
 
     @Override
     public int compareTo(AmoroRunListener.TestCase that) {
-      Assert.assertNotNull(that);
+      Assertions.assertNotNull(that);
       return that.cost.compareTo(cost);
     }
   }
