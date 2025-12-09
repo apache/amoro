@@ -18,16 +18,16 @@
 
 package org.apache.amoro.listener;
 
-import org.junit.Ignore;
+import java.util.Optional;
+import java.util.PriorityQueue;
+
 import org.junit.jupiter.api.Assertions;
+import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.launcher.TestExecutionListener;
-import org.junit.runner.Description;
-import org.junit.runner.Result;
-import org.junit.runner.notification.Failure;
+import org.junit.platform.launcher.TestIdentifier;
+import org.junit.platform.launcher.TestPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.PriorityQueue;
 
 public class AmoroRunListener implements TestExecutionListener {
   private static final Logger LOG = LoggerFactory.getLogger(AmoroRunListener.class);
@@ -37,18 +37,17 @@ public class AmoroRunListener implements TestExecutionListener {
   private final PriorityQueue<TestCase> testCaseQueue = new PriorityQueue<>();
 
   @Override
-  public void testRunStarted(Description description) {
+  public void testPlanExecutionStarted(TestPlan testPlan) {
     startTime = System.currentTimeMillis();
-    LOG.info(
-        "{} Tests started! Number of Test case: {}",
-        description == null ? "Unknown" : description.getClassName(),
-        description == null ? 0 : description.testCount());
+    int testCount = (int) testPlan.countTestIdentifiers(TestIdentifier::isTest);
+    LOG.info("Tests started! Number of Test case: {}", testCount);
   }
 
   @Override
-  public void testRunFinished(Result result) {
+  public void testPlanExecutionFinished(TestPlan testPlan) {
     long endTime = System.currentTimeMillis();
-    LOG.info("Tests finished! Number of test case: {}", result.getRunCount());
+    int testCount = (int) testPlan.countTestIdentifiers(TestIdentifier::isTest);
+    LOG.info("Tests finished! Number of test case: {}", testCount);
     long elapsedSeconds = (endTime - startTime) / 1000;
     LOG.info("Elapsed time of tests execution: {} seconds", elapsedSeconds);
     int printNum = Math.min(testCaseQueue.size(), 50);
@@ -61,31 +60,42 @@ public class AmoroRunListener implements TestExecutionListener {
   }
 
   @Override
-  public void testStarted(Description description) {
-    singleTestStartTime = System.currentTimeMillis();
-    LOG.info("{} test is starting...", description.getMethodName());
+  public void executionStarted(TestIdentifier testIdentifier) {
+    if (testIdentifier.isTest()) {
+      singleTestStartTime = System.currentTimeMillis();
+      LOG.info("{} test is starting...", testIdentifier.getDisplayName());
+    }
   }
 
   @Override
-  public void testFinished(Description description) {
-    long cost = System.currentTimeMillis() - singleTestStartTime;
-    testCaseQueue.add(TestCase.of(cost, description.getMethodName()));
-    LOG.info("{} test is finished, cost {}ms...\n", description.getMethodName(), cost);
+  public void executionFinished(
+      TestIdentifier testIdentifier, TestExecutionResult testExecutionResult) {
+    if (testIdentifier.isTest()) {
+      long cost = System.currentTimeMillis() - singleTestStartTime;
+      testCaseQueue.add(TestCase.of(cost, testIdentifier.getDisplayName()));
+      LOG.info("{} test is finished, cost {}ms...\n", testIdentifier.getDisplayName(), cost);
+
+      if (testExecutionResult.getStatus() == TestExecutionResult.Status.FAILED) {
+        LOG.info("{} test FAILED!!!", testIdentifier.getDisplayName());
+        Optional<Throwable> throwable = testExecutionResult.getThrowable();
+        if (throwable.isPresent()) {
+          LOG.info("Failure reason: {}", throwable.get().getMessage());
+        }
+      }
+    }
   }
 
   @Override
-  public void testFailure(Failure failure) {
-    LOG.info("{} test FAILED!!!", failure.getDescription().getMethodName());
-  }
-
-  @Override
-  public void testIgnored(Description description) throws Exception {
-    super.testIgnored(description);
-    Ignore ignore = description.getAnnotation(Ignore.class);
-    LOG.info(
-        "@Ignore test method '{}', ignored reason '{}'.",
-        description.getMethodName(),
-        ignore.value());
+  public void executionSkipped(TestIdentifier testIdentifier, String reason) {
+    if (testIdentifier.isTest()) {
+      String ignoredReason = reason != null && !reason.isEmpty()
+          ? reason
+          : "No reason provided";
+      LOG.info(
+          "@Disabled method '{}', ignored reason '{}'.",
+          testIdentifier.getDisplayName(),
+          ignoredReason);
+    }
   }
 
   private static class TestCase implements Comparable<TestCase> {
