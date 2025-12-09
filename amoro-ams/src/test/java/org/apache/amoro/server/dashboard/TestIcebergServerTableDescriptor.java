@@ -78,6 +78,48 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
   }
 
   @Test
+  public void testGetTablePartitions() {
+    // The default test table is partitioned by 'age' field (see
+    // IcebergHadoopCatalogTestHelper.SPEC)
+    org.apache.iceberg.Table icebergTable = getTable();
+    Assert.assertTrue("Test table should be partitioned", icebergTable.spec().isPartitioned());
+
+    // Add some data files to create partitions
+    org.apache.iceberg.DataFile file1 =
+        org.apache.iceberg.DataFiles.builder(icebergTable.spec())
+            .withPath("/path/to/data-a.parquet")
+            .withFileSizeInBytes(100)
+            .withRecordCount(10)
+            .build();
+    icebergTable.newAppend().appendFile(file1).commit();
+
+    // Get partitions using descriptor
+    MixedAndIcebergTableDescriptor descriptor = new MixedAndIcebergTableDescriptor();
+    List<org.apache.amoro.table.descriptor.PartitionBaseInfo> partitions =
+        descriptor.getTablePartitions(getAmoroCatalog().loadTable(TEST_DB, TEST_TABLE));
+
+    // Verify we got partition info - should have at least 1 partition after adding a file
+    Assert.assertNotNull(partitions);
+    Assert.assertTrue("Should have at least 1 partition", partitions.size() > 0);
+
+    // Verify file count is correct
+    long totalFiles = partitions.stream().mapToLong(p -> p.getFileCount()).sum();
+    Assert.assertEquals("Should have 1 file total", 1, totalFiles);
+
+    // Verify we used PARTITIONS metadata table (not fallback)
+    // When using PARTITIONS table, fileSize and lastCommitTime are set to 0
+    // Fallback method would calculate actual values
+    for (org.apache.amoro.table.descriptor.PartitionBaseInfo partition : partitions) {
+      Assert.assertEquals(
+          "FileSize should be 0 when using PARTITIONS metadata table", 0L, partition.getFileSize());
+      Assert.assertEquals(
+          "LastCommitTime should be 0 when using PARTITIONS metadata table",
+          0L,
+          partition.getLastCommitTime());
+    }
+  }
+
+  @Test
   public void testOptimizingProcess() {
     TestMixedAndIcebergTableDescriptor descriptor = new TestMixedAndIcebergTableDescriptor();
 
