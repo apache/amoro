@@ -22,7 +22,6 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.utils.MemorySize;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.util.PropertyUtil;
@@ -36,14 +35,14 @@ public class MetricBasedEvaluationEvent {
 
   public static boolean isReachFallbackInterval(OptimizingConfig config, long lastPlanTime) {
     long fallbackInterval = config.getEvaluationFallbackInterval();
-    return fallbackInterval >= 0 && System.currentTimeMillis() - lastPlanTime > fallbackInterval;
+    return fallbackInterval >= 0 && System.currentTimeMillis() - lastPlanTime >= fallbackInterval;
   }
 
   public static boolean isEvaluatingNecessary(
       OptimizingConfig config, MixedTable table, long lastPlanTime) {
     if (table.format() != TableFormat.ICEBERG && table.format() != TableFormat.MIXED_ICEBERG) {
       logger.debug(
-          "MetricBasedRefreshEvent only support ICEBERG/MIXED_ICEBERG tables. Always return true for other table formats.");
+          "MetricBasedEvaluationEvent only support ICEBERG/MIXED_ICEBERG tables. Always return true for other table formats.");
       return true;
     }
     // Step 1: Perform periodic scheduling according to the fallback interval to avoid false
@@ -84,7 +83,7 @@ public class MetricBasedEvaluationEvent {
     return partitionFileCount > 1
         && (mseTolerance == 0
             || (double) partitionSquaredErrorSum / partitionFileCount
-                >= mseTolerance * mseTolerance);
+                >= (double) mseTolerance * mseTolerance);
   }
 
   static class BasicTableStats {
@@ -114,10 +113,7 @@ public class MetricBasedEvaluationEvent {
       deleteFileCnt +=
           PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0);
       dataFileCnt += PropertyUtil.propertyAsInt(summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
-      fileSize +=
-          MemorySize.parse(
-                  PropertyUtil.propertyAsString(summary, SnapshotSummary.TOTAL_FILE_SIZE_PROP, "0"))
-              .getBytes();
+      fileSize += PropertyUtil.propertyAsLong(summary, SnapshotSummary.TOTAL_FILE_SIZE_PROP, 0);
     }
   }
 }

@@ -142,7 +142,8 @@ public class TableProperties {
       -1; // event-based evaluation not in effect
 
   public static final String SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE =
-      "self-optimizing.evaluation.file-size.mse-tolerance";
+      "self-optimizing.evaluation.file-size.mse-tolerance"; // Mean Squared Error (MSE) tolerance
+  // for file size evaluation
   public static final long SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE_DEFAULT = 0;
 
   /** table clean related properties */

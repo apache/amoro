@@ -218,8 +218,28 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   private void updateFileSizeSquaredErrorSum(DataFile dataFile) {
+    // Only accumulate squared error for files smaller than `minTargetSize`
+    // For files larger than or equal to minTargetSize, diffSize will be 0, contributing nothing to
+    // the error sum
     long diffSize = minTargetSize - Math.min(dataFile.fileSizeInBytes(), minTargetSize);
-    fileSizeSquaredErrorSum += diffSize * diffSize;
+    if (diffSize <= 0) {
+      return;
+    }
+
+    // Prevent overflow for diffSize * diffSize by saturating to Long.MAX_VALUE
+    final long prod;
+    if (diffSize > Long.MAX_VALUE / diffSize) {
+      prod = Long.MAX_VALUE;
+    } else {
+      prod = diffSize * diffSize;
+    }
+
+    // Prevent overflow when adding to fileSizeSquaredErrorSum (saturate to Long.MAX_VALUE)
+    if (fileSizeSquaredErrorSum > Long.MAX_VALUE - prod) {
+      fileSizeSquaredErrorSum = Long.MAX_VALUE;
+    } else {
+      fileSizeSquaredErrorSum += prod;
+    }
   }
 
   protected boolean fileShouldFullOptimizing(DataFile dataFile, List<ContentFile<?>> deleteFiles) {

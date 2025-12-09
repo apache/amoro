@@ -20,6 +20,7 @@ package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.optimizing.evaluation.MetricBasedEvaluationEvent;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
@@ -61,12 +62,13 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
 
   private void tryEvaluatingPendingInput(DefaultTableRuntime tableRuntime, MixedTable table) {
     // only evaluate pending input when optimizing is enabled and in idle state
-    if (tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()
+    OptimizingConfig optimizingConfig = tableRuntime.getOptimizingConfig();
+    if (optimizingConfig.isEnabled()
         && tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
 
-      if (tableRuntime.getTableConfiguration().getOptimizingConfig().isEventBasedTriggerEnabled()
+      if (optimizingConfig.isEventBasedTriggerEnabled()
           && !MetricBasedEvaluationEvent.isEvaluatingNecessary(
-              tableRuntime.getOptimizingConfig(), table, tableRuntime.getLastPlanTime())) {
+              optimizingConfig, table, tableRuntime.getLastPlanTime())) {
         logger.debug(
             "{} optimizing is not necessary due to event based trigger",
             tableRuntime.getTableIdentifier());
