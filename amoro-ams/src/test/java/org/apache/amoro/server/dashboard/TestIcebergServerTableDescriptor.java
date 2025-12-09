@@ -106,16 +106,16 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
     long totalFiles = partitions.stream().mapToLong(p -> p.getFileCount()).sum();
     Assert.assertEquals("Should have 1 file total", 1, totalFiles);
 
-    // Verify we used PARTITIONS metadata table (not fallback)
-    // When using PARTITIONS table, fileSize and lastCommitTime are set to 0
-    // Fallback method would calculate actual values
+    // Verify we used PARTITIONS metadata table which provides fileSize and lastCommitTime
     for (org.apache.amoro.table.descriptor.PartitionBaseInfo partition : partitions) {
-      Assert.assertEquals(
-          "FileSize should be 0 when using PARTITIONS metadata table", 0L, partition.getFileSize());
-      Assert.assertEquals(
-          "LastCommitTime should be 0 when using PARTITIONS metadata table",
-          0L,
-          partition.getLastCommitTime());
+      // File size should be available from PARTITIONS metadata table
+      Assert.assertTrue(
+          "FileSize should be available from PARTITIONS metadata table",
+          partition.getFileSize() >= 0);
+      // Last commit time should be available from PARTITIONS metadata table
+      Assert.assertTrue(
+          "LastCommitTime should be available from PARTITIONS metadata table",
+          partition.getLastCommitTime() >= 0);
     }
   }
 

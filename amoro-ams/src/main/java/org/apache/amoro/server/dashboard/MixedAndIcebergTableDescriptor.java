@@ -531,19 +531,25 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             partitionInfo.setSpecId(specId);
 
             // Get file statistics from the partition metadata table
-            // record_count: index 2
-            // file_count: index 3
-            Long recordCount = row.get(2, Long.class);
+            // Schema: partition, spec_id, record_count, file_count,
+            // total_data_file_size_in_bytes,
+            // position_delete_record_count, position_delete_file_count,
+            // equality_delete_record_count, equality_delete_file_count,
+            // last_updated_at, last_updated_snapshot_id
             Integer dataFileCount = row.get(3, Integer.class);
+            Long totalDataFileSize = row.get(4, Long.class);
+            Integer posDeleteFileCount = row.get(6, Integer.class);
+            Integer eqDeleteFileCount = row.get(8, Integer.class);
+            Long lastUpdatedAt = row.get(9, Long.class);
 
-            partitionInfo.setFileCount(dataFileCount != null ? dataFileCount : 0);
-
-            // Note: The PARTITIONS metadata table doesn't include total file size or commit time
-            // For file size, we would need to sum from files metadata which defeats the performance
-            // benefit
-            // Setting to 0 as a trade-off for performance
-            partitionInfo.setFileSize(0L);
-            partitionInfo.setLastCommitTime(0L);
+            // Total file count = data files + position delete files + equality delete files
+            int totalFileCount =
+                (dataFileCount != null ? dataFileCount : 0)
+                    + (posDeleteFileCount != null ? posDeleteFileCount : 0)
+                    + (eqDeleteFileCount != null ? eqDeleteFileCount : 0);
+            partitionInfo.setFileCount(totalFileCount);
+            partitionInfo.setFileSize(totalDataFileSize != null ? totalDataFileSize : 0L);
+            partitionInfo.setLastCommitTime(lastUpdatedAt != null ? lastUpdatedAt : 0L);
 
             partitions.add(partitionInfo);
           }
