@@ -41,6 +41,7 @@ import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
+import org.apache.amoro.server.process.ProcessService;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.DefaultOptimizerManager;
@@ -104,6 +105,7 @@ public class AmoroServiceContainer {
   private OptimizerManager optimizerManager;
   private TableService tableService;
   private DefaultOptimizingService optimizingService;
+  private ProcessService processService;
   private TerminalManager terminalManager;
   private Configurations serviceConfig;
   private TServer tableManagementServer;
@@ -177,9 +179,12 @@ public class AmoroServiceContainer {
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
 
+    processService = new ProcessService(serviceConfig, tableService);
+
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
     addHandlerChain(optimizingService.getTableRuntimeHandler());
+    addHandlerChain(processService.getTableHandlerChain());
     addHandlerChain(InlineTableExecutors.getInstance().getDataExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getSnapshotsExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
@@ -223,6 +228,10 @@ public class AmoroServiceContainer {
       LOG.info("Stopping optimizing service...");
       optimizingService.dispose();
       optimizingService = null;
+    }
+    if (processService != null) {
+      LOG.info("Stopping process server...");
+      processService.dispose();
     }
   }
 

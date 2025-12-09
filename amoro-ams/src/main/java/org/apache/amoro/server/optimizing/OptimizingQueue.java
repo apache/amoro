@@ -67,6 +67,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -835,11 +836,14 @@ public class OptimizingQueue extends PersistentBase {
                       mapper.insertProcess(
                           tableRuntime.getTableIdentifier().getId(),
                           processId,
+                          "",
                           status,
                           optimizingType.name().toUpperCase(),
                           tableRuntime.getOptimizingStatus().name().toLowerCase(),
                           "AMORO",
+                          0,
                           planTime,
+                          new HashMap<>(),
                           getSummary().summaryAsMap(false))),
           () ->
               doAs(
@@ -874,10 +878,13 @@ public class OptimizingQueue extends PersistentBase {
                       mapper.updateProcess(
                           tableRuntime.getTableIdentifier().getId(),
                           processId,
+                          "",
                           status,
                           tableRuntime.getOptimizingStatus().name().toLowerCase(),
+                          0,
                           System.currentTimeMillis(),
                           getFailedReason(),
+                          new HashMap<>(),
                           getSummary().summaryAsMap(false))),
           () -> tableRuntime.completeProcess(success),
           () -> clearProcess(this));
