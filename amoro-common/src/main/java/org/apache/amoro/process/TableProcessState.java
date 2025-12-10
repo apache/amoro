@@ -28,13 +28,16 @@ import java.util.Map;
 public class TableProcessState implements ProcessState {
 
   @StateField private volatile long id;
+  @StateField private volatile String externalProcessIdentifier;
   private final Action action;
   private final ServerTableIdentifier tableIdentifier;
-  @StateField private int retryNumber;
-  @StateField private long startTime;
+  private String executionEngine;
+  @StateField private int retryNumber = 0;
+  @StateField private long startTime = -1L;
   @StateField private long endTime = -1L;
-  @StateField private ProcessStatus status = ProcessStatus.SUBMITTED;
+  @StateField private ProcessStatus status = ProcessStatus.PENDING;
   @StateField private volatile String failedReason;
+  private volatile Map<String, String> processParameters;
   private volatile Map<String, String> summary;
 
   public TableProcessState(Action action, ServerTableIdentifier tableIdentifier) {
@@ -48,9 +51,21 @@ public class TableProcessState implements ProcessState {
     this.tableIdentifier = tableIdentifier;
   }
 
+  public TableProcessState(
+      long id, Action action, ServerTableIdentifier tableIdentifier, String executionEngine) {
+    this.id = id;
+    this.action = action;
+    this.tableIdentifier = tableIdentifier;
+    this.executionEngine = executionEngine;
+  }
+
   @Override
   public long getId() {
     return id;
+  }
+
+  public String getExternalProcessIdentifier() {
+    return externalProcessIdentifier;
   }
 
   public String getName() {
@@ -71,6 +86,10 @@ public class TableProcessState implements ProcessState {
 
   public ProcessStatus getStatus() {
     return status;
+  }
+
+  public String getExecutionEngine() {
+    return executionEngine;
   }
 
   @Override
@@ -96,6 +115,14 @@ public class TableProcessState implements ProcessState {
     return tableIdentifier;
   }
 
+  public void setExternalProcessIdentifier(String externalProcessIdentifier) {
+    this.externalProcessIdentifier = externalProcessIdentifier;
+  }
+
+  public void setExecutionEngine(String executionEngine) {
+    this.executionEngine = executionEngine;
+  }
+
   protected void setSummary(Map<String, String> summary) {
     this.summary = summary;
   }
@@ -104,7 +131,7 @@ public class TableProcessState implements ProcessState {
     this.startTime = startTime;
   }
 
-  protected void setStatus(ProcessStatus status) {
+  public void setStatus(ProcessStatus status) {
     if (status == ProcessStatus.SUCCESS
         || status == ProcessStatus.FAILED
         || status == ProcessStatus.KILLED) {
@@ -129,15 +156,46 @@ public class TableProcessState implements ProcessState {
     this.id = processId;
   }
 
+  public Map<String, String> getProcessParameters() {
+    return processParameters;
+  }
+
+  public void setProcessParameters(Map<String, String> processParameters) {
+    this.processParameters = processParameters;
+  }
+
+  public void setSubmitted(String externalProcessIdentifier) {
+    this.status = ProcessStatus.SUBMITTED;
+    setExternalProcessIdentifier(externalProcessIdentifier);
+    this.startTime = System.currentTimeMillis();
+  }
+
   public void setSubmitted() {
     this.status = ProcessStatus.SUBMITTED;
     this.startTime = System.currentTimeMillis();
   }
 
+  public void setRunning() {
+    this.status = ProcessStatus.RUNNING;
+  }
+
+  public void setCanceling() {
+    this.status = ProcessStatus.CANCELING;
+  }
+
   public void addRetryNumber() {
     this.retryNumber += 1;
     this.status = ProcessStatus.PENDING;
+    this.externalProcessIdentifier = "";
     this.failedReason = null;
+  }
+
+  public void resetRetryNumber() {
+    this.retryNumber = 0;
+  }
+
+  public void setCanceled() {
+    this.status = ProcessStatus.CANCELED;
   }
 
   public void setCompleted() {
@@ -158,5 +216,9 @@ public class TableProcessState implements ProcessState {
 
   public int getRetryNumber() {
     return retryNumber;
+  }
+
+  public void setRetryNumber(int retryNumber) {
+    this.retryNumber = retryNumber;
   }
 }

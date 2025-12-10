@@ -52,6 +52,7 @@ home = [ "HTML", "RSS", "SearchIndex" ]
   main = [ # Main menu, docs site left nav
     { name = "Introduction", url = "/", weight = 1},
     { name = "Concepts", weight = 100 },
+    { name = "Configuration", weight = 150 },
     { name = "Admin Guides", weight = 200},
     { name = "User Guides", weight = 300},
     { name = "Formats", weight = 400 },
