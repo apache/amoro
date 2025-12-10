@@ -91,6 +91,9 @@ public class OptimizingConfig {
   // self-optimizing.min-plan-interval
   private long minPlanInterval;
 
+  // self-optimizing.refresh.event-triggered
+  private boolean eventTriggeredRefresh;
+
   public OptimizingConfig() {}
 
   public boolean isEnabled() {
@@ -290,6 +293,15 @@ public class OptimizingConfig {
     return this;
   }
 
+  public boolean isEventTriggeredRefresh() {
+    return eventTriggeredRefresh;
+  }
+
+  public OptimizingConfig setEventTriggeredRefresh(boolean eventTriggeredRefresh) {
+    this.eventTriggeredRefresh = eventTriggeredRefresh;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -320,7 +332,8 @@ public class OptimizingConfig {
         && baseRefreshInterval == that.baseRefreshInterval
         && hiveRefreshInterval == that.hiveRefreshInterval
         && Objects.equal(optimizerGroup, that.optimizerGroup)
-        && Objects.equal(minPlanInterval, that.minPlanInterval);
+        && Objects.equal(minPlanInterval, that.minPlanInterval)
+        && eventTriggeredRefresh == that.eventTriggeredRefresh;
   }
 
   @Override
@@ -347,7 +360,8 @@ public class OptimizingConfig {
         baseHashBucket,
         baseRefreshInterval,
         hiveRefreshInterval,
-        minPlanInterval);
+        minPlanInterval,
+        eventTriggeredRefresh);
   }
 
   @Override
@@ -373,6 +387,7 @@ public class OptimizingConfig {
         .add("baseHashBucket", baseHashBucket)
         .add("baseRefreshInterval", baseRefreshInterval)
         .add("hiveRefreshInterval", hiveRefreshInterval)
+        .add("externalEventTriggered", eventTriggeredRefresh)
         .toString();
   }
 }
