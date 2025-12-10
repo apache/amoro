@@ -18,9 +18,6 @@
 
 package org.apache.amoro.listener;
 
-import java.util.Optional;
-import java.util.PriorityQueue;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.launcher.TestExecutionListener;
@@ -28,6 +25,9 @@ import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
+import java.util.PriorityQueue;
 
 public class AmoroRunListener implements TestExecutionListener {
   private static final Logger LOG = LoggerFactory.getLogger(AmoroRunListener.class);
@@ -88,9 +88,7 @@ public class AmoroRunListener implements TestExecutionListener {
   @Override
   public void executionSkipped(TestIdentifier testIdentifier, String reason) {
     if (testIdentifier.isTest()) {
-      String ignoredReason = reason != null && !reason.isEmpty()
-          ? reason
-          : "No reason provided";
+      String ignoredReason = reason != null && !reason.isEmpty() ? reason : "No reason provided";
       LOG.info(
           "@Disabled method '{}', ignored reason '{}'.",
           testIdentifier.getDisplayName(),
