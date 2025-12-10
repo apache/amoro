@@ -67,6 +67,7 @@ import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
 import org.apache.amoro.table.descriptor.PartitionBaseInfo;
 import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
+import org.apache.amoro.table.descriptor.StatisticsBaseInfo;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
 import org.apache.amoro.utils.MixedDataFiles;
@@ -507,6 +508,11 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   @Override
   public List<ConsumerInfo> getTableConsumerInfos(AmoroTable<?> amoroTable) {
     return Collections.emptyList();
+  }
+
+  @Override
+  public StatisticsBaseInfo getTableStatistics(AmoroTable<?> amoroTable) {
+    return new StatisticsBaseInfo();
   }
 
   @Override
