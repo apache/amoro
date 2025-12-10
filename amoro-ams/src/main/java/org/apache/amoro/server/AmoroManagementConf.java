@@ -192,6 +192,13 @@ public class AmoroManagementConf {
           .defaultValue(100)
           .withDescription("Filters will not be used beyond that number of partitions.");
 
+  public static final ConfigOption<Duration> REFRESH_TABLES_MAX_INTERVAL =
+      ConfigOptions.key("refresh-tables.max-interval")
+          .durationType()
+          .defaultValue(Duration.ofHours(1))
+          .withDescription(
+              "Maximum interval for refreshing table metadata. (Used as the fallback interval when enabling refreshes triggered by external events).");
+
   public static final ConfigOption<Duration> BLOCKER_TIMEOUT =
       ConfigOptions.key("blocker.timeout")
           .durationType()

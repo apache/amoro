@@ -96,6 +96,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | refresh-external-catalogs.queue-size | 1000000 | The queue size of the executors of the external catalog explorer. |
 | refresh-external-catalogs.thread-count | 10 | The number of threads used for discovering tables in external catalogs. |
 | refresh-tables.interval | 1 min | Interval for refreshing table metadata. |
+| refresh-tables.max-interval | 1 h | Maximum interval for refreshing table metadata. (Used as the fallback interval when enabling refreshes triggered by external events). |
 | refresh-tables.max-pending-partition-count | 100 | Filters will not be used beyond that number of partitions. |
 | refresh-tables.thread-count | 10 | The number of threads used for refreshing tables. |
 | self-optimizing.break-quota-limit-enabled | true | Allow the table to break the quota limit when the resource is sufficient. |

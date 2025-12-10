@@ -45,6 +45,7 @@ ams:
     thread-count: 10
     interval: 1min # 60000
     max-pending-partition-count: 100 # default 100
+    max-interval: 1h
 
   self-optimizing:
     commit-thread-count: 10

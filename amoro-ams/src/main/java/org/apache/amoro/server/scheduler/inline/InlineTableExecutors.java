@@ -78,7 +78,8 @@ public class InlineTableExecutors {
             tableService,
             conf.getInteger(AmoroManagementConf.REFRESH_TABLES_THREAD_COUNT),
             conf.get(AmoroManagementConf.REFRESH_TABLES_INTERVAL).toMillis(),
-            conf.getInteger(AmoroManagementConf.REFRESH_MAX_PENDING_PARTITIONS));
+            conf.getInteger(AmoroManagementConf.REFRESH_MAX_PENDING_PARTITIONS),
+            conf.get(AmoroManagementConf.REFRESH_TABLES_MAX_INTERVAL).toMillis());
     if (conf.getBoolean(AmoroManagementConf.AUTO_CREATE_TAGS_ENABLED)) {
       this.tagsAutoCreatingExecutor =
           new TagsAutoCreatingExecutor(

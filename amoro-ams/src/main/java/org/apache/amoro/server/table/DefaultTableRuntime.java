@@ -100,6 +100,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
   private final TableSummaryMetrics tableSummaryMetrics;
   private volatile long lastPlanTime;
+  private volatile long lastRefreshTime;
   private volatile OptimizingProcess optimizingProcess;
   private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
@@ -179,6 +180,14 @@ public class DefaultTableRuntime extends AbstractTableRuntime
 
   public void setLastPlanTime(long lastPlanTime) {
     this.lastPlanTime = lastPlanTime;
+  }
+
+  public long getLastRefreshTime() {
+    return lastRefreshTime;
+  }
+
+  public void setLastRefreshTime(long lastRefreshTime) {
+    this.lastRefreshTime = lastRefreshTime;
   }
 
   public OptimizingStatus getOptimizingStatus() {
@@ -334,6 +343,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
               return s;
             })
         .commit();
+    setLastRefreshTime(System.currentTimeMillis());
     return this;
   }
 

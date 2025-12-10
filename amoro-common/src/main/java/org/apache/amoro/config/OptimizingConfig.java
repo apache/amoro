@@ -97,6 +97,9 @@ public class OptimizingConfig {
   // self-optimizing.evaluation.fallback-interval
   private long evaluationFallbackInterval;
 
+  // self-optimizing.refresh.event-triggered
+  private boolean eventTriggeredRefresh;
+
   public OptimizingConfig() {}
 
   public boolean isEnabled() {
@@ -318,6 +321,15 @@ public class OptimizingConfig {
     return this;
   }
 
+  public boolean isEventTriggeredRefresh() {
+    return eventTriggeredRefresh;
+  }
+
+  public OptimizingConfig setEventTriggeredRefresh(boolean eventTriggeredRefresh) {
+    this.eventTriggeredRefresh = eventTriggeredRefresh;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -350,7 +362,8 @@ public class OptimizingConfig {
         && Objects.equal(optimizerGroup, that.optimizerGroup)
         && Objects.equal(minPlanInterval, that.minPlanInterval)
         && Objects.equal(evaluationMseTolerance, that.evaluationMseTolerance)
-        && Objects.equal(evaluationFallbackInterval, that.evaluationFallbackInterval);
+        && Objects.equal(evaluationFallbackInterval, that.evaluationFallbackInterval)
+        && eventTriggeredRefresh == that.eventTriggeredRefresh;
   }
 
   @Override
@@ -379,7 +392,8 @@ public class OptimizingConfig {
         hiveRefreshInterval,
         minPlanInterval,
         evaluationMseTolerance,
-        evaluationFallbackInterval);
+        evaluationFallbackInterval,
+        eventTriggeredRefresh);
   }
 
   @Override
@@ -407,6 +421,7 @@ public class OptimizingConfig {
         .add("hiveRefreshInterval", hiveRefreshInterval)
         .add("evaluationMseTolerance", evaluationMseTolerance)
         .add("evaluationFallbackInterval", evaluationFallbackInterval)
+        .add("externalEventTriggered", eventTriggeredRefresh)
         .toString();
   }
 }

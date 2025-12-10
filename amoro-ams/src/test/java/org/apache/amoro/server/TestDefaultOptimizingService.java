@@ -478,7 +478,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   private class TableRuntimeRefresher extends TableRuntimeRefreshExecutor {
 
     public TableRuntimeRefresher() {
-      super(tableService(), 1, Integer.MAX_VALUE, Integer.MAX_VALUE);
+      super(tableService(), 1, Integer.MAX_VALUE, Integer.MAX_VALUE, Long.MAX_VALUE);
     }
 
     void refreshPending() {
