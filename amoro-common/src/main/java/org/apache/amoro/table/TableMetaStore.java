@@ -284,7 +284,7 @@ public class TableMetaStore implements Serializable {
     if (runtimeContext == null) {
       if (withLocalConfiguration) {
         // do not use cache for TableMetaStore constructed with local Configuration
-        runtimeContext = new RuntimeContext();
+        return new RuntimeContext();
       } else {
         RUNTIME_CONTEXT_CACHE.putIfAbsent(this, new RuntimeContext());
         runtimeContext = RUNTIME_CONTEXT_CACHE.get(this);
