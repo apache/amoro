@@ -127,6 +127,7 @@ public class TableMetaStore implements Serializable {
   private final boolean disableAuth;
   private final String accessKey;
   private final String secretKey;
+  private boolean withLocalConfiguration = false;
 
   private transient RuntimeContext runtimeContext;
   private transient String authInformation;
@@ -180,6 +181,7 @@ public class TableMetaStore implements Serializable {
     this.accessKey = null;
     this.secretKey = null;
     getRuntimeContext().setConfiguration(configuration);
+    this.withLocalConfiguration = true;
   }
 
   public byte[] getMetaStoreSite() {
@@ -280,8 +282,13 @@ public class TableMetaStore implements Serializable {
 
   private RuntimeContext getRuntimeContext() {
     if (runtimeContext == null) {
-      RUNTIME_CONTEXT_CACHE.putIfAbsent(this, new RuntimeContext());
-      runtimeContext = RUNTIME_CONTEXT_CACHE.get(this);
+      if (withLocalConfiguration) {
+        // do not use cache for TableMetaStore constructed with local Configuration
+        runtimeContext = new RuntimeContext();
+      } else {
+        RUNTIME_CONTEXT_CACHE.putIfAbsent(this, new RuntimeContext());
+        runtimeContext = RUNTIME_CONTEXT_CACHE.get(this);
+      }
     }
     return runtimeContext;
   }
