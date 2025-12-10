@@ -130,13 +130,16 @@ CREATE UNIQUE INDEX uniq_table_state_key ON table_runtime_state (table_id, state
 CREATE TABLE table_process (
     process_id       BIGINT NOT NULL PRIMARY KEY,
     table_id         BIGINT NOT NULL,
+    external_process_identifier         VARCHAR(256) NOT NULL,
     status           VARCHAR(64) NOT NULL,
     process_type     VARCHAR(64) NOT NULL,
     process_stage    VARCHAR(64) NOT NULL,
     execution_engine VARCHAR(64) NOT NULL,
+    retry_number     INT NOT NULL,
     create_time      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     finish_time      TIMESTAMP DEFAULT NULL,
     fail_message     CLOB,
+    process_parameters          CLOB(64m),
     summary          CLOB(64m)
 );
 CREATE INDEX table_process_table_idx ON table_process (table_id, create_time);
@@ -212,7 +215,7 @@ CREATE TABLE api_tokens (
 CREATE TABLE platform_file (
     id                 INT GENERATED ALWAYS AS IDENTITY,
     file_name          VARCHAR(100) NOT NULL,
-    file_content_b64   LONG VARCHAR NOT NULL,
+    file_content_b64   CLOB NOT NULL,
     file_path          VARCHAR(100),
     add_time           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT platform_file_pk PRIMARY KEY (id)

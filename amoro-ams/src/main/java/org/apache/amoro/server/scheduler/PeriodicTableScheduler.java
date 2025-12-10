@@ -25,8 +25,10 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.cleanup.CleanupOperation;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -84,18 +86,49 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
         .forEach(
             tableRuntime -> {
               if (scheduledTables.add(tableRuntime.getTableIdentifier())) {
-                executor.schedule(
-                    () -> executeTask(tableRuntime), getStartDelay(), TimeUnit.MILLISECONDS);
+                scheduleTableExecution(
+                    tableRuntime, calculateExecutionDelay(tableRuntime, getCleanupOperation()));
               }
             });
 
     logger.info("Table executor {} initialized", getClass().getSimpleName());
   }
 
+  private long calculateExecutionDelay(
+      TableRuntime tableRuntime, CleanupOperation cleanupOperation) {
+    // If the table needs to be executed immediately, schedule it to run after a short delay.
+    if (shouldExecuteTask(tableRuntime, cleanupOperation)) {
+      return getStartDelay();
+    }
+
+    // If the table does not need to be executed immediately, schedule it for the next execution
+    // time.
+    // Adding getStartDelay() helps distribute the execution time of multiple tables,
+    // reducing the probability of simultaneous execution and system load spikes.
+    return getNextExecutingTime(tableRuntime) + getStartDelay();
+  }
+
+  /**
+   * Schedule a table for execution with the specified delay.
+   *
+   * @param tableRuntime The table runtime to schedule
+   * @param delay The delay in milliseconds before execution
+   */
+  private void scheduleTableExecution(TableRuntime tableRuntime, long delay) {
+    executor.schedule(() -> executeTask(tableRuntime), delay, TimeUnit.MILLISECONDS);
+    logger.debug(
+        "Scheduled execution for table {} with delay {} ms",
+        tableRuntime.getTableIdentifier(),
+        delay);
+  }
+
   private void executeTask(TableRuntime tableRuntime) {
     try {
       if (isExecutable(tableRuntime)) {
         execute(tableRuntime);
+        // Different tables take different amounts of time to execute the end of execute(),
+        // so you need to perform the update operation separately for each table.
+        persistUpdatingCleanupTime(tableRuntime);
       }
     } finally {
       scheduledTables.remove(tableRuntime.getTableIdentifier());
@@ -116,6 +149,99 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
   protected abstract boolean enabled(TableRuntime tableRuntime);
 
   protected abstract void execute(TableRuntime tableRuntime);
+
+  protected boolean shouldExecute(Long lastCleanupEndTime) {
+    return true;
+  }
+
+  private void persistUpdatingCleanupTime(TableRuntime tableRuntime) {
+    CleanupOperation cleanupOperation = getCleanupOperation();
+    if (shouldSkipOperation(tableRuntime, cleanupOperation)) {
+      return;
+    }
+
+    try {
+      long currentTime = System.currentTimeMillis();
+      ((DefaultTableRuntime) tableRuntime).updateLastCleanTime(cleanupOperation, currentTime);
+
+      logger.debug(
+          "Update lastCleanTime for table {} with cleanup operation {}",
+          tableRuntime.getTableIdentifier().getTableName(),
+          cleanupOperation);
+    } catch (Exception e) {
+      logger.error(
+          "Failed to update lastCleanTime for table {}",
+          tableRuntime.getTableIdentifier().getTableName(),
+          e);
+    }
+  }
+
+  /**
+   * Get cleanup operation. Default is NONE, subclasses should override this method to provide
+   * specific operation.
+   *
+   * @return cleanup operation
+   */
+  protected CleanupOperation getCleanupOperation() {
+    return CleanupOperation.NONE;
+  }
+
+  protected boolean shouldExecuteTask(
+      TableRuntime tableRuntime, CleanupOperation cleanupOperation) {
+    if (shouldSkipOperation(tableRuntime, cleanupOperation)) {
+      return true;
+    }
+
+    long lastCleanupEndTime =
+        ((DefaultTableRuntime) tableRuntime).getLastCleanTime(cleanupOperation);
+
+    // If it's zero, execute the task
+    if (lastCleanupEndTime == 0L) {
+      logger.debug(
+          "LastCleanupTime for table {} with operation {} is not exist, executing task",
+          tableRuntime.getTableIdentifier().getTableName(),
+          cleanupOperation);
+      return true;
+    }
+
+    // After ams restarts, certain cleanup operations can only be re-executed
+    // if sufficient time has elapsed since the last cleanup.
+    boolean result = shouldExecute(lastCleanupEndTime);
+    logger.debug(
+        result
+            ? "Should execute task for table {} with {}"
+            : "Not enough time has passed since last cleanup for table {} with {}, delaying execution",
+        tableRuntime.getTableIdentifier().getTableName(),
+        cleanupOperation);
+
+    return result;
+  }
+
+  /**
+   * Check if the operation should be skipped based on common conditions.
+   *
+   * @param tableRuntime the table runtime to check
+   * @param cleanupOperation the cleanup operation to perform
+   * @return true if the operation should be skipped, false otherwise
+   */
+  private boolean shouldSkipOperation(
+      TableRuntime tableRuntime, CleanupOperation cleanupOperation) {
+    if (cleanupOperation == CleanupOperation.NONE) {
+      logger.debug(
+          "No cleanup operation specified, skipping cleanup time check for table {}",
+          tableRuntime.getTableIdentifier().getTableName());
+      return true;
+    }
+
+    if (!(tableRuntime instanceof DefaultTableRuntime)) {
+      logger.debug(
+          "Table runtime is not DefaultTableRuntime, skipping cleanup time check for table {}",
+          tableRuntime.getTableIdentifier().getTableName());
+      return true;
+    }
+
+    return false;
+  }
 
   protected String getThreadName() {
     return String.join("-", StringUtils.splitByCharacterTypeCamelCase(getClass().getSimpleName()))

@@ -49,6 +49,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -312,11 +313,14 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
               mapper.insertProcess(
                   identifier.getId(),
                   processId,
+                  "",
                   status,
                   type.name(),
                   type.name(),
                   "AMORO",
+                  0,
                   planTime,
+                  new HashMap<>(),
                   summary.summaryAsMap(false)));
       doAs(
           OptimizingProcessMapper.class,
