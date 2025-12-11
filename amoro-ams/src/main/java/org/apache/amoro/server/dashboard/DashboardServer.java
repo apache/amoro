@@ -92,6 +92,7 @@ public class DashboardServer {
 
   private final PasswdAuthenticationProvider basicAuthProvider;
   private final TokenAuthenticationProvider jwtAuthProvider;
+
   private final String proxyClientIpHeader;
 
   public DashboardServer(
