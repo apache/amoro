@@ -163,7 +163,8 @@
         <pagehelper.version>6.1.0</pagehelper.version>
         <jsqlparser.version>4.7</jsqlparser.version>
         <fasterxml.jackson.version>2.14.2</fasterxml.jackson.version>
-
+        <apache-directory-server.version>2.0.0-M15</apache-directory-server.version>
+        <apache-directory-api-all.version>1.0.0-M20</apache-directory-api-all.version>
         <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
         <lucene-dependency-scope>compile</lucene-dependency-scope>
         <aliyun-sdk-dependency-scope>provided</aliyun-sdk-dependency-scope>
@@ -598,6 +599,13 @@
                 <groupId>org.apache.directory.jdbm</groupId>
                 <artifactId>apacheds-jdbm1</artifactId>
                 <version>2.0.0-M2</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-all</artifactId>
+                <version>${apache-directory-api-all.version}</version>
                 <scope>test</scope>
             </dependency>
 

@@ -328,6 +328,29 @@ public class AmoroManagementConf {
               "User-defined password authentication implementation of"
                   + " org.apache.amoro.authentication.PasswdAuthenticationProvider");
 
+  public static final ConfigOption<String> HTTP_SERVER_LOGIN_AUTH_PROVIDER =
+      ConfigOptions.key("http-server.login-auth-provider")
+          .stringType()
+          .defaultValue(DefaultPasswdAuthenticationProvider.class.getName())
+          .withDescription(
+              "User-defined login authentication implementation of"
+                  + " org.apache.amoro.authentication.PasswdAuthenticationProvider");
+
+  public static final ConfigOption<String> HTTP_SERVER_LOGIN_AUTH_LDAP_USER_PATTERN =
+      ConfigOptions.key("http-server.login-auth-ldap-user-pattern")
+          .stringType()
+          .noDefaultValue()
+          .withDescription(
+              "LDAP user pattern for authentication. The pattern defines how to construct the user's distinguished name (DN) in the LDAP directory. "
+                  + "Use {0} as a placeholder for the username. For example, 'cn={0},ou=people,dc=example,dc=com' will search for users in the specified organizational unit.");
+
+  public static final ConfigOption<String> HTTP_SERVER_LOGIN_AUTH_LDAP_URL =
+      ConfigOptions.key("http-server.login-auth-ldap-url")
+          .stringType()
+          .noDefaultValue()
+          .withDescription(
+              "LDAP connection URL(s), value could be a SPACE separated list of URLs to multiple LDAP servers for resiliency. URLs are tried in the order specified until the connection is successful");
+
   public static final ConfigOption<String> HTTP_SERVER_AUTH_JWT_PROVIDER =
       ConfigOptions.key("http-server.auth-jwt-provider")
           .stringType()
