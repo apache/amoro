@@ -500,6 +500,13 @@
             <version>${guava.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-test-framework</artifactId>
+            <version>${apache-directory-server.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
