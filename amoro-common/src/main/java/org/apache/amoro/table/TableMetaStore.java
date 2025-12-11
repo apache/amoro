@@ -127,7 +127,6 @@ public class TableMetaStore implements Serializable {
   private final boolean disableAuth;
   private final String accessKey;
   private final String secretKey;
-  private final Configuration configuration;
 
   private transient RuntimeContext runtimeContext;
   private transient String authInformation;
@@ -166,7 +165,6 @@ public class TableMetaStore implements Serializable {
     this.disableAuth = disableAuth;
     this.accessKey = accessKey;
     this.secretKey = secretKey;
-    this.configuration = null;
   }
 
   private TableMetaStore(Configuration configuration) {
@@ -181,8 +179,8 @@ public class TableMetaStore implements Serializable {
     this.krbPrincipal = null;
     this.accessKey = null;
     this.secretKey = null;
-    this.configuration = configuration;
-    getRuntimeContext().setConfiguration(configuration);
+    this.runtimeContext = new RuntimeContext();
+    runtimeContext.setConfiguration(configuration);
   }
 
   public byte[] getMetaStoreSite() {
@@ -283,17 +281,8 @@ public class TableMetaStore implements Serializable {
 
   private RuntimeContext getRuntimeContext() {
     if (runtimeContext == null) {
-      // When TableMetaStore is constructed with a configuration, it means we want to use
-      // the local configuration rather than the cached one. Create a separate RuntimeContext
-      // for it to avoid incorrect cache hits.
-      if (configuration != null) {
-        // This is a TableMetaStore created with withConfiguration(), don't use cache
-        runtimeContext = new RuntimeContext();
-      } else {
-        // Normal case: use the cache for TableMetaStore with catalog configurations
-        RUNTIME_CONTEXT_CACHE.putIfAbsent(this, new RuntimeContext());
-        runtimeContext = RUNTIME_CONTEXT_CACHE.get(this);
-      }
+      RUNTIME_CONTEXT_CACHE.putIfAbsent(this, new RuntimeContext());
+      runtimeContext = RUNTIME_CONTEXT_CACHE.get(this);
     }
     return runtimeContext;
   }
