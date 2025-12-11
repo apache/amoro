@@ -70,9 +70,6 @@ sectionPagesMenu = "main"
   name = "NetEase Media"
   logo = "netease-media.png"
 [[params.users]]
-  name = "NetEase Yidun"
-  logo = "netease-yidun.png"
-[[params.users]]
   name = "GREE"
   logo = "gree.png"
 [[params.users]]
@@ -111,6 +108,9 @@ sectionPagesMenu = "main"
 [[params.users]]
   name = "Ctrip"
   logo = "ctrip.png"
+[[params.users]]
+  name = "Huifu"
+  logo = "huifu.svg"
 
 [outputFormats.SearchIndex]
 baseName = "landingpagesearch"
