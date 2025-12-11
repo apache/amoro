@@ -207,8 +207,7 @@ public class ConfigHelpers {
     if (o.getClass() == String.class) {
       return (String) o;
     } else if (o.getClass() == Duration.class) {
-      Duration duration = (Duration) o;
-      return String.format("%d ns", duration.toNanos());
+      return TimeUtils.formatWithHighestUnit((Duration) o);
     } else if (o instanceof List) {
       return ((List<?>) o)
           .stream()
@@ -440,7 +439,8 @@ public class ConfigHelpers {
                       return orderedUnits.get(idx - 1);
                     }
                   })
-              .orElse(TimeUnit.MILLISECONDS);
+              // Use the largest unit if all divide evenly
+              .orElse(orderedUnits.get(orderedUnits.size() - 1));
 
       return String.format(
           "%d %s",
