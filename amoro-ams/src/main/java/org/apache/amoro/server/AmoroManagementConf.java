@@ -535,6 +535,7 @@ public class AmoroManagementConf {
   public static final String DB_TYPE_DERBY = "derby";
   public static final String DB_TYPE_MYSQL = "mysql";
   public static final String DB_TYPE_POSTGRES = "postgres";
+  public static final String DB_TYPE_DAMENG = "dameng";
 
   // terminal config
   public static final List<String> TERMINAL_BACKEND_VALUES =
