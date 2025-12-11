@@ -127,7 +127,7 @@ public class TableMetaStore implements Serializable {
   private final boolean disableAuth;
   private final String accessKey;
   private final String secretKey;
-  private final boolean withLocalConfiguration;
+  private final Configuration configuration;
 
   private transient RuntimeContext runtimeContext;
   private transient String authInformation;
@@ -166,7 +166,7 @@ public class TableMetaStore implements Serializable {
     this.disableAuth = disableAuth;
     this.accessKey = accessKey;
     this.secretKey = secretKey;
-    this.withLocalConfiguration = false;
+    this.configuration = null;
   }
 
   private TableMetaStore(Configuration configuration) {
@@ -181,7 +181,7 @@ public class TableMetaStore implements Serializable {
     this.krbPrincipal = null;
     this.accessKey = null;
     this.secretKey = null;
-    this.withLocalConfiguration = true;
+    this.configuration = configuration;
     getRuntimeContext().setConfiguration(configuration);
   }
 
@@ -286,7 +286,7 @@ public class TableMetaStore implements Serializable {
       // When TableMetaStore is constructed with a configuration, it means we want to use
       // the local configuration rather than the cached one. Create a separate RuntimeContext
       // for it to avoid incorrect cache hits.
-      if (withLocalConfiguration) {
+      if (configuration != null) {
         // This is a TableMetaStore created with withConfiguration(), don't use cache
         runtimeContext = new RuntimeContext();
       } else {
