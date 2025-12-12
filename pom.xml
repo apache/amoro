@@ -72,6 +72,7 @@
     <properties>
         <java.source.version>11</java.source.version>
         <java.target.version>11</java.target.version>
+        <target.java.version>1.8</target.java.version>
         <maven.compiler.source>${java.source.version}</maven.compiler.source>
         <maven.compiler.target>${java.target.version}</maven.compiler.target>
         <maven.version>3.9.11</maven.version>
@@ -1309,6 +1310,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
@@ -1733,6 +1740,11 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>3.0.0-M1</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1767,6 +1779,97 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <!-- enforce at least mvn version 3.1.1 (see FLINK-12447) -->
+                                    <version>[3.1.1,)</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>${target.java.version}</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>ban-unsafe-snakeyaml</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>org.yaml:snakeyaml:(,1.26]</exclude>
+                                    </excludes>
+                                    <includes>
+                                        <!-- Snakeyaml is pulled in by many modules without using it in production,
+                                          so there's no benefit in us investing time into bumping these. -->
+                                        <include>org.yaml:snakeyaml:(,1.26]:*:test</include>
+                                    </includes>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>ban-unsafe-jackson</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>com.fasterxml.jackson*:*:(,2.7.0]</exclude>
+                                    </excludes>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>dependency-convergence</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <!-- disabled by default as it interacts badly with shade-plugin -->
+                        <phase>none</phase>
+                        <configuration>
+                            <rules>
+                                <dependencyConvergence></dependencyConvergence>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>enforce-junit-engines</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <phase>validate</phase>
+                        <configuration>
+                            <rules>
+                                <evaluateBeanshell>
+                                    <condition>"${project.dependencies}".contains("groupId=org.junit.jupiter, artifactId=junit-jupiter-engine,")</condition>
+                                    <message>If junit-jupiter-engine is missing, JUnit 5 test cases will be silently ignored.</message>
+                                </evaluateBeanshell>
+                                <evaluateBeanshell>
+                                    <condition>"${project.dependencies}".contains("groupId=org.junit.vintage, artifactId=junit-vintage-engine,")</condition>
+                                    <message>If junit-vintage-engine is missing, JUnit 4 test cases will be silently ignored.</message>
+                                </evaluateBeanshell>
+                            </rules>
+                        </configuration>
+                    </execution>
+
+                </executions>
             </plugin>
         </plugins>
     </build>
