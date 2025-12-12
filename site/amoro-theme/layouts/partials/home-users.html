@@ -12,21 +12,30 @@
 <!-- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
 <!-- - See the License for the specific language governing permissions and-->
 <!-- - limitations under the License.-->
-{{ if eq $.Site.Params.siteType "docs" }}
-    <!-- Don't include termynal.js for docs homepage -->
-    {{ .Scratch.Set "includeTermynal" false }}
-    {{ partial "body.html" . }}
-{{ else }}
-    {{ partial "head.html" . }}
-    {{ partial "header.html" . }}
-    <div id="content">
-    {{ partial "home-intro.html" . }}
-    {{ partial "home-content.html" . }}
-    {{ partial "home-users.html" . }}
-    {{ partial "home-feature.html" . }}
-    {{ partial "home-footer.html" . }}
-    <!-- Include termynal.js for landing-page homepage -->
-    {{ .Scratch.Set "includeTermynal" true }}
-    {{ partial "js.html" . }}
+<div id="home-users">
+  <div class="content">
+    <div class="title">Who is Using Amoro</div>
+    <div class="subtitle">Trusted by leading companies worldwide</div>
+    <div class="users-wall">
+      <div class="users-track">
+        {{range .Site.Params.users}}
+        <div class="user-item" title="{{ .name }}">
+          <img src="{{ .Site.BaseURL }}/img/users/{{ .logo }}" alt="{{ .name }}" />
+        </div>
+        {{end}}
+        <!-- Duplicate for infinite scroll effect -->
+        {{range .Site.Params.users}}
+        <div class="user-item" title="{{ .name }}">
+          <img src="{{ .Site.BaseURL }}/img/users/{{ .logo }}" alt="{{ .name }}" />
+        </div>
+        {{end}}
+      </div>
     </div>
-{{ end }}
+    <div class="add-company">
+      <a href="https://github.com/apache/amoro/issues/1853" target="_blank" class="btn btn-add">
+        Add Your Company
+      </a>
+    </div>
+  </div>
+</div>
+
