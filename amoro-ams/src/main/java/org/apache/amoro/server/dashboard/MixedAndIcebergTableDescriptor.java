@@ -447,9 +447,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     }
     Map<String, PartitionBaseInfo> partitionBaseInfoHashMap = new HashMap<>();
 
-    CloseableIterable<PartitionFileBaseInfo> tableFiles =
-        getTableFilesInternal(amoroTable, null, null);
-    try {
+    try (CloseableIterable<PartitionFileBaseInfo> tableFiles =
+        getTableFilesInternal(amoroTable, null, null)) {
       for (PartitionFileBaseInfo fileInfo : tableFiles) {
         if (!partitionBaseInfoHashMap.containsKey(fileInfo.getPartition())) {
           PartitionBaseInfo partitionBaseInfo = new PartitionBaseInfo();
@@ -465,14 +464,9 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                 ? partitionInfo.getLastCommitTime()
                 : fileInfo.getCommitTime());
       }
-    } finally {
-      try {
-        tableFiles.close();
-      } catch (IOException e) {
-        LOG.warn("Failed to close the manifest reader.", e);
-      }
+    } catch (IOException e) {
+      LOG.warn("Failed to close the manifest reader.", e);
     }
-
     return new ArrayList<>(partitionBaseInfoHashMap.values());
   }
 

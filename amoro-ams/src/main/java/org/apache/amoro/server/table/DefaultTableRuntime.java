@@ -554,6 +554,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
             currentChangeSnapshotId);
         state.setCurrentChangeSnapshotId(currentChangeSnapshotId);
         state.setCurrentSnapshotId(currentSnapshotId);
+        return true;
       }
     } else {
       long currentSnapshotId = doRefreshSnapshots((UnkeyedTable) table);
