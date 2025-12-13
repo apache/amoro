@@ -22,6 +22,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.process.ProcessService;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.DefaultTableRuntimeFactory;
 import org.apache.amoro.server.table.DefaultTableService;
@@ -37,6 +38,7 @@ import java.time.Duration;
 public abstract class AMSServiceTestBase extends AMSManagerTestBase {
   private static DefaultTableService TABLE_SERVICE = null;
   private static DefaultOptimizingService OPTIMIZING_SERVICE = null;
+  private static ProcessService PROCESS_SERVICE = null;
 
   private static TableRuntimeFactoryManager tableRuntimeFactoryManager = null;
 
@@ -57,7 +59,10 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
       OPTIMIZING_SERVICE =
           new DefaultOptimizingService(
               configurations, CATALOG_MANAGER, OPTIMIZER_MANAGER, TABLE_SERVICE);
+      PROCESS_SERVICE = new ProcessService(configurations, TABLE_SERVICE);
+
       TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
+      TABLE_SERVICE.addHandlerChain(PROCESS_SERVICE.getTableHandlerChain());
       TABLE_SERVICE.initialize();
       try {
         ResourceGroup group = defaultResourceGroup();
@@ -88,6 +93,10 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
 
   protected DefaultOptimizingService optimizingService() {
     return OPTIMIZING_SERVICE;
+  }
+
+  protected ProcessService processServiceService() {
+    return PROCESS_SERVICE;
   }
 
   protected static ResourceGroup defaultResourceGroup() {

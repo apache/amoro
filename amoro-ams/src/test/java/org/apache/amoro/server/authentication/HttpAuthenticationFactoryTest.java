@@ -20,11 +20,15 @@ package org.apache.amoro.server.authentication;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.apache.amoro.authentication.PasswdAuthenticationProvider;
+import org.apache.amoro.authentication.TokenAuthenticationProvider;
+import org.apache.amoro.authentication.TokenCredential;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.spi.authentication.PasswdAuthenticationProvider;
 import org.junit.jupiter.api.Test;
+
+import java.util.Collections;
 
 public class HttpAuthenticationFactoryTest {
   @Test
@@ -44,17 +48,52 @@ public class HttpAuthenticationFactoryTest {
         HttpAuthenticationFactory.getPasswordAuthenticationProvider(
             DefaultPasswdAuthenticationProvider.class.getName(), conf);
 
-    assert passwdAuthenticationProvider.authenticate("admin", "password").getName().equals("admin");
+    assert passwdAuthenticationProvider
+        .authenticate(new DefaultPasswordCredential("admin", "password"))
+        .getName()
+        .equals("admin");
 
     assertThrows(
         SignatureCheckException.class,
         () -> {
-          passwdAuthenticationProvider.authenticate("admin", "invalidPassword");
+          passwdAuthenticationProvider.authenticate(
+              new DefaultPasswordCredential("admin", "invalidPassword"));
         });
     assertThrows(
         SignatureCheckException.class,
         () -> {
-          passwdAuthenticationProvider.authenticate("nonAdmin", "password");
+          passwdAuthenticationProvider.authenticate(
+              new DefaultPasswordCredential("nonAdmin", "password"));
+        });
+  }
+
+  @Test
+  public void testBearerTokenAuthenticationProvider() {
+    Configurations conf = new Configurations();
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          HttpAuthenticationFactory.getBearerAuthenticationProvider(
+              "NonExistentProviderClass", conf);
+        });
+
+    TokenAuthenticationProvider tokenAuthenticationProvider =
+        HttpAuthenticationFactory.getBearerAuthenticationProvider(
+            UserDefinedTokenAuthenticationProviderImpl.class.getName(), conf);
+
+    assert tokenAuthenticationProvider
+        .authenticate(
+            new DefaultTokenCredential(
+                "token", Collections.singletonMap(TokenCredential.CLIENT_IP_KEY, "localhost")))
+        .getName()
+        .equals("user");
+    assertThrows(
+        SignatureCheckException.class,
+        () -> {
+          tokenAuthenticationProvider.authenticate(
+              new DefaultTokenCredential(
+                  "invalidToken",
+                  Collections.singletonMap(TokenCredential.CLIENT_IP_KEY, "localhost")));
         });
   }
 }

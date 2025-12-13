@@ -205,6 +205,14 @@ After installing the plugin, format your code automatically by applying the foll
 7. Under “Formatting Actions”, select “Optimize imports” and “Reformat file”.
 8. From the “All file types list” next to “Reformat code”, select Java and Scala.
 
+### Updating Configuration Documentation
+
+If you modify ConfigOptions, please regenerate the configuration documentation by running:
+
+```shell
+UPDATE=1 ./mvnw test -pl amoro-ams -am -Dtest=ConfigurationsTest
+```
+
 ### Copyright
 
 All files (including source code, configuration files) in the project are required to declare
