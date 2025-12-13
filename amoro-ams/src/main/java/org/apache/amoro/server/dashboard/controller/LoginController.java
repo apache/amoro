@@ -19,22 +19,23 @@
 package org.apache.amoro.server.dashboard.controller;
 
 import io.javalin.http.Context;
-import org.apache.amoro.config.Configurations;
-import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.authentication.DefaultPasswordCredential;
+import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.server.dashboard.response.OkResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.Map;
 
 /** The controller that handles login requests. */
 public class LoginController {
+  public static final Logger LOG = LoggerFactory.getLogger(LoginController.class);
 
-  private final String adminUser;
-  private final String adminPassword;
+  private final DashboardServer dashboardServer;
 
-  public LoginController(Configurations serviceConfig) {
-    adminUser = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
-    adminPassword = serviceConfig.get(AmoroManagementConf.ADMIN_PASSWORD);
+  public LoginController(DashboardServer dashboardServer) {
+    this.dashboardServer = dashboardServer;
   }
 
   /** Get current user. */
@@ -49,10 +50,11 @@ public class LoginController {
     Map<String, String> bodyParams = ctx.bodyAsClass(Map.class);
     String user = bodyParams.get("user");
     String pwd = bodyParams.get("password");
-    if (adminUser.equals(user) && (adminPassword.equals(pwd))) {
-      ctx.sessionAttribute("user", new SessionInfo(adminUser, System.currentTimeMillis() + ""));
-      ctx.json(OkResponse.of("success"));
-    } else {
+    DefaultPasswordCredential credential = new DefaultPasswordCredential(user, pwd);
+    try {
+      dashboardServer.getLoginAuthProvider().authenticate(credential);
+    } catch (Exception e) {
+      LOG.error("authenticate user {} failed", user, e);
       throw new RuntimeException("invalid user " + user + " or password!");
     }
   }

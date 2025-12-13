@@ -92,6 +92,8 @@ public class DashboardServer {
 
   private final PasswdAuthenticationProvider basicAuthProvider;
   private final TokenAuthenticationProvider jwtAuthProvider;
+
+  private final PasswdAuthenticationProvider loginAuthProvider;
   private final String proxyClientIpHeader;
 
   public DashboardServer(
@@ -103,7 +105,7 @@ public class DashboardServer {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController();
-    this.loginController = new LoginController(serviceConfig);
+    this.loginController = new LoginController(this);
     this.optimizerGroupController = new OptimizerGroupController(tableManager, optimizerManager);
     this.optimizerController = new OptimizerController(optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
@@ -131,6 +133,9 @@ public class DashboardServer {
             ? HttpAuthenticationFactory.getBearerAuthenticationProvider(
                 serviceConfig.get(AmoroManagementConf.HTTP_SERVER_AUTH_JWT_PROVIDER), serviceConfig)
             : null;
+    this.loginAuthProvider =
+        HttpAuthenticationFactory.getPasswordAuthenticationProvider(
+            serviceConfig.get(AmoroManagementConf.HTTP_SERVER_LOGIN_AUTH_PROVIDER), serviceConfig);
     this.proxyClientIpHeader =
         serviceConfig.get(AmoroManagementConf.HTTP_SERVER_PROXY_CLIENT_IP_HEADER);
   }
@@ -483,5 +488,9 @@ public class DashboardServer {
       }
     }
     return false;
+  }
+
+  public PasswdAuthenticationProvider getLoginAuthProvider() {
+    return loginAuthProvider;
   }
 }
