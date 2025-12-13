@@ -267,3 +267,17 @@ CREATE TABLE `http_session` (
     PRIMARY KEY(`session_id`, `context_path`, `virtual_host`),
     KEY `idx_session_expiry` (`expiry_time`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Http session store' ROW_FORMAT=DYNAMIC;
+
+CREATE TABLE IF NOT EXISTS ha_lease (
+  cluster_name       VARCHAR(64)   NOT NULL COMMENT 'AMS cluster name',
+  service_name       VARCHAR(64)   NOT NULL COMMENT 'Service name (AMS/TABLE_SERVICE/OPTIMIZING_SERVICE)',
+  node_id            VARCHAR(256)  NULL COMMENT 'Unique node identifier (host:port:uuid)',
+  node_ip            VARCHAR(64)   NULL COMMENT 'Node IP address',
+  server_info_json   TEXT          NULL COMMENT 'JSON encoded server info (AmsServerInfo)',
+  lease_expire_ts    BIGINT        NULL COMMENT 'Lease expiration timestamp (ms since epoch)',
+  version            INT           NOT NULL DEFAULT 0 COMMENT 'Optimistic lock version of the lease row',
+  updated_at         BIGINT        NOT NULL COMMENT 'Last update timestamp (ms since epoch)',
+  PRIMARY KEY (cluster_name, service_name),
+  KEY `idx_ha_lease_expire` (lease_expire_ts) COMMENT 'Index for querying expired leases',
+  KEY `idx_ha_lease_node` (node_id) COMMENT 'Index for querying leases by node ID'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='HA lease table for leader election and heartbeat renewal';

@@ -440,3 +440,26 @@ COMMENT ON COLUMN http_session.expiry_time IS 'Expiry time';
 COMMENT ON COLUMN http_session.max_interval IS 'Max internal';
 COMMENT ON COLUMN http_session.data_store IS 'Session data store';
 COMMENT ON TABLE http_session IS 'Http session store';
+
+CREATE TABLE IF NOT EXISTS ha_lease (
+  cluster_name       VARCHAR(64)  NOT NULL,
+  service_name       VARCHAR(64)  NOT NULL,
+  node_id            VARCHAR(256) NULL,
+  node_ip            VARCHAR(64)  NULL,
+  server_info_json   TEXT         NULL,
+  lease_expire_ts    BIGINT       NULL,
+  version            INT          NOT NULL DEFAULT 0,
+  updated_at         BIGINT       NOT NULL,
+  PRIMARY KEY (cluster_name, service_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ha_lease_expire ON ha_lease (lease_expire_ts);
+CREATE INDEX IF NOT EXISTS idx_ha_lease_node   ON ha_lease (node_id);
+
+COMMENT ON COLUMN service_name IS 'Service name (AMS/TABLE_SERVICE/OPTIMIZING_SERVICE)';
+COMMENT ON COLUMN node_id IS 'Unique node identifier (host:port:uuid)';
+COMMENT ON COLUMN node_ip IS 'Node IP address';
+COMMENT ON COLUMN server_info_json IS 'JSON encoded server info (AmsServerInfo)';
+COMMENT ON COLUMN lease_expire_ts IS 'Lease expiration timestamp (ms since epoch)';
+COMMENT ON COLUMN version IS 'Optimistic lock version of the lease row';
+COMMENT ON COLUMN updated_at IS 'Last update timestamp (ms since epoch)';

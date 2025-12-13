@@ -49,11 +49,24 @@ public class AmoroManagementConfValidator {
 
     // HA config
     if (configurations.getBoolean(AmoroManagementConf.HA_ENABLE)) {
-      if ("".equals(configurations.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS))) {
+      String type = configurations.getString(AmoroManagementConf.HA_TYPE).toLowerCase();
+      if (!AmoroManagementConf.HA_TYPE_ZK.equals(type)
+          && !AmoroManagementConf.HA_TYPE_DATABASE.equals(type)) {
         throw new IllegalArgumentException(
-            AmoroManagementConf.HA_ZOOKEEPER_ADDRESS.key()
-                + " must be configured when you enable "
-                + "the ams high availability");
+            String.format("Illegal ha.type: %s, zk or database is available", type));
+      }
+      if (AmoroManagementConf.HA_TYPE_ZK.equals(type)) {
+        if ("".equals(configurations.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS))) {
+          throw new IllegalArgumentException(
+              AmoroManagementConf.HA_ZOOKEEPER_ADDRESS.key()
+                  + " must be configured when ha.type=zk");
+        }
+      } else {
+        String dbUrl = configurations.getString(AmoroManagementConf.DB_CONNECTION_URL);
+        if ("".equals(dbUrl)) {
+          throw new IllegalArgumentException(
+              "database.url must be configured when ha.type=database");
+        }
       }
     }
     // terminal config
