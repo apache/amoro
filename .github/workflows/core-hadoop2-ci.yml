@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        jdk: [ '8', '11' ]
+        jdk: [ '11' ]
     name: Build Amoro with JDK ${{ matrix.jdk }}
     steps:
       - uses: actions/checkout@v3
