@@ -179,7 +179,8 @@ public class TableMetaStore implements Serializable {
     this.krbPrincipal = null;
     this.accessKey = null;
     this.secretKey = null;
-    getRuntimeContext().setConfiguration(configuration);
+    this.runtimeContext = new RuntimeContext();
+    runtimeContext.setConfiguration(configuration);
   }
 
   public byte[] getMetaStoreSite() {
