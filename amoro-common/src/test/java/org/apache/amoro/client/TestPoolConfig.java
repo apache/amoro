@@ -18,40 +18,40 @@
 
 package org.apache.amoro.client;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class TestPoolConfig {
 
   @Test
-  public void testConstructFromUrl() {
+  void testConstructFromUrl() {
     String url =
         "thrift://127.0.0.1:1261?connectTimeout=5000&socketTimeout=6000&maxMessageSize=100&autoReconnect=false"
             + "&maxReconnects=3&minIdle=10&maxIdle=10&maxWaitMillis=500";
     PoolConfig<?> poolConfig = PoolConfig.forUrl(url);
 
-    Assert.assertEquals(5000, poolConfig.getConnectTimeout());
-    Assert.assertEquals(6000, poolConfig.getSocketTimeout());
-    Assert.assertEquals(100, poolConfig.getMaxMessageSize());
-    Assert.assertFalse(poolConfig.isAutoReconnect());
-    Assert.assertEquals(3, poolConfig.getMaxReconnects());
-    Assert.assertEquals(10, poolConfig.getMinIdle());
-    Assert.assertEquals(10, poolConfig.getMaxIdle());
-    Assert.assertEquals(500, poolConfig.getMaxWaitMillis());
+    Assertions.assertEquals(5000, poolConfig.getConnectTimeout());
+    Assertions.assertEquals(6000, poolConfig.getSocketTimeout());
+    Assertions.assertEquals(100, poolConfig.getMaxMessageSize());
+    Assertions.assertFalse(poolConfig.isAutoReconnect());
+    Assertions.assertEquals(3, poolConfig.getMaxReconnects());
+    Assertions.assertEquals(10, poolConfig.getMinIdle());
+    Assertions.assertEquals(10, poolConfig.getMaxIdle());
+    Assertions.assertEquals(500, poolConfig.getMaxWaitMillis());
   }
 
   @Test
-  public void tetUrlParameterNameError() {
+  void tetUrlParameterNameError() {
     // We will ignore parameters with unknown name
     String url = "thrift://127.0.0.1:1261?connectTimeouts=300";
     PoolConfig<?> poolConfig = PoolConfig.forUrl(url);
-    Assert.assertEquals(0, poolConfig.getConnectTimeout());
+    Assertions.assertEquals(0, poolConfig.getConnectTimeout());
   }
 
   @Test
-  public void testUrlFormatError() {
+  void testUrlFormatError() {
     String url = "thrift://127.0.0.1:1261?connectTimeout=5000& ";
-    Assert.assertThrows(
+    Assertions.assertThrows(
         IllegalArgumentException.class,
         () -> {
           PoolConfig.forUrl(url);
