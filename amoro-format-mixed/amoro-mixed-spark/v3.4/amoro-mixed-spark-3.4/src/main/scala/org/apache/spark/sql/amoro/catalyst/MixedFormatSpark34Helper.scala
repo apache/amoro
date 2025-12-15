@@ -36,7 +36,7 @@ import org.apache.amoro.data.PrimaryKeyData
 import org.apache.amoro.spark.SparkInternalRowWrapper
 import org.apache.amoro.spark.sql.connector.expressions.FileIndexBucket
 
-object MixedFormatSpark35Helper extends SQLConfHelper {
+object MixedFormatSpark34Helper extends SQLConfHelper {
 
   import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits._
 

@@ -1859,6 +1859,13 @@
             </properties>
         </profile>
         <profile>
+            <id>spark-3.4</id>
+            <properties>
+                <spark.version>3.4.4</spark.version>
+                <spark.major.version>3.4</spark.major.version>
+            </properties>
+        </profile>
+        <profile>
             <id>spark-3.5</id>
             <properties>
                 <spark.version>3.5.7</spark.version>

@@ -26,9 +26,9 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>amoro-format-mixed-spark-3.5_${scala.binary.version}</artifactId>
+    <artifactId>amoro-format-mixed-spark-3.4_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
-    <name>Amoro Project Mixed Format Spark 3.5</name>
+    <name>Amoro Project Mixed Format Spark 3.4</name>
     <url>https://amoro.apache.org</url>
 
     <properties>
@@ -239,7 +239,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark-3.5_${scala.binary.version}</artifactId>
+            <artifactId>iceberg-spark-3.4_${scala.binary.version}</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
@@ -255,7 +255,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark-extensions-3.5_${scala.binary.version}</artifactId>
+            <artifactId>iceberg-spark-extensions-3.4_${scala.binary.version}</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
@@ -263,20 +263,6 @@
                     <artifactId>parquet-column</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-            <version>${scala.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-compiler</artifactId>
-            <version>${scala.version}</version>
-            <scope>provided</scope>
         </dependency>
 
         <!-- test dependencies -->

@@ -35,10 +35,9 @@ import org.apache.spark.sql.catalyst.analysis.{MultiAlias, RelationTimeTravel, U
 import org.apache.spark.sql.catalyst.catalog.BucketSpec
 import org.apache.spark.sql.catalyst.expressions.{Add, Alias, And, Ascending, AttributeReference, BaseGroupingSets, BitwiseAnd, BitwiseNot, BitwiseOr, BitwiseXor, CaseWhen, Cast, Concat, CreateNamedStruct, CreateStruct, Cube, CurrentDate, CurrentRow, CurrentTimestamp, CurrentUser, Descending, Divide, EmptyRow, EqualNullSafe, EqualTo, EvalMode, Exists, Expression, GreaterThan, GreaterThanOrEqual, GroupingSets, ILike, In, InSubquery, IntegralDivide, IsNotNull, IsNotUnknown, IsNull, IsUnknown, LambdaFunction, LateralSubquery, LessThan, LessThanOrEqual, Like, LikeAll, LikeAny, ListQuery, Literal, Lower, Multiply, NamedExpression, Not, NotLikeAll, NotLikeAny, NullsFirst, NullsLast, Or, Overlay, Predicate, RangeFrame, Remainder, RLike, Rollup, RowFrame, ScalarSubquery, SortOrder, SpecifiedWindowFrame, StringLocate, StringTrim, StringTrimLeft, StringTrimRight, SubqueryExpression, Substring, Subtract, TimestampAdd, TimestampDiff, UnaryMinus, UnaryPositive, UnboundedFollowing, UnboundedPreceding, UnresolvedNamedLambdaVariable, UnresolvedWindowExpression, UnspecifiedFrame, WindowExpression, WindowSpec, WindowSpecDefinition, WindowSpecReference}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{First, Last, PercentileCont, PercentileDisc}
-import org.apache.spark.sql.catalyst.parser.{EnhancedLogicalPlan, ParseException}
+import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.catalyst.util.{CharVarcharUtils, DateTimeUtils, IntervalUtils}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils._
 import org.apache.spark.sql.connector.catalog.{CatalogV2Util, TableCatalog}
@@ -507,9 +506,7 @@ class MixedFormatSqlExtendAstBuilder()
     Filter(expression(ctx.booleanExpression), plan)
   }
 
-  /**
-   * Add a hive-style transform (SELECT TRANSFORM/MAP/REDUCE) query specification to a logical plan.
-   */
+  /* Add a hive -style transform (SELECT TRANSFORM / MAP / REDUCE) query specification to a logical plan.*/
   private def withTransformQuerySpecification(
       ctx: ParserRuleContext,
       transformClause: TransformClauseContext,
@@ -527,7 +524,7 @@ class MixedFormatSqlExtendAstBuilder()
       // Typed return columns.
       val schema = createSchema(transformClause.colTypeList)
       val replacedSchema = CharVarcharUtils.replaceCharVarcharWithStringInSchema(schema)
-      (DataTypeUtils.toAttributes(replacedSchema), false)
+      (schema.toAttributes, false)
     } else if (transformClause.identifierSeq != null) {
       // Untyped return columns.
       val attrs = visitIdentifierSeq(transformClause.identifierSeq).map { name =>
@@ -596,7 +593,7 @@ class MixedFormatSqlExtendAstBuilder()
     selectClause.hints.asScala.foldRight(plan)(withHints)
   }
 
-  def visitCommonSelectQueryClausePlan(
+  private def visitCommonSelectQueryClausePlan(
       relation: LogicalPlan,
       expressions: Seq[Expression],
       lateralView: java.util.List[LateralViewContext],

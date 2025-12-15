@@ -25,7 +25,6 @@ import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression,
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
-import org.apache.spark.sql.execution.datasources.DataSourceAnalysis.resolver
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
 import org.apache.amoro.spark.{MixedFormatSparkCatalog, MixedFormatSparkSessionCatalog}
@@ -126,6 +125,7 @@ case class QueryWithConstraintCheck(spark: SparkSession) extends Rule[LogicalPla
   }
 
   protected def findOutputAttr(attrs: Seq[Attribute], attrName: String): Attribute = {
+    val resolver = spark.sessionState.analyzer.resolver
     attrs.find(attr => resolver(attr.name, attrName)).getOrElse {
       throw new UnsupportedOperationException(s"Cannot find $attrName in $attrs")
     }

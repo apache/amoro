@@ -19,7 +19,7 @@
 package org.apache.amoro.spark.sql.catalyst.optimize
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.amoro.catalyst.MixedFormatSpark35Helper
+import org.apache.spark.sql.amoro.catalyst.MixedFormatSpark34Helper
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -67,7 +67,7 @@ case class RewriteDeleteFromMixedFormatTable(spark: SparkSession) extends Rule[L
       val query = buildUpsertQuery(r, upsertWrite, scanBuilder, condition)
       var options: Map[String, String] = Map.empty
       options += (WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
-      val writeBuilder = MixedFormatSpark35Helper.newWriteBuilder(r.table, query.schema, options)
+      val writeBuilder = MixedFormatSpark34Helper.newWriteBuilder(r.table, query.schema, options)
       val write = writeBuilder.build()
 
       val projections =
