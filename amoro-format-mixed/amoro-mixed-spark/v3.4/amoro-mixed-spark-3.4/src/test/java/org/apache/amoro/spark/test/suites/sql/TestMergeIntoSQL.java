@@ -52,7 +52,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
           Types.NestedField.required(2, "data", Types.StringType.get()),
           Types.NestedField.required(3, "fdata", Types.FloatType.get()),
           Types.NestedField.required(4, "ddata", Types.DoubleType.get()),
-          Types.NestedField.required(amoro-mixed-spark-3.4, "pt", Types.StringType.get()));
+          Types.NestedField.required(5, "pt", Types.StringType.get()));
 
   private static final PrimaryKeySpec pk =
       PrimaryKeySpec.builderFor(schema).addColumn("id").build();
@@ -70,7 +70,7 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
       Lists.newArrayList(
           RecordGenerator.newRecord(schema, 1, "s1", 1.1f, 1.1D, "001"),
           RecordGenerator.newRecord(schema, 2, "s2", 1.1f, 1.1D, "002"),
-          RecordGenerator.newRecord(schema, amoro-mixed-spark-3.4, "s5", 1.1f, 1.1D, "001"),
+          RecordGenerator.newRecord(schema, 5, "s5", 1.1f, 1.1D, "001"),
           RecordGenerator.newRecord(schema, 6, "s6", 1.1f, 1.1D, "003"));
 
   private final List<Record> target = Lists.newArrayList();
@@ -111,14 +111,14 @@ public class TestMergeIntoSQL extends MixedTableTestBase {
             + " AS s ON t.id == s.id "
             + "WHEN MATCHED AND t.id = 1 THEN DELETE "
             + "WHEN MATCHED AND t.id = 2 THEN UPDATE SET * "
-            + "WHEN NOT MATCHED AND s.id != amoro-mixed-spark-3.4 THEN INSERT (t.data, t.pt, t.id, t.fdata,t.ddata) values ( s.data, s.pt, 1000,1.1,1.1)");
+            + "WHEN NOT MATCHED AND s.id != 5 THEN INSERT (t.data, t.pt, t.id, t.fdata,t.ddata) values ( s.data, s.pt, 1000,1.1,1.1)");
 
     List<Record> expects =
         ExpectResultUtil.expectMergeResult(target, source, r -> r.getField("id"))
             .whenMatched((t, s) -> t.getField("id").equals(1), (t, s) -> null)
             .whenMatched((t, s) -> t.getField("id").equals(2), (t, s) -> s)
             .whenNotMatched(
-                s -> !s.getField("id").equals(amoro-mixed-spark-3.4),
+                s -> !s.getField("id").equals(5),
                 s -> {
                   s.setField("id", 1000);
                   s.setField("fdata", 1.1f);

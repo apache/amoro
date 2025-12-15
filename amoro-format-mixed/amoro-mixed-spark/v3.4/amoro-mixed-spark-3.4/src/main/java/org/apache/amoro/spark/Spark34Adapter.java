@@ -20,7 +20,7 @@ package org.apache.amoro.spark;
 
 import org.apache.amoro.spark.util.ExpressionHelper;
 
-public class Spark35Adapter implements SparkAdapter {
+public class Spark34Adapter implements SparkAdapter {
   ExpressionHelper expressionHelper = new ExpressionHelper();
 
   @Override

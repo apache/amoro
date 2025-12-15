@@ -25,10 +25,9 @@ import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.SQLConfHelper
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, CreateNamedStruct, EvalMode, Expression, ExtractValue, GetStructField, Literal, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical.{Assignment, LogicalPlan}
-import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.catalyst.util.CharVarcharUtils
 import org.apache.spark.sql.internal.SQLConf.StoreAssignmentPolicy
-import org.apache.spark.sql.types.{StructField, StructType}
+import org.apache.spark.sql.types.{DataType, StructField, StructType}
 
 trait MixedFormatAssignmentAlignmentSupport extends CastSupport {
 
@@ -171,8 +170,7 @@ trait MixedFormatAssignmentAlignmentSupport extends CastSupport {
         // use byName = true to catch cases when struct field names don't match
         // e.g. a struct with fields (a, b) is assigned as a struct with fields (a, c) or (b, a)
         val errors = new mutable.ArrayBuffer[String]()
-        val canWrite = DataTypeUtils.canWrite(
-          "",
+        val canWrite = DataType.canWrite(
           expr.dataType,
           tableAttr.dataType,
           byName = true,

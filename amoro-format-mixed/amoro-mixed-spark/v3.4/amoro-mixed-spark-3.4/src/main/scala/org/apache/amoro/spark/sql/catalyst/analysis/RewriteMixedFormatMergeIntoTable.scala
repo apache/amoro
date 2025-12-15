@@ -21,7 +21,7 @@ package org.apache.amoro.spark.sql.catalyst.analysis
 import scala.collection.{mutable, Seq}
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.amoro.catalyst.{ExpressionHelper, MixedFormatSpark35Helper}
+import org.apache.spark.sql.amoro.catalyst.{ExpressionHelper, MixedFormatSpark34Helper}
 import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Expression, ExprId, IsNotNull, Literal}
 import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
@@ -240,7 +240,7 @@ case class RewriteMixedFormatMergeIntoTable(spark: SparkSession) extends Rule[Lo
       rowIdAttrs,
       MixedFormatExtensionUtils.isKeyedTable(relation))
     val writeBuilder =
-      MixedFormatSpark35Helper.newWriteBuilder(relation.table, mergeRows.schema, options)
+      MixedFormatSpark34Helper.newWriteBuilder(relation.table, mergeRows.schema, options)
     val write = writeBuilder.build()
     MixedFormatRowLevelWrite(writeRelation, mergeRows, options, projections, Some(write))
   }

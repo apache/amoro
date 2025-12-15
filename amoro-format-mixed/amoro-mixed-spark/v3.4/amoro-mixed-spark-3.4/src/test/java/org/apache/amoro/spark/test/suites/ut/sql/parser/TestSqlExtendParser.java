@@ -157,7 +157,6 @@ public class TestSqlExtendParser {
     CreateTableAsSelect create = (CreateTableAsSelect) plan;
     LogicalPlan ctasQuery = create.query();
     LogicalPlan expectQuery = sparkSqlParser.parsePlan(asSelectBody);
-
     Assertions.assertEquals(expectQuery, ctasQuery);
   }
 }
