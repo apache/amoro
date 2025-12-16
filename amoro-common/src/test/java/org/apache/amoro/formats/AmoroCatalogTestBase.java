@@ -36,12 +36,27 @@ public abstract class AmoroCatalogTestBase {
 
   protected Object originalCatalog;
 
+  public AmoroCatalogTestBase() {
+    this.catalogTestHelper = null;
+  }
+
   public AmoroCatalogTestBase(AmoroCatalogTestHelper<?> catalogTestHelper) {
     this.catalogTestHelper = catalogTestHelper;
   }
 
+  protected AmoroCatalogTestHelper<?> createHelper() {
+    return null;
+  }
+
   @BeforeEach
-  void setupCatalog() throws IOException {
+  protected void setupCatalog() throws IOException {
+    if (catalogTestHelper == null) {
+      catalogTestHelper = createHelper();
+      if (catalogTestHelper == null) {
+        throw new IllegalStateException(
+            "catalogTestHelper must be set either via constructor or createHelper() method");
+      }
+    }
     String path = tempDir.toFile().getAbsolutePath();
     catalogTestHelper.initWarehouse(path);
     this.amoroCatalog = catalogTestHelper.amoroCatalog();
@@ -50,6 +65,8 @@ public abstract class AmoroCatalogTestBase {
 
   @AfterEach
   void cleanCatalog() {
-    catalogTestHelper.clean();
+    if (catalogTestHelper != null) {
+      catalogTestHelper.clean();
+    }
   }
 }

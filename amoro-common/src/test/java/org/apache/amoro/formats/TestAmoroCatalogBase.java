@@ -37,6 +37,10 @@ public abstract class TestAmoroCatalogBase extends AmoroCatalogTestBase {
 
   private static final String TABLE = "table";
 
+  public TestAmoroCatalogBase() {
+    super();
+  }
+
   public TestAmoroCatalogBase(AmoroCatalogTestHelper<?> catalogTestHelper) {
     super(catalogTestHelper);
   }
@@ -49,7 +53,7 @@ public abstract class TestAmoroCatalogBase extends AmoroCatalogTestBase {
   protected abstract List<String> listDatabases();
 
   @Test
-  void testListDatabases() {
+  public void testListDatabases() {
     createDatabase(DB1);
     createDatabase(DB2);
     createDatabase(DB3);
@@ -60,7 +64,7 @@ public abstract class TestAmoroCatalogBase extends AmoroCatalogTestBase {
   }
 
   @Test
-  void testDropDatabases() {
+  public void testDropDatabases() {
     createDatabase(DB1);
     amoroCatalog.dropDatabase(DB1);
 
@@ -68,26 +72,26 @@ public abstract class TestAmoroCatalogBase extends AmoroCatalogTestBase {
   }
 
   @Test
-  void testCreateDatabases() {
+  public void testCreateDatabases() {
     amoroCatalog.createDatabase(DB1);
     Assertions.assertTrue(listDatabases().contains(DB1));
   }
 
   @Test
-  void testExistsDatabase() {
+  public void testExistsDatabase() {
     createDatabase(DB1);
     Assertions.assertTrue(amoroCatalog.databaseExists(DB1));
   }
 
   @Test
-  void testExistsTable() {
+  public void testExistsTable() {
     createDatabase(DB1);
     createTable(DB1, TABLE, new HashMap<>());
     Assertions.assertTrue(amoroCatalog.tableExists(DB1, TABLE));
   }
 
   @Test
-  void testLoadTable() {
+  public void testLoadTable() {
     createDatabase(DB1);
     Map<String, String> properties = new HashMap<>();
     properties.put("key1", "value1");
