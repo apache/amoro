@@ -31,7 +31,7 @@ import java.util.Map;
 public class TestFileIOCaching {
 
   // Use empty TableMetaStore for testing
-  private TableMetaStore tableMetaStore = TableMetaStore.EMPTY;;
+  private TableMetaStore tableMetaStore = TableMetaStore.EMPTY;
   // Create the table ID using the static factory method
   private TableIdentifier tableId =
       TableIdentifier.of("test_catalog", "test_database", "test_table");

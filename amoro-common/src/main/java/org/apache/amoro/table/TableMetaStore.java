@@ -319,12 +319,15 @@ public class TableMetaStore implements Serializable {
         && Arrays.equals(krbKeyTab, that.krbKeyTab)
         && Arrays.equals(krbConf, that.krbConf)
         && Objects.equals(krbPrincipal, that.krbPrincipal)
-        && Objects.equals(disableAuth, that.disableAuth);
+        && Objects.equals(disableAuth, that.disableAuth)
+        && Objects.equals(accessKey, that.accessKey)
+        && Objects.equals(secretKey, that.secretKey);
   }
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(disableAuth, authMethod, hadoopUsername, krbPrincipal);
+    int result =
+        Objects.hash(disableAuth, authMethod, hadoopUsername, krbPrincipal, accessKey, secretKey);
     result = 31 * result + Arrays.hashCode(metaStoreSite);
     result = 31 * result + Arrays.hashCode(hdfsSite);
     result = 31 * result + Arrays.hashCode(coreSite);

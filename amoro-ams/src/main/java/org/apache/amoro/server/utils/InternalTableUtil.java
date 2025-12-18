@@ -31,6 +31,7 @@ import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.AuthenticatedFileIOs;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.CatalogUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -46,10 +47,15 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** Util class for internal table operations. */
 public class InternalTableUtil {
   private static final Logger LOG = LoggerFactory.getLogger(InternalTableUtil.class);
+
+  // Cache for FileIO instances at the catalog level
+  private static final ConcurrentHashMap<TableMetaStore, AuthenticatedFileIO>
+      CATALOG_FILE_IO_CACHE = new ConcurrentHashMap<>();
 
   /**
    * Check if this table is created before version 0.7.0
@@ -83,19 +89,28 @@ public class InternalTableUtil {
    * @return iceberg file io
    */
   public static AuthenticatedFileIO newIcebergFileIo(CatalogMeta meta) {
-    Map<String, String> catalogProperties = meta.getCatalogProperties();
-    TableMetaStore store = CatalogUtil.buildMetaStore(meta);
-    Configuration conf = store.getConfiguration();
-    String warehouse = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
-    String defaultImpl = HADOOP_FILE_IO_IMPL;
-    if (warehouse.toLowerCase().startsWith(S3_PROTOCOL_PREFIX)) {
-      defaultImpl = S3_FILE_IO_IMPL;
-    } else if (warehouse.toLowerCase().startsWith(OSS_PROTOCOL_PREFIX)) {
-      defaultImpl = OSS_FILE_IO_IMPL;
-    }
-    String ioImpl = catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, defaultImpl);
-    FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
-    return AuthenticatedFileIOs.buildAdaptIcebergFileIO(store, fileIO);
+    return CATALOG_FILE_IO_CACHE.computeIfAbsent(
+        CatalogUtil.buildMetaStore(meta),
+        store -> {
+          LOG.debug("Creating new AuthenticatedFileIO for catalog {}", meta.getCatalogName());
+          Map<String, String> catalogProperties = meta.getCatalogProperties();
+          Configuration conf = store.getConfiguration();
+
+          String warehouse = catalogProperties.get(CatalogMetaProperties.KEY_WAREHOUSE);
+          String defaultImpl = HADOOP_FILE_IO_IMPL;
+          if (warehouse != null && !warehouse.isEmpty()) {
+            if (warehouse.toLowerCase().startsWith(S3_PROTOCOL_PREFIX)) {
+              defaultImpl = S3_FILE_IO_IMPL;
+            } else if (warehouse.toLowerCase().startsWith(OSS_PROTOCOL_PREFIX)) {
+              defaultImpl = OSS_FILE_IO_IMPL;
+            }
+          }
+          String ioImpl =
+              catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, defaultImpl);
+          FileIO fileIO =
+              org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
+          return AuthenticatedFileIOs.buildAdaptIcebergFileIO(store, fileIO);
+        });
   }
 
   /**
@@ -166,5 +181,11 @@ public class InternalTableUtil {
       LOG.warn("Unable to parse version from metadata location: {}", metadataLocation, e);
       return 0;
     }
+  }
+
+  @VisibleForTesting
+  public static void clearFileIOCache() {
+    CATALOG_FILE_IO_CACHE.clear();
+    LOG.info("Cleared Catalog FileIO cache");
   }
 }
