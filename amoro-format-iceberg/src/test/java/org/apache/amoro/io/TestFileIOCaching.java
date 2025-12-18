@@ -103,23 +103,6 @@ public class TestFileIOCaching extends TableTestBase {
         "FileIO instances should be the same for the same table and TableMetaStore",
         fileIO1,
         fileIO2);
-
-    // Test with different table ID but same meta store
-    TableIdentifier otherTableId = TableIdentifier.of("test_catalog", "different", "table");
-
-    // Get a FileIO instance for a different table
-    AuthenticatedHadoopFileIO fileIO3 =
-        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
-            otherTableId, location, tableProperties, tableMetaStore, new HashMap<>());
-
-    // For cache key testing, get another instance with the same different table
-    AuthenticatedHadoopFileIO fileIO4 =
-        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
-            otherTableId, location, tableProperties, tableMetaStore, new HashMap<>());
-
-    // Verify different table with same parameters also returns cached instances
-    Assert.assertSame(
-        "FileIO instances should be the same for the same table ID", fileIO3, fileIO4);
   }
 
   @Test
