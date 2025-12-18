@@ -32,6 +32,9 @@ import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.AuthenticatedFileIOs;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.cache.CacheBuilder;
+import org.apache.amoro.shade.guava32.com.google.common.cache.CacheLoader;
+import org.apache.amoro.shade.guava32.com.google.common.cache.LoadingCache;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.CatalogUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -47,15 +50,47 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /** Util class for internal table operations. */
 public class InternalTableUtil {
   private static final Logger LOG = LoggerFactory.getLogger(InternalTableUtil.class);
 
   // Cache for FileIO instances at the catalog level
-  private static final ConcurrentHashMap<TableMetaStore, AuthenticatedFileIO>
-      CATALOG_FILE_IO_CACHE = new ConcurrentHashMap<>();
+  // Expires entries after 1 hour of inactivity
+  private static final LoadingCache<CatalogMeta, AuthenticatedFileIO> CATALOG_FILE_IO_CACHE =
+      CacheBuilder.newBuilder()
+          .expireAfterAccess(1, TimeUnit.HOURS)
+          .build(
+              new CacheLoader<CatalogMeta, AuthenticatedFileIO>() {
+                @Override
+                public AuthenticatedFileIO load(CatalogMeta key) {
+                  return createAuthenticatedFileIO(key);
+                }
+              });
+
+  private static AuthenticatedFileIO createAuthenticatedFileIO(CatalogMeta meta) {
+    Map<String, String> catalogProperties = meta.getCatalogProperties();
+    TableMetaStore store = CatalogUtil.buildMetaStore(meta);
+    LOG.debug(
+        "Creating new AuthenticatedFileIO for catalog with TableMetaStore {}",
+        store.getClass().getName());
+    Configuration conf = store.getConfiguration();
+
+    String warehouse = catalogProperties.get(CatalogMetaProperties.KEY_WAREHOUSE);
+    String defaultImpl = HADOOP_FILE_IO_IMPL;
+    if (warehouse != null && !warehouse.isEmpty()) {
+      if (warehouse.toLowerCase().startsWith(S3_PROTOCOL_PREFIX)) {
+        defaultImpl = S3_FILE_IO_IMPL;
+      } else if (warehouse.toLowerCase().startsWith(OSS_PROTOCOL_PREFIX)) {
+        defaultImpl = OSS_FILE_IO_IMPL;
+      }
+    }
+    String ioImpl = catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, defaultImpl);
+    FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
+    return AuthenticatedFileIOs.buildAdaptIcebergFileIO(store, fileIO);
+  }
 
   /**
    * Check if this table is created before version 0.7.0
@@ -89,28 +124,13 @@ public class InternalTableUtil {
    * @return iceberg file io
    */
   public static AuthenticatedFileIO newIcebergFileIo(CatalogMeta meta) {
-    return CATALOG_FILE_IO_CACHE.computeIfAbsent(
-        CatalogUtil.buildMetaStore(meta),
-        store -> {
-          LOG.debug("Creating new AuthenticatedFileIO for catalog {}", meta.getCatalogName());
-          Map<String, String> catalogProperties = meta.getCatalogProperties();
-          Configuration conf = store.getConfiguration();
-
-          String warehouse = catalogProperties.get(CatalogMetaProperties.KEY_WAREHOUSE);
-          String defaultImpl = HADOOP_FILE_IO_IMPL;
-          if (warehouse != null && !warehouse.isEmpty()) {
-            if (warehouse.toLowerCase().startsWith(S3_PROTOCOL_PREFIX)) {
-              defaultImpl = S3_FILE_IO_IMPL;
-            } else if (warehouse.toLowerCase().startsWith(OSS_PROTOCOL_PREFIX)) {
-              defaultImpl = OSS_FILE_IO_IMPL;
-            }
-          }
-          String ioImpl =
-              catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, defaultImpl);
-          FileIO fileIO =
-              org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
-          return AuthenticatedFileIOs.buildAdaptIcebergFileIO(store, fileIO);
-        });
+    try {
+      return CATALOG_FILE_IO_CACHE.get(meta);
+    } catch (ExecutionException e) {
+      LOG.warn(
+          "Failed to get AuthenticatedFileIO from cache for catalog {}", meta.getCatalogName(), e);
+      return createAuthenticatedFileIO(meta);
+    }
   }
 
   /**
@@ -185,7 +205,7 @@ public class InternalTableUtil {
 
   @VisibleForTesting
   public static void clearFileIOCache() {
-    CATALOG_FILE_IO_CACHE.clear();
+    CATALOG_FILE_IO_CACHE.invalidateAll();
     LOG.info("Cleared Catalog FileIO cache");
   }
 }

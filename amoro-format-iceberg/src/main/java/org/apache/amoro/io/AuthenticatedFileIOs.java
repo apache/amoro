@@ -19,6 +19,9 @@
 package org.apache.amoro.io;
 
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.cache.CacheBuilder;
+import org.apache.amoro.shade.guava32.com.google.common.cache.CacheLoader;
+import org.apache.amoro.shade.guava32.com.google.common.cache.LoadingCache;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
@@ -31,7 +34,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class AuthenticatedFileIOs {
 
@@ -39,12 +43,57 @@ public class AuthenticatedFileIOs {
   public static final boolean CLOSE_TRASH = true;
 
   // Cache for FileIO instances at the catalog level - key is the TableMetaStore instance
-  private static final ConcurrentHashMap<TableMetaStore, AuthenticatedHadoopFileIO> FILE_IO_CACHE =
-      new ConcurrentHashMap<>();
+  // Expires entries after 1 hour of inactivity
+  private static final LoadingCache<TableMetaStore, AuthenticatedHadoopFileIO> FILE_IO_CACHE =
+      CacheBuilder.newBuilder()
+          .expireAfterAccess(1, TimeUnit.HOURS)
+          .build(
+              new CacheLoader<TableMetaStore, AuthenticatedHadoopFileIO>() {
+                @Override
+                public AuthenticatedHadoopFileIO load(TableMetaStore metaStore) {
+                  return createAuthenticatedHadoopFileIO(metaStore);
+                }
+              });
+
+  // Helper method to create a new AuthenticatedHadoopFileIO instance
+  private static AuthenticatedHadoopFileIO createAuthenticatedHadoopFileIO(
+      TableMetaStore metaStore) {
+    LOG.debug(
+        "Creating new AuthenticatedHadoopFileIO for catalog with TableMetaStore {}",
+        metaStore.getClass().getName());
+    return new AuthenticatedHadoopFileIO(metaStore);
+  }
 
   // Cache for recoverable FileIO instances with trash management
-  private static final ConcurrentHashMap<RecoverableFileIOCacheKey, RecoverableHadoopFileIO>
-      RECOVERABLE_FILE_IO_CACHE = new ConcurrentHashMap<>();
+  // Expires entries after 1 hour of inactivity
+  private static final LoadingCache<RecoverableFileIOCacheKey, RecoverableHadoopFileIO>
+      RECOVERABLE_FILE_IO_CACHE =
+          CacheBuilder.newBuilder()
+              .expireAfterAccess(1, TimeUnit.HOURS)
+              .build(
+                  new CacheLoader<RecoverableFileIOCacheKey, RecoverableHadoopFileIO>() {
+                    @Override
+                    public RecoverableHadoopFileIO load(RecoverableFileIOCacheKey key) {
+                      return createRecoverableHadoopFileIO(key);
+                    }
+                  });
+
+  // Helper method to create a new RecoverableHadoopFileIO instance
+  private static RecoverableHadoopFileIO createRecoverableHadoopFileIO(
+      RecoverableFileIOCacheKey key) {
+    LOG.debug("Creating new RecoverableHadoopFileIO for table {}", key.tableIdentifier);
+    TableMetaStore tableMetaStore = key.tableMetaStore;
+    AuthenticatedHadoopFileIO baseFileIO = buildHadoopFileIO(tableMetaStore);
+    TableTrashManager trashManager =
+        TableTrashManagers.build(
+            key.tableIdentifier, key.tableLocation, key.tableProperties, baseFileIO);
+    String trashFilePattern =
+        PropertyUtil.propertyAsString(
+            key.tableProperties,
+            TableProperties.TABLE_TRASH_FILE_PATTERN,
+            TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
+    return new RecoverableHadoopFileIO(tableMetaStore, trashManager, trashFilePattern);
+  }
 
   public static AuthenticatedHadoopFileIO buildRecoverableHadoopFileIO(
       TableIdentifier tableIdentifier,
@@ -62,30 +111,19 @@ public class AuthenticatedFileIOs {
 
       // Create a cache key using the dedicated key class
       RecoverableFileIOCacheKey cacheKey =
-          new RecoverableFileIOCacheKey(tableIdentifier, tableLocation);
+          new RecoverableFileIOCacheKey(
+              tableIdentifier, tableLocation, tableProperties, tableMetaStore);
 
-      // Check if we already have a cached instance
-      RecoverableHadoopFileIO cachedIO = RECOVERABLE_FILE_IO_CACHE.get(cacheKey);
-      if (cachedIO != null) {
-        LOG.debug("Reusing cached RecoverableHadoopFileIO for table {}", tableIdentifier);
-        return cachedIO;
+      try {
+        // Get or create a cached instance automatically via LoadingCache
+        RecoverableHadoopFileIO fileIO = RECOVERABLE_FILE_IO_CACHE.get(cacheKey);
+        LOG.debug("Using RecoverableHadoopFileIO for table {}", tableIdentifier);
+        return fileIO;
+      } catch (ExecutionException e) {
+        LOG.warn(
+            "Failed to get RecoverableHadoopFileIO from cache for table {}", tableIdentifier, e);
+        return createRecoverableHadoopFileIO(cacheKey);
       }
-
-      // If not in cache, create a new instance and cache it
-      AuthenticatedHadoopFileIO baseFileIO = buildHadoopFileIO(tableMetaStore);
-      TableTrashManager trashManager =
-          TableTrashManagers.build(tableIdentifier, tableLocation, tableProperties, baseFileIO);
-      String trashFilePattern =
-          PropertyUtil.propertyAsString(
-              tableProperties,
-              TableProperties.TABLE_TRASH_FILE_PATTERN,
-              TableProperties.TABLE_TRASH_FILE_PATTERN_DEFAULT);
-
-      RecoverableHadoopFileIO fileIO =
-          new RecoverableHadoopFileIO(tableMetaStore, trashManager, trashFilePattern);
-      RECOVERABLE_FILE_IO_CACHE.put(cacheKey, fileIO);
-      LOG.debug("Created and cached new RecoverableHadoopFileIO for table {}", tableIdentifier);
-      return fileIO;
     } else {
       // Use the simple cached FileIO without trash management
       return buildHadoopFileIO(tableMetaStore);
@@ -93,15 +131,13 @@ public class AuthenticatedFileIOs {
   }
 
   public static AuthenticatedHadoopFileIO buildHadoopFileIO(TableMetaStore tableMetaStore) {
-    // Check if we already have a cached instance for this TableMetaStore
-    return FILE_IO_CACHE.computeIfAbsent(
-        tableMetaStore,
-        metaStore -> {
-          LOG.debug(
-              "Creating new AuthenticatedHadoopFileIO for catalog with TableMetaStore {}",
-              metaStore.getClass().getName());
-          return new AuthenticatedHadoopFileIO(metaStore);
-        });
+    // Get or create a cached instance for this TableMetaStore
+    try {
+      return FILE_IO_CACHE.get(tableMetaStore);
+    } catch (ExecutionException e) {
+      LOG.warn("Failed to get AuthenticatedHadoopFileIO from cache, creating new instance", e);
+      return createAuthenticatedHadoopFileIO(tableMetaStore);
+    }
   }
 
   public static AuthenticatedFileIO buildAdaptIcebergFileIO(
@@ -117,18 +153,26 @@ public class AuthenticatedFileIOs {
 
   @VisibleForTesting
   public static void clearCache() {
-    FILE_IO_CACHE.clear();
-    RECOVERABLE_FILE_IO_CACHE.clear();
+    FILE_IO_CACHE.invalidateAll();
+    RECOVERABLE_FILE_IO_CACHE.invalidateAll();
     LOG.info("Cleared FileIO cache");
   }
 
   private static final class RecoverableFileIOCacheKey {
     private final TableIdentifier tableIdentifier;
     private final String tableLocation;
+    private final Map<String, String> tableProperties;
+    private final TableMetaStore tableMetaStore;
 
-    private RecoverableFileIOCacheKey(TableIdentifier tableIdentifier, String tableLocation) {
+    private RecoverableFileIOCacheKey(
+        TableIdentifier tableIdentifier,
+        String tableLocation,
+        Map<String, String> tableProperties,
+        TableMetaStore tableMetaStore) {
       this.tableIdentifier = tableIdentifier;
       this.tableLocation = tableLocation;
+      this.tableProperties = tableProperties;
+      this.tableMetaStore = tableMetaStore;
     }
 
     @Override
