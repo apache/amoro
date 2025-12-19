@@ -331,7 +331,12 @@ public class TableConfigurations {
             PropertyUtil.propertyAsLong(
                 properties,
                 TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL,
-                TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT));
+                TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT))
+        .setEventTriggeredRefresh(
+            PropertyUtil.propertyAsBoolean(
+                properties,
+                TableProperties.SELF_OPTIMIZING_REFRESH_EVENT_TRIGGERED,
+                TableProperties.SELF_OPTIMIZING_REFRESH_EVENT_TRIGGERED_DEFAULT));
   }
 
   /**
