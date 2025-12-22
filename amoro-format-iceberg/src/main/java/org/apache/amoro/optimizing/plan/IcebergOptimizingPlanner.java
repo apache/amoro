@@ -37,7 +37,8 @@ public class IcebergOptimizingPlanner extends AbstractOptimizingPlanner {
       double availableCore,
       long maxInputSizePerThread,
       long lastMinorOptimizingTime,
-      long lastFullOptimizingTime) {
+      long lastFullOptimizingTime,
+      long lastMajorOptimizingTime) {
     super(
         identifier,
         config,
@@ -48,7 +49,8 @@ public class IcebergOptimizingPlanner extends AbstractOptimizingPlanner {
         availableCore,
         maxInputSizePerThread,
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 
   @Override
@@ -60,6 +62,7 @@ public class IcebergOptimizingPlanner extends AbstractOptimizingPlanner {
         partition,
         planTime,
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 }

@@ -52,7 +52,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
       String hiveLocation,
       long planTime,
       long lastMinorOptimizingTime,
-      long lastFullOptimizingTime) {
+      long lastFullOptimizingTime,
+      long lastMajorOptimizingTime) {
     super(
         identifier,
         table,
@@ -60,7 +61,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
         partition,
         planTime,
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
     this.hiveLocation = hiveLocation;
   }
 
@@ -112,7 +114,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
         planTime,
         isKeyedTable(),
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 
   @Override
@@ -154,7 +157,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
         long planTime,
         boolean keyedTable,
         long lastMinorOptimizingTime,
-        long lastFullOptimizingTime) {
+        long lastFullOptimizingTime,
+        long lastMajorOptimizingTime) {
       super(
           identifier,
           config,
@@ -163,7 +167,8 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
           planTime,
           keyedTable,
           lastMinorOptimizingTime,
-          lastFullOptimizingTime);
+          lastFullOptimizingTime,
+          lastMajorOptimizingTime);
       this.hiveLocation = hiveLocation;
       String optimizedTime =
           partitionProperties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);

@@ -228,15 +228,37 @@ public class IcebergTableUtil {
     OptimizingConfig config = tableRuntime.getOptimizingConfig();
     long lastMinor = tableRuntime.getLastMinorOptimizingTime();
     long lastFull = tableRuntime.getLastFullOptimizingTime();
+    long lastMajor = tableRuntime.getLastMajorOptimizingTime();
     if (TableFormat.ICEBERG.equals(table.format())) {
       return new IcebergOptimizerEvaluator(
-          identifier, config, table, snapshot, maxPendingPartitions, lastMinor, lastFull);
+          identifier,
+          config,
+          table,
+          snapshot,
+          maxPendingPartitions,
+          lastMinor,
+          lastFull,
+          lastMajor);
     } else if (TableFormat.MIXED_ICEBERG.equals(table.format())) {
       return new MixedIcebergOptimizingEvaluator(
-          identifier, config, table, snapshot, maxPendingPartitions, lastMinor, lastFull);
+          identifier,
+          config,
+          table,
+          snapshot,
+          maxPendingPartitions,
+          lastMinor,
+          lastFull,
+          lastMajor);
     } else if (TableFormat.MIXED_HIVE.equals(table.format())) {
       return new MixedHiveOptimizingEvaluator(
-          identifier, config, table, snapshot, maxPendingPartitions, lastMinor, lastFull);
+          identifier,
+          config,
+          table,
+          snapshot,
+          maxPendingPartitions,
+          lastMinor,
+          lastFull,
+          lastMajor);
     }
     throw new IllegalStateException("Un-supported table-format:" + table.format().toString());
   }
@@ -267,6 +289,7 @@ public class IcebergTableUtil {
     OptimizingConfig config = tableRuntime.getOptimizingConfig();
     long lastMinor = tableRuntime.getLastMinorOptimizingTime();
     long lastFull = tableRuntime.getLastFullOptimizingTime();
+    long lastMajor = tableRuntime.getLastMajorOptimizingTime();
     TableSnapshot snapshot = IcebergTableUtil.getSnapshot(table, tableRuntime);
     if (TableFormat.ICEBERG.equals(table.format())) {
       return new IcebergOptimizingPlanner(
@@ -279,7 +302,8 @@ public class IcebergTableUtil {
           availableCore,
           maxInputSizePerThread,
           lastMinor,
-          lastFull);
+          lastFull,
+          lastMajor);
     } else if (TableFormat.MIXED_ICEBERG.equals(table.format())) {
       return new MixedIcebergOptimizingPlanner(
           identifier,
@@ -291,7 +315,8 @@ public class IcebergTableUtil {
           availableCore,
           maxInputSizePerThread,
           lastMinor,
-          lastFull);
+          lastFull,
+          lastMajor);
     } else if (TableFormat.MIXED_HIVE.equals(table.format())) {
       return new MixedHiveOptimizingPlanner(
           identifier,
@@ -303,7 +328,8 @@ public class IcebergTableUtil {
           availableCore,
           maxInputSizePerThread,
           lastMinor,
-          lastFull);
+          lastFull,
+          lastMajor);
     }
     throw new IllegalStateException("Unsupported table format:" + table.format().toString());
   }
