@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Admin-Guides on Amoro</title>
+    <link>https://amoro.apache.org/docs/0.6.1/admin-guides/</link>
+    <description>Recent content in Admin-Guides on Amoro</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/docs/0.6.1/admin-guides/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Deployment</title>
+      <link>https://amoro.apache.org/docs/0.6.1/deployment/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/deployment/</guid>
+      <description>&lt;h1 id=&#34;deployment&#34;&gt;Deployment&lt;/h1&gt;&#xA;&lt;p&gt;You can choose to download the stable release package from &lt;a href=&#34;../../../download/&#34;&gt;download page&lt;/a&gt;, or the source code form &lt;a href=&#34;https://github.com/apache/incubator-amoro&#34;&gt;Github&lt;/a&gt; and compile it according to the README.&lt;/p&gt;&#xA;&lt;h2 id=&#34;system-requirements&#34;&gt;System requirements&lt;/h2&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Java 8 is required. Java 17 is required for Trino.&lt;/li&gt;&#xA;&lt;li&gt;Optional: MySQL 5.5 or higher&lt;/li&gt;&#xA;&lt;li&gt;Optional: PostgreSQL 14.x or higher&lt;/li&gt;&#xA;&lt;li&gt;Optional: ZooKeeper 3.4.x or higher&lt;/li&gt;&#xA;&lt;li&gt;Optional: Hive (2.x or 3.x)&lt;/li&gt;&#xA;&lt;li&gt;Optional: Hadoop (2.9.x or 3.x)&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h2 id=&#34;download-the-distribution&#34;&gt;Download the distribution&lt;/h2&gt;&#xA;&lt;p&gt;All released package can be downloaded from &lt;a href=&#34;../../../download/&#34;&gt;download page&lt;/a&gt;.&#xA;You can download amoro-x.y.z-bin.zip (x.y.z is the release number), and you can also download the runtime packages for each engine version according to the engine you are using.&#xA;Unzip it to create the amoro-x.y.z directory in the same directory, and then go to the amoro-x.y.z directory.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Deployment On Kubernetes</title>
+      <link>https://amoro.apache.org/docs/0.6.1/deployment-on-kubernetes/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/deployment-on-kubernetes/</guid>
+      <description>&lt;h1 id=&#34;deploy-ams-on-kubernetes&#34;&gt;Deploy AMS On Kubernetes&lt;/h1&gt;&#xA;&lt;h2 id=&#34;requirements&#34;&gt;Requirements&lt;/h2&gt;&#xA;&lt;p&gt;If you want to deploy AMS on Kubernetes, you’d better get a sense of the following things.&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Use AMS official docker image or build AMS docker image&lt;/li&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/setup/&#34;&gt;An active Kubernetes cluster&lt;/a&gt;&lt;/li&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/tasks/tools/#kubectl&#34;&gt;Kubectl&lt;/a&gt;&lt;/li&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://helm.sh/docs/intro/quickstart/&#34;&gt;Helm3+&lt;/a&gt;&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h2 id=&#34;amoro-official-docker-image&#34;&gt;Amoro Official Docker Image&lt;/h2&gt;&#xA;&lt;p&gt;You can find the official docker image at &lt;a href=&#34;https://hub.docker.com/u/arctic163&#34;&gt;Amoro Docker Hub&lt;/a&gt;.&lt;/p&gt;&#xA;&lt;p&gt;The following are images that can be used in a production environment.&lt;/p&gt;&#xA;&lt;p&gt;&lt;strong&gt;arctic163/amoro&lt;/strong&gt;&lt;/p&gt;&#xA;&lt;p&gt;This is an image built based on the Amoro binary distribution package for deploying AMS.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Managing Catalogs</title>
+      <link>https://amoro.apache.org/docs/0.6.1/managing-catalogs/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/managing-catalogs/</guid>
+      <description>&lt;h1 id=&#34;managing-catalogs&#34;&gt;Managing Catalogs&lt;/h1&gt;&#xA;&lt;p&gt;Users can import your test or online clusters through the catalog management function provided by the AMS Dashboard. Before adding a new Catalog,&#xA;please read the following guidelines and select the appropriate creation according to your actual needs.&lt;/p&gt;&#xA;&lt;h2 id=&#34;create-catalog&#34;&gt;Create catalog&lt;/h2&gt;&#xA;&lt;p&gt;In Amoro, the catalog is a namespace for a group of libraries and tables. Under the catalog, it is further divided into different databases, and under each database, there are different tables. The name of a table in Amoro is uniquely identified by the format &lt;code&gt;catalog.database.table&lt;/code&gt;. In practical applications, a catalog generally corresponds to a metadata service, such as the commonly used Hive Metastore in big data.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Managing Optimizers</title>
+      <link>https://amoro.apache.org/docs/0.6.1/managing-optimizers/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/managing-optimizers/</guid>
+      <description>&lt;h1 id=&#34;managing-optimizers&#34;&gt;Managing Optimizers&lt;/h1&gt;&#xA;&lt;p&gt;The optimizer is the execution unit for performing self-optimizing tasks on a table. To isolate optimizing tasks on different tables and support the deployment of optimizers in different environments, Amoro has proposed the concepts of optimizer containers and optimizer groups:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Optimizer container: Encapsulate the deployment method of optimizers, there are three implementations for now: &lt;code&gt;flink container&lt;/code&gt; based on Flink streaming job, &lt;code&gt;local container&lt;/code&gt; based on Java Application, and &lt;code&gt;external container&lt;/code&gt; based on manually started by users.&lt;/li&gt;&#xA;&lt;li&gt;Optimizer group: A collection of optimizers, where each table must select an optimizer group to perform optimizing tasks on it. Tables under the same optimizer group contribute resources to each other, and tables under different optimizer groups can be isolated in terms of optimizer resources.&lt;/li&gt;&#xA;&lt;li&gt;Optimizer: The specific unit that performs optimizing tasks, usually with multiple concurrent units.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h2 id=&#34;optimizer-container&#34;&gt;Optimizer container&lt;/h2&gt;&#xA;&lt;p&gt;Before using self-optimizing, you need to configure the container information in the configuration file. Optimizer container represents a specific set of runtime environment configuration, and the scheduling scheme of optimizer in that runtime environment. The container includes three types: flink, local, and external.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Using Kyuubi By Terminal</title>
+      <link>https://amoro.apache.org/docs/0.6.1/using-kyuubi/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/using-kyuubi/</guid>
+      <description>&lt;h1 id=&#34;using-kyuubi-by-terminal&#34;&gt;Using Kyuubi By Terminal&lt;/h1&gt;&#xA;&lt;p&gt;&lt;strong&gt;Prerequisites&lt;/strong&gt;:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;There must be a running Kyuubi. To deploy and run Kyuubi, please refer to &lt;a href=&#34;https://kyuubi.readthedocs.io/en/master/&#34;&gt;Kyuubi doc&lt;/a&gt;&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;Terminal supports interfacing with Kyuubi to submit SQL to Kyuubi for execution. All you need to do is add the Kyuubi configuration as instructed below:&lt;/p&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;ams:&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    terminal:&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      backend: kyuubi&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/ &lt;span style=&#34;color:#75715e&#34;&gt;# kyuubi Connection Address&lt;/span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Without configuring Kyuubi, Terminal executes in memory in AMS.&lt;/p&gt;&#xA;&lt;p&gt;To execute SQL in Terminal, you can refer to the following steps:：&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

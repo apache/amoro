@@ -1,0 +1,701 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Using Logstore</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/0.6.1//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Quickstart</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.6.1/../../quickstart-setup/">Setup</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.6.1/../../quick-demo/">Quick Demo</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.6.1/../../docs/lastest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.6.1/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.6.1/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.6.1/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.6.1/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.6.1/../../roadmap/">Roadmap</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.6.1/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.6.1/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/0.6.1//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><h1 id="using-logstore">Using Logstore</h1>
+<p>Due to the limitations of traditional offline data warehouse architectures in supporting real-time business needs, real-time data warehousing has experienced rapid evolution in recent years. In the architecture of real-time data warehousing, Apache Kafka is often used as the storage system for real-time data. However, this also brings about the issue of data disconnection between offline data warehouses.</p>
+<p>Developers often need to pay attention to data stored in HDFS as well as data in Kafka, which increases the complexity of business development. Therefore, Amoro proposes the addition of an optional parameter, &ldquo;LogStore enabled&rdquo; (<code>log-store.enabled</code>), to the table configuration. This allows for retrieving data with sub-second and minute-level latency by operating on a single table while ensuring the eventual consistency of data from both sources.</p>
+<h2 id="real-time-data-in-logstore">Real-Time data in LogStore</h2>
+<p>Amoro tables provide two types of storage: FileStore and LogStore. FileStore stores massive full data, while LogStore stores real-time incremental data.</p>
+<p>Real-time data can provide second-level data visibility and ensure data consistency without enabling LogStore transactions.</p>
+<p>Its underlying storage system can be connected to external message queuing middleware, currently supporting only Kafka and Pulsar.</p>
+<p>Users can enable LogStore by configuring the following parameters when creating an Amoro table. For specific configurations, please refer to <a href="../configurations/#logstore-configurations">LogStore related configurations</a>.</p>
+<h2 id="overview">Overview</h2>
+<table>
+  <thead>
+      <tr>
+          <th>Flink</th>
+          <th>Kafka</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Flink 1.15</td>
+          <td>✔</td>
+      </tr>
+      <tr>
+          <td>Flink 1.16</td>
+          <td>✔</td>
+      </tr>
+      <tr>
+          <td>Flink 1.17</td>
+          <td>✔</td>
+      </tr>
+  </tbody>
+</table>
+<p>Kafka as LogStore Version Description:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Flink Version</th>
+          <th>Kafka Versions</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>1.15.x</td>
+          <td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
+      </tr>
+      <tr>
+          <td>1.16.x</td>
+          <td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
+      </tr>
+      <tr>
+          <td>1.17.x</td>
+          <td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="prerequisites-for-using-logstore">Prerequisites for using LogStore</h3>
+<p>When creating an Amoro table, LogStore needs to be enabled.</p>
+<ul>
+<li>You can create a table after selecting a specific Catalog on the Amoro <a href="http://localhost:1630">Dashboard</a> - Terminal page</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> db.log_table (
+</span></span><span style="display:flex;"><span>    id int,
+</span></span><span style="display:flex;"><span>    name string,
+</span></span><span style="display:flex;"><span>    ts <span style="color:#66d9ef">timestamp</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">primary</span> <span style="color:#66d9ef">key</span> (id)
+</span></span><span style="display:flex;"><span>) <span style="color:#66d9ef">using</span> arctic
+</span></span><span style="display:flex;"><span>tblproperties (
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;log-store.enabled&#34;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;true&#34;</span>,
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;log-store.topic&#34;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;topic_log_test&#34;</span>,
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;log-store.address&#34;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;localhost:9092&#34;</span>
+</span></span><span style="display:flex;"><span>);
+</span></span></code></pre></div><ul>
+<li>You can also use Flink SQL to create tables in Flink-SQL-Client</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- First use the use catalog command to switch to the arctic catalog.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> db.log_table (
+</span></span><span style="display:flex;"><span>    id int,
+</span></span><span style="display:flex;"><span>    name string,
+</span></span><span style="display:flex;"><span>    ts <span style="color:#66d9ef">timestamp</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">primary</span> <span style="color:#66d9ef">key</span> (id) <span style="color:#66d9ef">not</span> enforced
+</span></span><span style="display:flex;"><span>) <span style="color:#66d9ef">WITH</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;log-store.enabled&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;true&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;log-store.topic&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;topic_log_test&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;log-store.address&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;localhost:9092&#39;</span>);
+</span></span></code></pre></div><h3 id="double-write-logstore-and-filestore">Double write LogStore and FileStore</h3>
+<p><img src="../images/flink/auto-writer.png" alt="Introduce"></p>
+<p>Amoro Connector writes data to LogStore and ChangeStore at the same time through double-write operations, without opening Kafka transactions to ensure data consistency between the two, because opening transactions will bring a few minutes of delay to downstream tasks (the specific delay time depends on upstream tasks checkpoint interval).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.log_table <span style="color:#75715e">/*+ OPTIONS(&#39;arctic.emit.mode&#39;=&#39;log&#39;) */</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> id, name, ts <span style="color:#66d9ef">from</span> sourceTable;
+</span></span></code></pre></div><blockquote>
+<p>Currently, only the Apache Flink engine implements the dual-write LogStore and FileStore.</p>
+</blockquote>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#real-time-data-in-logstore">Real-Time data in LogStore</a></li>
+    <li><a href="#overview">Overview</a>
+      <ul>
+        <li><a href="#prerequisites-for-using-logstore">Prerequisites for using LogStore</a></li>
+        <li><a href="#double-write-logstore-and-filestore">Double write LogStore and FileStore</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/0.6.1//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.6.1//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/0.6.1//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.6.1//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.6.1//js/iceberg-theme.js"></script>
+
+
+
+</html>

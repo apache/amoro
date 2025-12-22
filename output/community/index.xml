@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Communities on Apache Amoro™</title>
+    <link>https://amoro.apache.org/community/</link>
+    <description>Recent content in Communities on Apache Amoro™</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/community/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>How To Contribute</title>
+      <link>https://amoro.apache.org/how-to-contribute/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/how-to-contribute/</guid>
+      <description>Contributing to Amoro Thanks for your interest in the Amoro project. Contributions are welcome and are greatly appreciated! Every little effort helps, and credit will always be given.&#xA;This page provides some orientation and resources for getting involved with the project. It also offers recommendations for the best results when engaging with the community. We hope this will be a pleasant first experience for you and you&amp;rsquo;ll return to continue contributing.</description>
+    </item>
+    <item>
+      <title>Join Community</title>
+      <link>https://amoro.apache.org/join-community/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/join-community/</guid>
+      <description>Welcome to Apache Amoro (incubating) Amoro community is a free, open-source community project. Anyone interested in the Amoro project can join the community and contribute to its development by becoming a part of it.&#xA;This document describes some guidelines for joining the Amoro community.&#xA;Mailing Lists List Name Address Subscribe Unsubscribe Archive Developer List dev@amoro.apache.org subscribe unsubscribe archive Commits List commits@amoro.apache.org subscribe unsubscribe archive Roles and Responsibilities Amoro community is composed of and operated by the following roles:</description>
+    </item>
+    <item>
+      <title>Release Guide</title>
+      <link>https://amoro.apache.org/release-guide/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/release-guide/</guid>
+      <description>How to release a new version Preparation Apache release documentation Please refer to the following link to understand the ASF release process:&#xA;Apache Release Guide Apache Release Policy Publishing Maven Artifacts Environmental requirements JDK 11 Apache Maven 3.8+ GnuPG 2.1+ Git SVN GPG signature Follow the Apache release guidelines, you need the GPG signature to sign the release version, users can also use this to determine if the downloaded version has been tampered with.</description>
+    </item>
+    <item>
+      <title>Release Guide</title>
+      <link>https://amoro.apache.org/validate-release/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/validate-release/</guid>
+      <description>How to validate a new release Download candidate # If there is svn locally, you can clone to the local $ svn co https://dist.apache.org/repos/dist/dev/incubator/amoro/${release_version}-${rc_version}/ # or download the material file directly $ wget https://dist.apache.org/repos/dist/dev/incubator/amoro/${release_version}-${rc_version}/ validate candidate Check GPG signature Download the KEYS and import it:&#xA;$ curl https://downloads.apache.org/incubator/amoro/KEYS &amp;gt; KEYS # Download KEYS $ gpg --import KEYS # Import KEYS to local Trust the KEY used in this version:&#xA;$ gpg --edit-key xxxxxxxxxx #KEY user used in this version gpg (GnuPG) 2.</description>
+    </item>
+  </channel>
+</rss>

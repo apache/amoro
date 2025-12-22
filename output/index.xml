@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Apache Amoro™</title>
+    <link>https://amoro.apache.org/</link>
+    <description>Recent content on Apache Amoro™</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Benchmark Report</title>
+      <link>https://amoro.apache.org/benchmark-report/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/benchmark-report/</guid>
+      <description>Benchmark Report Test purpose This test aims at comparing the OLAP benchmark performance of various data lake formats in the scenario of continuous streaming ingestion in the CDC database.&#xA;Meanwhile, particular attention was paid during the testing process to the impact of enabling self-optimizing on the analytical performance of the table.&#xA;Test envrionment Hardware configuration Number OS Cpu core Memory Disk type Deployed components 1 CentOS 7 40 256 SAS HDFS、Hive、Yarn 2 CentOS 7 40 256 SAS HDFS、Hive、Yarn 3 CentOS 7 40 256 SAS HDFS、Hive、Yarn 4 CentOS 7 40 256 SAS Trino、Presto 5 CentOS 7 40 256 SAS Trino、Presto 6 CentOS 7 40 256 SAS Trino、Presto Software version Software Version Trino 380 Presto 274 Iceberg 0.</description>
+    </item>
+    <item>
+      <title>Blogs</title>
+      <link>https://amoro.apache.org/blogs/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/blogs/</guid>
+      <description>Amoro Blogs Here is a list of blogs that talk about Amoro. The blogs are ordered from most recent to oldest.&#xA;10x Faster Iceberg Compaction: How Apache Amoro’s Self-Optimizing Outperforms Spark Jobs Date: Sep 19th, 2025&#xA;Authors: Jinsong Zhou</description>
+    </item>
+    <item>
+      <title>Download</title>
+      <link>https://amoro.apache.org/download/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/download/</guid>
+      <description>Download Please choose an Amoro version to download from the following tables. It is recommended you use the latest version.&#xA;Please verify the release with corresponding hashes(sha512), signatures and project release KEYS.&#xA;The instructions for checking hashes(sha512) and signatures is indicated on Verify Instructions page.&#xA;The latest release Version Date Source Binary Release Notes 0.8.1 2025 Sep 11 source (signature | sha512) amoro-bin-hadoop3 (signature | sha512) amoro-bin-hadoop2 (signature | sha512) release note All archived releases Version Date Source Binary Release Notes 0.</description>
+    </item>
+    <item>
+      <title>How To Benchmark</title>
+      <link>https://amoro.apache.org/benchmark-guide/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/benchmark-guide/</guid>
+      <description>Benchmark Guild This guilde introduces detailed steps for executing the benchmark to validate performance of various data lake formats.&#xA;By following the steps in the guild, you can learn about the analytical performance of different data lake table format. At the same time, you can flexibly adjust the test scenarios to obtain test results that better suit your actual scenario.&#xA;Deploy testing environment Deploy by Docker With Docker-Compose, you can quickly set up an environment for performing the benchmark.</description>
+    </item>
+    <item>
+      <title>How To Contribute</title>
+      <link>https://amoro.apache.org/how-to-contribute/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/how-to-contribute/</guid>
+      <description>Contributing to Amoro Thanks for your interest in the Amoro project. Contributions are welcome and are greatly appreciated! Every little effort helps, and credit will always be given.&#xA;This page provides some orientation and resources for getting involved with the project. It also offers recommendations for the best results when engaging with the community. We hope this will be a pleasant first experience for you and you&amp;rsquo;ll return to continue contributing.</description>
+    </item>
+    <item>
+      <title>Join Community</title>
+      <link>https://amoro.apache.org/join-community/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/join-community/</guid>
+      <description>Welcome to Apache Amoro (incubating) Amoro community is a free, open-source community project. Anyone interested in the Amoro project can join the community and contribute to its development by becoming a part of it.&#xA;This document describes some guidelines for joining the Amoro community.&#xA;Mailing Lists List Name Address Subscribe Unsubscribe Archive Developer List dev@amoro.apache.org subscribe unsubscribe archive Commits List commits@amoro.apache.org subscribe unsubscribe archive Roles and Responsibilities Amoro community is composed of and operated by the following roles:</description>
+    </item>
+    <item>
+      <title>Quickstart</title>
+      <link>https://amoro.apache.org/quick-start/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/quick-start/</guid>
+      <description>Quickstart This guide outlines the basic process of using Amoro, allowing you to quickly experience its core features. You can choose to use either the Iceberg Format or the Mixed-Iceberg Format to complete the entire process.&#xA;If you are more interested in the Mixed-Hive Format or the Paimon Format, you can refer to: Mixed-Hive Format and Paimon Format. For specific information on the different formats supported by Amoro, please refer to: Table Format.</description>
+    </item>
+    <item>
+      <title>Release Guide</title>
+      <link>https://amoro.apache.org/release-guide/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/release-guide/</guid>
+      <description>How to release a new version Preparation Apache release documentation Please refer to the following link to understand the ASF release process:&#xA;Apache Release Guide Apache Release Policy Publishing Maven Artifacts Environmental requirements JDK 11 Apache Maven 3.8+ GnuPG 2.1+ Git SVN GPG signature Follow the Apache release guidelines, you need the GPG signature to sign the release version, users can also use this to determine if the downloaded version has been tampered with.</description>
+    </item>
+    <item>
+      <title>Release Guide</title>
+      <link>https://amoro.apache.org/validate-release/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/validate-release/</guid>
+      <description>How to validate a new release Download candidate # If there is svn locally, you can clone to the local $ svn co https://dist.apache.org/repos/dist/dev/incubator/amoro/${release_version}-${rc_version}/ # or download the material file directly $ wget https://dist.apache.org/repos/dist/dev/incubator/amoro/${release_version}-${rc_version}/ validate candidate Check GPG signature Download the KEYS and import it:&#xA;$ curl https://downloads.apache.org/incubator/amoro/KEYS &amp;gt; KEYS # Download KEYS $ gpg --import KEYS # Import KEYS to local Trust the KEY used in this version:&#xA;$ gpg --edit-key xxxxxxxxxx #KEY user used in this version gpg (GnuPG) 2.</description>
+    </item>
+  </channel>
+</rss>

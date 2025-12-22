@@ -1,0 +1,438 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Release Guide</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/css/bootstrap.css" rel="stylesheet">
+
+
+<link href="/css/markdown.css" rel="stylesheet">
+<link href="/css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="/css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="/css/termynal.css" rel="stylesheet">
+
+<link href="/css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="/quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.8.1/">0.8.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.8.0/">0.8.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="/download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="/blogs/">Blogs</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/release-guide/">Release guide</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/validate-release/">Validate release</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container toc-only">
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><h1 id="how-to-validate-a-new-release">How to validate a new release</h1>
+<h2 id="download-candidate">Download candidate</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># If there is svn locally, you can clone to the local</span>
+</span></span><span style="display:flex;"><span>$ svn co https://dist.apache.org/repos/dist/dev/incubator/amoro/<span style="color:#e6db74">${</span>release_version<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>rc_version<span style="color:#e6db74">}</span>/
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># or download the material file directly</span>
+</span></span><span style="display:flex;"><span>$ wget https://dist.apache.org/repos/dist/dev/incubator/amoro/<span style="color:#e6db74">${</span>release_version<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>rc_version<span style="color:#e6db74">}</span>/
+</span></span></code></pre></div><h2 id="validate-candidate">validate candidate</h2>
+<h3 id="check-gpg-signature">Check GPG signature</h3>
+<p>Download the KEYS and import it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ curl  https://downloads.apache.org/incubator/amoro/KEYS &gt; KEYS <span style="color:#75715e"># Download KEYS</span>
+</span></span><span style="display:flex;"><span>$ gpg --import KEYS <span style="color:#75715e"># Import KEYS to local</span>
+</span></span></code></pre></div><p>Trust the KEY used in this version:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ gpg --edit-key xxxxxxxxxx <span style="color:#75715e">#KEY user used in this version</span>
+</span></span><span style="display:flex;"><span>gpg <span style="color:#f92672">(</span>GnuPG<span style="color:#f92672">)</span> 2.2.21; Copyright <span style="color:#f92672">(</span>C<span style="color:#f92672">)</span> <span style="color:#ae81ff">2020</span> Free Software Foundation, Inc.
+</span></span><span style="display:flex;"><span>This is free software: you are free to change and redistribute it.
+</span></span><span style="display:flex;"><span>There is NO WARRANTY, to the extent permitted by law.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Secret key is available.
+</span></span><span style="display:flex;"><span>gpg&gt; trust <span style="color:#75715e">#trust</span>
+</span></span><span style="display:flex;"><span>Please decide how far you trust this user to correctly verify other users<span style="color:#e6db74">&#39; keys
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">(by looking at passports, checking fingerprints from different sources, etc.)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  1 = I don&#39;</span>t know or won<span style="color:#960050;background-color:#1e0010">&#39;</span>t say
+</span></span><span style="display:flex;"><span>  2 <span style="color:#f92672">=</span> I <span style="color:#66d9ef">do</span> NOT trust
+</span></span><span style="display:flex;"><span>  3 <span style="color:#f92672">=</span> I trust marginally
+</span></span><span style="display:flex;"><span>  4 <span style="color:#f92672">=</span> I trust fully
+</span></span><span style="display:flex;"><span>  5 <span style="color:#f92672">=</span> I trust ultimately
+</span></span><span style="display:flex;"><span>  m <span style="color:#f92672">=</span> back to the main menu
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Your decision? <span style="color:#ae81ff">5</span> <span style="color:#75715e">#choose 5</span>
+</span></span><span style="display:flex;"><span>Do you really want to set this key to ultimate trust? <span style="color:#f92672">(</span>y/N<span style="color:#f92672">)</span> y  <span style="color:#75715e">#choose y</span>
+</span></span></code></pre></div><p>Check the gpg signature:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ <span style="color:#66d9ef">for</span> i in *.tar.gz; <span style="color:#66d9ef">do</span> echo $i; gpg --verify $i.asc $i; <span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><h3 id="check-sha512-hash">Check sha512 hash</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Command for Linux</span>
+</span></span><span style="display:flex;"><span>$ <span style="color:#66d9ef">for</span> i in *.tar.gz; <span style="color:#66d9ef">do</span> echo $i; sha512sum --check  $i.sha512; <span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Command for MacOS</span>
+</span></span><span style="display:flex;"><span>$ <span style="color:#66d9ef">for</span> i in *.tar.gz; <span style="color:#66d9ef">do</span> echo $i; shasum -a <span style="color:#ae81ff">512</span> -c $i.sha512; <span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><h3 id="check-the-binary-package">Check the binary package</h3>
+<p>Unzip the binary pakcages: <code>apache-amoro-${AMORO_VERSION}-bin-${HADOOP_VERSION}.tar.gz</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Hadoop2</span>
+</span></span><span style="display:flex;"><span>$ tar -xzvf apache-amoro-0.8.0-incubating-bin-hadoop2.tar.gz
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Hadoop3 </span>
+</span></span><span style="display:flex;"><span>$ tar -xzvf apache-amoro-0.8.0-incubating-bin-hadoop3.tar.gz
+</span></span></code></pre></div><p>check as follows:</p>
+<ul>
+<li>Check whether the package contains unnecessary files, which makes the tar package too large</li>
+<li>Folder contains the word incubating</li>
+<li>There are LICENSE and NOTICE files</li>
+<li>There is a DISCLAIMER file</li>
+<li>Check for extra files or folders, such as empty folders, etc.</li>
+</ul>
+<h3 id="check-the-source-package">Check the source package</h3>
+<p>Unzip the binary pakcages: <code>apache-amoro-${AMORO_VERSION}-src.tar.gz</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ tar -xzvf apache-amoro-0.8.0-incubating-src.tar.gz
+</span></span></code></pre></div><p>Check as follows:</p>
+<ul>
+<li>There are LICENSE and NOTICE files</li>
+<li>There is a DISCLAIMER file</li>
+<li>All source files have ASF license at the beginning</li>
+<li>Only source files exist, not binary files</li>
+</ul>
+<p>Compile from source:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Compile from source</span>
+</span></span><span style="display:flex;"><span>$ mvn clean package
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Or skip the unit test</span>
+</span></span><span style="display:flex;"><span>$ mvn clean package -DskipTests
+</span></span></code></pre></div><h2 id="vote-for-the-release">vote for the release</h2>
+<p>If all verifications pass, please vote +1 for the new release! If you find any critical issues, pleaste vote -1 for it.
+Thanks a lot for your work!</p>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#download-candidate">Download candidate</a></li>
+    <li><a href="#validate-candidate">validate candidate</a>
+      <ul>
+        <li><a href="#check-gpg-signature">Check GPG signature</a></li>
+        <li><a href="#check-sha512-hash">Check sha512 hash</a></li>
+        <li><a href="#check-the-binary-package">Check the binary package</a></li>
+        <li><a href="#check-the-source-package">Check the source package</a></li>
+      </ul>
+    </li>
+    <li><a href="#vote-for-the-release">vote for the release</a></li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org//js/iceberg-theme.js"></script>
+
+
+
+</html>

@@ -1,0 +1,647 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Benchmark Report</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/css/bootstrap.css" rel="stylesheet">
+
+
+<link href="/css/markdown.css" rel="stylesheet">
+<link href="/css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="/css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="/css/termynal.css" rel="stylesheet">
+
+<link href="/css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="/quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.8.1/">0.8.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.8.0/">0.8.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a id="active"  href="/benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="/download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="/blogs/">Blogs</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/release-guide/">Release guide</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/validate-release/">Validate release</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container toc-only">
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><h1 id="benchmark-report">Benchmark Report</h1>
+<h2 id="test-purpose">Test purpose</h2>
+<p>This test aims at comparing the OLAP benchmark performance of various data lake formats in the scenario of continuous streaming ingestion in the CDC database.</p>
+<p>Meanwhile, particular attention was paid during the testing process to the impact of enabling self-optimizing on the analytical performance of the table.</p>
+<h2 id="test-envrionment">Test envrionment</h2>
+<h3 id="hardware-configuration">Hardware configuration</h3>
+<table>
+<thead>
+<tr>
+<th>Number</th>
+<th>OS</th>
+<th>Cpu core</th>
+<th>Memory</th>
+<th>Disk type</th>
+<th>Deployed components</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>CentOS 7</td>
+<td>40</td>
+<td>256</td>
+<td>SAS</td>
+<td>HDFS、Hive、Yarn</td>
+</tr>
+<tr>
+<td>2</td>
+<td>CentOS 7</td>
+<td>40</td>
+<td>256</td>
+<td>SAS</td>
+<td>HDFS、Hive、Yarn</td>
+</tr>
+<tr>
+<td>3</td>
+<td>CentOS 7</td>
+<td>40</td>
+<td>256</td>
+<td>SAS</td>
+<td>HDFS、Hive、Yarn</td>
+</tr>
+<tr>
+<td>4</td>
+<td>CentOS 7</td>
+<td>40</td>
+<td>256</td>
+<td>SAS</td>
+<td>Trino、Presto</td>
+</tr>
+<tr>
+<td>5</td>
+<td>CentOS 7</td>
+<td>40</td>
+<td>256</td>
+<td>SAS</td>
+<td>Trino、Presto</td>
+</tr>
+<tr>
+<td>6</td>
+<td>CentOS 7</td>
+<td>40</td>
+<td>256</td>
+<td>SAS</td>
+<td>Trino、Presto</td>
+</tr>
+</tbody>
+</table>
+<h3 id="software-version">Software version</h3>
+<table>
+<thead>
+<tr>
+<th>Software</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trino</td>
+<td>380</td>
+</tr>
+<tr>
+<td>Presto</td>
+<td>274</td>
+</tr>
+<tr>
+<td>Iceberg</td>
+<td>0.13</td>
+</tr>
+<tr>
+<td>Amoro</td>
+<td>0.4</td>
+</tr>
+<tr>
+<td>Hudi</td>
+<td>0.11.1</td>
+</tr>
+</tbody>
+</table>
+<h2 id="test-plan">Test plan</h2>
+<h3 id="overview">Overview</h3>
+<p>This test is based on CHbenchmark, which is a hybrid testing standard that integrates TPCC and TPCH. The overall testing workload can be divided into two categories:</p>
+<ul>
+<li>
+<p>5 OLTP workloads based on TPC-C: NewOrder, Payment, OrderStatus, Delivery, and StockLevel.</p>
+</li>
+<li>
+<p>22 OLAP workloads based on TCP-H, where Q15 was abandoned in this test due to its association with views and the lack of view rewriting.</p>
+</li>
+</ul>
+<img src="../images/chbenchmark/OLTP-OLAP.png" alt="OLTP AND OLAP" width="60%" height="60%">
+<h3 id="prepare-test-data">Prepare test data</h3>
+<p>Based on the TPC-C, the raw data was constructed in MySQL for this test. The dataset includes a total of 12 tables, with the relationship between TPC-C and TPC-H tables shown in the following diagram:</p>
+<img src="../images/chbenchmark/TPCC-TPCH.png" alt="TPCC AND TPCH" width="60%" height="60%">
+<p>In addition, the relationship between the data sizes of each table is shown in the following table, where <code>w</code> represents the number of warehouses. It can be observed that the data sizes of intermediate tables such as <code>new_order</code> and <code>stock</code> are affected by the number of warehouses. Therefore, the data set size can be adjusted by controlling the number of warehouses during testing.</p>
+<img src="../images/chbenchmark/chbenchmark.png" alt="chbenchmark" width="60%" height="60%">
+<p>In this test, the number of warehouses was set to 100, and the initial data set size in the MySQL database was approximately 10GB. The following table shows the number of data records for each table in the initial data set and the changes in the number of data records for each table after running the one-hour TPC-C test.</p>
+<table>
+<thead>
+<tr>
+<th>Table name</th>
+<th>The number of records (rows) in beginning</th>
+<th>The number of records (rows) after running a one-hour TPC-C test</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>warehouse</td>
+<td>100</td>
+<td>100</td>
+</tr>
+<tr>
+<td>item</td>
+<td>100000</td>
+<td>100000</td>
+</tr>
+<tr>
+<td>stock</td>
+<td>10000000</td>
+<td>10000000</td>
+</tr>
+<tr>
+<td>district</td>
+<td>1000</td>
+<td>1000</td>
+</tr>
+<tr>
+<td>customer</td>
+<td>3000000</td>
+<td>3000000</td>
+</tr>
+<tr>
+<td>history</td>
+<td>3000000</td>
+<td>3119285（+119285）</td>
+</tr>
+<tr>
+<td>oorder</td>
+<td>3000000</td>
+<td>3124142（+124142）</td>
+</tr>
+<tr>
+<td>new_order</td>
+<td>893709</td>
+<td>907373（+13664）</td>
+</tr>
+<tr>
+<td>order_line</td>
+<td>29996774</td>
+<td>31252799（+1256025）</td>
+</tr>
+<tr>
+<td>region</td>
+<td>5</td>
+<td>5</td>
+</tr>
+<tr>
+<td>nation</td>
+<td>62</td>
+<td>62</td>
+</tr>
+<tr>
+<td>supplier</td>
+<td>1000</td>
+<td>1000</td>
+</tr>
+</tbody>
+</table>
+<h3 id="perform-the-test">Perform the test</h3>
+<p>Before starting TPC-H testing, start a Flink job to synchronize both the history data and real-time data from MySQL into the data lake.
+Afterwards, execute TPC-H testing through query engines such as Trino or Presto.</p>
+<p>TPC-H contains 22 query statements, only three of which are listed here due to space limitation:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- query1 
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> ol_number,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">sum</span>(ol_quantity) <span style="color:#66d9ef">AS</span> sum_qty,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">sum</span>(ol_amount) <span style="color:#66d9ef">AS</span> sum_amount,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">avg</span>(ol_quantity) <span style="color:#66d9ef">AS</span> avg_qty,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">avg</span>(ol_amount) <span style="color:#66d9ef">AS</span> avg_amount,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">count</span>(<span style="color:#f92672">*</span>) <span style="color:#66d9ef">AS</span> count_order
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> order_line
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> ol_delivery_d <span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#39;2007-01-02 00:00:00.000000&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">GROUP</span> <span style="color:#66d9ef">BY</span> ol_number
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> ol_number;
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span> <span style="color:#75715e">-- query2 
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> su_suppkey,
+</span></span><span style="display:flex;"><span>    su_name,
+</span></span><span style="display:flex;"><span>    n_name,
+</span></span><span style="display:flex;"><span>    i_id,
+</span></span><span style="display:flex;"><span>    i_name,
+</span></span><span style="display:flex;"><span>    su_address,
+</span></span><span style="display:flex;"><span>    su_phone,
+</span></span><span style="display:flex;"><span>    su_comment
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> item, supplier, stock, nation, region, 
+</span></span><span style="display:flex;"><span>    (<span style="color:#66d9ef">SELECT</span> s_i_id <span style="color:#66d9ef">AS</span> m_i_id,
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">MIN</span>(s_quantity) <span style="color:#66d9ef">AS</span> m_s_quantity
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">FROM</span> stock, supplier, nation, region
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">WHERE</span> <span style="color:#66d9ef">MOD</span>((s_w_id<span style="color:#f92672">*</span>s_i_id), <span style="color:#ae81ff">10000</span>) <span style="color:#f92672">=</span> su_suppkey
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">AND</span> su_nationkey <span style="color:#f92672">=</span> n_nationkey
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">AND</span> n_regionkey <span style="color:#f92672">=</span> r_regionkey
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">AND</span> r_name <span style="color:#66d9ef">LIKE</span> <span style="color:#e6db74">&#39;Europ%&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">GROUP</span> <span style="color:#66d9ef">BY</span> s_i_id) m
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> i_id <span style="color:#f92672">=</span> s_i_id
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> <span style="color:#66d9ef">MOD</span>((s_w_id <span style="color:#f92672">*</span> s_i_id), <span style="color:#ae81ff">10000</span>) <span style="color:#f92672">=</span> su_suppkey
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> su_nationkey <span style="color:#f92672">=</span> n_nationkey
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> n_regionkey <span style="color:#f92672">=</span> r_regionkey
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> i_data <span style="color:#66d9ef">LIKE</span> <span style="color:#e6db74">&#39;%b&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> r_name <span style="color:#66d9ef">LIKE</span> <span style="color:#e6db74">&#39;Europ%&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> i_id<span style="color:#f92672">=</span>m_i_id
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> s_quantity <span style="color:#f92672">=</span> m_s_quantity
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> n_name, su_name, i_id;
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span> <span style="color:#75715e">-- query3 
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> ol_o_id,
+</span></span><span style="display:flex;"><span>    ol_w_id,
+</span></span><span style="display:flex;"><span>    ol_d_id,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">sum</span>(ol_amount) <span style="color:#66d9ef">AS</span> revenue,
+</span></span><span style="display:flex;"><span>    o_entry_d
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> customer, new_order, oorder, order_line
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> c_state <span style="color:#66d9ef">LIKE</span> <span style="color:#e6db74">&#39;A%&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> c_id <span style="color:#f92672">=</span> o_c_id
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> c_w_id <span style="color:#f92672">=</span> o_w_id
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> c_d_id <span style="color:#f92672">=</span> o_d_id
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> no_w_id <span style="color:#f92672">=</span> o_w_id
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> no_d_id <span style="color:#f92672">=</span> o_d_id
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> no_o_id <span style="color:#f92672">=</span> o_id
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> ol_w_id <span style="color:#f92672">=</span> o_w_id
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> ol_d_id <span style="color:#f92672">=</span> o_d_id
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> ol_o_id <span style="color:#f92672">=</span> o_id
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">AND</span> o_entry_d <span style="color:#f92672">&gt;</span> <span style="color:#e6db74">&#39;2007-01-02 00:00:00.000000&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">GROUP</span> <span style="color:#66d9ef">BY</span> ol_o_id, ol_w_id, ol_d_id, o_entry_d
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> revenue <span style="color:#66d9ef">DESC</span>, o_entry_d;
+</span></span></code></pre></div><h2 id="test-results">Test results</h2>
+<h3 id="static-result">Static result</h3>
+<p><img src="../images/chbenchmark/arctic-iceberg-100-warehouse-static-performence.png" alt="arctic iceberg static performence"></p>
+<p>The figure above shows a performance comparison of Iceberg and Mixed-Iceberg table formats for querying static data. It can be seen from the figure that the query performance of the two table formats is similar.</p>
+<h3 id="dynamic-result">Dynamic result</h3>
+<p><img src="../images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_with_TPCC_time.png" alt="Amoro Iceberg Hudi 100 warehouse performence with TPCC time"></p>
+<p>The figure above shows a performance comparison of Iceberg 、Mixed-Iceberg and Hudi table formats for querying dynamic data. The test recorded the results of running TPC-C for different time periods.</p>
+<p>The following are the specific results of each test group:</p>
+<p><img src="../images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_on_TPCC_0-30_minutes.png" alt="Amoro Iceberg Hudi 100 warehouse performence on TPCC 0-30 minutes"></p>
+<p><img src="../images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_on_TPCC_30-60_minutes.png" alt="Amoro Iceberg Hudi 100 warehouse performence on TPCC 30-60 minutes"></p>
+<p><img src="../images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_on_TPCC_60-90_minutes.png" alt="Amoro Iceberg Hudi 100 warehouse performence on TPCC 60-90 minutes"></p>
+<p><img src="../images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_on_TPCC_90-120_minutes.png" alt="Amoro Iceberg Hudi 100 warehouse performence on TPCC 90-120 minutes"></p>
+<h2 id="conclusion">Conclusion</h2>
+<ul>
+<li>In the case of static data, the query performance of Iceberg and Mixed-Iceberg tables is similar.</li>
+<li>Without enabling self-optimizing, the query performance of all table formats will continue to decline as dynamic data is continuously written.</li>
+<li>After enabling self-optimizing, the query performance of all table formats remains stable as dynamic data is continuously written.</li>
+</ul>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#test-purpose">Test purpose</a></li>
+    <li><a href="#test-envrionment">Test envrionment</a>
+      <ul>
+        <li><a href="#hardware-configuration">Hardware configuration</a></li>
+        <li><a href="#software-version">Software version</a></li>
+      </ul>
+    </li>
+    <li><a href="#test-plan">Test plan</a>
+      <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#prepare-test-data">Prepare test data</a></li>
+        <li><a href="#perform-the-test">Perform the test</a></li>
+      </ul>
+    </li>
+    <li><a href="#test-results">Test results</a>
+      <ul>
+        <li><a href="#static-result">Static result</a></li>
+        <li><a href="#dynamic-result">Dynamic result</a></li>
+      </ul>
+    </li>
+    <li><a href="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org//js/iceberg-theme.js"></script>
+
+
+
+</html>

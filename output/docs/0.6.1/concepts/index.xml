@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Concepts on Amoro</title>
+    <link>https://amoro.apache.org/docs/0.6.1/concepts/</link>
+    <description>Recent content in Concepts on Amoro</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/docs/0.6.1/concepts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Catalogs</title>
+      <link>https://amoro.apache.org/docs/0.6.1/catalogs/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/catalogs/</guid>
+      <description>&lt;h1 id=&#34;catalogs&#34;&gt;Catalogs&lt;/h1&gt;&#xA;&lt;h2 id=&#34;introduce-multi-catalog&#34;&gt;Introduce multi-catalog&lt;/h2&gt;&#xA;&lt;p&gt;A catalog is a metadata namespace that stores information about databases, tables, views, indexes, users, and UDFs. It provides a higher-level&#xA;namespace for &lt;code&gt;table&lt;/code&gt; and &lt;code&gt;database&lt;/code&gt;. Typically, a catalog is associated with a specific type of data source or cluster. In Flink, Spark and Trino,&#xA;the multi-catalog feature can be used to support SQL across data sources, such as:&lt;/p&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-SQL&#34; data-lang=&#34;SQL&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;SELECT&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;c&lt;/span&gt;.ID, &lt;span style=&#34;color:#66d9ef&#34;&gt;c&lt;/span&gt;.NAME, &lt;span style=&#34;color:#66d9ef&#34;&gt;c&lt;/span&gt;.AGE, o.AMOUNT&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;FROM&lt;/span&gt; MYSQL.ONLINE.CUSTOMERS &lt;span style=&#34;color:#66d9ef&#34;&gt;c&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;JOIN&lt;/span&gt; HIVE.OFFLINE.ORDERS o&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;ON&lt;/span&gt; (&lt;span style=&#34;color:#66d9ef&#34;&gt;c&lt;/span&gt;.ID &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; o.CUSTOMER_ID)&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In the past, data lakes were managed using the Hive Metastore (HMS) to handle metadata. Unfortunately, HMS does not support multi-catalog, which&#xA;limits the capabilities of engines on the data lake. For example, some users may want to use Spark to perform federated computation across different&#xA;Hive clusters by specifying the catalog name, requiring them to develop a Hive catalog plugin in the upper layer. Additionally, data lake formats are&#xA;moving from a single Hive-centric approach to a landscape of competing formats such as Iceberg, Delta, and Hudi. These new data lake formats are more&#xA;cloud-friendly and will facilitate the migration of data lakes to the cloud. In this context, a management system that supports multi-catalog is&#xA;needed to help users govern data lakes with different environments and formats.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Self-Optimizing</title>
+      <link>https://amoro.apache.org/docs/0.6.1/self-optimizing/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/self-optimizing/</guid>
+      <description>&lt;h1 id=&#34;self-optimizing&#34;&gt;Self-optimizing&lt;/h1&gt;&#xA;&lt;h2 id=&#34;introduction&#34;&gt;Introduction&lt;/h2&gt;&#xA;&lt;p&gt;Lakehouse is characterized by its openness and loose coupling, with data and files maintained by users through various engines. While this&#xA;architecture appears to be well-suited for T+1 scenarios, as more attention is paid to applying Lakehouse to streaming data warehouses and real-time&#xA;analysis scenarios, challenges arise. For example:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Streaming writes bring a massive amount of fragment files&lt;/li&gt;&#xA;&lt;li&gt;CDC ingestion and streaming updates generate excessive redundant data&lt;/li&gt;&#xA;&lt;li&gt;Using the new data lake format leads to orphan files and expired snapshots.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;These issues can significantly affect the performance and cost of data analysis. Therefore, Amoro has introduced a Self-optimizing mechanism to&#xA;create an out-of-the-box Streaming Lakehouse management service that is as user-friendly as a traditional database or data warehouse. The new table&#xA;format is used for this purpose. Self-optimizing involves various procedures such as file compaction, deduplication, and sorting.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Table Watermark</title>
+      <link>https://amoro.apache.org/docs/0.6.1/table-watermark/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/table-watermark/</guid>
+      <description>&lt;h1 id=&#34;table-watermark&#34;&gt;Table Watermark&lt;/h1&gt;&#xA;&lt;h2 id=&#34;table-freshness&#34;&gt;Table freshness&lt;/h2&gt;&#xA;&lt;p&gt;Data freshness represents timeliness, and in many discussions, freshness is considered one of the important indicators of data quality. In traditional&#xA;offline data warehouses, higher cost typically means better performance, creating a typical binary paradox in terms of cost-performance trade-off.&#xA;However, in high-freshness streaming data warehouses, massive small files and frequent updates can lead to performance degradation. The higher the&#xA;freshness, the greater the impact on performance. To achieve the required performance, users must incur higher costs. Thus, for streaming data&#xA;warehouses, data freshness, query performance, and cost form a tripartite paradox.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

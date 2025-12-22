@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Concepts on Amoro</title>
+    <link>https://amoro.apache.org/docs/0.8.0/concepts/</link>
+    <description>Recent content in Concepts on Amoro</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/docs/0.8.0/concepts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Catalogs</title>
+      <link>https://amoro.apache.org/docs/0.8.0/catalogs/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.0/catalogs/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;catalogs&#34;&gt;Catalogs&lt;/h1&gt;&#xA;&lt;h2 id=&#34;introduce-multi-catalog&#34;&gt;Introduce multi-catalog&lt;/h2&gt;&#xA;&lt;p&gt;A catalog is a metadata namespace that stores information about databases, tables, views, indexes, users, and UDFs. It provides a higher-level&#xA;namespace for &lt;code&gt;table&lt;/code&gt; and &lt;code&gt;database&lt;/code&gt;. Typically, a catalog is associated with a specific type of data source or cluster. In Flink, Spark and Trino,&#xA;the multi-catalog feature can be used to support SQL across data sources, such as:&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Self-Optimizing</title>
+      <link>https://amoro.apache.org/docs/0.8.0/self-optimizing/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.0/self-optimizing/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;self-optimizing&#34;&gt;Self-optimizing&lt;/h1&gt;&#xA;&lt;h2 id=&#34;introduction&#34;&gt;Introduction&lt;/h2&gt;&#xA;&lt;p&gt;Lakehouse is characterized by its openness and loose coupling, with data and files maintained by users through various engines. While this&#xA;architecture appears to be well-suited for T+1 scenarios, as more attention is paid to applying Lakehouse to streaming data warehouses and real-time&#xA;analysis scenarios, challenges arise. For example:&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Table Watermark</title>
+      <link>https://amoro.apache.org/docs/0.8.0/table-watermark/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.0/table-watermark/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;table-watermark&#34;&gt;Table Watermark&lt;/h1&gt;&#xA;&lt;h2 id=&#34;table-freshness&#34;&gt;Table freshness&lt;/h2&gt;&#xA;&lt;p&gt;Data freshness represents timeliness, and in many discussions, freshness is considered one of the important indicators of data quality. In traditional&#xA;offline data warehouses, higher cost typically means better performance, creating a typical binary paradox in terms of cost-performance trade-off.&#xA;However, in high-freshness streaming data warehouses, massive small files and frequent updates can lead to performance degradation. The higher the&#xA;freshness, the greater the impact on performance. To achieve the required performance, users must incur higher costs. Thus, for streaming data&#xA;warehouses, data freshness, query performance, and cost form a tripartite paradox.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

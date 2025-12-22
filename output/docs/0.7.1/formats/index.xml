@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Formats on Amoro</title>
+    <link>https://amoro.apache.org/docs/0.7.1/formats/</link>
+    <description>Recent content in Formats on Amoro</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/docs/0.7.1/formats/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Iceberg</title>
+      <link>https://amoro.apache.org/docs/0.7.1/iceberg-format/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.1/iceberg-format/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;iceberg-format&#34;&gt;Iceberg Format&lt;/h1&gt;&#xA;&lt;p&gt;Iceberg format refers to &lt;a href=&#34;https://iceberg.apache.org&#34;&gt;Apache Iceberg&lt;/a&gt; table, which is an open table format for large analytical datasets designed to provide scalable, efficient, and secure data storage and query solutions.&#xA;It supports data operations on multiple storage backends and provides features such as ACID transactions, multi-version control, and schema evolution, making data management and querying more flexible and convenient.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Mixed-Hive</title>
+      <link>https://amoro.apache.org/docs/0.7.1/mixed-hive-format/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.1/mixed-hive-format/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;mixed-hive-format&#34;&gt;Mixed-Hive Format&lt;/h1&gt;&#xA;&lt;p&gt;Mixed-Hive format is a format that has better compatibility with Hive than Mixed-Iceberg format.&#xA;Mixed-Hive format uses a Hive table as the BaseStore and an Iceberg table as the ChangeStore. Mixed-Hive format supports:&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Mixed-Iceberg</title>
+      <link>https://amoro.apache.org/docs/0.7.1/mixed-iceberg-format/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.1/mixed-iceberg-format/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;mixed-iceberg-format&#34;&gt;Mixed-Iceberg Format&lt;/h1&gt;&#xA;&lt;p&gt;Compared with Iceberg format, Mixed-Iceberg format provides more features:&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Overview</title>
+      <link>https://amoro.apache.org/docs/0.7.1/formats-overview/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.1/formats-overview/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;formats-overview&#34;&gt;Formats Overview&lt;/h1&gt;&#xA;&lt;p&gt;Table format (aka. format) was first proposed by Iceberg, which can be described as follows:&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Paimon</title>
+      <link>https://amoro.apache.org/docs/0.7.1/paimon-format/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.1/paimon-format/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;paimon-format&#34;&gt;Paimon Format&lt;/h1&gt;&#xA;&lt;p&gt;Paimon format refers to &lt;a href=&#34;https://paimon.apache.org/&#34;&gt;Apache Paimon&lt;/a&gt; table.&#xA;Paimon is a streaming data lake platform with high-speed data ingestion, changelog tracking and efficient real-time analytics.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

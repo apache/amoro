@@ -1,0 +1,965 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Deployment</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/0.7.0//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Quickstart</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../quickstart-setup/">Setup</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../quick-demo/">Quick Demo</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.7.0/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.7.0/../../roadmap/">Roadmap</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/0.7.0//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="deployment">Deployment</h1>
+<p>You can choose to download the stable release package from <a href="../../../download/">download page</a>, or the source code form <a href="https://github.com/apache/amoro">Github</a> and compile it according to the README.</p>
+<h2 id="system-requirements">System requirements</h2>
+<ul>
+<li>Java 8 is required.</li>
+<li>Optional: MySQL 5.5 or higher</li>
+<li>Optional: PostgreSQL 14.x or higher</li>
+<li>Optional: ZooKeeper 3.4.x or higher</li>
+</ul>
+<h2 id="download-the-distribution">Download the distribution</h2>
+<p>All released package can be downloaded from <a href="../../../download/">download page</a>.
+You can download apache-amoro-x.y.z-bin.tar.gz (x.y.z is the release number), and you can also download the runtime packages for each engine version according to the engine you are using.
+Unzip it to create the amoro-x.y.z directory in the same directory, and then go to the amoro-x.y.z directory.</p>
+<h2 id="source-code-compilation">Source code compilation</h2>
+<p>You can build based on the master branch without compiling Trino. The compilation method and the directory of results are described below:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ git clone https://github.com/apache/amoro.git
+</span></span><span style="display:flex;"><span>$ cd amoro
+</span></span><span style="display:flex;"><span>$ base_dir<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>pwd<span style="color:#66d9ef">)</span> 
+</span></span><span style="display:flex;"><span>$ mvn clean package -DskipTests
+</span></span><span style="display:flex;"><span>$ cd amoro-ams/dist/target/
+</span></span><span style="display:flex;"><span>$ ls
+</span></span><span style="display:flex;"><span>amoro-x.y.z-bin.zip <span style="color:#75715e"># AMS release package</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$ cd <span style="color:#e6db74">${</span>base_dir<span style="color:#e6db74">}</span>/amoro-mixed-format/amoro-mixed-format-flink/v1.15/amoro-mixed-format-flink-runtime-1.15/target
+</span></span><span style="display:flex;"><span>$ ls 
+</span></span><span style="display:flex;"><span>amoro-mixed-format-flink-runtime-1.15-x.y.z.jar <span style="color:#75715e"># Flink 1.15 runtime package</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$ cd <span style="color:#e6db74">${</span>base_dir<span style="color:#e6db74">}</span>/amoro-mixed-format/amoro-mixed-format-spark/v3.2/amoro-mixed-format-spark-runtime-3.2/target
+</span></span><span style="display:flex;"><span>$ ls
+</span></span><span style="display:flex;"><span>amoro-mixed-format-spark-runtime-3.2-x.y.z.jar <span style="color:#75715e"># Spark v3.2 runtime package)</span>
+</span></span></code></pre></div><p>More build guide can be found in the project&rsquo;s <a href="https://github.com/apache/amoro?tab=readme-ov-file#building">README</a>.</p>
+<h2 id="configuration">Configuration</h2>
+<p>If you want to use AMS in a production environment, it is recommended to modify <code>{AMORO_HOME}/conf/config.yaml</code> by referring to the following configuration steps.</p>
+<h3 id="configure-the-service-address">Configure the service address</h3>
+<ul>
+<li>The <code>ams.server-bind-host</code> configuration specifies the host to which AMS is bound. The default value, <code>0.0.0.0,</code> indicates binding to all network interfaces.</li>
+<li>The <code>ams.server-expose-host</code> configuration specifies the host exposed by AMS that the compute engines and optimizers used to connect to AMS. You can configure a specific IP address on the machine, or an IP prefix. When AMS starts up, it will find the first host that matches this prefix.</li>
+<li>The <code>ams.thrift-server.table-service.bind-port</code> configuration specifies the binding port of the Thrift Server that provides the table service. The compute engines access AMS through this port, and the default value is 1260.</li>
+<li>The <code>ams.thrift-server.optimizing-service.bind-port</code> configuration specifies the binding port of the Thrift Server that provides the optimizing service. The optimizers access AMS through this port, and the default value is 1261.</li>
+<li>The <code>ams.http-server.bind-port</code> configuration specifies the port to which the HTTP service is bound. The Dashboard and Open API are bound to this port, and the default value is 1630.</li>
+<li>The <code>ams.http-server.rest-auth-type</code> configuration specifies the REST API auth type, which could be token(default) or basic. The basic auth would reuse <code>ams.admin-username</code> and <code>ams.admin-password</code> for authentication.</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">server-bind-host</span>: <span style="color:#e6db74">&#34;0.0.0.0&#34;</span> <span style="color:#75715e">#The IP address for service listening, default is 0.0.0.0.</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">server-expose-host</span>: <span style="color:#e6db74">&#34;127.0.0.1&#34;</span> <span style="color:#75715e">#The IP address for service external exposure, default is 127.0.0.1.</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">thrift-server</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">table-service</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">bind-port</span>: <span style="color:#ae81ff">1260</span> <span style="color:#75715e">#The port for accessing AMS table service.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">optimizing-service</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">bind-port</span>: <span style="color:#ae81ff">1261</span> <span style="color:#75715e">#The port for accessing AMS optimizing service.</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">http-server</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">bind-port</span>: <span style="color:#ae81ff">1630</span> <span style="color:#75715e">#The port for accessing AMS Dashboard.</span>
+</span></span></code></pre></div><div class="info">
+    Make sure the port is not used before configuring it.
+</div>
+<h3 id="configure-system-database">Configure system database</h3>
+<p>You can use MySQL/PostgreSQL as the system database instead of the default Derby.</p>
+<p>If you would like to use MySQL as the system database, you need to manually download the <a href="https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.1.0/mysql-connector-j-8.1.0.jar">MySQL JDBC Connector</a>
+and move it into the <code>{AMORO_HOME}/lib/</code> directory. You can use the following command to complete these operations:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd <span style="color:#e6db74">${</span>AMORO_HOME<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>$ MYSQL_JDBC_DRIVER_VERSION<span style="color:#f92672">=</span>8.0.30
+</span></span><span style="display:flex;"><span>$ wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/<span style="color:#e6db74">${</span>MYSQL_JDBC_DRIVER_VERSION<span style="color:#e6db74">}</span>/mysql-connector-java-<span style="color:#e6db74">${</span>MYSQL_JDBC_DRIVER_VERSION<span style="color:#e6db74">}</span>.jar
+</span></span><span style="display:flex;"><span>$ mv mysql-connector-java-<span style="color:#e6db74">${</span>MYSQL_JDBC_DRIVER_VERSION<span style="color:#e6db74">}</span>.jar lib
+</span></span></code></pre></div><p>Create an empty database in MySQL/PostgreSQL, then AMS will automatically create tables in this MySQL/PostgreSQL database when it first started.</p>
+<p>One thing you need to do is Adding MySQL/PostgreSQL configuration under <code>config.yaml</code> of Ams:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># MySQL</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">database</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">mysql</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">jdbc-driver-class</span>: <span style="color:#ae81ff">com.mysql.cj.jdbc.Driver</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">url</span>: <span style="color:#ae81ff">jdbc:mysql://127.0.0.1:3306/amoro?useUnicode=true&amp;characterEncoding=UTF8&amp;autoReconnect=true&amp;useAffectedRows=true&amp;allowPublicKeyRetrieval=true&amp;useSSL=false</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">username</span>: <span style="color:#ae81ff">root</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">password</span>: <span style="color:#ae81ff">root</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># PostgreSQL</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#ams:</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#  database:</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#    type: postgres</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#    jdbc-driver-class: org.postgresql.Driver</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#    url: jdbc:postgresql://127.0.0.1:5432/amoro</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#    username: user</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#    password: passwd</span>
+</span></span></code></pre></div><h3 id="configure-high-availability">Configure high availability</h3>
+<p>To improve stability, AMS supports a one-master-multi-backup HA mode. Zookeeper is used to implement leader election,
+and the AMS cluster name and Zookeeper address are specified. The AMS cluster name is used to bind different AMS clusters
+on the same Zookeeper cluster to avoid mutual interference.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ha</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>  <span style="color:#75715e">#Enable HA</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">cluster-name</span>: <span style="color:#ae81ff">default</span> <span style="color:#75715e"># Differentiating binding multiple sets of AMS on the same ZooKeeper.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">zookeeper-address</span>: <span style="color:#ae81ff">127.0.0.1</span>:<span style="color:#ae81ff">2181</span>,<span style="color:#ae81ff">127.0.0.1</span>:<span style="color:#ae81ff">2182</span>,<span style="color:#ae81ff">127.0.0.1</span>:<span style="color:#ae81ff">2183</span> <span style="color:#75715e"># ZooKeeper server address.</span>
+</span></span></code></pre></div><h3 id="configure-optimizer-containers">Configure optimizer containers</h3>
+<p>To scale out the optimizer through AMS, container configuration is required.
+If you choose to manually start an external optimizer, no additional container configuration is required. AMS will initialize a container named <code>external</code> by default to store all externally started optimizers.
+AMS provides implementations of <code>LocalContainer</code> and <code>FlinkContainer</code> by default. Configuration for both container types can be found below:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">localContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.LocalOptimizerContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.JAVA_HOME</span>: <span style="color:#e6db74">&#34;/opt/java&#34;</span>   <span style="color:#75715e"># JDK environment</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">flinkContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.FlinkOptimizerContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-home</span>: <span style="color:#e6db74">&#34;/opt/flink/&#34;</span>                                     <span style="color:#75715e"># The installation directory of Flink</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.JVM_ARGS</span>: <span style="color:#e6db74">&#34;-Djava.security.krb5.conf=/opt/krb5.conf&#34;</span>   <span style="color:#75715e"># Submitting Flink jobs with Java parameters, such as Kerberos parameters.</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.HADOOP_CONF_DIR</span>: <span style="color:#e6db74">&#34;/etc/hadoop/conf/&#34;</span>                   <span style="color:#75715e"># Hadoop configuration file directory</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.HADOOP_USER_NAME</span>: <span style="color:#e6db74">&#34;hadoop&#34;</span>                             <span style="color:#75715e"># Hadoop user</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.FLINK_CONF_DIR</span>: <span style="color:#e6db74">&#34;/etc/hadoop/conf/&#34;</span>                    <span style="color:#75715e"># Flink configuration file directory</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sparkContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.SparkOptimizerContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">spark-home</span>: <span style="color:#ae81ff">/opt/spark/                                    </span> <span style="color:#75715e"># Spark install home</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">master</span>: <span style="color:#ae81ff">yarn                                               </span> <span style="color:#75715e"># The cluster manager to connect to. See the list of https://spark.apache.org/docs/latest/submitting-applications.html#master-urls.</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">deploy-mode</span>: <span style="color:#ae81ff">cluster                                       </span> <span style="color:#75715e"># Spark deploy mode, client or cluster</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.JVM_ARGS</span>: -<span style="color:#ae81ff">Djava.security.krb5.conf=/opt/krb5.conf  </span> <span style="color:#75715e"># Spark launch jvm args, like kerberos config when ues kerberos</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.HADOOP_CONF_DIR</span>: <span style="color:#ae81ff">/etc/hadoop/conf/                  </span> <span style="color:#75715e"># Hadoop config dir</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.HADOOP_USER_NAME</span>: <span style="color:#ae81ff">hadoop                            </span> <span style="color:#75715e"># Hadoop user submit on yarn</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.SPARK_CONF_DIR</span>: <span style="color:#ae81ff">/opt/spark/conf/                    </span> <span style="color:#75715e"># Spark config dir</span>
+</span></span></code></pre></div><p>More optimizer container configurations can be found in <a href="../managing-optimizers/">managing optimizers</a>.</p>
+<h3 id="configure-terminal">Configure terminal</h3>
+<p>The Terminal module in the AMS Dashboard allows users to execute SQL directly on the platform. Currently, the Terminal backend supports two implementations: <code>local</code> and <code>kyuubi</code>.
+In local mode, an embedded Spark environment will be started in AMS. In kyuubi mode, an additional kyuubi service needs to be deployed.
+The configuration for kyuubi mode can refer to: <a href="../using-kyuubi/">Using Kyuubi with Terminal</a>. Below is the configuration for the local mode:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">terminal</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">backend</span>: <span style="color:#ae81ff">local</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">local.spark.sql.iceberg.handle-timestamp-without-timezone</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># When the catalog type is Hive, it automatically uses the Spark session catalog to access Hive tables.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">local.using-session-catalog-for-hive</span>: <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><p>More properties the terminal supports including:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>terminal.backend</td>
+<td>local</td>
+<td>Terminal backend implementation. local, kyuubi and custom are valid values.</td>
+</tr>
+<tr>
+<td>terminal.factory</td>
+<td>-</td>
+<td>Session factory implement of terminal, <code>terminal.backend</code> must be <code>custom</code> if this is set.</td>
+</tr>
+<tr>
+<td>terminal.result.limit</td>
+<td>1000</td>
+<td>Row limit of result-set</td>
+</tr>
+<tr>
+<td>terminal.stop-on-error</td>
+<td>false</td>
+<td>When a statement fails to execute, stop execution or continue executing the remaining statements.</td>
+</tr>
+<tr>
+<td>terminal.session.timeout</td>
+<td>30</td>
+<td>Session timeout in minutes.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="configure-metric-reporter">Configure metric reporter</h3>
+<p>Amoro provides metric reporters by plugin mechanism to connect to  external metric systems.</p>
+<p>All metric-reporter plugins are configured in <code>$AMORO_CONF_DIR/plugins/metric-repoters.yaml</code> .</p>
+<p>The configuration format of the plug-in is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metric-reporters</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>:                 <span style="color:#75715e"># the unified plugin name.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>:              <span style="color:#75715e"># if this plugin is enabled, default is true.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:           <span style="color:#75715e"># a map defines properties of plugin.</span>
+</span></span></code></pre></div><p>Currently, there is only one reporter is available.</p>
+<h4 id="prometheus-exporter">Prometheus Exporter</h4>
+<p>By enable the <code>prometheus-exporter</code> plugin, the AMS will start a prometheus http exporter server.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">metric-reporters</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">prometheus-exporter           </span> <span style="color:#75715e"># configs for prometheus exporter</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>       <span style="color:#f92672">port</span>: <span style="color:#ae81ff">9090</span>                        <span style="color:#75715e"># the port that the prometheus-exporter listens on.</span>
+</span></span></code></pre></div><p>You can add a scrape job in your prometheus configs</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Your prometheus configs file.</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">scrape_configs</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#39;amoro-exporter&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">15s</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">static_configs</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">targets</span>: [<span style="color:#e6db74">&#39;localhost:9090&#39;</span>]  <span style="color:#75715e"># The host and port that you configured in Amoro plugins configs file.</span>
+</span></span></code></pre></div><h3 id="environments-variables">Environments variables</h3>
+<p>The following environment variables take effect during the startup process of AMS,
+you can set up those environments to overwrite the default value.</p>
+<table>
+<thead>
+<tr>
+<th>Environments variable name</th>
+<th>Default value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AMORO_CONF_DIR</td>
+<td>${AMORO_HOME}/conf</td>
+<td>location where Amoro loading config files.</td>
+</tr>
+<tr>
+<td>AMORO_LOG_DIR</td>
+<td>${AMORO_HOME}/logs</td>
+<td>location where the logs files output</td>
+</tr>
+</tbody>
+</table>
+<p>Note: <code>$AMORO_HOME</code> can&rsquo;t be overwritten from environment variable. It always points to the parent dir of <code>./bin</code>.</p>
+<h3 id="configure-ams-jvm">Configure AMS JVM</h3>
+<p>The following JVM options could be set in <code>${AMORO_CONF_DIR}/jvm.properties</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Property Name</th>
+<th>Related Jvm option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>xms</td>
+<td>&ldquo;-Xms${value}m</td>
+<td>Xms config for jvm</td>
+</tr>
+<tr>
+<td>xmx</td>
+<td>&ldquo;-Xmx${value}m</td>
+<td>Xmx config for jvm</td>
+</tr>
+<tr>
+<td>jmx.remote.port</td>
+<td>&ldquo;-Dcom.sun.management.jmxremote.port=${value}</td>
+<td>Enable remote debug</td>
+</tr>
+<tr>
+<td>extra.options</td>
+<td>&ldquo;JAVA_OPTS=&quot;${JAVA_OPTS} ${JVM_EXTRA_CONFIG}&rdquo;</td>
+<td>The addition jvm options</td>
+</tr>
+</tbody>
+</table>
+<h2 id="start-ams">Start AMS</h2>
+<p>Enter the directory amoro-x.y.z and execute bin/ams.sh start to start AMS.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd amoro-x.y.z
+</span></span><span style="display:flex;"><span>$ bin/ams.sh start
+</span></span></code></pre></div><p>Then, access http://localhost:1630 through a browser to see the login page. If it appears, it means that the startup is
+successful. The default username and password for login are both &ldquo;admin&rdquo;.</p>
+<p>You can also restart/stop AMS with the following command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ bin/ams.sh restart
+</span></span><span style="display:flex;"><span>$ bin/ams.sh stop
+</span></span></code></pre></div><h2 id="upgrade-ams">Upgrade AMS</h2>
+<h3 id="upgrade-system-databases">Upgrade system databases</h3>
+<p>You can find all the upgrade SQL scripts under <code>{AMORO_HOME}/conf/mysql/</code> with name pattern <code>upgrade-a.b.c-to-x.y.z.sql</code>.
+Execute the upgrade SQL scripts one by one to your system database based on your starting and target versions.</p>
+<h3 id="replace-all-libs-and-plugins">Replace all libs and plugins</h3>
+<p>Replace all contents in the original <code>{AMORO_HOME}/lib</code> directory with the contents in the lib directory of the new installation package.
+Replace all contents in the original <code>{AMORO_HOME}/plugin</code> directory with the contents in the plugin directory of the new installation package.</p>
+<div class="info">
+    Backup the old content before replacing it, so that you can roll back the upgrade operation if necessary.
+</div>
+<h3 id="configure-new-properties">Configure new properties</h3>
+<p>The old configuration file <code>{AMORO_HOME}/conf/config.yaml</code> is usually compatible with the new version, but the new version may introduce new parameters. Try to compare the configuration files of the old and new versions, and reconfigure the parameters if necessary.</p>
+<h3 id="restart-ams">Restart AMS</h3>
+<p>Restart AMS with the following commands:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>bin/ams.sh restart
+</span></span></code></pre></div></div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#system-requirements">System requirements</a></li>
+    <li><a href="#download-the-distribution">Download the distribution</a></li>
+    <li><a href="#source-code-compilation">Source code compilation</a></li>
+    <li><a href="#configuration">Configuration</a>
+      <ul>
+        <li><a href="#configure-the-service-address">Configure the service address</a></li>
+        <li><a href="#configure-system-database">Configure system database</a></li>
+        <li><a href="#configure-high-availability">Configure high availability</a></li>
+        <li><a href="#configure-optimizer-containers">Configure optimizer containers</a></li>
+        <li><a href="#configure-terminal">Configure terminal</a></li>
+        <li><a href="#configure-metric-reporter">Configure metric reporter</a></li>
+        <li><a href="#environments-variables">Environments variables</a></li>
+        <li><a href="#configure-ams-jvm">Configure AMS JVM</a></li>
+      </ul>
+    </li>
+    <li><a href="#start-ams">Start AMS</a></li>
+    <li><a href="#upgrade-ams">Upgrade AMS</a>
+      <ul>
+        <li><a href="#upgrade-system-databases">Upgrade system databases</a></li>
+        <li><a href="#replace-all-libs-and-plugins">Replace all libs and plugins</a></li>
+        <li><a href="#configure-new-properties">Configure new properties</a></li>
+        <li><a href="#restart-ams">Restart AMS</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/0.7.0//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.0//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/0.7.0//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.0//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.0//js/iceberg-theme.js"></script>
+
+
+
+</html>

@@ -1,0 +1,809 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Deployment On Kubernetes</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/0.7.0//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Quickstart</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../quickstart-setup/">Setup</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../quick-demo/">Quick Demo</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.7.0/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.7.0/../../roadmap/">Roadmap</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/0.7.0//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="deploy-ams-on-kubernetes">Deploy AMS On Kubernetes</h1>
+<h2 id="requirements">Requirements</h2>
+<p>If you want to deploy AMS on Kubernetes, you’d better get a sense of the following things.</p>
+<ul>
+<li>Use AMS official docker image or build AMS docker image</li>
+<li><a href="https://kubernetes.io/docs/setup/">An active Kubernetes cluster</a></li>
+<li><a href="https://kubernetes.io/docs/tasks/tools/#kubectl">Kubectl</a></li>
+<li><a href="https://helm.sh/docs/intro/quickstart/">Helm3+</a></li>
+</ul>
+<h2 id="amoro-official-docker-image">Amoro Official Docker Image</h2>
+<p>You can find the official docker image at <a href="https://hub.docker.com/u/apache">Amoro Docker Hub</a>.</p>
+<p>The following are images that can be used in a production environment.</p>
+<p><strong>apache/amoro</strong></p>
+<p>This is an image built based on the Amoro binary distribution package for deploying AMS.</p>
+<p><strong>apache/amoro-flink-optimizer</strong></p>
+<p>This is an image built based on the official version of Flink for deploying the Flink optimizer.</p>
+<p><strong>apache/amoro-spark-optimizer</strong></p>
+<p>This is an image built based on the official version of Spark for deploying the Spark optimizer.</p>
+<h2 id="build-ams-docker-image">Build AMS Docker Image</h2>
+<p>If you want to build images locally, you can find the <code>build.sh</code> script in the docker folder of the project and pass the following command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./docker/build.sh amoro
+</span></span></code></pre></div><p>or build the <code>amoro-flink-optimizer</code> image by:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./docker/build.sh amoro-flink-optimizer --flink-version &lt;flink-version&gt;
+</span></span></code></pre></div><p>or build the <code>amoro-spark-optimizer</code> image by:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./docker/build.sh amoro-spark-optimizer --spark-version &lt;spark-version&gt;
+</span></span></code></pre></div><h2 id="get-helm-charts">Get Helm Charts</h2>
+<p>You can obtain the latest official release chart by adding the official Helm repository.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm repo add amoro https://netease.github.io/amoro/charts
+</span></span><span style="display:flex;"><span>$ helm search repo amoro 
+</span></span><span style="display:flex;"><span>NAME           CHART VERSION    APP VERSION        DESCRIPTION           
+</span></span><span style="display:flex;"><span>amoro/amoro    0.1.0            0.7.0              A Helm chart <span style="color:#66d9ef">for</span> Amoro 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$ helm pull amoro/amoro 
+</span></span><span style="display:flex;"><span>$ tar zxvf amoro-*.tgz
+</span></span></code></pre></div><p>Alternatively, you can find the latest charts directly from the Github source code.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ git clone https://github.com/apache/amoro.git
+</span></span><span style="display:flex;"><span>$ cd amoro/charts
+</span></span><span style="display:flex;"><span>$ helm dependency build ./amoro
+</span></span></code></pre></div><h2 id="install">Install</h2>
+<p>When you are ready, you can use the following helm command to start</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install &lt;deployment-name&gt; ./amoro 
+</span></span></code></pre></div><p>After successful installation, you can access WebUI through the following command.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl port-forward services/&lt;deployment-name&gt;-amoro-rest 1630:1630
+</span></span></code></pre></div><p>Open browser to go web: http://localhost:1630</p>
+<h2 id="access-logs">Access logs</h2>
+<p>Then, use pod name to get logs:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pod
+</span></span><span style="display:flex;"><span>$ kubectl logs <span style="color:#f92672">{</span>amoro-pod-name<span style="color:#f92672">}</span>
+</span></span></code></pre></div><h2 id="uninstall">Uninstall</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm uninstall &lt;deployment-name&gt;
+</span></span></code></pre></div><h2 id="configuring-helm-application">Configuring Helm application.</h2>
+<p>Helm uses <code>&lt;chart&gt;/values.yaml</code> files as configuration files, and you can also copy this file for separate maintenance.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cp amoro/values.yaml my-values.yaml
+</span></span><span style="display:flex;"><span>$ vim my-values.yaml
+</span></span></code></pre></div><p>And deploy Helm applications using independent configuration files.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install &lt;deployment-name&gt; ./amoro -f my-values.yaml
+</span></span></code></pre></div><h3 id="enable-ingress">Enable Ingress</h3>
+<p>Ingress is not enabled by default. In production environments, it is recommended to enable Ingress to access the AMS Dashboard from outside the cluster.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ingress</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ingressClassName</span>: <span style="color:#e6db74">&#34;nginx&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">hostname</span>: <span style="color:#ae81ff">minikube.amoro.com</span>
+</span></span></code></pre></div><h3 id="configure-the-database">Configure the database.</h3>
+<p>AMS default is to use Derby database for storage. When the pod is destroyed, the data will also disappear.
+In production environments, we recommend using MySQL as the storage for system data.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">amoroConf</span>: 
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">database</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">mysql</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">driver</span>: <span style="color:#ae81ff">com.mysql.cj.jdbc.Driver</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">url</span>: <span style="color:#ae81ff">&lt;jdbc-uri&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">username</span>: <span style="color:#ae81ff">&lt;mysql-user&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">password</span>: <span style="color:#ae81ff">&lt;mysql-password&gt;</span>
+</span></span></code></pre></div><h3 id="configure-the-images">Configure the Images</h3>
+<p>Helm charts deploy images by default using the latest tag.
+If you need to modify the image address, such as using a private repository or building your own image</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">image</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">repository</span>: <span style="color:#ae81ff">&lt;your repository&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">pullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">tag</span>: <span style="color:#ae81ff">&lt;your tag&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">imagePullSecrets</span>: [ ]
+</span></span></code></pre></div><h3 id="configure-the-flink-optimizer-container">Configure the Flink Optimizer Container</h3>
+<p>By default, the Flink Optimizer Container is enabled.
+You can modify the container configuration by changing the <code>optimizer.flink</code> section.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">optimizer</span>: 
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">flink</span>: 
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">## container name, default is flink</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">~ </span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">## the image repository</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">repository</span>: <span style="color:#ae81ff">apache/amoro-flink-optimizer</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">## the image tag, if not set, the default value is the same with amoro image tag.</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">tag</span>: <span style="color:#ae81ff">~</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">pullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">## the location of flink optimizer jar in image.</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">jobUri</span>: <span style="color:#e6db74">&#34;local:///opt/flink/usrlib/optimizer-job.jar&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>: {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;flink-conf.taskmanager.memory.managed.size&#34;: </span><span style="color:#e6db74">&#34;32mb&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;flink-conf.taskmanager.memory.network.max&#34;: </span><span style="color:#e6db74">&#34;32mb&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;flink-conf.taskmanager.memory.network.min&#34;: </span><span style="color:#e6db74">&#34;32mb&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><h3 id="configure-the-rbac">Configure the RBAC</h3>
+<p>By default, Helm Chart creates a service account, role, and role bind for Amoro deploy.
+You can also modify this configuration to use an existing account.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># ServiceAccount of Amoro to schedule optimizer.</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">serviceAccount</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Specifies whether a service account should be created or using an existed account</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">create</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Annotations to add to the service account</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">annotations</span>: { }
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Specifies ServiceAccount name to be used if `create: false`</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">~</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e"># if `serviceAccount.create` == true. role and role-bind will be created</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">rbac</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># create a role/role-bind if automatically create service account</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">create</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># create a cluster-role and cluster-role-bind if cluster := true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">cluster</span>: <span style="color:#66d9ef">false</span>
+</span></span></code></pre></div><p>Notes:</p>
+<ul>
+<li>If <code>serviceAccount.create</code> is false, you must provide a <code>serviceAccount.name</code> and create the <code>serviceAccount</code> beforehand.</li>
+<li>If <code>serviceAccount.rbac.create</code> is false, the role and role-bind will not be created automatically.</li>
+<li>You can set <code>serviceAccount.rbac.cluster</code> to true, which will create a <code>cluster-role</code> and <code>cluster-role-bind</code> instead of a <code>role</code> and <code>role-bind</code>.</li>
+</ul>
+<p>By default, the <code>serviceAccount</code> will be used to create the flink-optimizer.
+Therefore, if you need to schedule the flink-optimizer across namespaces,
+please create a <code>cluster-role</code> or use your own created <code>serviceAccount</code>.</p>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#requirements">Requirements</a></li>
+    <li><a href="#amoro-official-docker-image">Amoro Official Docker Image</a></li>
+    <li><a href="#build-ams-docker-image">Build AMS Docker Image</a></li>
+    <li><a href="#get-helm-charts">Get Helm Charts</a></li>
+    <li><a href="#install">Install</a></li>
+    <li><a href="#access-logs">Access logs</a></li>
+    <li><a href="#uninstall">Uninstall</a></li>
+    <li><a href="#configuring-helm-application">Configuring Helm application.</a>
+      <ul>
+        <li><a href="#enable-ingress">Enable Ingress</a></li>
+        <li><a href="#configure-the-database">Configure the database.</a></li>
+        <li><a href="#configure-the-images">Configure the Images</a></li>
+        <li><a href="#configure-the-flink-optimizer-container">Configure the Flink Optimizer Container</a></li>
+        <li><a href="#configure-the-rbac">Configure the RBAC</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/0.7.0//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.0//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/0.7.0//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.0//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.0//js/iceberg-theme.js"></script>
+
+
+
+</html>

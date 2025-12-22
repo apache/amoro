@@ -1,0 +1,1240 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Managing Optimizers</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/0.7.1//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="../../quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.7.1/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.7.1/../../roadmap/">Roadmap</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/0.7.1//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="managing-optimizers">Managing Optimizers</h1>
+<p>The optimizer is the execution unit for performing self-optimizing tasks on a table. To isolate optimizing tasks on different tables and support the deployment of optimizers in different environments, Amoro has proposed the concepts of optimizer containers and optimizer groups:</p>
+<ul>
+<li>Optimizer container: Encapsulate the deployment method of optimizers, there are four implementations for now: <code>flink container</code> based on Flink streaming job, <code>spark container</code> based on Spark job, <code>local container</code> based on Java Application, and <code>external container</code> based on manually started by users.</li>
+<li>Optimizer group: A collection of optimizers, where each table must select an optimizer group to perform optimizing tasks on it. Tables under the same optimizer group contribute resources to each other, and tables under different optimizer groups can be isolated in terms of optimizer resources.</li>
+<li>Optimizer: The specific unit that performs optimizing tasks, usually with multiple concurrent units.</li>
+</ul>
+<h2 id="optimizer-container">Optimizer container</h2>
+<p>Before using self-optimizing, you need to configure the container information in the configuration file. Optimizer container represents a specific set of runtime environment configuration, and the scheduling scheme of optimizer in that runtime environment. The container includes three types: flink, local, and external.</p>
+<h3 id="local-container">Local container</h3>
+<p>Local container is a way to start Optimizer by local process and supports multi-threaded execution of Optimizer tasks. It is recommended to be used only in demo or local deployment scenarios. If the environment variable for jdk is not configured, the user can configure java_home to point to the jdk root directory. If already configured, this configuration item can be ignored.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">localContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.LocalOptimizerContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.JAVA_HOME</span>: <span style="color:#e6db74">&#34;/opt/java&#34;</span>   <span style="color:#75715e"># JDK environment</span>
+</span></span></code></pre></div><h3 id="kubernetes-container">Kubernetes container</h3>
+<p>Kubernetes Optimizer Container is a way to start Optimizer On K8s with standalone Optimizer.
+To use flink container, you need to add a new container configuration.
+with container-impl as <code>org.apache.amoro.server.manager.KubernetesOptimizerContainer</code></p>
+<p>KubernetesOptimizerContainer support the following properties:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Property Name</th>
+          <th>Required</th>
+          <th>Default Value</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>kube-config-path</td>
+          <td>true</td>
+          <td>N/A</td>
+          <td>Kubernetes config location</td>
+      </tr>
+      <tr>
+          <td>image</td>
+          <td>true</td>
+          <td>N/A</td>
+          <td>Optimizer Image name</td>
+      </tr>
+      <tr>
+          <td>pullPolicy</td>
+          <td>false</td>
+          <td>IfNotPresent</td>
+          <td>Specify the imagePullPolicy in the container spec</td>
+      </tr>
+      <tr>
+          <td>namespace</td>
+          <td>false</td>
+          <td>&ldquo;default&rdquo;</td>
+          <td>The namespace of optimizer to deploy</td>
+      </tr>
+      <tr>
+          <td>ams-optimizing-uri</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>URI of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available</td>
+      </tr>
+      <tr>
+          <td>cpu.factor</td>
+          <td>false</td>
+          <td>&ldquo;1.0&rdquo;</td>
+          <td>CPU factor when request kubernetes resource. Default 1 Cpu pre thread</td>
+      </tr>
+      <tr>
+          <td>memory</td>
+          <td>true</td>
+          <td>N/A</td>
+          <td>Memory usage for pre thread</td>
+      </tr>
+  </tbody>
+</table>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">KubernetesContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.KubernetesOptimizerContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">kube-config-path</span>: <span style="color:#ae81ff">~/.kube/config</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">image</span>: <span style="color:#ae81ff">apache/amoro:{version}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">pullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
+</span></span></code></pre></div><h3 id="flink-container">Flink container</h3>
+<p>Flink container is a way to start Optimizer through Flink jobs. With Flink, you can easily deploy Optimizer
+on yarn clusters or kubernetes clusters to support large-scale data scenarios. To use flink container,
+you need to add a new container configuration. with container-impl as <code>org.apache.amoro.server.manager.FlinkOptimizerContainer</code></p>
+<p>FlinkOptimizerContainer support the following properties:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Property Name</th>
+          <th>Required</th>
+          <th>Default Value</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>flink-home</td>
+          <td>true</td>
+          <td>N/A</td>
+          <td>Flink installation location</td>
+      </tr>
+      <tr>
+          <td>target</td>
+          <td>true</td>
+          <td>yarn-per-job</td>
+          <td>flink job deployed target, available values <code>yarn-per-job</code>, <code>yarn-application</code>, <code>kubernetes-application</code>, <code>session</code></td>
+      </tr>
+      <tr>
+          <td>job-uri</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>The jar uri of flink optimizer job. This is required if target is application mode.</td>
+      </tr>
+      <tr>
+          <td>ams-optimizing-uri</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available</td>
+      </tr>
+      <tr>
+          <td>export.&lt;key&gt;</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>environment variables will be exported during job submit</td>
+      </tr>
+      <tr>
+          <td>export.JAVA_HOME</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>Java runtime location</td>
+      </tr>
+      <tr>
+          <td>export.HADOOP_CONF_DIR</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>Direction which holds the configuration files for the hadoop cluster (including hdfs-site.xml, core-site.xml, yarn-site.xml ). If the hadoop cluster has kerberos authentication enabled, you need to prepare an additional krb5.conf and a keytab file for the user to submit tasks</td>
+      </tr>
+      <tr>
+          <td>export.JVM_ARGS</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>you can configure flink to run additional configuration parameters, here is an example of configuring krb5.conf, specify the address of krb5.conf to be used by Flink when committing via <code>-Djava.security.krb5.conf=/opt/krb5.conf</code></td>
+      </tr>
+      <tr>
+          <td>export.HADOOP_USER_NAME</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>the username used to submit tasks to yarn, used for simple authentication</td>
+      </tr>
+      <tr>
+          <td>export.FLINK_CONF_DIR</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>the directory where flink_conf.yaml is located</td>
+      </tr>
+      <tr>
+          <td>flink-conf.&lt;key&gt;</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td><a href="https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/">Flink Configuration Options</a> will be passed to cli by <code>-Dkey=value</code>,</td>
+      </tr>
+  </tbody>
+</table>
+<div class="info">
+    <p>To better utilize the resources of Flink Optimizer, it is recommended to add the following configuration to the Flink Optimizer Group:</p>
+<ul>
+<li>Set <code>flink-conf.taskmanager.memory.managed.size</code> to <code>32mb</code> as Flink optimizer does not have any computation logic, it does not need to occupy managed memory.</li>
+<li>Set <code>flink-conf.taskmanager.memory.network.max</code> to <code>32mb</code> as there is no need for communication between operators in Flink Optimizer.</li>
+<li>Set <code>flink-conf.taskmanager.memory.network.min</code> to <code>32mb</code> as there is no need for communication between operators in Flink Optimizer.</li>
+</ul>
+</div>
+<p>An example for yarn-per-job mode:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">flinkContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.FlinkOptimizerContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-home</span>: <span style="color:#ae81ff">/opt/flink/                                        </span> <span style="color:#75715e">#flink install home</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.HADOOP_CONF_DIR</span>: <span style="color:#ae81ff">/etc/hadoop/conf/                      </span> <span style="color:#75715e">#hadoop config dir</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.HADOOP_USER_NAME</span>: <span style="color:#ae81ff">hadoop                                </span> <span style="color:#75715e">#hadoop user submit on yarn</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.JVM_ARGS</span>: -<span style="color:#ae81ff">Djava.security.krb5.conf=/opt/krb5.conf      </span> <span style="color:#75715e">#flink launch jvm args, like kerberos config when ues kerberos</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.FLINK_CONF_DIR</span>: <span style="color:#ae81ff">/etc/hadoop/conf/                       </span> <span style="color:#75715e">#flink config dir</span>
+</span></span></code></pre></div><p>An example for kubernetes-application mode:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">flinkContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.FlinkOptimizerContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-home</span>: <span style="color:#ae81ff">/opt/flink/                                                       </span> <span style="color:#75715e"># Flink install home</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">target</span>: <span style="color:#ae81ff">kubernetes-application                                                </span> <span style="color:#75715e"># Flink run as native kubernetes</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">pullPolicy</span>: <span style="color:#ae81ff">IfNotPresent                                                      </span> <span style="color:#75715e"># Specify the imagePullPolicy in the container spec  </span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">job-uri</span>: <span style="color:#e6db74">&#34;local:///opt/flink/usrlib/optimizer-job.jar&#34;</span>                         <span style="color:#75715e"># Optimizer job main jar for kubernetes application</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">ams-optimizing-uri</span>: <span style="color:#ae81ff">thrift://ams.amoro.service.local:1261                     </span> <span style="color:#75715e"># AMS optimizing uri </span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.FLINK_CONF_DIR</span>: <span style="color:#ae81ff">/opt/flink/conf/                                       </span> <span style="color:#75715e"># Flink config dir</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-conf.kubernetes.container.image</span>: <span style="color:#e6db74">&#34;apache/amoro-flink-optimizer:{version}&#34;</span>   <span style="color:#75715e"># Optimizer image ref</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-conf.kubernetes.service-account</span>: <span style="color:#ae81ff">flink                                  </span> <span style="color:#75715e"># Service account that is used within kubernetes cluster.</span>
+</span></span></code></pre></div><p>An example for flink session mode:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">flinkContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.FlinkOptimizerContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">target</span>: <span style="color:#ae81ff">session                                                               </span> <span style="color:#75715e"># Flink run in session cluster</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">job-uri</span>: <span style="color:#e6db74">&#34;local:///opt/flink/usrlib/optimizer-job.jar&#34;</span>                         <span style="color:#75715e"># Optimizer job main jar</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">ams-optimizing-uri</span>: <span style="color:#ae81ff">thrift://ams.amoro.service.local:1261                     </span> <span style="color:#75715e"># AMS optimizing uri </span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.FLINK_CONF_DIR</span>: <span style="color:#ae81ff">/opt/flink/conf/                                       </span> <span style="color:#75715e"># Flink config dir, flink-conf.yaml should e in this dir, contains the rest connection parameters of the session cluster</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-conf.high-availability: zookeeper                                        # Flink high availability mode, reference</span>: <span style="color:#ae81ff">https://nightlies.apache.org/flink/flink-docs-release-1.18/docs/deployment/config/#high-availability</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-conf.high-availability.zookeeper.quorum</span>: <span style="color:#ae81ff">xxx:2181</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-conf.high-availability.zookeeper.path.root</span>: <span style="color:#ae81ff">/flink</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-conf.high-availability.cluster-id</span>: <span style="color:#ae81ff">amoro-optimizer-cluster</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-conf.high-availability.storageDir</span>: <span style="color:#ae81ff">hdfs://xxx/xxx/xxx</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-conf.rest.address</span>: <span style="color:#ae81ff">localhost:8081                                       </span> <span style="color:#75715e"># If the session cluster is not high availability mode, please configure the restaddress of jobmanager</span>
+</span></span></code></pre></div><h3 id="spark-container">Spark container</h3>
+<p>Spark container is another way to start Optimizer through Spark jobs. With Spark, you can easily deploy Optimizer
+on yarn clusters or kubernetes clusters to support large-scale data scenarios. To use spark container,
+you need to add a new container configuration. with container-impl as <code>org.apache.amoro.server.manager.SparkOptimizerContainer</code></p>
+<p>SparkOptimizerContainer support the following properties:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Property Name</th>
+          <th>Required</th>
+          <th>Default Value</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>spark-home</td>
+          <td>true</td>
+          <td>N/A</td>
+          <td>Spark installation location</td>
+      </tr>
+      <tr>
+          <td>master</td>
+          <td>true</td>
+          <td>yarn</td>
+          <td>The cluster manager to connect to, available values <code>yarn</code>, <code>k8s://HOST:PORT</code></td>
+      </tr>
+      <tr>
+          <td>deploy-mode</td>
+          <td>true</td>
+          <td>client</td>
+          <td>Spark job deploy mode, available values <code>client</code>, <code>cluster</code></td>
+      </tr>
+      <tr>
+          <td>job-uri</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>The jar uri of spark optimizer job. This is required if deploy mode is cluster mode.</td>
+      </tr>
+      <tr>
+          <td>ams-optimizing-uri</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available</td>
+      </tr>
+      <tr>
+          <td>export.&lt;key&gt;</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>Environment variables will be exported during job submit</td>
+      </tr>
+      <tr>
+          <td>export.JAVA_HOME</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>Java runtime location</td>
+      </tr>
+      <tr>
+          <td>export.HADOOP_CONF_DIR</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>Direction which holds the configuration files for the hadoop cluster (including hdfs-site.xml, core-site.xml, yarn-site.xml ). If the hadoop cluster has kerberos authentication enabled, you need to prepare an additional krb5.conf and a keytab file for the user to submit tasks</td>
+      </tr>
+      <tr>
+          <td>export.JVM_ARGS</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>You can configure spark to run additional configuration parameters, here is an example of configuring krb5.conf, specify the address of krb5.conf to be used by Spark when committing via <code>-Djava.security.krb5.conf=/opt/krb5.conf</code></td>
+      </tr>
+      <tr>
+          <td>export.HADOOP_USER_NAME</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>The username used to submit tasks to yarn, used for simple authentication</td>
+      </tr>
+      <tr>
+          <td>export.SPARK_CONF_DIR</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>The directory where spark_conf.yaml is located</td>
+      </tr>
+      <tr>
+          <td>spark-conf.&lt;key&gt;</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td><a href="https://spark.apache.org/docs/latest/configuration.html">Spark Configuration Options</a> will be passed to cli by <code>-conf key=value</code>,</td>
+      </tr>
+  </tbody>
+</table>
+<div class="info">
+    <p>To better utilize the resources of Spark Optimizer, the DRA(Dynamic Resource Allocation) feature is switched on, and the optimizer parallelism equals `spark.dynamicAllocation.maxExecutors.
+If you don&rsquo;t want this feature, you can use these settings:</p>
+<ul>
+<li>Set <code>spark-conf.spark.dynamicAllocation.enabled</code> to <code>false</code> as you need allocate proper driver/executor resources Using <a href="https://spark.apache.org/docs/latest/configuration.html">Spark Configuration Options</a>.</li>
+<li>Set <code>spark-conf.spark.dynamicAllocation.maxExecutors</code> to <code>10</code> as optimizer parallelism can only affect parallelism polling optimizing tasks from AMS.</li>
+</ul>
+</div>
+<div class="info">
+    <p>The spark optimizer may fail due to class conflicts sometimes, you can try to fix by following the steps below：</p>
+<ul>
+<li>Set <code>spark-conf.spark.driver.userClassPathFirst</code> to <code>true</code>.</li>
+<li>Set <code>spark-conf.spark.executor.userClassPathFirst</code> to <code>true</code>.</li>
+</ul>
+</div>
+<p>An example for yarn client mode:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sparkContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.SparkOptimizerContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">spark-home</span>: <span style="color:#ae81ff">/opt/spark/                                        </span> <span style="color:#75715e"># Spark install home</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">master</span>: <span style="color:#ae81ff">yarn                                                   </span> <span style="color:#75715e"># The k8s cluster manager to connect to</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">deploy-mode</span>: <span style="color:#ae81ff">client                                            </span> <span style="color:#75715e"># Spark run as client mode </span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.HADOOP_CONF_DIR</span>: <span style="color:#ae81ff">/etc/hadoop/conf/                      </span> <span style="color:#75715e"># Hadoop config dir</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.HADOOP_USER_NAME</span>: <span style="color:#ae81ff">hadoop                                </span> <span style="color:#75715e"># Hadoop user submits on yarn</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.JVM_ARGS</span>: -<span style="color:#ae81ff">Djava.security.krb5.conf=/opt/krb5.conf      </span> <span style="color:#75715e"># Spark launch jvm args, like kerberos config when ues kerberos</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.SPARK_CONF_DIR</span>: <span style="color:#ae81ff">/etc/hadoop/conf/                       </span> <span style="color:#75715e"># Spark config dir</span>
+</span></span></code></pre></div><p>An example for kubernetes cluster mode:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sparkContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.SparkOptimizerContainer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">spark-home</span>: <span style="color:#ae81ff">/opt/spark/                                                                </span> <span style="color:#75715e"># Spark install home</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">master</span>: <span style="color:#ae81ff">k8s://https://&lt;k8s-apiserver-host&gt;:&lt;k8s-apiserver-port&gt;                        </span> <span style="color:#75715e"># The k8s cluster manager to connect to</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">deploy-mode</span>: <span style="color:#ae81ff">cluster                                                                   </span> <span style="color:#75715e"># Spark deploy mode, client or cluster</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">pullPolicy</span>: <span style="color:#ae81ff">IfNotPresent                                                               </span> <span style="color:#75715e"># Specify the imagePullPolicy in the container spec </span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">job-uri</span>: <span style="color:#e6db74">&#34;local:///opt/spark/usrlib/optimizer-job.jar&#34;</span>                                  <span style="color:#75715e"># Optimizer job main jar for kubernetes application</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">ams-optimizing-uri</span>: <span style="color:#ae81ff">thrift://ams.amoro.service.local:1261                              </span> <span style="color:#75715e"># AMS optimizing uri </span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.HADOOP_USER_NAME</span>: <span style="color:#ae81ff">hadoop                                                        </span> <span style="color:#75715e"># Hadoop user submits on yarn</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.HADOOP_CONF_DIR</span>: <span style="color:#ae81ff">/etc/hadoop/conf/                                              </span> <span style="color:#75715e"># Hadoop config dir</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.SPARK_CONF_DIR</span>: <span style="color:#ae81ff">/opt/spark/conf/                                                </span> <span style="color:#75715e"># Spark config dir</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">spark-conf.spark.kubernetes.container.image</span>: <span style="color:#e6db74">&#34;apache/amoro-spark-optimizer:{version}&#34;</span>   <span style="color:#75715e"># Optimizer image ref</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">spark-conf.spark.dynamicAllocation.enabled</span>: <span style="color:#e6db74">&#34;true&#34;</span>                                      <span style="color:#75715e"># Enabling DRA feature can make full use of computing resources</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">spark-conf.spark.shuffle.service.enabled</span>: <span style="color:#e6db74">&#34;false&#34;</span>                                       <span style="color:#75715e"># If spark DRA is used on kubernetes, we should set it false</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">spark-conf.spark.dynamicAllocation.shuffleTracking.enabled</span>: <span style="color:#e6db74">&#34;true&#34;</span>                      <span style="color:#75715e"># Enables shuffle file tracking for executors, which allows dynamic allocation without the need for an ESS</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">spark-conf.spark.kubernetes.namespace</span>: <span style="color:#ae81ff">&lt;spark-namespace&gt;                               </span> <span style="color:#75715e"># Namespace that is used within kubernetes cluster</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">spark-conf.spark.kubernetes.authenticate.driver.serviceAccountName</span>: <span style="color:#ae81ff">&lt;spark-sa&gt;         </span> <span style="color:#75715e"># Service account that is used within kubernetes cluster</span>
+</span></span></code></pre></div><h3 id="external-container">External container</h3>
+<p>External container refers to the way in which the user manually starts the optimizer. The system has a built-in external container called <code>external</code>, so you don&rsquo;t need to configure it manually.</p>
+<h2 id="optimizer-group">Optimizer group</h2>
+<p>Optimizer group (optimizer resource group) is a concept introduced to divide Optimizer resources. An Optimizer Group can
+contain several optimizers with the same container implementation to facilitate the expansion and contraction of the resource group.</p>
+<h3 id="add-optimizer-group">Add optimizer group</h3>
+<p>You can add an optimizer group on the Amoro dashboard by following these steps:</p>
+<p>1.Click the &ldquo;Add Group&rdquo; button in the top left corner of the <code>Optimizer Groups</code> page.
+<img src="../images/admin/add-optimizer-group.png" alt="add-optimizer-group"></p>
+<p>2.Configure the newly added Optimizer group.
+<img src="../images/admin/config-optimizer-group.png" alt="config-optimizer-group"></p>
+<p>The following configuration needs to be filled in:</p>
+<ul>
+<li>name: the name of the optimizer group, which can be seen in the list of optimizer groups on the front-end page.</li>
+<li>container: the name of a container configured in containers.</li>
+<li>properties: the default configuration under this group, is used as a configuration parameter for tasks when the optimize page is scaled out. Supports native parameters for <code>flink on yarn</code>, and users can set parameters using the <code>flink-conf.&lt;property&gt;=&lt;value&gt;</code> or use <code>flink-conf.yaml</code> to configure parameters. Supports native parameters for <code>spark on yarn</code>, and users can set parameters using the <code>spark-conf.&lt;property&gt;=&lt;value&gt;</code> or use <code>spark-defaults.conf</code> to configure parameters.</li>
+</ul>
+<p>The optimizer group supports the following properties:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Property</th>
+          <th>Container type</th>
+          <th>Required</th>
+          <th>Default</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>scheduling-policy</td>
+          <td>All</td>
+          <td>No</td>
+          <td>quota</td>
+          <td>The scheduler group scheduling policy, the default value is <code>quota</code>, it will be scheduled according to the quota resources configured for each table, the larger the table quota is, the more optimizer resources it can take. There is also a configuration <code>balanced</code> that will balance the scheduling of each table, the longer the table has not been optimized, the higher the scheduling priority will be.</td>
+      </tr>
+      <tr>
+          <td>memory</td>
+          <td>Local</td>
+          <td>Yes</td>
+          <td>N/A</td>
+          <td>The max memory of JVM for local optimizer, in MBs.</td>
+      </tr>
+      <tr>
+          <td>max-input-file-size-per-thread</td>
+          <td>All</td>
+          <td>No</td>
+          <td>536870912(512MB)</td>
+          <td>Max input file size per optimize thread.</td>
+      </tr>
+      <tr>
+          <td>ams-optimizing-uri</td>
+          <td>All</td>
+          <td>No</td>
+          <td>thrift://{ams.server-expose-host}:{ams.thrift-server.optimizing-service.binding-port}</td>
+          <td>Table optimizing service endpoint. This is used when the default service endpoint is not visitable.</td>
+      </tr>
+      <tr>
+          <td>flink-conf.&lt;key&gt;</td>
+          <td>Flink</td>
+          <td>No</td>
+          <td>N/A</td>
+          <td>Any flink config options could be overwritten, priority is optimizing-group &gt; optimizing-container &gt; flink-conf.yaml.</td>
+      </tr>
+      <tr>
+          <td>spark-conf.&lt;key&gt;</td>
+          <td>Spark</td>
+          <td>No</td>
+          <td>N/A</td>
+          <td>Any spark config options could be overwritten, priority is optimizing-group &gt; optimizing-container &gt; spark-defaults.conf.</td>
+      </tr>
+  </tbody>
+</table>
+<div class="info">
+    <p>To better utilize the resources of Flink Optimizer, it is recommended to add the following configuration to the Flink Optimizer Group:</p>
+<ul>
+<li>Set <code>flink-conf.taskmanager.memory.managed.size</code> to <code>32mb</code> as Flink optimizer does not have any computation logic, it does not need to occupy managed memory.</li>
+<li>Set <code>flink-conf.taskmanager.memory.network.max</code> to <code>32mb</code> as there is no need for communication between operators in Flink Optimizer.</li>
+<li>Set <code>flink-conf.taskmanager.memory.network.min</code> to <code>32mb</code> as there is no need for communication between operators in Flink Optimizer.</li>
+</ul>
+</div>
+<h3 id="edit-optimizer-group">Edit optimizer group</h3>
+<p>You can click the <code>edit</code> button on the <code>Optimizer Groups</code> page to modify the configuration of the Optimizer group.</p>
+<h3 id="remove-optimizer-group">Remove optimizer group</h3>
+<p>You can click the <code>remove</code> button on the <code>Optimizer Groups</code> page to delete the optimizer group, but only if the group is
+not referenced by any catalog or table and no optimizer belonging to this group is running.</p>
+<h2 id="optimizer-scale-out-and-release">Optimizer Scale-out and Release</h2>
+<h3 id="scale-out-optimizer">Scale out optimizer</h3>
+<p>You can click the <code>Scale-Out</code> button on the <code>Optimizer Groups</code> page to scale out the optimizer for the corresponding optimizer
+group, and then click <code>OK</code> to start the optimizer for this optimizer group according to the parallelism configuration.
+If the optimizer runs normally, you will see an optimizer with the status <code>RUNNING</code> on the <code>Optimizers</code> page.</p>
+<p><img src="../images/admin/optimizer_scale.png" alt="optimize-scale-out"></p>
+<h3 id="release-optimizer">Release optimizer</h3>
+<p>You can click the <code>Release</code> button on the <code>Optimizer</code> page to release the optimizer.</p>
+<p><img src="../images/admin/optimizer_release.png" alt="release optimizer"></p>
+<div class="info">
+    Currently, only optimizer scaled through the dashboard can be released on dashboard.
+</div>
+<h3 id="deploy-external-optimizer">Deploy external optimizer</h3>
+<p>You can submit optimizer in your own Flink task development platform or local Flink environment with the following configuration. The main parameters include:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./bin/flink run-application -t yarn-application <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -Djobmanager.memory.process.size<span style="color:#f92672">=</span>1024mb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -Dtaskmanager.memory.process.size<span style="color:#f92672">=</span>2048mb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -Dtaskmanager.memory.managed.size<span style="color:#f92672">=</span>32mb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -Dtaskmanager.memory.network.max<span style="color:#f92672">=</span>32mb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -Dtaskmanager.memory.network.min<span style="color:#f92672">=</span>32mb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -c org.apache.amoro.optimizer.flink.FlinkOptimizer <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> <span style="color:#e6db74">${</span>AMORO_HOME<span style="color:#e6db74">}</span>/plugin/optimizer/flink/optimizer-job.jar <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -a thrift://127.0.0.1:1261 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -g flinkGroup <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -p <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><p>The description of the relevant parameters is shown in the following table:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Property</th>
+          <th>Required</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>-a</td>
+          <td>Yes</td>
+          <td>The address of the AMS thrift service, for example: thrift://127.0.0.1:1261, can be obtained from the config.yaml configuration.</td>
+      </tr>
+      <tr>
+          <td>-g</td>
+          <td>Yes</td>
+          <td>Group name created in advance under external container.</td>
+      </tr>
+      <tr>
+          <td>-p</td>
+          <td>Yes</td>
+          <td>Optimizer parallelism usage.</td>
+      </tr>
+      <tr>
+          <td>-hb</td>
+          <td>No</td>
+          <td>Heart beat interval with ams, should be smaller than configuration ams.optimizer.heart-beat-timeout in AMS configuration conf/config.yaml which is 60000 milliseconds by default, default 10000(ms).</td>
+      </tr>
+      <tr>
+          <td>-eds</td>
+          <td>No</td>
+          <td>Whether extend storage to disk, default false.</td>
+      </tr>
+      <tr>
+          <td>-dsp</td>
+          <td>No</td>
+          <td>Defines the directory where the storage files are saved, the default temporary-file directory is specified by the system property <code>java.io.tmpdir</code>. On UNIX systems the default value of this property is typically &ldquo;/tmp&rdquo; or &ldquo;/var/tmp&rdquo;.</td>
+      </tr>
+      <tr>
+          <td>-msz</td>
+          <td>No</td>
+          <td>Memory storage size limit when extending disk storage(MB), default 512(MB).</td>
+      </tr>
+  </tbody>
+</table>
+<p>Or you can submit optimizer in your own Spark task development platform or local Spark environment with the following configuration. The main parameters include:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./bin/spark-submit --master yarn --deploy-mode cluster <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --conf <span style="color:#e6db74">&#34;spark.driver.cores=1&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --conf <span style="color:#e6db74">&#34;spark.driver.memory=g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --conf <span style="color:#e6db74">&#34;spark.executor.cores=1&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --conf <span style="color:#e6db74">&#34;spark.executor.memory=2g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --class org.apache.amoro.optimizer.spark.SparkOptimizer <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> <span style="color:#e6db74">${</span>AMORO_HOME<span style="color:#e6db74">}</span>/plugin/optimizer/spark/optimizer-job.jar <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -a thrift://127.0.0.1:1261 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -g sparkGroup <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -p <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><p>The description of the relevant parameters is shown in the following table:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Property</th>
+          <th>Required</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>-a</td>
+          <td>Yes</td>
+          <td>The address of the AMS thrift service, for example: thrift://127.0.0.1:1261, can be obtained from the config.yaml configuration.</td>
+      </tr>
+      <tr>
+          <td>-g</td>
+          <td>Yes</td>
+          <td>Group name created in advance under external container.</td>
+      </tr>
+      <tr>
+          <td>-p</td>
+          <td>Yes</td>
+          <td>Optimizer parallelism usage.</td>
+      </tr>
+      <tr>
+          <td>-hb</td>
+          <td>No</td>
+          <td>Heart beat interval with ams, should be smaller than configuration ams.optimizer.heart-beat-timeout in AMS configuration conf/config.yaml which is 60000 milliseconds by default, default 10000(ms).</td>
+      </tr>
+      <tr>
+          <td>-eds</td>
+          <td>No</td>
+          <td>Whether extend storage to disk, default false.</td>
+      </tr>
+      <tr>
+          <td>-dsp</td>
+          <td>No</td>
+          <td>Defines the directory where the storage files are saved, the default temporary-file directory is specified by the system property <code>java.io.tmpdir</code>. On UNIX systems the default value of this property is typically &ldquo;/tmp&rdquo; or &ldquo;/var/tmp&rdquo;.</td>
+      </tr>
+      <tr>
+          <td>-msz</td>
+          <td>No</td>
+          <td>Memory storage size limit when extending disk storage(MB), default 512(MB).</td>
+      </tr>
+  </tbody>
+</table>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#optimizer-container">Optimizer container</a>
+      <ul>
+        <li><a href="#local-container">Local container</a></li>
+        <li><a href="#kubernetes-container">Kubernetes container</a></li>
+        <li><a href="#flink-container">Flink container</a></li>
+        <li><a href="#spark-container">Spark container</a></li>
+        <li><a href="#external-container">External container</a></li>
+      </ul>
+    </li>
+    <li><a href="#optimizer-group">Optimizer group</a>
+      <ul>
+        <li><a href="#add-optimizer-group">Add optimizer group</a></li>
+        <li><a href="#edit-optimizer-group">Edit optimizer group</a></li>
+        <li><a href="#remove-optimizer-group">Remove optimizer group</a></li>
+      </ul>
+    </li>
+    <li><a href="#optimizer-scale-out-and-release">Optimizer Scale-out and Release</a>
+      <ul>
+        <li><a href="#scale-out-optimizer">Scale out optimizer</a></li>
+        <li><a href="#release-optimizer">Release optimizer</a></li>
+        <li><a href="#deploy-external-optimizer">Deploy external optimizer</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/0.7.1//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.1//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/0.7.1//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.1//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.1//js/iceberg-theme.js"></script>
+
+
+
+</html>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>User-Guides on Amoro</title>
+    <link>https://amoro.apache.org/docs/0.8.0/user-guides/</link>
+    <description>Recent content in User-Guides on Amoro</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/docs/0.8.0/user-guides/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>CDC Ingestion</title>
+      <link>https://amoro.apache.org/docs/0.8.0/cdc-ingestion/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.0/cdc-ingestion/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;cdc-ingestion&#34;&gt;CDC Ingestion&lt;/h1&gt;&#xA;&lt;p&gt;CDC stands for Change Data Capture, which is a broad concept, as long as it can capture the change data, it can be called CDC.&#xA;&lt;a href=&#34;https://github.com/apache/flink-cdc&#34;&gt;Flink CDC&lt;/a&gt; is a Log message-based data capture tool, all the inventory&#xA;and incremental data can be captured. Taking MySQL as an example, it can easily capture Binlog data through&#xA;&lt;a href=&#34;https://debezium.io/&#34;&gt;Debezium&lt;/a&gt;、&lt;a href=&#34;https://github.com/apache/flink-cdc&#34;&gt;Flink CDC&lt;/a&gt; and process the calculations in real time to send them to the data lake. The data lake can then be&#xA;queried by other engines.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Configurations</title>
+      <link>https://amoro.apache.org/docs/0.8.0/configurations/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.0/configurations/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;table-configurations&#34;&gt;Table Configurations&lt;/h1&gt;&#xA;&lt;h2 id=&#34;multi-level-configuration-management&#34;&gt;Multi-level configuration management&lt;/h2&gt;&#xA;&lt;p&gt;Amoro provides configurations that can be configured at the &lt;code&gt;Catalog&lt;/code&gt;, &lt;code&gt;Table&lt;/code&gt;, and &lt;code&gt;Engine&lt;/code&gt; levels. The configuration&#xA;priority is given first to the &lt;code&gt;Engine&lt;/code&gt;, followed by the &lt;code&gt;Table&lt;/code&gt;, and finally by the &lt;code&gt;Catalog&lt;/code&gt;.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Metrics</title>
+      <link>https://amoro.apache.org/docs/0.8.0/metrics/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.0/metrics/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;metrics&#34;&gt;Metrics&lt;/h1&gt;&#xA;&lt;p&gt;Amoro build a metrics system to measure the behaviours of table management processes, like how long has it been since a table last performed self-optimizing process, and how much resources does a optimizer group currently has?&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Using Tables</title>
+      <link>https://amoro.apache.org/docs/0.8.0/using-tables/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.0/using-tables/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;using-tables&#34;&gt;Using Tables&lt;/h1&gt;&#xA;&lt;p&gt;The SQL execution tool &lt;code&gt;Terminal&lt;/code&gt; is provided in AMS dashboard to help users quickly create, modify and delete tables.&#xA;It is also available in &lt;a href=&#34;../spark-ddl/&#34;&gt;Spark&lt;/a&gt; and &lt;a href=&#34;../flink-ddl/&#34;&gt;Flink&lt;/a&gt; and other engines to manage tables using SQL.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

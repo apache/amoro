@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://amoro.apache.org/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/benchmark-report/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/benchmark/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/blogs/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/categories/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/community/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/download/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/benchmark-guide/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/how-to-contribute/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/join-community/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/quick-start/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/release-guide/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/validate-release/</loc>
+  </url><url>
+    <loc>https://amoro.apache.org/tags/</loc>
+  </url>
+</urlset>

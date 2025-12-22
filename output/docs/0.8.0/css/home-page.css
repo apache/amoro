@@ -1,0 +1,209 @@
+#content {
+  max-height: calc(100% - 50px);
+}
+
+#intro-new {
+  margin: 0 auto;
+  height: 480px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: url(../img/banner.svg) center center no-repeat;
+  background-color: #ECEDF3;
+}
+
+#intro-new .intro-content {
+  width: 100%;
+  max-width: 1182px;
+  padding: 0 41px;
+}
+
+#intro-new .title {
+  font-size: 50px;
+  color: #0036A1;
+  font-weight: 600;
+}
+
+#intro-new .desc {
+  font-size: 24px;
+  font-weight: 500;
+  margin-top: 20px;
+}
+
+#intro-new .btns {
+  margin-top: 30px;
+  font-size: 0px;
+}
+
+#intro-new .btn-primary {
+  background: #ECEDF3;
+  margin-right: 16px;
+  padding: 13px 32px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  color: #0036A1;
+}
+
+#home-section {
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  background-color: #fff;
+}
+
+#home-section .content {
+  width: 100%;
+  max-width: 1100px;
+  padding: 64px 0px;
+}
+
+#home-section .content .title,
+#home-feature .content .title,
+#home-footer .content .title {
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 24px;
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+#home-section .content .img {
+  max-width: 100%;
+}
+
+#home-feature {
+  background: #f5f6fa;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+#home-feature .content .title {
+  font-size: 32px;
+}
+
+#home-feature .content {
+  width: 100%;
+  max-width: 1182px;
+  padding: 64px 41px 80px;
+}
+
+#home-feature .features {
+  display: grid;
+  grid-row-gap: 24px;
+  grid-column-gap: 24px;
+  max-width: 1100px;
+  grid-template-columns: auto auto;
+}
+
+#home-feature .feature-item {
+  background-color: #fff;
+  padding: 32px;
+  border-radius: 5px;
+  position: relative;
+}
+
+#home-feature .feature-item .fix-icon {
+  position: absolute;
+  top: 0px;
+  right: 20px;
+}
+
+@media screen and (max-width: 800px) {
+  #home-feature .features {
+    grid-template-columns: auto;
+  }
+}
+
+#home-feature .features .item-title {
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+#home-feature .features .item-title img {
+  margin-right: 13px;
+}
+
+#home-feature .features .item-desc {
+  margin-top: 24px;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 22px;
+  color: #53576a;
+}
+
+#home-footer {
+  background-color: #e9f1f3;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+#home-footer .content {
+  padding: 64px 0px;
+}
+
+#home-footer .content .title {
+  margin-bottom: 32px;
+  font-size: 32px;
+}
+
+#home-footer .content .btns {
+  font-size: 0px;
+  text-align: center;
+}
+
+#home-footer .content .btns .btn {
+  width: 300px;
+  background-color: #fff;
+  color: #1e1f27;
+  font-size: 16px;
+  font-weight: bold;
+  margin-right: 16px;
+  border-radius: 8px;
+  border: none;
+  margin-bottom: 12px;
+}
+
+#home-footer .content .btns .btn .img-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0px;
+}
+
+#home-footer .content .btns .btn .img-title img {
+  margin-right: 6px;
+}
+
+#home-footer .content .btns .wechat-btn {
+  position: relative;
+}
+
+#home-footer .content .btns .wechat-btn:hover .wechat-img {
+  display: block;
+}
+
+#home-footer .content .btns .wechat-img {
+  position: absolute;
+  right: 20px;
+  bottom: 48px;
+  display: none;
+}
+
+#home-footer .apache {
+  text-align: center;
+}
+
+#home-footer .apache .copyright{
+  padding: 6px 10px;
+}
+
+#home-footer .apache .logo{
+  padding-top: 20px;
+}

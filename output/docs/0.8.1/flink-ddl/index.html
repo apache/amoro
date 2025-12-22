@@ -1,0 +1,1083 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Flink DDL</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/0.8.1//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.8.1/../../quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.1/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.1/../../docs/0.8.1/">0.8.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.1/../../docs/0.8.0/">0.8.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.1/../../docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.1/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.1/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.1/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.1/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.8.1/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.8.1/../../roadmap/">Roadmap</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.1/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.1/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/0.8.1//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-customized-encryption-method/">Using Customized Encryption Method for Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-cdc-ingestion/">Flink CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="flink-ddl">Flink DDL</h1>
+<h2 id="create-catalogs">Create catalogs</h2>
+<h3 id="flink-sql">Flink SQL</h3>
+<p>The following statement can be executed to create a Flink catalog:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">CATALOG</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">catalog_name</span><span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">WITH</span> (
+</span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#39;type&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;mixed_iceberg&#39;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">`&lt;</span>config_key<span style="color:#f92672">&gt;`=`&lt;</span>config_value<span style="color:#f92672">&gt;`</span>
+</span></span><span style="display:flex;"><span>); 
+</span></span></code></pre></div><p>Where <code>&lt;catalog_name&gt;</code> is the user-defined name of the Flink catalog, and <code>&lt;config_key&gt;</code>=<code>&lt;config_value&gt;</code> has the following configurations:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default Value</th>
+          <th>Type</th>
+          <th>Required</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>type</td>
+          <td>N/A</td>
+          <td>String</td>
+          <td>Yes</td>
+          <td>Catalog type, validate values are mixed_iceberg and mixed_hive</td>
+      </tr>
+      <tr>
+          <td>metastore.url</td>
+          <td>(none)</td>
+          <td>String</td>
+          <td>No</td>
+          <td>The URL for Amoro Metastore is thrift://<code>&lt;ip&gt;</code>:<code>&lt;port&gt;</code>/<code>&lt;catalog_name_in_metastore&gt;</code>.<br>If high availability is enabled for AMS, it can also be specified in the form of zookeeper://{zookeeper-server}/{cluster-name}/{catalog-name}.</td>
+      </tr>
+      <tr>
+          <td>default-database</td>
+          <td>default</td>
+          <td>String</td>
+          <td>No</td>
+          <td>The default database to use</td>
+      </tr>
+      <tr>
+          <td>property-version</td>
+          <td>1</td>
+          <td>Integer</td>
+          <td>No</td>
+          <td>Catalog properties version, this option is for future backward compatibility</td>
+      </tr>
+      <tr>
+          <td>catalog-type</td>
+          <td>N/A</td>
+          <td>String</td>
+          <td>No</td>
+          <td>Metastore type of the catalog, validate values are hadoop, hive, rest, custom</td>
+      </tr>
+  </tbody>
+</table>
+<p>The authentication information of AMS catalog can upload configuration files on AMS website,
+or specify the authentication information and configuration file paths when creating catalogs with Flink DDL</p>
+<table>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default Value</th>
+          <th>Type</th>
+          <th>Required</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>properties.auth.load-from-ams</td>
+          <td>True</td>
+          <td>BOOLEAN</td>
+          <td>No</td>
+          <td>Whether to load security verification configuration from AMS. <br>True: load from AMS; <br>false: do not use AMS configuration. <br>Note: regardless of whether this parameter is configured, as long as the user has configured the auth.*** related parameters below, this configuration will be used for access.</td>
+      </tr>
+      <tr>
+          <td>properties.auth.type</td>
+          <td>(none)</td>
+          <td>String</td>
+          <td>No</td>
+          <td>Table security verification type, valid values: simple, kerberos, or not configured. Default not configured, no permission check is required. simple: use the hadoop username, used in conjunction with the parameter &lsquo;properties.auth.simple.hadoop_username&rsquo;; kerberos: configure kerberos permission verification, used in conjunction with the parameters &lsquo;properties.auth.kerberos.principal&rsquo;, &lsquo;properties.auth.kerberos.keytab&rsquo;, &lsquo;properties.auth.kerberos.krb&rsquo;</td>
+      </tr>
+      <tr>
+          <td>properties.auth.simple.hadoop_username</td>
+          <td>(none)</td>
+          <td>String</td>
+          <td>No</td>
+          <td>Access using this hadoop username, required when &lsquo;properties.auth.type&rsquo;=&lsquo;simple&rsquo;.</td>
+      </tr>
+      <tr>
+          <td>properties.auth.kerberos.principal</td>
+          <td>(none)</td>
+          <td>String</td>
+          <td>No</td>
+          <td>Configuration of kerberos principal, required when &lsquo;properties.auth.type&rsquo;=&lsquo;kerberos&rsquo;.</td>
+      </tr>
+      <tr>
+          <td>properties.auth.kerberos.krb.path</td>
+          <td>(none)</td>
+          <td>String</td>
+          <td>No</td>
+          <td>The absolute path to the krb5.conf configuration file for kerberos (the local file path of the Flink SQL submission machine, if the SQL task is submitted with the Flink SQL Client, the path is the local path of the same node, e.g. /XXX/XXX/krb5.conf).&rsquo; required if &lsquo;properties.auth.type&rsquo; = &lsquo;kerberos&rsquo;.</td>
+      </tr>
+      <tr>
+          <td>properties.auth.kerberos.keytab.path</td>
+          <td>(none)</td>
+          <td>String</td>
+          <td>No</td>
+          <td>The absolute path to the XXX.keytab configuration file for kerberos (the local file path of the Flink SQL submission machine, if the SQL task is submitted with the Flink SQL Client, the path is the local path of the same node, e.g. /XXX/XXX/XXX.keytab).&rsquo; required if &lsquo;properties.auth.type&rsquo; = &lsquo;kerberos&rsquo;.</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="yaml-configuration">YAML configuration</h3>
+<p>Refer to the Flink SQL Client <a href="https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sqlClient.html#environment-files">official configuration</a>.
+Modify the <code>conf/sql-client-defaults.yaml</code> file in the Flink directory.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">catalogs</span>:
+</span></span><span style="display:flex;"><span>- <span style="color:#f92672">name</span>: <span style="color:#ae81ff">&lt;catalog_name&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">mixed_iceberg</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">metastore.url</span>: <span style="color:#ae81ff">...</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">...</span>
+</span></span></code></pre></div><h2 id="create-statement">CREATE statement</h2>
+<h3 id="create-database">CREATE DATABASE</h3>
+<p>By default, the default-database configuration (default value: default) when creating catalog is used. You can create a database using the following example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">DATABASE</span> [<span style="color:#66d9ef">catalog_name</span>.]mixed_db;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>USE mixed_db;
+</span></span></code></pre></div><h3 id="create-table">CREATE TABLE</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>mixed_db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span> (
+</span></span><span style="display:flex;"><span>    id BIGINT,
+</span></span><span style="display:flex;"><span>    name STRING,
+</span></span><span style="display:flex;"><span>    op_time <span style="color:#66d9ef">TIMESTAMP</span>,
+</span></span><span style="display:flex;"><span>    ts3 <span style="color:#66d9ef">AS</span> <span style="color:#66d9ef">CAST</span>(op_time <span style="color:#66d9ef">as</span> <span style="color:#66d9ef">TIMESTAMP</span>(<span style="color:#ae81ff">3</span>)),
+</span></span><span style="display:flex;"><span>    watermark <span style="color:#66d9ef">FOR</span> ts3 <span style="color:#66d9ef">AS</span> ts3 <span style="color:#f92672">-</span> INTERVAL <span style="color:#e6db74">&#39;5&#39;</span> <span style="color:#66d9ef">SECOND</span>,
+</span></span><span style="display:flex;"><span>    proc <span style="color:#66d9ef">AS</span> PROCTIME(),
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span> (id) <span style="color:#66d9ef">NOT</span> ENFORCED
+</span></span><span style="display:flex;"><span>) <span style="color:#66d9ef">WITH</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;key&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;value&#39;</span>
+</span></span><span style="display:flex;"><span>);
+</span></span></code></pre></div><p>Currently, most of the syntax supported by <a href="https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sql/create.html#create-table">Flink SQL create table</a> is supported, including:</p>
+<ul>
+<li>PARTITION BY (column1, column2, …): configure Flink partition fields, but Flink does not yet support hidden partitions.</li>
+<li>PRIMARY KEY (column1, column2, …): configure primary keys.</li>
+<li>WITH (&lsquo;key&rsquo;=&lsquo;value&rsquo;, …): configure Amoro Table properties.</li>
+<li>computed_column_definition: column_name AS computed_column_expression. Currently, compute column must be listed after all physical columns.</li>
+<li>watermark_definition: WATERMARK FOR rowtime_column_name AS watermark_strategy_expression, rowtime_column_name must be of type TIMESTAMP(3).</li>
+</ul>
+<h4 id="partitioned-by">PARTITIONED BY</h4>
+<p>Create a partitioned table using PARTITIONED BY.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span><span style="color:#66d9ef">new</span><span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span> (
+</span></span><span style="display:flex;"><span>    id BIGINT,
+</span></span><span style="display:flex;"><span>    name STRING,
+</span></span><span style="display:flex;"><span>    op_time <span style="color:#66d9ef">TIMESTAMP</span>
+</span></span><span style="display:flex;"><span>) PARTITIONED <span style="color:#66d9ef">BY</span>(op_time) <span style="color:#66d9ef">WITH</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;key&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;value&#39;</span>
+</span></span><span style="display:flex;"><span>);
+</span></span></code></pre></div><p>Amoro tables support hidden partitions, but Flink does not support function-based partitions. Therefore, currently only partitions with the same value can be created through Flink SQL.</p>
+<p>Alternatively, tables can be created without creating a Flink catalog:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span> (
+</span></span><span style="display:flex;"><span>    id BIGINT,
+</span></span><span style="display:flex;"><span>    name STRING,
+</span></span><span style="display:flex;"><span>    op_time <span style="color:#66d9ef">TIMESTAMP</span>,
+</span></span><span style="display:flex;"><span>    proc <span style="color:#66d9ef">as</span> PROCTIME(),
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span> (id) <span style="color:#66d9ef">NOT</span> ENFORCED
+</span></span><span style="display:flex;"><span>) <span style="color:#66d9ef">WITH</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;connector&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;mixed-format&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;metastore.url&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;mixed_format.catalog&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;mixed_format.database&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;mixed_format.table&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;&#39;</span>
+</span></span><span style="display:flex;"><span>);
+</span></span></code></pre></div><p>where <code>&lt;metastore.url&gt;</code> is the URL of the Amoro Metastore, and <code>mixed_format.catalog</code>, <code>mixed_format.database</code> and <code>mixed_format.table</code> are the catalog name, database name and table name of this table under the AMS, respectively.</p>
+<h3 id="create-table-like">CREATE TABLE LIKE</h3>
+<p>Create a table with the same table structure, partitions, and table properties as an existing table. This can be achieved using CREATE TABLE LIKE.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>mixed_db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span> (
+</span></span><span style="display:flex;"><span>    id BIGINT,
+</span></span><span style="display:flex;"><span>    name STRING,
+</span></span><span style="display:flex;"><span>    op_time <span style="color:#66d9ef">TIMESTAMP</span>
+</span></span><span style="display:flex;"><span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span>  <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>mixed_db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table_like<span style="color:#f92672">`</span> 
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">LIKE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>mixed_db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span>;
+</span></span></code></pre></div><p>Further details can be found in <a href="https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sql/create.html#like">Flink create table like</a></p>
+<h2 id="drop-statement">DROP statement</h2>
+<h3 id="drop-database">DROP DATABASE</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">DATABASE</span> <span style="color:#66d9ef">catalog_name</span>.mixed_db
+</span></span></code></pre></div><h3 id="drop-table">DROP TABLE</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>mixed_db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span>;
+</span></span></code></pre></div><h2 id="show-statement">SHOW statement</h2>
+<h3 id="show-databases">SHOW DATABASES</h3>
+<p>View all database names under the current catalog:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> DATABASES;
+</span></span></code></pre></div><h3 id="show-tables">SHOW TABLES</h3>
+<p>View all table names in the current database:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> TABLES;
+</span></span></code></pre></div><h3 id="show-create-table">SHOW CREATE TABLE</h3>
+<p>View table details:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> <span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span>;
+</span></span></code></pre></div><h2 id="desc-statement">DESC statement</h2>
+<p>View table description:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DESC</span> <span style="color:#66d9ef">TABLE</span>;
+</span></span></code></pre></div><h2 id="alter-statement">ALTER statement</h2>
+<p>Not supported at the moment</p>
+<h2 id="supported-types">Supported types</h2>
+<h3 id="mixed-hive-data-types">Mixed-Hive data types</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Flink Data Type</th>
+          <th>Hive Data Type</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>STRING</td>
+          <td>CHAR(p)</td>
+      </tr>
+      <tr>
+          <td>STRING</td>
+          <td>VARCHAR(p)</td>
+      </tr>
+      <tr>
+          <td>STRING</td>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <td>BOOLEAN</td>
+          <td>BOOLEAN</td>
+      </tr>
+      <tr>
+          <td>INT</td>
+          <td>TINYINT</td>
+      </tr>
+      <tr>
+          <td>INT</td>
+          <td>SMALLINT</td>
+      </tr>
+      <tr>
+          <td>INT</td>
+          <td>INT</td>
+      </tr>
+      <tr>
+          <td>BIGINT</td>
+          <td>BIGINT</td>
+      </tr>
+      <tr>
+          <td>FLOAT</td>
+          <td>FLOAT</td>
+      </tr>
+      <tr>
+          <td>DOUBLE</td>
+          <td>DOUBLE</td>
+      </tr>
+      <tr>
+          <td>DECIMAL(p, s)</td>
+          <td>DECIMAL(p, s)</td>
+      </tr>
+      <tr>
+          <td>DATE</td>
+          <td>DATE</td>
+      </tr>
+      <tr>
+          <td>TIMESTAMP(6)</td>
+          <td>TIMESTAMP</td>
+      </tr>
+      <tr>
+          <td>VARBINARY</td>
+          <td>BINARY</td>
+      </tr>
+      <tr>
+          <td>ARRAY<T></td>
+          <td>ARRAY<T></td>
+      </tr>
+      <tr>
+          <td>MAP&lt;K, V&gt;</td>
+          <td>MAP&lt;K, V&gt;</td>
+      </tr>
+      <tr>
+          <td>ROW</td>
+          <td>STRUCT</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="mixed_iceberg-data-types">mixed_iceberg data types</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Flink Data Type</th>
+          <th>Mixed-Iceberg Data Type</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>CHAR(p)</td>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <td>VARCHAR(p)</td>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <td>STRING</td>
+          <td>STRING</td>
+      </tr>
+      <tr>
+          <td>BOOLEAN</td>
+          <td>BOOLEAN</td>
+      </tr>
+      <tr>
+          <td>TINYINT</td>
+          <td>INT</td>
+      </tr>
+      <tr>
+          <td>SMALLINT</td>
+          <td>INT</td>
+      </tr>
+      <tr>
+          <td>INT</td>
+          <td>INT</td>
+      </tr>
+      <tr>
+          <td>BIGINT</td>
+          <td>LONG</td>
+      </tr>
+      <tr>
+          <td>FLOAT</td>
+          <td>FLOAT</td>
+      </tr>
+      <tr>
+          <td>DOUBLE</td>
+          <td>DOUBLE</td>
+      </tr>
+      <tr>
+          <td>DECIMAL(p, s)</td>
+          <td>DECIMAL(p, s)</td>
+      </tr>
+      <tr>
+          <td>DATE</td>
+          <td>DATE</td>
+      </tr>
+      <tr>
+          <td>TIMESTAMP(6)</td>
+          <td>TIMESTAMP</td>
+      </tr>
+      <tr>
+          <td>TIMESTAMP(6) WITH LOCAL TIME ZONE</td>
+          <td>TIMESTAMPTZ</td>
+      </tr>
+      <tr>
+          <td>BINARY(p)</td>
+          <td>FIXED(p)</td>
+      </tr>
+      <tr>
+          <td>BINARY(16)</td>
+          <td>UUID</td>
+      </tr>
+      <tr>
+          <td>VARBINARY</td>
+          <td>BINARY</td>
+      </tr>
+      <tr>
+          <td>ARRAY<T></td>
+          <td>ARRAY<T></td>
+      </tr>
+      <tr>
+          <td>MAP&lt;K, V&gt;</td>
+          <td>MAP&lt;K, V&gt;</td>
+      </tr>
+      <tr>
+          <td>ROW</td>
+          <td>STRUCT</td>
+      </tr>
+      <tr>
+          <td>MULTISET<T></td>
+          <td>MAP&lt;T, INT&gt;</td>
+      </tr>
+  </tbody>
+</table>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#create-catalogs">Create catalogs</a>
+      <ul>
+        <li><a href="#flink-sql">Flink SQL</a></li>
+        <li><a href="#yaml-configuration">YAML configuration</a></li>
+      </ul>
+    </li>
+    <li><a href="#create-statement">CREATE statement</a>
+      <ul>
+        <li><a href="#create-database">CREATE DATABASE</a></li>
+        <li><a href="#create-table">CREATE TABLE</a></li>
+        <li><a href="#create-table-like">CREATE TABLE LIKE</a></li>
+      </ul>
+    </li>
+    <li><a href="#drop-statement">DROP statement</a>
+      <ul>
+        <li><a href="#drop-database">DROP DATABASE</a></li>
+        <li><a href="#drop-table">DROP TABLE</a></li>
+      </ul>
+    </li>
+    <li><a href="#show-statement">SHOW statement</a>
+      <ul>
+        <li><a href="#show-databases">SHOW DATABASES</a></li>
+        <li><a href="#show-tables">SHOW TABLES</a></li>
+        <li><a href="#show-create-table">SHOW CREATE TABLE</a></li>
+      </ul>
+    </li>
+    <li><a href="#desc-statement">DESC statement</a></li>
+    <li><a href="#alter-statement">ALTER statement</a></li>
+    <li><a href="#supported-types">Supported types</a>
+      <ul>
+        <li><a href="#mixed-hive-data-types">Mixed-Hive data types</a></li>
+        <li><a href="#mixed_iceberg-data-types">mixed_iceberg data types</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/0.8.1//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.8.1//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/0.8.1//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.8.1//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.8.1//js/iceberg-theme.js"></script>
+
+
+
+</html>

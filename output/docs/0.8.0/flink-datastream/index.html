@@ -1,0 +1,978 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Flink DataStream</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/0.8.0//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.8.0/../../quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.0/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.0/../../docs/0.8.0/">0.8.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.0/../../docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.0/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.0/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.0/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.0/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.8.0/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.8.0/../../roadmap/">Roadmap</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.0/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.8.0/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/0.8.0//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-cdc-ingestion/">Flink CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="flink-datastream">Flink DataStream</h1>
+<h2 id="add-maven-dependency">Add maven dependency</h2>
+<p>To add a dependency on Mixed-format flink connector in Maven, add the following to your pom.xml:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;dependencies&gt;</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;groupId&gt;</span>org.apache.amoro<span style="color:#f92672">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">&lt;!-- For example: amoro-format-mixed-flink-runtime-1.15 --&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;artifactId&gt;</span>amoro-format-mixed-flink-runtime-${flink.minor-version}<span style="color:#f92672">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">&lt;!-- For example: 0.7.0-incubating --&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;version&gt;</span>${amoro-format-mixed-flink.version}<span style="color:#f92672">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;/dependency&gt;</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/dependencies&gt;</span>
+</span></span></code></pre></div><h2 id="reading-with-datastream">Reading with DataStream</h2>
+<p>Amoro supports reading data in Batch or Streaming mode through Java API.</p>
+<h3 id="batch-mode">Batch mode</h3>
+<p>Using Batch mode to read the full and incremental data in the FileStore.</p>
+<ul>
+<li>Non-primary key tables support reading full data in batch mode, snapshot data with a specified snapshot-id or timestamp, and incremental data with a specified snapshot interval.</li>
+<li>The primary key table temporarily only supports reading the current full amount and later CDC data.</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.FlinkSource;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.MixedFormatTableLoader;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.table.TableIdentifier;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.datastream.DataStream;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.data.RowData;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.HashMap;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.Map;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Main</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>(String<span style="color:#f92672">[]</span> args) <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        StreamExecutionEnvironment env <span style="color:#f92672">=</span> StreamExecutionEnvironment.<span style="color:#a6e22e">createLocalEnvironment</span>();
+</span></span><span style="display:flex;"><span>        InternalCatalogBuilder catalogBuilder <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>                InternalCatalogBuilder
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">builder</span>()
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">metastoreUrl</span>(<span style="color:#e6db74">&#34;thrift://&lt;url&gt;:&lt;port&gt;/&lt;catalog_name&gt;&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        TableIdentifier tableId <span style="color:#f92672">=</span> TableIdentifier.<span style="color:#a6e22e">of</span>(<span style="color:#e6db74">&#34;catalog_name&#34;</span>, <span style="color:#e6db74">&#34;database_name&#34;</span>, <span style="color:#e6db74">&#34;test_table&#34;</span>);
+</span></span><span style="display:flex;"><span>        MixedFormatTableLoader tableLoader <span style="color:#f92672">=</span> MixedFormatTableLoader.<span style="color:#a6e22e">of</span>(tableId, catalogBuilder);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        Map<span style="color:#f92672">&lt;</span>String, String<span style="color:#f92672">&gt;</span> properties <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> HashMap<span style="color:#f92672">&lt;&gt;</span>();
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Default is true</span>
+</span></span><span style="display:flex;"><span>        properties.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;streaming&#34;</span>, <span style="color:#e6db74">&#34;false&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        DataStream<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> batch <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>                FlinkSource.<span style="color:#a6e22e">forRowData</span>()
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">env</span>(env)
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">tableLoader</span>(tableLoader)
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">properties</span>(properties)
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// print all data read</span>
+</span></span><span style="display:flex;"><span>        batch.<span style="color:#a6e22e">print</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Submit and execute the task</span>
+</span></span><span style="display:flex;"><span>        env.<span style="color:#a6e22e">execute</span>(<span style="color:#e6db74">&#34;Test Mixed-format table batch read&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The map properties contain below keys, <strong>currently only valid for non-primary key tables</strong>:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default</th>
+          <th>Type</th>
+          <th>Required</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>case-sensitive</td>
+          <td>false</td>
+          <td>Boolean</td>
+          <td>No</td>
+          <td>Case-sensitive</td>
+      </tr>
+      <tr>
+          <td>snapshot-id</td>
+          <td>(none)</td>
+          <td>Long</td>
+          <td>No</td>
+          <td>Read the full amount of data of the specified snapshot, only effective when streaming is false or not configured</td>
+      </tr>
+      <tr>
+          <td>as-of-timestamp</td>
+          <td>(none)</td>
+          <td>String</td>
+          <td>No</td>
+          <td>Read the last time less than the timestamp The full amount of snapshot data is valid only when streaming is false or not configured</td>
+      </tr>
+      <tr>
+          <td>start-snapshot-id</td>
+          <td>(none)</td>
+          <td>String</td>
+          <td>No</td>
+          <td>When streaming is false, end-snapshot-id needs to be used to read the two intervals Incremental data (snapshot1, snapshot2]. When streaming is true, read the incremental data after the snapshot, if not specified, read the incremental data after the current snapshot (not including the current one)</td>
+      </tr>
+      <tr>
+          <td>end-snapshot-id</td>
+          <td>(none )</td>
+          <td>String</td>
+          <td>No</td>
+          <td>Need to cooperate with start-snapshot-id to read incremental data in two intervals (snapshot1, snapshot2]</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="streaming-mode">Streaming mode</h3>
+<p>Amoro supports reading incremental data in FileStore or LogStore through Java API in Streaming mode</p>
+<h3 id="streaming-mode-logstore">Streaming mode (LogStore)</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.read.source.log.kafka.LogKafkaSource;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.MixedFormatTableLoader;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.util.MixedFormatUtils;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.shade.org.apache.iceberg.Schema;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.table.MixedTable;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.table.TableIdentifier;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.api.common.eventtime.WatermarkStrategy;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.datastream.DataStream;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.data.RowData;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Main</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>(String<span style="color:#f92672">[]</span> args) <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        StreamExecutionEnvironment env <span style="color:#f92672">=</span> StreamExecutionEnvironment.<span style="color:#a6e22e">createLocalEnvironment</span>();
+</span></span><span style="display:flex;"><span>        InternalCatalogBuilder catalogBuilder <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>                InternalCatalogBuilder
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">builder</span>()
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">metastoreUrl</span>(<span style="color:#e6db74">&#34;thrift://&lt;url&gt;:&lt;port&gt;/&lt;catalog_name&gt;&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        TableIdentifier tableId <span style="color:#f92672">=</span> TableIdentifier.<span style="color:#a6e22e">of</span>(<span style="color:#e6db74">&#34;catalog_name&#34;</span>, <span style="color:#e6db74">&#34;database_name&#34;</span>, <span style="color:#e6db74">&#34;test_table&#34;</span>);
+</span></span><span style="display:flex;"><span>        MixedFormatTableLoader tableLoader <span style="color:#f92672">=</span> MixedFormatTableLoader.<span style="color:#a6e22e">of</span>(tableId, catalogBuilder);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        MixedTable table <span style="color:#f92672">=</span> MixedFormatUtils.<span style="color:#a6e22e">loadMixedTable</span>(tableLoader);
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Read table All fields. If you only read some fields, you can construct the schema yourself, for example:</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Schema userSchema = new Schema(new ArrayList&lt;Types.NestedField&gt;() {{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//   add(Types.NestedField.optional(0, &#34;f_boolean&#34;, Types.BooleanType.get()));</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">//   add(Types.NestedField.optional(1, &#34;f_int&#34;, Types.IntegerType.get()));</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// }});</span>
+</span></span><span style="display:flex;"><span>        Schema schema <span style="color:#f92672">=</span> table.<span style="color:#a6e22e">schema</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// -----------Hidden Kafka--------------</span>
+</span></span><span style="display:flex;"><span>        LogKafkaSource source <span style="color:#f92672">=</span> LogKafkaSource.<span style="color:#a6e22e">builder</span>(schema, table.<span style="color:#a6e22e">properties</span>()).<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        DataStream<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> stream <span style="color:#f92672">=</span> env.<span style="color:#a6e22e">fromSource</span>(source, WatermarkStrategy.<span style="color:#a6e22e">noWatermarks</span>(), <span style="color:#e6db74">&#34;Log Source&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Print all the read data</span>
+</span></span><span style="display:flex;"><span>        stream.<span style="color:#a6e22e">print</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Submit and execute the task</span>
+</span></span><span style="display:flex;"><span>        env.<span style="color:#a6e22e">execute</span>(<span style="color:#e6db74">&#34;Test Mixed-format table streaming read&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="streaming-mode-filestore">Streaming mode (FileStore)</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.FlinkSource;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.MixedFormatTableLoader;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.table.TableIdentifier;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.datastream.DataStream;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.data.RowData;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.HashMap;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.Map;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Main</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>(String<span style="color:#f92672">[]</span> args) <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        StreamExecutionEnvironment env <span style="color:#f92672">=</span> StreamExecutionEnvironment.<span style="color:#a6e22e">createLocalEnvironment</span>();
+</span></span><span style="display:flex;"><span>        InternalCatalogBuilder catalogBuilder <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>                InternalCatalogBuilder
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">builder</span>()
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">metastoreUrl</span>(<span style="color:#e6db74">&#34;thrift://&lt;url&gt;:&lt;port&gt;/&lt;catalog_name&gt;&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        TableIdentifier tableId <span style="color:#f92672">=</span> TableIdentifier.<span style="color:#a6e22e">of</span>(<span style="color:#e6db74">&#34;catalog_name&#34;</span>, <span style="color:#e6db74">&#34;database_name&#34;</span>, <span style="color:#e6db74">&#34;test_table&#34;</span>);
+</span></span><span style="display:flex;"><span>        MixedFormatTableLoader tableLoader <span style="color:#f92672">=</span> MixedFormatTableLoader.<span style="color:#a6e22e">of</span>(tableId, catalogBuilder);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        Map<span style="color:#f92672">&lt;</span>String, String<span style="color:#f92672">&gt;</span> properties <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> HashMap<span style="color:#f92672">&lt;&gt;</span>();
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Default value is true</span>
+</span></span><span style="display:flex;"><span>        properties.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;streaming&#34;</span>, <span style="color:#e6db74">&#34;true&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        DataStream<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> stream <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>                FlinkSource.<span style="color:#a6e22e">forRowData</span>()
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">env</span>(env)
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">tableLoader</span>(tableLoader)
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">properties</span>(properties)
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Print all read data</span>
+</span></span><span style="display:flex;"><span>        stream.<span style="color:#a6e22e">print</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Submit and execute the task</span>
+</span></span><span style="display:flex;"><span>        env.<span style="color:#a6e22e">execute</span>(<span style="color:#e6db74">&#34;Test Mixed-format table streaming Read&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>DataStream API supports reading primary key tables and non-primary key tables. The configuration items supported by properties can refer to Querying With SQL <a href="../flink-dml/">chapter Hint Option</a></p>
+<h2 id="writing-with-datastream">Writing with DataStream</h2>
+<p>Amoro table supports writing data to LogStore or FileStore through Java API</p>
+<h3 id="overwrite-data">Overwrite data</h3>
+<p>Amoro table currently Only supports the existing data in the dynamic Overwrite table of the non-primary key table</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.MixedFormatTableLoader;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.write.FlinkSink;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.table.TableIdentifier;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.datastream.DataStream;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.api.DataTypes;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.api.TableSchema;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.data.RowData;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Main</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>(String<span style="color:#f92672">[]</span> args) <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Build your data stream</span>
+</span></span><span style="display:flex;"><span>        DataStream<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> input <span style="color:#f92672">=</span> <span style="color:#66d9ef">null</span>;
+</span></span><span style="display:flex;"><span>        StreamExecutionEnvironment env <span style="color:#f92672">=</span> StreamExecutionEnvironment.<span style="color:#a6e22e">createLocalEnvironment</span>();
+</span></span><span style="display:flex;"><span>        InternalCatalogBuilder catalogBuilder <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>                InternalCatalogBuilder
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">builder</span>()
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">metastoreUrl</span>(<span style="color:#e6db74">&#34;thrift://&lt;url&gt;:&lt;port&gt;/&lt;catalog_name&gt;&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        TableIdentifier tableId <span style="color:#f92672">=</span> TableIdentifier.<span style="color:#a6e22e">of</span>(<span style="color:#e6db74">&#34;catalog_name&#34;</span>, <span style="color:#e6db74">&#34;database_name&#34;</span>, <span style="color:#e6db74">&#34;test_table&#34;</span>);
+</span></span><span style="display:flex;"><span>        MixedFormatTableLoader tableLoader <span style="color:#f92672">=</span> MixedFormatTableLoader.<span style="color:#a6e22e">of</span>(tableId, catalogBuilder);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        TableSchema flinkSchema <span style="color:#f92672">=</span> TableSchema.<span style="color:#a6e22e">builder</span>()
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;id&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;name&#34;</span>, DataTypes.<span style="color:#a6e22e">STRING</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;op_time&#34;</span>, DataTypes.<span style="color:#a6e22e">TIMESTAMP_WITH_LOCAL_TIME_ZONE</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        FlinkSink
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">forRowData</span>(input)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">tableLoader</span>(tableLoader)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">overwrite</span>(<span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">flinkSchema</span>(flinkSchema)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Submit and execute the task</span>
+</span></span><span style="display:flex;"><span>        env.<span style="color:#a6e22e">execute</span>(<span style="color:#e6db74">&#34;Test Mixed-format table overwrite&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>} 
+</span></span></code></pre></div><h3 id="appending-data">Appending data</h3>
+<p>For the Amoro table, it supports specifying to write data to FileStore or LogStore through Java API.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.MixedFormatTableLoader;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.util.MixedFormatUtils;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.write.FlinkSink;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.table.MixedTable;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.table.TableIdentifier;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.datastream.DataStream;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.api.DataTypes;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.api.TableSchema;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.data.RowData;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Main</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>(String<span style="color:#f92672">[]</span> args) <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Build your data stream</span>
+</span></span><span style="display:flex;"><span>        DataStream<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> input <span style="color:#f92672">=</span> <span style="color:#66d9ef">null</span>;
+</span></span><span style="display:flex;"><span>        StreamExecutionEnvironment env <span style="color:#f92672">=</span> StreamExecutionEnvironment.<span style="color:#a6e22e">createLocalEnvironment</span>();
+</span></span><span style="display:flex;"><span>        InternalCatalogBuilder catalogBuilder <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>                InternalCatalogBuilder
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">builder</span>()
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">metastoreUrl</span>(<span style="color:#e6db74">&#34;thrift://&lt;url&gt;:&lt;port&gt;/&lt;catalog_name&gt;&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        TableIdentifier tableId <span style="color:#f92672">=</span> TableIdentifier.<span style="color:#a6e22e">of</span>(<span style="color:#e6db74">&#34;catalog_name&#34;</span>, <span style="color:#e6db74">&#34;database_name&#34;</span>, <span style="color:#e6db74">&#34;test_table&#34;</span>);
+</span></span><span style="display:flex;"><span>        MixedFormatTableLoader tableLoader <span style="color:#f92672">=</span> MixedFormatTableLoader.<span style="color:#a6e22e">of</span>(tableId, catalogBuilder);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        TableSchema flinkSchema <span style="color:#f92672">=</span> TableSchema.<span style="color:#a6e22e">builder</span>()
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;id&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;name&#34;</span>, DataTypes.<span style="color:#a6e22e">STRING</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;op_time&#34;</span>, DataTypes.<span style="color:#a6e22e">TIMESTAMP_WITH_LOCAL_TIME_ZONE</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        MixedTable table <span style="color:#f92672">=</span> MixedFormatUtils.<span style="color:#a6e22e">loadMixedTable</span>(tableLoader);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        table.<span style="color:#a6e22e">properties</span>().<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;mixed-format.emit.mode&#34;</span>, <span style="color:#e6db74">&#34;log,file&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        FlinkSink
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">forRowData</span>(input)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">table</span>(table)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">tableLoader</span>(tableLoader)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">flinkSchema</span>(flinkSchema)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        env.<span style="color:#a6e22e">execute</span>(<span style="color:#e6db74">&#34;Test Mixed-format table append&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The DataStream API supports writing to primary key tables and non-primary key tables. The configuration items supported by properties can refer to Writing With SQL <a href="../flink-dml/">chapter Hint Options</a></p>
+<blockquote>
+<p><strong>TIPS</strong></p>
+<p>mixed-format.emit.mode contains log, you need to configure log-store.enabled = true <a href="../flink-dml/">Enable Log Configuration</a></p>
+<p>mixed-format.emit.mode When file is included, the primary key table will only be written to ChangeStore, and the non-primary key table will be directly written to BaseStore.</p></blockquote>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#add-maven-dependency">Add maven dependency</a></li>
+    <li><a href="#reading-with-datastream">Reading with DataStream</a>
+      <ul>
+        <li><a href="#batch-mode">Batch mode</a></li>
+        <li><a href="#streaming-mode">Streaming mode</a></li>
+        <li><a href="#streaming-mode-logstore">Streaming mode (LogStore)</a></li>
+        <li><a href="#streaming-mode-filestore">Streaming mode (FileStore)</a></li>
+      </ul>
+    </li>
+    <li><a href="#writing-with-datastream">Writing with DataStream</a>
+      <ul>
+        <li><a href="#overwrite-data">Overwrite data</a></li>
+        <li><a href="#appending-data">Appending data</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/0.8.0//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.8.0//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/0.8.0//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.8.0//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.8.0//js/iceberg-theme.js"></script>
+
+
+
+</html>

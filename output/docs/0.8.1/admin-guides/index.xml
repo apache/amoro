@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Admin-Guides on Amoro</title>
+    <link>https://amoro.apache.org/docs/0.8.1/admin-guides/</link>
+    <description>Recent content in Admin-Guides on Amoro</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/docs/0.8.1/admin-guides/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Deployment</title>
+      <link>https://amoro.apache.org/docs/0.8.1/deployment/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.1/deployment/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;deployment&#34;&gt;Deployment&lt;/h1&gt;&#xA;&lt;p&gt;You can choose to download the stable release package from &lt;a href=&#34;../../../download/&#34;&gt;download page&lt;/a&gt;, or the source code form &lt;a href=&#34;https://github.com/apache/amoro&#34;&gt;Github&lt;/a&gt; and compile it according to the README.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Deployment On Kubernetes</title>
+      <link>https://amoro.apache.org/docs/0.8.1/deployment-on-kubernetes/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.1/deployment-on-kubernetes/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;deploy-ams-on-kubernetes&#34;&gt;Deploy AMS On Kubernetes&lt;/h1&gt;&#xA;&lt;h2 id=&#34;requirements&#34;&gt;Requirements&lt;/h2&gt;&#xA;&lt;p&gt;If you want to deploy AMS on Kubernetes, you’d better get a sense of the following things.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Managing Catalogs</title>
+      <link>https://amoro.apache.org/docs/0.8.1/managing-catalogs/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.1/managing-catalogs/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;managing-catalogs&#34;&gt;Managing Catalogs&lt;/h1&gt;&#xA;&lt;p&gt;Users can import your test or online clusters through the catalog management function provided by the AMS Dashboard. Before adding a new Catalog,&#xA;please read the following guidelines and select the appropriate creation according to your actual needs.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Managing Optimizers</title>
+      <link>https://amoro.apache.org/docs/0.8.1/managing-optimizers/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.1/managing-optimizers/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;managing-optimizers&#34;&gt;Managing Optimizers&lt;/h1&gt;&#xA;&lt;p&gt;The optimizer is the execution unit for performing self-optimizing tasks on a table. To isolate optimizing tasks on different tables and support the deployment of optimizers in different environments, Amoro has proposed the concepts of optimizer containers and optimizer groups:&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Using Customized Encryption Method for Configurations</title>
+      <link>https://amoro.apache.org/docs/0.8.1/using-customized-encryption-method/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.1/using-customized-encryption-method/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;using-customized-encryption-method-for-configurations&#34;&gt;Using Customized Encryption Method for Configurations&lt;/h1&gt;&#xA;&lt;p&gt;To enhance security, AMS allows encrypted sensitive configuration items such as passwords. Currently, AMS only supports the built-in base64 encryption algorithm (see &lt;a href=&#34;../deployment/#configure-encrypted-sensitive-configuration-items&#34;&gt;Configure encrypted configuration items&lt;/a&gt; for details). If you require a stronger or customized encryption method, AMS also provides the flexibility to implement your own encryption algorithm.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Using Kyuubi By Terminal</title>
+      <link>https://amoro.apache.org/docs/0.8.1/using-kyuubi/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.8.1/using-kyuubi/</guid>
+      <description>&lt;!--&#xA; - Licensed to the Apache Software Foundation (ASF) under one or more&#xA; - contributor license agreements.  See the NOTICE file distributed with&#xA; - this work for additional information regarding copyright ownership.&#xA; - The ASF licenses this file to You under the Apache License, Version 2.0&#xA; - (the &#34;License&#34;); you may not use this file except in compliance with&#xA; - the License.  You may obtain a copy of the License at&#xA; -&#xA; -   http://www.apache.org/licenses/LICENSE-2.0&#xA; -&#xA; - Unless required by applicable law or agreed to in writing, software&#xA; - distributed under the License is distributed on an &#34;AS IS&#34; BASIS,&#xA; - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#xA; - See the License for the specific language governing permissions and&#xA; - limitations under the License.&#xA; --&gt;&#xA;&lt;h1 id=&#34;using-kyuubi-by-terminal&#34;&gt;Using Kyuubi By Terminal&lt;/h1&gt;&#xA;&lt;p&gt;&lt;strong&gt;Prerequisites&lt;/strong&gt;:&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

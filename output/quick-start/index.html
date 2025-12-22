@@ -1,0 +1,539 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Quickstart</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/css/bootstrap.css" rel="stylesheet">
+
+
+<link href="/css/markdown.css" rel="stylesheet">
+<link href="/css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="/css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="/css/termynal.css" rel="stylesheet">
+
+<link href="/css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a id="active"  href="/quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.8.1/">0.8.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.8.0/">0.8.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="/download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="/blogs/">Blogs</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/release-guide/">Release guide</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="/validate-release/">Validate release</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container toc-only">
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><h1 id="quickstart">Quickstart</h1>
+<p>This guide outlines the basic process of using Amoro, allowing you to quickly experience its core features. You can choose to use either the <code>Iceberg Format</code> or the <code>Mixed-Iceberg Format</code> to complete the entire process.</p>
+<p>If you are more interested in the <code>Mixed-Hive Format</code> or the <code>Paimon Format</code>, you can refer to: <a href="/docs/latest/mixed-hive-format/">Mixed-Hive Format</a> and <a href="/docs/latest/paimon-format/">Paimon Format</a>. For specific information on the different formats supported by Amoro, please refer to: <a href="/docs/latest/formats-overview/">Table Format</a>.</p>
+<p>Before starting the quick demo, some steps are required to prepare the environment. The fastest way to get started is to use a docker-compose file that uses the apache/amoro image. To use this, you&rsquo;ll need to install the <a href="https://docs.docker.com/get-docker/">Docker CLI</a> as well as the <a href="https://github.com/docker/compose-cli/blob/main/INSTALL.md">Docker Compose CLI</a>.</p>
+<p>Once you have those, save the yaml below into a file named docker-compose.yml:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#34;3&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">minio</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">minio/minio</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">minio</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">MINIO_ROOT_USER=admin</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">MINIO_ROOT_PASSWORD=password</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">MINIO_DOMAIN=minio</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">networks</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">amoro_network</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">aliases</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#ae81ff">warehouse.minio</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">9001</span>:<span style="color:#ae81ff">9001</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">9000</span>:<span style="color:#ae81ff">9000</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">command</span>: [ <span style="color:#e6db74">&#34;server&#34;</span>, <span style="color:#e6db74">&#34;/data&#34;</span>, <span style="color:#e6db74">&#34;--console-address&#34;</span>, <span style="color:#e6db74">&#34;:9001&#34;</span> ]
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">mc</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">depends_on</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">minio</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">minio/mc</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">mc</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">networks</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">amoro_network</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">AWS_ACCESS_KEY_ID=admin</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">AWS_SECRET_ACCESS_KEY=password</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">AWS_REGION=us-east-1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">entrypoint</span>: &gt;<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      /bin/sh -c &#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      until (/usr/bin/mc alias set minio http://minio:9000 admin password) do echo &#39;...waiting...&#39; &amp;&amp; sleep 1; done;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      /usr/bin/mc rm -r --force minio/warehouse;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      /usr/bin/mc mb minio/warehouse;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      /usr/bin/mc anonymous set public minio/warehouse;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      tail -f /dev/null
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      &#34;</span>      
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">amoro</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">apache/amoro</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">amoro</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">8081</span>:<span style="color:#ae81ff">8081</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">1630</span>:<span style="color:#ae81ff">1630</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">1260</span>:<span style="color:#ae81ff">1260</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">JVM_XMS=1024</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">networks</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">amoro_network</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">./amoro:/tmp/warehouse</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">command</span>: [<span style="color:#e6db74">&#34;/entrypoint.sh&#34;</span>, <span style="color:#e6db74">&#34;ams&#34;</span>]
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">tty</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">stdin_open</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">networks</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">amoro_network</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">driver</span>: <span style="color:#ae81ff">bridge</span>
+</span></span></code></pre></div><p>Next, start up the docker containers with this command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker-compose up
+</span></span></code></pre></div><h2 id="prepare-steps">Prepare steps</h2>
+<h3 id="create-optimizer-group">Create optimizer group</h3>
+<p>Open <a href="http://localhost:1630">http://localhost:1630</a> in a browser, enter <code>admin/admin</code> to log in to the dashboard.</p>
+<p>Click on <code>Optimizing</code> in the sidebar, choose <code>Optimizer Groups</code> and click <code>Add Group</code> button to create a new group befre creating catalog:</p>
+<p><img src="../images/quickstart/create-group.png" alt="Create group"></p>
+<h3 id="create-catalog">Create catalog</h3>
+<p>Click on <code>Catalogs</code> in the sidebar, click on the <code>+</code> button under Catalog List to create a test catalog, and name it to <code>demo_catalog</code>:</p>
+<div class="codetabs">
+<input id="spark-sql" type="radio" name="CreateCatalog" onclick="selectExampleLanguage('spark-queries', 'spark-sql')">
+<label for="spark-sql">Iceberg Format</label>
+<input id="spark-shell" type="radio" name="CreateCatalog" onclick="selectExampleLanguage('spark-queries', 'spark-shell')">
+<label for="spark-shell">Mixed-Iceberg Format</label>
+<codeblock class="spark-sql">
+      <p>To use the Iceberg Format, select <code>Type</code> as <code>Internal Catalog</code>, and choose <code>Iceberg</code> as <code>Table Format</code>.
+<img src="../images/quickstart/create-iceberg-catalog.png" alt="Create iceberg catalog"></p>
+</codeblock>
+<codeblock class="spark-shell">
+      <p>To use the Mixed-Iceberg Format, select <code>Type</code> as <code>Internal Catalog</code>, and choose <code>Mixed-Iceberg</code> as <code>Table Format</code>.
+<img src="../images/quickstart/create-mixed-catalog.png" alt="Create mixed catalog"></p>
+</codeblock>
+</div>
+<h3 id="start-optimizers">Start optimizers</h3>
+<p>Click on <code>Optimizing</code> in the sidebar, select the <code>Optimizers</code> tab, and click the <code>Create Optimizer</code> button.</p>
+<p><img src="../images/quickstart/create-optimizer.png" alt="Scale out optimizer"></p>
+<p>Choose the <code>local</code> resource group and set the concurrency of the optimizer to 1 and click <code>OK</code>.</p>
+<p>You may need to wait a few seconds and try refreshing the page, you will find the newly launched optimizer here.</p>
+<p><img src="../images/quickstart/optimizers.png" alt="Optimizers"></p>
+<div class="info">
+    You may need to wait for up to 30 seconds for the optimizer to register with AMS.
+</div>
+<h2 id="demo-steps">Demo steps</h2>
+<h3 id="initialize-tables">Initialize tables</h3>
+<p>Click on <code>Terminal</code> in the sidebar, you can create the test tables here using SQL. Terminal supports executing Spark SQL statements for now.</p>
+<div class="codetabs">
+<input id="spark-sql" type="radio" name="CreateATable" onclick="selectExampleLanguage('spark-queries', 'spark-sql')">
+<label for="spark-sql">Iceberg Format</label>
+<input id="spark-shell" type="radio" name="CreateATable" onclick="selectExampleLanguage('spark-queries', 'spark-shell')">
+<label for="spark-shell">Mixed-Iceberg Format</label>
+<codeblock class="spark-sql">
+      <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">DATABASE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> db;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> db.<span style="color:#66d9ef">user</span> (
+</span></span><span style="display:flex;"><span>    id INT,
+</span></span><span style="display:flex;"><span>    name string,
+</span></span><span style="display:flex;"><span>    ts <span style="color:#66d9ef">TIMESTAMP</span>
+</span></span><span style="display:flex;"><span>) <span style="color:#66d9ef">USING</span> iceberg 
+</span></span><span style="display:flex;"><span>PARTITIONED <span style="color:#66d9ef">BY</span> (days(ts));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> OVERWRITE db.<span style="color:#66d9ef">user</span> <span style="color:#66d9ef">VALUES</span> 
+</span></span><span style="display:flex;"><span>(<span style="color:#ae81ff">1</span>, <span style="color:#e6db74">&#34;eric&#34;</span>, <span style="color:#66d9ef">timestamp</span>(<span style="color:#e6db74">&#34;2022-07-01 12:32:00&#34;</span>)),
+</span></span><span style="display:flex;"><span>(<span style="color:#ae81ff">2</span>, <span style="color:#e6db74">&#34;frank&#34;</span>, <span style="color:#66d9ef">timestamp</span>(<span style="color:#e6db74">&#34;2022-07-02 09:11:00&#34;</span>)),
+</span></span><span style="display:flex;"><span>(<span style="color:#ae81ff">3</span>, <span style="color:#e6db74">&#34;lee&#34;</span>, <span style="color:#66d9ef">timestamp</span>(<span style="color:#e6db74">&#34;2022-07-02 10:11:00&#34;</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> db.<span style="color:#66d9ef">user</span>;
+</span></span></code></pre></div>
+</codeblock>
+<codeblock class="spark-shell">
+      <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">DATABASE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> db;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> db.<span style="color:#66d9ef">user</span> (
+</span></span><span style="display:flex;"><span>    id INT,
+</span></span><span style="display:flex;"><span>    name string,
+</span></span><span style="display:flex;"><span>    ts <span style="color:#66d9ef">TIMESTAMP</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span>(id)
+</span></span><span style="display:flex;"><span>) <span style="color:#66d9ef">USING</span> mixed_iceberg 
+</span></span><span style="display:flex;"><span>PARTITIONED <span style="color:#66d9ef">BY</span> (days(ts));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> OVERWRITE db.<span style="color:#66d9ef">user</span> <span style="color:#66d9ef">VALUES</span> 
+</span></span><span style="display:flex;"><span>(<span style="color:#ae81ff">1</span>, <span style="color:#e6db74">&#34;eric&#34;</span>, <span style="color:#66d9ef">timestamp</span>(<span style="color:#e6db74">&#34;2022-07-01 12:32:00&#34;</span>)),
+</span></span><span style="display:flex;"><span>(<span style="color:#ae81ff">2</span>, <span style="color:#e6db74">&#34;frank&#34;</span>, <span style="color:#66d9ef">timestamp</span>(<span style="color:#e6db74">&#34;2022-07-02 09:11:00&#34;</span>)),
+</span></span><span style="display:flex;"><span>(<span style="color:#ae81ff">3</span>, <span style="color:#e6db74">&#34;lee&#34;</span>, <span style="color:#66d9ef">timestamp</span>(<span style="color:#e6db74">&#34;2022-07-02 10:11:00&#34;</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> db.<span style="color:#66d9ef">user</span>;
+</span></span></code></pre></div>
+</codeblock>
+</div>
+<p>Click on the <code>RUN</code> button uppon the SQL editor, and wait for the SQL query to finish executing. You can then see the query results under the SQL editor.</p>
+<h3 id="make-some-changes">Make some changes</h3>
+<p>Execute the following SQL statements one by one in the <code>Terminal</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- insert a few rows first
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.<span style="color:#66d9ef">user</span> (id, name, ts) <span style="color:#66d9ef">VALUES</span> (<span style="color:#ae81ff">4</span>, <span style="color:#e6db74">&#39;rock&#39;</span>,  <span style="color:#66d9ef">CAST</span>(<span style="color:#e6db74">&#39;2022-07-02 01:11:20&#39;</span> <span style="color:#66d9ef">AS</span> <span style="color:#66d9ef">TIMESTAMP</span>));
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.<span style="color:#66d9ef">user</span> (id, name, ts) <span style="color:#66d9ef">VALUES</span> (<span style="color:#ae81ff">5</span>, <span style="color:#e6db74">&#39;jack&#39;</span>,  <span style="color:#66d9ef">CAST</span>(<span style="color:#e6db74">&#39;2022-07-02 05:22:10&#39;</span> <span style="color:#66d9ef">AS</span> <span style="color:#66d9ef">TIMESTAMP</span>));
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.<span style="color:#66d9ef">user</span> (id, name, ts) <span style="color:#66d9ef">VALUES</span> (<span style="color:#ae81ff">6</span>, <span style="color:#e6db74">&#39;mars&#39;</span>,  <span style="color:#66d9ef">CAST</span>(<span style="color:#e6db74">&#39;2022-07-02 08:23:20&#39;</span> <span style="color:#66d9ef">AS</span> <span style="color:#66d9ef">TIMESTAMP</span>));
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.<span style="color:#66d9ef">user</span> (id, name, ts) <span style="color:#66d9ef">VALUES</span> (<span style="color:#ae81ff">7</span>, <span style="color:#e6db74">&#39;cloe&#39;</span>,  <span style="color:#66d9ef">CAST</span>(<span style="color:#e6db74">&#39;2022-07-02 08:44:50&#39;</span> <span style="color:#66d9ef">AS</span> <span style="color:#66d9ef">TIMESTAMP</span>));
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.<span style="color:#66d9ef">user</span> (id, name, ts) <span style="color:#66d9ef">VALUES</span> (<span style="color:#ae81ff">8</span>, <span style="color:#e6db74">&#39;smith&#39;</span>, <span style="color:#66d9ef">CAST</span>(<span style="color:#e6db74">&#39;2022-07-02 10:52:20&#39;</span> <span style="color:#66d9ef">AS</span> <span style="color:#66d9ef">TIMESTAMP</span>));
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.<span style="color:#66d9ef">user</span> (id, name, ts) <span style="color:#66d9ef">VALUES</span> (<span style="color:#ae81ff">9</span>, <span style="color:#e6db74">&#39;piec&#39;</span>,  <span style="color:#66d9ef">CAST</span>(<span style="color:#e6db74">&#39;2022-07-02 11:24:30&#39;</span> <span style="color:#66d9ef">AS</span> <span style="color:#66d9ef">TIMESTAMP</span>));
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.<span style="color:#66d9ef">user</span> (id, name, ts) <span style="color:#66d9ef">VALUES</span> (<span style="color:#ae81ff">10</span>, <span style="color:#e6db74">&#39;vovo&#39;</span>, <span style="color:#66d9ef">CAST</span>(<span style="color:#e6db74">&#39;2022-07-02 12:00:20&#39;</span> <span style="color:#66d9ef">AS</span> <span style="color:#66d9ef">TIMESTAMP</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- delete some rows then
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">DELETE</span> <span style="color:#66d9ef">FROM</span> db.<span style="color:#66d9ef">user</span> <span style="color:#66d9ef">where</span> id <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">DELETE</span> <span style="color:#66d9ef">FROM</span> db.<span style="color:#66d9ef">user</span> <span style="color:#66d9ef">where</span> id <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">DELETE</span> <span style="color:#66d9ef">FROM</span> db.<span style="color:#66d9ef">user</span> <span style="color:#66d9ef">where</span> id <span style="color:#f92672">=</span> <span style="color:#ae81ff">7</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- query the table 
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">from</span> db.<span style="color:#66d9ef">user</span>;
+</span></span></code></pre></div><h3 id="check-self-optimizing">Check self-optimizing</h3>
+<p>As new data is written to the table, Amoro will automatically trigger self-optimizing on the table.</p>
+<p>Click on <code>Tables</code> in the sidebar, select the test table to enter the table details page, and switch to the <code>Optimizing</code> tab, where you can see all the self-optimizing tasks on the table.</p>
+<p><img src="../images/quickstart/table-optimizing-history.png" alt="Table optimizing history"></p>
+<p>You can also enter the <code>Optimizing</code> page through the sidebar to view the current optimizing status of all tables.</p>
+<p><img src="../images/quickstart/table-optimizing-status.png" alt="Table optimizing status"></p>
+<p>For more information on Self-Optimizing, please refer to: <a href="/docs/latest/self-optimizing/">Self-optimizing</a></p>
+<div class="info">
+    After finishing the demo, you can run the following command in the directory of docker-compose.yml to stop all containers:
+</div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker-compose down
+</span></span></code></pre></div></div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#prepare-steps">Prepare steps</a>
+      <ul>
+        <li><a href="#create-optimizer-group">Create optimizer group</a></li>
+        <li><a href="#create-catalog">Create catalog</a></li>
+        <li><a href="#start-optimizers">Start optimizers</a></li>
+      </ul>
+    </li>
+    <li><a href="#demo-steps">Demo steps</a>
+      <ul>
+        <li><a href="#initialize-tables">Initialize tables</a></li>
+        <li><a href="#make-some-changes">Make some changes</a></li>
+        <li><a href="#check-self-optimizing">Check self-optimizing</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org//js/iceberg-theme.js"></script>
+
+
+
+</html>

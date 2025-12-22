@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Benchmarks on Apache Amoro™</title>
+    <link>https://amoro.apache.org/benchmark/</link>
+    <description>Recent content in Benchmarks on Apache Amoro™</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/benchmark/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Benchmark Report</title>
+      <link>https://amoro.apache.org/benchmark-report/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/benchmark-report/</guid>
+      <description>Benchmark Report Test purpose This test aims at comparing the OLAP benchmark performance of various data lake formats in the scenario of continuous streaming ingestion in the CDC database.&#xA;Meanwhile, particular attention was paid during the testing process to the impact of enabling self-optimizing on the analytical performance of the table.&#xA;Test envrionment Hardware configuration Number OS Cpu core Memory Disk type Deployed components 1 CentOS 7 40 256 SAS HDFS、Hive、Yarn 2 CentOS 7 40 256 SAS HDFS、Hive、Yarn 3 CentOS 7 40 256 SAS HDFS、Hive、Yarn 4 CentOS 7 40 256 SAS Trino、Presto 5 CentOS 7 40 256 SAS Trino、Presto 6 CentOS 7 40 256 SAS Trino、Presto Software version Software Version Trino 380 Presto 274 Iceberg 0.</description>
+    </item>
+    <item>
+      <title>How To Benchmark</title>
+      <link>https://amoro.apache.org/benchmark-guide/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/benchmark-guide/</guid>
+      <description>Benchmark Guild This guilde introduces detailed steps for executing the benchmark to validate performance of various data lake formats.&#xA;By following the steps in the guild, you can learn about the analytical performance of different data lake table format. At the same time, you can flexibly adjust the test scenarios to obtain test results that better suit your actual scenario.&#xA;Deploy testing environment Deploy by Docker With Docker-Compose, you can quickly set up an environment for performing the benchmark.</description>
+    </item>
+  </channel>
+</rss>

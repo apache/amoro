@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Introduction on Amoro</title>
+    <link>https://amoro.apache.org/docs/0.7.0/</link>
+    <description>Recent content in Introduction on Amoro</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/docs/0.7.0/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title></title>
+      <link>https://amoro.apache.org/docs/0.7.0/readme/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/readme/</guid>
+      <description>Amoro Docs This directory contains the documentation content of Amoro.&#xA;The documentation is written in Markdown format. The images referenced in the documentation are saved in the images folder. Style Proper nouns should start with a capital letter, like Hadoop、Hive、Iceberg、Amoro </description>
+    </item>
+    <item>
+      <title>Catalogs</title>
+      <link>https://amoro.apache.org/docs/0.7.0/catalogs/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/catalogs/</guid>
+      <description>Catalogs Introduce multi-catalog A catalog is a metadata namespace that stores information about databases, tables, views, indexes, users, and UDFs. It provides a higher-level namespace for table and database. Typically, a catalog is associated with a specific type of data source or cluster. In Flink, Spark and Trino, the multi-catalog feature can be used to support SQL across data sources, such as:&#xA;SELECT c.ID, c.NAME, c.AGE, o.AMOUNT FROM MYSQL.ONLINE.CUSTOMERS c JOIN HIVE.</description>
+    </item>
+    <item>
+      <title>CDC Ingestion</title>
+      <link>https://amoro.apache.org/docs/0.7.0/cdc-ingestion/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/cdc-ingestion/</guid>
+      <description>CDC Ingestion CDC stands for Change Data Capture, which is a broad concept, as long as it can capture the change data, it can be called CDC. Flink CDC is a Log message-based data capture tool, all the inventory and incremental data can be captured. Taking MySQL as an example, it can easily capture Binlog data through Debezium and process the calculations in real time to send them to the data lake.</description>
+    </item>
+    <item>
+      <title>Configurations</title>
+      <link>https://amoro.apache.org/docs/0.7.0/configurations/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/configurations/</guid>
+      <description>Table Configurations Multi-level configuration management Amoro provides configurations that can be configured at the Catalog, Table, and Engine levels. The configuration priority is given first to the Engine, followed by the Table, and finally by the Catalog.&#xA;Catalog: Generally, we recommend users to set default values for tables through the Catalog properties configuration, such as Self-optimizing related configurations. Table: We also recommend users to specify customized configurations when Create Table, which can also be modified through Alter Table operations.</description>
+    </item>
+    <item>
+      <title>Deployment</title>
+      <link>https://amoro.apache.org/docs/0.7.0/deployment/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/deployment/</guid>
+      <description>Deployment You can choose to download the stable release package from download page, or the source code form Github and compile it according to the README.&#xA;System requirements Java 8 is required. Optional: MySQL 5.5 or higher Optional: PostgreSQL 14.x or higher Optional: ZooKeeper 3.4.x or higher Download the distribution All released package can be downloaded from download page. You can download apache-amoro-x.y.z-bin.tar.gz (x.y.z is the release number), and you can also download the runtime packages for each engine version according to the engine you are using.</description>
+    </item>
+    <item>
+      <title>Deployment On Kubernetes</title>
+      <link>https://amoro.apache.org/docs/0.7.0/deployment-on-kubernetes/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/deployment-on-kubernetes/</guid>
+      <description>Deploy AMS On Kubernetes Requirements If you want to deploy AMS on Kubernetes, you’d better get a sense of the following things.&#xA;Use AMS official docker image or build AMS docker image An active Kubernetes cluster Kubectl Helm3+ Amoro Official Docker Image You can find the official docker image at Amoro Docker Hub.&#xA;The following are images that can be used in a production environment.&#xA;apache/amoro&#xA;This is an image built based on the Amoro binary distribution package for deploying AMS.</description>
+    </item>
+    <item>
+      <title>Flink DataStream</title>
+      <link>https://amoro.apache.org/docs/0.7.0/flink-datastream/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/flink-datastream/</guid>
+      <description>Flink DataStream Add maven dependency To add a dependency on Mixed-format flink connector in Maven, add the following to your pom.xml:&#xA;&amp;lt;dependencies&amp;gt; ... &amp;lt;dependency&amp;gt; &amp;lt;groupId&amp;gt;org.apache.amoro&amp;lt;/groupId&amp;gt; &amp;lt;!-- For example: amoro-mixed-format-flink-runtime-1.15 --&amp;gt; &amp;lt;artifactId&amp;gt;amoro-mixed-format-flink-runtime-${flink.minor-version}&amp;lt;/artifactId&amp;gt; &amp;lt;!-- For example: 0.7.0-incubating --&amp;gt; &amp;lt;version&amp;gt;${amoro-mixed-format-flink.version}&amp;lt;/version&amp;gt; &amp;lt;/dependency&amp;gt; ... &amp;lt;/dependencies&amp;gt; Reading with DataStream Amoro supports reading data in Batch or Streaming mode through Java API.&#xA;Batch mode Using Batch mode to read the full and incremental data in the FileStore.</description>
+    </item>
+    <item>
+      <title>Flink DDL</title>
+      <link>https://amoro.apache.org/docs/0.7.0/flink-ddl/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/flink-ddl/</guid>
+      <description>Flink DDL Create catalogs Flink SQL The following statement can be executed to create a Flink catalog:&#xA;CREATE CATALOG &amp;lt;catalog_name&amp;gt; WITH ( &amp;#39;type&amp;#39;=&amp;#39;mixed_iceberg&amp;#39;, `&amp;lt;config_key&amp;gt;`=`&amp;lt;config_value&amp;gt;` ); Where &amp;lt;catalog_name&amp;gt; is the user-defined name of the Flink catalog, and &amp;lt;config_key&amp;gt;=&amp;lt;config_value&amp;gt; has the following configurations:&#xA;Key Default Value Type Required Description type N/A String Yes Catalog type, validate values are mixed_iceberg and mixed_hive metastore.url (none) String Yes The URL for Amoro Metastore is thrift://&amp;lt;ip&amp;gt;:&amp;lt;port&amp;gt;/&amp;lt;catalog_name_in_metastore&amp;gt;.</description>
+    </item>
+    <item>
+      <title>Flink DML</title>
+      <link>https://amoro.apache.org/docs/0.7.0/flink-dml/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/flink-dml/</guid>
+      <description>Flink DML Querying with SQL Amoro tables support reading data in stream or batch mode through Flink SQL. You can switch modes using the following methods:&#xA;-- Run Flink tasks in streaming mode in the current session SET execution.runtime-mode = streaming; -- Run Flink tasks in batch mode in the current session SET execution.runtime-mode = batch; The following Hint Options are supported:&#xA;Key Default Value Type Required Description source.parallelism (none) Integer No Defines a custom parallelism for the source.</description>
+    </item>
+    <item>
+      <title>Flink Getting Started</title>
+      <link>https://amoro.apache.org/docs/0.7.0/flink-getting-started/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/flink-getting-started/</guid>
+      <description>Flink Getting Started Iceberg format The Iceberg Format can be accessed using the Connector provided by Iceberg. Refer to the documentation at Iceberg Flink user manual for more information.&#xA;Paimon format The Paimon Format can be accessed using the Connector provided by Paimon. Refer to the documentation at Paimon Flink user manual for more information.&#xA;Mixed format The Apache Flink engine can process Amoro table data in batch and streaming mode.</description>
+    </item>
+    <item>
+      <title>Iceberg</title>
+      <link>https://amoro.apache.org/docs/0.7.0/iceberg-format/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/iceberg-format/</guid>
+      <description>Iceberg Format Iceberg format refers to Apache Iceberg table, which is an open table format for large analytical datasets designed to provide scalable, efficient, and secure data storage and query solutions. It supports data operations on multiple storage backends and provides features such as ACID transactions, multi-version control, and schema evolution, making data management and querying more flexible and convenient.&#xA;With the release of Iceberg v2, Iceberg addresses the shortcomings of row-level updates through the MOR (Merge On Read) mechanism, which better supports streaming updates.</description>
+    </item>
+    <item>
+      <title>Managing Catalogs</title>
+      <link>https://amoro.apache.org/docs/0.7.0/managing-catalogs/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/managing-catalogs/</guid>
+      <description>Managing Catalogs Users can import your test or online clusters through the catalog management function provided by the AMS Dashboard. Before adding a new Catalog, please read the following guidelines and select the appropriate creation according to your actual needs.&#xA;Create catalog In Amoro, the catalog is a namespace for a group of libraries and tables. Under the catalog, it is further divided into different databases, and under each database, there are different tables.</description>
+    </item>
+    <item>
+      <title>Managing Optimizers</title>
+      <link>https://amoro.apache.org/docs/0.7.0/managing-optimizers/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/managing-optimizers/</guid>
+      <description>Managing Optimizers The optimizer is the execution unit for performing self-optimizing tasks on a table. To isolate optimizing tasks on different tables and support the deployment of optimizers in different environments, Amoro has proposed the concepts of optimizer containers and optimizer groups:&#xA;Optimizer container: Encapsulate the deployment method of optimizers, there are four implementations for now: flink container based on Flink streaming job, spark container based on Spark job, local container based on Java Application, and external container based on manually started by users.</description>
+    </item>
+    <item>
+      <title>Metrics</title>
+      <link>https://amoro.apache.org/docs/0.7.0/metrics/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/metrics/</guid>
+      <description>Metrics Amoro build a metrics system to measure the behaviours of table management processes, like how long has it been since a table last performed self-optimizing process, and how much resources does a optimizer group currently has?&#xA;There are two types of metrics provided in the Amoro metric system: Gauge and Counter.&#xA;Gauge: Provides a value of any type at a point in time. Counter: Used to count values by incrementing and decrementing.</description>
+    </item>
+    <item>
+      <title>Mixed-Hive</title>
+      <link>https://amoro.apache.org/docs/0.7.0/mixed-hive-format/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/mixed-hive-format/</guid>
+      <description>Mixed-Hive Format Mixed-Hive format is a format that has better compatibility with Hive than Mixed-Iceberg format. Mixed-Hive format uses a Hive table as the BaseStore and an Iceberg table as the ChangeStore. Mixed-Hive format supports:&#xA;schema, partition, and types consistent with Hive format Using the Hive connector to read and write Mixed-Hive format tables as Hive tables Upgrading a Hive table in-place to a Mixed-Hive format table without data rewriting or migration, with a response time in seconds All the functional features of Mixed-Iceberg format The structure of Mixed-Hive format is shown below:</description>
+    </item>
+    <item>
+      <title>Mixed-Iceberg</title>
+      <link>https://amoro.apache.org/docs/0.7.0/mixed-iceberg-format/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/mixed-iceberg-format/</guid>
+      <description>Mixed-Iceberg Format Compared with Iceberg format, Mixed-Iceberg format provides more features:&#xA;Stronger primary key constraints that also apply to Spark OLAP performance that is production-ready for real-time data warehouses through the auto-bucket mechanism LogStore configuration that can reduce data pipeline latency from minutes to milliseconds/seconds Transaction conflict resolution mechanism that enables concurrent writes with the same primary key The design intention of Mixed-Iceberg format is to provide a storage layer for stream-batch integration and offline-real-time unified data warehouses for big data platforms based on data lakes.</description>
+    </item>
+    <item>
+      <title>Overview</title>
+      <link>https://amoro.apache.org/docs/0.7.0/formats-overview/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/formats-overview/</guid>
+      <description>Formats Overview Table format (aka. format) was first proposed by Iceberg, which can be described as follows:&#xA;It defines the relationship between tables and files, and any engine can query and retrieve data files according to the table format. New formats such as Iceberg/Delta/Hudi further define the relationship between tables and snapshots, and the relationship between snapshots and files. All write operations on the table will generate new snapshots, and all read operations on the table are based on snapshots.</description>
+    </item>
+    <item>
+      <title>Paimon</title>
+      <link>https://amoro.apache.org/docs/0.7.0/paimon-format/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/paimon-format/</guid>
+      <description>Paimon Format Paimon format refers to Apache Paimon table. Paimon is a streaming data lake platform with high-speed data ingestion, changelog tracking and efficient real-time analytics.&#xA;By registering Paimon&amp;rsquo;s catalog with Amoro, users can view information such as Schema, Options, Files, Snapshots, DDLs, Compaction information, and more for Paimon tables. Furthermore, they can operate on Paimon tables using Spark SQL in the Terminal. The current supported catalog types and file system types for Paimon are all supported.</description>
+    </item>
+    <item>
+      <title>Self-Optimizing</title>
+      <link>https://amoro.apache.org/docs/0.7.0/self-optimizing/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/self-optimizing/</guid>
+      <description>Self-optimizing Introduction Lakehouse is characterized by its openness and loose coupling, with data and files maintained by users through various engines. While this architecture appears to be well-suited for T+1 scenarios, as more attention is paid to applying Lakehouse to streaming data warehouses and real-time analysis scenarios, challenges arise. For example:&#xA;Streaming writes bring a massive amount of fragment files CDC ingestion and streaming updates generate excessive redundant data Using the new data lake format leads to orphan files and expired snapshots.</description>
+    </item>
+    <item>
+      <title>Spark Configuration</title>
+      <link>https://amoro.apache.org/docs/0.7.0/spark-configuration/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/spark-configuration/</guid>
+      <description>Spark Configuration Catalogs configuration Using Mixed-Format in a standalone catalog Starting from version 3.x, Spark supports configuring an independent Catalog. If you want to use a Mixed-Format table in a standalone Catalog, you can configure it as follows:&#xA;spark.sql.catalog.mixed_catalog=org.apache.amoro.spark.MixedFormatSparkCatalog spark.sql.catalog.mixed_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE} Then, execute the following SQL in the Spark SQL Client to switch to the corresponding catalog.&#xA;use mixed_catalog; Of course, you can also access Mixed-Format tables by directly using the triplet mixed_catalog.</description>
+    </item>
+    <item>
+      <title>Spark DDL</title>
+      <link>https://amoro.apache.org/docs/0.7.0/spark-ddl/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/spark-ddl/</guid>
+      <description>Spark DDL CREATE TABLE To create an MixedFormat table under an Amoro Catalog, you can use using mixed_iceberg or using mixed_hive to specify the provider in the CREATE TABLE statement. If the Catalog type is Hive, the created table will be a Hive-compatible table.&#xA;CREATE TABLE mixed_catalog.db.sample ( id bigint COMMENT &amp;#34;unique id&amp;#34;, data string ) USING mixed_iceberg PRIMARY KEY You can use PRIMARY KEY in the CREATE TABLE statement to specify the primary key column.</description>
+    </item>
+    <item>
+      <title>Spark Getting Started</title>
+      <link>https://amoro.apache.org/docs/0.7.0/spark-getting-started/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/spark-getting-started/</guid>
+      <description>Spark Getting Started Iceberg Format The Iceberg Format can be accessed using the Connector provided by Iceberg. Refer to the documentation at Iceberg Spark Connector for more information.&#xA;Paimon Format The Paimon Format can be accessed using the Connector provided by Paimon. Refer to the documentation at Paimon Spark Connector for more information.&#xA;Mixed Format To use Amoro in a Spark shell, use the &amp;ndash;packages option:&#xA;spark-shell --packages org.apache.amoro:amoro-mixed-spark-3.3-runtime:0.7.0 If you want to include the connector in your Spark installation, add the amoro-mixed-spark-3.</description>
+    </item>
+    <item>
+      <title>Spark Queries</title>
+      <link>https://amoro.apache.org/docs/0.7.0/spark-queries/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/spark-queries/</guid>
+      <description>Spark Queries Querying with SQL Querying Mixed-Format table by merge on read Using Select statement to query on Mixed-Format tables.&#xA;SELECT * FROM mixed_catalog.db.sample The Mixed-Format connector will merge the data from BaseStore and ChangeStore.&#xA;Query on change store For a Mixed-Format table with primary keys. you can query on ChangeStore by .change.&#xA;SELECT * FROM mixed_catalog.db.sample.change +---+----+----+---------------+------------+--------------+ | id|name|data|_transaction_id|_file_offset|_change_action| +---+----+----+---------------+------------+--------------+ | 1|dddd|abcd| 3| 1| INSERT| | 1|dddd|abcd| 3| 2| DELETE| +---+----+----+---------------+------------+--------------+ The addition columns are:</description>
+    </item>
+    <item>
+      <title>Spark Writes</title>
+      <link>https://amoro.apache.org/docs/0.7.0/spark-writes/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/spark-writes/</guid>
+      <description>Spark Writes Writing with SQL INSERT OVERWRITE INSERT OVERWRITE can replace the partition in a table with the results of a query.&#xA;The default overwrite mode of Spark is Static, you can change the overwrite mode by&#xA;SET spark.sql.sources.partitionOverwriteMode=dynamic To demonstrate the behavior of dynamic and static overwrites, a test table is defined using the following DDL:&#xA;CREATE TABLE mixed_catalog.db.sample ( id int, data string, ts timestamp, primary key (id)) USING mixed_iceberg PARTITIONED BY (days(ts)) When Spark&amp;rsquo;s overwrite mode is dynamic, the partitions of the rows generated by the SELECT query will be replaced.</description>
+    </item>
+    <item>
+      <title>Table Watermark</title>
+      <link>https://amoro.apache.org/docs/0.7.0/table-watermark/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/table-watermark/</guid>
+      <description>Table Watermark Table freshness Data freshness represents timeliness, and in many discussions, freshness is considered one of the important indicators of data quality. In traditional offline data warehouses, higher cost typically means better performance, creating a typical binary paradox in terms of cost-performance trade-off. However, in high-freshness streaming data warehouses, massive small files and frequent updates can lead to performance degradation. The higher the freshness, the greater the impact on performance.</description>
+    </item>
+    <item>
+      <title>Trino</title>
+      <link>https://amoro.apache.org/docs/0.7.0/trino/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/trino/</guid>
+      <description>Trino Iceberg format Iceberg format can be accessed using the Iceberg Connector provided by Trino. please refer to the documentation at Iceberg Trino user manual for more information.&#xA;Paimon format Paimon format can be accessed using the Paimon Connector provided by Trino. please refer to the documentation at Paimon Trino user manual for more information.&#xA;Mixed format Install Create the {trino_home}/plugin/amoro directory in the Trino installation package, and extract the contents of the amoro-trino package amoro-mixed-format-trino-xx.</description>
+    </item>
+    <item>
+      <title>Using Kyuubi By Terminal</title>
+      <link>https://amoro.apache.org/docs/0.7.0/using-kyuubi/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/using-kyuubi/</guid>
+      <description>Using Kyuubi By Terminal Prerequisites:&#xA;There must be a running Kyuubi. To deploy and run Kyuubi, please refer to Kyuubi doc Terminal supports interfacing with Kyuubi to submit SQL to Kyuubi for execution. All you need to do is add the Kyuubi configuration as instructed below:&#xA;ams: terminal: backend: kyuubi kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/ # kyuubi Connection Address Kerberos Authentication Amoro terminal uses the Kerberos authentication information from the catalog to connect to Kyuubi.</description>
+    </item>
+    <item>
+      <title>Using Logstore</title>
+      <link>https://amoro.apache.org/docs/0.7.0/flink-using-logstore/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/flink-using-logstore/</guid>
+      <description>Using Logstore Due to the limitations of traditional offline data warehouse architectures in supporting real-time business needs, real-time data warehousing has experienced rapid evolution in recent years. In the architecture of real-time data warehousing, Apache Kafka is often used as the storage system for real-time data. However, this also brings about the issue of data disconnection between offline data warehouses.&#xA;Developers often need to pay attention to data stored in HDFS as well as data in Kafka, which increases the complexity of business development.</description>
+    </item>
+    <item>
+      <title>Using Tables</title>
+      <link>https://amoro.apache.org/docs/0.7.0/using-tables/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.7.0/using-tables/</guid>
+      <description>Using Tables The SQL execution tool Terminal is provided in AMS dashboard to help users quickly create, modify and delete tables. It is also available in Spark and Flink and other engines to manage tables using SQL.&#xA;Create table After logging into AMS dashboard, go to Terminal, enter the table creation statement and execute it to complete the table creation. The following is an example of table creation:&#xA;create table test_db.</description>
+    </item>
+  </channel>
+</rss>

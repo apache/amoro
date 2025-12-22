@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Formats on Amoro</title>
+    <link>https://amoro.apache.org/docs/0.6.1/formats/</link>
+    <description>Recent content in Formats on Amoro</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/docs/0.6.1/formats/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Paimon</title>
+      <link>https://amoro.apache.org/docs/0.6.1/paimon-format/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/paimon-format/</guid>
+      <description>&lt;h1 id=&#34;paimon-format&#34;&gt;Paimon Format&lt;/h1&gt;&#xA;&lt;p&gt;Paimon format refers to &lt;a href=&#34;https://paimon.apache.org/&#34;&gt;Apache Paimon&lt;/a&gt; table.&#xA;Paimon is a streaming data lake platform with high-speed data ingestion, changelog tracking and efficient real-time analytics.&lt;/p&gt;&#xA;&lt;p&gt;By registering Paimon&amp;rsquo;s catalog with Amoro, users can view information such as Schema, Options, Files, Snapshots, DDLs, Compaction information, and more for Paimon tables.&#xA;Furthermore, they can operate on Paimon tables using Spark SQL in the Terminal. The current supported catalog types and file system types for Paimon are all supported.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Iceberg</title>
+      <link>https://amoro.apache.org/docs/0.6.1/iceberg-format/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/iceberg-format/</guid>
+      <description>&lt;h1 id=&#34;iceberg-format&#34;&gt;Iceberg Format&lt;/h1&gt;&#xA;&lt;p&gt;Iceberg format refers to &lt;a href=&#34;https://iceberg.apache.org&#34;&gt;Apache Iceberg&lt;/a&gt; table, which is an open table format for large analytical datasets designed to provide scalable, efficient, and secure data storage and query solutions.&#xA;It supports data operations on multiple storage backends and provides features such as ACID transactions, multi-version control, and schema evolution, making data management and querying more flexible and convenient.&lt;/p&gt;&#xA;&lt;p&gt;With the release of &lt;a href=&#34;https://iceberg.apache.org/spec/&#34;&gt;Iceberg v2&lt;/a&gt;,  Iceberg addresses the shortcomings of row-level updates through the MOR (Merge On Read) mechanism, which better supports streaming updates.&#xA;However, as data and delete files are written, the read performance and availability of the table will decrease, and if not maintained in time, the table will quickly become unusable.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Mixed-Hive</title>
+      <link>https://amoro.apache.org/docs/0.6.1/mixed-hive-format/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/mixed-hive-format/</guid>
+      <description>&lt;h1 id=&#34;mixed-hive-format&#34;&gt;Mixed-Hive Format&lt;/h1&gt;&#xA;&lt;p&gt;Mixed-Hive format is a format that has better compatibility with Hive than Mixed-Iceberg format.&#xA;Mixed-Hive format uses a Hive table as the BaseStore and an Iceberg table as the ChangeStore. Mixed-Hive format supports:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;schema, partition, and types consistent with Hive format&lt;/li&gt;&#xA;&lt;li&gt;Using the Hive connector to read and write Mixed-Hive format tables as Hive tables&lt;/li&gt;&#xA;&lt;li&gt;Upgrading a Hive table in-place to a Mixed-Hive format table without data rewriting or migration, with a response time in seconds&lt;/li&gt;&#xA;&lt;li&gt;All the functional features of Mixed-Iceberg format&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;The structure of Mixed-Hive format is shown below:&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Mixed-Iceberg</title>
+      <link>https://amoro.apache.org/docs/0.6.1/mixed-iceberg-format/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/mixed-iceberg-format/</guid>
+      <description>&lt;h1 id=&#34;mixed-iceberg-format&#34;&gt;Mixed-Iceberg Format&lt;/h1&gt;&#xA;&lt;p&gt;Compared with Iceberg format, Mixed-Iceberg format provides more features:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Stronger primary key constraints that also apply to Spark&lt;/li&gt;&#xA;&lt;li&gt;OLAP performance that is production-ready for real-time data warehouses through the auto-bucket mechanism&lt;/li&gt;&#xA;&lt;li&gt;LogStore configuration that can reduce data pipeline latency from minutes to milliseconds/seconds&lt;/li&gt;&#xA;&lt;li&gt;Transaction conflict resolution mechanism that enables concurrent writes with the same primary key&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;The design intention of Mixed-Iceberg format is to provide a storage layer for stream-batch integration and offline-real-time unified data warehouses for big data platforms based on data lakes.&#xA;Under this goal-driven approach, Amoro designs Mixed-Iceberg format as a three-tier structure, with each level named after a different TableStore:&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Overview</title>
+      <link>https://amoro.apache.org/docs/0.6.1/formats-overview/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/0.6.1/formats-overview/</guid>
+      <description>&lt;h1 id=&#34;formats-overview&#34;&gt;Formats Overview&lt;/h1&gt;&#xA;&lt;p&gt;Table format (aka. format) was first proposed by Iceberg, which can be described as follows:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;It defines the relationship between tables and files, and any engine can query and retrieve data files according to the table format.&lt;/li&gt;&#xA;&lt;li&gt;New formats such as Iceberg/Delta/Hudi further define the relationship between tables and snapshots, and the relationship between snapshots and files.&#xA;All write operations on the table will generate new snapshots, and all read operations on the table are based on snapshots.&#xA;Snapshots bring MVCC, ACID, and Transaction capabilities to data lakes.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;In addition, new table formats such as &lt;a href=&#34;https://Iceberg.apache.org/&#34;&gt;Iceberg&lt;/a&gt; also provide many advanced features such as schema evolve, hidden partition, and data skip.&#xA;&lt;a href=&#34;https://hudi.apache.org/&#34;&gt;Hudi&lt;/a&gt; and &lt;a href=&#34;https://delta.io/&#34;&gt;Delta&lt;/a&gt; may have some differences in specific functions, but we see that the standard of table formats is gradually established with the functional convergence of these three open-source projects in the past two years.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

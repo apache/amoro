@@ -1,0 +1,816 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Self-Optimizing</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/0.7.0//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Quickstart</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../quickstart-setup/">Setup</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../quick-demo/">Quick Demo</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.7.0/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.7.0/../../roadmap/">Roadmap</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.0/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/0.7.0//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="self-optimizing">Self-optimizing</h1>
+<h2 id="introduction">Introduction</h2>
+<p>Lakehouse is characterized by its openness and loose coupling, with data and files maintained by users through various engines. While this
+architecture appears to be well-suited for T+1 scenarios, as more attention is paid to applying Lakehouse to streaming data warehouses and real-time
+analysis scenarios, challenges arise. For example:</p>
+<ul>
+<li>Streaming writes bring a massive amount of fragment files</li>
+<li>CDC ingestion and streaming updates generate excessive redundant data</li>
+<li>Using the new data lake format leads to orphan files and expired snapshots.</li>
+</ul>
+<p>These issues can significantly affect the performance and cost of data analysis. Therefore, Amoro has introduced a Self-optimizing mechanism to
+create an out-of-the-box Streaming Lakehouse management service that is as user-friendly as a traditional database or data warehouse. The new table
+format is used for this purpose. Self-optimizing involves various procedures such as file compaction, deduplication, and sorting.</p>
+<p>The architecture and working mechanism of Self-optimizing are shown in the figure below:</p>
+<p><img src="../images/concepts/self-optimizing_arch.png" alt="Self-optimizing architecture"></p>
+<p>The Optimizer is a component responsible for executing Self-optimizing tasks. It is a resident process managed by AMS. AMS is responsible for
+detecting and planning Self-optimizing tasks for tables, and then scheduling them to Optimizers for distributed execution in real-time. Finally, AMS
+is responsible for submitting the optimizing results. Amoro achieves physical isolation of Optimizers through the Optimizer Group.</p>
+<p>The core features of Amoro&rsquo;s Self-optimizing are:</p>
+<ul>
+<li>Automated, Asynchronous and Transparent — Continuous background detecting of file changes, asynchronous distributed execution of optimizing tasks,
+transparent and imperceptible to users</li>
+<li>Resource Isolation and Sharing — Allow resources to be isolated and shared at the table level, as well as setting resource quotas</li>
+<li>Flexible and Scalable Deployment — Optimizers support various deployment methods and convenient scaling</li>
+</ul>
+<h2 id="self-optimizing-mechanism">Self-optimizing mechanism</h2>
+<p>During the process of writing data, there may be two types of amplification: read amplification and write amplification:</p>
+<ul>
+<li>Read amplification — If an excessive amount of fragment files are generated during the writing process, or if there is an excessive mapping of
+delete and insert files (which may be a familiar issue for users of the Iceberg v2 format), and the optimizing cannot keep up with the rate of
+fragment file generation, it can significantly degrade reading performance.</li>
+<li>Write amplification — Frequently scheduling optimizing can lead to frequent compaction and rewriting of existing files, which causes resource
+competition and waste of CPU/IO/Memory, slows down the optimization speed, and further intensify read amplification.</li>
+</ul>
+<p>Frequent execution of optimizing is necessary to alleviate read amplification, but it can lead to write amplification. The design of self-optimizing
+needs trade off between read and write amplification. Amoro&rsquo;s Self-optimizing takes inspiration from the Generational Garbage Collection algorithm
+in the JVM. Files are divided into Fragments and Segments based on their sizes, and different Self-optimizing processes executed on Fragments and
+Segments are classified into two types: minor and major. Therefore, Amoro v0.4 introduces two parameters to define Fragments and Segments:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-SQL" data-lang="SQL"><span style="display:flex;"><span><span style="color:#75715e">-- Target file Size for Self-optimizing 
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">self</span><span style="color:#f92672">-</span>optimizing.target<span style="color:#f92672">-</span><span style="color:#66d9ef">size</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">134217728</span>(<span style="color:#ae81ff">128</span>MB)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- The fragment file size threshold for Self-optimizing
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">self</span><span style="color:#f92672">-</span>optimizing.fragment<span style="color:#f92672">-</span>ratio <span style="color:#f92672">=</span> <span style="color:#ae81ff">8</span>
+</span></span></code></pre></div><p><code>self-optimizing.target-size</code> defines the target output size for major optimizing, which is set to 128 MB by default. <code>self-optimizing.fragment-ratio</code>
+defines the ratio of the fragment file threshold to the target-size, with a value of 8 indicating that the default fragment threshold is 1/8 of the
+target-size, or 16 MB for a default target-size of 128 MB. Files smaller than 16 MB are considered fragments, while files larger than 16 MB are
+considered segments, as shown in the diagram below:</p>
+<p><img src="../images/concepts/minor_optimizing.png" alt="Minor optimizing"></p>
+<p>The goal of Minor optimizing is to alleviate read amplification issues, which entails two tasks：</p>
+<ul>
+<li>Compact fragment files into segment files as quickly as possible. Minor optimizing will be executed more frequently when fragment files are rapidly
+generated.</li>
+<li>Converting from a write-friendly file format to a read-friendly file format, which involves transitioning ChangeStore to BaseStore for the
+Mixed Format, and eq-delete files to pos-delete files for the Iceberg Format.</li>
+</ul>
+<p>After executing Minor optimizing multiple times, there will be many Segment files in the tablespace. Although in most cases, the read efficiency
+of Segment files can meet performance requirements, however:</p>
+<ul>
+<li>There may be a significant amount of accumulated delete data on each Segment file</li>
+<li>There may be a lot of duplicate data on primary keys between different Segment files</li>
+</ul>
+<p>At this stage, the reading performance problem is no longer caused by the read amplification issue resulting from small file size and file format.
+Instead, it is due to the presence of excessive redundant data that needs to be merged and cleaned up during merge-on-read. To address this problem,
+Amoro introduces major optimizing which merges Segment files to clean up redundant data and control its amount to a level that is favorable to
+reading. Minor optimizing has already performed multiple rounds of deduplication, and major optimizing is not scheduled frequently to avoid write
+amplification issues. Additionally, Full optimizing merges all files in the target space into a single file, which is a special case of
+major optimizing.</p>
+<p><img src="../images/concepts/major_optimizing.png" alt="Major optimizing"></p>
+<p>The design of Major optimizing and Minor optimizing takes inspiration from the Generational Garbage Collection algorithm of JVM. The execution
+logic of both optimizing is consistent, as they both involve file compaction, data deduplication, and conversion from write-friendly format to
+read-friendly format. The input-output relationships of Minor, Major, and Full optimizing are shown in the following table:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Self-optimizing type</th>
+<th style="text-align:left">Input space</th>
+<th style="text-align:left">Output space</th>
+<th style="text-align:left">Input file types</th>
+<th style="text-align:left">Output file types</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">minor</td>
+<td style="text-align:left">fragment</td>
+<td style="text-align:left">fragment/segment</td>
+<td style="text-align:left">insert, eq-delete, pos-delete</td>
+<td style="text-align:left">insert, pos-delete</td>
+</tr>
+<tr>
+<td style="text-align:left">major</td>
+<td style="text-align:left">fragment, segment</td>
+<td style="text-align:left">segment</td>
+<td style="text-align:left">insert, eq-delete, pos-delete</td>
+<td style="text-align:left">insert, pos-delete</td>
+</tr>
+<tr>
+<td style="text-align:left">full</td>
+<td style="text-align:left">fragment, segment</td>
+<td style="text-align:left">segment</td>
+<td style="text-align:left">insert, eq-delete, pos-delete</td>
+<td style="text-align:left">insert</td>
+</tr>
+</tbody>
+</table>
+<h2 id="self-optimizing-scheduling-policy">Self-optimizing scheduling policy</h2>
+<p>AMS determines the Scheduling Policy to sequence the self-optimization process for different tables. The actual resources allocated for
+Self-optimizing for each table are determined based on the chosen Scheduling Policy. Quota is used by Amoro to define the expected resource usage for
+each table, while Quota occupation represents the percentage of actual resource usage compared to the expected usage. The AMS page allows viewing of
+the Quota and Quota occupation for each table&rsquo;s Self-optimizing:</p>
+<p><img src="../images/concepts/quota-occupation.png" alt="quota_and_occupation"></p>
+<p>Different optimizer groups can be configured with different scheduling policies to meet various optimization requirements.
+See: <a href="../managing-optimizers#optimizer-group">Optimizer Group Configuration</a>。</p>
+<p>Users can also disable the Self-optimizing for a table by configuring the following settings on the table, which will prevent it from being scheduled
+for optimizing.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-SQL" data-lang="SQL"><span style="display:flex;"><span><span style="color:#66d9ef">self</span><span style="color:#f92672">-</span>optimizing.enabled <span style="color:#f92672">=</span> <span style="color:#66d9ef">false</span>;
+</span></span></code></pre></div><p>If you are working with non-updatable tables like logs or sensor data and are used to utilizing the Spark Rewrite Action offered by Iceberg, you can
+turn off the Self-optimizing.</p>
+<p>However, if the table is configured with a primary key and supports CDC ingestion and streaming updates (e.g., database synchronization tables or
+dimensionally aggregated tables), it is advisable to enable the Self-optimizing.</p>
+<p>Currently, there are two main scheduling policies available: <code>Quota</code> and <code>Balanced</code>.</p>
+<h3 id="quota">Quota</h3>
+<p>The <code>Quota</code> strategy is a scheduling policy that schedules based on resource usage. The Self-optimizing resource usage of a single table is managed
+by configuring the quota configuration on the table:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-SQL" data-lang="SQL"><span style="display:flex;"><span><span style="color:#75715e">-- Quota for Self-optimizing, indicating the CPU resource the table can take up
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">self</span><span style="color:#f92672">-</span>optimizing.quota <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>.<span style="color:#ae81ff">1</span>;
+</span></span></code></pre></div><p>Quota defines the maximum CPU usage that a single table can use, but Self-optimizing is actually executed in a distributed manner, and actual resource
+usage is dynamically managed based on actual execution time.In the optimizing management Web UI, the dynamic quota usage of a single table can be
+viewed through the &ldquo;Quota Occupy&rdquo; metric. From a design perspective, the quota occupy metric should dynamically approach 100%.</p>
+<p>In a platform, two situations may occur: overselling and overbuying.</p>
+<ul>
+<li>Overselling — If all optimizer configurations exceed the total quota of all table configurations, the quota occupy metric may dynamically approach
+above 100%</li>
+<li>Overbuying — If all optimizer configurations are lower than the total quota of all table configurations, the quota occupy metric should dynamically
+approach below 100%</li>
+</ul>
+<h3 id="balanced">Balanced</h3>
+<p>The <code>Balanced</code> strategy is a scheduling strategy based on time progression, where tables that have not been Self-optimized for a longer time have a
+higher scheduling priority. This strategy aims to keep the self-optimizing progress of each table at a similar level, which can avoid the situation
+where tables with high resource consumption do not perform Self-optimizing for a long time, thus affecting the overall query efficiency in the quota
+scheduling strategy.</p>
+<p>If there is no special requirement for resource usage among the tables in an optimizer group, and all tables are expected to have decent query
+efficiency, then the <code>Balanced</code> strategy is a good choice.</p>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#self-optimizing-mechanism">Self-optimizing mechanism</a></li>
+    <li><a href="#self-optimizing-scheduling-policy">Self-optimizing scheduling policy</a>
+      <ul>
+        <li><a href="#quota">Quota</a></li>
+        <li><a href="#balanced">Balanced</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/0.7.0//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.0//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/0.7.0//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.0//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.0//js/iceberg-theme.js"></script>
+
+
+
+</html>

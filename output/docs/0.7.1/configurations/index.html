@@ -1,0 +1,1087 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Configurations</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/0.7.1//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="../../quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.7.1/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/0.7.1/../../roadmap/">Roadmap</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/0.7.1/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/0.7.1//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="table-configurations">Table Configurations</h1>
+<h2 id="multi-level-configuration-management">Multi-level configuration management</h2>
+<p>Amoro provides configurations that can be configured at the <code>Catalog</code>, <code>Table</code>, and <code>Engine</code> levels. The configuration
+priority is given first to the <code>Engine</code>, followed by the <code>Table</code>, and finally by the <code>Catalog</code>.</p>
+<ul>
+<li>Catalog: Generally, we recommend
+users to set default values for tables through the <a href="../managing-catalogs/#configure-properties">Catalog properties configuration</a>, such as Self-optimizing related configurations.</li>
+<li>Table: We also recommend users to
+specify customized configurations when <a href="../using-tables/#create-table">Create Table</a>, which can also be
+modified through <a href="../using-tables/#modify-table">Alter Table</a> operations.</li>
+<li>Engine: If tuning is required in the engines, then consider configuring it at the engine level, refer to
+<a href="../spark-configuration/">Spark</a> and <a href="../flink-dml/">Flink</a>.</li>
+</ul>
+<h2 id="self-optimizing-configurations">Self-optimizing configurations</h2>
+<p>Self-optimizing configurations are applicable to both Iceberg Format and Mixed streaming Format.</p>
+<table>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>self-optimizing.enabled</td>
+          <td>true</td>
+          <td>Enables Self-optimizing</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.group</td>
+          <td>default</td>
+          <td>Optimizer group for Self-optimizing</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.quota</td>
+          <td>0.1</td>
+          <td>Quota for Self-optimizing, indicating the CPU resource the table can take up</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.execute.num-retries</td>
+          <td>5</td>
+          <td>Number of retries after failure of Self-optimizing</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.target-size</td>
+          <td>134217728(128MB)</td>
+          <td>Target size for Self-optimizing</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.max-file-count</td>
+          <td>10000</td>
+          <td>Maximum number of files processed by a Self-optimizing process</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.max-task-size-bytes</td>
+          <td>134217728(128MB)</td>
+          <td>Maximum file size bytes in a single task for splitting tasks</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.fragment-ratio</td>
+          <td>8</td>
+          <td>The fragment file size threshold. We could divide self-optimizing.target-size by this ratio to get the actual fragment file size</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.min-target-size-ratio</td>
+          <td>0.75</td>
+          <td>The undersized segment file size threshold. Segment files under this threshold will be considered for rewriting</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.minor.trigger.file-count</td>
+          <td>12</td>
+          <td>The minimum number of files to trigger minor optimizing is determined by the sum of fragment file count and equality delete file count</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.minor.trigger.interval</td>
+          <td>3600000(1 hour)</td>
+          <td>The time interval in milliseconds to trigger minor optimizing</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.major.trigger.duplicate-ratio</td>
+          <td>0.1</td>
+          <td>The ratio of duplicate data of segment files to trigger major optimizing</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.full.trigger.interval</td>
+          <td>-1(closed)</td>
+          <td>The time interval in milliseconds to trigger full optimizing</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.full.rewrite-all-files</td>
+          <td>true</td>
+          <td>Whether full optimizing rewrites all files or skips files that do not need to be optimized</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.min-plan-interval</td>
+          <td>60000</td>
+          <td>The minimum time interval between two self-optimizing planning action</td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="data-cleaning-configurations">Data-cleaning configurations</h2>
+<p>Data-cleaning configurations are applicable to both Iceberg Format and Mixed streaming Format.</p>
+<table>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>table-expire.enabled</td>
+          <td>true</td>
+          <td>Enables periodically expire table</td>
+      </tr>
+      <tr>
+          <td>change.data.ttl.minutes</td>
+          <td>10080(7 days)</td>
+          <td>Time to live in minutes for data of ChangeStore</td>
+      </tr>
+      <tr>
+          <td>snapshot.base.keep.minutes</td>
+          <td>720(12 hours)</td>
+          <td>Table-Expiration keeps the latest snapshots of BaseStore within a specified time in minutes</td>
+      </tr>
+      <tr>
+          <td>clean-orphan-file.enabled</td>
+          <td>false</td>
+          <td>Enables periodically clean orphan files</td>
+      </tr>
+      <tr>
+          <td>clean-orphan-file.min-existing-time-minutes</td>
+          <td>2880(2 days)</td>
+          <td>Cleaning orphan files keeps the files modified within a specified time in minutes</td>
+      </tr>
+      <tr>
+          <td>clean-dangling-delete-files.enabled</td>
+          <td>true</td>
+          <td>Whether to enable cleaning of dangling delete files</td>
+      </tr>
+      <tr>
+          <td>data-expire.enabled</td>
+          <td>false</td>
+          <td>Whether to enable data expiration</td>
+      </tr>
+      <tr>
+          <td>data-expire.level</td>
+          <td>partition</td>
+          <td>Level of data expiration. Including partition and file</td>
+      </tr>
+      <tr>
+          <td>data-expire.field</td>
+          <td>NULL</td>
+          <td>Field used to determine data expiration, supporting timestamp/timestampz/long type and string type field in date format</td>
+      </tr>
+      <tr>
+          <td>data-expire.datetime-string-pattern</td>
+          <td>yyyy-MM-dd</td>
+          <td>Pattern used for matching string datetime</td>
+      </tr>
+      <tr>
+          <td>data-expire.datetime-number-format</td>
+          <td>TIMESTAMP_MS</td>
+          <td>Timestamp unit for long field. Including TIMESTAMP_MS and TIMESTAMP_S</td>
+      </tr>
+      <tr>
+          <td>data-expire.retention-time</td>
+          <td>NULL</td>
+          <td>Retention period for data expiration. For example, 1d means retaining data for 1 day. Other supported units include h (hour), min (minute), s (second), ms (millisecond), etc.</td>
+      </tr>
+      <tr>
+          <td>data-expire.base-on-rule</td>
+          <td>LAST_COMMIT_TIME</td>
+          <td>A rule to indicate how to start expire data. Including LAST_COMMIT_TIME and CURRENT_TIME. LAST_COMMIT_TIME uses the timestamp of latest commit snapshot which is not optimized as the start of the expiration, which ensures that the table has <code>retention-time</code> data</td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="tags-configurations">Tags configurations</h2>
+<p>Tags configurations are applicable to Iceberg Format only now, and will be supported in Mixed Format
+soon.</p>
+<table>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>tag.auto-create.enabled</td>
+          <td>false</td>
+          <td>Enables automatically creating tags</td>
+      </tr>
+      <tr>
+          <td>tag.auto-create.trigger.period</td>
+          <td>daily</td>
+          <td>Period of creating tags, support <code>daily</code>,<code>hourly</code> now</td>
+      </tr>
+      <tr>
+          <td>tag.auto-create.trigger.offset.minutes</td>
+          <td>0</td>
+          <td>The minutes by which the tag is created after midnight (00:00)</td>
+      </tr>
+      <tr>
+          <td>tag.auto-create.trigger.max-delay.minutes</td>
+          <td>60</td>
+          <td>The maximum delay time for creating a tag</td>
+      </tr>
+      <tr>
+          <td>tag.auto-create.tag-format</td>
+          <td>&rsquo;tag-&lsquo;yyyyMMdd for daily and &rsquo;tag-&lsquo;yyyyMMddHH for hourly periods</td>
+          <td>The format of the name for tag. Modifying this configuration will not take effect on old tags</td>
+      </tr>
+      <tr>
+          <td>tag.auto-create.max-age-ms</td>
+          <td>-1</td>
+          <td>Time of automatically created Tag to retain, -1 means keep it forever. Modifying this configuration will not take effect on old tags</td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="mixed-format-configurations">Mixed Format configurations</h2>
+<p>If using Iceberg Format，please refer to <a href="https://iceberg.apache.org/docs/latest/configuration/">Iceberg configurations</a>，the following configurations are only applicable to Mixed Format.</p>
+<h3 id="reading-configurations">Reading configurations</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>read.split.open-file-cost</td>
+          <td>4194304(4MB)</td>
+          <td>The estimated cost to open a file</td>
+      </tr>
+      <tr>
+          <td>read.split.planning-lookback</td>
+          <td>10</td>
+          <td>Number of bins to consider when combining input splits</td>
+      </tr>
+      <tr>
+          <td>read.split.target-size</td>
+          <td>134217728(128MB)</td>
+          <td>Target size when combining data input splits</td>
+      </tr>
+      <tr>
+          <td>read.split.delete-ratio</td>
+          <td>0.05</td>
+          <td>When the ratio of delete files is below this threshold, the read task will be split into more tasks to improve query speed</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="writing-configurations">Writing configurations</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>base.write.format</td>
+          <td>parquet</td>
+          <td>File format for the table for BaseStore, applicable to KeyedTable</td>
+      </tr>
+      <tr>
+          <td>change.write.format</td>
+          <td>parquet</td>
+          <td>File format for the table for ChangeStore, applicable to KeyedTable</td>
+      </tr>
+      <tr>
+          <td>write.format.default</td>
+          <td>parquet</td>
+          <td>Default file format for the table, applicable to UnkeyedTable</td>
+      </tr>
+      <tr>
+          <td>base.file-index.hash-bucket</td>
+          <td>4</td>
+          <td>Initial number of buckets for BaseStore auto-bucket</td>
+      </tr>
+      <tr>
+          <td>change.file-index.hash-bucket</td>
+          <td>4</td>
+          <td>Initial number of buckets for ChangeStore auto-bucket</td>
+      </tr>
+      <tr>
+          <td>write.target-file-size-bytes</td>
+          <td>134217728(128MB)</td>
+          <td>Target size when writing</td>
+      </tr>
+      <tr>
+          <td>write.upsert.enabled</td>
+          <td>false</td>
+          <td>Enable upsert mode, multiple insert data with the same primary key will be merged if enabled</td>
+      </tr>
+      <tr>
+          <td>write.distribution-mode</td>
+          <td>hash</td>
+          <td>Shuffle rules for writing. UnkeyedTable can choose between none and hash, while KeyedTable can only choose hash</td>
+      </tr>
+      <tr>
+          <td>write.distribution.hash-mode</td>
+          <td>auto</td>
+          <td>Auto-bucket mode, which supports primary-key, partition-key, primary-partition-key, and auto</td>
+      </tr>
+      <tr>
+          <td>base.refresh-interval</td>
+          <td>-1 (Closed)</td>
+          <td>The interval for refreshing the BaseStore</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="logstore-configurations">LogStore configurations</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>log-store.enabled</td>
+          <td>false</td>
+          <td>Enables LogStore</td>
+      </tr>
+      <tr>
+          <td>log-store.type</td>
+          <td>kafka</td>
+          <td>Type of LogStore, which supports &lsquo;kafka&rsquo; and &lsquo;pulsar&rsquo;</td>
+      </tr>
+      <tr>
+          <td>log-store.address</td>
+          <td>NULL</td>
+          <td>Address of LogStore, required when LogStore enabled. For Kafka, this is the Kafka bootstrap servers. For Pulsar, this is the Pulsar Service URL, such as &lsquo;pulsar://localhost:6650&rsquo;</td>
+      </tr>
+      <tr>
+          <td>log-store.topic</td>
+          <td>NULL</td>
+          <td>Topic of LogStore, required when LogStore enabled</td>
+      </tr>
+      <tr>
+          <td>properties.pulsar.admin.adminUrl</td>
+          <td>NULL</td>
+          <td>HTTP URL of Pulsar admin, such as &lsquo;<a href="http://my-broker.example.com:8080">http://my-broker.example.com:8080</a>&rsquo;. Only required when log-store.type=pulsar</td>
+      </tr>
+      <tr>
+          <td>properties.XXX</td>
+          <td>NULL</td>
+          <td>Other configurations of LogStore. <br><br>For Kafka, all the configurations supported by Kafka Consumer/Producer can be set by prefixing them with <code>properties.</code>，<br>such as <code>'properties.batch.size'='16384'</code>，<br>refer to <a href="https://kafka.apache.org/documentation/#consumerconfigs">Kafka Consumer Configurations</a>, <a href="https://kafka.apache.org/documentation/#producerconfigs">Kafka Producer Configurations</a> for more details.<br><br> For Pulsar，all the configurations supported by Pulsar can be set by prefixing them with <code>properties.</code>, <br>such as <code>'properties.pulsar.client.requestTimeoutMs'='60000'</code>，<br>refer to <a href="https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/connectors/datastream/pulsar">Flink-Pulsar-Connector</a> for more details</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="watermark-configurations">Watermark configurations</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>table.event-time-field</td>
+          <td>_ingest_time</td>
+          <td>The event time field for calculating the watermark. The default <code>_ingest_time</code> indicates calculating with the time when the data was written</td>
+      </tr>
+      <tr>
+          <td>table.watermark-allowed-lateness-second</td>
+          <td>0</td>
+          <td>The allowed lateness time in seconds when calculating watermark</td>
+      </tr>
+      <tr>
+          <td>table.event-time-field.datetime-string-format</td>
+          <td><code>yyyy-MM-dd HH:mm:ss</code></td>
+          <td>The format of event time when it is in string format</td>
+      </tr>
+      <tr>
+          <td>table.event-time-field.datetime-number-format</td>
+          <td>TIMESTAMP_MS</td>
+          <td>The format of event time when it is in numeric format, which supports TIMESTAMP_MS (timestamp in milliseconds) and TIMESTAMP_S (timestamp in seconds)</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="mixed-hive-format-configurations">Mixed-Hive format configurations</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>base.hive.auto-sync-schema-change</td>
+          <td>true</td>
+          <td>Whether synchronize schema changes of Hive Table from HMS</td>
+      </tr>
+      <tr>
+          <td>base.hive.auto-sync-data-write</td>
+          <td>false</td>
+          <td>Whether synchronize data changes of Hive Table from HMS, this should be true when writing to Hive</td>
+      </tr>
+      <tr>
+          <td>base.hive.consistent-write.enabled</td>
+          <td>true</td>
+          <td>To avoid writing dirty data, the files written to the Hive directory will be hidden files and renamed to visible files upon commit.</td>
+      </tr>
+  </tbody>
+</table>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#multi-level-configuration-management">Multi-level configuration management</a></li>
+    <li><a href="#self-optimizing-configurations">Self-optimizing configurations</a></li>
+    <li><a href="#data-cleaning-configurations">Data-cleaning configurations</a></li>
+    <li><a href="#tags-configurations">Tags configurations</a></li>
+    <li><a href="#mixed-format-configurations">Mixed Format configurations</a>
+      <ul>
+        <li><a href="#reading-configurations">Reading configurations</a></li>
+        <li><a href="#writing-configurations">Writing configurations</a></li>
+        <li><a href="#logstore-configurations">LogStore configurations</a></li>
+        <li><a href="#watermark-configurations">Watermark configurations</a></li>
+        <li><a href="#mixed-hive-format-configurations">Mixed-Hive format configurations</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/0.7.1//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.1//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/0.7.1//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.1//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/0.7.1//js/iceberg-theme.js"></script>
+
+
+
+</html>
