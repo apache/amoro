@@ -140,6 +140,7 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
     LOG.info("Became the leader of AMS");
   }
 
+  @Override
   public void registAndElect() throws Exception {
     // TODO Here you can register for AMS and participate in the election.
   }
