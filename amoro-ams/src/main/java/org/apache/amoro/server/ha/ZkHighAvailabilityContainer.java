@@ -16,11 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server;
+package org.apache.amoro.server.ha;
 
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.AmsHAProperties;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
@@ -48,9 +49,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-public class HighAvailabilityContainer implements LeaderLatchListener {
+public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, LeaderLatchListener {
 
-  public static final Logger LOG = LoggerFactory.getLogger(HighAvailabilityContainer.class);
+  public static final Logger LOG = LoggerFactory.getLogger(ZkHighAvailabilityContainer.class);
 
   private final LeaderLatch leaderLatch;
   private final CuratorFramework zkClient;
@@ -60,7 +61,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
   private final AmsServerInfo optimizingServiceServerInfo;
   private volatile CountDownLatch followerLatch;
 
-  public HighAvailabilityContainer(Configurations serviceConfig) throws Exception {
+  public ZkHighAvailabilityContainer(Configurations serviceConfig) throws Exception {
     if (serviceConfig.getBoolean(AmoroManagementConf.HA_ENABLE)) {
       String zkServerAddress = serviceConfig.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS);
       int zkSessionTimeout =
@@ -109,6 +110,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     }
   }
 
+  @Override
   public void waitLeaderShip() throws Exception {
     LOG.info("Waiting to become the leader of AMS");
     if (leaderLatch != null) {
@@ -138,6 +140,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     LOG.info("Became the leader of AMS");
   }
 
+  @Override
   public void registAndElect() throws Exception {
     // TODO Here you can register for AMS and participate in the election.
   }
@@ -150,6 +153,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     LOG.info("Became the follower of AMS");
   }
 
+  @Override
   public void close() {
     if (leaderLatch != null) {
       try {
