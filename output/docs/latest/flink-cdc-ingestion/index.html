@@ -1,0 +1,1204 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Flink CDC Ingestion</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/latest//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.1/">0.8.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.0/">0.8.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">blogs</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/latest//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Configuration">
+                        <span>Configuration</span>
+                    </a>
+                </li>
+        <div id="Configuration" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../ams-config/">AMS Configuration</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-customized-encryption-method/">Using Customized Encryption Method for Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../rest-api/">REST API</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-cdc-ingestion/">Flink CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="apache-cdc-ingestion">Apache CDC Ingestion</h1>
+<p>CDC stands for Change Data Capture, which is a broad concept, as long as it can capture the change data, it can be called CDC. <a href="https://github.com/apache/flink-cdc">Flink CDC</a> is a Log message-based data capture tool, all the inventory and incremental data can be captured. Taking MySQL as an example, it can easily capture Binlog data through Debezium and process the calculations in real time to send them to the data lake. The data lake can then be queried by other engines.</p>
+<p>This section will show how to ingest one table or multiple tables into the data lake for both <a href="../iceberg-format/">Iceberg</a> format and <a href="../mixed-iceberg-format/">Mixed-Iceberg</a> format.</p>
+<h2 id="ingest-into-one-table">Ingest into one table</h2>
+<h3 id="iceberg-format">Iceberg format</h3>
+<p>The following example will show how <a href="https://nightlies.apache.org/flink/flink-cdc-docs-release-3.1/docs/">MySQL CDC</a> data is written to an Iceberg table.</p>
+<p><strong>Requirements</strong></p>
+<p>Please add <a href="https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc">Flink SQL Connector MySQL CDC</a> and <a href="https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-1.18/1.6.0/iceberg-flink-1.18-1.6.0.jar">Iceberg</a> Jars to the lib directory of the Flink engine package.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> products (
+</span></span><span style="display:flex;"><span>    id INT,
+</span></span><span style="display:flex;"><span>    name STRING,
+</span></span><span style="display:flex;"><span>    description STRING,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span> (id) <span style="color:#66d9ef">NOT</span> ENFORCED
+</span></span><span style="display:flex;"><span>) <span style="color:#66d9ef">WITH</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;connector&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;mysql-cdc&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;hostname&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;localhost&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;port&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;3306&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;username&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;root&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;password&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;123456&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;database-name&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;mydb&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;table-name&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;products&#39;</span>
+</span></span><span style="display:flex;"><span>);
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">CATALOG</span> iceberg_hadoop_catalog <span style="color:#66d9ef">WITH</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;type&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;iceberg&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;catalog-type&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;hadoop&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;warehouse&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;hdfs://nn:8020/warehouse/path&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;property-version&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;1&#39;</span>
+</span></span><span style="display:flex;"><span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> <span style="color:#f92672">`</span>iceberg_hadoop_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span><span style="color:#66d9ef">default</span><span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>sample<span style="color:#f92672">`</span> (
+</span></span><span style="display:flex;"><span>    id INT,
+</span></span><span style="display:flex;"><span>    name STRING,
+</span></span><span style="display:flex;"><span>    description STRING,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span> (id) <span style="color:#66d9ef">NOT</span> ENFORCED
+</span></span><span style="display:flex;"><span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> <span style="color:#f92672">`</span>iceberg_hadoop_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span><span style="color:#66d9ef">default</span><span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>sample<span style="color:#f92672">`</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> products;
+</span></span></code></pre></div><h3 id="mixed-iceberg-format">Mixed-Iceberg format</h3>
+<p>The following example will show how MySQL CDC data is written to a Mixed-Iceberg table.</p>
+<p><strong>Requirements</strong></p>
+<p>Please add <a href="https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc/3.1.1">Flink SQL Connector MySQL CDC</a> and <a href="../../../download/">Amoro</a> Jars to the lib directory of the Flink engine package.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> products (
+</span></span><span style="display:flex;"><span>    id INT,
+</span></span><span style="display:flex;"><span>    name STRING,
+</span></span><span style="display:flex;"><span>    description STRING,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span> (id) <span style="color:#66d9ef">NOT</span> ENFORCED
+</span></span><span style="display:flex;"><span>) <span style="color:#66d9ef">WITH</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;connector&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;mysql-cdc&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;hostname&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;localhost&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;port&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;3306&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;username&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;root&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;password&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;123456&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;database-name&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;mydb&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;table-name&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;products&#39;</span>
+</span></span><span style="display:flex;"><span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">CATALOG</span> amoro_catalog <span style="color:#66d9ef">WITH</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;type&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;amoro&#39;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;ams.uri&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;thrift://&lt;ip&gt;:&lt;port&gt;/&lt;catalog_name_in_metastore&gt;&#39;</span>
+</span></span><span style="display:flex;"><span>); 
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> <span style="color:#f92672">`</span>amoro_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_tb<span style="color:#f92672">`</span>(
+</span></span><span style="display:flex;"><span>    id INT,
+</span></span><span style="display:flex;"><span>    name STRING,
+</span></span><span style="display:flex;"><span>    description STRING,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span> (id) <span style="color:#66d9ef">NOT</span> ENFORCED
+</span></span><span style="display:flex;"><span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> <span style="color:#f92672">`</span>amoro_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_tb<span style="color:#f92672">`</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> products;
+</span></span></code></pre></div><h2 id="ingest-into-multiple-tables">Ingest Into multiple tables</h2>
+<h3 id="iceberg-format-1">Iceberg format</h3>
+<p>The following example will show how to write CDC data from multiple MySQL tables into the corresponding Iceberg table.</p>
+<p><strong>Requirements</strong></p>
+<p>Please add <a href="https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc/3.1.1">Flink Connector MySQL CDC</a>
+and <a href="https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-flink-1.18/1.6.0">Iceberg</a> dependencies to your
+Maven project&rsquo;s pom.xml file.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import static</span> java.util.stream.Collectors.toMap;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import static</span> org.apache.flink.cdc.connectors.mysql.table.MySqlReadableMetadata.DATABASE_NAME;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import static</span> org.apache.flink.cdc.connectors.mysql.table.MySqlReadableMetadata.TABLE_NAME;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.api.common.eventtime.WatermarkStrategy;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.api.common.typeinfo.TypeInformation;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.api.java.tuple.Tuple2;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.cdc.connectors.mysql.source.MySqlSource;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.cdc.connectors.mysql.table.MySqlDeserializationConverterFactory;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.cdc.debezium.DebeziumDeserializationSchema;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.cdc.debezium.table.MetadataConverter;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.cdc.debezium.table.RowDataDebeziumDeserializeSchema;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.functions.ProcessFunction;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.api.DataTypes;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.api.Schema;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.api.TableSchema;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.catalog.CatalogTable;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.catalog.Column;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.catalog.ObjectPath;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.catalog.ResolvedCatalogTable;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.catalog.ResolvedSchema;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.data.RowData;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.data.conversion.RowRowConverter;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.data.utils.JoinedRowData;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.types.logical.RowType;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.util.Collector;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.util.OutputTag;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.hadoop.conf.Configuration;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.iceberg.CatalogProperties;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.iceberg.Table;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.iceberg.catalog.Catalog;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.iceberg.catalog.Namespace;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.iceberg.catalog.TableIdentifier;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.iceberg.flink.CatalogLoader;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.iceberg.flink.TableLoader;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.iceberg.flink.sink.FlinkSink;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.kafka.connect.data.Struct;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.kafka.connect.source.SourceRecord;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.ArrayList;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.Collections;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.HashMap;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.List;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.Map;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.stream.Collectors;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.stream.Stream;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MySqlCDC2IcebergExample</span> {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>(String<span style="color:#f92672">[]</span> args) <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>    List<span style="color:#f92672">&lt;</span>Tuple2<span style="color:#f92672">&lt;</span>ObjectPath, ResolvedCatalogTable<span style="color:#f92672">&gt;&gt;</span> pathAndTable <span style="color:#f92672">=</span> initSourceTables();
+</span></span><span style="display:flex;"><span>    Map<span style="color:#f92672">&lt;</span>String, RowDataDebeziumDeserializeSchema<span style="color:#f92672">&gt;</span> debeziumDeserializeSchemas <span style="color:#f92672">=</span> getDebeziumDeserializeSchemas(pathAndTable);
+</span></span><span style="display:flex;"><span>    MySqlSource<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> mySqlSource <span style="color:#f92672">=</span> MySqlSource.<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span>builder()
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">hostname</span>(<span style="color:#e6db74">&#34;yourHostname&#34;</span>)
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">port</span>(yourPort)
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">databaseList</span>(<span style="color:#e6db74">&#34;test_db&#34;</span>)
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// setting up tables to be captured</span>
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">tableList</span>(<span style="color:#e6db74">&#34;test_db.user&#34;</span>, <span style="color:#e6db74">&#34;test_db.product&#34;</span>)
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">username</span>(<span style="color:#e6db74">&#34;yourUsername&#34;</span>)
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">password</span>(<span style="color:#e6db74">&#34;yourPassword&#34;</span>)
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">deserializer</span>(<span style="color:#66d9ef">new</span> CompositeDebeziumDeserializationSchema(debeziumDeserializeSchemas))
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    StreamExecutionEnvironment env <span style="color:#f92672">=</span> StreamExecutionEnvironment.<span style="color:#a6e22e">getExecutionEnvironment</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// enable checkpoint</span>
+</span></span><span style="display:flex;"><span>    env.<span style="color:#a6e22e">enableCheckpointing</span>(60000);
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Split CDC streams by table name</span>
+</span></span><span style="display:flex;"><span>    SingleOutputStreamOperator<span style="color:#f92672">&lt;</span>Void<span style="color:#f92672">&gt;</span> process <span style="color:#f92672">=</span> env
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">fromSource</span>(mySqlSource, WatermarkStrategy.<span style="color:#a6e22e">noWatermarks</span>(), <span style="color:#e6db74">&#34;MySQL Source&#34;</span>)
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">setParallelism</span>(4)
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">process</span>(<span style="color:#66d9ef">new</span> SplitCdcStreamFunction(pathAndTable.<span style="color:#a6e22e">stream</span>()
+</span></span><span style="display:flex;"><span>          .<span style="color:#a6e22e">collect</span>(toMap(e <span style="color:#f92672">-&gt;</span> e.<span style="color:#a6e22e">f0</span>.<span style="color:#a6e22e">toString</span>(),
+</span></span><span style="display:flex;"><span>              e <span style="color:#f92672">-&gt;</span> RowRowConverter.<span style="color:#a6e22e">create</span>(e.<span style="color:#a6e22e">f1</span>.<span style="color:#a6e22e">getResolvedSchema</span>().<span style="color:#a6e22e">toPhysicalRowDataType</span>())))))
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">name</span>(<span style="color:#e6db74">&#34;split stream&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// create Iceberg sink and insert into CDC data</span>
+</span></span><span style="display:flex;"><span>    Map<span style="color:#f92672">&lt;</span>String, String<span style="color:#f92672">&gt;</span> properties <span style="color:#f92672">=</span> Maps.<span style="color:#a6e22e">newHashMap</span>();
+</span></span><span style="display:flex;"><span>    properties.<span style="color:#a6e22e">put</span>(CatalogProperties.<span style="color:#a6e22e">WAREHOUSE_LOCATION</span>, <span style="color:#e6db74">&#34;yourWarehouseLocation&#34;</span>);
+</span></span><span style="display:flex;"><span>    properties.<span style="color:#a6e22e">put</span>(CatalogProperties.<span style="color:#a6e22e">URI</span>, <span style="color:#e6db74">&#34;yourThriftUri&#34;</span>);
+</span></span><span style="display:flex;"><span>    CatalogLoader catalogLoader <span style="color:#f92672">=</span> CatalogLoader.<span style="color:#a6e22e">hadoop</span>(<span style="color:#e6db74">&#34;hadoop_catalog&#34;</span>, <span style="color:#66d9ef">new</span> Configuration(), properties);
+</span></span><span style="display:flex;"><span>    Catalog icebergHadoopCatalog <span style="color:#f92672">=</span> catalogLoader.<span style="color:#a6e22e">loadCatalog</span>();
+</span></span><span style="display:flex;"><span>    Map<span style="color:#f92672">&lt;</span>String, TableSchema<span style="color:#f92672">&gt;</span> sinkTableSchemas <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> HashMap<span style="color:#f92672">&lt;&gt;</span>();
+</span></span><span style="display:flex;"><span>    sinkTableSchemas.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;user&#34;</span>, TableSchema.<span style="color:#a6e22e">builder</span>().<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;id&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>())
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;name&#34;</span>, DataTypes.<span style="color:#a6e22e">STRING</span>()).<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;op_time&#34;</span>, DataTypes.<span style="color:#a6e22e">TIMESTAMP</span>()).<span style="color:#a6e22e">build</span>());
+</span></span><span style="display:flex;"><span>    sinkTableSchemas.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;product&#34;</span>, TableSchema.<span style="color:#a6e22e">builder</span>().<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;productId&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>())
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;price&#34;</span>, DataTypes.<span style="color:#a6e22e">DECIMAL</span>(12, 6)).<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;saleCount&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>()).<span style="color:#a6e22e">build</span>());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> (Map.<span style="color:#a6e22e">Entry</span><span style="color:#f92672">&lt;</span>String, TableSchema<span style="color:#f92672">&gt;</span> entry : sinkTableSchemas.<span style="color:#a6e22e">entrySet</span>()) {
+</span></span><span style="display:flex;"><span>      TableIdentifier identifier <span style="color:#f92672">=</span> TableIdentifier.<span style="color:#a6e22e">of</span>(Namespace.<span style="color:#a6e22e">of</span>(<span style="color:#e6db74">&#34;test_db&#34;</span>), entry.<span style="color:#a6e22e">getKey</span>());
+</span></span><span style="display:flex;"><span>      Table table <span style="color:#f92672">=</span> icebergHadoopCatalog.<span style="color:#a6e22e">loadTable</span>(identifier);
+</span></span><span style="display:flex;"><span>      TableLoader tableLoader <span style="color:#f92672">=</span> TableLoader.<span style="color:#a6e22e">fromCatalog</span>(catalogLoader, identifier);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>      FlinkSink.<span style="color:#a6e22e">forRowData</span>(process.<span style="color:#a6e22e">getSideOutput</span>(<span style="color:#66d9ef">new</span> OutputTag<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span>(entry.<span style="color:#a6e22e">getKey</span>()){}))
+</span></span><span style="display:flex;"><span>        .<span style="color:#a6e22e">tableLoader</span>(tableLoader)
+</span></span><span style="display:flex;"><span>        .<span style="color:#a6e22e">table</span>(table)
+</span></span><span style="display:flex;"><span>        .<span style="color:#a6e22e">append</span>();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    env.<span style="color:#a6e22e">execute</span>(<span style="color:#e6db74">&#34;Sync MySQL to the Iceberg table&#34;</span>);
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CompositeDebeziumDeserializationSchema</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">implements</span> DebeziumDeserializationSchema<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">final</span> Map<span style="color:#f92672">&lt;</span>String, RowDataDebeziumDeserializeSchema<span style="color:#f92672">&gt;</span> deserializationSchemaMap;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#a6e22e">CompositeDebeziumDeserializationSchema</span>(
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">final</span> Map<span style="color:#f92672">&lt;</span>String, RowDataDebeziumDeserializeSchema<span style="color:#f92672">&gt;</span> deserializationSchemaMap) {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">deserializationSchemaMap</span> <span style="color:#f92672">=</span> deserializationSchemaMap;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">deserialize</span>(<span style="color:#66d9ef">final</span> SourceRecord record, <span style="color:#66d9ef">final</span> Collector<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> out)
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">final</span> Struct value <span style="color:#f92672">=</span> (Struct) record.<span style="color:#a6e22e">value</span>();
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">final</span> Struct source <span style="color:#f92672">=</span> value.<span style="color:#a6e22e">getStruct</span>(<span style="color:#e6db74">&#34;source&#34;</span>);
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">final</span> String db <span style="color:#f92672">=</span> source.<span style="color:#a6e22e">getString</span>(<span style="color:#e6db74">&#34;db&#34;</span>);
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">final</span> String table <span style="color:#f92672">=</span> source.<span style="color:#a6e22e">getString</span>(<span style="color:#e6db74">&#34;table&#34;</span>);
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">if</span> (deserializationSchemaMap <span style="color:#f92672">==</span> <span style="color:#66d9ef">null</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> IllegalStateException(<span style="color:#e6db74">&#34;deserializationSchemaMap can not be null!&#34;</span>);
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>      deserializationSchemaMap.<span style="color:#a6e22e">get</span>(db <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;.&#34;</span> <span style="color:#f92672">+</span> table).<span style="color:#a6e22e">deserialize</span>(record, out);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> TypeInformation<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> <span style="color:#a6e22e">getProducedType</span>() {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">return</span> TypeInformation.<span style="color:#a6e22e">of</span>(RowData.<span style="color:#a6e22e">class</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SplitCdcStreamFunction</span> <span style="color:#66d9ef">extends</span> ProcessFunction<span style="color:#f92672">&lt;</span>RowData, Void<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">final</span> Map<span style="color:#f92672">&lt;</span>String, RowRowConverter<span style="color:#f92672">&gt;</span> converters;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#a6e22e">SplitCdcStreamFunction</span>(<span style="color:#66d9ef">final</span> Map<span style="color:#f92672">&lt;</span>String, RowRowConverter<span style="color:#f92672">&gt;</span> converterMap) {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">converters</span> <span style="color:#f92672">=</span> converterMap;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">processElement</span>(<span style="color:#66d9ef">final</span> RowData rowData,
+</span></span><span style="display:flex;"><span>                               <span style="color:#66d9ef">final</span> ProcessFunction<span style="color:#f92672">&lt;</span>RowData, Void<span style="color:#f92672">&gt;</span>.<span style="color:#a6e22e">Context</span> ctx, <span style="color:#66d9ef">final</span> Collector<span style="color:#f92672">&lt;</span>Void<span style="color:#f92672">&gt;</span> out)
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// JoinedRowData like +I{row1=+I(1,2.340000,3), row2=+I(product,test_db)}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e">// so rowData.getArity() - 2 is the tableName field index</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">final</span> String tableName <span style="color:#f92672">=</span> rowData.<span style="color:#a6e22e">getString</span>(rowData.<span style="color:#a6e22e">getArity</span>() <span style="color:#f92672">-</span> 2).<span style="color:#a6e22e">toString</span>();
+</span></span><span style="display:flex;"><span>      ctx.<span style="color:#a6e22e">output</span>(<span style="color:#66d9ef">new</span> OutputTag<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span>(tableName) {},
+</span></span><span style="display:flex;"><span>        getField(JoinedRowData.<span style="color:#a6e22e">class</span>, (JoinedRowData) rowData, <span style="color:#e6db74">&#34;row1&#34;</span>));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#f92672">&lt;</span>O, V<span style="color:#f92672">&gt;</span> V <span style="color:#a6e22e">getField</span>(Class<span style="color:#f92672">&lt;</span>O<span style="color:#f92672">&gt;</span> clazz, O obj, String fieldName) {
+</span></span><span style="display:flex;"><span>      <span style="color:#66d9ef">try</span> {
+</span></span><span style="display:flex;"><span>        java.<span style="color:#a6e22e">lang</span>.<span style="color:#a6e22e">reflect</span>.<span style="color:#a6e22e">Field</span> field <span style="color:#f92672">=</span> clazz.<span style="color:#a6e22e">getDeclaredField</span>(fieldName);
+</span></span><span style="display:flex;"><span>        field.<span style="color:#a6e22e">setAccessible</span>(<span style="color:#66d9ef">true</span>);
+</span></span><span style="display:flex;"><span>        Object v <span style="color:#f92672">=</span> field.<span style="color:#a6e22e">get</span>(obj);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> v <span style="color:#f92672">==</span> <span style="color:#66d9ef">null</span> <span style="color:#f92672">?</span> <span style="color:#66d9ef">null</span> : (V) v;
+</span></span><span style="display:flex;"><span>      } <span style="color:#66d9ef">catch</span> (NoSuchFieldException <span style="color:#f92672">|</span> IllegalAccessException e) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> RuntimeException(e);
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> List<span style="color:#f92672">&lt;</span>Tuple2<span style="color:#f92672">&lt;</span>ObjectPath, ResolvedCatalogTable<span style="color:#f92672">&gt;&gt;</span> <span style="color:#a6e22e">initSourceTables</span>() {
+</span></span><span style="display:flex;"><span>    List<span style="color:#f92672">&lt;</span>Tuple2<span style="color:#f92672">&lt;</span>ObjectPath, ResolvedCatalogTable<span style="color:#f92672">&gt;&gt;</span> pathAndTable <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> ArrayList<span style="color:#f92672">&lt;&gt;</span>();
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// build table &#34;user&#34;</span>
+</span></span><span style="display:flex;"><span>    Schema userSchema <span style="color:#f92672">=</span> Schema.<span style="color:#a6e22e">newBuilder</span>()
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">column</span>(<span style="color:#e6db74">&#34;id&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>().<span style="color:#a6e22e">notNull</span>())
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">column</span>(<span style="color:#e6db74">&#34;name&#34;</span>, DataTypes.<span style="color:#a6e22e">STRING</span>())
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">column</span>(<span style="color:#e6db74">&#34;op_time&#34;</span>, DataTypes.<span style="color:#a6e22e">TIMESTAMP</span>())
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">primaryKey</span>(<span style="color:#e6db74">&#34;id&#34;</span>)
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>    List<span style="color:#f92672">&lt;</span>Column<span style="color:#f92672">&gt;</span> userTableCols <span style="color:#f92672">=</span> Stream.<span style="color:#a6e22e">of</span>(
+</span></span><span style="display:flex;"><span>      Column.<span style="color:#a6e22e">physical</span>(<span style="color:#e6db74">&#34;id&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>().<span style="color:#a6e22e">notNull</span>()),
+</span></span><span style="display:flex;"><span>      Column.<span style="color:#a6e22e">physical</span>(<span style="color:#e6db74">&#34;name&#34;</span>, DataTypes.<span style="color:#a6e22e">STRING</span>()),
+</span></span><span style="display:flex;"><span>      Column.<span style="color:#a6e22e">physical</span>(<span style="color:#e6db74">&#34;op_time&#34;</span>, DataTypes.<span style="color:#a6e22e">TIMESTAMP</span>())).<span style="color:#a6e22e">collect</span>(Collectors.<span style="color:#a6e22e">toList</span>());
+</span></span><span style="display:flex;"><span>    Schema.<span style="color:#a6e22e">UnresolvedPrimaryKey</span> userPrimaryKey <span style="color:#f92672">=</span> userSchema.<span style="color:#a6e22e">getPrimaryKey</span>().<span style="color:#a6e22e">orElseThrow</span>(() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">new</span> RuntimeException(<span style="color:#e6db74">&#34;table user required pk &#34;</span>));
+</span></span><span style="display:flex;"><span>    ResolvedSchema userResolvedSchema <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> ResolvedSchema(userTableCols, Collections.<span style="color:#a6e22e">emptyList</span>(), UniqueConstraint.<span style="color:#a6e22e">primaryKey</span>(
+</span></span><span style="display:flex;"><span>      userPrimaryKey.<span style="color:#a6e22e">getConstraintName</span>(), userPrimaryKey.<span style="color:#a6e22e">getColumnNames</span>()));
+</span></span><span style="display:flex;"><span>    ResolvedCatalogTable userTable <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> ResolvedCatalogTable(
+</span></span><span style="display:flex;"><span>      CatalogTable.<span style="color:#a6e22e">of</span>(userSchema, <span style="color:#e6db74">&#34;&#34;</span>, Collections.<span style="color:#a6e22e">emptyList</span>(), <span style="color:#66d9ef">new</span> HashMap<span style="color:#f92672">&lt;&gt;</span>()), userResolvedSchema);
+</span></span><span style="display:flex;"><span>    pathAndTable.<span style="color:#a6e22e">add</span>(Tuple2.<span style="color:#a6e22e">of</span>(<span style="color:#66d9ef">new</span> ObjectPath(<span style="color:#e6db74">&#34;test_db&#34;</span>, <span style="color:#e6db74">&#34;user&#34;</span>), userTable));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// build table &#34;product&#34;</span>
+</span></span><span style="display:flex;"><span>    Schema productSchema <span style="color:#f92672">=</span> Schema.<span style="color:#a6e22e">newBuilder</span>()
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">column</span>(<span style="color:#e6db74">&#34;productId&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>().<span style="color:#a6e22e">notNull</span>())
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">column</span>(<span style="color:#e6db74">&#34;price&#34;</span>, DataTypes.<span style="color:#a6e22e">DECIMAL</span>(12, 6))
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">column</span>(<span style="color:#e6db74">&#34;saleCount&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>())
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">primaryKey</span>(<span style="color:#e6db74">&#34;productId&#34;</span>)
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>    List<span style="color:#f92672">&lt;</span>Column<span style="color:#f92672">&gt;</span> productTableCols <span style="color:#f92672">=</span> Stream.<span style="color:#a6e22e">of</span>(
+</span></span><span style="display:flex;"><span>      Column.<span style="color:#a6e22e">physical</span>(<span style="color:#e6db74">&#34;productId&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>().<span style="color:#a6e22e">notNull</span>()),
+</span></span><span style="display:flex;"><span>      Column.<span style="color:#a6e22e">physical</span>(<span style="color:#e6db74">&#34;price&#34;</span>, DataTypes.<span style="color:#a6e22e">DECIMAL</span>(12, 6)),
+</span></span><span style="display:flex;"><span>      Column.<span style="color:#a6e22e">physical</span>(<span style="color:#e6db74">&#34;saleCount&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>())).<span style="color:#a6e22e">collect</span>(Collectors.<span style="color:#a6e22e">toList</span>());
+</span></span><span style="display:flex;"><span>    Schema.<span style="color:#a6e22e">UnresolvedPrimaryKey</span> productPrimaryKey <span style="color:#f92672">=</span> productSchema.<span style="color:#a6e22e">getPrimaryKey</span>().<span style="color:#a6e22e">orElseThrow</span>(() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">new</span> RuntimeException(<span style="color:#e6db74">&#34;table product required pk &#34;</span>));
+</span></span><span style="display:flex;"><span>    ResolvedSchema productResolvedSchema <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> ResolvedSchema(productTableCols, Collections.<span style="color:#a6e22e">emptyList</span>(), UniqueConstraint.<span style="color:#a6e22e">primaryKey</span>(
+</span></span><span style="display:flex;"><span>      productPrimaryKey.<span style="color:#a6e22e">getConstraintName</span>(), productPrimaryKey.<span style="color:#a6e22e">getColumnNames</span>()));
+</span></span><span style="display:flex;"><span>    ResolvedCatalogTable productTable <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> ResolvedCatalogTable(
+</span></span><span style="display:flex;"><span>      CatalogTable.<span style="color:#a6e22e">of</span>(productSchema, <span style="color:#e6db74">&#34;&#34;</span>, Collections.<span style="color:#a6e22e">emptyList</span>(), <span style="color:#66d9ef">new</span> HashMap<span style="color:#f92672">&lt;&gt;</span>()), productResolvedSchema);
+</span></span><span style="display:flex;"><span>    pathAndTable.<span style="color:#a6e22e">add</span>(Tuple2.<span style="color:#a6e22e">of</span>(<span style="color:#66d9ef">new</span> ObjectPath(<span style="color:#e6db74">&#34;test_db&#34;</span>, <span style="color:#e6db74">&#34;product&#34;</span>), productTable));
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> pathAndTable;
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> Map<span style="color:#f92672">&lt;</span>String, RowDataDebeziumDeserializeSchema<span style="color:#f92672">&gt;</span> <span style="color:#a6e22e">getDebeziumDeserializeSchemas</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">final</span> List<span style="color:#f92672">&lt;</span>Tuple2<span style="color:#f92672">&lt;</span>ObjectPath, ResolvedCatalogTable<span style="color:#f92672">&gt;&gt;</span> pathAndTable) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> pathAndTable.<span style="color:#a6e22e">stream</span>()
+</span></span><span style="display:flex;"><span>      .<span style="color:#a6e22e">collect</span>(toMap(e <span style="color:#f92672">-&gt;</span> e.<span style="color:#a6e22e">f0</span>.<span style="color:#a6e22e">toString</span>(), e <span style="color:#f92672">-&gt;</span> RowDataDebeziumDeserializeSchema.<span style="color:#a6e22e">newBuilder</span>()
+</span></span><span style="display:flex;"><span>        .<span style="color:#a6e22e">setPhysicalRowType</span>(
+</span></span><span style="display:flex;"><span>          (RowType) e.<span style="color:#a6e22e">f1</span>.<span style="color:#a6e22e">getResolvedSchema</span>().<span style="color:#a6e22e">toPhysicalRowDataType</span>().<span style="color:#a6e22e">getLogicalType</span>())
+</span></span><span style="display:flex;"><span>        .<span style="color:#a6e22e">setUserDefinedConverterFactory</span>(MySqlDeserializationConverterFactory.<span style="color:#a6e22e">instance</span>())
+</span></span><span style="display:flex;"><span>        .<span style="color:#a6e22e">setMetadataConverters</span>(
+</span></span><span style="display:flex;"><span>          <span style="color:#66d9ef">new</span> MetadataConverter<span style="color:#f92672">[]</span> {TABLE_NAME.<span style="color:#a6e22e">getConverter</span>(), DATABASE_NAME.<span style="color:#a6e22e">getConverter</span>()})
+</span></span><span style="display:flex;"><span>        .<span style="color:#a6e22e">setResultTypeInfo</span>(TypeInformation.<span style="color:#a6e22e">of</span>(RowData.<span style="color:#a6e22e">class</span>)).<span style="color:#a6e22e">build</span>()));
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="mixed-iceberg-format-1">Mixed-Iceberg format</h3>
+<p>The following example will show how to write CDC data from multiple MySQL tables into the corresponding Mixed-Iceberg table.</p>
+<p><strong>Requirements</strong></p>
+<p>Please add <a href="https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc/3.1.1">Flink Connector MySQL CDC</a> and <a href="https://mvnrepository.com/artifact/org.apache.amoro/amoro-format-mixed-flink-1.17/0.7.0-incubating">Amoro</a> dependencies to your Maven project&rsquo;s pom.xml file.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.MixedFormatTableLoader;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.util.MixedFormatUtils;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.write.FlinkSink;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.table.TableIdentifier;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.api.common.eventtime.WatermarkStrategy;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.api.common.typeinfo.TypeInformation;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.api.java.tuple.Tuple2;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.cdc.connectors.mysql.source.MySqlSource;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.cdc.connectors.mysql.table.MySqlDeserializationConverterFactory;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.cdc.debezium.DebeziumDeserializationSchema;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.cdc.debezium.table.MetadataConverter;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.cdc.debezium.table.RowDataDebeziumDeserializeSchema;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.streaming.api.functions.ProcessFunction;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.api.*;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.catalog.*;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.data.RowData;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.data.conversion.RowRowConverter;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.data.utils.JoinedRowData;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.table.types.logical.RowType;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.util.Collector;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.flink.util.OutputTag;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.kafka.connect.data.Struct;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.kafka.connect.source.SourceRecord;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.*;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.stream.Collectors;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.util.stream.Stream;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import static</span> java.util.stream.Collectors.toMap;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import static</span> org.apache.flink.cdc.connectors.mysql.table.MySqlReadableMetadata.DATABASE_NAME;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import static</span> org.apache.flink.cdc.connectors.mysql.table.MySqlReadableMetadata.TABLE_NAME;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MySqlCDC2MixedIcebergExample</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">main</span>(String<span style="color:#f92672">[]</span> args) <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>        List<span style="color:#f92672">&lt;</span>Tuple2<span style="color:#f92672">&lt;</span>ObjectPath, ResolvedCatalogTable<span style="color:#f92672">&gt;&gt;</span> pathAndTable <span style="color:#f92672">=</span> initSourceTables();
+</span></span><span style="display:flex;"><span>        Map<span style="color:#f92672">&lt;</span>String, RowDataDebeziumDeserializeSchema<span style="color:#f92672">&gt;</span> debeziumDeserializeSchemas <span style="color:#f92672">=</span> getDebeziumDeserializeSchemas(
+</span></span><span style="display:flex;"><span>                pathAndTable);
+</span></span><span style="display:flex;"><span>        MySqlSource<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> mySqlSource <span style="color:#f92672">=</span> MySqlSource.<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span>builder()
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">hostname</span>(<span style="color:#e6db74">&#34;yourHostname&#34;</span>)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">port</span>(3306)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">databaseList</span>(<span style="color:#e6db74">&#34;test_db&#34;</span>)
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// setting up tables to be captured</span>
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">tableList</span>(<span style="color:#e6db74">&#34;test_db.user&#34;</span>, <span style="color:#e6db74">&#34;test_db.product&#34;</span>)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">username</span>(<span style="color:#e6db74">&#34;yourUsername&#34;</span>)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">password</span>(<span style="color:#e6db74">&#34;yourPassword&#34;</span>)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">deserializer</span>(<span style="color:#66d9ef">new</span> CompositeDebeziumDeserializationSchema(debeziumDeserializeSchemas))
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        StreamExecutionEnvironment env <span style="color:#f92672">=</span> StreamExecutionEnvironment.<span style="color:#a6e22e">getExecutionEnvironment</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// enable checkpoint</span>
+</span></span><span style="display:flex;"><span>        env.<span style="color:#a6e22e">enableCheckpointing</span>(60000);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Split CDC streams by table name</span>
+</span></span><span style="display:flex;"><span>        SingleOutputStreamOperator<span style="color:#f92672">&lt;</span>Void<span style="color:#f92672">&gt;</span> process <span style="color:#f92672">=</span> env
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">fromSource</span>(mySqlSource, WatermarkStrategy.<span style="color:#a6e22e">noWatermarks</span>(), <span style="color:#e6db74">&#34;MySQL Source&#34;</span>).<span style="color:#a6e22e">setParallelism</span>(4)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">process</span>(<span style="color:#66d9ef">new</span> SplitCdcStreamFunction(pathAndTable.<span style="color:#a6e22e">stream</span>()
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">collect</span>(toMap(e <span style="color:#f92672">-&gt;</span> e.<span style="color:#a6e22e">f0</span>.<span style="color:#a6e22e">toString</span>(),
+</span></span><span style="display:flex;"><span>                                e <span style="color:#f92672">-&gt;</span> RowRowConverter.<span style="color:#a6e22e">create</span>(e.<span style="color:#a6e22e">f1</span>.<span style="color:#a6e22e">getResolvedSchema</span>().<span style="color:#a6e22e">toPhysicalRowDataType</span>())))))
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">name</span>(<span style="color:#e6db74">&#34;split stream&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// create Amoro sink and insert into cdc data</span>
+</span></span><span style="display:flex;"><span>        InternalCatalogBuilder catalogBuilder <span style="color:#f92672">=</span> InternalCatalogBuilder.<span style="color:#a6e22e">builder</span>().<span style="color:#a6e22e">metastoreUrl</span>(
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;thrift://&lt;ip&gt;:&lt;port&gt;/&lt;catalog_name_in_metastore&gt;&#34;</span>);
+</span></span><span style="display:flex;"><span>        Map<span style="color:#f92672">&lt;</span>String, TableSchema<span style="color:#f92672">&gt;</span> sinkTableSchemas <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> HashMap<span style="color:#f92672">&lt;&gt;</span>();
+</span></span><span style="display:flex;"><span>        sinkTableSchemas.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;user&#34;</span>, TableSchema.<span style="color:#a6e22e">builder</span>().<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;id&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;name&#34;</span>, DataTypes.<span style="color:#a6e22e">STRING</span>()).<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;op_time&#34;</span>, DataTypes.<span style="color:#a6e22e">TIMESTAMP</span>()).<span style="color:#a6e22e">build</span>());
+</span></span><span style="display:flex;"><span>        sinkTableSchemas.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;product&#34;</span>, TableSchema.<span style="color:#a6e22e">builder</span>().<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;productId&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;price&#34;</span>, DataTypes.<span style="color:#a6e22e">DECIMAL</span>(12, 6)).<span style="color:#a6e22e">field</span>(<span style="color:#e6db74">&#34;saleCount&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>()).<span style="color:#a6e22e">build</span>());
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> (Map.<span style="color:#a6e22e">Entry</span><span style="color:#f92672">&lt;</span>String, TableSchema<span style="color:#f92672">&gt;</span> entry : sinkTableSchemas.<span style="color:#a6e22e">entrySet</span>()) {
+</span></span><span style="display:flex;"><span>            TableIdentifier tableId <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>                    TableIdentifier.<span style="color:#a6e22e">of</span>(<span style="color:#e6db74">&#34;yourCatalogName&#34;</span>, <span style="color:#e6db74">&#34;yourDatabaseName&#34;</span>, entry.<span style="color:#a6e22e">getKey</span>());
+</span></span><span style="display:flex;"><span>            MixedFormatTableLoader tableLoader <span style="color:#f92672">=</span> MixedFormatTableLoader.<span style="color:#a6e22e">of</span>(tableId, catalogBuilder);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            FlinkSink.<span style="color:#a6e22e">forRowData</span>(process.<span style="color:#a6e22e">getSideOutput</span>(<span style="color:#66d9ef">new</span> OutputTag<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span>(entry.<span style="color:#a6e22e">getKey</span>()) {
+</span></span><span style="display:flex;"><span>                    }))
+</span></span><span style="display:flex;"><span>                    .<span style="color:#a6e22e">flinkSchema</span>(entry.<span style="color:#a6e22e">getValue</span>())
+</span></span><span style="display:flex;"><span>                    .<span style="color:#a6e22e">table</span>(MixedFormatUtils.<span style="color:#a6e22e">loadMixedTable</span>(tableLoader))
+</span></span><span style="display:flex;"><span>                    .<span style="color:#a6e22e">tableLoader</span>(tableLoader).<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        env.<span style="color:#a6e22e">execute</span>(<span style="color:#e6db74">&#34;Sync MySQL to Mixed-Iceberg table&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CompositeDebeziumDeserializationSchema</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">implements</span> DebeziumDeserializationSchema<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">final</span> Map<span style="color:#f92672">&lt;</span>String, RowDataDebeziumDeserializeSchema<span style="color:#f92672">&gt;</span> deserializationSchemaMap;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> <span style="color:#a6e22e">CompositeDebeziumDeserializationSchema</span>(
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">final</span> Map<span style="color:#f92672">&lt;</span>String, RowDataDebeziumDeserializeSchema<span style="color:#f92672">&gt;</span> deserializationSchemaMap) {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">deserializationSchemaMap</span> <span style="color:#f92672">=</span> deserializationSchemaMap;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">deserialize</span>(<span style="color:#66d9ef">final</span> SourceRecord record, <span style="color:#66d9ef">final</span> Collector<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> out)
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">final</span> Struct value <span style="color:#f92672">=</span> (Struct) record.<span style="color:#a6e22e">value</span>();
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">final</span> Struct source <span style="color:#f92672">=</span> value.<span style="color:#a6e22e">getStruct</span>(<span style="color:#e6db74">&#34;source&#34;</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">final</span> String db <span style="color:#f92672">=</span> source.<span style="color:#a6e22e">getString</span>(<span style="color:#e6db74">&#34;db&#34;</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">final</span> String table <span style="color:#f92672">=</span> source.<span style="color:#a6e22e">getString</span>(<span style="color:#e6db74">&#34;table&#34;</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (deserializationSchemaMap <span style="color:#f92672">==</span> <span style="color:#66d9ef">null</span>) {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> IllegalStateException(<span style="color:#e6db74">&#34;deserializationSchemaMap can not be null!&#34;</span>);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            deserializationSchemaMap.<span style="color:#a6e22e">get</span>(db <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;.&#34;</span> <span style="color:#f92672">+</span> table).<span style="color:#a6e22e">deserialize</span>(record, out);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> TypeInformation<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span> <span style="color:#a6e22e">getProducedType</span>() {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> TypeInformation.<span style="color:#a6e22e">of</span>(RowData.<span style="color:#a6e22e">class</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">SplitCdcStreamFunction</span> <span style="color:#66d9ef">extends</span> ProcessFunction<span style="color:#f92672">&lt;</span>RowData, Void<span style="color:#f92672">&gt;</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">final</span> Map<span style="color:#f92672">&lt;</span>String, RowRowConverter<span style="color:#f92672">&gt;</span> converters;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> <span style="color:#a6e22e">SplitCdcStreamFunction</span>(<span style="color:#66d9ef">final</span> Map<span style="color:#f92672">&lt;</span>String, RowRowConverter<span style="color:#f92672">&gt;</span> converterMap) {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">converters</span> <span style="color:#f92672">=</span> converterMap;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">processElement</span>(<span style="color:#66d9ef">final</span> RowData rowData,
+</span></span><span style="display:flex;"><span>                                   <span style="color:#66d9ef">final</span> ProcessFunction<span style="color:#f92672">&lt;</span>RowData, Void<span style="color:#f92672">&gt;</span>.<span style="color:#a6e22e">Context</span> ctx, <span style="color:#66d9ef">final</span> Collector<span style="color:#f92672">&lt;</span>Void<span style="color:#f92672">&gt;</span> out)
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">throws</span> Exception {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// JoinedRowData like +I{row1=+I(1,2.340000,3), row2=+I(product,test_db)}</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// so rowData.getArity() - 2 is the tableName field index</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">final</span> String tableName <span style="color:#f92672">=</span> rowData.<span style="color:#a6e22e">getString</span>(rowData.<span style="color:#a6e22e">getArity</span>() <span style="color:#f92672">-</span> 2).<span style="color:#a6e22e">toString</span>();
+</span></span><span style="display:flex;"><span>            ctx.<span style="color:#a6e22e">output</span>(<span style="color:#66d9ef">new</span> OutputTag<span style="color:#f92672">&lt;</span>RowData<span style="color:#f92672">&gt;</span>(tableName) {
+</span></span><span style="display:flex;"><span>                       },
+</span></span><span style="display:flex;"><span>                    getField(JoinedRowData.<span style="color:#a6e22e">class</span>, (JoinedRowData) rowData, <span style="color:#e6db74">&#34;row1&#34;</span>));
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#f92672">&lt;</span>O, V<span style="color:#f92672">&gt;</span> V <span style="color:#a6e22e">getField</span>(Class<span style="color:#f92672">&lt;</span>O<span style="color:#f92672">&gt;</span> clazz, O obj, String fieldName) {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">try</span> {
+</span></span><span style="display:flex;"><span>                java.<span style="color:#a6e22e">lang</span>.<span style="color:#a6e22e">reflect</span>.<span style="color:#a6e22e">Field</span> field <span style="color:#f92672">=</span> clazz.<span style="color:#a6e22e">getDeclaredField</span>(fieldName);
+</span></span><span style="display:flex;"><span>                field.<span style="color:#a6e22e">setAccessible</span>(<span style="color:#66d9ef">true</span>);
+</span></span><span style="display:flex;"><span>                Object v <span style="color:#f92672">=</span> field.<span style="color:#a6e22e">get</span>(obj);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span> v <span style="color:#f92672">==</span> <span style="color:#66d9ef">null</span> <span style="color:#f92672">?</span> <span style="color:#66d9ef">null</span> : (V) v;
+</span></span><span style="display:flex;"><span>            } <span style="color:#66d9ef">catch</span> (NoSuchFieldException <span style="color:#f92672">|</span> IllegalAccessException e) {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">throw</span> <span style="color:#66d9ef">new</span> RuntimeException(e);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> List<span style="color:#f92672">&lt;</span>Tuple2<span style="color:#f92672">&lt;</span>ObjectPath, ResolvedCatalogTable<span style="color:#f92672">&gt;&gt;</span> <span style="color:#a6e22e">initSourceTables</span>() {
+</span></span><span style="display:flex;"><span>        List<span style="color:#f92672">&lt;</span>Tuple2<span style="color:#f92672">&lt;</span>ObjectPath, ResolvedCatalogTable<span style="color:#f92672">&gt;&gt;</span> pathAndTable <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> ArrayList<span style="color:#f92672">&lt;&gt;</span>();
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// build table &#34;user&#34;</span>
+</span></span><span style="display:flex;"><span>        Schema userSchema <span style="color:#f92672">=</span> Schema.<span style="color:#a6e22e">newBuilder</span>()
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">column</span>(<span style="color:#e6db74">&#34;id&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>().<span style="color:#a6e22e">notNull</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">column</span>(<span style="color:#e6db74">&#34;name&#34;</span>, DataTypes.<span style="color:#a6e22e">STRING</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">column</span>(<span style="color:#e6db74">&#34;op_time&#34;</span>, DataTypes.<span style="color:#a6e22e">TIMESTAMP</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">primaryKey</span>(<span style="color:#e6db74">&#34;id&#34;</span>)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>        List<span style="color:#f92672">&lt;</span>Column<span style="color:#f92672">&gt;</span> userTableCols <span style="color:#f92672">=</span> Stream.<span style="color:#a6e22e">of</span>(
+</span></span><span style="display:flex;"><span>                Column.<span style="color:#a6e22e">physical</span>(<span style="color:#e6db74">&#34;id&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>().<span style="color:#a6e22e">notNull</span>()),
+</span></span><span style="display:flex;"><span>                Column.<span style="color:#a6e22e">physical</span>(<span style="color:#e6db74">&#34;name&#34;</span>, DataTypes.<span style="color:#a6e22e">STRING</span>()),
+</span></span><span style="display:flex;"><span>                Column.<span style="color:#a6e22e">physical</span>(<span style="color:#e6db74">&#34;op_time&#34;</span>, DataTypes.<span style="color:#a6e22e">TIMESTAMP</span>())).<span style="color:#a6e22e">collect</span>(Collectors.<span style="color:#a6e22e">toList</span>());
+</span></span><span style="display:flex;"><span>        Schema.<span style="color:#a6e22e">UnresolvedPrimaryKey</span> userPrimaryKey <span style="color:#f92672">=</span> userSchema.<span style="color:#a6e22e">getPrimaryKey</span>().<span style="color:#a6e22e">orElseThrow</span>(() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">new</span> RuntimeException(<span style="color:#e6db74">&#34;table user required pk &#34;</span>));
+</span></span><span style="display:flex;"><span>        ResolvedSchema userResolvedSchema <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> ResolvedSchema(userTableCols, Collections.<span style="color:#a6e22e">emptyList</span>(), UniqueConstraint.<span style="color:#a6e22e">primaryKey</span>(
+</span></span><span style="display:flex;"><span>                userPrimaryKey.<span style="color:#a6e22e">getConstraintName</span>(), userPrimaryKey.<span style="color:#a6e22e">getColumnNames</span>()));
+</span></span><span style="display:flex;"><span>        ResolvedCatalogTable userTable <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> ResolvedCatalogTable(
+</span></span><span style="display:flex;"><span>                CatalogTable.<span style="color:#a6e22e">of</span>(userSchema, <span style="color:#e6db74">&#34;&#34;</span>, Collections.<span style="color:#a6e22e">emptyList</span>(), <span style="color:#66d9ef">new</span> HashMap<span style="color:#f92672">&lt;&gt;</span>()), userResolvedSchema);
+</span></span><span style="display:flex;"><span>        pathAndTable.<span style="color:#a6e22e">add</span>(Tuple2.<span style="color:#a6e22e">of</span>(<span style="color:#66d9ef">new</span> ObjectPath(<span style="color:#e6db74">&#34;test_db&#34;</span>, <span style="color:#e6db74">&#34;user&#34;</span>), userTable));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// build table &#34;product&#34;</span>
+</span></span><span style="display:flex;"><span>        Schema productSchema <span style="color:#f92672">=</span> Schema.<span style="color:#a6e22e">newBuilder</span>()
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">column</span>(<span style="color:#e6db74">&#34;productId&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>().<span style="color:#a6e22e">notNull</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">column</span>(<span style="color:#e6db74">&#34;price&#34;</span>, DataTypes.<span style="color:#a6e22e">DECIMAL</span>(12, 6))
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">column</span>(<span style="color:#e6db74">&#34;saleCount&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>())
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">primaryKey</span>(<span style="color:#e6db74">&#34;productId&#34;</span>)
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>        List<span style="color:#f92672">&lt;</span>Column<span style="color:#f92672">&gt;</span> productTableCols <span style="color:#f92672">=</span> Stream.<span style="color:#a6e22e">of</span>(
+</span></span><span style="display:flex;"><span>                Column.<span style="color:#a6e22e">physical</span>(<span style="color:#e6db74">&#34;productId&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>().<span style="color:#a6e22e">notNull</span>()),
+</span></span><span style="display:flex;"><span>                Column.<span style="color:#a6e22e">physical</span>(<span style="color:#e6db74">&#34;price&#34;</span>, DataTypes.<span style="color:#a6e22e">DECIMAL</span>(12, 6)),
+</span></span><span style="display:flex;"><span>                Column.<span style="color:#a6e22e">physical</span>(<span style="color:#e6db74">&#34;saleCount&#34;</span>, DataTypes.<span style="color:#a6e22e">INT</span>())).<span style="color:#a6e22e">collect</span>(Collectors.<span style="color:#a6e22e">toList</span>());
+</span></span><span style="display:flex;"><span>        Schema.<span style="color:#a6e22e">UnresolvedPrimaryKey</span> productPrimaryKey <span style="color:#f92672">=</span> productSchema.<span style="color:#a6e22e">getPrimaryKey</span>().<span style="color:#a6e22e">orElseThrow</span>(() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">new</span> RuntimeException(<span style="color:#e6db74">&#34;table product required pk &#34;</span>));
+</span></span><span style="display:flex;"><span>        ResolvedSchema productResolvedSchema <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> ResolvedSchema(productTableCols, Collections.<span style="color:#a6e22e">emptyList</span>(), UniqueConstraint.<span style="color:#a6e22e">primaryKey</span>(
+</span></span><span style="display:flex;"><span>                productPrimaryKey.<span style="color:#a6e22e">getConstraintName</span>(), productPrimaryKey.<span style="color:#a6e22e">getColumnNames</span>()));
+</span></span><span style="display:flex;"><span>        ResolvedCatalogTable productTable <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> ResolvedCatalogTable(
+</span></span><span style="display:flex;"><span>                CatalogTable.<span style="color:#a6e22e">of</span>(productSchema, <span style="color:#e6db74">&#34;&#34;</span>, Collections.<span style="color:#a6e22e">emptyList</span>(), <span style="color:#66d9ef">new</span> HashMap<span style="color:#f92672">&lt;&gt;</span>()), productResolvedSchema);
+</span></span><span style="display:flex;"><span>        pathAndTable.<span style="color:#a6e22e">add</span>(Tuple2.<span style="color:#a6e22e">of</span>(<span style="color:#66d9ef">new</span> ObjectPath(<span style="color:#e6db74">&#34;test_db&#34;</span>, <span style="color:#e6db74">&#34;product&#34;</span>), productTable));
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> pathAndTable;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> Map<span style="color:#f92672">&lt;</span>String, RowDataDebeziumDeserializeSchema<span style="color:#f92672">&gt;</span> <span style="color:#a6e22e">getDebeziumDeserializeSchemas</span>(
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">final</span> List<span style="color:#f92672">&lt;</span>Tuple2<span style="color:#f92672">&lt;</span>ObjectPath, ResolvedCatalogTable<span style="color:#f92672">&gt;&gt;</span> pathAndTable) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> pathAndTable.<span style="color:#a6e22e">stream</span>()
+</span></span><span style="display:flex;"><span>                .<span style="color:#a6e22e">collect</span>(toMap(e <span style="color:#f92672">-&gt;</span> e.<span style="color:#a6e22e">f0</span>.<span style="color:#a6e22e">toString</span>(), e <span style="color:#f92672">-&gt;</span> RowDataDebeziumDeserializeSchema.<span style="color:#a6e22e">newBuilder</span>()
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">setPhysicalRowType</span>(
+</span></span><span style="display:flex;"><span>                                (RowType) e.<span style="color:#a6e22e">f1</span>.<span style="color:#a6e22e">getResolvedSchema</span>().<span style="color:#a6e22e">toPhysicalRowDataType</span>().<span style="color:#a6e22e">getLogicalType</span>())
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">setUserDefinedConverterFactory</span>(MySqlDeserializationConverterFactory.<span style="color:#a6e22e">instance</span>())
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">setMetadataConverters</span>(
+</span></span><span style="display:flex;"><span>                                <span style="color:#66d9ef">new</span> MetadataConverter<span style="color:#f92672">[]</span>{TABLE_NAME.<span style="color:#a6e22e">getConverter</span>(), DATABASE_NAME.<span style="color:#a6e22e">getConverter</span>()})
+</span></span><span style="display:flex;"><span>                        .<span style="color:#a6e22e">setResultTypeInfo</span>(TypeInformation.<span style="color:#a6e22e">of</span>(RowData.<span style="color:#a6e22e">class</span>)).<span style="color:#a6e22e">build</span>()));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div></div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#ingest-into-one-table">Ingest into one table</a>
+      <ul>
+        <li><a href="#iceberg-format">Iceberg format</a></li>
+        <li><a href="#mixed-iceberg-format">Mixed-Iceberg format</a></li>
+      </ul>
+    </li>
+    <li><a href="#ingest-into-multiple-tables">Ingest Into multiple tables</a>
+      <ul>
+        <li><a href="#iceberg-format-1">Iceberg format</a></li>
+        <li><a href="#mixed-iceberg-format-1">Mixed-Iceberg format</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/latest//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/iceberg-theme.js"></script>
+
+
+
+</html>

@@ -1,0 +1,764 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Spark Configuration</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/latest//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.1/">0.8.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.0/">0.8.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">blogs</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/latest//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Configuration">
+                        <span>Configuration</span>
+                    </a>
+                </li>
+        <div id="Configuration" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../ams-config/">AMS Configuration</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-customized-encryption-method/">Using Customized Encryption Method for Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../rest-api/">REST API</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-cdc-ingestion/">Flink CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="spark-configuration">Spark Configuration</h1>
+<h2 id="catalogs-configuration">Catalogs configuration</h2>
+<h3 id="using-mixed-format-in-a-standalone-catalog">Using Mixed-Format in a standalone catalog</h3>
+<p>Starting from version 3.x, Spark supports configuring an independent Catalog.
+If you want to use a Mixed-Format table in a standalone Catalog, you can create a mixed_catalog and load catalog
+metadata from AMS with following properties:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-properties" data-lang="properties"><span style="display:flex;"><span><span style="color:#a6e22e">spark.sql.catalog.mixed_catalog</span><span style="color:#f92672">=</span><span style="color:#e6db74">org.apache.amoro.spark.MixedFormatSparkCatalog</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">spark.sql.catalog.mixed_catalog.ams.uri</span><span style="color:#f92672">=</span><span style="color:#e6db74">thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}</span>
+</span></span></code></pre></div><p>Or create a mixed_catalog with local configurations with following properties:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-properties" data-lang="properties"><span style="display:flex;"><span><span style="color:#a6e22e">spark.sql.catalog.mixed_catalog</span><span style="color:#f92672">=</span><span style="color:#e6db74">org.apache.amoro.spark.MixedFormatSparkCatalog</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Configure mixed catalog type as you needed</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">spark.sql.catalog.mixed_catalog.type</span><span style="color:#f92672">=</span><span style="color:#e6db74">hadoop</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">spark.sql.catalog.mixed_catalog.warehouse</span><span style="color:#f92672">=</span><span style="color:#e6db74">/warehouse/hadoop_mixed_catalog</span>
+</span></span></code></pre></div><p>Then, execute the following SQL in the Spark SQL Client to switch to the corresponding catalog.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span>use mixed_catalog;
+</span></span></code></pre></div><p>Of course, you can also access Mixed-Format tables by directly using the triplet
+<code>mixed_catalog.{db_name}.{table_name}</code>.</p>
+<p>You can also set Spark&rsquo;s default catalog to your configured catalog using the following properties.
+In this way, you don&rsquo;t need to use the <code>use {catalog}</code> command to switch the default catalog.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-properties" data-lang="properties"><span style="display:flex;"><span><span style="color:#a6e22e">spark.sql.defaultCatalog</span><span style="color:#f92672">=</span><span style="color:#e6db74">mixed_catalog</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">spark.sql.catalog.mixed_catalog</span><span style="color:#f92672">=</span><span style="color:#e6db74">org.apache.amoro.spark.MixedFormatSparkCatalog</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">spark.sql.catalog.mixed_catalog.ams.uri</span><span style="color:#f92672">=</span><span style="color:#e6db74">thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}</span>
+</span></span></code></pre></div><p>In a standalone AmoroSparkCatalog scenario, only Mixed-Format tables can be created and accessed in the corresponding
+catalog</p>
+<h3 id="using-mixed-format-in-session-catalog">Using Mixed-Format in session catalog</h3>
+<p>If you want to access both existing Hive tables or Spark datasource tables and Mixed-Format tables in Spark,
+you can use the AmoroSparkSessionCatalog as the implementation of the Spark default session catalog.
+The configuration method is as follows.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-properties" data-lang="properties"><span style="display:flex;"><span><span style="color:#a6e22e">spark.sql.catalog.spark_catalog</span><span style="color:#f92672">=</span><span style="color:#e6db74">org.apache.amoro.spark.MixedFormatSparkSessionCatalog</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">spark.sql.catalog.spark_catalog.ams.uri</span><span style="color:#f92672">=</span><span style="color:#e6db74">thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}</span>
+</span></span></code></pre></div><p>When using the <code>MixedFormatSparkSessionCatalog</code> as the implementation of the <code>spark_catalog</code>, it behaves as follows</p>
+<ul>
+<li>
+<p>Load Table: When resolving a <code>db_name.table_name</code> identifier, it will load the table metadata by Spark&rsquo;s built-in
+session catalog implementation, and then checking the MixedFormat flag defined in table properties. If the table has
+the MixedFormat flag, it will be loaded by <code>MixedFormatSparkCatalog</code> again.</p>
+</li>
+<li>
+<p>Create Table: The behavior of <code>CREATE TABLE</code> is determined by the <code>using {provider}</code> clause in the DDL statement. If
+the clause contains <code>using mixed_iceberg</code> or <code>using mixed_hive</code>, a Mixed-Format table will be created. Otherwise, the default Spark implementation
+will be used to create the table.</p>
+</li>
+</ul>
+<p>When using the <code>MixedFormatSparkSessionCatalog</code>, there are several points to keep in mind:</p>
+<ul>
+<li><code>MixedFormatSparkSessionCatalog</code> can only be configured under the <code>spark_catalog</code></li>
+<li>The <code>spark.sql.catalogImplementation</code> must be configured as <code>HIVE</code></li>
+<li>Catalogs registered on AMS must use a Metastore of the <code>Hive</code> type.</li>
+</ul>
+<h2 id="the-high-availability-configuration">The high availability configuration</h2>
+<p>If AMS is configured with high availability, you can configure the <code>spark.sql.catalog.{catalog_name}.ams.uri</code> property in
+the following way to achieve higher availability.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-properties" data-lang="properties"><span style="display:flex;"><span><span style="color:#a6e22e">spark.sql.catalog.mixed_catalog</span><span style="color:#f92672">=</span><span style="color:#e6db74">org.apache.amoro.spark.MixedFormatSparkCatalog</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">spark.sql.catalog.mixed_catalog.ams.uri</span><span style="color:#f92672">=</span><span style="color:#e6db74">zookeeper://{zookeeper-endpoint-list}/{cluster-name}/{catalog-name}</span>
+</span></span></code></pre></div><p>Among above:</p>
+<ul>
+<li>zookeeper-endpoint-list:  a list of host:port pairs separated by commas. A valid value could
+be <code>192.168.1.1:2181,192.168.1.2:2181,192.168.1.3:2181</code></li>
+<li>cluster-name:  is the value of <code>ams.cluster.name</code> configured in the configuration file <code>config.yml</code> of AMS, which is
+used to identify the user space on ZooKeeper.</li>
+<li>catalog-name: the name of the Catalog on AMS.</li>
+</ul>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#catalogs-configuration">Catalogs configuration</a>
+      <ul>
+        <li><a href="#using-mixed-format-in-a-standalone-catalog">Using Mixed-Format in a standalone catalog</a></li>
+        <li><a href="#using-mixed-format-in-session-catalog">Using Mixed-Format in session catalog</a></li>
+      </ul>
+    </li>
+    <li><a href="#the-high-availability-configuration">The high availability configuration</a></li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/latest//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/iceberg-theme.js"></script>
+
+
+
+</html>

@@ -1,0 +1,1150 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>AMS Configuration</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/latest//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.1/">0.8.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.0/">0.8.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">blogs</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/latest//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Configuration">
+                        <span>Configuration</span>
+                    </a>
+                </li>
+        <div id="Configuration" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../ams-config/">AMS Configuration</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-customized-encryption-method/">Using Customized Encryption Method for Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../rest-api/">REST API</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-cdc-ingestion/">Flink CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<!-- This file is auto-generated. To update, run: UPDATE=1 ./mvnw test -pl amoro-ams -am -Dtest=ConfigurationsTest -->
+<h1 id="ams-configuration">AMS Configuration</h1>
+<h2 id="amoro-management-service-configuration">Amoro Management Service Configuration</h2>
+<p>The configuration options for Amoro Management Service (AMS).</p>
+<style>
+table { width: 100%; table-layout: fixed; }
+table th, table td { vertical-align: top; }
+table td:first-child, table th:first-child { word-break: normal; width: 40%; }
+table td:nth-child(2), table th:nth-child(2) { width: 20%; word-break: break-all; }
+table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
+</style>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>admin-password</td>
+<td>admin</td>
+<td>The administrator password</td>
+</tr>
+<tr>
+<td>admin-username</td>
+<td>admin</td>
+<td>The administrator account name.</td>
+</tr>
+<tr>
+<td>auto-create-tags.enabled</td>
+<td>true</td>
+<td>Enable creating tags.</td>
+</tr>
+<tr>
+<td>auto-create-tags.interval</td>
+<td>1 min</td>
+<td>Interval for creating tags.</td>
+</tr>
+<tr>
+<td>auto-create-tags.thread-count</td>
+<td>3</td>
+<td>The number of threads used for creating tags.</td>
+</tr>
+<tr>
+<td>blocker.timeout</td>
+<td>1 min</td>
+<td>Session timeout. Default unit is milliseconds if not specified.</td>
+</tr>
+<tr>
+<td>catalog-meta-cache.expiration-interval</td>
+<td>1 min</td>
+<td>TTL for catalog metadata.</td>
+</tr>
+<tr>
+<td>clean-dangling-delete-files.enabled</td>
+<td>true</td>
+<td>Enable dangling delete files cleaning.</td>
+</tr>
+<tr>
+<td>clean-dangling-delete-files.thread-count</td>
+<td>10</td>
+<td>The number of threads used for dangling delete files cleaning.</td>
+</tr>
+<tr>
+<td>clean-orphan-files.enabled</td>
+<td>true</td>
+<td>Enable orphan files cleaning.</td>
+</tr>
+<tr>
+<td>clean-orphan-files.interval</td>
+<td>1 d</td>
+<td>Interval for cleaning orphan files.</td>
+</tr>
+<tr>
+<td>clean-orphan-files.thread-count</td>
+<td>10</td>
+<td>The number of threads used for orphan files cleaning.</td>
+</tr>
+<tr>
+<td>data-expiration.enabled</td>
+<td>true</td>
+<td>Enable data expiration</td>
+</tr>
+<tr>
+<td>data-expiration.interval</td>
+<td>1 d</td>
+<td>Execute interval for data expiration</td>
+</tr>
+<tr>
+<td>data-expiration.thread-count</td>
+<td>10</td>
+<td>The number of threads used for data expiring</td>
+</tr>
+<tr>
+<td>database.auto-create-tables</td>
+<td>true</td>
+<td>Auto init table schema when started</td>
+</tr>
+<tr>
+<td>database.connection-pool-max-idle</td>
+<td>16</td>
+<td>Max idle connect count of database connect pool.</td>
+</tr>
+<tr>
+<td>database.connection-pool-max-total</td>
+<td>20</td>
+<td>Max connect count of database connect pool.</td>
+</tr>
+<tr>
+<td>database.connection-pool-max-wait-millis</td>
+<td>30000</td>
+<td>Max wait time before getting a connection timeout.</td>
+</tr>
+<tr>
+<td>database.jdbc-driver-class</td>
+<td>org.apache.derby.jdbc.EmbeddedDriver</td>
+<td>The JDBC driver class name for connecting to the database.</td>
+</tr>
+<tr>
+<td>database.password</td>
+<td></td>
+<td>The password for connecting to the database.</td>
+</tr>
+<tr>
+<td>database.type</td>
+<td>derby</td>
+<td>Database type.</td>
+</tr>
+<tr>
+<td>database.url</td>
+<td>jdbc:derby:/tmp/amoro/derby;create=true</td>
+<td>Database connection address</td>
+</tr>
+<tr>
+<td>database.username</td>
+<td>root</td>
+<td>The username for connecting to the database.</td>
+</tr>
+<tr>
+<td>expire-snapshots.enabled</td>
+<td>true</td>
+<td>Enable snapshots expiring.</td>
+</tr>
+<tr>
+<td>expire-snapshots.thread-count</td>
+<td>10</td>
+<td>The number of threads used for snapshots expiring.</td>
+</tr>
+<tr>
+<td>ha.cluster-name</td>
+<td>default</td>
+<td>Amoro management service cluster name.</td>
+</tr>
+<tr>
+<td>ha.connection-timeout</td>
+<td>5 min</td>
+<td>The Zookeeper connection timeout in milliseconds.</td>
+</tr>
+<tr>
+<td>ha.enabled</td>
+<td>false</td>
+<td>Whether to enable high availability mode.</td>
+</tr>
+<tr>
+<td>ha.heartbeat-interval</td>
+<td>10 s</td>
+<td>HA heartbeat interval.</td>
+</tr>
+<tr>
+<td>ha.lease-ttl</td>
+<td>30 s</td>
+<td>TTL of HA lease.</td>
+</tr>
+<tr>
+<td>ha.session-timeout</td>
+<td>30 s</td>
+<td>The Zookeeper session timeout in milliseconds.</td>
+</tr>
+<tr>
+<td>ha.type</td>
+<td>zk</td>
+<td>High availability implementation type: zk or database.</td>
+</tr>
+<tr>
+<td>ha.zookeeper-address</td>
+<td></td>
+<td>The Zookeeper address used for high availability.</td>
+</tr>
+<tr>
+<td>ha.zookeeper-auth-keytab</td>
+<td></td>
+<td>The Zookeeper authentication keytab file path when auth type is KERBEROS.</td>
+</tr>
+<tr>
+<td>ha.zookeeper-auth-principal</td>
+<td></td>
+<td>The Zookeeper authentication principal when auth type is KERBEROS.</td>
+</tr>
+<tr>
+<td>ha.zookeeper-auth-type</td>
+<td>NONE</td>
+<td>The Zookeeper authentication type, NONE or KERBEROS.</td>
+</tr>
+<tr>
+<td>http-server.auth-basic-provider</td>
+<td>org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider</td>
+<td>User-defined password authentication implementation of org.apache.amoro.authentication.PasswdAuthenticationProvider</td>
+</tr>
+<tr>
+<td>http-server.auth-jwt-provider</td>
+<td>&lt;undefined&gt;</td>
+<td>User-defined JWT (JSON Web Token) authentication implementation of org.apache.amoro.authentication.TokenAuthenticationProvider</td>
+</tr>
+<tr>
+<td>http-server.bind-port</td>
+<td>19090</td>
+<td>Port that the Http server is bound to.</td>
+</tr>
+<tr>
+<td>http-server.proxy-client-ip-header</td>
+<td>X-Real-IP</td>
+<td>The HTTP header to record the real client IP address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use.</td>
+</tr>
+<tr>
+<td>http-server.rest-auth-type</td>
+<td>token</td>
+<td>The authentication used by REST APIs, token (default), basic or jwt.</td>
+</tr>
+<tr>
+<td>http-server.session-timeout</td>
+<td>7 d</td>
+<td>Timeout for http session.</td>
+</tr>
+<tr>
+<td>optimizer.heart-beat-timeout</td>
+<td>1 min</td>
+<td>Timeout duration for Optimizer heartbeat.</td>
+</tr>
+<tr>
+<td>optimizer.max-planning-parallelism</td>
+<td>1</td>
+<td>Max planning parallelism in one optimizer group.</td>
+</tr>
+<tr>
+<td>optimizer.polling-timeout</td>
+<td>3 s</td>
+<td>Optimizer polling task timeout.</td>
+</tr>
+<tr>
+<td>optimizer.task-ack-timeout</td>
+<td>30 s</td>
+<td>Timeout duration for task acknowledgment.</td>
+</tr>
+<tr>
+<td>optimizer.task-execute-timeout</td>
+<td>1 h</td>
+<td>Timeout duration for task execution, default to 1 hour.</td>
+</tr>
+<tr>
+<td>overview-cache.max-size</td>
+<td>3360</td>
+<td>Max size of overview cache.</td>
+</tr>
+<tr>
+<td>overview-cache.refresh-interval</td>
+<td>3 min</td>
+<td>Interval for refreshing overview cache.</td>
+</tr>
+<tr>
+<td>refresh-external-catalogs.interval</td>
+<td>3 min</td>
+<td>Interval to refresh the external catalog.</td>
+</tr>
+<tr>
+<td>refresh-external-catalogs.queue-size</td>
+<td>1000000</td>
+<td>The queue size of the executors of the external catalog explorer.</td>
+</tr>
+<tr>
+<td>refresh-external-catalogs.thread-count</td>
+<td>10</td>
+<td>The number of threads used for discovering tables in external catalogs.</td>
+</tr>
+<tr>
+<td>refresh-tables.interval</td>
+<td>1 min</td>
+<td>Interval for refreshing table metadata.</td>
+</tr>
+<tr>
+<td>refresh-tables.max-pending-partition-count</td>
+<td>100</td>
+<td>Filters will not be used beyond that number of partitions.</td>
+</tr>
+<tr>
+<td>refresh-tables.thread-count</td>
+<td>10</td>
+<td>The number of threads used for refreshing tables.</td>
+</tr>
+<tr>
+<td>self-optimizing.break-quota-limit-enabled</td>
+<td>true</td>
+<td>Allow the table to break the quota limit when the resource is sufficient.</td>
+</tr>
+<tr>
+<td>self-optimizing.commit-manifest-io-thread-count</td>
+<td>10</td>
+<td>Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent commit operations.</td>
+</tr>
+<tr>
+<td>self-optimizing.commit-thread-count</td>
+<td>10</td>
+<td>The number of threads that self-optimizing uses to submit results.</td>
+</tr>
+<tr>
+<td>self-optimizing.plan-manifest-io-thread-count</td>
+<td>10</td>
+<td>Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent planning operations.</td>
+</tr>
+<tr>
+<td>self-optimizing.refresh-group-interval</td>
+<td>30 s</td>
+<td>Optimizer group refresh interval.</td>
+</tr>
+<tr>
+<td>self-optimizing.runtime-data-expire-interval-hours</td>
+<td>1</td>
+<td>The number of hours that self-optimizing runtime data expire interval.</td>
+</tr>
+<tr>
+<td>self-optimizing.runtime-data-keep-days</td>
+<td>30</td>
+<td>The number of days that self-optimizing runtime data keeps the runtime.</td>
+</tr>
+<tr>
+<td>server-bind-host</td>
+<td>0.0.0.0</td>
+<td>The host bound to the server.</td>
+</tr>
+<tr>
+<td>server-expose-host</td>
+<td></td>
+<td>The exposed host of the server.</td>
+</tr>
+<tr>
+<td>sync-hive-tables.enabled</td>
+<td>false</td>
+<td>Enable synchronizing Hive tables.</td>
+</tr>
+<tr>
+<td>sync-hive-tables.thread-count</td>
+<td>10</td>
+<td>The number of threads used for synchronizing Hive tables.</td>
+</tr>
+<tr>
+<td>table-manifest-io.thread-count</td>
+<td>20</td>
+<td>Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent planning or commit operations.</td>
+</tr>
+<tr>
+<td>terminal.backend</td>
+<td>local</td>
+<td>Terminal backend implementation. local, kyuubi and custom are valid values.</td>
+</tr>
+<tr>
+<td>terminal.factory</td>
+<td>&lt;undefined&gt;</td>
+<td>Session factory implement of terminal, <code>terminal.backend</code> must be <code>custom</code> if this is set.</td>
+</tr>
+<tr>
+<td>terminal.result.limit</td>
+<td>1000</td>
+<td>Row limit of result-set</td>
+</tr>
+<tr>
+<td>terminal.sensitive-conf-keys</td>
+<td></td>
+<td>Comma-separated list of sensitive conf keys used to desensitize related value.</td>
+</tr>
+<tr>
+<td>terminal.session.timeout</td>
+<td>30 min</td>
+<td>Session timeout. Default unit is milliseconds if not specified (** Note: default units are minutes when version &lt; 0.8).</td>
+</tr>
+<tr>
+<td>terminal.stop-on-error</td>
+<td>false</td>
+<td>When a statement fails to execute, stop execution or continue executing the remaining statements.</td>
+</tr>
+<tr>
+<td>thrift-server.max-message-size</td>
+<td>100 mb</td>
+<td>Maximum message size that the Thrift server can accept. Default unit is bytes if not specified.</td>
+</tr>
+<tr>
+<td>thrift-server.optimizing-service.bind-port</td>
+<td>1261</td>
+<td>Port that the optimizing service thrift server is bound to.</td>
+</tr>
+<tr>
+<td>thrift-server.selector-queue-size</td>
+<td>4</td>
+<td>The number of queue size per selector thread for the Thrift server</td>
+</tr>
+<tr>
+<td>thrift-server.selector-thread-count</td>
+<td>2</td>
+<td>The number of selector threads for the Thrift server.</td>
+</tr>
+<tr>
+<td>thrift-server.table-service.bind-port</td>
+<td>1260</td>
+<td>Port that the table service thrift server is bound to.</td>
+</tr>
+<tr>
+<td>thrift-server.table-service.worker-thread-count</td>
+<td>20</td>
+<td>The number of worker threads for the Thrift server.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="shade-utils-configuration">Shade Utils Configuration</h2>
+<p>The configuration options for Amoro Configuration Shade Utils.</p>
+<style>
+table { width: 100%; table-layout: fixed; }
+table th, table td { vertical-align: top; }
+table td:first-child, table th:first-child { word-break: normal; width: 40%; }
+table td:nth-child(2), table th:nth-child(2) { width: 20%; word-break: break-all; }
+table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
+</style>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>shade.identifier</td>
+<td>default</td>
+<td>The identifier of the encryption method for decryption. Defaults to &ldquo;default&rdquo;, indicating no encryption</td>
+</tr>
+<tr>
+<td>shade.sensitive-keywords</td>
+<td>admin-password;database.password</td>
+<td>A semicolon-separated list of keywords for the configuration items to be decrypted.</td>
+</tr>
+</tbody>
+</table>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#amoro-management-service-configuration">Amoro Management Service Configuration</a></li>
+    <li><a href="#shade-utils-configuration">Shade Utils Configuration</a></li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/latest//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/iceberg-theme.js"></script>
+
+
+
+</html>

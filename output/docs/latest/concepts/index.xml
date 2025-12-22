@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Concepts on Amoro</title>
+    <link>https://amoro.apache.org/docs/latest/concepts/</link>
+    <description>Recent content in Concepts on Amoro</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/docs/latest/concepts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Catalogs</title>
+      <link>https://amoro.apache.org/docs/latest/catalogs/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/latest/catalogs/</guid>
+      <description>Catalogs Introduce multi-catalog A catalog is a metadata namespace that stores information about databases, tables, views, indexes, users, and UDFs. It provides a higher-level namespace for table and database. Typically, a catalog is associated with a specific type of data source or cluster. In Flink, Spark and Trino, the multi-catalog feature can be used to support SQL across data sources, such as:&#xA;SELECT c.ID, c.NAME, c.AGE, o.AMOUNT FROM ${CATALOG_A}.ONLINE.CUSTOMERS c JOIN ${CATALOG_B}.</description>
+    </item>
+    <item>
+      <title>Self-Optimizing</title>
+      <link>https://amoro.apache.org/docs/latest/self-optimizing/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/latest/self-optimizing/</guid>
+      <description>Self-optimizing Introduction Lakehouse is characterized by its openness and loose coupling, with data and files maintained by users through various engines. While this architecture appears to be well-suited for T+1 scenarios, as more attention is paid to applying Lakehouse to streaming data warehouses and real-time analysis scenarios, challenges arise. For example:&#xA;Streaming writes bring a massive amount of fragment files CDC ingestion and streaming updates generate excessive redundant data Using the new data lake format leads to orphan files and expired snapshots.</description>
+    </item>
+    <item>
+      <title>Table Watermark</title>
+      <link>https://amoro.apache.org/docs/latest/table-watermark/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/latest/table-watermark/</guid>
+      <description>Table Watermark Table freshness Data freshness represents timeliness, and in many discussions, freshness is considered one of the important indicators of data quality. In traditional offline data warehouses, higher cost typically means better performance, creating a typical binary paradox in terms of cost-performance trade-off. However, in high-freshness streaming data warehouses, massive small files and frequent updates can lead to performance degradation. The higher the freshness, the greater the impact on performance.</description>
+    </item>
+  </channel>
+</rss>

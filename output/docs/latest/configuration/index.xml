@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Configurations on Amoro</title>
+    <link>https://amoro.apache.org/docs/latest/configuration/</link>
+    <description>Recent content in Configurations on Amoro</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/docs/latest/configuration/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>AMS Configuration</title>
+      <link>https://amoro.apache.org/docs/latest/ams-config/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/latest/ams-config/</guid>
+      <description>AMS Configuration Amoro Management Service Configuration The configuration options for Amoro Management Service (AMS).&#xA;Key Default Description admin-password admin The administrator password admin-username admin The administrator account name. auto-create-tags.enabled true Enable creating tags. auto-create-tags.interval 1 min Interval for creating tags. auto-create-tags.thread-count 3 The number of threads used for creating tags. blocker.timeout 1 min Session timeout. Default unit is milliseconds if not specified. catalog-meta-cache.expiration-interval 1 min TTL for catalog metadata. clean-dangling-delete-files.</description>
+    </item>
+  </channel>
+</rss>

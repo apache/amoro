@@ -1,0 +1,781 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Flink Getting Started</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/latest//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.1/">0.8.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.0/">0.8.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">blogs</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/latest//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Configuration">
+                        <span>Configuration</span>
+                    </a>
+                </li>
+        <div id="Configuration" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../ams-config/">AMS Configuration</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-customized-encryption-method/">Using Customized Encryption Method for Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../rest-api/">REST API</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-cdc-ingestion/">Flink CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="flink-getting-started">Flink Getting Started</h1>
+<h2 id="iceberg-format">Iceberg format</h2>
+<p>The Iceberg Format can be accessed using the Connector provided by Iceberg.
+Refer to the documentation at <a href="https://iceberg.apache.org/docs/latest/flink-connector/">Iceberg Flink user manual</a>
+for more information.</p>
+<h2 id="paimon-format">Paimon format</h2>
+<p>The Paimon Format can be accessed using the Connector provided by Paimon.
+Refer to the documentation at <a href="https://paimon.apache.org/docs/master/engines/flink/">Paimon Flink user manual</a>
+for more information.</p>
+<h2 id="mixed-format">Mixed format</h2>
+<p>The Apache Flink engine can process Amoro table data in batch and streaming mode. The Flink on Amoro connector provides the ability to read and write to the Amoro data lake while ensuring data consistency. To meet the high real-time data requirements of businesses, the Amoro data lake&rsquo;s underlying storage structure is designed with LogStore, which stores the latest changelog or append-only real-time data.</p>
+<p>Amoro integrates the DataStream API and Table API of <a href="https://flink.apache.org/">Apache Flink</a> to facilitate the use of Flink to read data from Amoro tables or write data to Amoro tables.</p>
+<p>Flink Connector includes:</p>
+<ul>
+<li><code>Flink SQL Select</code> reads Amoro table data through Apache Flink SQL.</li>
+<li><code>Flink SQL Insert</code> writes data to Amoro tables through Apache Flink SQL.</li>
+<li><code>Flink SQL DDL</code> creates/modifies/deletes libraries and tables through Apache Flink DDL statements.</li>
+<li><code>FlinkSource</code> reads Amoro table data through Apache Flink DS API.</li>
+<li><code>FlinkSink</code> writes data to Amoro tables through Apache Flink DS API.</li>
+<li><code>Flink Lookup Join</code> performs real-time read of Amoro table data for association calculation through Apache Flink Temporal Join grammar.</li>
+</ul>
+<p>The Amoro project can be self-compiled to obtain the runtime jar.</p>
+<p><code>./mvnw clean package -pl ':amoro-mixed-flink-runtime-1.15' -am -DskipTests</code></p>
+<p>The Flink Runtime Jar is located in the <code>amoro-format-mixed/amoro-format-mixed-flink/v1.15/amoro-format-mixed-flink-runtime-1.15/target</code> directory.</p>
+<h2 id="environment-preparation">Environment preparation</h2>
+<p>Download Flink and related dependencies, and download Flink 1.15/1.16/1.17 as needed. Taking Flink 1.15 as an example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Replace version value with the latest Amoro version if needed</span>
+</span></span><span style="display:flex;"><span>AMORO_VERSION<span style="color:#f92672">=</span>0.8.0-incubating
+</span></span><span style="display:flex;"><span>FLINK_VERSION<span style="color:#f92672">=</span>1.15.3
+</span></span><span style="display:flex;"><span>FLINK_MAJOR_VERSION<span style="color:#f92672">=</span>1.15
+</span></span><span style="display:flex;"><span>FLINK_HADOOP_SHADE_VERSION<span style="color:#f92672">=</span>2.7.5
+</span></span><span style="display:flex;"><span>APACHE_FLINK_URL<span style="color:#f92672">=</span>archive.apache.org/dist/flink
+</span></span><span style="display:flex;"><span>MAVEN_URL<span style="color:#f92672">=</span>https://repo1.maven.org/maven2
+</span></span><span style="display:flex;"><span>FLINK_CONNECTOR_URL<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MAVEN_URL<span style="color:#e6db74">}</span>/org/apache/flink
+</span></span><span style="display:flex;"><span>AMORO_CONNECTOR_URL<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MAVEN_URL<span style="color:#e6db74">}</span>/org/apache/amoro
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Download FLink binary package</span>
+</span></span><span style="display:flex;"><span>wget <span style="color:#e6db74">${</span>APACHE_FLINK_URL<span style="color:#e6db74">}</span>/flink-<span style="color:#e6db74">${</span>FLINK_VERSION<span style="color:#e6db74">}</span>/flink-<span style="color:#e6db74">${</span>FLINK_VERSION<span style="color:#e6db74">}</span>-bin-scala_2.12.tgz
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Unzip Flink binary package</span>
+</span></span><span style="display:flex;"><span>tar -zxvf flink-<span style="color:#e6db74">${</span>FLINK_VERSION<span style="color:#e6db74">}</span>-bin-scala_2.12.tgz
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cd flink-<span style="color:#e6db74">${</span>FLINK_VERSION<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Download Flink Hadoop dependency</span>
+</span></span><span style="display:flex;"><span>wget <span style="color:#e6db74">${</span>FLINK_CONNECTOR_URL<span style="color:#e6db74">}</span>/flink-shaded-hadoop-2-uber/<span style="color:#e6db74">${</span>FLINK_HADOOP_SHADE_VERSION<span style="color:#e6db74">}</span>-10.0/flink-shaded-hadoop-2-uber-<span style="color:#e6db74">${</span>FLINK_HADOOP_SHADE_VERSION<span style="color:#e6db74">}</span>-10.0.jar
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Download Flink Amoro Connector</span>
+</span></span><span style="display:flex;"><span>wget <span style="color:#e6db74">${</span>AMORO_CONNECTOR_URL<span style="color:#e6db74">}</span>/amoro-mixed-format-flink-runtime-<span style="color:#e6db74">${</span>FLINK_MAJOR_VERSION<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>AMORO_VERSION<span style="color:#e6db74">}</span>/amoro-mixed-format-flink-runtime-<span style="color:#e6db74">${</span>FLINK_MAJOR_VERSION<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>AMORO_VERSION<span style="color:#e6db74">}</span>.jar
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Copy the necessary JAR files to the lib directory</span>
+</span></span><span style="display:flex;"><span>mv flink-shaded-hadoop-2-uber-<span style="color:#e6db74">${</span>FLINK_HADOOP_SHADE_VERSION<span style="color:#e6db74">}</span>-10.0.jar lib
+</span></span><span style="display:flex;"><span>mv amoro-mixed-format-flink-runtime-<span style="color:#e6db74">${</span>FLINK_MAJOR_VERSION<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>AMORO_VERSION<span style="color:#e6db74">}</span>.jar lib
+</span></span></code></pre></div><p>Modify Flink related configuration files:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>cd flink-1.15.3
+</span></span><span style="display:flex;"><span>vim conf/flink-conf.yaml
+</span></span></code></pre></div><p>Modify the following settings:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Increase the number of slots to run two streaming tasks simultaneously</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">taskmanager.numberOfTaskSlots</span>: <span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Enable Checkpoint. Only when Checkpoint is enabled, the data written to the file is visible</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">execution.checkpointing.interval</span>: <span style="color:#ae81ff">10s</span>
+</span></span></code></pre></div><p>Move the dependencies to the lib directory of Flink:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Used to create a socket connector for inputting CDC data via sockets. Not necessary for non-quickstart examples.</span>
+</span></span><span style="display:flex;"><span>cp examples/table/ChangelogSocketExample.jar lib
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cp ../amoro-mixed-flink-runtime-<span style="color:#e6db74">${</span>FLINK_MAJOR_VERSION<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>AMORO_VERSION<span style="color:#e6db74">}</span>.jar lib
+</span></span><span style="display:flex;"><span>cp ../flink-shaded-hadoop-2-uber-<span style="color:#e6db74">${</span>FLINK_HADOOP_SHADE_VERSION<span style="color:#e6db74">}</span>-10.0.jar lib
+</span></span></code></pre></div><h3 id="mixed-hive-format">Mixed-Hive format</h3>
+<p>Starting from Amoro version 0.3.1, Mixed-Hive format is supported, and data in Amoro  Mixed-Hive format tables can be read/written through Flink. When operating on Mixed-Hive format tables through Flink, the following points should be noted:</p>
+<ol>
+<li>Flink Runtime Jar does not include the content of the Jar packages that Hive depends on. You need to manually put the <a href="https://repo1.maven.org/maven2/org/apache/hive/hive-exec/2.1.1/hive-exec-2.1.1.jar">Hive-dependent Jar package</a> in the flink/lib directory;</li>
+<li>When creating partitioned tables, the partition field needs to be placed in the last column; when there are multiple partition fields, they need to be placed at the end;</li>
+</ol>
+<h2 id="frequently-asked-questions">Frequently Asked Questions</h2>
+<p><strong>1. Data written to Amoro table is not visible</strong></p>
+<p>You need to enable Flink checkpoint and modify the <a href="https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/config.html#execution-checkpointing-interval">Flink checkpoint configuration</a> in Flink conf. The data will only be committed during checkpoint.</p>
+<p><strong>2. When using Flink SQL-Client to read Amoro tables with write.upsert feature enabled, there are still duplicate primary key data</strong></p>
+<p>The query results obtained through Flink SQL-Client cannot provide MOR semantics based on primary keys. If you need to obtain merged results through Flink engine queries, you can write the content of Amoro tables to a MySQL table through JDBC connector for viewing.</p>
+<p><strong>3. When writing to Amoro tables with write.upsert feature enabled through SQL-Client under Flink 1.15, there are still duplicate primary key data</strong></p>
+<p>You need to execute the command <code>set table.exec.sink.upsert-materialize = none</code> in SQL-Client to turn off the upsert materialize operator generated upsert view. This operator will affect the AmoroWriter&rsquo;s generation of delete data when the write.upsert feature is enabled, causing duplicate primary key data to not be merged.</p>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#iceberg-format">Iceberg format</a></li>
+    <li><a href="#paimon-format">Paimon format</a></li>
+    <li><a href="#mixed-format">Mixed format</a></li>
+    <li><a href="#environment-preparation">Environment preparation</a>
+      <ul>
+        <li><a href="#mixed-hive-format">Mixed-Hive format</a></li>
+      </ul>
+    </li>
+    <li><a href="#frequently-asked-questions">Frequently Asked Questions</a></li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/latest//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/iceberg-theme.js"></script>
+
+
+
+</html>

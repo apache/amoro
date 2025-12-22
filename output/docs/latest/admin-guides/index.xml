@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Admin-Guides on Amoro</title>
+    <link>https://amoro.apache.org/docs/latest/admin-guides/</link>
+    <description>Recent content in Admin-Guides on Amoro</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://amoro.apache.org/docs/latest/admin-guides/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Deployment</title>
+      <link>https://amoro.apache.org/docs/latest/deployment/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/latest/deployment/</guid>
+      <description>Deployment You can choose to download the stable release package from download page, or the source code form Github and compile it according to the README.&#xA;System requirements Java 8 is required. Optional: A RDBMS (PostgreSQL 14.x or higher, MySQL 5.5 or higher) Optional: ZooKeeper 3.4.x or higher Download the distribution All released package can be downloaded from download page. You can download apache-amoro-x.y.z-bin.tar.gz (x.y.z is the release number), and you can also download the runtime packages for each engine version according to the engine you are using.</description>
+    </item>
+    <item>
+      <title>Deployment On Kubernetes</title>
+      <link>https://amoro.apache.org/docs/latest/deployment-on-kubernetes/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/latest/deployment-on-kubernetes/</guid>
+      <description>Deploy AMS On Kubernetes Requirements If you want to deploy AMS on Kubernetes, you’d better get a sense of the following things.&#xA;Use AMS official docker image or build AMS docker image An active Kubernetes cluster Kubectl Helm3+ Amoro Official Docker Image You can find the official docker image at Amoro Docker Hub.&#xA;The following are images that can be used in a production environment.&#xA;apache/amoro&#xA;This is an image built based on the Amoro binary distribution package for deploying AMS.</description>
+    </item>
+    <item>
+      <title>Managing Catalogs</title>
+      <link>https://amoro.apache.org/docs/latest/managing-catalogs/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/latest/managing-catalogs/</guid>
+      <description>Managing Catalogs Users can import your test or online clusters through the catalog management function provided by the AMS Dashboard. Before adding a new Catalog, please read the following guidelines and select the appropriate creation according to your actual needs.&#xA;Create catalog In Amoro, the catalog is a namespace for a group of libraries and tables. Under the catalog, it is further divided into different databases, and under each database, there are different tables.</description>
+    </item>
+    <item>
+      <title>Managing Optimizers</title>
+      <link>https://amoro.apache.org/docs/latest/managing-optimizers/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/latest/managing-optimizers/</guid>
+      <description>Managing Optimizers The optimizer is the execution unit for performing self-optimizing tasks on a table. To isolate optimizing tasks on different tables and support the deployment of optimizers in different environments, Amoro has proposed the concepts of optimizer containers and optimizer groups:&#xA;Optimizer container: Encapsulate the deployment method of optimizers, there are four implementations for now: flink container based on Flink streaming job, spark container based on Spark job, local container based on Java Application, and external container based on manually started by users.</description>
+    </item>
+    <item>
+      <title>Using Customized Encryption Method for Configurations</title>
+      <link>https://amoro.apache.org/docs/latest/using-customized-encryption-method/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/latest/using-customized-encryption-method/</guid>
+      <description>Using Customized Encryption Method for Configurations To enhance security, AMS allows encrypted sensitive configuration items such as passwords. Currently, AMS only supports the built-in base64 encryption algorithm (see Configure encrypted configuration items for details). If you require a stronger or customized encryption method, AMS also provides the flexibility to implement your own encryption algorithm.&#xA;Develop the Custom Implementation To integrate a custom encryption algorithm, you need to create a Java class that implements the ConfigShade interface and package it as a service.</description>
+    </item>
+    <item>
+      <title>Using Kyuubi By Terminal</title>
+      <link>https://amoro.apache.org/docs/latest/using-kyuubi/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://amoro.apache.org/docs/latest/using-kyuubi/</guid>
+      <description>Using Kyuubi By Terminal Prerequisites:&#xA;There must be a running Kyuubi. To deploy and run Kyuubi, please refer to Kyuubi doc Terminal supports interfacing with Kyuubi to submit SQL to Kyuubi for execution. All you need to do is add the Kyuubi configuration as instructed below:&#xA;ams: terminal: backend: kyuubi kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/ # kyuubi Connection Address Kerberos Authentication Amoro terminal uses the Kerberos authentication information from the catalog to connect to Kyuubi.</description>
+    </item>
+  </channel>
+</rss>

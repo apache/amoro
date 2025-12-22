@@ -1,0 +1,900 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Spark DDL</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/latest//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.1/">0.8.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.0/">0.8.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">blogs</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/latest//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Configuration">
+                        <span>Configuration</span>
+                    </a>
+                </li>
+        <div id="Configuration" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../ams-config/">AMS Configuration</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-customized-encryption-method/">Using Customized Encryption Method for Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../rest-api/">REST API</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-cdc-ingestion/">Flink CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="spark-ddl">Spark DDL</h1>
+<h2 id="create-table">CREATE TABLE</h2>
+<p>To create an MixedFormat table under an Amoro Catalog, you can use <code>using mixed_iceberg</code> or <code>using mixed_hive</code> to specify the provider in the
+<code>CREATE TABLE</code> statement. If the Catalog type is Hive, the created table will be a Hive-compatible table.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample (
+</span></span><span style="display:flex;"><span>    id bigint  <span style="color:#66d9ef">COMMENT</span> <span style="color:#e6db74">&#34;unique id&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">data</span> string
+</span></span><span style="display:flex;"><span>) <span style="color:#66d9ef">USING</span> mixed_iceberg 
+</span></span></code></pre></div><h3 id="primary-key">PRIMARY KEY</h3>
+<p>You can use <code>PRIMARY KEY</code> in the <code>CREATE TABLE</code> statement to specify the primary key column.
+MixedFormat ensures the uniqueness of the primary key column through MOR (Merge on Read) and Self-Optimizing.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample (
+</span></span><span style="display:flex;"><span>    id bigint  <span style="color:#66d9ef">COMMENT</span> <span style="color:#e6db74">&#34;unique id&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">data</span> string ,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span> (id)
+</span></span><span style="display:flex;"><span>) <span style="color:#66d9ef">USING</span> mixed_iceberg 
+</span></span></code></pre></div><h3 id="partitioned-by">PARTITIONED BY</h3>
+<p>Using <code>PARTITIONED BY</code> in the <code>CREATE TABLE</code> statement to create a table with partition spec.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample (
+</span></span><span style="display:flex;"><span>    id bigint,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">data</span> string,
+</span></span><span style="display:flex;"><span>    category string)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">USING</span> mixed_iceberg
+</span></span><span style="display:flex;"><span>PARTITIONED <span style="color:#66d9ef">BY</span> (category)
+</span></span></code></pre></div><p>In the <code>PARTITIONED BY</code> clause, you can define partition expressions, and Mixed-Iceberg format supports all partition
+expressions in Iceberg.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample (
+</span></span><span style="display:flex;"><span>    id bigint,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">data</span> string,
+</span></span><span style="display:flex;"><span>    category string,
+</span></span><span style="display:flex;"><span>    ts <span style="color:#66d9ef">timestamp</span>, 
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span> (id) )
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">USING</span> mixed_iceberg
+</span></span><span style="display:flex;"><span>PARTITIONED <span style="color:#66d9ef">BY</span> (bucket(<span style="color:#ae81ff">16</span>, id), days(ts), category)
+</span></span></code></pre></div><p>Supported transformations are:</p>
+<ul>
+<li>
+<p>years(ts): partition by year</p>
+</li>
+<li>
+<p>months(ts): partition by month</p>
+</li>
+<li>
+<p>days(ts) or date(ts): equivalent to dating partitioning</p>
+</li>
+<li>
+<p>hours(ts) or date_hour(ts): equivalent to dating and hour partitioning</p>
+</li>
+<li>
+<p>bucket(N, col): partition by hashed value mod N buckets</p>
+</li>
+<li>
+<p>truncate(L, col): partition by value truncated to L</p>
+<pre><code>Strings are truncated to the given length
+
+Integers and longs truncate to bins: truncate(10, i) produces partitions 0, 10, 20, 30, …
+</code></pre>
+</li>
+</ul>
+<blockquote>
+<p>Mixed-Hive format doesn&rsquo;t support transform.</p>
+</blockquote>
+<h2 id="create-table--as-select">CREATE TABLE &hellip; AS SELECT</h2>
+<pre tabindex="0"><code>CREATE TABLE mixed_catalog.db.sample
+USING mixed_iceberg
+AS SELECT ...
+</code></pre><blockquote>
+<p>The <code>CREATE TABLE ... AS SELECT</code> syntax is used to create a table and write the query results to the table. Primary
+keys, partitions, and properties are not inherited from the source table and need to be configured separately.</p>
+</blockquote>
+<blockquote>
+<p>You can enable uniqueness check for the primary key in the source table by setting set
+<code>spark.sql.mixed-format.check-source-data-uniqueness.enabled = true</code> in Spark SQL. If there are duplicate primary keys, an
+error will be raised during the write operation.</p>
+</blockquote>
+<p>You can use the following syntax to create a table with primary keys, partitions, and properties:</p>
+<pre tabindex="0"><code>CREATE TABLE mixed_catalog.db.sample
+PRIMARY KEY(id) USING mixed_iceberg 
+PARTITIONED BY (pt)  
+TBLPROPERTIES (&#39;&#39;prop1&#39;&#39;=&#39;&#39;val1&#39;&#39;, &#39;&#39;prop2&#39;&#39;=&#39;&#39;val2&#39;&#39;)
+AS SELECT ...
+</code></pre><div class="info">
+    In the current version, <code>CREATE TABLE ... AS SELECT</code> does not provide atomicity guarantees.
+</div>
+<h2 id="create-table--like">CREATE TABLE &hellip; LIKE</h2>
+<p>The <code>CREATE TABLE ... LIKE</code> syntax copies the structure of a table, including primary keys and partitions, to a new
+table, but it does not copy the data.</p>
+<pre tabindex="0"><code>USE mixed_catalog;
+CREATE TABLE db.sample
+LIKE db.sample2
+USING mixed_iceberg
+TBLPROPERTIES (&#39;owner&#39;=&#39;xxxx&#39;);
+</code></pre><blockquote>
+<p>Since <code>PRIMARY KEY</code> is not a standard Spark syntax, if the source table is a MixedFormat table with primary keys, the
+new table can copy the schema information with the primary keys. Otherwise, only schema could be copied.</p>
+</blockquote>
+<div class="info">
+    <code>Create Table Like</code> only supports the binary form of <code>db.table</code> and in the same catalog
+</div>
+<h2 id="replace-table--as-select">REPLACE TABLE &hellip; AS SELECT</h2>
+<blockquote>
+<p>The <code>REPLACE TABLE ... AS SELECT</code> syntax only supports tables without primary keys in the current version.</p>
+</blockquote>
+<pre tabindex="0"><code>REPLACE TABLE mixed_catalog.db.sample
+USING mixed_iceberg
+AS SELECT ...
+</code></pre><blockquote>
+<p>In the current version, <code>REPLACE TABLE ... AS SELECT</code> does not provide atomicity guarantees.</p>
+</blockquote>
+<h2 id="drop-table">DROP TABLE</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample;
+</span></span></code></pre></div><h2 id="truncate-table">TRUNCATE TABLE</h2>
+<p>The <code>TRUNCATE TABLE</code> statement could delete all data in the table.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">TRUNCATE</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample;
+</span></span></code></pre></div><h2 id="alter-table">ALTER TABLE</h2>
+<p>The ALTER TABLE syntax supported by Mixed-Format includes:</p>
+<ul>
+<li>ALTER TABLE &hellip; SET TBLPROPERTIES</li>
+<li>ALTER TABLE &hellip; ADD COLUMN</li>
+<li>ALTER TABLE &hellip; RENAME COLUMN</li>
+<li>ALTER TABLE &hellip; ALTER COLUMN</li>
+<li>ALTER TABLE &hellip; DROP COLUMN</li>
+<li>ALTER TABLE &hellip; DROP PARTITION</li>
+</ul>
+<h3 id="alter-table--set-tblproperties">ALTER TABLE &hellip; SET TBLPROPERTIES</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample <span style="color:#66d9ef">SET</span> TBLPROPERTIES (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;read.split.target-size&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;268435456&#39;</span>
+</span></span><span style="display:flex;"><span>);
+</span></span></code></pre></div><p>Using <code>UNSET</code> to remove properties:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample UNSET TBLPROPERTIES (<span style="color:#e6db74">&#39;read.split.target-size&#39;</span>);
+</span></span></code></pre></div><h3 id="alter-table--add-column">ALTER TABLE &hellip; ADD COLUMN</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ADD</span> COLUMNS (
+</span></span><span style="display:flex;"><span>    new_column string <span style="color:#66d9ef">comment</span> <span style="color:#e6db74">&#39;new_column docs&#39;</span>
+</span></span><span style="display:flex;"><span>  );
+</span></span></code></pre></div><p>You can add multiple columns at once, separated by commas.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- create a struct column
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ADD</span> <span style="color:#66d9ef">COLUMN</span> point struct<span style="color:#f92672">&lt;</span>x: double, y: double<span style="color:#f92672">&gt;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- add a field to the struct
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ADD</span> <span style="color:#66d9ef">COLUMN</span> point.z double;
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- create a nested array column of struct
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ADD</span> <span style="color:#66d9ef">COLUMN</span> points array<span style="color:#f92672">&lt;</span>struct<span style="color:#f92672">&lt;</span>x: double, y: double<span style="color:#f92672">&gt;&gt;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- add a field to the struct within an array. Using keyword &#39;element&#39; to access the array&#39;s element column.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ADD</span> <span style="color:#66d9ef">COLUMN</span> points.element.z double;
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- create a map column of struct key and struct value
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ADD</span> <span style="color:#66d9ef">COLUMN</span> points <span style="color:#66d9ef">map</span><span style="color:#f92672">&lt;</span>struct<span style="color:#f92672">&lt;</span>x: int<span style="color:#f92672">&gt;</span>, struct<span style="color:#f92672">&lt;</span>a: int<span style="color:#f92672">&gt;&gt;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- add a field to the value struct in a map. Using keyword &#39;value&#39; to access the map&#39;s value column.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ADD</span> <span style="color:#66d9ef">COLUMN</span> points.value.b int;
+</span></span></code></pre></div><p>You can add columns at any position by using the <code>FIRST</code> or <code>AFTER</code> clause.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ADD</span> <span style="color:#66d9ef">COLUMN</span> new_column bigint <span style="color:#66d9ef">AFTER</span> other_column;
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> TABLEmixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ADD</span> <span style="color:#66d9ef">COLUMN</span> nested.new_column bigint <span style="color:#66d9ef">FIRST</span>;
+</span></span></code></pre></div><h3 id="alter-table--rename-column">ALTER TABLE &hellip; RENAME COLUMN</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample <span style="color:#66d9ef">RENAME</span> <span style="color:#66d9ef">COLUMN</span> <span style="color:#66d9ef">data</span> <span style="color:#66d9ef">TO</span> payload;
+</span></span></code></pre></div><h3 id="alter-table--alter-column">ALTER TABLE &hellip; ALTER COLUMN</h3>
+<p><code>&quot;</code>ALTER COLUMN` can be used to widen types, make fields nullable, set comments, and reorder fields.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample <span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">COLUMN</span> measurement <span style="color:#66d9ef">TYPE</span> double;
+</span></span></code></pre></div><p>To add or remove columns from a structure, use <code>ADD COLUMN</code> or <code>DROP COLUMN</code> with nested column names.</p>
+<p>Column comments can also be updated using <code>ALTER COLUMN</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample <span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">COLUMN</span> measurement <span style="color:#66d9ef">TYPE</span> double <span style="color:#66d9ef">COMMENT</span> <span style="color:#e6db74">&#39;unit is bytes per second&#39;</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample <span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">COLUMN</span> measurement <span style="color:#66d9ef">COMMENT</span> <span style="color:#e6db74">&#39;unit is kilobytes per second&#39;</span>;
+</span></span></code></pre></div><p>You can use the <code>FIRST</code> and <code>AFTER</code> clauses to reorder top-level or nested columns within a structure.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample <span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">COLUMN</span> col <span style="color:#66d9ef">FIRST</span>;
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample <span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">COLUMN</span> nested.col <span style="color:#66d9ef">AFTER</span> other_col;
+</span></span></code></pre></div><h3 id="alter-table--drop-column">ALTER TABLE &hellip; DROP COLUMN</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample <span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">COLUMN</span> id;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample <span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">COLUMN</span> point.z;
+</span></span></code></pre></div><h3 id="alter-table--drop-partition">ALTER TABLE &hellip; DROP PARTITION</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample <span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">EXISTS</span> PARTITION (dt<span style="color:#f92672">=</span><span style="color:#ae81ff">2022</span>);
+</span></span></code></pre></div><h2 id="desc-table">DESC TABLE</h2>
+<p><code>DESCRIBE TABLE</code> returns basic metadata information about a table, including the primary key information for tables that
+have a primary key</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span> <span style="color:#960050;background-color:#1e0010">{</span> <span style="color:#66d9ef">DESC</span> <span style="color:#f92672">|</span> <span style="color:#66d9ef">DESCRIBE</span> <span style="color:#960050;background-color:#1e0010">}</span>  <span style="color:#66d9ef">TABLE</span>  mixed_catalog.db.sample;
+</span></span></code></pre></div></div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#create-table">CREATE TABLE</a>
+      <ul>
+        <li><a href="#primary-key">PRIMARY KEY</a></li>
+        <li><a href="#partitioned-by">PARTITIONED BY</a></li>
+      </ul>
+    </li>
+    <li><a href="#create-table--as-select">CREATE TABLE &hellip; AS SELECT</a></li>
+    <li><a href="#create-table--like">CREATE TABLE &hellip; LIKE</a></li>
+    <li><a href="#replace-table--as-select">REPLACE TABLE &hellip; AS SELECT</a></li>
+    <li><a href="#drop-table">DROP TABLE</a></li>
+    <li><a href="#truncate-table">TRUNCATE TABLE</a></li>
+    <li><a href="#alter-table">ALTER TABLE</a>
+      <ul>
+        <li><a href="#alter-table--set-tblproperties">ALTER TABLE &hellip; SET TBLPROPERTIES</a></li>
+        <li><a href="#alter-table--add-column">ALTER TABLE &hellip; ADD COLUMN</a></li>
+        <li><a href="#alter-table--rename-column">ALTER TABLE &hellip; RENAME COLUMN</a></li>
+        <li><a href="#alter-table--alter-column">ALTER TABLE &hellip; ALTER COLUMN</a></li>
+        <li><a href="#alter-table--drop-column">ALTER TABLE &hellip; DROP COLUMN</a></li>
+        <li><a href="#alter-table--drop-partition">ALTER TABLE &hellip; DROP PARTITION</a></li>
+      </ul>
+    </li>
+    <li><a href="#desc-table">DESC TABLE</a></li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/latest//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/iceberg-theme.js"></script>
+
+
+
+</html>

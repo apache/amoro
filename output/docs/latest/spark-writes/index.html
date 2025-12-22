@@ -1,0 +1,825 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Spark Writes</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/latest//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.1/">0.8.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.0/">0.8.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">blogs</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/latest//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Configuration">
+                        <span>Configuration</span>
+                    </a>
+                </li>
+        <div id="Configuration" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../ams-config/">AMS Configuration</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-customized-encryption-method/">Using Customized Encryption Method for Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../rest-api/">REST API</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-cdc-ingestion/">Flink CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc"><!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="spark-writes">Spark Writes</h1>
+<h2 id="writing-with-sql">Writing with SQL</h2>
+<h3 id="insert-overwrite">INSERT OVERWRITE</h3>
+<p><code>INSERT OVERWRITE</code> can replace the partition in a table with the results of a query.</p>
+<p>The default overwrite mode of Spark is <code>Static</code>, you can change the overwrite mode by</p>
+<pre tabindex="0"><code>SET spark.sql.sources.partitionOverwriteMode=dynamic
+</code></pre><p>To demonstrate the behavior of dynamic and static overwrites, a test table is defined using the following DDL:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.sample (
+</span></span><span style="display:flex;"><span>    id int,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">data</span> string,
+</span></span><span style="display:flex;"><span>    ts <span style="color:#66d9ef">timestamp</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">primary</span> <span style="color:#66d9ef">key</span> (id))
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">USING</span> mixed_iceberg
+</span></span><span style="display:flex;"><span>PARTITIONED <span style="color:#66d9ef">BY</span> (days(ts))
+</span></span></code></pre></div><p>When Spark&rsquo;s overwrite mode is dynamic, the partitions of the rows generated by the SELECT query will be replaced.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> OVERWRITE mixed_catalog.db.sample <span style="color:#66d9ef">values</span> 
+</span></span><span style="display:flex;"><span>(<span style="color:#ae81ff">1</span>, <span style="color:#e6db74">&#39;aaa&#39;</span>,  <span style="color:#66d9ef">timestamp</span>(<span style="color:#e6db74">&#39; 2022-1-1 09:00:00 &#39;</span>)), 
+</span></span><span style="display:flex;"><span>(<span style="color:#ae81ff">2</span>, <span style="color:#e6db74">&#39;bbb&#39;</span>,  <span style="color:#66d9ef">timestamp</span>(<span style="color:#e6db74">&#39; 2022-1-2 09:00:00 &#39;</span>)), 
+</span></span><span style="display:flex;"><span>(<span style="color:#ae81ff">3</span>, <span style="color:#e6db74">&#39;ccc&#39;</span>,  <span style="color:#66d9ef">timestamp</span>(<span style="color:#e6db74">&#39; 2022-1-3 09:00:00 &#39;</span>))
+</span></span></code></pre></div><p>When Spark&rsquo;s overwrite mode is static, the PARTITION clause will be translated into the result set of the SELECT from
+the table. If the PARTITION clause is omitted, all partitions will be replaced.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> OVERWRITE mixed_catalog.db.sample 
+</span></span><span style="display:flex;"><span>partition( dt <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;2021-1-1&#39;</span>)  <span style="color:#66d9ef">values</span> 
+</span></span><span style="display:flex;"><span>(<span style="color:#ae81ff">1</span>, <span style="color:#e6db74">&#39;aaa&#39;</span>), (<span style="color:#ae81ff">2</span>, <span style="color:#e6db74">&#39;bbb&#39;</span>), (<span style="color:#ae81ff">3</span>, <span style="color:#e6db74">&#39;ccc&#39;</span>) 
+</span></span></code></pre></div><blockquote>
+<p>In Static mode, it is not supported to define transforms on partitioning columns.</p>
+</blockquote>
+<blockquote>
+<p>You can enable uniqueness check of the primary key on the source table by setting
+<code>spark.sql.mixed-format.check-source-data-uniqueness.enabled = true</code> in SPARK SQL. If there are duplicate primary keys,
+an error will be thrown during the write operation.</p>
+</blockquote>
+<h3 id="insert-into">INSERT INTO</h3>
+<p>To append new data to a table, use <code>INSERT INTO</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> mixed_catalog.db.sample <span style="color:#66d9ef">VALUES</span> (<span style="color:#ae81ff">1</span>, <span style="color:#e6db74">&#39;a&#39;</span>), (<span style="color:#ae81ff">2</span>, <span style="color:#e6db74">&#39;b&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> prod.db.<span style="color:#66d9ef">table</span> <span style="color:#66d9ef">SELECT</span> ...
+</span></span></code></pre></div><h4 id="upsert-to-table-with-primary-keys">Upsert to table with primary keys.</h4>
+<p>To add new data to a table with a primary key, you can control whether to enable the <code>UPSERT</code> function by setting
+the <code>write.upsert.enabled parameter</code>.</p>
+<p>When <code>UPSERT</code> is enabled, if a row with the same primary key already exists, an <code>UPDATE</code> operation will be performed,
+and if it does not exist, an INSERT operation will be performed.</p>
+<p>When <code>UPSERT</code> is disabled, only <code>INSERT</code> operation will be performed,
+even if there are rows with the same primary key in the table.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> mixed_catalog.db.keyedTable (
+</span></span><span style="display:flex;"><span>    id int,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">data</span> string,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">primary</span> <span style="color:#66d9ef">key</span> (id))
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">USING</span> mixed_iceberg
+</span></span><span style="display:flex;"><span>TBLPROPERTIES (<span style="color:#e6db74">&#39;write.upsert.enabled&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;true&#39;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> mixed_catalog.db.keyedTable <span style="color:#66d9ef">VALUES</span> (<span style="color:#ae81ff">1</span>, <span style="color:#e6db74">&#39;a&#39;</span>), (<span style="color:#ae81ff">2</span>, <span style="color:#e6db74">&#39;b&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> prod.db.keyedTable <span style="color:#66d9ef">SELECT</span> ...
+</span></span></code></pre></div><blockquote>
+<p>You can enable uniqueness check of the primary key on the source table by setting
+<code>spark.sql.mixed-format.check-source-data-uniqueness.enabled = true</code> in SPARK SQL. If there are duplicate primary keys,
+an error will be thrown during the write operation.</p>
+</blockquote>
+<h3 id="delete-from">DELETE FROM</h3>
+<p>The <code>DELETE FROM</code> statements delete rows from table.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DELETE</span> <span style="color:#66d9ef">FROM</span> mixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> ts <span style="color:#f92672">&gt;=</span> <span style="color:#e6db74">&#39;2020-05-01 00:00:00&#39;</span> <span style="color:#66d9ef">and</span> ts <span style="color:#f92672">&lt;</span> <span style="color:#e6db74">&#39;2020-06-01 00:00:00&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">DELETE</span> <span style="color:#66d9ef">FROM</span> mixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> session_time <span style="color:#f92672">&lt;</span> (<span style="color:#66d9ef">SELECT</span> <span style="color:#66d9ef">min</span>(session_time) <span style="color:#66d9ef">FROM</span> prod.db.good_events)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">DELETE</span> <span style="color:#66d9ef">FROM</span> mixed_catalog.db.sample <span style="color:#66d9ef">AS</span> t1
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> <span style="color:#66d9ef">EXISTS</span> (<span style="color:#66d9ef">SELECT</span> oid <span style="color:#66d9ef">FROM</span> prod.db.returned_orders <span style="color:#66d9ef">WHERE</span> t1.oid <span style="color:#f92672">=</span> oid)
+</span></span></code></pre></div><h3 id="update">UPDATE</h3>
+<p>The <code>UPDATE</code> statement modifies rows in the table.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">UPDATE</span> mixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">SET</span> c1 <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;update_c1&#39;</span>, c2 <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;update_c2&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> ts <span style="color:#f92672">&gt;=</span> <span style="color:#e6db74">&#39;2020-05-01 00:00:00&#39;</span> <span style="color:#66d9ef">and</span> ts <span style="color:#f92672">&lt;</span> <span style="color:#e6db74">&#39;2020-06-01 00:00:00&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">UPDATE</span> mixed_catalog.db.sample
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">SET</span> session_time <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, ignored <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> session_time <span style="color:#f92672">&lt;</span> (<span style="color:#66d9ef">SELECT</span> <span style="color:#66d9ef">min</span>(session_time) <span style="color:#66d9ef">FROM</span> prod.db.good_events)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">UPDATE</span> mixed_catalog.db.sample <span style="color:#66d9ef">AS</span> t1
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">SET</span> order_status <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;returned&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> <span style="color:#66d9ef">EXISTS</span> (<span style="color:#66d9ef">SELECT</span> oid <span style="color:#66d9ef">FROM</span> prod.db.returned_orders <span style="color:#66d9ef">WHERE</span> t1.oid <span style="color:#f92672">=</span> oid)
+</span></span></code></pre></div><h3 id="merge-into">MERGE INTO</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span>MERGE <span style="color:#66d9ef">INTO</span> prod.db.target t   <span style="color:#75715e">-- a target table
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">USING</span> (<span style="color:#66d9ef">SELECT</span> ...) s          <span style="color:#75715e">-- the source updates
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">ON</span> t.id <span style="color:#f92672">=</span> s.id                <span style="color:#75715e">-- condition to find updates for target rows
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">WHEN</span> ...                      <span style="color:#75715e">-- updates
+</span></span></span></code></pre></div><p>The <code>MERGE INTO</code> statement supports multi action <code>WHEN MATCHED ... THEN ...</code> to execute <code>UPDATE</code>, <code>DELETE</code>, <code>INSERT</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>MERGE <span style="color:#66d9ef">INTO</span> prod.db.target t   
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">USING</span> prod.db.<span style="color:#66d9ef">source</span> s       
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ON</span> t.id <span style="color:#f92672">=</span> s.id             
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHEN</span> MATCHED <span style="color:#66d9ef">AND</span> s.op <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;delete&#39;</span> <span style="color:#66d9ef">THEN</span> <span style="color:#66d9ef">DELETE</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHEN</span> MATCHED <span style="color:#66d9ef">AND</span> t.<span style="color:#66d9ef">count</span> <span style="color:#66d9ef">IS</span> <span style="color:#66d9ef">NULL</span> <span style="color:#66d9ef">AND</span> s.op <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;increment&#39;</span> <span style="color:#66d9ef">THEN</span> <span style="color:#66d9ef">UPDATE</span> <span style="color:#66d9ef">SET</span> t.<span style="color:#66d9ef">count</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHEN</span> MATCHED <span style="color:#66d9ef">AND</span> s.op <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;increment&#39;</span> <span style="color:#66d9ef">THEN</span> <span style="color:#66d9ef">UPDATE</span> <span style="color:#66d9ef">SET</span> t.<span style="color:#66d9ef">count</span> <span style="color:#f92672">=</span> t.<span style="color:#66d9ef">count</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>          
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHEN</span> <span style="color:#66d9ef">NOT</span> MATCHED <span style="color:#66d9ef">THEN</span> <span style="color:#66d9ef">INSERT</span> <span style="color:#f92672">*</span>
+</span></span></code></pre></div><h2 id="writing-with-dataframes">Writing with DataFrames</h2>
+<h3 id="appending-data">Appending data</h3>
+<p>Using <code>append()</code> to add data to a MixedFormat table.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span>val <span style="color:#66d9ef">data</span>: DataFrame <span style="color:#f92672">=</span> ...
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">data</span>.writeTo(<span style="color:#e6db74">&#34;mixed_catalog.db.sample&#34;</span>).append()
+</span></span></code></pre></div><h3 id="overwriting-data">Overwriting data</h3>
+<p>Using <code>overwritePartitions()</code> to overwriting data.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span>val <span style="color:#66d9ef">data</span>: DataFrame <span style="color:#f92672">=</span> ...
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">data</span>.writeTo(<span style="color:#e6db74">&#34;mixed_catalog.db.sample&#34;</span>).overwritePartitions()
+</span></span></code></pre></div><h3 id="creating-tables">Creating tables</h3>
+<p>The <code>create()</code> will create a table and write data to the table, just like <code>CREATE TABLE AS SELECT</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span>val <span style="color:#66d9ef">data</span>: DataFrame <span style="color:#f92672">=</span> ...
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">data</span>.writeTo(<span style="color:#e6db74">&#34;mixed_catalog.db.sample&#34;</span>).<span style="color:#66d9ef">create</span>()
+</span></span></code></pre></div><p>The primary keys and partition keys could be specified by <code>partitionBy()</code> and <code>option(&quot;primary.keys&quot;, &quot;'xxx'&quot;)</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span>val <span style="color:#66d9ef">data</span>: DataFrame <span style="color:#f92672">=</span> ...
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">data</span>.<span style="color:#66d9ef">write</span>().format(<span style="color:#e6db74">&#34;mixed_iceberg&#34;</span>)
+</span></span><span style="display:flex;"><span>    .partitionBy(<span style="color:#e6db74">&#34;data&#34;</span>)
+</span></span><span style="display:flex;"><span>    .<span style="color:#66d9ef">option</span>(<span style="color:#e6db74">&#34;primary.keys&#34;</span>, <span style="color:#e6db74">&#34;&#39;xxx&#39;&#34;</span>)
+</span></span><span style="display:flex;"><span>    .save(<span style="color:#e6db74">&#34;mixed_catalog.db.sample&#34;</span>)
+</span></span></code></pre></div></div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#writing-with-sql">Writing with SQL</a>
+      <ul>
+        <li><a href="#insert-overwrite">INSERT OVERWRITE</a></li>
+        <li><a href="#insert-into">INSERT INTO</a></li>
+        <li><a href="#delete-from">DELETE FROM</a></li>
+        <li><a href="#update">UPDATE</a></li>
+        <li><a href="#merge-into">MERGE INTO</a></li>
+      </ul>
+    </li>
+    <li><a href="#writing-with-dataframes">Writing with DataFrames</a>
+      <ul>
+        <li><a href="#appending-data">Appending data</a></li>
+        <li><a href="#overwriting-data">Overwriting data</a></li>
+        <li><a href="#creating-tables">Creating tables</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/latest//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/iceberg-theme.js"></script>
+
+
+
+</html>
