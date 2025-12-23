@@ -19,36 +19,53 @@
 package org.apache.amoro.process;
 
 import org.apache.amoro.TableRuntime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * An abstract table process to handle table state.
- *
- * @param <T>
- */
-public abstract class TableProcess<T extends TableProcessState> implements AmoroProcess<T> {
+/** An abstract table process to handle table state. */
+public abstract class TableProcess implements AmoroProcess {
 
-  protected final T state;
+  public static final Logger LOG = LoggerFactory.getLogger(TableProcess.class);
+
   protected final TableRuntime tableRuntime;
+  protected final TableProcessStore tableProcessStore;
+  protected final int maxRetryTime;
   private final SimpleFuture submitFuture = new SimpleFuture();
   private final SimpleFuture completeFuture = new SimpleFuture();
 
-  protected TableProcess(T state, TableRuntime tableRuntime) {
-    this.state = state;
+  protected TableProcess(TableRuntime tableRuntime) {
+    this(tableRuntime, null, 1);
+  }
+
+  protected TableProcess(TableRuntime tableRuntime, TableProcessStore tableProcessStore) {
+    this(tableRuntime, tableProcessStore, 1);
+  }
+
+  protected TableProcess(
+      TableRuntime tableRuntime, TableProcessStore tableProcessStore, int maxRetryTime) {
     this.tableRuntime = tableRuntime;
+    this.tableProcessStore = tableProcessStore;
+    this.maxRetryTime = maxRetryTime;
   }
 
   public TableRuntime getTableRuntime() {
     return tableRuntime;
   }
 
+  public String getExternalProcessIdentifier() {
+    // TODO: Add a new field to process meta to store external process identifier.(e.g. flink job id
+    // or yarn app id)
+    return tableProcessStore.getExternalProcessIdentifier();
+  }
+
   @Override
-  public T getState() {
-    return state;
+  public TableProcessStore store() {
+    return tableProcessStore;
   }
 
   @Override
   public ProcessStatus getStatus() {
-    return state.getStatus();
+    return tableProcessStore.getStatus();
   }
 
   protected abstract void closeInternal();

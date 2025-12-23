@@ -40,7 +40,8 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
       Pair<Integer, StructLike> partition,
       long planTime,
       long lastMinorOptimizingTime,
-      long lastFullOptimizingTime) {
+      long lastFullOptimizingTime,
+      long lastMajorOptimizingTime) {
     super(
         identifier,
         table,
@@ -48,7 +49,8 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
         partition,
         planTime,
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 
   @Override
