@@ -21,6 +21,7 @@ package org.apache.amoro.optimizing;
 import org.apache.amoro.io.reader.GenericCombinedIcebergDataReader;
 import org.apache.amoro.io.writer.GenericIcebergPartitionedFanoutWriter;
 import org.apache.amoro.io.writer.IcebergFanoutPosDeleteWriter;
+import org.apache.amoro.shade.guava32.com.google.common.math.LongMath;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.DataFile;
@@ -34,7 +35,6 @@ import org.apache.iceberg.io.FileWriter;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.UnpartitionedWriter;
-import org.apache.iceberg.relocated.com.google.common.math.LongMath;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.math.RoundingMode;
