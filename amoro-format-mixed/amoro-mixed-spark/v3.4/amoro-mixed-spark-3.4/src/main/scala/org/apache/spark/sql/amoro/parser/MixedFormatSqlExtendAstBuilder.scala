@@ -522,9 +522,7 @@ class MixedFormatSqlExtendAstBuilder()
     // Create the attributes.
     val (attributes, schemaLess) = if (transformClause.colTypeList != null) {
       // Typed return columns.
-      val schema = createSchema(transformClause.colTypeList)
-      val replacedSchema = CharVarcharUtils.replaceCharVarcharWithStringInSchema(schema)
-      (schema.toAttributes, false)
+      (createSchema(transformClause.colTypeList).toAttributes, false)
     } else if (transformClause.identifierSeq != null) {
       // Untyped return columns.
       val attrs = visitIdentifierSeq(transformClause.identifierSeq).map { name =>
@@ -593,7 +591,7 @@ class MixedFormatSqlExtendAstBuilder()
     selectClause.hints.asScala.foldRight(plan)(withHints)
   }
 
-  private def visitCommonSelectQueryClausePlan(
+  def visitCommonSelectQueryClausePlan(
       relation: LogicalPlan,
       expressions: Seq[Expression],
       lateralView: java.util.List[LateralViewContext],
