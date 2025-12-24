@@ -45,3 +45,6 @@ github:
 notifications:
   commits: commits@amoro.apache.org
   discussions: dev@amoro.apache.org
+
+publish:
+  whoami: asf-site
