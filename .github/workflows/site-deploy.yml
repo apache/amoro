@@ -17,6 +17,8 @@ jobs:
   deploy-site-page:
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
         with:
@@ -60,6 +62,8 @@ jobs:
     needs: deploy-site-page
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
         with:
@@ -103,6 +107,8 @@ jobs:
   deploy-versioned-docs-page:
     if: (github.ref != 'refs/heads/master' && (startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/')))
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     continue-on-error: true
     steps:
       - uses: actions/checkout@v3
