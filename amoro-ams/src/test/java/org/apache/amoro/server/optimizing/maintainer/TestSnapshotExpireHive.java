@@ -21,6 +21,7 @@ package org.apache.amoro.server.optimizing.maintainer;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.formats.iceberg.maintainer.MixedTableMaintainer;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
@@ -111,7 +112,8 @@ public class TestSnapshotExpireHive extends TestSnapshotExpire {
         isKeyedTable()
             ? getMixedTable().asKeyedTable().baseTable()
             : getMixedTable().asUnkeyedTable();
-    MixedTableMaintainer mixedTableMaintainer = new MixedTableMaintainer(getMixedTable(), null);
+    MixedTableMaintainer mixedTableMaintainer =
+        new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()));
     mixedTableMaintainer.getBaseMaintainer().expireSnapshots(System.currentTimeMillis(), 1);
     Assert.assertEquals(1, Iterables.size(unkeyedTable.snapshots()));
 

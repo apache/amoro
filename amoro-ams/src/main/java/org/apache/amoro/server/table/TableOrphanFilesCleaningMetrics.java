@@ -21,12 +21,14 @@ package org.apache.amoro.server.table;
 import static org.apache.amoro.metrics.MetricDefine.defineCounter;
 
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.maintainer.MaintainerMetrics;
 import org.apache.amoro.metrics.Counter;
 import org.apache.amoro.metrics.MetricDefine;
 import org.apache.amoro.metrics.MetricRegistry;
 
 /** Table Orphan Files Cleaning metrics. */
-public class TableOrphanFilesCleaningMetrics extends AbstractTableMetrics {
+public class TableOrphanFilesCleaningMetrics extends AbstractTableMetrics
+    implements MaintainerMetrics {
   private final Counter orphanDataFilesCount = new Counter();
   private final Counter expectedOrphanDataFilesCount = new Counter();
 
@@ -88,5 +90,15 @@ public class TableOrphanFilesCleaningMetrics extends AbstractTableMetrics {
   public void completeOrphanMetadataFiles(int expected, int cleaned) {
     expectedOrphanMetadataFilesCount.inc(expected);
     orphanMetadataFilesCount.inc(cleaned);
+  }
+
+  @Override
+  public void recordOrphanDataFilesCleaned(int expected, int cleaned) {
+    completeOrphanDataFiles(expected, cleaned);
+  }
+
+  @Override
+  public void recordOrphanMetadataFilesCleaned(int expected, int cleaned) {
+    completeOrphanMetadataFiles(expected, cleaned);
   }
 }

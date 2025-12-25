@@ -21,7 +21,7 @@ package org.apache.amoro.server.scheduler.inline;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.server.optimizing.maintainer.TableMaintainer;
+import org.apache.amoro.maintainer.TableMaintainer;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.TableService;

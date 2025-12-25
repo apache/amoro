@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.maintainer;
+package org.apache.amoro.maintainer;
 
 /**
  * API for maintaining table.
@@ -24,7 +24,6 @@ package org.apache.amoro.server.optimizing.maintainer;
  * <p>Includes: clean content files, clean metadata, clean dangling delete files, expire snapshots,
  * auto create tags.
  */
-// TODO TableMaintainer should not be in this optimizing.xxx package.
 public interface TableMaintainer {
 
   /** Clean table orphan files. Includes: data files, metadata files. */

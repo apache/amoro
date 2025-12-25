@@ -23,6 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.formats.iceberg.maintainer.IcebergTableMaintainer;
 import org.apache.amoro.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import org.apache.amoro.io.writer.SortedPosDeleteWriter;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -101,7 +102,8 @@ public class TestOrphanFileCleanIceberg extends TestOrphanFileClean {
     assertDanglingDeleteFiles(testTable, 1);
 
     IcebergTableMaintainer tableMaintainer =
-        new IcebergTableMaintainer(testTable, testTable.id(), null);
+        new IcebergTableMaintainer(
+            testTable, testTable.id(), TestTableMaintainerContext.of(testTable));
     tableMaintainer.doCleanDanglingDeleteFiles();
 
     assertDanglingDeleteFiles(testTable, 0);
