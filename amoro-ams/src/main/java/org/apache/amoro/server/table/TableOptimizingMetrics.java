@@ -31,7 +31,6 @@ import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.primitives.Longs;
 import org.apache.iceberg.Snapshot;
@@ -350,7 +349,10 @@ public class TableOptimizingMetrics extends AbstractTableMetrics {
     }
     // ignore snapshot which is created by amoro maintain commits or no files added
     if (snapshot.summary().values().stream()
-            .anyMatch(IcebergTableMaintainer.AMORO_MAINTAIN_COMMITS::contains)
+            .anyMatch(
+                org.apache.amoro.formats.iceberg.maintainer.IcebergTableMaintainer
+                        .AMORO_MAINTAIN_COMMITS
+                    ::contains)
         || Long.parseLong(snapshot.summary().getOrDefault(SnapshotSummary.ADDED_FILES_PROP, "0"))
             == 0) {
       return;
