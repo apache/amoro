@@ -42,7 +42,8 @@ public class MixedHiveOptimizingPlanner extends AbstractOptimizingPlanner {
       double availableCore,
       long maxInputSizePerThread,
       long lastMinorOptimizingTime,
-      long lastFullOptimizingTime) {
+      long lastFullOptimizingTime,
+      long lastMajorOptimizingTime) {
     super(
         identifier,
         config,
@@ -53,7 +54,8 @@ public class MixedHiveOptimizingPlanner extends AbstractOptimizingPlanner {
         availableCore,
         maxInputSizePerThread,
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
     this.hiveLocation = (((SupportHive) mixedTable).hiveLocation());
   }
 
@@ -67,6 +69,7 @@ public class MixedHiveOptimizingPlanner extends AbstractOptimizingPlanner {
         hiveLocation,
         planTime,
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 }

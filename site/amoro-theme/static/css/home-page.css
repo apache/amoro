@@ -207,3 +207,149 @@
 #home-footer .apache .logo{
   padding-top: 20px;
 }
+
+/* User Wall Styles */
+#home-users {
+  background: #fff;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#home-users .content {
+  width: 100%;
+  max-width: 1182px;
+  padding: 64px 41px;
+}
+
+#home-users .content .title {
+  font-size: 32px;
+  font-weight: bold;
+  line-height: 24px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+#home-users .content .subtitle {
+  font-size: 16px;
+  color: #53576a;
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+#home-users .users-wall {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+#home-users .users-wall::before,
+#home-users .users-wall::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+#home-users .users-wall::before {
+  left: 0;
+  background: linear-gradient(to right, #fff 0%, transparent 100%);
+}
+
+#home-users .users-wall::after {
+  right: 0;
+  background: linear-gradient(to left, #fff 0%, transparent 100%);
+}
+
+#home-users .users-track {
+  display: flex;
+  animation: scroll-left 40s linear infinite;
+  width: fit-content;
+}
+
+#home-users .users-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+#home-users .user-item {
+  flex-shrink: 0;
+  width: 180px;
+  height: 80px;
+  margin: 0 20px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f6fa;
+  border-radius: 8px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+#home-users .user-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+
+#home-users .user-item img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: grayscale(100%);
+  opacity: 0.7;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+#home-users .user-item:hover img {
+  filter: grayscale(0%);
+  opacity: 1;
+}
+
+#home-users .add-company {
+  text-align: center;
+  margin-top: 40px;
+}
+
+#home-users .btn-add {
+  display: inline-block;
+  padding: 12px 32px;
+  background: #0036A1;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.3s ease;
+}
+
+#home-users .btn-add:hover {
+  background: #002880;
+  color: #fff;
+  text-decoration: none;
+}
+
+@media screen and (max-width: 800px) {
+  #home-users .user-item {
+    width: 140px;
+    height: 60px;
+    margin: 0 12px;
+  }
+
+  #home-users .users-wall::before,
+  #home-users .users-wall::after {
+    width: 50px;
+  }
+}

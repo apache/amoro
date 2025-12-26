@@ -44,6 +44,7 @@ import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.process.TableProcessMeta;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -74,15 +75,21 @@ import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.IcebergFindFiles;
+import org.apache.iceberg.MetadataTableType;
+import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SnapshotSummary;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableOperations;
+import org.apache.iceberg.TableScan;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.types.Types;
@@ -445,35 +452,170 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     if (mixedTable.spec().isUnpartitioned()) {
       return new ArrayList<>();
     }
-    Map<String, PartitionBaseInfo> partitionBaseInfoHashMap = new HashMap<>();
 
-    CloseableIterable<PartitionFileBaseInfo> tableFiles =
-        getTableFilesInternal(amoroTable, null, null);
-    try {
-      for (PartitionFileBaseInfo fileInfo : tableFiles) {
-        if (!partitionBaseInfoHashMap.containsKey(fileInfo.getPartition())) {
-          PartitionBaseInfo partitionBaseInfo = new PartitionBaseInfo();
-          partitionBaseInfo.setPartition(fileInfo.getPartition());
-          partitionBaseInfo.setSpecId(fileInfo.getSpecId());
-          partitionBaseInfoHashMap.put(fileInfo.getPartition(), partitionBaseInfo);
+    List<PartitionBaseInfo> result = new ArrayList<>();
+
+    // For keyed tables, we need to collect partitions from both change and base tables
+    if (mixedTable.isKeyedTable()) {
+      Map<String, PartitionBaseInfo> partitionMap = new HashMap<>();
+
+      // Collect from change table
+      List<PartitionBaseInfo> changePartitions =
+          collectPartitionsFromTable(mixedTable.asKeyedTable().changeTable());
+      for (PartitionBaseInfo partition : changePartitions) {
+        partitionMap.put(partition.getPartition(), partition);
+      }
+
+      // Collect from base table and merge
+      List<PartitionBaseInfo> basePartitions =
+          collectPartitionsFromTable(mixedTable.asKeyedTable().baseTable());
+      for (PartitionBaseInfo basePartition : basePartitions) {
+        if (partitionMap.containsKey(basePartition.getPartition())) {
+          PartitionBaseInfo existing = partitionMap.get(basePartition.getPartition());
+          existing.setFileCount(existing.getFileCount() + basePartition.getFileCount());
+          existing.setFileSize(existing.getFileSize() + basePartition.getFileSize());
+        } else {
+          partitionMap.put(basePartition.getPartition(), basePartition);
         }
-        PartitionBaseInfo partitionInfo = partitionBaseInfoHashMap.get(fileInfo.getPartition());
-        partitionInfo.setFileCount(partitionInfo.getFileCount() + 1);
-        partitionInfo.setFileSize(partitionInfo.getFileSize() + fileInfo.getFileSize());
-        partitionInfo.setLastCommitTime(
-            partitionInfo.getLastCommitTime() > fileInfo.getCommitTime()
-                ? partitionInfo.getLastCommitTime()
-                : fileInfo.getCommitTime());
       }
-    } finally {
-      try {
-        tableFiles.close();
-      } catch (IOException e) {
-        LOG.warn("Failed to close the manifest reader.", e);
-      }
+
+      result.addAll(partitionMap.values());
+    } else {
+      result = collectPartitionsFromTable(mixedTable.asUnkeyedTable());
     }
 
-    return new ArrayList<>(partitionBaseInfoHashMap.values());
+    return result;
+  }
+
+  /**
+   * Collect partition information from an Iceberg table using the PARTITIONS metadata table. This
+   * is much more efficient than scanning all data files, especially for tables with many files.
+   *
+   * @param table The Iceberg table to collect partitions from
+   * @return List of partition information
+   */
+  private List<PartitionBaseInfo> collectPartitionsFromTable(Table table) {
+    List<PartitionBaseInfo> partitions = new ArrayList<>();
+
+    try {
+      Preconditions.checkArgument(
+          table instanceof HasTableOperations, "table must support table operations");
+      TableOperations ops = ((HasTableOperations) table).operations();
+
+      // Use PARTITIONS metadata table for efficient partition statistics
+      Table partitionsTable =
+          MetadataTableUtils.createMetadataTableInstance(
+              ops,
+              table.name(),
+              table.name() + "#" + MetadataTableType.PARTITIONS.name(),
+              MetadataTableType.PARTITIONS);
+
+      TableScan scan = partitionsTable.newScan();
+      try (CloseableIterable<FileScanTask> tasks = scan.planFiles()) {
+        CloseableIterable<CloseableIterable<StructLike>> transform =
+            CloseableIterable.transform(tasks, task -> task.asDataTask().rows());
+
+        try (CloseableIterable<StructLike> rows = CloseableIterable.concat(transform)) {
+          for (StructLike row : rows) {
+            PartitionBaseInfo partitionInfo = new PartitionBaseInfo();
+
+            // Get partition field - it's a struct
+            StructLike partition = row.get(0, StructLike.class);
+            int specId = row.get(1, Integer.class);
+
+            // Convert partition struct to path string
+            PartitionSpec spec = table.specs().get(specId);
+            String partitionPath = spec.partitionToPath(partition);
+
+            partitionInfo.setPartition(partitionPath);
+            partitionInfo.setSpecId(specId);
+
+            // Get file statistics from the partition metadata table
+            // Schema: partition, spec_id, record_count, file_count,
+            // total_data_file_size_in_bytes,
+            // position_delete_record_count, position_delete_file_count,
+            // equality_delete_record_count, equality_delete_file_count,
+            // last_updated_at, last_updated_snapshot_id
+            Integer dataFileCount = row.get(3, Integer.class);
+            Long totalDataFileSize = row.get(4, Long.class);
+            Integer posDeleteFileCount = row.get(6, Integer.class);
+            Integer eqDeleteFileCount = row.get(8, Integer.class);
+            Long lastUpdatedAt = row.get(9, Long.class);
+
+            // Total file count = data files + position delete files + equality delete files
+            int totalFileCount =
+                (dataFileCount != null ? dataFileCount : 0)
+                    + (posDeleteFileCount != null ? posDeleteFileCount : 0)
+                    + (eqDeleteFileCount != null ? eqDeleteFileCount : 0);
+            partitionInfo.setFileCount(totalFileCount);
+            // TODO: Iceberg partitions table currently only reports data file sizes, not delete
+            // file sizes.
+            // This will be updated once Iceberg supports reporting delete file sizes.
+            // See: https://github.com/apache/iceberg/issues/14803
+            partitionInfo.setFileSize(totalDataFileSize != null ? totalDataFileSize : 0L);
+            partitionInfo.setLastCommitTime(lastUpdatedAt != null ? lastUpdatedAt : 0L);
+
+            partitions.add(partitionInfo);
+          }
+        }
+      }
+    } catch (Exception e) {
+      LOG.warn(
+          "Failed to use PARTITIONS metadata table, falling back to file scanning. Error: {}",
+          e.getMessage());
+      // Fallback to the old approach if metadata table access fails
+      return collectPartitionsFromFileScan(table);
+    }
+
+    return partitions;
+  }
+
+  /**
+   * Fallback method to collect partitions by scanning all files. This is kept for backward
+   * compatibility and error cases.
+   *
+   * @param table The Iceberg table to scan
+   * @return List of partition information
+   */
+  protected List<PartitionBaseInfo> collectPartitionsFromFileScan(Table table) {
+    Map<String, PartitionBaseInfo> partitionMap = new HashMap<>();
+
+    IcebergFindFiles manifestReader =
+        new IcebergFindFiles(table).ignoreDeleted().planWith(executorService);
+
+    try (CloseableIterable<IcebergFindFiles.IcebergManifestEntry> entries =
+        manifestReader.entries()) {
+
+      for (IcebergFindFiles.IcebergManifestEntry entry : entries) {
+        ContentFile<?> file = entry.getFile();
+        PartitionSpec spec = table.specs().get(file.specId());
+        String partitionPath = spec.partitionToPath(file.partition());
+
+        if (!partitionMap.containsKey(partitionPath)) {
+          PartitionBaseInfo partitionInfo = new PartitionBaseInfo();
+          partitionInfo.setPartition(partitionPath);
+          partitionInfo.setSpecId(file.specId());
+          partitionInfo.setFileCount(0);
+          partitionInfo.setFileSize(0L);
+          partitionInfo.setLastCommitTime(0L);
+          partitionMap.put(partitionPath, partitionInfo);
+        }
+
+        PartitionBaseInfo partitionInfo = partitionMap.get(partitionPath);
+        partitionInfo.setFileCount(partitionInfo.getFileCount() + 1);
+        partitionInfo.setFileSize(partitionInfo.getFileSize() + file.fileSizeInBytes());
+
+        long snapshotId = entry.getSnapshotId();
+        if (table.snapshot(snapshotId) != null) {
+          long commitTime = table.snapshot(snapshotId).timestampMillis();
+          partitionInfo.setLastCommitTime(Math.max(partitionInfo.getLastCommitTime(), commitTime));
+        }
+      }
+    } catch (IOException e) {
+      LOG.error("Failed to scan files for partition information", e);
+    }
+
+    return new ArrayList<>(partitionMap.values());
   }
 
   @Override

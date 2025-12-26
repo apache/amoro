@@ -38,7 +38,8 @@ public class MixedHiveOptimizingEvaluator extends MixedIcebergOptimizingEvaluato
       TableSnapshot currentSnapshot,
       int maxPendingPartitions,
       long lastMinorOptimizingTime,
-      long lastFullOptimizingTime) {
+      long lastFullOptimizingTime,
+      long lastMajorOptimizingTime) {
     super(
         identifier,
         config,
@@ -46,7 +47,8 @@ public class MixedHiveOptimizingEvaluator extends MixedIcebergOptimizingEvaluato
         currentSnapshot,
         maxPendingPartitions,
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 
   @Override
@@ -62,6 +64,7 @@ public class MixedHiveOptimizingEvaluator extends MixedIcebergOptimizingEvaluato
         System.currentTimeMillis(),
         mixedTable.isKeyedTable(),
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 }

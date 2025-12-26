@@ -91,7 +91,8 @@ public class TestHiveKeyedPartitionPlan extends TestKeyedPartitionPlan {
         hiveLocation,
         System.currentTimeMillis(),
         getTableRuntime().getLastMinorOptimizingTime(),
-        getTableRuntime().getLastFullOptimizingTime());
+        getTableRuntime().getLastFullOptimizingTime(),
+        getTableRuntime().getLastMajorOptimizingTime());
   }
 
   @Test

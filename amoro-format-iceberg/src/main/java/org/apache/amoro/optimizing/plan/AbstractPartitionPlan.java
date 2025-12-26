@@ -51,6 +51,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
   protected final ServerTableIdentifier identifier;
   protected final long lastMinorOptimizingTime;
   protected final long lastFullOptimizingTime;
+  protected final long lastMajorOptimizingTime;
   private CommonPartitionEvaluator evaluator;
   private TaskSplitter taskSplitter;
   protected MixedTable tableObject;
@@ -82,7 +83,8 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
       Pair<Integer, StructLike> partition,
       long planTime,
       long lastMinorOptimizingTime,
-      long lastFullOptimizingTime) {
+      long lastFullOptimizingTime,
+      long lastMajorOptimizingTime) {
     this.identifier = identifier;
     this.partition = partition;
     this.tableObject = table;
@@ -90,6 +92,7 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
     this.planTime = planTime;
     this.lastMinorOptimizingTime = lastMinorOptimizingTime;
     this.lastFullOptimizingTime = lastFullOptimizingTime;
+    this.lastMajorOptimizingTime = lastMajorOptimizingTime;
   }
 
   @Override
@@ -106,7 +109,13 @@ public abstract class AbstractPartitionPlan implements PartitionEvaluator {
 
   protected CommonPartitionEvaluator buildEvaluator() {
     return new CommonPartitionEvaluator(
-        identifier, config, partition, planTime, lastMinorOptimizingTime, lastFullOptimizingTime);
+        identifier,
+        config,
+        partition,
+        planTime,
+        lastMinorOptimizingTime,
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 
   @Override

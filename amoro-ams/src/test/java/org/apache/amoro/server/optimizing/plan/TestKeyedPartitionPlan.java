@@ -222,7 +222,8 @@ public class TestKeyedPartitionPlan extends MixedTablePlanTestBase {
         getPartition(),
         System.currentTimeMillis(),
         getTableRuntime().getLastMinorOptimizingTime(),
-        getTableRuntime().getLastFullOptimizingTime());
+        getTableRuntime().getLastFullOptimizingTime(),
+        getTableRuntime().getLastMajorOptimizingTime());
   }
 
   @Override

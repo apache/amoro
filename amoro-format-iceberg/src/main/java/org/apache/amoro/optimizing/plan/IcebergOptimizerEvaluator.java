@@ -33,7 +33,8 @@ public class IcebergOptimizerEvaluator extends AbstractOptimizingEvaluator {
       TableSnapshot currentSnapshot,
       int maxPendingPartitions,
       long lastMinorOptimizingTime,
-      long lastFullOptimizingTime) {
+      long lastFullOptimizingTime,
+      long lastMajorOptimizingTime) {
     super(
         identifier,
         config,
@@ -41,7 +42,8 @@ public class IcebergOptimizerEvaluator extends AbstractOptimizingEvaluator {
         currentSnapshot,
         maxPendingPartitions,
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 
   @Override
@@ -52,6 +54,7 @@ public class IcebergOptimizerEvaluator extends AbstractOptimizingEvaluator {
         partition,
         System.currentTimeMillis(),
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 }

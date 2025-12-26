@@ -36,7 +36,8 @@ public class MixedIcebergOptimizingEvaluator extends AbstractOptimizingEvaluator
       TableSnapshot currentSnapshot,
       int maxPendingPartitions,
       long lastMinorOptimizingTime,
-      long lastFullOptimizingTime) {
+      long lastFullOptimizingTime,
+      long lastMajorOptimizingTime) {
     super(
         identifier,
         config,
@@ -44,7 +45,8 @@ public class MixedIcebergOptimizingEvaluator extends AbstractOptimizingEvaluator
         currentSnapshot,
         maxPendingPartitions,
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 
   protected Map<String, String> partitionProperties(Pair<Integer, StructLike> partition) {
@@ -62,6 +64,7 @@ public class MixedIcebergOptimizingEvaluator extends AbstractOptimizingEvaluator
         System.currentTimeMillis(),
         mixedTable.isKeyedTable(),
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 }

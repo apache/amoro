@@ -83,7 +83,8 @@ public class TestIcebergPartitionPlan extends TestUnkeyedPartitionPlan {
         getPartition(),
         System.currentTimeMillis(),
         tableRuntime.getLastMinorOptimizingTime(),
-        tableRuntime.getLastFullOptimizingTime());
+        tableRuntime.getLastFullOptimizingTime(),
+        tableRuntime.getLastMajorOptimizingTime());
   }
 
   @Override

@@ -20,7 +20,9 @@ package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.optimizing.evaluation.MetadataBasedEvaluationEvent;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
@@ -60,8 +62,19 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
 
   private void tryEvaluatingPendingInput(DefaultTableRuntime tableRuntime, MixedTable table) {
     // only evaluate pending input when optimizing is enabled and in idle state
-    if (tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()
+    OptimizingConfig optimizingConfig = tableRuntime.getOptimizingConfig();
+    if (optimizingConfig.isEnabled()
         && tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
+
+      if (optimizingConfig.isMetadataBasedTriggerEnabled()
+          && !MetadataBasedEvaluationEvent.isEvaluatingNecessary(
+              optimizingConfig, table, tableRuntime.getLastPlanTime())) {
+        logger.debug(
+            "{} optimizing is not necessary due to metadata based trigger",
+            tableRuntime.getTableIdentifier());
+        return;
+      }
+
       AbstractOptimizingEvaluator evaluator =
           IcebergTableUtil.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
       if (evaluator.isNecessary()) {

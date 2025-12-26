@@ -331,7 +331,17 @@ public class TableConfigurations {
             PropertyUtil.propertyAsLong(
                 properties,
                 TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL,
-                TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT));
+                TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL_DEFAULT))
+        .setEvaluationFallbackInterval(
+            PropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.SELF_OPTIMIZING_EVALUATION_FALLBACK_INTERVAL,
+                TableProperties.SELF_OPTIMIZING_EVALUATION_FALLBACK_INTERVAL_DEFAULT))
+        .setEvaluationMseTolerance(
+            PropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE,
+                TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE_DEFAULT));
   }
 
   /**

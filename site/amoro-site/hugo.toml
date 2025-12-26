@@ -50,6 +50,68 @@ sectionPagesMenu = "main"
   desc = "Can be easily deployed and used in private environments, cloud environments, hybrid cloud environments, and multi-cloud environments."
   icon = "Infrastructure-Idependent"
 
+# Users who are using Amoro
+[[params.users]]
+  name = "ByteDance"
+  logo = "bytedance.png"
+[[params.users]]
+  name = "Tencent Cloud"
+  logo = "tencent-cloud.svg"
+[[params.users]]
+  name = "Cisco"
+  logo = "cisco.png"
+[[params.users]]
+  name = "Youdao"
+  logo = "youdao.png"
+[[params.users]]
+  name = "Huya"
+  logo = "huya.png"
+[[params.users]]
+  name = "NetEase Media"
+  logo = "netease-media.png"
+[[params.users]]
+  name = "GREE"
+  logo = "gree.png"
+[[params.users]]
+  name = "Lalamove"
+  logo = "lalamove.png"
+[[params.users]]
+  name = "Lilith Games"
+  logo = "lilith.png"
+[[params.users]]
+  name = "Huatai Securities"
+  logo = "huatai.png"
+[[params.users]]
+  name = "Gaoji Medical"
+  logo = "gaoji.png"
+[[params.users]]
+  name = "TRS"
+  logo = "trs.png"
+[[params.users]]
+  name = "Shunwang"
+  logo = "shunwang.png"
+[[params.users]]
+  name = "China Telecom Zhejiang"
+  logo = "china-telecom.png"
+[[params.users]]
+  name = "SEMI"
+  logo = "semi.png"
+[[params.users]]
+  name = "China Mobile Suzhou"
+  logo = "china-mobile.png"
+[[params.users]]
+  name = "Onething Tech"
+  logo = "onething.svg"
+[[params.users]]
+  name = "DMALL"
+  logo = "dmall.png"
+[[params.users]]
+  name = "Ctrip"
+  logo = "ctrip.png"
+[[params.users]]
+  name = "Huifu"
+  logo = "huifu.svg"
+
 [outputFormats.SearchIndex]
 baseName = "landingpagesearch"
 mediaType = "application/json"

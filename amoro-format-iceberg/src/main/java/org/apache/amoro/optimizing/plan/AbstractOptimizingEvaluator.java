@@ -61,6 +61,7 @@ public abstract class AbstractOptimizingEvaluator {
   protected final TableSnapshot currentSnapshot;
   protected final long lastFullOptimizingTime;
   protected final long lastMinorOptimizingTime;
+  protected final long lastMajorOptimizingTime;
   protected final int maxPendingPartitions;
   protected boolean isInitialized = false;
   protected Map<String, PartitionEvaluator> needOptimizingPlanMap = Maps.newHashMap();
@@ -73,7 +74,8 @@ public abstract class AbstractOptimizingEvaluator {
       TableSnapshot currentSnapshot,
       int maxPendingPartitions,
       long lastMinorOptimizingTime,
-      long lastFullOptimizingTime) {
+      long lastFullOptimizingTime,
+      long lastMajorOptimizingTime) {
     this.identifier = identifier;
     this.config = config;
     this.mixedTable = table;
@@ -81,6 +83,7 @@ public abstract class AbstractOptimizingEvaluator {
     this.maxPendingPartitions = maxPendingPartitions;
     this.lastFullOptimizingTime = lastFullOptimizingTime;
     this.lastMinorOptimizingTime = lastMinorOptimizingTime;
+    this.lastMajorOptimizingTime = lastMajorOptimizingTime;
   }
 
   protected void initEvaluator() {
