@@ -20,7 +20,6 @@ package org.apache.amoro.maintainer;
 
 import org.apache.amoro.config.TableConfiguration;
 
-import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -60,7 +59,5 @@ public interface TableMaintainerContext {
    *
    * @return set of Hive location paths, or empty set if not a Hive table
    */
-  default Set<String> getHiveLocationPaths() {
-    return Collections.emptySet();
-  }
+  Set<String> getHiveLocationPaths();
 }

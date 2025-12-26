@@ -23,16 +23,20 @@ import org.apache.amoro.maintainer.MaintainerMetrics;
 import org.apache.amoro.maintainer.OptimizingInfo;
 import org.apache.amoro.maintainer.TableMaintainerContext;
 import org.apache.amoro.server.table.TableConfigurations;
+import org.apache.amoro.server.utils.HiveLocationUtil;
 import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
+
+import java.util.Collections;
+import java.util.Set;
 
 /** Utility class for creating test TableMaintainerContext instances. */
 public class TestTableMaintainerContext {
 
   /** Create a test TableMaintainerContext for the given MixedTable. */
   public static TableMaintainerContext of(MixedTable table) {
-    return new Impl(TableConfigurations.parseTableConfig(table.properties()));
+    return new Impl(TableConfigurations.parseTableConfig(table.properties()), table);
   }
 
   /** Create a test TableMaintainerContext for the given KeyedTable. */
@@ -49,10 +53,18 @@ public class TestTableMaintainerContext {
   public static class Impl implements TableMaintainerContext {
     private final TableConfiguration tableConfiguration;
     private OptimizingInfo optimizingInfo;
+    private final MixedTable mixedTable;
 
     public Impl(TableConfiguration tableConfiguration) {
       this.tableConfiguration = tableConfiguration;
       this.optimizingInfo = OptimizingInfo.EMPTY;
+      this.mixedTable = null;
+    }
+
+    public Impl(TableConfiguration tableConfiguration, MixedTable mixedTable) {
+      this.tableConfiguration = tableConfiguration;
+      this.optimizingInfo = OptimizingInfo.EMPTY;
+      this.mixedTable = mixedTable;
     }
 
     public void setOptimizingInfo(OptimizingInfo optimizingInfo) {
@@ -72,6 +84,15 @@ public class TestTableMaintainerContext {
     @Override
     public OptimizingInfo getOptimizingInfo() {
       return optimizingInfo;
+    }
+
+    @Override
+    public Set<String> getHiveLocationPaths() {
+      // Use HiveLocationUtil to get Hive location paths
+      if (mixedTable == null) {
+        return Collections.emptySet();
+      }
+      return HiveLocationUtil.getHiveLocation(mixedTable);
     }
   }
 }

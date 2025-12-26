@@ -205,7 +205,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assert.assertEquals(4, Iterables.size(table.snapshots()));
 
     MixedTableMaintainer tableMaintainer =
-        new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()));
+        new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(table));
     tableMaintainer.expireSnapshots();
 
     Assert.assertEquals(2, Iterables.size(table.snapshots()));
@@ -239,7 +239,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assert.assertEquals(4, Iterables.size(table.snapshots()));
 
     MixedTableMaintainer tableMaintainer =
-        new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()));
+        new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(table));
     tableMaintainer.expireSnapshots();
 
     Assert.assertEquals(2, Iterables.size(table.snapshots()));
@@ -262,7 +262,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     TestTableMaintainerContext.Impl context =
         new TestTableMaintainerContext.Impl(
-            TableConfigurations.parseTableConfig(table.properties()));
+            TableConfigurations.parseTableConfig(table.properties()), table);
     new MixedTableMaintainer(table, context).expireSnapshots();
     Assert.assertEquals(1, Iterables.size(table.snapshots()));
 
@@ -481,7 +481,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     Assert.assertEquals(2, Iterables.size(testUnkeyedTable.snapshots()));
 
     MixedTableMaintainer tableMaintainer =
-        new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()));
+        new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(testUnkeyedTable));
     testUnkeyedTable.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0").commit();
 
     tableMaintainer.expireSnapshots();
@@ -489,7 +489,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
     testUnkeyedTable.updateProperties().set("gc.enabled", "true").commit();
     tableMaintainer =
-        new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()));
+        new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(testUnkeyedTable));
     tableMaintainer.expireSnapshots();
     Assert.assertEquals(1, Iterables.size(testUnkeyedTable.snapshots()));
   }
@@ -508,8 +508,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     table.updateProperties().set(TableProperties.SNAPSHOT_KEEP_DURATION, "0s").commit();
     table.updateProperties().set(TableProperties.SNAPSHOT_MIN_COUNT, "3").commit();
 
-    new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()))
-        .expireSnapshots();
+    new MixedTableMaintainer(table, TestTableMaintainerContext.of(table)).expireSnapshots();
     Assert.assertEquals(2, Iterables.size(table.snapshots()));
 
     table.newAppend().commit();
@@ -517,8 +516,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
     table.newAppend().commit();
     expectedSnapshots.add(table.currentSnapshot());
 
-    new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()))
-        .expireSnapshots();
+    new MixedTableMaintainer(table, TestTableMaintainerContext.of(table)).expireSnapshots();
     Assert.assertEquals(3, Iterables.size(table.snapshots()));
     Assert.assertTrue(
         Iterators.elementsEqual(expectedSnapshots.iterator(), table.snapshots().iterator()));
