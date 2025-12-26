@@ -553,6 +553,7 @@ public class AmoroManagementConf {
   public static final String DB_TYPE_DERBY = "derby";
   public static final String DB_TYPE_MYSQL = "mysql";
   public static final String DB_TYPE_POSTGRES = "postgres";
+  public static final String DB_TYPE_DAMENG = "dameng";
 
   // HA config
   public static final String HA_TYPE_ZK = "zk";
