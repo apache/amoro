@@ -90,7 +90,8 @@ public class TestHiveUnkeyedPartitionPlan extends TestUnkeyedPartitionPlan {
         hiveLocation,
         System.currentTimeMillis(),
         getTableRuntime().getLastMinorOptimizingTime(),
-        getTableRuntime().getLastFullOptimizingTime());
+        getTableRuntime().getLastFullOptimizingTime(),
+        getTableRuntime().getLastMajorOptimizingTime());
   }
 
   @Test

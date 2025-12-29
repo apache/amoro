@@ -36,6 +36,8 @@ import org.apache.amoro.server.dashboard.JavalinJsonMapper;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
+import org.apache.amoro.server.ha.HighAvailabilityContainerFactory;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.DataSourceFactory;
@@ -115,7 +117,7 @@ public class AmoroServiceContainer {
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
-    haContainer = new HighAvailabilityContainer(serviceConfig);
+    haContainer = HighAvailabilityContainerFactory.create(serviceConfig);
   }
 
   public static void main(String[] args) {

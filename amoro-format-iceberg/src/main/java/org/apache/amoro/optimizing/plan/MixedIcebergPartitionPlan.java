@@ -56,7 +56,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       Pair<Integer, StructLike> partition,
       long planTime,
       long lastMinorOptimizingTime,
-      long lastFullOptimizingTime) {
+      long lastFullOptimizingTime,
+      long lastMajorOptimizingTime) {
     super(
         identifier,
         table,
@@ -64,7 +65,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         partition,
         planTime,
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
     this.partitionProperties = TablePropertyUtil.getPartitionProperties(table, partition.second());
   }
 
@@ -121,7 +123,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         planTime,
         isKeyedTable(),
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
   }
 
   public static class MixedIcebergPartitionEvaluator extends CommonPartitionEvaluator {
@@ -137,9 +140,16 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
         long planTime,
         boolean keyedTable,
         long lastMinorOptimizingTime,
-        long lastFullOptimizingTime) {
+        long lastFullOptimizingTime,
+        long lastMajorOptimizingTime) {
       super(
-          identifier, config, partition, planTime, lastMinorOptimizingTime, lastFullOptimizingTime);
+          identifier,
+          config,
+          partition,
+          planTime,
+          lastMinorOptimizingTime,
+          lastFullOptimizingTime,
+          lastMajorOptimizingTime);
       this.keyedTable = keyedTable;
       String optimizedTime = partitionProperties.get(TableProperties.PARTITION_BASE_OPTIMIZED_TIME);
       long lastBaseOptimizedTime = optimizedTime == null ? 0 : Long.parseLong(optimizedTime);
