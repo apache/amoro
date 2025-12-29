@@ -38,6 +38,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.DateTimeUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.iceberg.util.StructLikeSet;
 
@@ -269,17 +270,21 @@ public class KeyedTableDataView extends AbstractTableDataView {
       } else if (o1 == null || o2 == null) {
         return false;
       } else if (o1 instanceof OffsetDateTime) {
-        // Handle OffsetDateTime comparison
+        // Convert OffsetDateTime to microseconds using DateTimeUtil
+        long micros1 = DateTimeUtil.microsFromTimestamptz((OffsetDateTime) o1);
         if (o2 instanceof OffsetDateTime) {
-          equals = ((OffsetDateTime) o1).isEqual((OffsetDateTime) o2);
+          // Both are OffsetDateTime, convert both to microseconds
+          long micros2 = DateTimeUtil.microsFromTimestamptz((OffsetDateTime) o2);
+          equals = micros1 == micros2;
         } else if (o2 instanceof Long) {
-          // Compare OffsetDateTime with Long timestamp
-          equals = ((OffsetDateTime) o1).toEpochSecond() == ((Long) o2) / 1000000;
+          // o2 is already microseconds, compare directly
+          equals = micros1 == (Long) o2;
         } else if (o2 instanceof String) {
-          // Try to parse String as OffsetDateTime
+          // Try to parse o2 as OffsetDateTime and convert to microseconds
           try {
             OffsetDateTime dt = OffsetDateTime.parse((String) o2);
-            equals = ((OffsetDateTime) o1).isEqual(dt);
+            long micros2 = DateTimeUtil.microsFromTimestamptz(dt);
+            equals = micros1 == micros2;
           } catch (Exception e) {
             equals = false;
           }
@@ -287,21 +292,24 @@ public class KeyedTableDataView extends AbstractTableDataView {
           equals = o1.equals(o2);
         }
       } else if (o1 instanceof Long && o2 instanceof OffsetDateTime) {
-        // Handle Long to OffsetDateTime comparison
-        equals = ((Long) o1) / 1000000 == ((OffsetDateTime) o2).toEpochSecond();
+        // o1 is microseconds, convert o2 to microseconds and compare
+        long micros2 = DateTimeUtil.microsFromTimestamptz((OffsetDateTime) o2);
+        equals = (Long) o1 == micros2;
       } else if (o1 instanceof Long && o2 instanceof String) {
-        // Handle Long to String timestamp comparison
+        // o1 is microseconds, try to parse o2 as OffsetDateTime
         try {
           OffsetDateTime dt = OffsetDateTime.parse((String) o2);
-          equals = ((Long) o1) / 1000000 == dt.toEpochSecond();
+          long micros2 = DateTimeUtil.microsFromTimestamptz(dt);
+          equals = (Long) o1 == micros2;
         } catch (Exception e) {
           equals = o1.equals(o2);
         }
       } else if (o1 instanceof String && o2 instanceof Long) {
-        // Handle String timestamp to Long comparison
+        // Try to parse o1 as OffsetDateTime and convert to microseconds
         try {
           OffsetDateTime dt = OffsetDateTime.parse((String) o1);
-          equals = dt.toEpochSecond() == ((Long) o2) / 1000000;
+          long micros1 = DateTimeUtil.microsFromTimestamptz(dt);
+          equals = micros1 == (Long) o2;
         } catch (Exception e) {
           equals = o1.equals(o2);
         }
