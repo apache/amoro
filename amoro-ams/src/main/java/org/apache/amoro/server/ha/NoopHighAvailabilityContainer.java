@@ -44,6 +44,24 @@ public class NoopHighAvailabilityContainer implements HighAvailabilityContainer 
   }
 
   @Override
+  public void registAndElect() throws Exception {}
+
+  @Override
+  public boolean hasLeadership() {
+    return false;
+  }
+
+  @Override
+  public AmsServerInfo getOptimizingServiceServerInfo() {
+    return null;
+  }
+
+  @Override
+  public List<AmsServerInfo> getAliveNodes() throws Exception {
+    return List.of();
+  }
+
+  @Override
   /** No-op close operation. */
   public void close() {
     LOG.info("Noop HA: closed");

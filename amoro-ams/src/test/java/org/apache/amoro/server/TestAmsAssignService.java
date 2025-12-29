@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TestAmsAssignService {
 
   private Configurations serviceConfig;
-  private HighAvailabilityContainer haContainer;
+  private ZkHighAvailabilityContainer haContainer;
   private AmsAssignService assignService;
   private AmsServerInfo node1;
   private AmsServerInfo node2;
@@ -459,11 +459,11 @@ public class TestAmsAssignService {
     return createContainerWithMockZk(serviceConfig);
   }
 
-  /** Create HighAvailabilityContainer with mocked ZK components using reflection. */
-  private HighAvailabilityContainer createContainerWithMockZk(Configurations config)
+  /** Create ZkHighAvailabilityContainer with mocked ZK components using reflection. */
+  private ZkHighAvailabilityContainer createContainerWithMockZk(Configurations config)
       throws Exception {
     // Create container without ZK connection to avoid any connection attempts
-    HighAvailabilityContainer container = createContainerWithoutZk(config);
+    ZkHighAvailabilityContainer container = createContainerWithoutZk(config);
 
     // Inject mock ZK client and leader latch
     java.lang.reflect.Field zkClientField =
@@ -479,8 +479,8 @@ public class TestAmsAssignService {
     return container;
   }
 
-  /** Create a HighAvailabilityContainer without initializing ZK connection. */
-  private HighAvailabilityContainer createContainerWithoutZk(Configurations config)
+  /** Create a ZkHighAvailabilityContainer without initializing ZK connection. */
+  private ZkHighAvailabilityContainer createContainerWithoutZk(Configurations config)
       throws Exception {
     java.lang.reflect.Constructor<ZkHighAvailabilityContainer> constructor =
         ZkHighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
@@ -489,7 +489,7 @@ public class TestAmsAssignService {
     Configurations tempConfig = new Configurations(config);
     tempConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
 
-    HighAvailabilityContainer container = constructor.newInstance(tempConfig);
+    ZkHighAvailabilityContainer container = constructor.newInstance(tempConfig);
 
     // Now set all required fields using reflection
     java.lang.reflect.Field isMasterSlaveModeField =
@@ -557,7 +557,7 @@ public class TestAmsAssignService {
   }
 
   /** Create AmsAssignService with mock BucketAssignStore. */
-  private AmsAssignService createAssignServiceWithMockStore(HighAvailabilityContainer container)
+  private AmsAssignService createAssignServiceWithMockStore(ZkHighAvailabilityContainer container)
       throws Exception {
     return new AmsAssignService(container, serviceConfig, mockAssignStore);
   }
