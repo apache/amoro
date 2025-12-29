@@ -279,15 +279,6 @@ public class KeyedTableDataView extends AbstractTableDataView {
         } else if (o2 instanceof Long) {
           // o2 is already microseconds, compare directly
           equals = micros1 == (Long) o2;
-        } else if (o2 instanceof String) {
-          // Try to parse o2 as OffsetDateTime and convert to microseconds
-          try {
-            OffsetDateTime dt = OffsetDateTime.parse((String) o2);
-            long micros2 = DateTimeUtil.microsFromTimestamptz(dt);
-            equals = micros1 == micros2;
-          } catch (Exception e) {
-            equals = false;
-          }
         } else {
           equals = o1.equals(o2);
         }
@@ -295,24 +286,6 @@ public class KeyedTableDataView extends AbstractTableDataView {
         // o1 is microseconds, convert o2 to microseconds and compare
         long micros2 = DateTimeUtil.microsFromTimestamptz((OffsetDateTime) o2);
         equals = (Long) o1 == micros2;
-      } else if (o1 instanceof Long && o2 instanceof String) {
-        // o1 is microseconds, try to parse o2 as OffsetDateTime
-        try {
-          OffsetDateTime dt = OffsetDateTime.parse((String) o2);
-          long micros2 = DateTimeUtil.microsFromTimestamptz(dt);
-          equals = (Long) o1 == micros2;
-        } catch (Exception e) {
-          equals = o1.equals(o2);
-        }
-      } else if (o1 instanceof String && o2 instanceof Long) {
-        // Try to parse o1 as OffsetDateTime and convert to microseconds
-        try {
-          OffsetDateTime dt = OffsetDateTime.parse((String) o1);
-          long micros1 = DateTimeUtil.microsFromTimestamptz(dt);
-          equals = micros1 == (Long) o2;
-        } catch (Exception e) {
-          equals = o1.equals(o2);
-        }
       } else {
         equals = o1.equals(o2);
       }
