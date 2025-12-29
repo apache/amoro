@@ -286,6 +286,7 @@ public class AmoroServiceContainer {
         new DashboardServer(
             serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager);
     RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
+    ExternalEventService externalEventService = new ExternalEventService();
 
     httpServer =
         Javalin.create(
@@ -304,6 +305,7 @@ public class AmoroServiceContainer {
         () -> {
           dashboardServer.endpoints().addEndpoints();
           restCatalogService.endpoints().addEndpoints();
+          externalEventService.endpoints().addEndpoints();
         });
 
     httpServer.before(
@@ -320,6 +322,8 @@ public class AmoroServiceContainer {
         (e, ctx) -> {
           if (restCatalogService.needHandleException(ctx)) {
             restCatalogService.handleException(e, ctx);
+          } else if (externalEventService.needHandleException(ctx)) {
+            externalEventService.handleException(e, ctx);
           } else {
             dashboardServer.handleException(e, ctx);
           }
