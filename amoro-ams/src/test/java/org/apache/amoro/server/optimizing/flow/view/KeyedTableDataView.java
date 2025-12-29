@@ -269,7 +269,42 @@ public class KeyedTableDataView extends AbstractTableDataView {
       } else if (o1 == null || o2 == null) {
         return false;
       } else if (o1 instanceof OffsetDateTime) {
-        equals = ((OffsetDateTime) o1).isEqual((OffsetDateTime) o2);
+        // Handle OffsetDateTime comparison
+        if (o2 instanceof OffsetDateTime) {
+          equals = ((OffsetDateTime) o1).isEqual((OffsetDateTime) o2);
+        } else if (o2 instanceof Long) {
+          // Compare OffsetDateTime with Long timestamp
+          equals = ((OffsetDateTime) o1).toEpochSecond() == ((Long) o2) / 1000000;
+        } else if (o2 instanceof String) {
+          // Try to parse String as OffsetDateTime
+          try {
+            OffsetDateTime dt = OffsetDateTime.parse((String) o2);
+            equals = ((OffsetDateTime) o1).isEqual(dt);
+          } catch (Exception e) {
+            equals = false;
+          }
+        } else {
+          equals = o1.equals(o2);
+        }
+      } else if (o1 instanceof Long && o2 instanceof OffsetDateTime) {
+        // Handle Long to OffsetDateTime comparison
+        equals = ((Long) o1) / 1000000 == ((OffsetDateTime) o2).toEpochSecond();
+      } else if (o1 instanceof Long && o2 instanceof String) {
+        // Handle Long to String timestamp comparison
+        try {
+          OffsetDateTime dt = OffsetDateTime.parse((String) o2);
+          equals = ((Long) o1) / 1000000 == dt.toEpochSecond();
+        } catch (Exception e) {
+          equals = o1.equals(o2);
+        }
+      } else if (o1 instanceof String && o2 instanceof Long) {
+        // Handle String timestamp to Long comparison
+        try {
+          OffsetDateTime dt = OffsetDateTime.parse((String) o1);
+          equals = dt.toEpochSecond() == ((Long) o2) / 1000000;
+        } catch (Exception e) {
+          equals = o1.equals(o2);
+        }
       } else {
         equals = o1.equals(o2);
       }
