@@ -1,0 +1,57 @@
+<!-- - Licensed to the Apache Software Foundation (ASF) under one or more-->
+<!-- - contributor license agreements.  See the NOTICE file distributed with-->
+<!-- - this work for additional information regarding copyright ownership.-->
+<!-- - The ASF licenses this file to You under the Apache License, Version 2.0-->
+<!-- - (the "License"); you may not use this file except in compliance with-->
+<!-- - the License.  You may obtain a copy of the License at-->
+<!-- - -->
+<!-- -   http://www.apache.org/licenses/LICENSE-2.0-->
+<!-- - -->
+<!-- - Unless required by applicable law or agreed to in writing, software-->
+<!-- - distributed under the License is distributed on an "AS IS" BASIS,-->
+<!-- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- - See the License for the specific language governing permissions and-->
+<!-- - limitations under the License.-->
+{{ if not .Params.disableSidebar }}
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        {{ partial "search.html" . }}
+        {{ partial "search-results.html" . }}
+    <div class="sidebar-menu">
+    <ul>
+        {{ $currentPage := . }}
+<!--        `main` Menu -->
+        {{ range .Site.Menus.main }}
+        {{ $menuContainsCurrentPage := eq (lower .Name) $currentPage.Section}}
+        {{ $validateName := replace .Name " " "_" }}
+            {{ if .HasChildren }}
+                <li>
+<!--                    Use this line below if you want the active section in the sidebar to be highlighted-->
+<!--                    <a id="{{ if $currentPage.HasMenuCurrent "main" . }}active{{ end }}" href="#">-->
+                    <a class="top-menu chevron-toggle {{if not (or ($currentPage.IsMenuCurrent "main" .) ($currentPage.HasMenuCurrent "main" .)) }} collapsed{{end}}" data-toggle="collapse" href="#{{ $validateName }}">
+                        <span>{{ .Name }}{{ .Post }}</span>
+                    </a>
+                </li>
+        <div id="{{ $validateName }}" class="{{if or ($currentPage.IsMenuCurrent "main" .) ($currentPage.HasMenuCurrent "main" .) }}collapse in{{ else }}collapse in{{end}}">
+                <ul class="sub-menu">
+                    {{ range .Children }}
+                        <li>
+                            <a href="{{ .URL }}">{{ .Name }}</a>
+                        </li>
+                    {{ end }}
+                </ul>
+        </div>
+            {{ else }}
+                <li>
+                    <a class="top-menu" id="{{ if eq $currentPage.Title .Name }}active{{ end }}" {{ if hasPrefix .Identifier "_" }}target="_blank"{{ end }} href="{{ if eq .Pre "relative" }}{{ $.Site.BaseURL }}{{ .URL }}{{ else }}{{ .URL }}{{ end }}">
+                        <span>{{ .Name }}{{ .Post }}</span>
+                    </a>
+                </li>
+            {{ end }}
+        {{ end }}
+        </ul>
+        </div>
+    </div>
+    
+</div>
+{{ end }}

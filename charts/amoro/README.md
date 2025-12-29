@@ -41,13 +41,35 @@ When you want to test the template rendering, but not actually install anything.
 There are two ways to render templates. It will return the rendered template to you so you can see the output.
 
 - Local rendering chart templates
+
 ```shell
 helm template --debug ../amoro
 ```
+
 - Server side rendering chart templates
+
 ```shell
 helm install --dry-run --debug --generate-name ../amoro
 ```
+
+## Package Chart
+
+To package the Helm chart into a `.tgz` archive file, use the `helm package` command:
+
+```shell
+helm package ../amoro
+```
+
+This will create a packaged chart file named `amoro-<version>.tgz` (e.g., `amoro-0.1.0.tgz`) in the current directory.
+
+You can also specify a destination directory for the packaged chart:
+
+```shell
+helm package ../amoro --destination ./packaged
+```
+
+The packaged chart can then be used for distribution or uploaded to a Helm chart repository.
+
 <!-- ## Features -->
 
 ## Documentation
@@ -66,10 +88,13 @@ submitting PRs, please let all the tests passed .
 2 Steps for test. (Same as above，you should rebuild the charts/ first)
 
 - Install `helm-unittest`
+
 ```shell
 helm plugin install https://github.com/helm-unittest/helm-unittest.git
 ```
+
 - Execute Tests.
+
 ```shell
 helm unittest ../amoro
 ```

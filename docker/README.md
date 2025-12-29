@@ -32,7 +32,7 @@ e.g.
 ```
 
 - NOTICE: The amoro image, amoro-spark-optimizer image and amoro-flink-optimizer image required the project had been packaged.
-  So run `mvn clean package -DskipTests` before building amoro, amoro-spark-optimizer, or amoro-flink-optimizer image.
+  So run `./mvnw clean package -DskipTests` before building amoro, amoro-spark-optimizer, or amoro-flink-optimizer image.
 
 You can speed up image building via 
 

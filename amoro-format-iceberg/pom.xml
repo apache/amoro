@@ -16,9 +16,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -123,20 +121,20 @@
             <artifactId>aliyun-sdk-oss</artifactId>
             <exclusions>
                 <exclusion>
-                    <artifactId>httpclient</artifactId>
                     <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-auth</artifactId>
+            <artifactId>${hadoop-client-api.artifact}</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client</artifactId>
+            <artifactId>${hadoop-client-runtime.artifact}</artifactId>
         </dependency>
 
         <dependency>

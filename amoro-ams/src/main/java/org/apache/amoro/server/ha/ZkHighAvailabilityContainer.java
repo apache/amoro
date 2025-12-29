@@ -16,11 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server;
+package org.apache.amoro.server.ha;
 
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.AmsHAProperties;
+import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.api.transaction.CuratorOp;
@@ -29,19 +32,28 @@ import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.recipes.le
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.CreateMode;
 import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.KeeperException;
+import org.apache.amoro.utils.DynConstructors;
 import org.apache.amoro.utils.JacksonUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.login.Configuration;
+
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-public class HighAvailabilityContainer implements LeaderLatchListener {
+public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, LeaderLatchListener {
 
-  public static final Logger LOG = LoggerFactory.getLogger(HighAvailabilityContainer.class);
+  public static final Logger LOG = LoggerFactory.getLogger(ZkHighAvailabilityContainer.class);
 
   private final LeaderLatch leaderLatch;
   private final CuratorFramework zkClient;
@@ -54,7 +66,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
   private volatile CountDownLatch followerLatch;
   private String registeredNodePath;
 
-  public HighAvailabilityContainer(Configurations serviceConfig) throws Exception {
+  public ZkHighAvailabilityContainer(Configurations serviceConfig) throws Exception {
     this.isMasterSlaveMode = serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
     if (serviceConfig.getBoolean(AmoroManagementConf.HA_ENABLE)) {
       String zkServerAddress = serviceConfig.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS);
@@ -67,6 +79,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
       optimizingServiceMasterPath = AmsHAProperties.getOptimizingServiceMasterPath(haClusterName);
       nodesPath = AmsHAProperties.getNodesPath(haClusterName);
       ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3, 5000);
+      setupZookeeperAuth(serviceConfig);
       this.zkClient =
           CuratorFrameworkFactory.builder()
               .connectString(zkServerAddress)
@@ -107,6 +120,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     }
   }
 
+  @Override
   public void waitLeaderShip() throws Exception {
     LOG.info("Waiting to become the leader of AMS");
     if (leaderLatch != null) {
@@ -157,6 +171,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     LOG.info("Registered AMS node to ZK: {}", registeredNodePath);
   }
 
+  @Override
   public void waitFollowerShip() throws Exception {
     LOG.info("Waiting to become the follower of AMS");
     if (followerLatch != null) {
@@ -165,6 +180,7 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
     LOG.info("Became the follower of AMS");
   }
 
+  @Override
   public void close() {
     if (leaderLatch != null) {
       try {
@@ -289,6 +305,53 @@ public class HighAvailabilityContainer implements LeaderLatchListener {
       zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
     } catch (KeeperException.NodeExistsException e) {
       // ignore
+    }
+  }
+
+  private static final Map<Pair<String, String>, Configuration> JAAS_CONFIGURATION_CACHE =
+      Maps.newConcurrentMap();
+
+  /** For a kerberized cluster, we dynamically set up the client's JAAS conf. */
+  public static void setupZookeeperAuth(Configurations configurations) throws IOException {
+    String zkAuthType = configurations.get(AmoroManagementConf.HA_ZOOKEEPER_AUTH_TYPE);
+    if ("KERBEROS".equalsIgnoreCase(zkAuthType) && UserGroupInformation.isSecurityEnabled()) {
+      String principal = configurations.get(AmoroManagementConf.HA_ZOOKEEPER_AUTH_PRINCIPAL);
+      String keytab = configurations.get(AmoroManagementConf.HA_ZOOKEEPER_AUTH_KEYTAB);
+      Preconditions.checkArgument(
+          StringUtils.isNoneBlank(principal, keytab),
+          "%s and %s must be provided for KERBEROS authentication",
+          AmoroManagementConf.HA_ZOOKEEPER_AUTH_PRINCIPAL.key(),
+          AmoroManagementConf.HA_ZOOKEEPER_AUTH_KEYTAB.key());
+      if (!new File(keytab).exists()) {
+        throw new IOException(
+            String.format(
+                "%s: %s does not exist",
+                AmoroManagementConf.HA_ZOOKEEPER_AUTH_KEYTAB.key(), keytab));
+      }
+      System.setProperty("zookeeper.sasl.clientconfig", "AmoroZooKeeperClient");
+      String zkClientPrincipal = SecurityUtil.getServerPrincipal(principal, "0.0.0.0");
+      Configuration jaasConf =
+          JAAS_CONFIGURATION_CACHE.computeIfAbsent(
+              Pair.of(principal, keytab),
+              pair -> {
+                // HDFS-16591 makes breaking change on JaasConfiguration
+                return DynConstructors.builder()
+                    .impl( // Hadoop 3.3.5 and above
+                        "org.apache.hadoop.security.authentication.util.JaasConfiguration",
+                        String.class,
+                        String.class,
+                        String.class)
+                    .impl( // Hadoop 3.3.4 and previous
+                        // scalastyle:off
+                        "org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager$JaasConfiguration",
+                        // scalastyle:on
+                        String.class,
+                        String.class,
+                        String.class)
+                    .<Configuration>build()
+                    .newInstance("AmoroZooKeeperClient", zkClientPrincipal, keytab);
+              });
+      Configuration.setConfiguration(jaasConf);
     }
   }
 }

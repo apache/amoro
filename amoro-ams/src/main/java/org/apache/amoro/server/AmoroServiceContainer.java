@@ -38,11 +38,14 @@ import org.apache.amoro.server.dashboard.JavalinJsonMapper;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
+import org.apache.amoro.server.ha.HighAvailabilityContainerFactory;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
+import org.apache.amoro.server.process.ProcessService;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.DefaultOptimizerManager;
@@ -107,6 +110,7 @@ public class AmoroServiceContainer {
   private OptimizerManager optimizerManager;
   private TableService tableService;
   private DefaultOptimizingService optimizingService;
+  private ProcessService processService;
   private TerminalManager terminalManager;
   private Configurations serviceConfig;
   private TServer tableManagementServer;
@@ -117,7 +121,7 @@ public class AmoroServiceContainer {
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
-    haContainer = new HighAvailabilityContainer(serviceConfig);
+    haContainer = HighAvailabilityContainerFactory.create(serviceConfig);
   }
 
   public static void main(String[] args) {
@@ -210,9 +214,12 @@ public class AmoroServiceContainer {
         new DefaultOptimizingService(
             serviceConfig, catalogManager, optimizerManager, tableService, haContainer);
 
+    processService = new ProcessService(serviceConfig, tableService);
+
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
     addHandlerChain(optimizingService.getTableRuntimeHandler());
+    addHandlerChain(processService.getTableHandlerChain());
     addHandlerChain(InlineTableExecutors.getInstance().getDataExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getSnapshotsExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
@@ -261,6 +268,10 @@ public class AmoroServiceContainer {
       LOG.info("Stopping optimizing service...");
       optimizingService.dispose();
       optimizingService = null;
+    }
+    if (processService != null) {
+      LOG.info("Stopping process server...");
+      processService.dispose();
     }
   }
 

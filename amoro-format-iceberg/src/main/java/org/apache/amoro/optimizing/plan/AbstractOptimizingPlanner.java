@@ -65,7 +65,8 @@ public abstract class AbstractOptimizingPlanner extends AbstractOptimizingEvalua
       double availableCore,
       long maxInputSizePerThread,
       long lastMinorOptimizingTime,
-      long lastFullOptimizingTime) {
+      long lastFullOptimizingTime,
+      long lastMajorOptimizingTime) {
     super(
         identifier,
         config,
@@ -73,7 +74,8 @@ public abstract class AbstractOptimizingPlanner extends AbstractOptimizingEvalua
         snapshot,
         Integer.MAX_VALUE,
         lastMinorOptimizingTime,
-        lastFullOptimizingTime);
+        lastFullOptimizingTime,
+        lastMajorOptimizingTime);
     this.partitionFilter = partitionFilter;
     this.availableCore = availableCore;
     this.planTime = System.currentTimeMillis();

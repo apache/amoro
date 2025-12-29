@@ -734,6 +734,36 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return expiredFiles;
   }
 
+  private static int calExpireDaysForDate(long expireTimestamp, Types.NestedField field) {
+    // Round up to next day to ensure inclusive behavior for date boundaries
+    // This allows the existing < comparison to work correctly for Date types
+    LocalDate expireDate =
+        Instant.ofEpochMilli(expireTimestamp)
+            .atZone(getDefaultZoneId(field)) //
+            .toLocalDate();
+
+    int expireDays = (int) expireDate.plusDays(1).toEpochDay();
+
+    return expireDays;
+  }
+
+  /**
+   * Convert expiration timestamp to the appropriate value based on field type.
+   *
+   * <p>This method handles different field types for data expiration:
+   *
+   * <ul>
+   *   <li>TIMESTAMP: converts milliseconds to microseconds
+   *   <li>LONG: handles both millisecond and second formats
+   *   <li>STRING: formats timestamp as date string using configured pattern
+   *   <li>DATE: converts timestamp to days since epoch
+   * </ul>
+   *
+   * @param expirationConfig expiration configuration containing format patterns
+   * @param field the field being used for expiration
+   * @param expireTimestamp timestamp in milliseconds for expiration boundary
+   * @return comparable value appropriate for the field type
+   */
   private Comparable<?> getExpireValue(
       DataExpirationConfig expirationConfig, Types.NestedField field, long expireTimestamp) {
     switch (field.type().typeId()) {
@@ -755,6 +785,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
             .format(
                 DateTimeFormatter.ofPattern(
                     expirationConfig.getDateTimePattern(), Locale.getDefault()));
+
+      case DATE:
+        return calExpireDaysForDate(expireTimestamp, field);
       default:
         throw new IllegalArgumentException(
             "Unsupported expiration field type: " + field.type().typeId());
@@ -795,6 +828,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
                     DateTimeFormatter.ofPattern(
                         expirationConfig.getDateTimePattern(), Locale.getDefault()));
         return Expressions.lessThanOrEqual(field.name(), expireDateTime);
+      case DATE:
+        int expireDays = calExpireDaysForDate(expireTimestamp, field);
+        return Expressions.lessThan(field.name(), expireDays);
       default:
         return Expressions.alwaysTrue();
     }
@@ -999,6 +1035,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
                   .atZone(getDefaultZoneId(field))
                   .toInstant()
                   .toEpochMilli());
+    } else if (type.typeId() == Type.TypeID.DATE) {
+      if (upperBound instanceof Integer) {
+        literal = Literal.of(((Integer) upperBound).longValue() * 24 * 60 * 60 * 1000);
+      }
     }
 
     return literal;
