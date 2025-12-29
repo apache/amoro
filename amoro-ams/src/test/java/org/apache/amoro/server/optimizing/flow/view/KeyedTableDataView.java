@@ -269,23 +269,12 @@ public class KeyedTableDataView extends AbstractTableDataView {
         return true;
       } else if (o1 == null || o2 == null) {
         return false;
-      } else if (o1 instanceof OffsetDateTime) {
-        // Convert OffsetDateTime to microseconds using DateTimeUtil
-        long micros1 = DateTimeUtil.microsFromTimestamptz((OffsetDateTime) o1);
-        if (o2 instanceof OffsetDateTime) {
-          // Both are OffsetDateTime, convert both to microseconds
-          long micros2 = DateTimeUtil.microsFromTimestamptz((OffsetDateTime) o2);
-          equals = micros1 == micros2;
-        } else if (o2 instanceof Long) {
-          // o2 is already microseconds, compare directly
-          equals = micros1 == (Long) o2;
-        } else {
-          equals = o1.equals(o2);
-        }
+      } else if (o1 instanceof OffsetDateTime && o2 instanceof OffsetDateTime) {
+        equals = ((OffsetDateTime) o1).isEqual((OffsetDateTime) o2);
+      } else if (o1 instanceof OffsetDateTime && o2 instanceof Long) {
+        equals = DateTimeUtil.microsFromTimestamptz((OffsetDateTime) o1) == (Long) o2;
       } else if (o1 instanceof Long && o2 instanceof OffsetDateTime) {
-        // o1 is microseconds, convert o2 to microseconds and compare
-        long micros2 = DateTimeUtil.microsFromTimestamptz((OffsetDateTime) o2);
-        equals = (Long) o1 == micros2;
+        equals = (Long) o1 == DateTimeUtil.microsFromTimestamptz((OffsetDateTime) o2);
       } else {
         equals = o1.equals(o2);
       }
