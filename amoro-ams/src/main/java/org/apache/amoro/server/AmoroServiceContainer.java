@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server;
 
+import static org.apache.amoro.server.AmoroManagementConf.USE_MASTER_SLAVE_MODE;
+
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
@@ -72,6 +74,7 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TNonblockingSer
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportFactory;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramedTransport;
+import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.JacksonUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -99,6 +102,7 @@ public class AmoroServiceContainer {
   public static final Logger LOG = LoggerFactory.getLogger(AmoroServiceContainer.class);
 
   public static final String SERVER_CONFIG_FILENAME = "config.yaml";
+  private static boolean IS_MASTER_SLAVE_MODE = false;
 
   private final HighAvailabilityContainer haContainer;
   private DataSource dataSource;
@@ -114,6 +118,7 @@ public class AmoroServiceContainer {
   private TServer optimizingServiceServer;
   private Javalin httpServer;
   private AmsServiceMetrics amsServiceMetrics;
+  private AmsAssignService amsAssignService;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
@@ -132,21 +137,32 @@ public class AmoroServiceContainer {
                     LOG.info("AMS service has been shut down");
                   }));
       service.startRestServices();
-      while (true) {
-        try {
-          service.waitLeaderShip();
-          service.startOptimizingService();
-          service.waitFollowerShip();
-        } catch (Exception e) {
-          LOG.error("AMS start error", e);
-        } finally {
-          service.disposeOptimizingService();
+      if (IS_MASTER_SLAVE_MODE) {
+        // Even if one does not become the master, it cannot block the subsequent logic.
+        service.registAndElect();
+        // Regardless of whether tp becomes the master, the service needs to be activated.
+        service.startOptimizingService();
+      } else {
+        while (true) {
+          try {
+            service.waitLeaderShip();
+            service.startOptimizingService();
+            service.waitFollowerShip();
+          } catch (Exception e) {
+            LOG.error("AMS start error", e);
+          } finally {
+            service.disposeOptimizingService();
+          }
         }
       }
     } catch (Throwable t) {
       LOG.error("AMS encountered an unknown exception, will exist", t);
       System.exit(1);
     }
+  }
+
+  public void registAndElect() throws Exception {
+    haContainer.registAndElect();
   }
 
   public void waitLeaderShip() throws Exception {
@@ -175,11 +191,47 @@ public class AmoroServiceContainer {
     TableRuntimeFactoryManager tableRuntimeFactoryManager = new TableRuntimeFactoryManager();
     tableRuntimeFactoryManager.initialize();
 
+    // In master-slave mode, create BucketAssignStore and AmsAssignService
+    BucketAssignStore bucketAssignStore = null;
+    if (IS_MASTER_SLAVE_MODE && haContainer != null) {
+      String clusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
+      // Choose BucketAssignStore implementation based on HA container type
+      CuratorFramework zkClient = null;
+      if (haContainer instanceof org.apache.amoro.server.ha.ZkHighAvailabilityContainer) {
+        org.apache.amoro.server.ha.ZkHighAvailabilityContainer zkHaContainer =
+            (org.apache.amoro.server.ha.ZkHighAvailabilityContainer) haContainer;
+        zkClient = zkHaContainer.getZkClient();
+        bucketAssignStore = new ZkBucketAssignStore(zkClient, clusterName);
+        LOG.info("Using ZkBucketAssignStore for master-slave mode");
+      } else if (haContainer
+          instanceof org.apache.amoro.server.ha.DataBaseHighAvailabilityContainer) {
+        bucketAssignStore = new DatabaseBucketAssignStore(clusterName);
+        LOG.info("Using DatabaseBucketAssignStore for master-slave mode");
+      } else {
+        LOG.warn(
+            "Unsupported HA container type for master-slave mode: {}",
+            haContainer.getClass().getName());
+      }
+
+      // Create and start AmsAssignService for bucket assignment
+      if (bucketAssignStore != null) {
+        amsAssignService = new AmsAssignService(haContainer, serviceConfig, zkClient);
+        amsAssignService.start();
+        LOG.info("AmsAssignService started for master-slave mode");
+      }
+    }
+
     tableService =
-        new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
+        new DefaultTableService(
+            serviceConfig,
+            catalogManager,
+            tableRuntimeFactoryManager,
+            haContainer,
+            bucketAssignStore);
 
     optimizingService =
-        new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
+        new DefaultOptimizingService(
+            serviceConfig, catalogManager, optimizerManager, tableService, haContainer);
 
     processService = new ProcessService(serviceConfig, tableService);
 
@@ -220,6 +272,11 @@ public class AmoroServiceContainer {
     if (optimizingServiceServer != null) {
       LOG.info("Stopping optimizing server[serving:{}] ...", optimizingServiceServer.isServing());
       optimizingServiceServer.stop();
+    }
+    if (amsAssignService != null) {
+      LOG.info("Stopping AmsAssignService...");
+      amsAssignService.stop();
+      amsAssignService = null;
     }
     if (tableService != null) {
       LOG.info("Stopping table service...");
@@ -267,6 +324,7 @@ public class AmoroServiceContainer {
   private void initConfig() throws Exception {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
+    IS_MASTER_SLAVE_MODE = serviceConfig.getBoolean(USE_MASTER_SLAVE_MODE);
   }
 
   private void startThriftService() {
@@ -545,6 +603,12 @@ public class AmoroServiceContainer {
           containerProperties.putIfAbsent(
               OptimizerProperties.AMS_OPTIMIZER_URI,
               AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
+          // Add master-slave mode flag to container properties
+          // Read from serviceConfig directly since IS_MASTER_SLAVE_MODE is set after
+          // initContainerConfig()
+          if (serviceConfig.getBoolean(USE_MASTER_SLAVE_MODE)) {
+            containerProperties.put(OptimizerProperties.OPTIMIZER_MASTER_SLAVE_MODE, "true");
+          }
           // put addition system properties
           container.setProperties(containerProperties);
           containerList.add(container);

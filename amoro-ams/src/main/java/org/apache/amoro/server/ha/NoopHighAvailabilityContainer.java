@@ -18,8 +18,12 @@
 
 package org.apache.amoro.server.ha;
 
+import org.apache.amoro.client.AmsServerInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /** No-op HA container that never blocks and performs no leader election. */
 public class NoopHighAvailabilityContainer implements HighAvailabilityContainer {
@@ -35,6 +39,24 @@ public class NoopHighAvailabilityContainer implements HighAvailabilityContainer 
   /** Returns immediately without blocking. */
   public void waitFollowerShip() {
     LOG.info("Noop HA: waitFollowerShip returns immediately");
+  }
+
+  @Override
+  public void registAndElect() throws Exception {}
+
+  @Override
+  public boolean hasLeadership() {
+    return false;
+  }
+
+  @Override
+  public AmsServerInfo getOptimizingServiceServerInfo() {
+    return null;
+  }
+
+  @Override
+  public List<AmsServerInfo> getAliveNodes() throws Exception {
+    return new ArrayList<>();
   }
 
   @Override

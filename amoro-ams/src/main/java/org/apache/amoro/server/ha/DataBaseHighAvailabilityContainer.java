@@ -28,6 +28,8 @@ import org.apache.amoro.utils.JacksonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -133,6 +135,49 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
       followerLatch.await();
     }
     LOG.info("Became the follower of AMS (Database lease)");
+  }
+
+  @Override
+  public void registAndElect() throws Exception {
+    boolean isMasterSlaveMode = serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
+    if (!isMasterSlaveMode) {
+      LOG.debug("Master-slave mode is not enabled, skip node registration");
+      return;
+    }
+    // In master-slave mode, register node to database by writing OPTIMIZING_SERVICE info
+    // This is similar to ZK mode registering ephemeral nodes
+    long now = System.currentTimeMillis();
+    String optimizingInfoJson = JacksonUtil.toJSONString(optimizingServiceServerInfo);
+    try {
+      doAsIgnoreError(
+          HaLeaseMapper.class,
+          mapper -> {
+            int updated =
+                mapper.updateServerInfo(
+                    clusterName, OPTIMIZING_SERVICE, nodeId, nodeIp, optimizingInfoJson, now);
+            if (updated == 0) {
+              mapper.insertServerInfoIfAbsent(
+                  clusterName, OPTIMIZING_SERVICE, nodeId, nodeIp, optimizingInfoJson, now);
+            }
+          });
+      LOG.info(
+          "Registered AMS node to database: nodeId={}, optimizingService={}",
+          nodeId,
+          optimizingServiceServerInfo);
+    } catch (Exception e) {
+      LOG.error("Failed to register node to database", e);
+      throw e;
+    }
+  }
+
+  @Override
+  public boolean hasLeadership() {
+    return isLeader.get();
+  }
+
+  @Override
+  public AmsServerInfo getOptimizingServiceServerInfo() {
+    return optimizingServiceServerInfo;
   }
 
   /** Closes the heartbeat executor safely. */
@@ -299,6 +344,40 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
     if (followerLatch != null) {
       followerLatch.countDown();
     }
+  }
+
+  @Override
+  public List<AmsServerInfo> getAliveNodes() throws Exception {
+    List<AmsServerInfo> aliveNodes = new ArrayList<>();
+    if (!isLeader.get()) {
+      LOG.warn("Only leader node can get alive nodes list");
+      return aliveNodes;
+    }
+    try {
+      long currentTime = System.currentTimeMillis();
+      List<HaLeaseMeta> leases =
+          getAs(
+              HaLeaseMapper.class,
+              mapper -> mapper.selectLeasesByService(clusterName, OPTIMIZING_SERVICE));
+      for (HaLeaseMeta lease : leases) {
+        // Only include nodes with valid (non-expired) leases
+        if (lease.getLeaseExpireTs() != null && lease.getLeaseExpireTs() > currentTime) {
+          if (lease.getServerInfoJson() != null && !lease.getServerInfoJson().isEmpty()) {
+            try {
+              AmsServerInfo nodeInfo =
+                  JacksonUtil.parseObject(lease.getServerInfoJson(), AmsServerInfo.class);
+              aliveNodes.add(nodeInfo);
+            } catch (Exception e) {
+              LOG.warn("Failed to parse server info for node {}", lease.getNodeId(), e);
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      LOG.error("Failed to get alive nodes from database", e);
+      throw e;
+    }
+    return aliveNodes;
   }
 
   private AmsServerInfo buildServerInfo(String host, int thriftBindPort, int restBindPort) {
