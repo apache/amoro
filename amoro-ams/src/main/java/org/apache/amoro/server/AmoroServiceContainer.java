@@ -74,6 +74,7 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TNonblockingSer
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportFactory;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramedTransport;
+import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.JacksonUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -192,14 +193,32 @@ public class AmoroServiceContainer {
 
     // In master-slave mode, create BucketAssignStore and AmsAssignService
     BucketAssignStore bucketAssignStore = null;
-    if (IS_MASTER_SLAVE_MODE && haContainer != null && haContainer.getZkClient() != null) {
+    if (IS_MASTER_SLAVE_MODE && haContainer != null) {
       String clusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
-      bucketAssignStore = new ZkBucketAssignStore(haContainer.getZkClient(), clusterName);
+      // Choose BucketAssignStore implementation based on HA container type
+      CuratorFramework zkClient = null;
+      if (haContainer instanceof org.apache.amoro.server.ha.ZkHighAvailabilityContainer) {
+        org.apache.amoro.server.ha.ZkHighAvailabilityContainer zkHaContainer =
+            (org.apache.amoro.server.ha.ZkHighAvailabilityContainer) haContainer;
+        zkClient = zkHaContainer.getZkClient();
+        bucketAssignStore = new ZkBucketAssignStore(zkClient, clusterName);
+        LOG.info("Using ZkBucketAssignStore for master-slave mode");
+      } else if (haContainer
+          instanceof org.apache.amoro.server.ha.DataBaseHighAvailabilityContainer) {
+        bucketAssignStore = new DatabaseBucketAssignStore(clusterName);
+        LOG.info("Using DatabaseBucketAssignStore for master-slave mode");
+      } else {
+        LOG.warn(
+            "Unsupported HA container type for master-slave mode: {}",
+            haContainer.getClass().getName());
+      }
+
       // Create and start AmsAssignService for bucket assignment
-      amsAssignService =
-          new AmsAssignService(haContainer, serviceConfig, haContainer.getZkClient());
-      amsAssignService.start();
-      LOG.info("AmsAssignService started for master-slave mode");
+      if (bucketAssignStore != null) {
+        amsAssignService = new AmsAssignService(haContainer, serviceConfig, zkClient);
+        amsAssignService.start();
+        LOG.info("AmsAssignService started for master-slave mode");
+      }
     }
 
     tableService =

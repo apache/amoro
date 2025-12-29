@@ -20,6 +20,7 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
@@ -70,6 +71,14 @@ public class AmsAssignService {
     doAssign();
   }
 
+  /**
+   * Constructor for AmsAssignService. Creates appropriate BucketAssignStore based on HA container
+   * type.
+   *
+   * @param haContainer High availability container (ZK or Database)
+   * @param serviceConfig Service configuration
+   * @param zkClient ZooKeeper client (null for Database mode)
+   */
   public AmsAssignService(
       HighAvailabilityContainer haContainer,
       Configurations serviceConfig,
@@ -82,7 +91,21 @@ public class AmsAssignService {
     this.assignIntervalSeconds =
         serviceConfig.get(AmoroManagementConf.ASSIGN_INTERVAL).getSeconds();
     String clusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
-    this.assignStore = new ZkBucketAssignStore(zkClient, clusterName);
+
+    // Create appropriate BucketAssignStore based on HA container type
+    if (haContainer instanceof org.apache.amoro.server.ha.ZkHighAvailabilityContainer) {
+      if (zkClient == null) {
+        throw new IllegalArgumentException(
+            "ZooKeeper client is required for ZkHighAvailabilityContainer");
+      }
+      this.assignStore = new ZkBucketAssignStore(zkClient, clusterName);
+    } else if (haContainer
+        instanceof org.apache.amoro.server.ha.DataBaseHighAvailabilityContainer) {
+      this.assignStore = new DatabaseBucketAssignStore(clusterName);
+    } else {
+      throw new IllegalArgumentException(
+          "Unsupported HA container type: " + haContainer.getClass().getName());
+    }
   }
 
   /**

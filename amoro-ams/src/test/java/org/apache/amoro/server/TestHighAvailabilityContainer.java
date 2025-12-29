@@ -27,6 +27,8 @@ import static org.mockito.Mockito.when;
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.AmsHAProperties;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
+import org.apache.amoro.server.ha.ZkHighAvailabilityContainer;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.CreateMode;
@@ -258,7 +260,7 @@ public class TestHighAvailabilityContainer {
     // Test that registAndElect skips when HA is not enabled
     serviceConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
     serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
-    haContainer = new HighAvailabilityContainer(serviceConfig);
+    haContainer = new ZkHighAvailabilityContainer(serviceConfig);
 
     // Should not throw exception
     haContainer.registAndElect();

@@ -177,3 +177,13 @@ ALTER TABLE `table_process`
 ADD COLUMN `external_process_identifier` varchar(256) DEFAULT NULL COMMENT 'Table optimizing external process identifier',
 ADD COLUMN `retry_number` int(11) NOT NULL DEFAULT 0 COMMENT 'Retry times',
 ADD COLUMN `process_parameters` mediumtext COMMENT 'Table process parameters';
+
+
+-- When using database-based leader election, a database-based bucket allocation scheme is required.
+CREATE TABLE IF NOT EXISTS bucket_assign (
+    cluster_name VARCHAR(255) NOT NULL,
+    node_key VARCHAR(255) NOT NULL,
+    bucket_ids_json TEXT,
+    last_update_time BIGINT,
+    PRIMARY KEY (cluster_name, node_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bucket allocation information based on the database';
