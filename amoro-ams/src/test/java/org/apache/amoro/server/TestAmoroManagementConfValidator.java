@@ -46,7 +46,7 @@ public class TestAmoroManagementConfValidator {
   }
 
   public static Stream<Arguments> testValidateDBConfig() {
-    return Stream.of(Arguments.of("mysql"), Arguments.of("postgres"));
+    return Stream.of(Arguments.of("mysql"), Arguments.of("postgres"), Arguments.of("dameng"));
   }
 
   @ParameterizedTest
