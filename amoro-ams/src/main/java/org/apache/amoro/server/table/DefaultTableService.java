@@ -831,7 +831,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
     meta.setTableSummary(new TableSummary());
     meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
     meta.setTableSummary(new TableSummary());
-    doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
 
     // In master-slave mode, assign bucketId to the table if it's not assigned yet
     // Only leader node should assign bucketIds
