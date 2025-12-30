@@ -27,10 +27,8 @@ import java.util.Map;
  * submitted by user or system and handled by Amoro. AmoroProcess should be related to one single
  * {@link Action}, which could be minor optimizing, major optimizing, external optimizing, metadata
  * refreshing, snapshots expiring, orphaned files cleaning or hive commit sync.
- *
- * @param <T> the state type of the process
  */
-public interface AmoroProcess<T extends ProcessState> {
+public interface AmoroProcess {
 
   /**
    * return submit future of the process. This method always returns the same future object even if
@@ -53,7 +51,17 @@ public interface AmoroProcess<T extends ProcessState> {
    *
    * @return the state of the process
    */
-  T getState();
+  TableProcessStore store();
+
+  /**
+   * Get the string encoded process params of the process, this could be a simple description or a
+   * POJO encoded by JSON
+   *
+   * @return the params of the process
+   */
+  default Map<String, String> getProcessParameters() {
+    return store().getProcessParameters();
+  }
 
   /**
    * Get the string encoded summary of the process, this could be a simple description or a POJO
@@ -62,7 +70,7 @@ public interface AmoroProcess<T extends ProcessState> {
    * @return the summary of the process
    */
   default Map<String, String> getSummary() {
-    return getState().getSummary();
+    return store().getSummary();
   }
 
   /**
@@ -71,7 +79,7 @@ public interface AmoroProcess<T extends ProcessState> {
    * @return the status of the process
    */
   default ProcessStatus getStatus() {
-    return getState().getStatus();
+    return store().getStatus();
   }
 
   /**
@@ -80,7 +88,7 @@ public interface AmoroProcess<T extends ProcessState> {
    * @return the id of the process
    */
   default long getId() {
-    return getState().getId();
+    return store().getProcessId();
   }
 
   /**
@@ -89,6 +97,6 @@ public interface AmoroProcess<T extends ProcessState> {
    * @return the action of the process
    */
   default Action getAction() {
-    return getState().getAction();
+    return store().getAction();
   }
 }

@@ -87,7 +87,7 @@ jobs:
           echo "MVN_HADOOP=-Phadoop2" >> $GITHUB_ENV
 
       - name: Build dist module with Maven
-        run: ./mvnw clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats
+        run: ./mvnw clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats -Pno-extended-disk-storage -Pno-plugin-bin
 
       - name: Build and Push Amoro Docker Image
         uses: docker/build-push-action@v4
@@ -186,7 +186,7 @@ jobs:
     if: ${{ startsWith(github.repository, 'apache/') }}
     strategy:
       matrix:
-        spark: [ "3.3.3" ]
+        spark: [ "3.5.7" ]
         scala: [ "2.12.15" ]
     steps:
       - uses: actions/checkout@v3
@@ -212,11 +212,11 @@ jobs:
           images: |
             name=apache/amoro-spark-optimizer
           tags: |
-            type=ref,event=branch,enable=${{ matrix.spark == '3.3.3' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.spark == '3.3.3' }},suffix=-snapshot-spark3.3
-            type=raw,enable=${{ matrix.hadoop == '3.3.3' && startsWith(github.ref, 'refs/tags/v') }},value=latest
-            type=semver,enable=${{ matrix.spark == '3.3.3' }},pattern={{version}}
-            type=semver,enable=${{ matrix.spark == '3.3.3' }},pattern={{version}}, suffix=-spark3.3
+            type=ref,event=branch,enable=${{ matrix.spark == '3.5.7' }},suffix=-snapshot
+            type=ref,event=branch,enable=${{ matrix.spark == '3.5.7' }},suffix=-snapshot-spark3.5
+            type=raw,enable=${{ matrix.hadoop == '3.5.7' && startsWith(github.ref, 'refs/tags/v') }},value=latest
+            type=semver,enable=${{ matrix.spark == '3.5.7' }},pattern={{version}}
+            type=semver,enable=${{ matrix.spark == '3.5.7' }},pattern={{version}}, suffix=-spark3.5
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'

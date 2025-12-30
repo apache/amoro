@@ -24,7 +24,9 @@ public enum ProcessStatus {
   PENDING,
   SUBMITTED,
   RUNNING,
+  CANCELING,
   SUCCESS,
+  CANCELED,
   CLOSED,
   KILLED,
   FAILED;

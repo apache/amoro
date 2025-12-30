@@ -39,11 +39,14 @@ import org.apache.amoro.server.dashboard.RequestForwardedException;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
+import org.apache.amoro.server.ha.HighAvailabilityContainerFactory;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
+import org.apache.amoro.server.process.ProcessService;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.DefaultOptimizerManager;
@@ -72,6 +75,7 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TNonblockingSer
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportFactory;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramedTransport;
+import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.JacksonUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -108,6 +112,7 @@ public class AmoroServiceContainer {
   private OptimizerManager optimizerManager;
   private TableService tableService;
   private DefaultOptimizingService optimizingService;
+  private ProcessService processService;
   private TerminalManager terminalManager;
   private Configurations serviceConfig;
   private TServer tableManagementServer;
@@ -118,7 +123,7 @@ public class AmoroServiceContainer {
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
-    haContainer = new HighAvailabilityContainer(serviceConfig);
+    haContainer = HighAvailabilityContainerFactory.create(serviceConfig);
   }
 
   public static void main(String[] args) {
@@ -189,14 +194,32 @@ public class AmoroServiceContainer {
 
     // In master-slave mode, create BucketAssignStore and AmsAssignService
     BucketAssignStore bucketAssignStore = null;
-    if (IS_MASTER_SLAVE_MODE && haContainer != null && haContainer.getZkClient() != null) {
+    if (IS_MASTER_SLAVE_MODE && haContainer != null) {
       String clusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
-      bucketAssignStore = new ZkBucketAssignStore(haContainer.getZkClient(), clusterName);
+      // Choose BucketAssignStore implementation based on HA container type
+      CuratorFramework zkClient = null;
+      if (haContainer instanceof org.apache.amoro.server.ha.ZkHighAvailabilityContainer) {
+        org.apache.amoro.server.ha.ZkHighAvailabilityContainer zkHaContainer =
+            (org.apache.amoro.server.ha.ZkHighAvailabilityContainer) haContainer;
+        zkClient = zkHaContainer.getZkClient();
+        bucketAssignStore = new ZkBucketAssignStore(zkClient, clusterName);
+        LOG.info("Using ZkBucketAssignStore for master-slave mode");
+      } else if (haContainer
+          instanceof org.apache.amoro.server.ha.DataBaseHighAvailabilityContainer) {
+        bucketAssignStore = new DatabaseBucketAssignStore(clusterName);
+        LOG.info("Using DatabaseBucketAssignStore for master-slave mode");
+      } else {
+        LOG.warn(
+            "Unsupported HA container type for master-slave mode: {}",
+            haContainer.getClass().getName());
+      }
+
       // Create and start AmsAssignService for bucket assignment
-      amsAssignService =
-          new AmsAssignService(haContainer, serviceConfig, haContainer.getZkClient());
-      amsAssignService.start();
-      LOG.info("AmsAssignService started for master-slave mode");
+      if (bucketAssignStore != null) {
+        amsAssignService = new AmsAssignService(haContainer, serviceConfig, zkClient);
+        amsAssignService.start();
+        LOG.info("AmsAssignService started for master-slave mode");
+      }
     }
 
     tableService =
@@ -211,9 +234,12 @@ public class AmoroServiceContainer {
         new DefaultOptimizingService(
             serviceConfig, catalogManager, optimizerManager, tableService, haContainer);
 
+    processService = new ProcessService(serviceConfig, tableService);
+
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
     addHandlerChain(optimizingService.getTableRuntimeHandler());
+    addHandlerChain(processService.getTableHandlerChain());
     addHandlerChain(InlineTableExecutors.getInstance().getDataExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getSnapshotsExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
@@ -262,6 +288,10 @@ public class AmoroServiceContainer {
       LOG.info("Stopping optimizing service...");
       optimizingService.dispose();
       optimizingService = null;
+    }
+    if (processService != null) {
+      LOG.info("Stopping process server...");
+      processService.dispose();
     }
   }
 

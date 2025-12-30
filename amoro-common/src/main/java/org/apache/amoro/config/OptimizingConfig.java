@@ -91,6 +91,12 @@ public class OptimizingConfig {
   // self-optimizing.min-plan-interval
   private long minPlanInterval;
 
+  // self-optimizing.evaluation.file-size.mse-tolerance
+  private long evaluationMseTolerance;
+
+  // self-optimizing.evaluation.fallback-interval
+  private long evaluationFallbackInterval;
+
   public OptimizingConfig() {}
 
   public boolean isEnabled() {
@@ -290,6 +296,28 @@ public class OptimizingConfig {
     return this;
   }
 
+  public long getEvaluationFallbackInterval() {
+    return evaluationFallbackInterval;
+  }
+
+  public OptimizingConfig setEvaluationFallbackInterval(long evaluationFallbackInterval) {
+    this.evaluationFallbackInterval = evaluationFallbackInterval;
+    return this;
+  }
+
+  public boolean isMetadataBasedTriggerEnabled() {
+    return evaluationFallbackInterval >= 0;
+  }
+
+  public long getEvaluationMseTolerance() {
+    return evaluationMseTolerance;
+  }
+
+  public OptimizingConfig setEvaluationMseTolerance(long evaluationMseTolerance) {
+    this.evaluationMseTolerance = evaluationMseTolerance;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -320,7 +348,9 @@ public class OptimizingConfig {
         && baseRefreshInterval == that.baseRefreshInterval
         && hiveRefreshInterval == that.hiveRefreshInterval
         && Objects.equal(optimizerGroup, that.optimizerGroup)
-        && Objects.equal(minPlanInterval, that.minPlanInterval);
+        && Objects.equal(minPlanInterval, that.minPlanInterval)
+        && Objects.equal(evaluationMseTolerance, that.evaluationMseTolerance)
+        && Objects.equal(evaluationFallbackInterval, that.evaluationFallbackInterval);
   }
 
   @Override
@@ -347,7 +377,9 @@ public class OptimizingConfig {
         baseHashBucket,
         baseRefreshInterval,
         hiveRefreshInterval,
-        minPlanInterval);
+        minPlanInterval,
+        evaluationMseTolerance,
+        evaluationFallbackInterval);
   }
 
   @Override
@@ -373,6 +405,8 @@ public class OptimizingConfig {
         .add("baseHashBucket", baseHashBucket)
         .add("baseRefreshInterval", baseRefreshInterval)
         .add("hiveRefreshInterval", hiveRefreshInterval)
+        .add("evaluationMseTolerance", evaluationMseTolerance)
+        .add("evaluationFallbackInterval", evaluationFallbackInterval)
         .toString();
   }
 }

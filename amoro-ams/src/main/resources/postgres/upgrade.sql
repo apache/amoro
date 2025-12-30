@@ -222,3 +222,9 @@ ALTER TABLE table_runtime ADD COLUMN bucket_id varchar(4);
 UPDATE table_runtime
 SET bucket_id = CAST((ROW_NUMBER() OVER (ORDER BY table_id) - 1) % 100 + 1 AS VARCHAR)
 WHERE bucket_id IS NULL;
+
+-- ADD external_process_identifier, retry_number, process_parameters to table_runtime
+ALTER TABLE table_process
+ADD COLUMN external_process_identifier varchar(256) DEFAULT NULL,
+ADD COLUMN retry_number int NOT NULL,
+ADD COLUMN process_parameters text;

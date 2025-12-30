@@ -161,7 +161,7 @@ ALTER TABLE `table_runtime` ADD COLUMN `bucket_id` VARCHAR(4)  DEFAULT NULL COMM
 -- This is mainly for upgrade scenarios where existing tables may not have bucketId assigned
 UPDATE `table_runtime` t1
 INNER JOIN (
-    SELECT 
+    SELECT
         `table_id`,
         CAST((ROW_NUMBER() OVER (ORDER BY `table_id`) - 1) % 100 + 1 AS CHAR) AS `bucket_id`
     FROM `table_runtime`
@@ -170,3 +170,20 @@ INNER JOIN (
 SET t1.`bucket_id` = t2.`bucket_id`
 WHERE t1.`bucket_id` IS NULL;
 
+
+
+-- ADD external_process_identifier, retry_number, process_parameters to table_runtime
+ALTER TABLE `table_process`
+ADD COLUMN `external_process_identifier` varchar(256) DEFAULT NULL COMMENT 'Table optimizing external process identifier',
+ADD COLUMN `retry_number` int(11) NOT NULL DEFAULT 0 COMMENT 'Retry times',
+ADD COLUMN `process_parameters` mediumtext COMMENT 'Table process parameters';
+
+
+-- When using database-based leader election, a database-based bucket allocation scheme is required.
+CREATE TABLE IF NOT EXISTS bucket_assign (
+    cluster_name VARCHAR(255) NOT NULL,
+    node_key VARCHAR(255) NOT NULL,
+    bucket_ids_json TEXT,
+    last_update_time BIGINT,
+    PRIMARY KEY (cluster_name, node_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bucket allocation information based on the database';

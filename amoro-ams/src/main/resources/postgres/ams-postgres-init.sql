@@ -213,32 +213,38 @@ comment on column table_runtime_state.create_time is 'create time';
 comment on column table_runtime_state.update_time is 'update time';
 
 CREATE TABLE table_process (
-    process_id      bigserial PRIMARY KEY,
-    table_id        bigint NOT NULL,
-    status          varchar(64) NOT NULL,
-    process_type    varchar(64) NOT NULL,
-    process_stage   varchar(64) NOT NULL,
-    execution_engine varchar(64) NOT NULL,
-    create_time     timestamptz NOT NULL DEFAULT now(),
-    finish_time     timestamptz,
-    fail_message    text CHECK (length(fail_message) <= 4096),
-    summary         text,
+    process_id                      bigserial PRIMARY KEY,
+    table_id                        bigint NOT NULL,
+    external_process_identifier     varchar(256) DEFAULT NULL,
+    status                          varchar(64) NOT NULL,
+    process_type                    varchar(64) NOT NULL,
+    process_stage                   varchar(64) NOT NULL,
+    execution_engine                varchar(64) NOT NULL,
+    retry_number                    int NOT NULL,
+    create_time                     timestamptz NOT NULL DEFAULT now(),
+    finish_time                     timestamptz,
+    fail_message                    text CHECK (length(fail_message) <= 4096),
+    process_parameters              text,
+    summary                         text,
     CONSTRAINT table_process_unique UNIQUE (process_id)
 );
 
 CREATE INDEX table_process_table_idx ON table_process (table_id, create_time);
 
 COMMENT ON TABLE  table_process IS 'History of optimizing after each commit';
-COMMENT ON COLUMN table_process.process_id      IS 'table process id';
-COMMENT ON COLUMN table_process.table_id        IS 'table id';
-COMMENT ON COLUMN table_process.status          IS 'Table optimizing status';
-COMMENT ON COLUMN table_process.process_type    IS 'Process action type';
-COMMENT ON COLUMN table_process.process_stage   IS 'Process current stage';
-COMMENT ON COLUMN table_process.execution_engine IS 'Execution engine';
-COMMENT ON COLUMN table_process.create_time     IS 'First plan time';
-COMMENT ON COLUMN table_process.finish_time     IS 'finish time or failed time';
-COMMENT ON COLUMN table_process.fail_message    IS 'Error message after task failed';
-COMMENT ON COLUMN table_process.summary         IS 'Max change transaction id of these tasks';
+COMMENT ON COLUMN table_process.process_id                  IS 'table process id';
+COMMENT ON COLUMN table_process.table_id                    IS 'table id';
+COMMENT ON COLUMN table_process.external_process_identifier IS 'Table optimizing external processidentifier';
+COMMENT ON COLUMN table_process.status                      IS 'Table optimizing status';
+COMMENT ON COLUMN table_process.process_type                IS 'Process action type';
+COMMENT ON COLUMN table_process.process_stage               IS 'Process current stage';
+COMMENT ON COLUMN table_process.execution_engine            IS 'Execution engine';
+COMMENT ON COLUMN table_process.retry_number                IS 'Retry times';
+COMMENT ON COLUMN table_process.create_time                 IS 'First plan time';
+COMMENT ON COLUMN table_process.finish_time                 IS 'finish time or failed time';
+COMMENT ON COLUMN table_process.fail_message                IS 'Error message after task failed';
+COMMENT ON COLUMN table_process.process_parameters          IS 'Table process parameters';
+COMMENT ON COLUMN table_process.summary                     IS 'Max change transaction id of these tasks';
 
 CREATE TABLE optimizing_process_state (
     process_id                bigint PRIMARY KEY,
@@ -434,3 +440,26 @@ COMMENT ON COLUMN http_session.expiry_time IS 'Expiry time';
 COMMENT ON COLUMN http_session.max_interval IS 'Max internal';
 COMMENT ON COLUMN http_session.data_store IS 'Session data store';
 COMMENT ON TABLE http_session IS 'Http session store';
+
+CREATE TABLE IF NOT EXISTS ha_lease (
+  cluster_name       VARCHAR(64)  NOT NULL,
+  service_name       VARCHAR(64)  NOT NULL,
+  node_id            VARCHAR(256) NULL,
+  node_ip            VARCHAR(64)  NULL,
+  server_info_json   TEXT         NULL,
+  lease_expire_ts    BIGINT       NULL,
+  version            INT          NOT NULL DEFAULT 0,
+  updated_at         BIGINT       NOT NULL,
+  PRIMARY KEY (cluster_name, service_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ha_lease_expire ON ha_lease (lease_expire_ts);
+CREATE INDEX IF NOT EXISTS idx_ha_lease_node   ON ha_lease (node_id);
+
+COMMENT ON COLUMN service_name IS 'Service name (AMS/TABLE_SERVICE/OPTIMIZING_SERVICE)';
+COMMENT ON COLUMN node_id IS 'Unique node identifier (host:port:uuid)';
+COMMENT ON COLUMN node_ip IS 'Node IP address';
+COMMENT ON COLUMN server_info_json IS 'JSON encoded server info (AmsServerInfo)';
+COMMENT ON COLUMN lease_expire_ts IS 'Lease expiration timestamp (ms since epoch)';
+COMMENT ON COLUMN version IS 'Optimistic lock version of the lease row';
+COMMENT ON COLUMN updated_at IS 'Last update timestamp (ms since epoch)';

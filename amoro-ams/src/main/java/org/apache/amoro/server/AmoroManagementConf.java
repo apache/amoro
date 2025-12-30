@@ -239,17 +239,48 @@ public class AmoroManagementConf {
           .defaultValue(false)
           .withDescription("Whether to enable high availability mode.");
 
+  public static final ConfigOption<String> HA_TYPE =
+      ConfigOptions.key("ha.type")
+          .stringType()
+          .defaultValue(AmoroManagementConf.HA_TYPE_ZK)
+          .withDescription("High availability implementation type: zk or database.");
+
   public static final ConfigOption<String> HA_CLUSTER_NAME =
       ConfigOptions.key("ha.cluster-name")
           .stringType()
           .defaultValue("default")
           .withDescription("Amoro management service cluster name.");
 
+  public static final ConfigOption<java.time.Duration> HA_HEARTBEAT_INTERVAL =
+      ConfigOptions.key("ha.heartbeat-interval")
+          .durationType()
+          .defaultValue(java.time.Duration.ofSeconds(10))
+          .withDescription("HA heartbeat interval.");
+
   public static final ConfigOption<String> HA_ZOOKEEPER_ADDRESS =
       ConfigOptions.key("ha.zookeeper-address")
           .stringType()
           .defaultValue("")
           .withDescription("The Zookeeper address used for high availability.");
+
+  public static final ConfigOption<String> HA_ZOOKEEPER_AUTH_TYPE =
+      ConfigOptions.key("ha.zookeeper-auth-type")
+          .stringType()
+          .defaultValue("NONE")
+          .withDescription("The Zookeeper authentication type, NONE or KERBEROS.");
+
+  public static final ConfigOption<String> HA_ZOOKEEPER_AUTH_KEYTAB =
+      ConfigOptions.key("ha.zookeeper-auth-keytab")
+          .stringType()
+          .defaultValue("")
+          .withDescription(
+              "The Zookeeper authentication keytab file path when auth type is KERBEROS.");
+
+  public static final ConfigOption<String> HA_ZOOKEEPER_AUTH_PRINCIPAL =
+      ConfigOptions.key("ha.zookeeper-auth-principal")
+          .stringType()
+          .defaultValue("")
+          .withDescription("The Zookeeper authentication principal when auth type is KERBEROS.");
 
   public static final ConfigOption<Duration> HA_ZOOKEEPER_SESSION_TIMEOUT =
       ConfigOptions.key("ha.session-timeout")
@@ -262,6 +293,12 @@ public class AmoroManagementConf {
           .durationType()
           .defaultValue(Duration.ofSeconds(300))
           .withDescription("The Zookeeper connection timeout in milliseconds.");
+
+  public static final ConfigOption<java.time.Duration> HA_LEASE_TTL =
+      ConfigOptions.key("ha.lease-ttl")
+          .durationType()
+          .defaultValue(java.time.Duration.ofSeconds(30))
+          .withDescription("TTL of HA lease.");
 
   public static final ConfigOption<Integer> TABLE_SERVICE_THRIFT_BIND_PORT =
       ConfigOptions.key("thrift-server.table-service.bind-port")
@@ -551,6 +588,10 @@ public class AmoroManagementConf {
   public static final String DB_TYPE_DERBY = "derby";
   public static final String DB_TYPE_MYSQL = "mysql";
   public static final String DB_TYPE_POSTGRES = "postgres";
+
+  // HA config
+  public static final String HA_TYPE_ZK = "zk";
+  public static final String HA_TYPE_DATABASE = "database";
 
   // terminal config
   public static final List<String> TERMINAL_BACKEND_VALUES =

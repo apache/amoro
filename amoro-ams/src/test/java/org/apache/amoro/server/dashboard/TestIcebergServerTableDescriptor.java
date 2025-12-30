@@ -49,6 +49,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -74,6 +75,81 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
         .allowIncompatibleChanges()
         .addColumn("new_col", Types.IntegerType.get())
         .commit();
+  }
+
+  @Test
+  public void testGetTablePartitions() {
+    // The default test table is partitioned by 'age' field (see
+    // IcebergHadoopCatalogTestHelper.SPEC)
+    org.apache.iceberg.Table icebergTable = getTable();
+    Assert.assertTrue("Test table should be partitioned", icebergTable.spec().isPartitioned());
+
+    // Add some data files to create partitions
+    org.apache.iceberg.DataFile file1 =
+        org.apache.iceberg.DataFiles.builder(icebergTable.spec())
+            .withPath("/path/to/data-a.parquet")
+            .withFileSizeInBytes(100)
+            .withRecordCount(10)
+            .build();
+    icebergTable.newAppend().appendFile(file1).commit();
+
+    // Get partitions using descriptor
+    MixedAndIcebergTableDescriptor descriptor = new MixedAndIcebergTableDescriptor();
+    List<org.apache.amoro.table.descriptor.PartitionBaseInfo> partitions =
+        descriptor.getTablePartitions(getAmoroCatalog().loadTable(TEST_DB, TEST_TABLE));
+
+    // Verify we got partition info - should have at least 1 partition after adding a file
+    Assert.assertNotNull(partitions);
+    Assert.assertTrue("Should have at least 1 partition", partitions.size() > 0);
+
+    // Verify file count is correct
+    long totalFiles = partitions.stream().mapToLong(p -> p.getFileCount()).sum();
+    Assert.assertEquals("Should have 1 file total", 1, totalFiles);
+
+    // Verify we used PARTITIONS metadata table which provides fileSize and lastCommitTime
+    for (org.apache.amoro.table.descriptor.PartitionBaseInfo partition : partitions) {
+      // File size should be available from PARTITIONS metadata table
+      Assert.assertTrue(
+          "FileSize should be available from PARTITIONS metadata table",
+          partition.getFileSize() >= 0);
+      // Last commit time should be available from PARTITIONS metadata table
+      Assert.assertTrue(
+          "LastCommitTime should be available from PARTITIONS metadata table",
+          partition.getLastCommitTime() >= 0);
+    }
+  }
+
+  @Test
+  public void testGetTablePartitionsFallback() {
+    // Test the fallback path by using a custom descriptor that forces fallback
+    org.apache.iceberg.Table icebergTable = getTable();
+    Assert.assertTrue("Test table should be partitioned", icebergTable.spec().isPartitioned());
+
+    // Add data file
+    org.apache.iceberg.DataFile file1 =
+        org.apache.iceberg.DataFiles.builder(icebergTable.spec())
+            .withPath("/path/to/fallback-data.parquet")
+            .withFileSizeInBytes(200)
+            .withRecordCount(20)
+            .build();
+    icebergTable.newAppend().appendFile(file1).commit();
+
+    // Use the fallback method directly
+    TestMixedAndIcebergTableDescriptor testDescriptor = new TestMixedAndIcebergTableDescriptor();
+    List<org.apache.amoro.table.descriptor.PartitionBaseInfo> partitions =
+        testDescriptor.testCollectPartitionsFromFileScan(icebergTable);
+
+    // Verify fallback works correctly
+    Assert.assertNotNull(partitions);
+    Assert.assertTrue("Fallback should return at least 1 partition", partitions.size() > 0);
+
+    // Verify file count
+    long totalFiles = partitions.stream().mapToLong(p -> p.getFileCount()).sum();
+    Assert.assertEquals("Fallback should count files correctly", 1, totalFiles);
+
+    // Verify fallback calculates actual values (not 0 like PARTITIONS table)
+    long totalSize = partitions.stream().mapToLong(p -> p.getFileSize()).sum();
+    Assert.assertTrue("Fallback should calculate actual file size (not 0)", totalSize > 0);
   }
 
   @Test
@@ -291,6 +367,11 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
   /** Test descriptor class, add insert table/optimizing process methods for test. */
   private static class TestMixedAndIcebergTableDescriptor extends MixedAndIcebergTableDescriptor {
 
+    public List<org.apache.amoro.table.descriptor.PartitionBaseInfo>
+        testCollectPartitionsFromFileScan(Table table) {
+      return collectPartitionsFromFileScan(table);
+    }
+
     public void insertTable(ServerTableIdentifier identifier) {
       doAs(TableMetaMapper.class, mapper -> mapper.insertTable(identifier));
     }
@@ -312,11 +393,14 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
               mapper.insertProcess(
                   identifier.getId(),
                   processId,
+                  "",
                   status,
                   type.name(),
                   type.name(),
                   "AMORO",
+                  0,
                   planTime,
+                  new HashMap<>(),
                   summary.summaryAsMap(false)));
       doAs(
           OptimizingProcessMapper.class,

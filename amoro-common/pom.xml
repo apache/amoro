@@ -64,6 +64,21 @@
         </dependency>
 
         <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-net</groupId>
+            <artifactId>commons-net</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
         </dependency>
@@ -85,12 +100,12 @@
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-auth</artifactId>
+            <artifactId>${hadoop-client-api.artifact}</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client</artifactId>
+            <artifactId>${hadoop-client-runtime.artifact}</artifactId>
         </dependency>
 
         <dependency>
@@ -168,17 +183,6 @@
                 </executions>
             </plugin>
 
-            <!--Compile thrift api with commend: mvnw thrift:compile -pl amoro-common-->
-            <plugin>
-                <groupId>org.apache.thrift.tools</groupId>
-                <artifactId>maven-thrift-plugin</artifactId>
-                <version>${maven-thrift-plugin.version}</version>
-                <configuration>
-                    <outputDirectory>src/main/gen-java</outputDirectory>
-                    <thriftSourceRoot>src/main/thrift</thriftSourceRoot>
-                    <generator>java</generator>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
@@ -193,4 +197,52 @@
         </plugins>
         <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
     </build>
+
+    <profiles>
+        <!--Compile thrift api with commend: ./mvnw -pl amoro-common -Pthrift-gen generate-sources -->
+        <profile>
+            <id>thrift-gen</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.thrift.tools</groupId>
+                        <artifactId>maven-thrift-plugin</artifactId>
+                        <version>${maven-thrift-plugin.version}</version>
+                        <configuration>
+                            <outputDirectory>src/main/gen-java</outputDirectory>
+                            <thriftSourceRoot>src/main/thrift</thriftSourceRoot>
+                            <generator>java</generator>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>thrift-compile</id>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                                <phase>generate-sources</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>relocate-thrift-package</id>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <phase>generate-sources</phase>
+                                <configuration>
+                                    <target>
+                                        <!-- Rewrite Thrift classes to use shaded thrift package -->
+                                        <replace dir="src/main/gen-java" includes="**/*.java" token="org.apache.thrift" value="org.apache.amoro.shade.thrift.org.apache.thrift"></replace>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

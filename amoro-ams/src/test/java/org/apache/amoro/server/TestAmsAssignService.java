@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.AmsHAProperties;
+import org.apache.amoro.server.ha.ZkHighAvailabilityContainer;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.CreateMode;
@@ -50,7 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TestAmsAssignService {
 
   private Configurations serviceConfig;
-  private HighAvailabilityContainer haContainer;
+  private ZkHighAvailabilityContainer haContainer;
   private AmsAssignService assignService;
   private AmsServerInfo node1;
   private AmsServerInfo node2;
@@ -118,7 +119,7 @@ public class TestAmsAssignService {
 
     // Create second node
     Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
+    ZkHighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
     haContainer2.registAndElect();
 
     try {
@@ -158,7 +159,7 @@ public class TestAmsAssignService {
     // Setup: 2 nodes with initial assignment
     haContainer.registAndElect();
     Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
+    ZkHighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
     haContainer2.registAndElect();
 
     try {
@@ -263,7 +264,7 @@ public class TestAmsAssignService {
 
     // Add new node
     Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
+    ZkHighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
     haContainer2.registAndElect();
 
     try {
@@ -313,10 +314,10 @@ public class TestAmsAssignService {
     // Setup: 3 nodes
     haContainer.registAndElect();
     Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
+    ZkHighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
     haContainer2.registAndElect();
     Configurations config3 = createNodeConfig("127.0.0.3", 1263, 1633);
-    HighAvailabilityContainer haContainer3 = createContainerWithMockZk(config3);
+    ZkHighAvailabilityContainer haContainer3 = createContainerWithMockZk(config3);
     haContainer3.registAndElect();
 
     try {
@@ -351,9 +352,9 @@ public class TestAmsAssignService {
     // Setup: 2 nodes initially
     haContainer.registAndElect();
     Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
+    ZkHighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
     haContainer2.registAndElect();
-    HighAvailabilityContainer haContainer3 = null;
+    ZkHighAvailabilityContainer haContainer3 = null;
 
     try {
       Thread.sleep(100);
@@ -443,7 +444,7 @@ public class TestAmsAssignService {
     // Create a non-leader container
     mockLeaderLatch = createMockLeaderLatch(false); // Not leader
     Configurations nonLeaderConfig = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer nonLeaderContainer = createContainerWithMockZk(nonLeaderConfig);
+    ZkHighAvailabilityContainer nonLeaderContainer = createContainerWithMockZk(nonLeaderConfig);
     nonLeaderContainer.registAndElect();
 
     try {
@@ -481,46 +482,46 @@ public class TestAmsAssignService {
     return config;
   }
 
-  /** Create HighAvailabilityContainer with mocked ZK components using reflection. */
-  private HighAvailabilityContainer createContainerWithMockZk() throws Exception {
+  /** Create ZkHighAvailabilityContainer with mocked ZK components using reflection. */
+  private ZkHighAvailabilityContainer createContainerWithMockZk() throws Exception {
     return createContainerWithMockZk(serviceConfig);
   }
 
-  /** Create HighAvailabilityContainer with mocked ZK components using reflection. */
-  private HighAvailabilityContainer createContainerWithMockZk(Configurations config)
+  /** Create ZkHighAvailabilityContainer with mocked ZK components using reflection. */
+  private ZkHighAvailabilityContainer createContainerWithMockZk(Configurations config)
       throws Exception {
     // Create container without ZK connection to avoid any connection attempts
-    HighAvailabilityContainer container = createContainerWithoutZk(config);
+    ZkHighAvailabilityContainer container = createContainerWithoutZk(config);
 
     // Inject mock ZK client and leader latch
     java.lang.reflect.Field zkClientField =
-        HighAvailabilityContainer.class.getDeclaredField("zkClient");
+        ZkHighAvailabilityContainer.class.getDeclaredField("zkClient");
     zkClientField.setAccessible(true);
     zkClientField.set(container, mockZkClient);
 
     java.lang.reflect.Field leaderLatchField =
-        HighAvailabilityContainer.class.getDeclaredField("leaderLatch");
+        ZkHighAvailabilityContainer.class.getDeclaredField("leaderLatch");
     leaderLatchField.setAccessible(true);
     leaderLatchField.set(container, mockLeaderLatch);
 
     return container;
   }
 
-  /** Create a HighAvailabilityContainer without initializing ZK connection. */
-  private HighAvailabilityContainer createContainerWithoutZk(Configurations config)
+  /** Create a ZkHighAvailabilityContainer without initializing ZK connection. */
+  private ZkHighAvailabilityContainer createContainerWithoutZk(Configurations config)
       throws Exception {
-    java.lang.reflect.Constructor<HighAvailabilityContainer> constructor =
-        HighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
+    java.lang.reflect.Constructor<ZkHighAvailabilityContainer> constructor =
+        ZkHighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
 
     // Create a minimal config that disables HA to avoid ZK connection
     Configurations tempConfig = new Configurations(config);
     tempConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
 
-    HighAvailabilityContainer container = constructor.newInstance(tempConfig);
+    ZkHighAvailabilityContainer container = constructor.newInstance(tempConfig);
 
     // Now set all required fields using reflection
     java.lang.reflect.Field isMasterSlaveModeField =
-        HighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
+        ZkHighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
     isMasterSlaveModeField.setAccessible(true);
     isMasterSlaveModeField.set(
         container, config.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE));
@@ -529,24 +530,24 @@ public class TestAmsAssignService {
       String haClusterName = config.getString(AmoroManagementConf.HA_CLUSTER_NAME);
 
       java.lang.reflect.Field tableServiceMasterPathField =
-          HighAvailabilityContainer.class.getDeclaredField("tableServiceMasterPath");
+          ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceMasterPath");
       tableServiceMasterPathField.setAccessible(true);
       tableServiceMasterPathField.set(
           container, AmsHAProperties.getTableServiceMasterPath(haClusterName));
 
       java.lang.reflect.Field optimizingServiceMasterPathField =
-          HighAvailabilityContainer.class.getDeclaredField("optimizingServiceMasterPath");
+          ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceMasterPath");
       optimizingServiceMasterPathField.setAccessible(true);
       optimizingServiceMasterPathField.set(
           container, AmsHAProperties.getOptimizingServiceMasterPath(haClusterName));
 
       java.lang.reflect.Field nodesPathField =
-          HighAvailabilityContainer.class.getDeclaredField("nodesPath");
+          ZkHighAvailabilityContainer.class.getDeclaredField("nodesPath");
       nodesPathField.setAccessible(true);
       nodesPathField.set(container, AmsHAProperties.getNodesPath(haClusterName));
 
       java.lang.reflect.Field tableServiceServerInfoField =
-          HighAvailabilityContainer.class.getDeclaredField("tableServiceServerInfo");
+          ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceServerInfo");
       tableServiceServerInfoField.setAccessible(true);
       AmsServerInfo tableServiceServerInfo =
           buildServerInfo(
@@ -556,7 +557,7 @@ public class TestAmsAssignService {
       tableServiceServerInfoField.set(container, tableServiceServerInfo);
 
       java.lang.reflect.Field optimizingServiceServerInfoField =
-          HighAvailabilityContainer.class.getDeclaredField("optimizingServiceServerInfo");
+          ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceServerInfo");
       optimizingServiceServerInfoField.setAccessible(true);
       AmsServerInfo optimizingServiceServerInfo =
           buildServerInfo(
@@ -584,7 +585,7 @@ public class TestAmsAssignService {
   }
 
   /** Create AmsAssignService with mock BucketAssignStore. */
-  private AmsAssignService createAssignServiceWithMockStore(HighAvailabilityContainer container)
+  private AmsAssignService createAssignServiceWithMockStore(ZkHighAvailabilityContainer container)
       throws Exception {
     AmsAssignService service = new AmsAssignService(container, serviceConfig, mockZkClient);
 

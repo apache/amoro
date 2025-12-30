@@ -32,7 +32,7 @@ import org.apache.amoro.optimizing.TableRuntimeOptimizingState;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.AmoroProcess;
 import org.apache.amoro.process.ProcessFactory;
-import org.apache.amoro.process.TableProcessState;
+import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
@@ -129,7 +129,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   }
 
   @Override
-  public AmoroProcess<? extends TableProcessState> trigger(Action action) {
+  public AmoroProcess trigger(Action action) {
     return Optional.ofNullable(processContainerMap.get(action))
         .map(container -> container.trigger(action))
         // Define a related exception
@@ -137,7 +137,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   }
 
   @Override
-  public void install(Action action, ProcessFactory<? extends TableProcessState> processFactory) {
+  public void install(Action action, ProcessFactory processFactory) {
     if (processContainerMap.putIfAbsent(action, new TableProcessContainer(processFactory))
         != null) {
       throw new IllegalStateException("ProcessFactory for action " + action + " already exists");
@@ -150,14 +150,14 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   }
 
   @Override
-  public List<TableProcessState> getProcessStates() {
+  public List<TableProcessStore> getProcessStates() {
     return processContainerMap.values().stream()
         .flatMap(container -> container.getProcessStates().stream())
         .collect(Collectors.toList());
   }
 
   @Override
-  public List<TableProcessState> getProcessStates(Action action) {
+  public List<TableProcessStore> getProcessStates(Action action) {
     return processContainerMap.get(action).getProcessStates();
   }
 
@@ -554,6 +554,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
             currentChangeSnapshotId);
         state.setCurrentChangeSnapshotId(currentChangeSnapshotId);
         state.setCurrentSnapshotId(currentSnapshotId);
+        return true;
       }
     } else {
       long currentSnapshotId = doRefreshSnapshots((UnkeyedTable) table);
@@ -585,19 +586,17 @@ public class DefaultTableRuntime extends AbstractTableRuntime
 
   private class TableProcessContainer {
     private final Lock processLock = new ReentrantLock();
-    private final ProcessFactory<? extends TableProcessState> processFactory;
-    private final Map<Long, AmoroProcess<? extends TableProcessState>> processMap =
-        Maps.newConcurrentMap();
+    private final ProcessFactory processFactory;
+    private final Map<Long, AmoroProcess> processMap = Maps.newConcurrentMap();
 
-    TableProcessContainer(ProcessFactory<? extends TableProcessState> processFactory) {
+    TableProcessContainer(ProcessFactory processFactory) {
       this.processFactory = processFactory;
     }
 
-    public AmoroProcess<? extends TableProcessState> trigger(Action action) {
+    public AmoroProcess trigger(Action action) {
       processLock.lock();
       try {
-        AmoroProcess<? extends TableProcessState> process =
-            processFactory.create(DefaultTableRuntime.this, action);
+        AmoroProcess process = processFactory.create(DefaultTableRuntime.this, action);
         process.getCompleteFuture().whenCompleted(() -> processMap.remove(process.getId()));
         processMap.put(process.getId(), process);
         return process;
@@ -606,8 +605,8 @@ public class DefaultTableRuntime extends AbstractTableRuntime
       }
     }
 
-    public List<TableProcessState> getProcessStates() {
-      return processMap.values().stream().map(AmoroProcess::getState).collect(Collectors.toList());
+    public List<TableProcessStore> getProcessStates() {
+      return processMap.values().stream().map(AmoroProcess::store).collect(Collectors.toList());
     }
   }
 }
