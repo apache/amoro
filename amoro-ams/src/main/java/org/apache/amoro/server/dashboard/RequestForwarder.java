@@ -20,7 +20,7 @@ package org.apache.amoro.server.dashboard;
 
 import io.javalin.http.Context;
 import org.apache.amoro.client.AmsServerInfo;
-import org.apache.amoro.server.HighAvailabilityContainer;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
@@ -68,20 +68,22 @@ public class RequestForwarder {
   private final int retryBackoffMs;
   private final int circuitBreakerThreshold;
   private final long circuitBreakerTimeoutMs;
+  private final boolean isMasterSlaveMode;
 
   // Circuit breaker state
   private final AtomicInteger failureCount = new AtomicInteger(0);
   private final AtomicLong lastFailureTime = new AtomicLong(0);
   private volatile boolean circuitOpen = false;
 
-  public RequestForwarder(HighAvailabilityContainer haContainer) {
+  public RequestForwarder(HighAvailabilityContainer haContainer, boolean isMasterSlaveMode) {
     this(
         haContainer,
         DEFAULT_TIMEOUT_MS,
         DEFAULT_RETRY_COUNT,
         DEFAULT_RETRY_BACKOFF_MS,
         DEFAULT_CIRCUIT_BREAKER_THRESHOLD,
-        DEFAULT_CIRCUIT_BREAKER_TIMEOUT_MS);
+        DEFAULT_CIRCUIT_BREAKER_TIMEOUT_MS,
+        isMasterSlaveMode);
   }
 
   public RequestForwarder(
@@ -90,12 +92,14 @@ public class RequestForwarder {
       int maxRetries,
       int retryBackoffMs,
       int circuitBreakerThreshold,
-      long circuitBreakerTimeoutMs) {
+      long circuitBreakerTimeoutMs,
+      boolean isMasterSlaveMode) {
     this.haContainer = haContainer;
     this.maxRetries = maxRetries;
     this.retryBackoffMs = retryBackoffMs;
     this.circuitBreakerThreshold = circuitBreakerThreshold;
     this.circuitBreakerTimeoutMs = circuitBreakerTimeoutMs;
+    this.isMasterSlaveMode = isMasterSlaveMode;
 
     RequestConfig requestConfig =
         RequestConfig.custom()
@@ -114,7 +118,7 @@ public class RequestForwarder {
   /** Check if the request should be forwarded to the leader node. */
   public boolean shouldForward(Context ctx) {
     // Only forward in master-slave mode
-    if (!haContainer.isMasterSlaveMode()) {
+    if (!isMasterSlaveMode) {
       return false;
     }
 

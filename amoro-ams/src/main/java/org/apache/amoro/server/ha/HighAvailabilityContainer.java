@@ -67,6 +67,13 @@ public interface HighAvailabilityContainer {
   AmsServerInfo getOptimizingServiceServerInfo();
 
   /**
+   * Returns the current AMS node information{@link AmsServerInfo}.
+   *
+   * @return AmsServerInfo
+   */
+  AmsServerInfo getLeaderNodeInfo();
+
+  /**
    * Get list of alive nodes. Only the leader node should call this method.
    *
    * @return List of alive node information

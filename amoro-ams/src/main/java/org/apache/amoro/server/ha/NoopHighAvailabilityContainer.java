@@ -58,6 +58,11 @@ public class NoopHighAvailabilityContainer implements HighAvailabilityContainer 
   }
 
   @Override
+  public AmsServerInfo getLeaderNodeInfo() {
+    return null;
+  }
+
+  @Override
   public List<AmsServerInfo> getAliveNodes() throws Exception {
     return new ArrayList<>();
   }

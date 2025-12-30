@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
 import org.apache.amoro.client.AmsServerInfo;
-import org.apache.amoro.server.HighAvailabilityContainer;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.StatusLine;
@@ -75,6 +75,7 @@ public class TestRequestForwarder {
     when(mockServletRequest.getHeaderNames()).thenReturn(emptyHeaderNames);
 
     // Create RequestForwarder with custom configuration for testing
+    // isMasterSlaveMode is set to true by default for most tests
     requestForwarder =
         new RequestForwarder(
             mockHaContainer,
@@ -82,7 +83,8 @@ public class TestRequestForwarder {
             2, // maxRetries (reduced for faster tests)
             100, // retryBackoffMs (reduced for faster tests)
             3, // circuitBreakerThreshold (reduced for faster tests)
-            5000); // circuitBreakerTimeoutMs (reduced for faster tests)
+            5000, // circuitBreakerTimeoutMs (reduced for faster tests)
+            true); // isMasterSlaveMode
 
     // Use reflection to replace httpClient with mock (for testing purposes)
     // Note: In a real scenario, you might want to use a test-friendly constructor
@@ -144,17 +146,19 @@ public class TestRequestForwarder {
 
   @Test
   public void testShouldForward_NotMasterSlaveMode() {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(false);
+    // Create a new RequestForwarder with isMasterSlaveMode = false
+    RequestForwarder nonMasterSlaveForwarder =
+        new RequestForwarder(
+            mockHaContainer, 5000, 2, 100, 3, 5000, false); // isMasterSlaveMode = false
 
     assertFalse(
         "Should not forward when master-slave mode is disabled",
-        requestForwarder.shouldForward(mockContext));
+        nonMasterSlaveForwarder.shouldForward(mockContext));
     verify(mockHaContainer, never()).hasLeadership();
   }
 
   @Test
   public void testShouldForward_IsLeader() {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(true);
 
     assertFalse(
@@ -164,7 +168,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testShouldForward_GetMethod() {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("GET");
 
@@ -173,7 +176,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testShouldForward_PostMethod() {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("POST");
 
@@ -182,7 +184,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testShouldForward_PutMethod() {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("PUT");
 
@@ -191,7 +192,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testShouldForward_DeleteMethod() {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("DELETE");
 
@@ -201,7 +201,6 @@ public class TestRequestForwarder {
   @Test
   public void testForwardRequest_Success() throws Exception {
     // Setup
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("POST");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs");
@@ -256,7 +255,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testForwardRequest_WithQueryString() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("GET");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs");
@@ -268,7 +266,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testForwardRequest_NoLeaderInfo() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("POST");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs");
@@ -300,7 +297,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testForwardRequest_RetryOnFailure() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("POST");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs");
@@ -351,7 +347,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testForwardRequest_MaxRetriesExceeded() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("POST");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs");
@@ -383,7 +378,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testForwardRequest_Status204() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("DELETE");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs/test");
@@ -420,7 +414,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testForwardRequest_EmptyResponseBody() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("POST");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs");
@@ -463,7 +456,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testForwardRequest_RequestBodyFromInputStream() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("PUT");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs/test");
@@ -543,7 +535,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testForwardRequest_CopyHeaders() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("POST");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs");
@@ -603,7 +594,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testCircuitBreaker_OpenAfterFailures() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("POST");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs");
@@ -643,7 +633,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testGetFailureCount() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("POST");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs");
@@ -673,7 +662,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testForwardRequest_Status500() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("POST");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs");
@@ -718,7 +706,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testForwardRequest_NonApiEndpoint() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("POST");
     when(mockContext.path()).thenReturn("/some/non-api/path");
@@ -758,7 +745,6 @@ public class TestRequestForwarder {
 
   @Test
   public void testForwardRequest_WithResponseHeaders() throws Exception {
-    when(mockHaContainer.isMasterSlaveMode()).thenReturn(true);
     when(mockHaContainer.hasLeadership()).thenReturn(false);
     when(mockContext.method()).thenReturn("GET");
     when(mockContext.path()).thenReturn("/api/ams/v1/catalogs");
