@@ -102,6 +102,13 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | refresh-tables.interval | 1 min | Interval for refreshing table metadata. |
 | refresh-tables.max-pending-partition-count | 100 | Filters will not be used beyond that number of partitions. |
 | refresh-tables.thread-count | 10 | The number of threads used for refreshing tables. |
+| request-forwarder.circuit-breaker.threshold | 5 | Number of consecutive failures before opening the circuit breaker. |
+| request-forwarder.circuit-breaker.timeout | 1 min | Timeout duration for circuit breaker to remain open before attempting to close. |
+| request-forwarder.max-connections | 100 | Maximum number of connections for request forwarding HTTP client. |
+| request-forwarder.max-connections-per-route | 20 | Maximum number of connections per route for request forwarding HTTP client. |
+| request-forwarder.max-retries | 3 | Maximum number of retry attempts for request forwarding. |
+| request-forwarder.retry-backoff | 1 s | Backoff duration between retry attempts for request forwarding. |
+| request-forwarder.timeout | 30 s | Timeout duration for request forwarding to leader node. |
 | self-optimizing.break-quota-limit-enabled | true | Allow the table to break the quota limit when the resource is sufficient. |
 | self-optimizing.commit-manifest-io-thread-count | 10 | Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent commit operations. |
 | self-optimizing.commit-thread-count | 10 | The number of threads that self-optimizing uses to submit results. |

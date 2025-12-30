@@ -180,6 +180,11 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
     return optimizingServiceServerInfo;
   }
 
+  @Override
+  public AmsServerInfo getLeaderNodeInfo() {
+    return null;
+  }
+
   /** Closes the heartbeat executor safely. */
   @Override
   public void close() {

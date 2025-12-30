@@ -343,7 +343,7 @@ public class AmoroServiceContainer {
   private void initHttpService() {
     // Create request forwarder for master-slave mode
     org.apache.amoro.server.dashboard.RequestForwarder requestForwarder = null;
-    if (haContainer != null && haContainer.isMasterSlaveMode()) {
+    if (haContainer != null && IS_MASTER_SLAVE_MODE) {
       // Get configuration values for request forwarder
       int timeoutMs =
           (int) serviceConfig.get(AmoroManagementConf.REQUEST_FORWARDER_TIMEOUT).toMillis();
@@ -368,7 +368,8 @@ public class AmoroServiceContainer {
               maxRetries,
               retryBackoffMs,
               circuitBreakerThreshold,
-              circuitBreakerTimeoutMs);
+              circuitBreakerTimeoutMs,
+              IS_MASTER_SLAVE_MODE);
 
       LOG.info(
           "Request forwarder initialized with configuration: timeout={}ms, maxRetries={}, "
