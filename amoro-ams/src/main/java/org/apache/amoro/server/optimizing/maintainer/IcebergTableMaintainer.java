@@ -693,7 +693,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     Comparable<?> expireValue = getExpireValue(expirationConfig, field, expireTimestamp);
     return CloseableIterable.transform(
         CloseableIterable.withNoopClose(Iterables.concat(dataFiles, deleteFiles)),
-        contentFile -> {
+        (ContentFile<?> contentFile) -> {
           Literal<Long> literal =
               getExpireTimestampLiteral(
                   contentFile,
@@ -702,7 +702,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
                       expirationConfig.getDateTimePattern(), Locale.getDefault()),
                   expirationConfig.getNumberDateFormat(),
                   expireValue);
-          return new FileEntry(contentFile.copyWithoutStats(), literal);
+          // copyWithoutStats() returns ContentFile<?> but with a captured wildcard type
+          // that needs explicit casting for type inference
+          @SuppressWarnings("rawtypes")
+          ContentFile<?> fileWithoutStats =
+              (ContentFile<?>) ((ContentFile) contentFile.copyWithoutStats());
+          return new FileEntry(fileWithoutStats, literal);
         });
   }
 

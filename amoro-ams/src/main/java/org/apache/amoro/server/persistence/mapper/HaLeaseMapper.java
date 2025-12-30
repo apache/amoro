@@ -108,6 +108,20 @@ public interface HaLeaseMapper {
       @Param("clusterName") String clusterName, @Param("serviceName") String serviceName);
 
   /**
+   * Select all leases for cluster and service.
+   *
+   * @param clusterName cluster name
+   * @param serviceName service name
+   * @return list of lease rows
+   */
+  @Select(
+      "SELECT cluster_name, service_name, node_id, node_ip, server_info_json, lease_expire_ts, version, updated_at "
+          + "FROM ha_lease WHERE cluster_name = #{clusterName} AND service_name = #{serviceName}")
+  @ResultMap("HaLeaseMetaMap")
+  List<HaLeaseMeta> selectLeasesByService(
+      @Param("clusterName") String clusterName, @Param("serviceName") String serviceName);
+
+  /**
    * Select current lease for cluster and service.
    *
    * @param clusterName cluster name

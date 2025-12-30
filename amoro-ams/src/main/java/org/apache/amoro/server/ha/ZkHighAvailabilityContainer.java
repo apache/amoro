@@ -46,6 +46,8 @@ import javax.security.auth.login.Configuration;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
@@ -57,11 +59,15 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
   private final CuratorFramework zkClient;
   private final String tableServiceMasterPath;
   private final String optimizingServiceMasterPath;
+  private final String nodesPath;
   private final AmsServerInfo tableServiceServerInfo;
   private final AmsServerInfo optimizingServiceServerInfo;
+  private final boolean isMasterSlaveMode;
   private volatile CountDownLatch followerLatch;
+  private String registeredNodePath;
 
   public ZkHighAvailabilityContainer(Configurations serviceConfig) throws Exception {
+    this.isMasterSlaveMode = serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
     if (serviceConfig.getBoolean(AmoroManagementConf.HA_ENABLE)) {
       String zkServerAddress = serviceConfig.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS);
       int zkSessionTimeout =
@@ -71,6 +77,7 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
       String haClusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
       tableServiceMasterPath = AmsHAProperties.getTableServiceMasterPath(haClusterName);
       optimizingServiceMasterPath = AmsHAProperties.getOptimizingServiceMasterPath(haClusterName);
+      nodesPath = AmsHAProperties.getNodesPath(haClusterName);
       ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3, 5000);
       setupZookeeperAuth(serviceConfig);
       this.zkClient =
@@ -83,6 +90,7 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
       zkClient.start();
       createPathIfNeeded(tableServiceMasterPath);
       createPathIfNeeded(optimizingServiceMasterPath);
+      createPathIfNeeded(nodesPath);
       String leaderPath = AmsHAProperties.getLeaderPath(haClusterName);
       createPathIfNeeded(leaderPath);
       leaderLatch = new LeaderLatch(zkClient, leaderPath);
@@ -103,8 +111,10 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
       zkClient = null;
       tableServiceMasterPath = null;
       optimizingServiceMasterPath = null;
+      nodesPath = null;
       tableServiceServerInfo = null;
       optimizingServiceServerInfo = null;
+      registeredNodePath = null;
       // block follower latch forever when ha is disabled
       followerLatch = new CountDownLatch(1);
     }
@@ -140,6 +150,27 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
     LOG.info("Became the leader of AMS");
   }
 
+  public void registAndElect() throws Exception {
+    if (!isMasterSlaveMode) {
+      LOG.debug("Master-slave mode is not enabled, skip node registration");
+      return;
+    }
+    if (zkClient == null || nodesPath == null) {
+      LOG.warn("HA is not enabled, skip node registration");
+      return;
+    }
+    // Register node to ZK using ephemeral node
+    // The node will be automatically deleted when the session expires
+    String nodeInfo = JacksonUtil.toJSONString(optimizingServiceServerInfo);
+    registeredNodePath =
+        zkClient
+            .create()
+            .creatingParentsIfNeeded()
+            .withMode(CreateMode.EPHEMERAL_SEQUENTIAL)
+            .forPath(nodesPath + "/node-", nodeInfo.getBytes(StandardCharsets.UTF_8));
+    LOG.info("Registered AMS node to ZK: {}", registeredNodePath);
+  }
+
   @Override
   public void waitFollowerShip() throws Exception {
     LOG.info("Waiting to become the follower of AMS");
@@ -153,6 +184,18 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
   public void close() {
     if (leaderLatch != null) {
       try {
+        // Unregister node from ZK
+        if (registeredNodePath != null) {
+          try {
+            zkClient.delete().forPath(registeredNodePath);
+            LOG.info("Unregistered AMS node from ZK: {}", registeredNodePath);
+          } catch (KeeperException.NoNodeException e) {
+            // Node already deleted, ignore
+            LOG.debug("Node {} already deleted", registeredNodePath);
+          } catch (Exception e) {
+            LOG.warn("Failed to unregister node from ZK: {}", registeredNodePath, e);
+          }
+        }
         this.leaderLatch.close();
         this.zkClient.close();
       } catch (IOException e) {
@@ -185,6 +228,76 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
     amsServerInfo.setRestBindPort(restBindPort);
     amsServerInfo.setThriftBindPort(thriftBindPort);
     return amsServerInfo;
+  }
+
+  /**
+   * Get list of alive nodes. Only the leader node can call this method.
+   *
+   * @return List of alive node information
+   */
+  public List<AmsServerInfo> getAliveNodes() throws Exception {
+    List<AmsServerInfo> aliveNodes = new ArrayList<>();
+    if (!isMasterSlaveMode) {
+      LOG.debug("Master-slave mode is not enabled, return empty node list");
+      return aliveNodes;
+    }
+    if (zkClient == null || nodesPath == null) {
+      LOG.warn("HA is not enabled, return empty node list");
+      return aliveNodes;
+    }
+    if (!leaderLatch.hasLeadership()) {
+      LOG.warn("Only leader node can get alive nodes list");
+      return aliveNodes;
+    }
+    try {
+      List<String> nodePaths = zkClient.getChildren().forPath(nodesPath);
+      for (String nodePath : nodePaths) {
+        try {
+          String fullPath = nodesPath + "/" + nodePath;
+          byte[] data = zkClient.getData().forPath(fullPath);
+          if (data != null && data.length > 0) {
+            String nodeInfoJson = new String(data, StandardCharsets.UTF_8);
+            AmsServerInfo nodeInfo = JacksonUtil.parseObject(nodeInfoJson, AmsServerInfo.class);
+            aliveNodes.add(nodeInfo);
+          }
+        } catch (Exception e) {
+          LOG.warn("Failed to get node info for path: {}", nodePath, e);
+        }
+      }
+    } catch (KeeperException.NoNodeException e) {
+      LOG.debug("Nodes path {} does not exist", nodesPath);
+    }
+    return aliveNodes;
+  }
+
+  /**
+   * Check if current node is the leader.
+   *
+   * @return true if current node is the leader, false otherwise
+   */
+  public boolean hasLeadership() {
+    if (leaderLatch == null) {
+      return false;
+    }
+    return leaderLatch.hasLeadership();
+  }
+
+  /**
+   * Get the current node's table service server info.
+   *
+   * @return The current node's server info, null if HA is not enabled
+   */
+  public AmsServerInfo getOptimizingServiceServerInfo() {
+    return optimizingServiceServerInfo;
+  }
+
+  /**
+   * Get the ZooKeeper client. This is used for creating BucketAssignStore.
+   *
+   * @return The ZooKeeper client, null if HA is not enabled
+   */
+  public CuratorFramework getZkClient() {
+    return zkClient;
   }
 
   private void createPathIfNeeded(String path) throws Exception {

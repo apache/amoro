@@ -491,7 +491,7 @@ public class TestSnapshotExpire extends ExecutorTestBase {
 
   @Test
   public void testBaseTableGcDisabled() {
-    Assume.assumeFalse(isKeyedTable());
+    Assume.assumeFalse(getMixedTable().isKeyedTable());
     UnkeyedTable testUnkeyedTable = getMixedTable().asUnkeyedTable();
     testUnkeyedTable.updateProperties().set("gc.enabled", "false").commit();
 

@@ -136,6 +136,13 @@ public abstract class AbstractOptimizerContainer implements InternalResourceCont
     if (StringUtils.isNotEmpty(resource.getResourceId())) {
       stringBuilder.append(" -id ").append(resource.getResourceId());
     }
+    // Add master-slave mode flag if enabled
+    if (containerProperties != null
+        && "true"
+            .equalsIgnoreCase(
+                containerProperties.get(OptimizerProperties.OPTIMIZER_MASTER_SLAVE_MODE))) {
+      stringBuilder.append(" -msm");
+    }
     return stringBuilder.toString();
   }
 
