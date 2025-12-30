@@ -38,7 +38,7 @@ jobs:
     strategy:
       matrix:
         jdk: [ '11' ]
-        spark: [ '3.3', '3.5' ]
+        spark: [ '3.3','3.4', '3.5' ]
     name: Build Amoro with JDK ${{ matrix.jdk }} Spark-${{ matrix.spark }}
     steps:
       - uses: actions/checkout@v3
