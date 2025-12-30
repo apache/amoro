@@ -48,6 +48,9 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | auto-create-tags.interval | 1 min | Interval for creating tags. |
 | auto-create-tags.thread-count | 3 | The number of threads used for creating tags. |
 | blocker.timeout | 1 min | Session timeout. Default unit is milliseconds if not specified. |
+| bucket-assign.interval | 1 min | Interval for bucket assignment service to detect node changes and redistribute bucket IDs. |
+| bucket-id.total-count | 100 | Total count of bucket IDs for assignment. Bucket IDs range from 1 to this value. |
+| bucket-table-sync.interval | 1 min | Interval for syncing tables assigned to bucket IDs in master-slave mode. Each node periodically loads tables from database based on its assigned bucket IDs. |
 | catalog-meta-cache.expiration-interval | 1 min | TTL for catalog metadata. |
 | clean-dangling-delete-files.enabled | true | Enable dangling delete files cleaning. |
 | clean-dangling-delete-files.thread-count | 10 | The number of threads used for dangling delete files cleaning. |
@@ -85,6 +88,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | http-server.proxy-client-ip-header | X-Real-IP | The HTTP header to record the real client IP address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use. |
 | http-server.rest-auth-type | token | The authentication used by REST APIs, token (default), basic or jwt. |
 | http-server.session-timeout | 7 d | Timeout for http session. |
+| node-offline.timeout | 5 min | Timeout duration to determine if a node is offline. After this duration, the node's bucket IDs will be reassigned. |
 | optimizer.heart-beat-timeout | 1 min | Timeout duration for Optimizer heartbeat. |
 | optimizer.max-planning-parallelism | 1 | Max planning parallelism in one optimizer group. |
 | optimizer.polling-timeout | 3 s | Optimizer polling task timeout. |
@@ -98,6 +102,13 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | refresh-tables.interval | 1 min | Interval for refreshing table metadata. |
 | refresh-tables.max-pending-partition-count | 100 | Filters will not be used beyond that number of partitions. |
 | refresh-tables.thread-count | 10 | The number of threads used for refreshing tables. |
+| request-forwarder.circuit-breaker.threshold | 5 | Number of consecutive failures before opening the circuit breaker. |
+| request-forwarder.circuit-breaker.timeout | 1 min | Timeout duration for circuit breaker to remain open before attempting to close. |
+| request-forwarder.max-connections | 100 | Maximum number of connections for request forwarding HTTP client. |
+| request-forwarder.max-connections-per-route | 20 | Maximum number of connections per route for request forwarding HTTP client. |
+| request-forwarder.max-retries | 3 | Maximum number of retry attempts for request forwarding. |
+| request-forwarder.retry-backoff | 1 s | Backoff duration between retry attempts for request forwarding. |
+| request-forwarder.timeout | 30 s | Timeout duration for request forwarding to leader node. |
 | self-optimizing.break-quota-limit-enabled | true | Allow the table to break the quota limit when the resource is sufficient. |
 | self-optimizing.commit-manifest-io-thread-count | 10 | Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent commit operations. |
 | self-optimizing.commit-thread-count | 10 | The number of threads that self-optimizing uses to submit results. |
@@ -122,6 +133,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | thrift-server.selector-thread-count | 2 | The number of selector threads for the Thrift server. |
 | thrift-server.table-service.bind-port | 1260 | Port that the table service thrift server is bound to. |
 | thrift-server.table-service.worker-thread-count | 20 | The number of worker threads for the Thrift server. |
+| use-master-slave-mode | false | Enable master & slave mode, which supports horizontal scaling of AMS. |
 
 
 ## Shade Utils Configuration

@@ -47,4 +47,5 @@ public class OptimizerProperties {
   public static final String OPTIMIZER_CACHE_MAX_TOTAL_SIZE_DEFAULT = "128mb";
   public static final String OPTIMIZER_CACHE_TIMEOUT = "cache-timeout";
   public static final String OPTIMIZER_CACHE_TIMEOUT_DEFAULT = "10min";
+  public static final String OPTIMIZER_MASTER_SLAVE_MODE = "master-slave-mode";
 }

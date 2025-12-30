@@ -109,10 +109,15 @@ public class RestCatalogService extends PersistentBase {
 
   private final CatalogManager catalogManager;
   private final InternalTableManager tableManager;
+  private final org.apache.amoro.server.dashboard.RequestForwarder requestForwarder;
 
-  public RestCatalogService(CatalogManager catalogManager, InternalTableManager tableManager) {
+  public RestCatalogService(
+      CatalogManager catalogManager,
+      InternalTableManager tableManager,
+      org.apache.amoro.server.dashboard.RequestForwarder requestForwarder) {
     this.catalogManager = catalogManager;
     this.tableManager = tableManager;
+    this.requestForwarder = requestForwarder;
     ObjectMapper objectMapper = jsonMapper();
     this.jsonMapper = new JavalinJackson(objectMapper);
   }
@@ -148,6 +153,32 @@ public class RestCatalogService extends PersistentBase {
 
   public boolean needHandleException(Context ctx) {
     return ctx.req.getRequestURI().startsWith(ICEBERG_REST_API_PREFIX);
+  }
+
+  /**
+   * Check if the request should be forwarded to the leader node and forward it if needed.
+   *
+   * @param ctx the Javalin context
+   * @return true if the request was forwarded, false otherwise
+   */
+  private boolean checkAndForward(Context ctx) {
+    if (requestForwarder != null && requestForwarder.shouldForward(ctx)) {
+      try {
+        return requestForwarder.forwardRequest(ctx);
+      } catch (java.io.IOException e) {
+        LOG.error("Failed to forward request to leader node: {}", ctx.path(), e);
+        ErrorResponse errorResponse =
+            ErrorResponse.builder()
+                .responseCode(500)
+                .withType("IOException")
+                .withMessage("Failed to forward request to leader node: " + e.getMessage())
+                .build();
+        ctx.res.setStatus(500);
+        jsonResponse(ctx, errorResponse);
+        return true; // Request handled (with error)
+      }
+    }
+    return false;
   }
 
   public void handleException(Exception e, Context ctx) {
@@ -220,6 +251,9 @@ public class RestCatalogService extends PersistentBase {
 
   /** POST PREFIX/{catalog}/v1/namespaces */
   public void createNamespace(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     handleCatalog(
         ctx,
         catalog -> {
@@ -243,6 +277,9 @@ public class RestCatalogService extends PersistentBase {
 
   /** DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace} */
   public void dropNamespace(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     String catalog = ctx.pathParam("catalog");
     String ns = ctx.pathParam("namespace");
     Preconditions.checkNotNull(ns, "namespace is null");
@@ -253,6 +290,9 @@ public class RestCatalogService extends PersistentBase {
 
   /** POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/properties */
   public void setNamespaceProperties(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     throw new UnsupportedOperationException("namespace properties is not supported");
   }
 
@@ -272,6 +312,9 @@ public class RestCatalogService extends PersistentBase {
 
   /** POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables */
   public void createTable(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     handleNamespace(
         ctx,
         (catalog, database) -> {
@@ -317,6 +360,9 @@ public class RestCatalogService extends PersistentBase {
 
   /** POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table} */
   public void commitTable(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     handleTable(
         ctx,
         handler -> {
@@ -340,6 +386,9 @@ public class RestCatalogService extends PersistentBase {
 
   /** DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table} */
   public void deleteTable(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     handleTable(
         ctx,
         handler -> {
@@ -361,6 +410,9 @@ public class RestCatalogService extends PersistentBase {
 
   /** POST PREFIX/v1/catalogs/{catalog}/tables/rename */
   public void renameTable(Context ctx) {
+    if (checkAndForward(ctx)) {
+      return;
+    }
     throw new UnsupportedOperationException("rename is not supported now.");
   }
 

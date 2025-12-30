@@ -281,3 +281,11 @@ CREATE TABLE IF NOT EXISTS ha_lease (
   KEY `idx_ha_lease_expire` (lease_expire_ts) COMMENT 'Index for querying expired leases',
   KEY `idx_ha_lease_node` (node_id) COMMENT 'Index for querying leases by node ID'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='HA lease table for leader election and heartbeat renewal';
+
+CREATE TABLE IF NOT EXISTS bucket_assign (
+  cluster_name VARCHAR(255) NOT NULL,
+  node_key VARCHAR(255) NOT NULL,
+  bucket_ids_json TEXT,
+  last_update_time BIGINT,
+  PRIMARY KEY (cluster_name, node_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bucket allocation information based on the database';
