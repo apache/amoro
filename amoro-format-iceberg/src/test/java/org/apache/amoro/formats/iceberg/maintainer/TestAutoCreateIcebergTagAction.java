@@ -16,16 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.maintainer;
+package org.apache.amoro.formats.iceberg.maintainer;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
 import org.apache.amoro.config.TagConfiguration;
-import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;
@@ -40,6 +40,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.Map;
 
 public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
@@ -57,7 +59,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   @NotNull
   private AutoCreateIcebergTagAction newAutoCreateIcebergTagAction(Table table, LocalDateTime now) {
-    TagConfiguration tagConfig = TableConfigurations.parseTagConfiguration(table.properties());
+    TagConfiguration tagConfig = parseTagConfiguration(table.properties());
     return new AutoCreateIcebergTagAction(table, tagConfig, now);
   }
 
@@ -345,6 +347,58 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
             .toEpochMilli();
 
     Assert.assertEquals(expectedTriggerTime, actualTriggerTime);
+  }
+
+  /**
+   * Parse tag configuration from table properties. This is a test helper method that replicates the
+   * logic from TableConfigurations to avoid AMS dependency.
+   */
+  private TagConfiguration parseTagConfiguration(Map<String, String> tableProperties) {
+    TagConfiguration tagConfig = new TagConfiguration();
+    tagConfig.setAutoCreateTag(
+        CompatiblePropertyUtil.propertyAsBoolean(
+            tableProperties,
+            TableProperties.ENABLE_AUTO_CREATE_TAG,
+            TableProperties.ENABLE_AUTO_CREATE_TAG_DEFAULT));
+    tagConfig.setTriggerPeriod(
+        TagConfiguration.Period.valueOf(
+            CompatiblePropertyUtil.propertyAsString(
+                    tableProperties,
+                    TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD,
+                    TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD_DEFAULT)
+                .toUpperCase(Locale.ROOT)));
+
+    String defaultFormat;
+    switch (tagConfig.getTriggerPeriod()) {
+      case DAILY:
+        defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_DAILY_DEFAULT;
+        break;
+      case HOURLY:
+        defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_HOURLY_DEFAULT;
+        break;
+      default:
+        throw new IllegalArgumentException(
+            "Unsupported trigger period: " + tagConfig.getTriggerPeriod());
+    }
+    tagConfig.setTagFormat(
+        CompatiblePropertyUtil.propertyAsString(
+            tableProperties, TableProperties.AUTO_CREATE_TAG_FORMAT, defaultFormat));
+    tagConfig.setTriggerOffsetMinutes(
+        CompatiblePropertyUtil.propertyAsInt(
+            tableProperties,
+            TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES,
+            TableProperties.AUTO_CREATE_TAG_TRIGGER_OFFSET_MINUTES_DEFAULT));
+    tagConfig.setMaxDelayMinutes(
+        CompatiblePropertyUtil.propertyAsInt(
+            tableProperties,
+            TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES,
+            TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES_DEFAULT));
+    tagConfig.setTagMaxAgeMs(
+        CompatiblePropertyUtil.propertyAsLong(
+            tableProperties,
+            TableProperties.AUTO_CREATE_TAG_MAX_AGE_MS,
+            TableProperties.AUTO_CREATE_TAG_MAX_AGE_MS_DEFAULT));
+    return tagConfig;
   }
 
   private long getOffsetMinutesOfToday(long millis) {

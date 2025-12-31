@@ -16,21 +16,20 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.maintainer;
+package org.apache.amoro.formats.iceberg.maintainer;
 
 import static org.apache.amoro.shade.guava32.com.google.common.primitives.Longs.min;
 import static org.apache.amoro.utils.MixedTableUtil.BLOB_TYPE_OPTIMIZED_SEQUENCE_EXIST;
 
 import org.apache.amoro.IcebergFileEntry;
-import org.apache.amoro.TableFormat;
 import org.apache.amoro.config.DataExpirationConfig;
 import org.apache.amoro.data.FileNameRules;
+import org.apache.amoro.maintainer.MaintainerMetrics;
+import org.apache.amoro.maintainer.TableMaintainer;
+import org.apache.amoro.maintainer.TableMaintainerContext;
 import org.apache.amoro.scan.TableEntriesScan;
-import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.TableConfigurations;
-import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
-import org.apache.amoro.server.utils.HiveLocationUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -54,6 +53,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Literal;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
@@ -76,22 +76,25 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedTableMaintainer.class);
 
+  public static final Set<Type.TypeID> DATA_EXPIRATION_FIELD_TYPES =
+      Sets.newHashSet(
+          Type.TypeID.TIMESTAMP, Type.TypeID.STRING, Type.TypeID.LONG, Type.TypeID.DATE);
+
   private final MixedTable mixedTable;
+  private final TableMaintainerContext context;
 
   private ChangeTableMaintainer changeMaintainer;
-
   private final BaseTableMaintainer baseMaintainer;
-  private final DefaultTableRuntime tableRuntime;
 
-  public MixedTableMaintainer(MixedTable mixedTable, DefaultTableRuntime tableRuntime) {
+  public MixedTableMaintainer(MixedTable mixedTable, TableMaintainerContext context) {
     this.mixedTable = mixedTable;
-    this.tableRuntime = tableRuntime;
+    this.context = context;
     if (mixedTable.isKeyedTable()) {
       changeMaintainer =
-          new ChangeTableMaintainer(mixedTable.asKeyedTable().changeTable(), tableRuntime);
-      baseMaintainer = new BaseTableMaintainer(mixedTable.asKeyedTable().baseTable(), tableRuntime);
+          new ChangeTableMaintainer(mixedTable.asKeyedTable().changeTable(), context);
+      baseMaintainer = new BaseTableMaintainer(mixedTable.asKeyedTable().baseTable(), context);
     } else {
-      baseMaintainer = new BaseTableMaintainer(mixedTable.asUnkeyedTable(), tableRuntime);
+      baseMaintainer = new BaseTableMaintainer(mixedTable.asUnkeyedTable(), context);
     }
   }
 
@@ -101,6 +104,11 @@ public class MixedTableMaintainer implements TableMaintainer {
       changeMaintainer.cleanOrphanFiles();
     }
     baseMaintainer.cleanOrphanFiles();
+  }
+
+  @Override
+  public void cleanDanglingDeleteFiles() {
+    // Mixed table doesn't support clean dangling delete files
   }
 
   @Override
@@ -121,13 +129,11 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   @Override
   public void expireData() {
-    DataExpirationConfig expirationConfig =
-        tableRuntime.getTableConfiguration().getExpiringDataConfig();
+    DataExpirationConfig expirationConfig = context.getTableConfiguration().getExpiringDataConfig();
     try {
       Types.NestedField field =
           mixedTable.schema().findField(expirationConfig.getExpirationField());
-      if (!TableConfigurations.isValidDataExpirationField(
-          expirationConfig, field, mixedTable.name())) {
+      if (!isValidDataExpirationField(expirationConfig, field, mixedTable.name())) {
         return;
       }
 
@@ -137,7 +143,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
   }
 
-  protected Instant expireMixedBaseOnRule(
+  public Instant expireMixedBaseOnRule(
       DataExpirationConfig expirationConfig, Types.NestedField field) {
     Instant changeInstant =
         Optional.ofNullable(changeMaintainer).isPresent()
@@ -250,23 +256,21 @@ public class MixedTableMaintainer implements TableMaintainer {
     throw new UnsupportedOperationException("Mixed table doesn't support auto create tags");
   }
 
-  protected void cleanContentFiles(
-      long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
+  public void cleanContentFiles(long lastTime, MaintainerMetrics metrics) {
     if (changeMaintainer != null) {
-      changeMaintainer.cleanContentFiles(lastTime, orphanFilesCleaningMetrics);
+      changeMaintainer.cleanContentFiles(lastTime, metrics);
     }
-    baseMaintainer.cleanContentFiles(lastTime, orphanFilesCleaningMetrics);
+    baseMaintainer.cleanContentFiles(lastTime, metrics);
   }
 
-  protected void cleanMetadata(
-      long lastTime, TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics) {
+  public void cleanMetadata(long lastTime, MaintainerMetrics metrics) {
     if (changeMaintainer != null) {
-      changeMaintainer.cleanMetadata(lastTime, orphanFilesCleaningMetrics);
+      changeMaintainer.cleanMetadata(lastTime, metrics);
     }
-    baseMaintainer.cleanMetadata(lastTime, orphanFilesCleaningMetrics);
+    baseMaintainer.cleanMetadata(lastTime, metrics);
   }
 
-  protected void doCleanDanglingDeleteFiles() {
+  public void doCleanDanglingDeleteFiles() {
     if (changeMaintainer != null) {
       changeMaintainer.doCleanDanglingDeleteFiles();
     }
@@ -281,48 +285,87 @@ public class MixedTableMaintainer implements TableMaintainer {
     return baseMaintainer;
   }
 
+  /**
+   * Check if the given field is valid for data expiration.
+   *
+   * @param config data expiration config
+   * @param field table nested field
+   * @param name table name
+   * @return true if field is valid
+   */
+  protected boolean isValidDataExpirationField(
+      DataExpirationConfig config, Types.NestedField field, String name) {
+    return config.isEnabled()
+        && config.getRetentionTime() > 0
+        && validateExpirationField(field, name, config.getExpirationField());
+  }
+
+  private static boolean validateExpirationField(
+      Types.NestedField field, String name, String expirationField) {
+    if (Strings.isNullOrEmpty(expirationField) || null == field) {
+      LOG.warn(
+          String.format(
+              "Field(%s) used to determine data expiration is illegal for table(%s)",
+              expirationField, name));
+      return false;
+    }
+    Type.TypeID typeID = field.type().typeId();
+    if (!DATA_EXPIRATION_FIELD_TYPES.contains(typeID)) {
+      LOG.warn(
+          String.format(
+              "Table(%s) field(%s) type(%s) is not supported for data expiration, please use the "
+                  + "following types: %s",
+              name,
+              expirationField,
+              typeID.name(),
+              DATA_EXPIRATION_FIELD_TYPES.stream()
+                  .map(Enum::name)
+                  .collect(Collectors.joining(", "))));
+      return false;
+    }
+
+    return true;
+  }
+
+  /** Inner class for maintaining change table of mixed table. */
   public class ChangeTableMaintainer extends IcebergTableMaintainer {
 
     private static final int DATA_FILE_LIST_SPLIT = 3000;
 
     private final UnkeyedTable unkeyedTable;
 
-    public ChangeTableMaintainer(UnkeyedTable unkeyedTable, DefaultTableRuntime tableRuntime) {
-      super(unkeyedTable, mixedTable.id(), tableRuntime);
+    public ChangeTableMaintainer(UnkeyedTable unkeyedTable, TableMaintainerContext context) {
+      super(unkeyedTable, mixedTable.id(), context);
       this.unkeyedTable = unkeyedTable;
     }
 
     @Override
     @VisibleForTesting
-    void expireSnapshots(long mustOlderThan, int minCount) {
+    public void expireSnapshots(long mustOlderThan, int minCount) {
       expireFiles(mustOlderThan);
       super.expireSnapshots(mustOlderThan, minCount);
     }
 
     @Override
     public void expireSnapshots() {
-      if (!expireSnapshotEnabled(tableRuntime)) {
+      if (!expireSnapshotEnabled()) {
         return;
       }
       long now = System.currentTimeMillis();
-      expireFiles(now - snapshotsKeepTime(tableRuntime));
-      expireSnapshots(
-          mustOlderThan(tableRuntime, now),
-          tableRuntime.getTableConfiguration().getSnapshotMinCount());
+      expireFiles(now - getSnapshotsKeepTime());
+      expireSnapshots(getMustOlderThan(now), context.getTableConfiguration().getSnapshotMinCount());
     }
 
-    @Override
-    protected long mustOlderThan(DefaultTableRuntime tableRuntime, long now) {
+    private long getSnapshotsKeepTime() {
+      return context.getTableConfiguration().getChangeDataTTLMinutes() * 60 * 1000;
+    }
+
+    private long getMustOlderThan(long now) {
       return min(
           // The change data ttl time
-          now - snapshotsKeepTime(tableRuntime),
+          now - getSnapshotsKeepTime(),
           // The latest flink committed snapshot should not be expired for recovering flink job
           fetchLatestFlinkCommittedSnapshotTime(table));
-    }
-
-    @Override
-    protected long snapshotsKeepTime(DefaultTableRuntime tableRuntime) {
-      return tableRuntime.getTableConfiguration().getChangeDataTTLMinutes() * 60 * 1000;
     }
 
     public void expireFiles(long ttlPoint) {
@@ -440,14 +483,14 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
   }
 
+  /** Inner class for maintaining base table of mixed table. */
   public class BaseTableMaintainer extends IcebergTableMaintainer {
-    private final Set<String> hiveFiles = Sets.newHashSet();
+    private final Set<String> hiveFiles;
 
-    public BaseTableMaintainer(UnkeyedTable unkeyedTable, DefaultTableRuntime tableRuntime) {
-      super(unkeyedTable, mixedTable.id(), tableRuntime);
-      if (unkeyedTable.format() == TableFormat.MIXED_HIVE) {
-        hiveFiles.addAll(HiveLocationUtil.getHiveLocation(mixedTable));
-      }
+    public BaseTableMaintainer(UnkeyedTable unkeyedTable, TableMaintainerContext context) {
+      super(unkeyedTable, mixedTable.id(), context);
+      // Get Hive location paths from context, no longer depends on HiveLocationUtil
+      this.hiveFiles = context.getHiveLocationPaths();
     }
 
     @Override
@@ -457,14 +500,14 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    protected Set<String> expireSnapshotNeedToExcludeFiles() {
+    public Set<String> expireSnapshotNeedToExcludeFiles() {
       return hiveFiles;
     }
 
     @Override
-    protected long mustOlderThan(DefaultTableRuntime tableRuntime, long now) {
+    public long mustOlderThan(long now) {
       DataExpirationConfig expiringDataConfig =
-          tableRuntime.getTableConfiguration().getExpiringDataConfig();
+          context.getTableConfiguration().getExpiringDataConfig();
       long dataExpiringSnapshotTime =
           expiringDataConfig.isEnabled()
                   && expiringDataConfig.getBaseOnRule()
@@ -474,9 +517,9 @@ public class MixedTableMaintainer implements TableMaintainer {
 
       return min(
           // The snapshots keep time for base store
-          now - snapshotsKeepTime(tableRuntime),
+          now - snapshotsKeepTime(),
           // The snapshot optimizing plan based should not be expired for committing
-          fetchOptimizingPlanSnapshotTime(table, tableRuntime),
+          fetchOptimizingPlanSnapshotTime(table),
           // The latest non-optimized snapshot should not be expired for data expiring
           dataExpiringSnapshotTime,
           // The latest flink committed snapshot should not be expired for recovering flink job
@@ -505,6 +548,7 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
   }
 
+  /** Entry wrapper for mixed table files with expiration information. */
   public static class MixedFileEntry extends IcebergTableMaintainer.FileEntry {
 
     private final boolean isChange;
