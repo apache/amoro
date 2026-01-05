@@ -298,97 +298,97 @@
 <h2 id="test-envrionment">Test envrionment</h2>
 <h3 id="hardware-configuration">Hardware configuration</h3>
 <table>
-<thead>
-<tr>
-<th>Number</th>
-<th>OS</th>
-<th>Cpu core</th>
-<th>Memory</th>
-<th>Disk type</th>
-<th>Deployed components</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1</td>
-<td>CentOS 7</td>
-<td>40</td>
-<td>256</td>
-<td>SAS</td>
-<td>HDFS、Hive、Yarn</td>
-</tr>
-<tr>
-<td>2</td>
-<td>CentOS 7</td>
-<td>40</td>
-<td>256</td>
-<td>SAS</td>
-<td>HDFS、Hive、Yarn</td>
-</tr>
-<tr>
-<td>3</td>
-<td>CentOS 7</td>
-<td>40</td>
-<td>256</td>
-<td>SAS</td>
-<td>HDFS、Hive、Yarn</td>
-</tr>
-<tr>
-<td>4</td>
-<td>CentOS 7</td>
-<td>40</td>
-<td>256</td>
-<td>SAS</td>
-<td>Trino、Presto</td>
-</tr>
-<tr>
-<td>5</td>
-<td>CentOS 7</td>
-<td>40</td>
-<td>256</td>
-<td>SAS</td>
-<td>Trino、Presto</td>
-</tr>
-<tr>
-<td>6</td>
-<td>CentOS 7</td>
-<td>40</td>
-<td>256</td>
-<td>SAS</td>
-<td>Trino、Presto</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Number</th>
+          <th>OS</th>
+          <th>Cpu core</th>
+          <th>Memory</th>
+          <th>Disk type</th>
+          <th>Deployed components</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>1</td>
+          <td>CentOS 7</td>
+          <td>40</td>
+          <td>256</td>
+          <td>SAS</td>
+          <td>HDFS、Hive、Yarn</td>
+      </tr>
+      <tr>
+          <td>2</td>
+          <td>CentOS 7</td>
+          <td>40</td>
+          <td>256</td>
+          <td>SAS</td>
+          <td>HDFS、Hive、Yarn</td>
+      </tr>
+      <tr>
+          <td>3</td>
+          <td>CentOS 7</td>
+          <td>40</td>
+          <td>256</td>
+          <td>SAS</td>
+          <td>HDFS、Hive、Yarn</td>
+      </tr>
+      <tr>
+          <td>4</td>
+          <td>CentOS 7</td>
+          <td>40</td>
+          <td>256</td>
+          <td>SAS</td>
+          <td>Trino、Presto</td>
+      </tr>
+      <tr>
+          <td>5</td>
+          <td>CentOS 7</td>
+          <td>40</td>
+          <td>256</td>
+          <td>SAS</td>
+          <td>Trino、Presto</td>
+      </tr>
+      <tr>
+          <td>6</td>
+          <td>CentOS 7</td>
+          <td>40</td>
+          <td>256</td>
+          <td>SAS</td>
+          <td>Trino、Presto</td>
+      </tr>
+  </tbody>
 </table>
 <h3 id="software-version">Software version</h3>
 <table>
-<thead>
-<tr>
-<th>Software</th>
-<th>Version</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Trino</td>
-<td>380</td>
-</tr>
-<tr>
-<td>Presto</td>
-<td>274</td>
-</tr>
-<tr>
-<td>Iceberg</td>
-<td>0.13</td>
-</tr>
-<tr>
-<td>Amoro</td>
-<td>0.4</td>
-</tr>
-<tr>
-<td>Hudi</td>
-<td>0.11.1</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Software</th>
+          <th>Version</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Trino</td>
+          <td>380</td>
+      </tr>
+      <tr>
+          <td>Presto</td>
+          <td>274</td>
+      </tr>
+      <tr>
+          <td>Iceberg</td>
+          <td>0.13</td>
+      </tr>
+      <tr>
+          <td>Amoro</td>
+          <td>0.4</td>
+      </tr>
+      <tr>
+          <td>Hudi</td>
+          <td>0.11.1</td>
+      </tr>
+  </tbody>
 </table>
 <h2 id="test-plan">Test plan</h2>
 <h3 id="overview">Overview</h3>
@@ -409,82 +409,82 @@
 <img src="../images/chbenchmark/chbenchmark.png" alt="chbenchmark" width="60%" height="60%">
 <p>In this test, the number of warehouses was set to 100, and the initial data set size in the MySQL database was approximately 10GB. The following table shows the number of data records for each table in the initial data set and the changes in the number of data records for each table after running the one-hour TPC-C test.</p>
 <table>
-<thead>
-<tr>
-<th>Table name</th>
-<th>The number of records (rows) in beginning</th>
-<th>The number of records (rows) after running a one-hour TPC-C test</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>warehouse</td>
-<td>100</td>
-<td>100</td>
-</tr>
-<tr>
-<td>item</td>
-<td>100000</td>
-<td>100000</td>
-</tr>
-<tr>
-<td>stock</td>
-<td>10000000</td>
-<td>10000000</td>
-</tr>
-<tr>
-<td>district</td>
-<td>1000</td>
-<td>1000</td>
-</tr>
-<tr>
-<td>customer</td>
-<td>3000000</td>
-<td>3000000</td>
-</tr>
-<tr>
-<td>history</td>
-<td>3000000</td>
-<td>3119285（+119285）</td>
-</tr>
-<tr>
-<td>oorder</td>
-<td>3000000</td>
-<td>3124142（+124142）</td>
-</tr>
-<tr>
-<td>new_order</td>
-<td>893709</td>
-<td>907373（+13664）</td>
-</tr>
-<tr>
-<td>order_line</td>
-<td>29996774</td>
-<td>31252799（+1256025）</td>
-</tr>
-<tr>
-<td>region</td>
-<td>5</td>
-<td>5</td>
-</tr>
-<tr>
-<td>nation</td>
-<td>62</td>
-<td>62</td>
-</tr>
-<tr>
-<td>supplier</td>
-<td>1000</td>
-<td>1000</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Table name</th>
+          <th>The number of records (rows) in beginning</th>
+          <th>The number of records (rows) after running a one-hour TPC-C test</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>warehouse</td>
+          <td>100</td>
+          <td>100</td>
+      </tr>
+      <tr>
+          <td>item</td>
+          <td>100000</td>
+          <td>100000</td>
+      </tr>
+      <tr>
+          <td>stock</td>
+          <td>10000000</td>
+          <td>10000000</td>
+      </tr>
+      <tr>
+          <td>district</td>
+          <td>1000</td>
+          <td>1000</td>
+      </tr>
+      <tr>
+          <td>customer</td>
+          <td>3000000</td>
+          <td>3000000</td>
+      </tr>
+      <tr>
+          <td>history</td>
+          <td>3000000</td>
+          <td>3119285（+119285）</td>
+      </tr>
+      <tr>
+          <td>oorder</td>
+          <td>3000000</td>
+          <td>3124142（+124142）</td>
+      </tr>
+      <tr>
+          <td>new_order</td>
+          <td>893709</td>
+          <td>907373（+13664）</td>
+      </tr>
+      <tr>
+          <td>order_line</td>
+          <td>29996774</td>
+          <td>31252799（+1256025）</td>
+      </tr>
+      <tr>
+          <td>region</td>
+          <td>5</td>
+          <td>5</td>
+      </tr>
+      <tr>
+          <td>nation</td>
+          <td>62</td>
+          <td>62</td>
+      </tr>
+      <tr>
+          <td>supplier</td>
+          <td>1000</td>
+          <td>1000</td>
+      </tr>
+  </tbody>
 </table>
 <h3 id="perform-the-test">Perform the test</h3>
 <p>Before starting TPC-H testing, start a Flink job to synchronize both the history data and real-time data from MySQL into the data lake.
 Afterwards, execute TPC-H testing through query engines such as Trino or Presto.</p>
 <p>TPC-H contains 22 query statements, only three of which are listed here due to space limitation:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- query1 
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> ol_number,
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> ol_number,
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">sum</span>(ol_quantity) <span style="color:#66d9ef">AS</span> sum_qty,
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">sum</span>(ol_amount) <span style="color:#66d9ef">AS</span> sum_amount,
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">avg</span>(ol_quantity) <span style="color:#66d9ef">AS</span> avg_qty,
@@ -496,7 +496,7 @@ Afterwards, execute TPC-H testing through query engines such as Trino or Presto.
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> ol_number;
 </span></span><span style="display:flex;"><span>        
 </span></span><span style="display:flex;"><span> <span style="color:#75715e">-- query2 
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> su_suppkey,
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> su_suppkey,
 </span></span><span style="display:flex;"><span>    su_name,
 </span></span><span style="display:flex;"><span>    n_name,
 </span></span><span style="display:flex;"><span>    i_id,
@@ -524,7 +524,7 @@ Afterwards, execute TPC-H testing through query engines such as Trino or Presto.
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> n_name, su_name, i_id;
 </span></span><span style="display:flex;"><span>        
 </span></span><span style="display:flex;"><span> <span style="color:#75715e">-- query3 
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> ol_o_id,
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> ol_o_id,
 </span></span><span style="display:flex;"><span>    ol_w_id,
 </span></span><span style="display:flex;"><span>    ol_d_id,
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">sum</span>(ol_amount) <span style="color:#66d9ef">AS</span> revenue,

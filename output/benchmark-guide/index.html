@@ -301,76 +301,76 @@ The detailed steps reference: <a href="https://github.com/NetEase/lakehouse-benc
 <h3 id="deploy-manually">Deploy manually</h3>
 <p>Alternatively, you can manually deploy the following components to set up the test environment：</p>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Component</th>
-<th style="text-align:left">Version</th>
-<th style="text-align:left">Description</th>
-<th style="text-align:left">Installation Guide</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">MySQL</td>
-<td style="text-align:left">5.7+</td>
-<td style="text-align:left">MySQL is used to generate TPC-C data for synchronization to data lakes.</td>
-<td style="text-align:left"><a href="https://dev.mysql.com/doc/mysql-installation-excerpt/5.7/en/">MySQL Installation Guide</a></td>
-</tr>
-<tr>
-<td style="text-align:left">Hadoop</td>
-<td style="text-align:left">2.3.7+</td>
-<td style="text-align:left">Hadoop is used to provide the storage for data lakes.</td>
-<td style="text-align:left"><a href="https://ambari.apache.org/">Ambari</a></td>
-</tr>
-<tr>
-<td style="text-align:left">Trino</td>
-<td style="text-align:left">380</td>
-<td style="text-align:left">Trino is used to execute TPC-H queries for Iceberg and Mixed-Iceberg format tables.</td>
-<td style="text-align:left"><a href="https://trino.io/docs/current/installation/deployment.html">Trino Installation Guide</a></td>
-</tr>
-<tr>
-<td style="text-align:left">Amoro Trino Connector</td>
-<td style="text-align:left">0.4.0</td>
-<td style="text-align:left">To query Mixed-Iceberg Format tables in Trino, you need to install and configure the Amoro connector in Trino.</td>
-<td style="text-align:left"><a href="https://amoro.netease.com/docs/latest/trino/">Amoro Trino Connector</a></td>
-</tr>
-<tr>
-<td style="text-align:left">Iceberg Trino Connector</td>
-<td style="text-align:left">0.13.0</td>
-<td style="text-align:left">To query Iceberg Format tables in Trino, you need to install and configure the Iceberg connector in Trino.</td>
-<td style="text-align:left"><a href="https://trino.io/docs/current/connector/iceberg.html">Iceberg Trino Connector</a></td>
-</tr>
-<tr>
-<td style="text-align:left">Presto</td>
-<td style="text-align:left">274</td>
-<td style="text-align:left">Presto is used to execute TPC-H queries for Hudi format tables.</td>
-<td style="text-align:left"><a href="https://prestodb.io/docs/current/installation/deployment.html">Presto Installation Guide</a></td>
-</tr>
-<tr>
-<td style="text-align:left">Hudi Presto Connector</td>
-<td style="text-align:left">0.11.1</td>
-<td style="text-align:left">To query Iceberg Format tables in Trino, you need to install and configure the Iceberg connector in Presto.</td>
-<td style="text-align:left"><a href="https://prestodb.io/docs/current/connector/hudi.html">Hudi Presto Connector</a></td>
-</tr>
-<tr>
-<td style="text-align:left">AMS</td>
-<td style="text-align:left">0.4.0</td>
-<td style="text-align:left">Amoro Management Service, support self-optimizing on tables during the test.</td>
-<td style="text-align:left"><a href="https://amoro.netease.com/docs/latest/deployment/">AMS Installation Guide</a></td>
-</tr>
-<tr>
-<td style="text-align:left">data-lake-benchmark</td>
-<td style="text-align:left">21</td>
-<td style="text-align:left">The core program of Benchmark which is responsible for generating test data, executing the testing process, and generating test results.</td>
-<td style="text-align:left"><a href="https://github.com/NetEase/data-lake-benchmark#readme">Data Lake Benchmark</a></td>
-</tr>
-<tr>
-<td style="text-align:left">lakehouse-benchmark-ingestion</td>
-<td style="text-align:left">1.0</td>
-<td style="text-align:left">Data synchronization tool based on Flink-CDC which can synchronize data from  database to data lake in real-time.</td>
-<td style="text-align:left"><a href="https://github.com/NetEase/lakehouse-benchmark-ingestion">Lakehouse Benchmark Ingestion</a></td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Component</th>
+          <th style="text-align: left">Version</th>
+          <th style="text-align: left">Description</th>
+          <th style="text-align: left">Installation Guide</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left">MySQL</td>
+          <td style="text-align: left">5.7+</td>
+          <td style="text-align: left">MySQL is used to generate TPC-C data for synchronization to data lakes.</td>
+          <td style="text-align: left"><a href="https://dev.mysql.com/doc/mysql-installation-excerpt/5.7/en/">MySQL Installation Guide</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left">Hadoop</td>
+          <td style="text-align: left">2.3.7+</td>
+          <td style="text-align: left">Hadoop is used to provide the storage for data lakes.</td>
+          <td style="text-align: left"><a href="https://ambari.apache.org/">Ambari</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left">Trino</td>
+          <td style="text-align: left">380</td>
+          <td style="text-align: left">Trino is used to execute TPC-H queries for Iceberg and Mixed-Iceberg format tables.</td>
+          <td style="text-align: left"><a href="https://trino.io/docs/current/installation/deployment.html">Trino Installation Guide</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left">Amoro Trino Connector</td>
+          <td style="text-align: left">0.4.0</td>
+          <td style="text-align: left">To query Mixed-Iceberg Format tables in Trino, you need to install and configure the Amoro connector in Trino.</td>
+          <td style="text-align: left"><a href="https://amoro.netease.com/docs/latest/trino/">Amoro Trino Connector</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left">Iceberg Trino Connector</td>
+          <td style="text-align: left">0.13.0</td>
+          <td style="text-align: left">To query Iceberg Format tables in Trino, you need to install and configure the Iceberg connector in Trino.</td>
+          <td style="text-align: left"><a href="https://trino.io/docs/current/connector/iceberg.html">Iceberg Trino Connector</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left">Presto</td>
+          <td style="text-align: left">274</td>
+          <td style="text-align: left">Presto is used to execute TPC-H queries for Hudi format tables.</td>
+          <td style="text-align: left"><a href="https://prestodb.io/docs/current/installation/deployment.html">Presto Installation Guide</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left">Hudi Presto Connector</td>
+          <td style="text-align: left">0.11.1</td>
+          <td style="text-align: left">To query Iceberg Format tables in Trino, you need to install and configure the Iceberg connector in Presto.</td>
+          <td style="text-align: left"><a href="https://prestodb.io/docs/current/connector/hudi.html">Hudi Presto Connector</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left">AMS</td>
+          <td style="text-align: left">0.4.0</td>
+          <td style="text-align: left">Amoro Management Service, support self-optimizing on tables during the test.</td>
+          <td style="text-align: left"><a href="https://amoro.netease.com/docs/latest/deployment/">AMS Installation Guide</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left">data-lake-benchmark</td>
+          <td style="text-align: left">21</td>
+          <td style="text-align: left">The core program of Benchmark which is responsible for generating test data, executing the testing process, and generating test results.</td>
+          <td style="text-align: left"><a href="https://github.com/NetEase/data-lake-benchmark#readme">Data Lake Benchmark</a></td>
+      </tr>
+      <tr>
+          <td style="text-align: left">lakehouse-benchmark-ingestion</td>
+          <td style="text-align: left">1.0</td>
+          <td style="text-align: left">Data synchronization tool based on Flink-CDC which can synchronize data from  database to data lake in real-time.</td>
+          <td style="text-align: left"><a href="https://github.com/NetEase/lakehouse-benchmark-ingestion">Lakehouse Benchmark Ingestion</a></td>
+      </tr>
+  </tbody>
 </table>
 <h2 id="benchmark-steps">Benchmark steps</h2>
 <ol>
