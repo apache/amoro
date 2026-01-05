@@ -694,52 +694,52 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><p>The map properties contain below keys, <strong>currently only valid for non-primary key tables</strong>:</p>
 <table>
-<thead>
-<tr>
-<th>Key</th>
-<th>Default</th>
-<th>Type</th>
-<th>Required</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>case-sensitive</td>
-<td>false</td>
-<td>Boolean</td>
-<td>No</td>
-<td>Case-sensitive</td>
-</tr>
-<tr>
-<td>snapshot-id</td>
-<td>(none)</td>
-<td>Long</td>
-<td>No</td>
-<td>Read the full amount of data of the specified snapshot, only effective when streaming is false or not configured</td>
-</tr>
-<tr>
-<td>as-of-timestamp</td>
-<td>(none)</td>
-<td>String</td>
-<td>No</td>
-<td>Read the last time less than the timestamp The full amount of snapshot data is valid only when streaming is false or not configured</td>
-</tr>
-<tr>
-<td>start-snapshot-id</td>
-<td>(none)</td>
-<td>String</td>
-<td>No</td>
-<td>When streaming is false, end-snapshot-id needs to be used to read the two intervals Incremental data (snapshot1, snapshot2]. When streaming is true, read the incremental data after the snapshot, if not specified, read the incremental data after the current snapshot (not including the current one)</td>
-</tr>
-<tr>
-<td>end-snapshot-id</td>
-<td>(none )</td>
-<td>String</td>
-<td>No</td>
-<td>Need to cooperate with start-snapshot-id to read incremental data in two intervals (snapshot1, snapshot2]</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default</th>
+          <th>Type</th>
+          <th>Required</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>case-sensitive</td>
+          <td>false</td>
+          <td>Boolean</td>
+          <td>No</td>
+          <td>Case-sensitive</td>
+      </tr>
+      <tr>
+          <td>snapshot-id</td>
+          <td>(none)</td>
+          <td>Long</td>
+          <td>No</td>
+          <td>Read the full amount of data of the specified snapshot, only effective when streaming is false or not configured</td>
+      </tr>
+      <tr>
+          <td>as-of-timestamp</td>
+          <td>(none)</td>
+          <td>String</td>
+          <td>No</td>
+          <td>Read the last time less than the timestamp The full amount of snapshot data is valid only when streaming is false or not configured</td>
+      </tr>
+      <tr>
+          <td>start-snapshot-id</td>
+          <td>(none)</td>
+          <td>String</td>
+          <td>No</td>
+          <td>When streaming is false, end-snapshot-id needs to be used to read the two intervals Incremental data (snapshot1, snapshot2]. When streaming is true, read the incremental data after the snapshot, if not specified, read the incremental data after the current snapshot (not including the current one)</td>
+      </tr>
+      <tr>
+          <td>end-snapshot-id</td>
+          <td>(none )</td>
+          <td>String</td>
+          <td>No</td>
+          <td>Need to cooperate with start-snapshot-id to read incremental data in two intervals (snapshot1, snapshot2]</td>
+      </tr>
+  </tbody>
 </table>
 <h3 id="streaming-mode">Streaming mode</h3>
 <p>Amoro supports reading incremental data in FileStore or LogStore through Java API in Streaming mode</p>

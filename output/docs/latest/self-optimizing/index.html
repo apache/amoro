@@ -669,9 +669,9 @@ needs trade off between read and write amplification. Amoro&rsquo;s Self-optimiz
 in the JVM. Files are divided into Fragments and Segments based on their sizes, and different Self-optimizing processes executed on Fragments and
 Segments are classified into two types: minor and major. Therefore, Amoro v0.4 introduces two parameters to define Fragments and Segments:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-SQL" data-lang="SQL"><span style="display:flex;"><span><span style="color:#75715e">-- Target file Size for Self-optimizing 
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">self</span><span style="color:#f92672">-</span>optimizing.target<span style="color:#f92672">-</span><span style="color:#66d9ef">size</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">134217728</span>(<span style="color:#ae81ff">128</span>MB)
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">self</span><span style="color:#f92672">-</span>optimizing.target<span style="color:#f92672">-</span><span style="color:#66d9ef">size</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">134217728</span>(<span style="color:#ae81ff">128</span>MB)
 </span></span><span style="display:flex;"><span><span style="color:#75715e">-- The fragment file size threshold for Self-optimizing
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">self</span><span style="color:#f92672">-</span>optimizing.fragment<span style="color:#f92672">-</span>ratio <span style="color:#f92672">=</span> <span style="color:#ae81ff">8</span>
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">self</span><span style="color:#f92672">-</span>optimizing.fragment<span style="color:#f92672">-</span>ratio <span style="color:#f92672">=</span> <span style="color:#ae81ff">8</span>
 </span></span></code></pre></div><p><code>self-optimizing.target-size</code> defines the target output size for major optimizing, which is set to 128 MB by default. <code>self-optimizing.fragment-ratio</code>
 defines the ratio of the fragment file threshold to the target-size, with a value of 8 indicating that the default fragment threshold is 1/8 of the
 target-size, or 16 MB for a default target-size of 128 MB. Files smaller than 16 MB are considered fragments, while files larger than 16 MB are
@@ -701,38 +701,38 @@ major optimizing.</p>
 logic of both optimizing is consistent, as they both involve file compaction, data deduplication, and conversion from write-friendly format to
 read-friendly format. The input-output relationships of Minor, Major, and Full optimizing are shown in the following table:</p>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Self-optimizing type</th>
-<th style="text-align:left">Input space</th>
-<th style="text-align:left">Output space</th>
-<th style="text-align:left">Input file types</th>
-<th style="text-align:left">Output file types</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">minor</td>
-<td style="text-align:left">fragment</td>
-<td style="text-align:left">fragment/segment</td>
-<td style="text-align:left">insert, eq-delete, pos-delete</td>
-<td style="text-align:left">insert, pos-delete</td>
-</tr>
-<tr>
-<td style="text-align:left">major</td>
-<td style="text-align:left">fragment, segment</td>
-<td style="text-align:left">segment</td>
-<td style="text-align:left">insert, eq-delete, pos-delete</td>
-<td style="text-align:left">insert, pos-delete</td>
-</tr>
-<tr>
-<td style="text-align:left">full</td>
-<td style="text-align:left">fragment, segment</td>
-<td style="text-align:left">segment</td>
-<td style="text-align:left">insert, eq-delete, pos-delete</td>
-<td style="text-align:left">insert</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Self-optimizing type</th>
+          <th style="text-align: left">Input space</th>
+          <th style="text-align: left">Output space</th>
+          <th style="text-align: left">Input file types</th>
+          <th style="text-align: left">Output file types</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left">minor</td>
+          <td style="text-align: left">fragment</td>
+          <td style="text-align: left">fragment/segment</td>
+          <td style="text-align: left">insert, eq-delete, pos-delete</td>
+          <td style="text-align: left">insert, pos-delete</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">major</td>
+          <td style="text-align: left">fragment, segment</td>
+          <td style="text-align: left">segment</td>
+          <td style="text-align: left">insert, eq-delete, pos-delete</td>
+          <td style="text-align: left">insert, pos-delete</td>
+      </tr>
+      <tr>
+          <td style="text-align: left">full</td>
+          <td style="text-align: left">fragment, segment</td>
+          <td style="text-align: left">segment</td>
+          <td style="text-align: left">insert, eq-delete, pos-delete</td>
+          <td style="text-align: left">insert</td>
+      </tr>
+  </tbody>
 </table>
 <h2 id="self-optimizing-scheduling-policy">Self-optimizing scheduling policy</h2>
 <p>AMS determines the Scheduling Policy to sequence the self-optimization process for different tables. The actual resources allocated for
@@ -755,10 +755,10 @@ dimensionally aggregated tables), it is advisable to enable the Self-optimizing.
 by configuring the quota configuration on the table. Quota specifies the maximum number of optimizer resources that can be allocated to each table.
 Quotas can be specified as either a decimal (representing a percentage) or an integer (representing a fixed number of resources):</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-SQL" data-lang="SQL"><span style="display:flex;"><span><span style="color:#75715e">-- Set quota as a percentage of total optimizer resources
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">self</span><span style="color:#f92672">-</span>optimizing.quota <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>.<span style="color:#ae81ff">5</span>;
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">self</span><span style="color:#f92672">-</span>optimizing.quota <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>.<span style="color:#ae81ff">5</span>;
 </span></span></code></pre></div><p>A decimal quota (e.g., 0.5) limits the table to a percentage of the total available optimizer resources.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-SQL" data-lang="SQL"><span style="display:flex;"><span><span style="color:#75715e">-- Set quota as a fixed number of optimizer resources
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">self</span><span style="color:#f92672">-</span>optimizing.quota <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>;
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">self</span><span style="color:#f92672">-</span>optimizing.quota <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>;
 </span></span></code></pre></div><p>An integer quota (e.g., 10) restricts the table to a specific number of optimizer resources.</p>
 <p>This flexible configuration prevents resource underutilization and allows users to tailor resource allocation to their needs.</p>
 <p>The <code>Quota</code> strategy schedules tables based on their Occupation metric, which is calculated as the ratio of the actual optimizer thread execution time used

@@ -670,78 +670,78 @@ The change records of the table can be queried through the ChangeStore, and the 
 </ul>
 <h4 id="trino-and-amoro-type-mapping">Trino and Amoro Type Mapping:</h4>
 <table>
-<thead>
-<tr>
-<th style="text-align:left">Amoro type</th>
-<th style="text-align:left">Trino type</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><code>BOOLEAN</code></td>
-<td style="text-align:left"><code>BOOLEAN</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>INT</code></td>
-<td style="text-align:left"><code>INTEGER</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>LONG</code></td>
-<td style="text-align:left"><code>BIGINT</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>FLOAT</code></td>
-<td style="text-align:left"><code>REAL</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>DOUBLE</code></td>
-<td style="text-align:left"><code>DOUBLE</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>DECIMAL(p,s)</code></td>
-<td style="text-align:left"><code>DECIMAL(p,s)</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>DATE</code></td>
-<td style="text-align:left"><code>DATE</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>TIME</code></td>
-<td style="text-align:left"><code>TIME(6)</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>TIMESTAMP</code></td>
-<td style="text-align:left"><code>TIMESTAMP(6)</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>TIMESTAMPTZ</code></td>
-<td style="text-align:left"><code>TIMESTAMP(6) WITH TIME ZONE</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>STRING</code></td>
-<td style="text-align:left"><code>VARCHAR</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>UUID</code></td>
-<td style="text-align:left"><code>UUID</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>BINARY</code></td>
-<td style="text-align:left"><code>VARBINARY</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>STRUCT(...)</code></td>
-<td style="text-align:left"><code>ROW(...)</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>LIST(e)</code></td>
-<td style="text-align:left"><code>ARRAY(e)</code></td>
-</tr>
-<tr>
-<td style="text-align:left"><code>MAP(k,v)</code></td>
-<td style="text-align:left"><code>MAP(k,v)</code></td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th style="text-align: left">Amoro type</th>
+          <th style="text-align: left">Trino type</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: left"><code>BOOLEAN</code></td>
+          <td style="text-align: left"><code>BOOLEAN</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>INT</code></td>
+          <td style="text-align: left"><code>INTEGER</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>LONG</code></td>
+          <td style="text-align: left"><code>BIGINT</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>FLOAT</code></td>
+          <td style="text-align: left"><code>REAL</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>DOUBLE</code></td>
+          <td style="text-align: left"><code>DOUBLE</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>DECIMAL(p,s)</code></td>
+          <td style="text-align: left"><code>DECIMAL(p,s)</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>DATE</code></td>
+          <td style="text-align: left"><code>DATE</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>TIME</code></td>
+          <td style="text-align: left"><code>TIME(6)</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>TIMESTAMP</code></td>
+          <td style="text-align: left"><code>TIMESTAMP(6)</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>TIMESTAMPTZ</code></td>
+          <td style="text-align: left"><code>TIMESTAMP(6) WITH TIME ZONE</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>STRING</code></td>
+          <td style="text-align: left"><code>VARCHAR</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>UUID</code></td>
+          <td style="text-align: left"><code>UUID</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>BINARY</code></td>
+          <td style="text-align: left"><code>VARBINARY</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>STRUCT(...)</code></td>
+          <td style="text-align: left"><code>ROW(...)</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>LIST(e)</code></td>
+          <td style="text-align: left"><code>ARRAY(e)</code></td>
+      </tr>
+      <tr>
+          <td style="text-align: left"><code>MAP(k,v)</code></td>
+          <td style="text-align: left"><code>MAP(k,v)</code></td>
+      </tr>
+  </tbody>
 </table>
 <h3 id="trino-uses-proxy-user-to-access-hadoop-cluster">Trino uses proxy user to access Hadoop cluster.</h3>
 <p>By default, when Trino queries Amoro, it uses the Hadoop user configured in the <a href="../managing-catalogs/#create-catalog">catalog creation</a> to access the Hadoop cluster.

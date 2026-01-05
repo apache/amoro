@@ -643,28 +643,28 @@
 <p>Local container is a way to start Optimizer by local process and supports multi-threaded execution of Optimizer tasks. It is recommended to be used only in demo or local deployment scenarios. If the environment variable for jdk is not configured, the user can configure java_home to point to the jdk root directory. If already configured, this configuration item can be ignored.</p>
 <p>Local container support the following properties:</p>
 <table>
-<thead>
-<tr>
-<th>Property Name</th>
-<th>Required</th>
-<th>Default Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ams-optimizing-uri</td>
-<td>false</td>
-<td>N/A</td>
-<td>URI of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available</td>
-</tr>
-<tr>
-<td>export.JAVA_HOME</td>
-<td>false</td>
-<td>N/A</td>
-<td>Java runtime location</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Property Name</th>
+          <th>Required</th>
+          <th>Default Value</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>ams-optimizing-uri</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>URI of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available</td>
+      </tr>
+      <tr>
+          <td>export.JAVA_HOME</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>Java runtime location</td>
+      </tr>
+  </tbody>
 </table>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">localContainer</span>
@@ -674,55 +674,55 @@
 </span></span></code></pre></div><p>The format for optimizing URI is <code>thrift://{host}:{port}?parameter1=value2&amp;parameter2=value2</code>.
 The supported parameters include:</p>
 <table>
-<thead>
-<tr>
-<th>Parameter Name</th>
-<th>Default Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>autoReconnect</td>
-<td>true</td>
-<td>If reconnect the server when the connection is broken</td>
-</tr>
-<tr>
-<td>maxReconnects</td>
-<td>5</td>
-<td>Retry times when reconnecting</td>
-</tr>
-<tr>
-<td>connectTimeout</td>
-<td>0 (Forever)</td>
-<td>Timeout in milliseconds when connecting the server</td>
-</tr>
-<tr>
-<td>socketTimeout</td>
-<td>0 (Forever)</td>
-<td>Timeout in milliseconds when communicating with the server</td>
-</tr>
-<tr>
-<td>maxMessageSize</td>
-<td>104856600 (100MB)</td>
-<td>Max message size when communicating with the server</td>
-</tr>
-<tr>
-<td>maxMessageSize</td>
-<td>104856600 (100MB)</td>
-<td>Max message size when communicating with the server</td>
-</tr>
-<tr>
-<td>minIdle</td>
-<td>0</td>
-<td>Minimal idle clients in the pool</td>
-</tr>
-<tr>
-<td>maxIdle</td>
-<td>5</td>
-<td>Maximal idle clients in the pool</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Parameter Name</th>
+          <th>Default Value</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>autoReconnect</td>
+          <td>true</td>
+          <td>If reconnect the server when the connection is broken</td>
+      </tr>
+      <tr>
+          <td>maxReconnects</td>
+          <td>5</td>
+          <td>Retry times when reconnecting</td>
+      </tr>
+      <tr>
+          <td>connectTimeout</td>
+          <td>0 (Forever)</td>
+          <td>Timeout in milliseconds when connecting the server</td>
+      </tr>
+      <tr>
+          <td>socketTimeout</td>
+          <td>0 (Forever)</td>
+          <td>Timeout in milliseconds when communicating with the server</td>
+      </tr>
+      <tr>
+          <td>maxMessageSize</td>
+          <td>104856600 (100MB)</td>
+          <td>Max message size when communicating with the server</td>
+      </tr>
+      <tr>
+          <td>maxMessageSize</td>
+          <td>104856600 (100MB)</td>
+          <td>Max message size when communicating with the server</td>
+      </tr>
+      <tr>
+          <td>minIdle</td>
+          <td>0</td>
+          <td>Minimal idle clients in the pool</td>
+      </tr>
+      <tr>
+          <td>maxIdle</td>
+          <td>5</td>
+          <td>Maximal idle clients in the pool</td>
+      </tr>
+  </tbody>
 </table>
 <h3 id="kubernetes-container">Kubernetes container</h3>
 <p>Kubernetes container is a way to start Optimizer On K8s with standalone Optimizer.
@@ -730,64 +730,64 @@ To use Kubernetes container, you need to add a new container configuration.
 with container-impl as <code>org.apache.amoro.server.manager.KubernetesOptimizerContainer</code></p>
 <p>Kubernetes container support the following properties:</p>
 <table>
-<thead>
-<tr>
-<th>Property Name</th>
-<th>Required</th>
-<th>Default Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>kube-config-path</td>
-<td>true</td>
-<td>N/A</td>
-<td>Kubernetes config location</td>
-</tr>
-<tr>
-<td>image</td>
-<td>true</td>
-<td>N/A</td>
-<td>Optimizer Image name</td>
-</tr>
-<tr>
-<td>pullPolicy</td>
-<td>false</td>
-<td>IfNotPresent</td>
-<td>Specify the imagePullPolicy in the container spec</td>
-</tr>
-<tr>
-<td>namespace</td>
-<td>false</td>
-<td>&ldquo;default&rdquo;</td>
-<td>The namespace of optimizer to deploy</td>
-</tr>
-<tr>
-<td>ams-optimizing-uri</td>
-<td>false</td>
-<td>N/A</td>
-<td>URI of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available</td>
-</tr>
-<tr>
-<td>cpu.factor</td>
-<td>false</td>
-<td>&ldquo;1.0&rdquo;</td>
-<td>CPU factor when request kubernetes resource. Default 1 Cpu pre thread</td>
-</tr>
-<tr>
-<td>memory</td>
-<td>true</td>
-<td>N/A</td>
-<td>Memory usage for pre thread</td>
-</tr>
-<tr>
-<td>extra.jvm.heap.ratio</td>
-<td>false</td>
-<td>0.8</td>
-<td>The ratio of JVM heap memory to total pod memory</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Property Name</th>
+          <th>Required</th>
+          <th>Default Value</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>kube-config-path</td>
+          <td>true</td>
+          <td>N/A</td>
+          <td>Kubernetes config location</td>
+      </tr>
+      <tr>
+          <td>image</td>
+          <td>true</td>
+          <td>N/A</td>
+          <td>Optimizer Image name</td>
+      </tr>
+      <tr>
+          <td>pullPolicy</td>
+          <td>false</td>
+          <td>IfNotPresent</td>
+          <td>Specify the imagePullPolicy in the container spec</td>
+      </tr>
+      <tr>
+          <td>namespace</td>
+          <td>false</td>
+          <td>&ldquo;default&rdquo;</td>
+          <td>The namespace of optimizer to deploy</td>
+      </tr>
+      <tr>
+          <td>ams-optimizing-uri</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>URI of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available</td>
+      </tr>
+      <tr>
+          <td>cpu.factor</td>
+          <td>false</td>
+          <td>&ldquo;1.0&rdquo;</td>
+          <td>CPU factor when request kubernetes resource. Default 1 Cpu pre thread</td>
+      </tr>
+      <tr>
+          <td>memory</td>
+          <td>true</td>
+          <td>N/A</td>
+          <td>Memory usage for pre thread</td>
+      </tr>
+      <tr>
+          <td>extra.jvm.heap.ratio</td>
+          <td>false</td>
+          <td>0.8</td>
+          <td>The ratio of JVM heap memory to total pod memory</td>
+      </tr>
+  </tbody>
 </table>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">KubernetesContainer</span>
@@ -802,82 +802,82 @@ on yarn clusters or kubernetes clusters to support large-scale data scenarios. T
 you need to add a new container configuration. with container-impl as <code>org.apache.amoro.server.manager.FlinkOptimizerContainer</code></p>
 <p>Flink container support the following properties:</p>
 <table>
-<thead>
-<tr>
-<th>Property Name</th>
-<th>Required</th>
-<th>Default Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>flink-home</td>
-<td>true</td>
-<td>N/A</td>
-<td>Flink installation location</td>
-</tr>
-<tr>
-<td>target</td>
-<td>true</td>
-<td>yarn-per-job</td>
-<td>flink job deployed target, available values <code>yarn-per-job</code>, <code>yarn-application</code>, <code>kubernetes-application</code>, <code>session</code></td>
-</tr>
-<tr>
-<td>job-uri</td>
-<td>false</td>
-<td>N/A</td>
-<td>The jar uri of flink optimizer job. This is required if target is application mode.</td>
-</tr>
-<tr>
-<td>ams-optimizing-uri</td>
-<td>false</td>
-<td>N/A</td>
-<td>uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available</td>
-</tr>
-<tr>
-<td>export.&lt;key&gt;</td>
-<td>false</td>
-<td>N/A</td>
-<td>environment variables will be exported during job submit</td>
-</tr>
-<tr>
-<td>export.JAVA_HOME</td>
-<td>false</td>
-<td>N/A</td>
-<td>Java runtime location</td>
-</tr>
-<tr>
-<td>export.HADOOP_CONF_DIR</td>
-<td>false</td>
-<td>N/A</td>
-<td>Direction which holds the configuration files for the hadoop cluster (including hdfs-site.xml, core-site.xml, yarn-site.xml ). If the hadoop cluster has kerberos authentication enabled, you need to prepare an additional krb5.conf and a keytab file for the user to submit tasks</td>
-</tr>
-<tr>
-<td>export.JVM_ARGS</td>
-<td>false</td>
-<td>N/A</td>
-<td>you can configure flink to run additional configuration parameters, here is an example of configuring krb5.conf, specify the address of krb5.conf to be used by Flink when committing via <code>-Djava.security.krb5.conf=/opt/krb5.conf</code></td>
-</tr>
-<tr>
-<td>export.HADOOP_USER_NAME</td>
-<td>false</td>
-<td>N/A</td>
-<td>the username used to submit tasks to yarn, used for simple authentication</td>
-</tr>
-<tr>
-<td>export.FLINK_CONF_DIR</td>
-<td>false</td>
-<td>N/A</td>
-<td>the directory where flink_conf.yaml is located</td>
-</tr>
-<tr>
-<td>flink-conf.&lt;key&gt;</td>
-<td>false</td>
-<td>N/A</td>
-<td><a href="https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/">Flink Configuration Options</a> will be passed to cli by <code>-Dkey=value</code>,</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Property Name</th>
+          <th>Required</th>
+          <th>Default Value</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>flink-home</td>
+          <td>true</td>
+          <td>N/A</td>
+          <td>Flink installation location</td>
+      </tr>
+      <tr>
+          <td>target</td>
+          <td>true</td>
+          <td>yarn-per-job</td>
+          <td>flink job deployed target, available values <code>yarn-per-job</code>, <code>yarn-application</code>, <code>kubernetes-application</code>, <code>session</code></td>
+      </tr>
+      <tr>
+          <td>job-uri</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>The jar uri of flink optimizer job. This is required if target is application mode.</td>
+      </tr>
+      <tr>
+          <td>ams-optimizing-uri</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available</td>
+      </tr>
+      <tr>
+          <td>export.&lt;key&gt;</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>environment variables will be exported during job submit</td>
+      </tr>
+      <tr>
+          <td>export.JAVA_HOME</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>Java runtime location</td>
+      </tr>
+      <tr>
+          <td>export.HADOOP_CONF_DIR</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>Direction which holds the configuration files for the hadoop cluster (including hdfs-site.xml, core-site.xml, yarn-site.xml ). If the hadoop cluster has kerberos authentication enabled, you need to prepare an additional krb5.conf and a keytab file for the user to submit tasks</td>
+      </tr>
+      <tr>
+          <td>export.JVM_ARGS</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>you can configure flink to run additional configuration parameters, here is an example of configuring krb5.conf, specify the address of krb5.conf to be used by Flink when committing via <code>-Djava.security.krb5.conf=/opt/krb5.conf</code></td>
+      </tr>
+      <tr>
+          <td>export.HADOOP_USER_NAME</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>the username used to submit tasks to yarn, used for simple authentication</td>
+      </tr>
+      <tr>
+          <td>export.FLINK_CONF_DIR</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>the directory where flink_conf.yaml is located</td>
+      </tr>
+      <tr>
+          <td>flink-conf.&lt;key&gt;</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td><a href="https://nightlies.apache.org/flink/flink-docs-master/docs/deployment/config/">Flink Configuration Options</a> will be passed to cli by <code>-Dkey=value</code>,</td>
+      </tr>
+  </tbody>
 </table>
 <div class="info">
     <p>To better utilize the resources of Flink Optimizer, it is recommended to add the following configuration to the Flink Optimizer Group:</p>
@@ -931,88 +931,88 @@ on yarn clusters or kubernetes clusters to support large-scale data scenarios. T
 you need to add a new container configuration. with container-impl as <code>org.apache.amoro.server.manager.SparkOptimizerContainer</code></p>
 <p>Spark container support the following properties:</p>
 <table>
-<thead>
-<tr>
-<th>Property Name</th>
-<th>Required</th>
-<th>Default Value</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>spark-home</td>
-<td>true</td>
-<td>N/A</td>
-<td>Spark installation location</td>
-</tr>
-<tr>
-<td>master</td>
-<td>true</td>
-<td>yarn</td>
-<td>The cluster manager to connect to, available values <code>yarn</code>, <code>k8s://HOST:PORT</code></td>
-</tr>
-<tr>
-<td>deploy-mode</td>
-<td>true</td>
-<td>client</td>
-<td>Spark job deploy mode, available values <code>client</code>, <code>cluster</code></td>
-</tr>
-<tr>
-<td>job-uri</td>
-<td>false</td>
-<td>N/A</td>
-<td>The jar uri of spark optimizer job. This is required if deploy mode is cluster mode.</td>
-</tr>
-<tr>
-<td>ams-optimizing-uri</td>
-<td>false</td>
-<td>N/A</td>
-<td>uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available</td>
-</tr>
-<tr>
-<td>export.&lt;key&gt;</td>
-<td>false</td>
-<td>N/A</td>
-<td>Environment variables will be exported during job submit</td>
-</tr>
-<tr>
-<td>export.JAVA_HOME</td>
-<td>false</td>
-<td>N/A</td>
-<td>Java runtime location</td>
-</tr>
-<tr>
-<td>export.HADOOP_CONF_DIR</td>
-<td>false</td>
-<td>N/A</td>
-<td>Direction which holds the configuration files for the hadoop cluster (including hdfs-site.xml, core-site.xml, yarn-site.xml ). If the hadoop cluster has kerberos authentication enabled, you need to prepare an additional krb5.conf and a keytab file for the user to submit tasks</td>
-</tr>
-<tr>
-<td>export.JVM_ARGS</td>
-<td>false</td>
-<td>N/A</td>
-<td>You can configure spark to run additional configuration parameters, here is an example of configuring krb5.conf, specify the address of krb5.conf to be used by Spark when committing via <code>-Djava.security.krb5.conf=/opt/krb5.conf</code></td>
-</tr>
-<tr>
-<td>export.HADOOP_USER_NAME</td>
-<td>false</td>
-<td>N/A</td>
-<td>The username used to submit tasks to yarn, used for simple authentication</td>
-</tr>
-<tr>
-<td>export.SPARK_CONF_DIR</td>
-<td>false</td>
-<td>N/A</td>
-<td>The directory where spark_conf.yaml is located</td>
-</tr>
-<tr>
-<td>spark-conf.&lt;key&gt;</td>
-<td>false</td>
-<td>N/A</td>
-<td><a href="https://spark.apache.org/docs/latest/configuration.html">Spark Configuration Options</a> will be passed to cli by <code>-conf key=value</code>,</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Property Name</th>
+          <th>Required</th>
+          <th>Default Value</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>spark-home</td>
+          <td>true</td>
+          <td>N/A</td>
+          <td>Spark installation location</td>
+      </tr>
+      <tr>
+          <td>master</td>
+          <td>true</td>
+          <td>yarn</td>
+          <td>The cluster manager to connect to, available values <code>yarn</code>, <code>k8s://HOST:PORT</code></td>
+      </tr>
+      <tr>
+          <td>deploy-mode</td>
+          <td>true</td>
+          <td>client</td>
+          <td>Spark job deploy mode, available values <code>client</code>, <code>cluster</code></td>
+      </tr>
+      <tr>
+          <td>job-uri</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>The jar uri of spark optimizer job. This is required if deploy mode is cluster mode.</td>
+      </tr>
+      <tr>
+          <td>ams-optimizing-uri</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>uri of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available</td>
+      </tr>
+      <tr>
+          <td>export.&lt;key&gt;</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>Environment variables will be exported during job submit</td>
+      </tr>
+      <tr>
+          <td>export.JAVA_HOME</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>Java runtime location</td>
+      </tr>
+      <tr>
+          <td>export.HADOOP_CONF_DIR</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>Direction which holds the configuration files for the hadoop cluster (including hdfs-site.xml, core-site.xml, yarn-site.xml ). If the hadoop cluster has kerberos authentication enabled, you need to prepare an additional krb5.conf and a keytab file for the user to submit tasks</td>
+      </tr>
+      <tr>
+          <td>export.JVM_ARGS</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>You can configure spark to run additional configuration parameters, here is an example of configuring krb5.conf, specify the address of krb5.conf to be used by Spark when committing via <code>-Djava.security.krb5.conf=/opt/krb5.conf</code></td>
+      </tr>
+      <tr>
+          <td>export.HADOOP_USER_NAME</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>The username used to submit tasks to yarn, used for simple authentication</td>
+      </tr>
+      <tr>
+          <td>export.SPARK_CONF_DIR</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td>The directory where spark_conf.yaml is located</td>
+      </tr>
+      <tr>
+          <td>spark-conf.&lt;key&gt;</td>
+          <td>false</td>
+          <td>N/A</td>
+          <td><a href="https://spark.apache.org/docs/latest/configuration.html">Spark Configuration Options</a> will be passed to cli by <code>-conf key=value</code>,</td>
+      </tr>
+  </tbody>
 </table>
 <div class="info">
     <p>To better utilize the resources of Spark Optimizer, the DRA(Dynamic Resource Allocation) feature is switched on, and the optimizer parallelism equals `spark.dynamicAllocation.maxExecutors.
@@ -1080,87 +1080,87 @@ contain several optimizers with the same container implementation to facilitate 
 </ul>
 <p>The optimizer group supports the following properties:</p>
 <table>
-<thead>
-<tr>
-<th>Property</th>
-<th>Container type</th>
-<th>Required</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>scheduling-policy</td>
-<td>All</td>
-<td>No</td>
-<td>quota</td>
-<td>The scheduler group scheduling policy, the default value is <code>quota</code>, it will be scheduled according to the quota resources configured for each table, the larger the table quota is, the more optimizer resources it can take. There is also a configuration <code>balanced</code> that will balance the scheduling of each table, the longer the table has not been optimized, the higher the scheduling priority will be.</td>
-</tr>
-<tr>
-<td>max-input-file-size-per-thread</td>
-<td>All</td>
-<td>No</td>
-<td>536870912(512MB)</td>
-<td>Max input file size per optimize thread.</td>
-</tr>
-<tr>
-<td>ams-optimizing-uri</td>
-<td>All</td>
-<td>No</td>
-<td>thrift://{ams.server-expose-host}:{ams.thrift-server.optimizing-service.binding-port}</td>
-<td>Table optimizing service endpoint. This is used when the default service endpoint is not visitable.</td>
-</tr>
-<tr>
-<td>cache-enabled</td>
-<td>All</td>
-<td>No</td>
-<td>false</td>
-<td>Whether enable cache in optimizer.</td>
-</tr>
-<tr>
-<td>cache-max-total-size</td>
-<td>All</td>
-<td>No</td>
-<td>128mb</td>
-<td>Max total size in optimier cache.</td>
-</tr>
-<tr>
-<td>cache-max-entry-size</td>
-<td>All</td>
-<td>No</td>
-<td>64mb</td>
-<td>Max entry size in optimizer cache.</td>
-</tr>
-<tr>
-<td>cache-timeout</td>
-<td>All</td>
-<td>No</td>
-<td>10min</td>
-<td>Timeout in optimizer cache.</td>
-</tr>
-<tr>
-<td>memory</td>
-<td>Local</td>
-<td>Yes</td>
-<td>N/A</td>
-<td>The max memory of JVM for local optimizer, in MBs.</td>
-</tr>
-<tr>
-<td>flink-conf.&lt;key&gt;</td>
-<td>Flink</td>
-<td>No</td>
-<td>N/A</td>
-<td>Any flink config options could be overwritten, priority is optimizing-group &gt; optimizing-container &gt; flink-conf.yaml.</td>
-</tr>
-<tr>
-<td>spark-conf.&lt;key&gt;</td>
-<td>Spark</td>
-<td>No</td>
-<td>N/A</td>
-<td>Any spark config options could be overwritten, priority is optimizing-group &gt; optimizing-container &gt; spark-defaults.conf.</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Property</th>
+          <th>Container type</th>
+          <th>Required</th>
+          <th>Default</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>scheduling-policy</td>
+          <td>All</td>
+          <td>No</td>
+          <td>quota</td>
+          <td>The scheduler group scheduling policy, the default value is <code>quota</code>, it will be scheduled according to the quota resources configured for each table, the larger the table quota is, the more optimizer resources it can take. There is also a configuration <code>balanced</code> that will balance the scheduling of each table, the longer the table has not been optimized, the higher the scheduling priority will be.</td>
+      </tr>
+      <tr>
+          <td>max-input-file-size-per-thread</td>
+          <td>All</td>
+          <td>No</td>
+          <td>536870912(512MB)</td>
+          <td>Max input file size per optimize thread.</td>
+      </tr>
+      <tr>
+          <td>ams-optimizing-uri</td>
+          <td>All</td>
+          <td>No</td>
+          <td>thrift://{ams.server-expose-host}:{ams.thrift-server.optimizing-service.binding-port}</td>
+          <td>Table optimizing service endpoint. This is used when the default service endpoint is not visitable.</td>
+      </tr>
+      <tr>
+          <td>cache-enabled</td>
+          <td>All</td>
+          <td>No</td>
+          <td>false</td>
+          <td>Whether enable cache in optimizer.</td>
+      </tr>
+      <tr>
+          <td>cache-max-total-size</td>
+          <td>All</td>
+          <td>No</td>
+          <td>128mb</td>
+          <td>Max total size in optimier cache.</td>
+      </tr>
+      <tr>
+          <td>cache-max-entry-size</td>
+          <td>All</td>
+          <td>No</td>
+          <td>64mb</td>
+          <td>Max entry size in optimizer cache.</td>
+      </tr>
+      <tr>
+          <td>cache-timeout</td>
+          <td>All</td>
+          <td>No</td>
+          <td>10min</td>
+          <td>Timeout in optimizer cache.</td>
+      </tr>
+      <tr>
+          <td>memory</td>
+          <td>Local</td>
+          <td>Yes</td>
+          <td>N/A</td>
+          <td>The max memory of JVM for local optimizer, in MBs.</td>
+      </tr>
+      <tr>
+          <td>flink-conf.&lt;key&gt;</td>
+          <td>Flink</td>
+          <td>No</td>
+          <td>N/A</td>
+          <td>Any flink config options could be overwritten, priority is optimizing-group &gt; optimizing-container &gt; flink-conf.yaml.</td>
+      </tr>
+      <tr>
+          <td>spark-conf.&lt;key&gt;</td>
+          <td>Spark</td>
+          <td>No</td>
+          <td>N/A</td>
+          <td>Any spark config options could be overwritten, priority is optimizing-group &gt; optimizing-container &gt; spark-defaults.conf.</td>
+      </tr>
+  </tbody>
 </table>
 <div class="info">
     <p>To better utilize the resources of Flink Optimizer, it is recommended to add the following configuration to the Flink Optimizer Group:</p>
@@ -1190,160 +1190,160 @@ If the optimizer runs normally, you will see an optimizer with the status <code>
 <h3 id="deploy-external-optimizer">Deploy external optimizer</h3>
 <p>You can submit optimizer in your own Flink task development platform or local Flink environment with the following configuration. The main parameters include:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./bin/flink run-application -t yarn-application <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -Djobmanager.memory.process.size<span style="color:#f92672">=</span>1024mb <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -Dtaskmanager.memory.process.size<span style="color:#f92672">=</span>2048mb <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -Dtaskmanager.memory.managed.size<span style="color:#f92672">=</span>32mb <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -Dtaskmanager.memory.network.max<span style="color:#f92672">=</span>32mb <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -Dtaskmanager.memory.network.min<span style="color:#f92672">=</span>32mb <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -c org.apache.amoro.optimizer.flink.FlinkOptimizer <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> <span style="color:#e6db74">${</span>AMORO_HOME<span style="color:#e6db74">}</span>/plugin/optimizer/flink/optimizer-job.jar <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -a thrift://127.0.0.1:1261 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -g flinkGroup <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -p <span style="color:#ae81ff">1</span>
+</span></span></span><span style="display:flex;"><span> -Djobmanager.memory.process.size<span style="color:#f92672">=</span>1024mb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> -Dtaskmanager.memory.process.size<span style="color:#f92672">=</span>2048mb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> -Dtaskmanager.memory.managed.size<span style="color:#f92672">=</span>32mb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> -Dtaskmanager.memory.network.max<span style="color:#f92672">=</span>32mb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> -Dtaskmanager.memory.network.min<span style="color:#f92672">=</span>32mb <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> -c org.apache.amoro.optimizer.flink.FlinkOptimizer <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> <span style="color:#e6db74">${</span>AMORO_HOME<span style="color:#e6db74">}</span>/plugin/optimizer/flink/optimizer-job.jar <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> -a thrift://127.0.0.1:1261 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> -g flinkGroup <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> -p <span style="color:#ae81ff">1</span>
 </span></span></code></pre></div><p>The description of the relevant parameters is shown in the following table:</p>
 <table>
-<thead>
-<tr>
-<th>Property</th>
-<th>Required</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>-a</td>
-<td>Yes</td>
-<td>The address of the AMS thrift service, for example: thrift://127.0.0.1:1261, can be obtained from the config.yaml configuration.</td>
-</tr>
-<tr>
-<td>-g</td>
-<td>Yes</td>
-<td>Group name created in advance under external container.</td>
-</tr>
-<tr>
-<td>-p</td>
-<td>Yes</td>
-<td>Optimizer parallelism usage.</td>
-</tr>
-<tr>
-<td>-hb</td>
-<td>No</td>
-<td>Heart beat interval with ams, should be smaller than configuration ams.optimizer.heart-beat-timeout in AMS configuration conf/config.yaml which is 60000 milliseconds by default, default 10000(ms).</td>
-</tr>
-<tr>
-<td>-eds</td>
-<td>No</td>
-<td>Whether extend storage to disk, default false.</td>
-</tr>
-<tr>
-<td>-dsp</td>
-<td>No</td>
-<td>Defines the directory where the storage files are saved, the default temporary-file directory is specified by the system property <code>java.io.tmpdir</code>. On UNIX systems the default value of this property is typically &ldquo;/tmp&rdquo; or &ldquo;/var/tmp&rdquo;.</td>
-</tr>
-<tr>
-<td>-msz</td>
-<td>No</td>
-<td>Memory storage size limit when extending disk storage(MB), default 512(MB).</td>
-</tr>
-<tr>
-<td>-ce</td>
-<td>No</td>
-<td>Whether enable cache in optimizer, default false.</td>
-</tr>
-<tr>
-<td>-cmts</td>
-<td>No</td>
-<td>Max total size in optimier cache, default 128MB.</td>
-</tr>
-<tr>
-<td>-cmes</td>
-<td>No</td>
-<td>Max entry size in optimizer cache, default 64MB.</td>
-</tr>
-<tr>
-<td>-ct</td>
-<td>No</td>
-<td>Timeout in optimizer cache, default 10Min.</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Property</th>
+          <th>Required</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>-a</td>
+          <td>Yes</td>
+          <td>The address of the AMS thrift service, for example: thrift://127.0.0.1:1261, can be obtained from the config.yaml configuration.</td>
+      </tr>
+      <tr>
+          <td>-g</td>
+          <td>Yes</td>
+          <td>Group name created in advance under external container.</td>
+      </tr>
+      <tr>
+          <td>-p</td>
+          <td>Yes</td>
+          <td>Optimizer parallelism usage.</td>
+      </tr>
+      <tr>
+          <td>-hb</td>
+          <td>No</td>
+          <td>Heart beat interval with ams, should be smaller than configuration ams.optimizer.heart-beat-timeout in AMS configuration conf/config.yaml which is 60000 milliseconds by default, default 10000(ms).</td>
+      </tr>
+      <tr>
+          <td>-eds</td>
+          <td>No</td>
+          <td>Whether extend storage to disk, default false.</td>
+      </tr>
+      <tr>
+          <td>-dsp</td>
+          <td>No</td>
+          <td>Defines the directory where the storage files are saved, the default temporary-file directory is specified by the system property <code>java.io.tmpdir</code>. On UNIX systems the default value of this property is typically &ldquo;/tmp&rdquo; or &ldquo;/var/tmp&rdquo;.</td>
+      </tr>
+      <tr>
+          <td>-msz</td>
+          <td>No</td>
+          <td>Memory storage size limit when extending disk storage(MB), default 512(MB).</td>
+      </tr>
+      <tr>
+          <td>-ce</td>
+          <td>No</td>
+          <td>Whether enable cache in optimizer, default false.</td>
+      </tr>
+      <tr>
+          <td>-cmts</td>
+          <td>No</td>
+          <td>Max total size in optimier cache, default 128MB.</td>
+      </tr>
+      <tr>
+          <td>-cmes</td>
+          <td>No</td>
+          <td>Max entry size in optimizer cache, default 64MB.</td>
+      </tr>
+      <tr>
+          <td>-ct</td>
+          <td>No</td>
+          <td>Timeout in optimizer cache, default 10Min.</td>
+      </tr>
+  </tbody>
 </table>
 <p>Or you can submit optimizer in your own Spark task development platform or local Spark environment with the following configuration. The main parameters include:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./bin/spark-submit --master yarn --deploy-mode cluster <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --conf <span style="color:#e6db74">&#34;spark.driver.cores=1&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --conf <span style="color:#e6db74">&#34;spark.driver.memory=g&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --conf <span style="color:#e6db74">&#34;spark.executor.cores=1&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --conf <span style="color:#e6db74">&#34;spark.executor.memory=2g&#34;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --class org.apache.amoro.optimizer.spark.SparkOptimizer <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> <span style="color:#e6db74">${</span>AMORO_HOME<span style="color:#e6db74">}</span>/plugin/optimizer/spark/optimizer-job.jar <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -a thrift://127.0.0.1:1261 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -g sparkGroup <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> -p <span style="color:#ae81ff">1</span>
+</span></span></span><span style="display:flex;"><span> --conf <span style="color:#e6db74">&#34;spark.driver.cores=1&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> --conf <span style="color:#e6db74">&#34;spark.driver.memory=g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> --conf <span style="color:#e6db74">&#34;spark.executor.cores=1&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> --conf <span style="color:#e6db74">&#34;spark.executor.memory=2g&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> --class org.apache.amoro.optimizer.spark.SparkOptimizer <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> <span style="color:#e6db74">${</span>AMORO_HOME<span style="color:#e6db74">}</span>/plugin/optimizer/spark/optimizer-job.jar <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> -a thrift://127.0.0.1:1261 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> -g sparkGroup <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span> -p <span style="color:#ae81ff">1</span>
 </span></span></code></pre></div><p>The description of the relevant parameters is shown in the following table:</p>
 <table>
-<thead>
-<tr>
-<th>Property</th>
-<th>Required</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>-a</td>
-<td>Yes</td>
-<td>The address of the AMS thrift service, for example: thrift://127.0.0.1:1261, can be obtained from the config.yaml configuration.</td>
-</tr>
-<tr>
-<td>-g</td>
-<td>Yes</td>
-<td>Group name created in advance under external container.</td>
-</tr>
-<tr>
-<td>-p</td>
-<td>Yes</td>
-<td>Optimizer parallelism usage.</td>
-</tr>
-<tr>
-<td>-hb</td>
-<td>No</td>
-<td>Heart beat interval with ams, should be smaller than configuration ams.optimizer.heart-beat-timeout in AMS configuration conf/config.yaml which is 60000 milliseconds by default, default 10000(ms).</td>
-</tr>
-<tr>
-<td>-eds</td>
-<td>No</td>
-<td>Whether extend storage to disk, default false.</td>
-</tr>
-<tr>
-<td>-dsp</td>
-<td>No</td>
-<td>Defines the directory where the storage files are saved, the default temporary-file directory is specified by the system property <code>java.io.tmpdir</code>. On UNIX systems the default value of this property is typically &ldquo;/tmp&rdquo; or &ldquo;/var/tmp&rdquo;.</td>
-</tr>
-<tr>
-<td>-msz</td>
-<td>No</td>
-<td>Memory storage size limit when extending disk storage(MB), default 512(MB).</td>
-</tr>
-<tr>
-<td>-ce</td>
-<td>No</td>
-<td>Whether enable cache in optimizer, default false.</td>
-</tr>
-<tr>
-<td>-cmts</td>
-<td>No</td>
-<td>Max total size in optimier cache, default 128MB.</td>
-</tr>
-<tr>
-<td>-cmes</td>
-<td>No</td>
-<td>Max entry size in optimizer cache, default 64MB.</td>
-</tr>
-<tr>
-<td>-ct</td>
-<td>No</td>
-<td>Timeout in optimizer cache, default 10Min.</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Property</th>
+          <th>Required</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>-a</td>
+          <td>Yes</td>
+          <td>The address of the AMS thrift service, for example: thrift://127.0.0.1:1261, can be obtained from the config.yaml configuration.</td>
+      </tr>
+      <tr>
+          <td>-g</td>
+          <td>Yes</td>
+          <td>Group name created in advance under external container.</td>
+      </tr>
+      <tr>
+          <td>-p</td>
+          <td>Yes</td>
+          <td>Optimizer parallelism usage.</td>
+      </tr>
+      <tr>
+          <td>-hb</td>
+          <td>No</td>
+          <td>Heart beat interval with ams, should be smaller than configuration ams.optimizer.heart-beat-timeout in AMS configuration conf/config.yaml which is 60000 milliseconds by default, default 10000(ms).</td>
+      </tr>
+      <tr>
+          <td>-eds</td>
+          <td>No</td>
+          <td>Whether extend storage to disk, default false.</td>
+      </tr>
+      <tr>
+          <td>-dsp</td>
+          <td>No</td>
+          <td>Defines the directory where the storage files are saved, the default temporary-file directory is specified by the system property <code>java.io.tmpdir</code>. On UNIX systems the default value of this property is typically &ldquo;/tmp&rdquo; or &ldquo;/var/tmp&rdquo;.</td>
+      </tr>
+      <tr>
+          <td>-msz</td>
+          <td>No</td>
+          <td>Memory storage size limit when extending disk storage(MB), default 512(MB).</td>
+      </tr>
+      <tr>
+          <td>-ce</td>
+          <td>No</td>
+          <td>Whether enable cache in optimizer, default false.</td>
+      </tr>
+      <tr>
+          <td>-cmts</td>
+          <td>No</td>
+          <td>Max total size in optimier cache, default 128MB.</td>
+      </tr>
+      <tr>
+          <td>-cmes</td>
+          <td>No</td>
+          <td>Max entry size in optimizer cache, default 64MB.</td>
+      </tr>
+      <tr>
+          <td>-ct</td>
+          <td>No</td>
+          <td>Timeout in optimizer cache, default 10Min.</td>
+      </tr>
+  </tbody>
 </table>
 </div>
                 

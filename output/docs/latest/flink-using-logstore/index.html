@@ -640,49 +640,49 @@
 <p>Users can enable LogStore by configuring the following parameters when creating an Amoro table. For specific configurations, please refer to <a href="../configurations/#logstore-configurations">LogStore related configurations</a>.</p>
 <h2 id="overview">Overview</h2>
 <table>
-<thead>
-<tr>
-<th>Flink</th>
-<th>Kafka</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Flink 1.15</td>
-<td>✔</td>
-</tr>
-<tr>
-<td>Flink 1.16</td>
-<td>✔</td>
-</tr>
-<tr>
-<td>Flink 1.17</td>
-<td>✔</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Flink</th>
+          <th>Kafka</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Flink 1.15</td>
+          <td>✔</td>
+      </tr>
+      <tr>
+          <td>Flink 1.16</td>
+          <td>✔</td>
+      </tr>
+      <tr>
+          <td>Flink 1.17</td>
+          <td>✔</td>
+      </tr>
+  </tbody>
 </table>
 <p>Kafka as LogStore Version Description:</p>
 <table>
-<thead>
-<tr>
-<th>Flink Version</th>
-<th>Kafka Versions</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1.15.x</td>
-<td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
-</tr>
-<tr>
-<td>1.16.x</td>
-<td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
-</tr>
-<tr>
-<td>1.17.x</td>
-<td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Flink Version</th>
+          <th>Kafka Versions</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>1.15.x</td>
+          <td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
+      </tr>
+      <tr>
+          <td>1.16.x</td>
+          <td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
+      </tr>
+      <tr>
+          <td>1.17.x</td>
+          <td>0.10.2.*<br> 0.11.*<br> 1.*<br> 2.*<br> 3.*</td>
+      </tr>
+  </tbody>
 </table>
 <h3 id="prerequisites-for-using-logstore">Prerequisites for using LogStore</h3>
 <p>When creating an Amoro table, LogStore needs to be enabled.</p>
@@ -704,7 +704,7 @@
 <li>You can also use Flink SQL to create tables in Flink-SQL-Client</li>
 </ul>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- First use the use catalog command to switch to the mixed-format catalog.
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> db.log_table (
+</span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> db.log_table (
 </span></span><span style="display:flex;"><span>    id int,
 </span></span><span style="display:flex;"><span>    name string,
 </span></span><span style="display:flex;"><span>    ts <span style="color:#66d9ef">timestamp</span>,

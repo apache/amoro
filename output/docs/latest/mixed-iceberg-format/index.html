@@ -661,10 +661,10 @@ Auto-bucket divides the data under a partition into sets of non-intersecting pri
 While possessing the features of the Mixed-Iceberg format, the BaseStore and ChangeStore can be read and written using the native Iceberg connector, thus having all the functional features of the Iceberg format.
 Taking Spark as an example, this paper describes how to operate on the Mixed-Iceberg format table created by Quick demo using the Iceberg connector. We can use the following command to open a Spark SQL client:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>spark-sql --packages org.apache.Iceberg:Iceberg-spark-runtime-3.2_2.12:0.14.0<span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --conf spark.sql.extensions<span style="color:#f92672">=</span>org.apache.Iceberg.spark.extensions.IcebergSparkSessionExtensions <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --conf spark.sql.catalog.local<span style="color:#f92672">=</span>org.apache.Iceberg.spark.SparkCatalog <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --conf spark.sql.catalog.local.type<span style="color:#f92672">=</span>hadoop <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>    --conf spark.sql.catalog.local.warehouse<span style="color:#f92672">=</span>/tmp/Amoro/warehouse
+</span></span></span><span style="display:flex;"><span>    --conf spark.sql.extensions<span style="color:#f92672">=</span>org.apache.Iceberg.spark.extensions.IcebergSparkSessionExtensions <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    --conf spark.sql.catalog.local<span style="color:#f92672">=</span>org.apache.Iceberg.spark.SparkCatalog <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    --conf spark.sql.catalog.local.type<span style="color:#f92672">=</span>hadoop <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>    --conf spark.sql.catalog.local.warehouse<span style="color:#f92672">=</span>/tmp/Amoro/warehouse
 </span></span></code></pre></div><p>After that, we can use the following command to read from or write to the Iceberg tables managed by Amoro:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>-- Switch to Iceberg catalog
 </span></span><span style="display:flex;"><span>use local;

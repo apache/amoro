@@ -643,415 +643,415 @@ table td:nth-child(2), table th:nth-child(2) { width: 20%; word-break: break-all
 table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 </style>
 <table>
-<thead>
-<tr>
-<th>Key</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>admin-password</td>
-<td>admin</td>
-<td>The administrator password</td>
-</tr>
-<tr>
-<td>admin-username</td>
-<td>admin</td>
-<td>The administrator account name.</td>
-</tr>
-<tr>
-<td>auto-create-tags.enabled</td>
-<td>true</td>
-<td>Enable creating tags.</td>
-</tr>
-<tr>
-<td>auto-create-tags.interval</td>
-<td>1 min</td>
-<td>Interval for creating tags.</td>
-</tr>
-<tr>
-<td>auto-create-tags.thread-count</td>
-<td>3</td>
-<td>The number of threads used for creating tags.</td>
-</tr>
-<tr>
-<td>blocker.timeout</td>
-<td>1 min</td>
-<td>Session timeout. Default unit is milliseconds if not specified.</td>
-</tr>
-<tr>
-<td>catalog-meta-cache.expiration-interval</td>
-<td>1 min</td>
-<td>TTL for catalog metadata.</td>
-</tr>
-<tr>
-<td>clean-dangling-delete-files.enabled</td>
-<td>true</td>
-<td>Enable dangling delete files cleaning.</td>
-</tr>
-<tr>
-<td>clean-dangling-delete-files.thread-count</td>
-<td>10</td>
-<td>The number of threads used for dangling delete files cleaning.</td>
-</tr>
-<tr>
-<td>clean-orphan-files.enabled</td>
-<td>true</td>
-<td>Enable orphan files cleaning.</td>
-</tr>
-<tr>
-<td>clean-orphan-files.interval</td>
-<td>1 d</td>
-<td>Interval for cleaning orphan files.</td>
-</tr>
-<tr>
-<td>clean-orphan-files.thread-count</td>
-<td>10</td>
-<td>The number of threads used for orphan files cleaning.</td>
-</tr>
-<tr>
-<td>data-expiration.enabled</td>
-<td>true</td>
-<td>Enable data expiration</td>
-</tr>
-<tr>
-<td>data-expiration.interval</td>
-<td>1 d</td>
-<td>Execute interval for data expiration</td>
-</tr>
-<tr>
-<td>data-expiration.thread-count</td>
-<td>10</td>
-<td>The number of threads used for data expiring</td>
-</tr>
-<tr>
-<td>database.auto-create-tables</td>
-<td>true</td>
-<td>Auto init table schema when started</td>
-</tr>
-<tr>
-<td>database.connection-pool-max-idle</td>
-<td>16</td>
-<td>Max idle connect count of database connect pool.</td>
-</tr>
-<tr>
-<td>database.connection-pool-max-total</td>
-<td>20</td>
-<td>Max connect count of database connect pool.</td>
-</tr>
-<tr>
-<td>database.connection-pool-max-wait-millis</td>
-<td>30000</td>
-<td>Max wait time before getting a connection timeout.</td>
-</tr>
-<tr>
-<td>database.jdbc-driver-class</td>
-<td>org.apache.derby.jdbc.EmbeddedDriver</td>
-<td>The JDBC driver class name for connecting to the database.</td>
-</tr>
-<tr>
-<td>database.password</td>
-<td></td>
-<td>The password for connecting to the database.</td>
-</tr>
-<tr>
-<td>database.type</td>
-<td>derby</td>
-<td>Database type.</td>
-</tr>
-<tr>
-<td>database.url</td>
-<td>jdbc:derby:/tmp/amoro/derby;create=true</td>
-<td>Database connection address</td>
-</tr>
-<tr>
-<td>database.username</td>
-<td>root</td>
-<td>The username for connecting to the database.</td>
-</tr>
-<tr>
-<td>expire-snapshots.enabled</td>
-<td>true</td>
-<td>Enable snapshots expiring.</td>
-</tr>
-<tr>
-<td>expire-snapshots.thread-count</td>
-<td>10</td>
-<td>The number of threads used for snapshots expiring.</td>
-</tr>
-<tr>
-<td>ha.cluster-name</td>
-<td>default</td>
-<td>Amoro management service cluster name.</td>
-</tr>
-<tr>
-<td>ha.connection-timeout</td>
-<td>5 min</td>
-<td>The Zookeeper connection timeout in milliseconds.</td>
-</tr>
-<tr>
-<td>ha.enabled</td>
-<td>false</td>
-<td>Whether to enable high availability mode.</td>
-</tr>
-<tr>
-<td>ha.heartbeat-interval</td>
-<td>10 s</td>
-<td>HA heartbeat interval.</td>
-</tr>
-<tr>
-<td>ha.lease-ttl</td>
-<td>30 s</td>
-<td>TTL of HA lease.</td>
-</tr>
-<tr>
-<td>ha.session-timeout</td>
-<td>30 s</td>
-<td>The Zookeeper session timeout in milliseconds.</td>
-</tr>
-<tr>
-<td>ha.type</td>
-<td>zk</td>
-<td>High availability implementation type: zk or database.</td>
-</tr>
-<tr>
-<td>ha.zookeeper-address</td>
-<td></td>
-<td>The Zookeeper address used for high availability.</td>
-</tr>
-<tr>
-<td>ha.zookeeper-auth-keytab</td>
-<td></td>
-<td>The Zookeeper authentication keytab file path when auth type is KERBEROS.</td>
-</tr>
-<tr>
-<td>ha.zookeeper-auth-principal</td>
-<td></td>
-<td>The Zookeeper authentication principal when auth type is KERBEROS.</td>
-</tr>
-<tr>
-<td>ha.zookeeper-auth-type</td>
-<td>NONE</td>
-<td>The Zookeeper authentication type, NONE or KERBEROS.</td>
-</tr>
-<tr>
-<td>http-server.auth-basic-provider</td>
-<td>org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider</td>
-<td>User-defined password authentication implementation of org.apache.amoro.authentication.PasswdAuthenticationProvider</td>
-</tr>
-<tr>
-<td>http-server.auth-jwt-provider</td>
-<td>&lt;undefined&gt;</td>
-<td>User-defined JWT (JSON Web Token) authentication implementation of org.apache.amoro.authentication.TokenAuthenticationProvider</td>
-</tr>
-<tr>
-<td>http-server.bind-port</td>
-<td>19090</td>
-<td>Port that the Http server is bound to.</td>
-</tr>
-<tr>
-<td>http-server.proxy-client-ip-header</td>
-<td>X-Real-IP</td>
-<td>The HTTP header to record the real client IP address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use.</td>
-</tr>
-<tr>
-<td>http-server.rest-auth-type</td>
-<td>token</td>
-<td>The authentication used by REST APIs, token (default), basic or jwt.</td>
-</tr>
-<tr>
-<td>http-server.session-timeout</td>
-<td>7 d</td>
-<td>Timeout for http session.</td>
-</tr>
-<tr>
-<td>optimizer.heart-beat-timeout</td>
-<td>1 min</td>
-<td>Timeout duration for Optimizer heartbeat.</td>
-</tr>
-<tr>
-<td>optimizer.max-planning-parallelism</td>
-<td>1</td>
-<td>Max planning parallelism in one optimizer group.</td>
-</tr>
-<tr>
-<td>optimizer.polling-timeout</td>
-<td>3 s</td>
-<td>Optimizer polling task timeout.</td>
-</tr>
-<tr>
-<td>optimizer.task-ack-timeout</td>
-<td>30 s</td>
-<td>Timeout duration for task acknowledgment.</td>
-</tr>
-<tr>
-<td>optimizer.task-execute-timeout</td>
-<td>1 h</td>
-<td>Timeout duration for task execution, default to 1 hour.</td>
-</tr>
-<tr>
-<td>overview-cache.max-size</td>
-<td>3360</td>
-<td>Max size of overview cache.</td>
-</tr>
-<tr>
-<td>overview-cache.refresh-interval</td>
-<td>3 min</td>
-<td>Interval for refreshing overview cache.</td>
-</tr>
-<tr>
-<td>refresh-external-catalogs.interval</td>
-<td>3 min</td>
-<td>Interval to refresh the external catalog.</td>
-</tr>
-<tr>
-<td>refresh-external-catalogs.queue-size</td>
-<td>1000000</td>
-<td>The queue size of the executors of the external catalog explorer.</td>
-</tr>
-<tr>
-<td>refresh-external-catalogs.thread-count</td>
-<td>10</td>
-<td>The number of threads used for discovering tables in external catalogs.</td>
-</tr>
-<tr>
-<td>refresh-tables.interval</td>
-<td>1 min</td>
-<td>Interval for refreshing table metadata.</td>
-</tr>
-<tr>
-<td>refresh-tables.max-pending-partition-count</td>
-<td>100</td>
-<td>Filters will not be used beyond that number of partitions.</td>
-</tr>
-<tr>
-<td>refresh-tables.thread-count</td>
-<td>10</td>
-<td>The number of threads used for refreshing tables.</td>
-</tr>
-<tr>
-<td>self-optimizing.break-quota-limit-enabled</td>
-<td>true</td>
-<td>Allow the table to break the quota limit when the resource is sufficient.</td>
-</tr>
-<tr>
-<td>self-optimizing.commit-manifest-io-thread-count</td>
-<td>10</td>
-<td>Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent commit operations.</td>
-</tr>
-<tr>
-<td>self-optimizing.commit-thread-count</td>
-<td>10</td>
-<td>The number of threads that self-optimizing uses to submit results.</td>
-</tr>
-<tr>
-<td>self-optimizing.plan-manifest-io-thread-count</td>
-<td>10</td>
-<td>Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent planning operations.</td>
-</tr>
-<tr>
-<td>self-optimizing.refresh-group-interval</td>
-<td>30 s</td>
-<td>Optimizer group refresh interval.</td>
-</tr>
-<tr>
-<td>self-optimizing.runtime-data-expire-interval-hours</td>
-<td>1</td>
-<td>The number of hours that self-optimizing runtime data expire interval.</td>
-</tr>
-<tr>
-<td>self-optimizing.runtime-data-keep-days</td>
-<td>30</td>
-<td>The number of days that self-optimizing runtime data keeps the runtime.</td>
-</tr>
-<tr>
-<td>server-bind-host</td>
-<td>0.0.0.0</td>
-<td>The host bound to the server.</td>
-</tr>
-<tr>
-<td>server-expose-host</td>
-<td></td>
-<td>The exposed host of the server.</td>
-</tr>
-<tr>
-<td>sync-hive-tables.enabled</td>
-<td>false</td>
-<td>Enable synchronizing Hive tables.</td>
-</tr>
-<tr>
-<td>sync-hive-tables.thread-count</td>
-<td>10</td>
-<td>The number of threads used for synchronizing Hive tables.</td>
-</tr>
-<tr>
-<td>table-manifest-io.thread-count</td>
-<td>20</td>
-<td>Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent planning or commit operations.</td>
-</tr>
-<tr>
-<td>terminal.backend</td>
-<td>local</td>
-<td>Terminal backend implementation. local, kyuubi and custom are valid values.</td>
-</tr>
-<tr>
-<td>terminal.factory</td>
-<td>&lt;undefined&gt;</td>
-<td>Session factory implement of terminal, <code>terminal.backend</code> must be <code>custom</code> if this is set.</td>
-</tr>
-<tr>
-<td>terminal.result.limit</td>
-<td>1000</td>
-<td>Row limit of result-set</td>
-</tr>
-<tr>
-<td>terminal.sensitive-conf-keys</td>
-<td></td>
-<td>Comma-separated list of sensitive conf keys used to desensitize related value.</td>
-</tr>
-<tr>
-<td>terminal.session.timeout</td>
-<td>30 min</td>
-<td>Session timeout. Default unit is milliseconds if not specified (** Note: default units are minutes when version &lt; 0.8).</td>
-</tr>
-<tr>
-<td>terminal.stop-on-error</td>
-<td>false</td>
-<td>When a statement fails to execute, stop execution or continue executing the remaining statements.</td>
-</tr>
-<tr>
-<td>thrift-server.max-message-size</td>
-<td>100 mb</td>
-<td>Maximum message size that the Thrift server can accept. Default unit is bytes if not specified.</td>
-</tr>
-<tr>
-<td>thrift-server.optimizing-service.bind-port</td>
-<td>1261</td>
-<td>Port that the optimizing service thrift server is bound to.</td>
-</tr>
-<tr>
-<td>thrift-server.selector-queue-size</td>
-<td>4</td>
-<td>The number of queue size per selector thread for the Thrift server</td>
-</tr>
-<tr>
-<td>thrift-server.selector-thread-count</td>
-<td>2</td>
-<td>The number of selector threads for the Thrift server.</td>
-</tr>
-<tr>
-<td>thrift-server.table-service.bind-port</td>
-<td>1260</td>
-<td>Port that the table service thrift server is bound to.</td>
-</tr>
-<tr>
-<td>thrift-server.table-service.worker-thread-count</td>
-<td>20</td>
-<td>The number of worker threads for the Thrift server.</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>admin-password</td>
+          <td>admin</td>
+          <td>The administrator password</td>
+      </tr>
+      <tr>
+          <td>admin-username</td>
+          <td>admin</td>
+          <td>The administrator account name.</td>
+      </tr>
+      <tr>
+          <td>auto-create-tags.enabled</td>
+          <td>true</td>
+          <td>Enable creating tags.</td>
+      </tr>
+      <tr>
+          <td>auto-create-tags.interval</td>
+          <td>1 min</td>
+          <td>Interval for creating tags.</td>
+      </tr>
+      <tr>
+          <td>auto-create-tags.thread-count</td>
+          <td>3</td>
+          <td>The number of threads used for creating tags.</td>
+      </tr>
+      <tr>
+          <td>blocker.timeout</td>
+          <td>1 min</td>
+          <td>Session timeout. Default unit is milliseconds if not specified.</td>
+      </tr>
+      <tr>
+          <td>catalog-meta-cache.expiration-interval</td>
+          <td>1 min</td>
+          <td>TTL for catalog metadata.</td>
+      </tr>
+      <tr>
+          <td>clean-dangling-delete-files.enabled</td>
+          <td>true</td>
+          <td>Enable dangling delete files cleaning.</td>
+      </tr>
+      <tr>
+          <td>clean-dangling-delete-files.thread-count</td>
+          <td>10</td>
+          <td>The number of threads used for dangling delete files cleaning.</td>
+      </tr>
+      <tr>
+          <td>clean-orphan-files.enabled</td>
+          <td>true</td>
+          <td>Enable orphan files cleaning.</td>
+      </tr>
+      <tr>
+          <td>clean-orphan-files.interval</td>
+          <td>1 d</td>
+          <td>Interval for cleaning orphan files.</td>
+      </tr>
+      <tr>
+          <td>clean-orphan-files.thread-count</td>
+          <td>10</td>
+          <td>The number of threads used for orphan files cleaning.</td>
+      </tr>
+      <tr>
+          <td>data-expiration.enabled</td>
+          <td>true</td>
+          <td>Enable data expiration</td>
+      </tr>
+      <tr>
+          <td>data-expiration.interval</td>
+          <td>1 d</td>
+          <td>Execute interval for data expiration</td>
+      </tr>
+      <tr>
+          <td>data-expiration.thread-count</td>
+          <td>10</td>
+          <td>The number of threads used for data expiring</td>
+      </tr>
+      <tr>
+          <td>database.auto-create-tables</td>
+          <td>true</td>
+          <td>Auto init table schema when started</td>
+      </tr>
+      <tr>
+          <td>database.connection-pool-max-idle</td>
+          <td>16</td>
+          <td>Max idle connect count of database connect pool.</td>
+      </tr>
+      <tr>
+          <td>database.connection-pool-max-total</td>
+          <td>20</td>
+          <td>Max connect count of database connect pool.</td>
+      </tr>
+      <tr>
+          <td>database.connection-pool-max-wait-millis</td>
+          <td>30000</td>
+          <td>Max wait time before getting a connection timeout.</td>
+      </tr>
+      <tr>
+          <td>database.jdbc-driver-class</td>
+          <td>org.apache.derby.jdbc.EmbeddedDriver</td>
+          <td>The JDBC driver class name for connecting to the database.</td>
+      </tr>
+      <tr>
+          <td>database.password</td>
+          <td></td>
+          <td>The password for connecting to the database.</td>
+      </tr>
+      <tr>
+          <td>database.type</td>
+          <td>derby</td>
+          <td>Database type.</td>
+      </tr>
+      <tr>
+          <td>database.url</td>
+          <td>jdbc:derby:/tmp/amoro/derby;create=true</td>
+          <td>Database connection address</td>
+      </tr>
+      <tr>
+          <td>database.username</td>
+          <td>root</td>
+          <td>The username for connecting to the database.</td>
+      </tr>
+      <tr>
+          <td>expire-snapshots.enabled</td>
+          <td>true</td>
+          <td>Enable snapshots expiring.</td>
+      </tr>
+      <tr>
+          <td>expire-snapshots.thread-count</td>
+          <td>10</td>
+          <td>The number of threads used for snapshots expiring.</td>
+      </tr>
+      <tr>
+          <td>ha.cluster-name</td>
+          <td>default</td>
+          <td>Amoro management service cluster name.</td>
+      </tr>
+      <tr>
+          <td>ha.connection-timeout</td>
+          <td>5 min</td>
+          <td>The Zookeeper connection timeout in milliseconds.</td>
+      </tr>
+      <tr>
+          <td>ha.enabled</td>
+          <td>false</td>
+          <td>Whether to enable high availability mode.</td>
+      </tr>
+      <tr>
+          <td>ha.heartbeat-interval</td>
+          <td>10 s</td>
+          <td>HA heartbeat interval.</td>
+      </tr>
+      <tr>
+          <td>ha.lease-ttl</td>
+          <td>30 s</td>
+          <td>TTL of HA lease.</td>
+      </tr>
+      <tr>
+          <td>ha.session-timeout</td>
+          <td>30 s</td>
+          <td>The Zookeeper session timeout in milliseconds.</td>
+      </tr>
+      <tr>
+          <td>ha.type</td>
+          <td>zk</td>
+          <td>High availability implementation type: zk or database.</td>
+      </tr>
+      <tr>
+          <td>ha.zookeeper-address</td>
+          <td></td>
+          <td>The Zookeeper address used for high availability.</td>
+      </tr>
+      <tr>
+          <td>ha.zookeeper-auth-keytab</td>
+          <td></td>
+          <td>The Zookeeper authentication keytab file path when auth type is KERBEROS.</td>
+      </tr>
+      <tr>
+          <td>ha.zookeeper-auth-principal</td>
+          <td></td>
+          <td>The Zookeeper authentication principal when auth type is KERBEROS.</td>
+      </tr>
+      <tr>
+          <td>ha.zookeeper-auth-type</td>
+          <td>NONE</td>
+          <td>The Zookeeper authentication type, NONE or KERBEROS.</td>
+      </tr>
+      <tr>
+          <td>http-server.auth-basic-provider</td>
+          <td>org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider</td>
+          <td>User-defined password authentication implementation of org.apache.amoro.authentication.PasswdAuthenticationProvider</td>
+      </tr>
+      <tr>
+          <td>http-server.auth-jwt-provider</td>
+          <td>&lt;undefined&gt;</td>
+          <td>User-defined JWT (JSON Web Token) authentication implementation of org.apache.amoro.authentication.TokenAuthenticationProvider</td>
+      </tr>
+      <tr>
+          <td>http-server.bind-port</td>
+          <td>19090</td>
+          <td>Port that the Http server is bound to.</td>
+      </tr>
+      <tr>
+          <td>http-server.proxy-client-ip-header</td>
+          <td>X-Real-IP</td>
+          <td>The HTTP header to record the real client IP address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use.</td>
+      </tr>
+      <tr>
+          <td>http-server.rest-auth-type</td>
+          <td>token</td>
+          <td>The authentication used by REST APIs, token (default), basic or jwt.</td>
+      </tr>
+      <tr>
+          <td>http-server.session-timeout</td>
+          <td>7 d</td>
+          <td>Timeout for http session.</td>
+      </tr>
+      <tr>
+          <td>optimizer.heart-beat-timeout</td>
+          <td>1 min</td>
+          <td>Timeout duration for Optimizer heartbeat.</td>
+      </tr>
+      <tr>
+          <td>optimizer.max-planning-parallelism</td>
+          <td>1</td>
+          <td>Max planning parallelism in one optimizer group.</td>
+      </tr>
+      <tr>
+          <td>optimizer.polling-timeout</td>
+          <td>3 s</td>
+          <td>Optimizer polling task timeout.</td>
+      </tr>
+      <tr>
+          <td>optimizer.task-ack-timeout</td>
+          <td>30 s</td>
+          <td>Timeout duration for task acknowledgment.</td>
+      </tr>
+      <tr>
+          <td>optimizer.task-execute-timeout</td>
+          <td>1 h</td>
+          <td>Timeout duration for task execution, default to 1 hour.</td>
+      </tr>
+      <tr>
+          <td>overview-cache.max-size</td>
+          <td>3360</td>
+          <td>Max size of overview cache.</td>
+      </tr>
+      <tr>
+          <td>overview-cache.refresh-interval</td>
+          <td>3 min</td>
+          <td>Interval for refreshing overview cache.</td>
+      </tr>
+      <tr>
+          <td>refresh-external-catalogs.interval</td>
+          <td>3 min</td>
+          <td>Interval to refresh the external catalog.</td>
+      </tr>
+      <tr>
+          <td>refresh-external-catalogs.queue-size</td>
+          <td>1000000</td>
+          <td>The queue size of the executors of the external catalog explorer.</td>
+      </tr>
+      <tr>
+          <td>refresh-external-catalogs.thread-count</td>
+          <td>10</td>
+          <td>The number of threads used for discovering tables in external catalogs.</td>
+      </tr>
+      <tr>
+          <td>refresh-tables.interval</td>
+          <td>1 min</td>
+          <td>Interval for refreshing table metadata.</td>
+      </tr>
+      <tr>
+          <td>refresh-tables.max-pending-partition-count</td>
+          <td>100</td>
+          <td>Filters will not be used beyond that number of partitions.</td>
+      </tr>
+      <tr>
+          <td>refresh-tables.thread-count</td>
+          <td>10</td>
+          <td>The number of threads used for refreshing tables.</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.break-quota-limit-enabled</td>
+          <td>true</td>
+          <td>Allow the table to break the quota limit when the resource is sufficient.</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.commit-manifest-io-thread-count</td>
+          <td>10</td>
+          <td>Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent commit operations.</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.commit-thread-count</td>
+          <td>10</td>
+          <td>The number of threads that self-optimizing uses to submit results.</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.plan-manifest-io-thread-count</td>
+          <td>10</td>
+          <td>Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent planning operations.</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.refresh-group-interval</td>
+          <td>30 s</td>
+          <td>Optimizer group refresh interval.</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.runtime-data-expire-interval-hours</td>
+          <td>1</td>
+          <td>The number of hours that self-optimizing runtime data expire interval.</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.runtime-data-keep-days</td>
+          <td>30</td>
+          <td>The number of days that self-optimizing runtime data keeps the runtime.</td>
+      </tr>
+      <tr>
+          <td>server-bind-host</td>
+          <td>0.0.0.0</td>
+          <td>The host bound to the server.</td>
+      </tr>
+      <tr>
+          <td>server-expose-host</td>
+          <td></td>
+          <td>The exposed host of the server.</td>
+      </tr>
+      <tr>
+          <td>sync-hive-tables.enabled</td>
+          <td>false</td>
+          <td>Enable synchronizing Hive tables.</td>
+      </tr>
+      <tr>
+          <td>sync-hive-tables.thread-count</td>
+          <td>10</td>
+          <td>The number of threads used for synchronizing Hive tables.</td>
+      </tr>
+      <tr>
+          <td>table-manifest-io.thread-count</td>
+          <td>20</td>
+          <td>Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent planning or commit operations.</td>
+      </tr>
+      <tr>
+          <td>terminal.backend</td>
+          <td>local</td>
+          <td>Terminal backend implementation. local, kyuubi and custom are valid values.</td>
+      </tr>
+      <tr>
+          <td>terminal.factory</td>
+          <td>&lt;undefined&gt;</td>
+          <td>Session factory implement of terminal, <code>terminal.backend</code> must be <code>custom</code> if this is set.</td>
+      </tr>
+      <tr>
+          <td>terminal.result.limit</td>
+          <td>1000</td>
+          <td>Row limit of result-set</td>
+      </tr>
+      <tr>
+          <td>terminal.sensitive-conf-keys</td>
+          <td></td>
+          <td>Comma-separated list of sensitive conf keys used to desensitize related value.</td>
+      </tr>
+      <tr>
+          <td>terminal.session.timeout</td>
+          <td>30 min</td>
+          <td>Session timeout. Default unit is milliseconds if not specified (** Note: default units are minutes when version &lt; 0.8).</td>
+      </tr>
+      <tr>
+          <td>terminal.stop-on-error</td>
+          <td>false</td>
+          <td>When a statement fails to execute, stop execution or continue executing the remaining statements.</td>
+      </tr>
+      <tr>
+          <td>thrift-server.max-message-size</td>
+          <td>100 mb</td>
+          <td>Maximum message size that the Thrift server can accept. Default unit is bytes if not specified.</td>
+      </tr>
+      <tr>
+          <td>thrift-server.optimizing-service.bind-port</td>
+          <td>1261</td>
+          <td>Port that the optimizing service thrift server is bound to.</td>
+      </tr>
+      <tr>
+          <td>thrift-server.selector-queue-size</td>
+          <td>4</td>
+          <td>The number of queue size per selector thread for the Thrift server</td>
+      </tr>
+      <tr>
+          <td>thrift-server.selector-thread-count</td>
+          <td>2</td>
+          <td>The number of selector threads for the Thrift server.</td>
+      </tr>
+      <tr>
+          <td>thrift-server.table-service.bind-port</td>
+          <td>1260</td>
+          <td>Port that the table service thrift server is bound to.</td>
+      </tr>
+      <tr>
+          <td>thrift-server.table-service.worker-thread-count</td>
+          <td>20</td>
+          <td>The number of worker threads for the Thrift server.</td>
+      </tr>
+  </tbody>
 </table>
 <h2 id="shade-utils-configuration">Shade Utils Configuration</h2>
 <p>The configuration options for Amoro Configuration Shade Utils.</p>
@@ -1063,25 +1063,25 @@ table td:nth-child(2), table th:nth-child(2) { width: 20%; word-break: break-all
 table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 </style>
 <table>
-<thead>
-<tr>
-<th>Key</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>shade.identifier</td>
-<td>default</td>
-<td>The identifier of the encryption method for decryption. Defaults to &ldquo;default&rdquo;, indicating no encryption</td>
-</tr>
-<tr>
-<td>shade.sensitive-keywords</td>
-<td>admin-password;database.password</td>
-<td>A semicolon-separated list of keywords for the configuration items to be decrypted.</td>
-</tr>
-</tbody>
+  <thead>
+      <tr>
+          <th>Key</th>
+          <th>Default</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>shade.identifier</td>
+          <td>default</td>
+          <td>The identifier of the encryption method for decryption. Defaults to &ldquo;default&rdquo;, indicating no encryption</td>
+      </tr>
+      <tr>
+          <td>shade.sensitive-keywords</td>
+          <td>admin-password;database.password</td>
+          <td>A semicolon-separated list of keywords for the configuration items to be decrypted.</td>
+      </tr>
+  </tbody>
 </table>
 </div>
                 
