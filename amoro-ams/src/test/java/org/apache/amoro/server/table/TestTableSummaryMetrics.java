@@ -142,7 +142,8 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
 
   void refreshPending() {
     TableRuntimeRefreshExecutor refresher =
-        new TableRuntimeRefreshExecutor(tableService(), 1, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        new TableRuntimeRefreshExecutor(
+            tableService(), 1, Integer.MAX_VALUE, Integer.MAX_VALUE, Long.MAX_VALUE);
     refresher.execute(getDefaultTableRuntime(serverTableIdentifier().getId()));
     refresher.dispose();
   }

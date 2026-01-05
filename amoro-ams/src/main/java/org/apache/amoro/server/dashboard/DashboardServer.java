@@ -36,6 +36,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.ExternalEventService;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.authentication.HttpAuthenticationFactory;
 import org.apache.amoro.server.catalog.CatalogManager;
@@ -467,7 +468,8 @@ public class DashboardServer {
     "/swagger-docs",
     "/api/ams/v1/api/token/calculate/signature",
     "/api/ams/v1/api/token/calculate/encryptString",
-    RestCatalogService.ICEBERG_REST_API_PREFIX + "/*"
+    RestCatalogService.ICEBERG_REST_API_PREFIX + "/*",
+    ExternalEventService.REFRESH_REST_API_PREFIX + "/*"
   };
 
   private static boolean inWhiteList(String uri) {

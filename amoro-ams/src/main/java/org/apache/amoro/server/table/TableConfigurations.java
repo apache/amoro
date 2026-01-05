@@ -341,7 +341,12 @@ public class TableConfigurations {
             PropertyUtil.propertyAsLong(
                 properties,
                 TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE,
-                TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE_DEFAULT));
+                TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE_DEFAULT))
+        .setEventTriggeredRefresh(
+            PropertyUtil.propertyAsBoolean(
+                properties,
+                TableProperties.SELF_OPTIMIZING_REFRESH_EVENT_TRIGGERED,
+                TableProperties.SELF_OPTIMIZING_REFRESH_EVENT_TRIGGERED_DEFAULT));
   }
 
   /**
