@@ -87,7 +87,7 @@
         <maven-javadoc-plugin.version>3.3.0</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
         <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
-        <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
+        <maven-shade-plugin.version>3.6.1</maven-shade-plugin.version>
         <maven-scala-plugin.version>4.8.1</maven-scala-plugin.version>
         <maven-antlr4-plugin.version>4.3</maven-antlr4-plugin.version>
         <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
@@ -1843,13 +1843,6 @@
         </profile>
 
         <profile>
-            <id>java8</id>
-            <properties>
-                <java.target.version>8</java.target.version>
-                <java.source.version>8</java.source.version>
-            </properties>
-        </profile>
-        <profile>
             <id>java11</id>
             <activation>
                 <jdk>[11,)</jdk>
@@ -1863,6 +1856,13 @@
             <properties>
                 <spark.version>3.3.4</spark.version>
                 <spark.major.version>3.3</spark.major.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>spark-3.4</id>
+            <properties>
+                <spark.version>3.4.4</spark.version>
+                <spark.major.version>3.4</spark.major.version>
             </properties>
         </profile>
         <profile>
