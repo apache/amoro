@@ -1,0 +1,159 @@
+name: Deploy Site
+
+on:
+  push:
+    branches:
+      - master
+      - '[0-9]+.[0-9]+.[0-9]+'
+    paths:
+      - 'site/**'
+      - 'docs/**'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-incubating'
+  workflow_dispatch:
+
+jobs:
+  deploy-site-page:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - uses: actions/checkout@v3
+        with:
+          ref: asf-site
+          fetch-depth: 1
+          path: asf-site
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Build
+        run: |
+          echo "Building amoro site pages"
+          cd site/amoro-site && hugo -b https://amoro.apache.org/ -d ../../output
+          cd ../../
+          echo "Copying the result to the asf-site location"
+          cp -rf output/* asf-site/output/
+
+      - name: Deploy
+        working-directory: asf-site
+        run: |
+          echo "Running git config"
+          git config user.name "GitHub Actions"
+          git config user.email "actions@users.noreply.github.com"
+          echo "Running git add -A"
+          git add -A .
+          echo "Running git commit"
+          if git commit -m "Regenerated Amoro site page based on ${GITHUB_SHA} commit"
+          then
+            git push origin asf-site
+          fi
+
+  deploy-latest-docs-page:
+    needs: deploy-site-page
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - uses: actions/checkout@v3
+        with:
+          ref: asf-site
+          fetch-depth: 1
+          path: asf-site
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Build
+        run: |
+          echo "Building latest docs page"
+          cd site/amoro-docs && hugo -b https://amoro.apache.org/docs/latest -d ../../output/docs/latest
+          cd ../../
+          echo "Copying the result to the asf-site location"
+          cp -rf output/docs/latest/* asf-site/output/docs/latest
+          
+
+      - name: Deploy
+        working-directory: asf-site
+        run: |
+          echo "Running git config"
+          git config user.name "GitHub Actions"
+          git config user.email "actions@users.noreply.github.com"
+          echo "Running git add -A"
+          git add -A .
+          echo "Running git commit"
+          if git commit -m "Regenerated Amoro latest docs page based on ${GITHUB_SHA} commit"
+          then
+            git push origin asf-site
+          fi
+
+  deploy-versioned-docs-page:
+    if: (github.ref != 'refs/heads/master' && (startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/')))
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - uses: actions/checkout@v3
+        with:
+          ref: asf-site
+          fetch-depth: 1
+          path: asf-site
+
+      - name: Set output
+        id: vars
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            # For tags, remove the 'v' prefix if present
+            VERSION=${GITHUB_REF#refs/tags/}
+            VERSION=${VERSION#v}
+            # Remove -incubating suffix if present
+            VERSION=${VERSION%-incubating}
+            echo "branch_name=${VERSION}" >> $GITHUB_OUTPUT
+          else
+            # For branches, use the branch name
+            echo "branch_name=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Build
+        run: |
+          echo "Building versioned docs page"
+          cd site/amoro-docs && hugo -b https://amoro.apache.org/docs/${{ steps.vars.outputs.branch_name }}/ -d ../../output/docs/${{ steps.vars.outputs.branch_name }}
+          cd ../../
+          echo "Copying the result to the asf-site location"
+          cp -rf output/docs/${{ steps.vars.outputs.branch_name }}/* asf-site/output/docs/${{ steps.vars.outputs.branch_name }}
+
+      - name: Deploy
+        working-directory: asf-site
+        run: |
+          echo "Running git config"
+          git config user.name "GitHub Actions"
+          git config user.email "actions@users.noreply.github.com"
+          echo "Running git add -A"
+          git add -A .
+          echo "Running git commit"
+          if git commit -m "Regenerated Amoro versioned docs page based on ${GITHUB_SHA} commit"
+          then
+            git push origin asf-site
+          fi
