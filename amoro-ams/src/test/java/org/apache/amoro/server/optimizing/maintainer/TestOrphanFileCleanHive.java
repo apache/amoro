@@ -18,12 +18,13 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
-import static org.apache.amoro.server.optimizing.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
+import static org.apache.amoro.formats.iceberg.maintainer.IcebergTableMaintainer.DATA_FOLDER_NAME;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.formats.iceberg.maintainer.MixedTableMaintainer;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
@@ -84,7 +85,8 @@ public class TestOrphanFileCleanHive extends TestOrphanFileClean {
     changeOrphanDataFile.createOrOverwrite().close();
     Assert.assertTrue(getMixedTable().io().exists(hiveOrphanFilePath));
 
-    MixedTableMaintainer maintainer = new MixedTableMaintainer(getMixedTable(), null);
+    MixedTableMaintainer maintainer =
+        new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()));
     TableIdentifier tableIdentifier = getMixedTable().id();
     TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
         new TableOrphanFilesCleaningMetrics(
