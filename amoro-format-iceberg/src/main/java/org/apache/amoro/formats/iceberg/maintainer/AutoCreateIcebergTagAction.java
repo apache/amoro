@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.optimizing.maintainer;
+package org.apache.amoro.formats.iceberg.maintainer;
 
 import org.apache.amoro.config.TagConfiguration;
 import org.apache.iceberg.ManageSnapshots;
