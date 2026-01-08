@@ -39,6 +39,7 @@ import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.testutils.FailsOnJava17;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
@@ -57,6 +58,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -74,6 +76,7 @@ import java.util.Map;
 import java.util.Set;
 
 @RunWith(Parameterized.class)
+@Category(FailsOnJava17.class)
 public class TestUnkeyed extends FlinkTestBase {
 
   @Rule public TemporaryFolder tempFolder = new TemporaryFolder();

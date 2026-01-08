@@ -26,6 +26,7 @@ import org.apache.amoro.flink.write.FlinkTaskWriterBaseTest;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.testutils.FailsOnJava17;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.data.RowData;
@@ -39,6 +40,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,6 +50,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Category(FailsOnJava17.class)
 public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskWriterBaseTest {
   private String db;
 

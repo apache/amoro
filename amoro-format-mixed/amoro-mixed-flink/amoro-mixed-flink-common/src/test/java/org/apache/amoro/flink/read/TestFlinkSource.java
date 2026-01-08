@@ -29,6 +29,7 @@ import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.table.FlinkSource;
 import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.amoro.flink.util.DataUtil;
+import org.apache.amoro.testutils.FailsOnJava17;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.CheckpointingMode;
@@ -49,6 +50,7 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -63,6 +65,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
+@Category(FailsOnJava17.class)
 public class TestFlinkSource extends FlinkTestBase {
 
   protected static final FileFormat FILE_FORMAT =

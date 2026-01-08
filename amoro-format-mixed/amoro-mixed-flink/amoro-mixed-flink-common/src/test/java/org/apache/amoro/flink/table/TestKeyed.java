@@ -38,6 +38,7 @@ import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.table.TableProperties;
+import org.apache.amoro.testutils.FailsOnJava17;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.ApiExpression;
@@ -57,6 +58,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
@@ -77,6 +79,7 @@ import java.util.Map;
 import java.util.Set;
 
 @RunWith(Parameterized.class)
+@Category(FailsOnJava17.class)
 public class TestKeyed extends FlinkTestBase {
 
   public static final Logger LOG = LoggerFactory.getLogger(TestKeyed.class);

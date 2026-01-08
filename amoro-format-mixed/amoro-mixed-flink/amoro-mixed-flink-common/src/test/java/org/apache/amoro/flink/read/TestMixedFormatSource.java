@@ -41,6 +41,7 @@ import org.apache.amoro.table.KeyedTable;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.testutils.FailsOnJava17;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.JobStatus;
@@ -86,6 +87,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,6 +106,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Category(FailsOnJava17.class)
 public class TestMixedFormatSource extends TestRowDataReaderFunction implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(TestMixedFormatSource.class);
   private static final long serialVersionUID = 7418812854449034756L;
