@@ -58,6 +58,9 @@ WORKDIR ${AMORO_HOME}
 RUN cd ${AMORO_HOME}/lib \
     && wget ${MAVEN_MIRROR}/mysql/mysql-connector-java/8.0.30/mysql-connector-java-8.0.30.jar
 
+RUN cd ${AMORO_HOME}/lib \
+    && wget ${MAVEN_MIRROR}/com/dameng/DmJdbcDriver18/8.1.2.141/DmJdbcDriver18-8.1.2.141.jar
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["help"]
 

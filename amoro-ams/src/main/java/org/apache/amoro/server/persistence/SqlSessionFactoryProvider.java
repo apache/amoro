@@ -88,6 +88,7 @@ public class SqlSessionFactoryProvider {
     properties.setProperty("MySQL", "mysql");
     properties.setProperty("PostgreSQL", "postgres");
     properties.setProperty("Derby", "derby");
+    properties.setProperty("DM DBMS", "dameng");
     provider.setProperties(properties);
     configuration.setDatabaseId(provider.getDatabaseId(dataSource));
     if (sqlSessionFactory == null) {
@@ -103,6 +104,7 @@ public class SqlSessionFactoryProvider {
     registerDialectAlias("postgres", PostgreSqlDialect.class);
     registerDialectAlias("mysql", MySqlDialect.class);
     registerDialectAlias("derby", SqlServer2012Dialect.class);
+    registerDialectAlias("dameng", MySqlDialect.class);
   }
 
   public SqlSessionFactory get() {
