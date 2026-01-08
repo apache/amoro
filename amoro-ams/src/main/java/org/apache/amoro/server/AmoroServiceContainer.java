@@ -117,6 +117,7 @@ public class AmoroServiceContainer {
   private TServer optimizingServiceServer;
   private Javalin httpServer;
   private AmsServiceMetrics amsServiceMetrics;
+  private HAState haState = HAState.INITIALIZING;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
@@ -135,24 +136,26 @@ public class AmoroServiceContainer {
                     LOG.info("AMS service has been shut down");
                   }));
       service.startRestServices();
-      if (IS_MASTER_SLAVE_MODE) {
-        // Even if one does not become the master, it cannot block the subsequent logic.
-        service.registAndElect();
-        // Regardless of whether tp becomes the master, the service needs to be activated.
-        service.startOptimizingService();
-      } else {
-        while (true) {
-          try {
-            service.waitLeaderShip();
+        if (IS_MASTER_SLAVE_MODE) {
+            // Even if one does not become the master, it cannot block the subsequent logic.
+            service.registAndElect();
+            // Regardless of whether tp becomes the master, the service needs to be activated.
             service.startOptimizingService();
-            service.waitFollowerShip();
-          } catch (Exception e) {
-            LOG.error("AMS start error", e);
-          } finally {
-            service.disposeOptimizingService();
-          }
+        } else {
+            while (true) {
+                try {
+                    // Used to block AMS instances that have not acquired leadership
+                    service.waitLeaderShip();
+                    service.transitionToLeader();
+                    // Used to block AMS instances that have acquired leadership
+                    service.waitFollowerShip();
+                } catch (Exception e) {
+                    LOG.error("AMS start error", e);
+                } finally {
+                    service.transitionToFollower();
+                }
+            }
         }
-      }
     } catch (Throwable t) {
       LOG.error("AMS encountered an unknown exception, will exist", t);
       System.exit(1);
@@ -161,6 +164,26 @@ public class AmoroServiceContainer {
 
   public void registAndElect() throws Exception {
     haContainer.registAndElect();
+  }
+
+  public enum HAState {
+    INITIALIZING(0),
+    FOLLOWER(1),
+    LEADER(2);
+
+    private int code;
+
+    HAState(int code) {
+      this.code = code;
+    }
+
+    public int getCode() {
+      return code;
+    }
+  }
+
+  public HAState getHaState() {
+    return haState;
   }
 
   public void waitLeaderShip() throws Exception {
@@ -183,6 +206,22 @@ public class AmoroServiceContainer {
     initHttpService();
     startHttpService();
     registerAmsServiceMetric();
+  }
+
+  public void transitionToLeader() throws Exception {
+    if (haState == HAState.LEADER) {
+      return;
+    }
+    startOptimizingService();
+    haState = HAState.LEADER;
+  }
+
+  public void transitionToFollower() {
+    if (haState == HAState.FOLLOWER) {
+      return;
+    }
+    haState = HAState.FOLLOWER;
+    disposeOptimizingService();
   }
 
   public void startOptimizingService() throws Exception {
@@ -284,6 +323,10 @@ public class AmoroServiceContainer {
     IS_MASTER_SLAVE_MODE = serviceConfig.getBoolean(USE_MASTER_SLAVE_MODE);
   }
 
+  public Configurations getServiceConfig() {
+    return serviceConfig;
+  }
+
   private void startThriftService() {
     startThriftServer(tableManagementServer, "thrift-table-management-server-thread");
     startThriftServer(optimizingServiceServer, "thrift-optimizing-server-thread");
@@ -299,7 +342,7 @@ public class AmoroServiceContainer {
   private void initHttpService() {
     DashboardServer dashboardServer =
         new DashboardServer(
-            serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager);
+            serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager, this);
     RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
 
     httpServer =
@@ -375,7 +418,8 @@ public class AmoroServiceContainer {
   }
 
   private void registerAmsServiceMetric() {
-    amsServiceMetrics = new AmsServiceMetrics(MetricManager.getInstance().getGlobalRegistry());
+    amsServiceMetrics =
+        new AmsServiceMetrics(MetricManager.getInstance().getGlobalRegistry(), this);
     amsServiceMetrics.register();
   }
 

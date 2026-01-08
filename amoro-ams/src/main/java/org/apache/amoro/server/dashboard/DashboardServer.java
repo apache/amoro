@@ -36,6 +36,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.AmoroServiceContainer;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.authentication.HttpAuthenticationFactory;
 import org.apache.amoro.server.catalog.CatalogManager;
@@ -99,10 +100,11 @@ public class DashboardServer {
       CatalogManager catalogManager,
       TableManager tableManager,
       OptimizerManager optimizerManager,
-      TerminalManager terminalManager) {
+      TerminalManager terminalManager,
+      AmoroServiceContainer ams) {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(catalogManager, platformFileManager);
-    this.healthCheckController = new HealthCheckController();
+    this.healthCheckController = new HealthCheckController(ams);
     this.loginController = new LoginController(serviceConfig);
     this.optimizerGroupController = new OptimizerGroupController(tableManager, optimizerManager);
     this.optimizerController = new OptimizerController(optimizerManager);
