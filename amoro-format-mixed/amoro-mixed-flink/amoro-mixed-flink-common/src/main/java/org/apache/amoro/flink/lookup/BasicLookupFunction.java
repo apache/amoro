@@ -30,7 +30,6 @@ import org.apache.amoro.hive.io.reader.AbstractAdaptHiveKeyedDataReader;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.MetricGroup;
-import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;
 import org.apache.flink.util.FlinkRuntimeException;
@@ -45,12 +44,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -244,20 +241,16 @@ public class BasicLookupFunction<T> implements Serializable {
   }
 
   private String generateRocksDBPath(FunctionContext context, String tableName) {
-    String tmpPath = getTmpDirectoryFromTMContainer(context);
+    String tmpPath = getTmpDirectory(context);
     File db = new File(tmpPath, tableName + "-lookup-" + UUID.randomUUID());
     return db.toString();
   }
 
-  private static String getTmpDirectoryFromTMContainer(FunctionContext context) {
-    try {
-      Field field = context.getClass().getDeclaredField("context");
-      field.setAccessible(true);
-      StreamingRuntimeContext runtimeContext = (StreamingRuntimeContext) field.get(context);
-      String[] tmpDirectories = runtimeContext.getTaskManagerRuntimeInfo().getTmpDirectories();
-      return tmpDirectories[ThreadLocalRandom.current().nextInt(tmpDirectories.length)];
-    } catch (NoSuchFieldException | IllegalAccessException e) {
-      throw new RuntimeException(e);
+  private static String getTmpDirectory(FunctionContext context) {
+    String configuredTmpDir = context.getJobParameter("java.io.tmpdir", null);
+    if (configuredTmpDir != null && !configuredTmpDir.isEmpty()) {
+      return configuredTmpDir;
     }
+    return System.getProperty("java.io.tmpdir");
   }
 }

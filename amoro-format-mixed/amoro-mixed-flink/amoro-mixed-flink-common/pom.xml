@@ -326,6 +326,14 @@
 
         <dependency>
             <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-common</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-mixed-hive</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
@@ -422,7 +430,8 @@
                             <value>org.apache.amoro.listener.AmoroRunListener</value>
                         </property>
                     </properties>
-                    <argLine>-verbose:class</argLine>
+                    <excludedGroups>${surefire.excludedGroups.jdk}</excludedGroups>
+                    <argLine>${amoro.surefire.baseArgLine}</argLine>
                 </configuration>
             </plugin>
             <plugin>

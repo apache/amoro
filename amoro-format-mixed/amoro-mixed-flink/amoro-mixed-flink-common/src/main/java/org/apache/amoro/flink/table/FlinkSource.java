@@ -40,7 +40,6 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.InputFormatSourceFunction;
 import org.apache.flink.streaming.api.functions.source.ParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.streaming.api.operators.OneInputStreamOperatorFactory;
 import org.apache.flink.streaming.api.operators.StreamSource;
 import org.apache.flink.streaming.api.transformations.LegacySourceTransformation;
 import org.apache.flink.streaming.api.transformations.OneInputTransformation;
@@ -49,7 +48,9 @@ import org.apache.flink.table.connector.ProviderContext;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.source.FlinkInputFormat;
@@ -243,37 +244,55 @@ public class FlinkSource {
               .properties(properties)
               .flinkConf(flinkConf)
               .limit(limit);
+      Long startSnapshotId = null;
       if (MixedFormatValidator.SCAN_STARTUP_MODE_LATEST.equalsIgnoreCase(scanStartupMode)) {
         Optional<Snapshot> startSnapshotOptional =
             Optional.ofNullable(tableLoader.loadTable().currentSnapshot());
         if (startSnapshotOptional.isPresent()) {
           Snapshot snapshot = startSnapshotOptional.get();
+          startSnapshotId = snapshot.snapshotId();
           LOG.info(
               "Get starting snapshot id {} based on scan startup mode {}",
               snapshot.snapshotId(),
               scanStartupMode);
-          builder.startSnapshotId(snapshot.snapshotId());
+          builder.startSnapshotId(startSnapshotId);
         }
       }
       DataStream<RowData> origin = builder.build();
-      return wrapKrb(origin).assignTimestampsAndWatermarks(watermarkStrategy);
+      return wrapKrb(origin, startSnapshotId).assignTimestampsAndWatermarks(watermarkStrategy);
     }
 
     /** extract op from dataStream, and wrap krb support */
-    private DataStream<RowData> wrapKrb(DataStream<RowData> ds) {
+    private DataStream<RowData> wrapKrb(DataStream<RowData> ds, Long startSnapshotId) {
       IcebergClassUtil.clean(env);
       Transformation origin = ds.getTransformation();
       int scanParallelism =
           flinkConf
               .getOptional(MixedFormatValidator.SCAN_PARALLELISM)
               .orElse(origin.getParallelism());
+      Table table = mixedTable.asUnkeyedTable();
+      Schema projectedIcebergSchema =
+          projectedSchema == null
+              ? mixedTable.schema()
+              : FlinkSchemaUtil.convert(
+                  mixedTable.schema(),
+                  org.apache.amoro.flink.FlinkSchemaUtil.filterWatermark(projectedSchema));
 
       if (origin instanceof OneInputTransformation) {
         OneInputTransformation<RowData, RowData> tf =
             (OneInputTransformation<RowData, RowData>) ds.getTransformation();
-        OneInputStreamOperatorFactory op = (OneInputStreamOperatorFactory) tf.getOperatorFactory();
         ProxyFactory<FlinkInputFormat> inputFormatProxyFactory =
-            IcebergClassUtil.getInputFormatProxyFactory(op, mixedTable.io(), mixedTable.schema());
+            IcebergClassUtil.getInputFormatProxyFactory(
+                tableLoader,
+                table,
+                mixedTable.io(),
+                mixedTable.schema(),
+                projectedIcebergSchema,
+                flinkConf,
+                properties,
+                filters,
+                limit,
+                startSnapshotId);
 
         if (tf.getInputs().isEmpty()) {
           return env.addSource(
@@ -305,7 +324,7 @@ public class FlinkSource {
           (InputFormatSourceFunction) IcebergClassUtil.getSourceFunction(source);
 
       InputFormat inputFormatProxy =
-          (InputFormat) ProxyUtil.getProxy(function.getFormat(), mixedTable.io());
+          new KerberosAwareInputFormat<>(function.getFormat(), mixedTable.io());
       DataStreamSource sourceStream =
           env.createInput(inputFormatProxy, tfSource.getOutputType())
               .setParallelism(scanParallelism);
