@@ -136,26 +136,26 @@ public class AmoroServiceContainer {
                     LOG.info("AMS service has been shut down");
                   }));
       service.startRestServices();
-      if (IS_MASTER_SLAVE_MODE) {
-        // Even if one does not become the master, it cannot block the subsequent logic.
-        service.registAndElect();
-        // Regardless of whether tp becomes the master, the service needs to be activated.
-        service.startOptimizingService();
-      } else {
-          while (true) {
-              try {
-                  // Used to block AMS instances that have not acquired leadership
-                  service.waitLeaderShip();
-                  service.transitionToLeader();
-                  // Used to block AMS instances that have acquired leadership
-                  service.waitFollowerShip();
-              } catch (Exception e) {
-                  LOG.error("AMS start error", e);
-              } finally {
-                  service.transitionToFollower();
-              }
-          }
-      }
+        if (IS_MASTER_SLAVE_MODE) {
+            // Even if one does not become the master, it cannot block the subsequent logic.
+            service.registAndElect();
+            // Regardless of whether tp becomes the master, the service needs to be activated.
+            service.startOptimizingService();
+        } else {
+            while (true) {
+                try {
+                    // Used to block AMS instances that have not acquired leadership
+                    service.waitLeaderShip();
+                    service.transitionToLeader();
+                    // Used to block AMS instances that have acquired leadership
+                    service.waitFollowerShip();
+                } catch (Exception e) {
+                    LOG.error("AMS start error", e);
+                } finally {
+                    service.transitionToFollower();
+                }
+            }
+        }
     } catch (Throwable t) {
       LOG.error("AMS encountered an unknown exception, will exist", t);
       System.exit(1);
