@@ -34,4 +34,13 @@ public class PreconditionUtils {
       throw new AlreadyExistsException(objectName);
     }
   }
+
+  public static void checkNotNullOrEmpty(CharSequence arg, String argName) {
+    if (arg == null) {
+      throw new IllegalArgumentException(argName + " cannot be null");
+    }
+    if (arg.length() == 0) {
+      throw new IllegalArgumentException(argName + " cannot be empty");
+    }
+  }
 }
