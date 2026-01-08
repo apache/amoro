@@ -852,6 +852,21 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
           <td>Port that the Http server is bound to.</td>
       </tr>
       <tr>
+          <td>http-server.login-auth-ldap-url</td>
+          <td>&lt;undefined&gt;</td>
+          <td>LDAP connection URL(s), value could be a SPACE separated list of URLs to multiple LDAP servers for resiliency. URLs are tried in the order specified until the connection is successful</td>
+      </tr>
+      <tr>
+          <td>http-server.login-auth-ldap-user-pattern</td>
+          <td>&lt;undefined&gt;</td>
+          <td>LDAP user pattern for authentication. The pattern defines how to construct the user&rsquo;s distinguished name (DN) in the LDAP directory. Use {0} as a placeholder for the username. For example, &lsquo;cn={0},ou=people,dc=example,dc=com&rsquo; will search for users in the specified organizational unit.</td>
+      </tr>
+      <tr>
+          <td>http-server.login-auth-provider</td>
+          <td>org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider</td>
+          <td>User-defined login authentication implementation of org.apache.amoro.authentication.PasswdAuthenticationProvider</td>
+      </tr>
+      <tr>
           <td>http-server.proxy-client-ip-header</td>
           <td>X-Real-IP</td>
           <td>The HTTP header to record the real client IP address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use.</td>
