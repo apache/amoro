@@ -77,92 +77,102 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
 
   @Test
   public void run() throws Exception {
-    MixedTable table = getMixedTable();
+    // Save the original value to restore later
+    long originalFilterEqDeleteTriggerRecordCount =
+        CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT;
 
-    int partitionCount = 2;
-    int primaryUpperBound = 30000;
+    try {
+      MixedTable table = getMixedTable();
 
-    long writeTargetFileSize = 1024 * 12;
-    long selfTargetFileSize = table.format() == TableFormat.ICEBERG ? 1024 * 384 : 1024 * 128;
-    int minorTriggerCount = table.format() == TableFormat.ICEBERG ? 3 : 4;
-    int availableCore = 10;
+      int partitionCount = 2;
+      int primaryUpperBound = 30000;
 
-    int cycle = 5;
-    int recordCountOnceWrite = 2500;
+      long writeTargetFileSize = 1024 * 12;
+      long selfTargetFileSize = table.format() == TableFormat.ICEBERG ? 1024 * 384 : 1024 * 128;
+      int minorTriggerCount = table.format() == TableFormat.ICEBERG ? 3 : 4;
+      int availableCore = 10;
 
-    // close full optimize
-    table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
-    // Need move file to hive scene
-    table.updateProperties().set(SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES, "false").commit();
+      int cycle = 5;
+      int recordCountOnceWrite = 2500;
 
-    KeyedTableDataView view =
-        new KeyedTableDataView(
-            table,
-            tableTestHelper().primaryKeySpec().getPkSchema(),
-            partitionCount,
-            primaryUpperBound,
-            writeTargetFileSize,
-            null);
+      // close full optimize
+      table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
+      // Need move file to hive scene
+      table.updateProperties().set(SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES, "false").commit();
 
-    // init checker
-    DataConcurrencyChecker dataConcurrencyChecker = new DataConcurrencyChecker(view);
-    OptimizingCountChecker optimizingCountChecker = new OptimizingCountChecker(0);
-    FullOptimizingWrite2HiveChecker fullOptimizingWrite2HiveChecker =
-        new FullOptimizingWrite2HiveChecker(view);
-    FullOptimizingMove2HiveChecker fullOptimizingMove2HiveChecker =
-        new FullOptimizingMove2HiveChecker(view);
-    MinorOptimizingCheck minorOptimizingCheck = new MinorOptimizingCheck();
+      KeyedTableDataView view =
+          new KeyedTableDataView(
+              table,
+              tableTestHelper().primaryKeySpec().getPkSchema(),
+              partitionCount,
+              primaryUpperBound,
+              writeTargetFileSize,
+              null);
 
-    CompleteOptimizingFlow.Builder builder =
-        CompleteOptimizingFlow.builder(table, availableCore)
-            .setTargetSize(selfTargetFileSize)
-            .setFragmentRatio(null)
-            .setDuplicateRatio(null)
-            .setMinorTriggerFileCount(minorTriggerCount)
-            .addChecker(dataConcurrencyChecker)
-            .addChecker(optimizingCountChecker)
-            .addChecker(minorOptimizingCheck);
+      // init checker
+      DataConcurrencyChecker dataConcurrencyChecker = new DataConcurrencyChecker(view);
+      OptimizingCountChecker optimizingCountChecker = new OptimizingCountChecker(0);
+      FullOptimizingWrite2HiveChecker fullOptimizingWrite2HiveChecker =
+          new FullOptimizingWrite2HiveChecker(view);
+      FullOptimizingMove2HiveChecker fullOptimizingMove2HiveChecker =
+          new FullOptimizingMove2HiveChecker(view);
+      MinorOptimizingCheck minorOptimizingCheck = new MinorOptimizingCheck();
 
-    if (table.format() == TableFormat.MIXED_HIVE) {
-      builder
-          .addChecker(fullOptimizingWrite2HiveChecker)
-          .addChecker(fullOptimizingMove2HiveChecker);
-    }
+      CompleteOptimizingFlow.Builder builder =
+          CompleteOptimizingFlow.builder(table, availableCore)
+              .setTargetSize(selfTargetFileSize)
+              .setFragmentRatio(null)
+              .setDuplicateRatio(null)
+              .setMinorTriggerFileCount(minorTriggerCount)
+              .addChecker(dataConcurrencyChecker)
+              .addChecker(optimizingCountChecker)
+              .addChecker(minorOptimizingCheck);
 
-    CompleteOptimizingFlow optimizingFlow = builder.build();
-
-    // full optimizing need move file to hive from change
-    view.append(recordCountOnceWrite);
-    mustFullCycle(table, optimizingFlow::optimize);
-
-    view.append(recordCountOnceWrite);
-    optimizingFlow.optimize();
-
-    // full optimizing need move file to hive from change and base
-    view.append(recordCountOnceWrite);
-    mustFullCycle(table, optimizingFlow::optimize);
-
-    while (cycle-- > 0) {
-      view.onlyDelete(recordCountOnceWrite);
-      optimizingFlow.optimize();
-
-      view.cdc(recordCountOnceWrite);
-      optimizingFlow.optimize();
-
-      view.upsert(recordCountOnceWrite);
-      if (cycle % 2 == 0) {
-        // Trigger BloomFilter
-        CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 2499L;
-
-        mustFullCycle(table, optimizingFlow::optimize);
-      } else {
-        optimizingFlow.optimize();
+      if (table.format() == TableFormat.MIXED_HIVE) {
+        builder
+            .addChecker(fullOptimizingWrite2HiveChecker)
+            .addChecker(fullOptimizingMove2HiveChecker);
       }
-    }
 
-    List<CompleteOptimizingFlow.Checker> checkers = optimizingFlow.unTriggerChecker();
-    if (checkers.size() != 0) {
-      throw new IllegalStateException("Some checkers are not triggered:" + checkers);
+      CompleteOptimizingFlow optimizingFlow = builder.build();
+
+      // full optimizing need move file to hive from change
+      view.append(recordCountOnceWrite);
+      mustFullCycle(table, optimizingFlow::optimize);
+
+      view.append(recordCountOnceWrite);
+      optimizingFlow.optimize();
+
+      // full optimizing need move file to hive from change and base
+      view.append(recordCountOnceWrite);
+      mustFullCycle(table, optimizingFlow::optimize);
+
+      while (cycle-- > 0) {
+        view.onlyDelete(recordCountOnceWrite);
+        optimizingFlow.optimize();
+
+        view.cdc(recordCountOnceWrite);
+        optimizingFlow.optimize();
+
+        view.upsert(recordCountOnceWrite);
+        if (cycle % 2 == 0) {
+          // Trigger BloomFilter
+          CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 2499L;
+
+          mustFullCycle(table, optimizingFlow::optimize);
+        } else {
+          optimizingFlow.optimize();
+        }
+      }
+
+      List<CompleteOptimizingFlow.Checker> checkers = optimizingFlow.unTriggerChecker();
+      if (!checkers.isEmpty()) {
+        throw new IllegalStateException("Some checkers are not triggered:" + checkers);
+      }
+    } finally {
+      // Restore the original value to avoid polluting other tests
+      CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT =
+          originalFilterEqDeleteTriggerRecordCount;
     }
   }
 

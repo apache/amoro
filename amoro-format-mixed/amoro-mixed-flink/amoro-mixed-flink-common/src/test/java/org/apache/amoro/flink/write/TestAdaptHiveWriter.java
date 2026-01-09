@@ -36,6 +36,7 @@ import org.apache.amoro.table.ChangeLocationKind;
 import org.apache.amoro.table.LocationKind;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.WriteOperationKind;
+import org.apache.amoro.testutils.FailsOnJava17;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
@@ -54,6 +55,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -69,6 +71,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
+@Category(FailsOnJava17.class)
 public class TestAdaptHiveWriter extends TableTestBase {
 
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
