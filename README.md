@@ -116,7 +116,7 @@ Amoro contains modules as below:
 
 ## Building
 
-Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixed/amoro-mixed-trino` module).
+Amoro is built using Maven with JDK 11 and 17(required for `amoro-format-mixed/amoro-mixed-trino` module, experimental for other modules).
 
 * Build all modules without `amoro-mixed-trino`: `./mvnw clean package`
 * Build and skip tests: `./mvnw clean package -DskipTests`
