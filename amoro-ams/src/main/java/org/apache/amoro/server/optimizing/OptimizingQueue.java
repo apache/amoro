@@ -564,9 +564,16 @@ public class OptimizingQueue extends PersistentBase {
 
     private void completeTask(OptimizerThread thread, OptimizingTaskResult result) {
       TaskRuntime<?> taskRuntime = getTaskRuntime(result.getTaskId());
+      // Complete taskRuntime first (this acquires the database lock, but not under
+      // TableOptimizingProcess.this.lock protection)
+      // This avoids deadlock by ensuring consistent lock acquisition order (acquire
+      // TableOptimizingProcess.this.lock first, then database lock)
+      taskRuntime.complete(thread, result);
+      // After taskRuntime.complete() returns (database lock is released), acquire
+      // TableOptimizingProcess.this.lock and call acceptResult
       lock.lock();
       try {
-        taskRuntime.complete(thread, result);
+        acceptResult(taskRuntime);
       } finally {
         lock.unlock();
       }
@@ -891,7 +898,14 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     private void cancelTasks() {
+      // Cancel all tasks first (this acquires the database lock, but not under
+      // TableOptimizingProcess.this.lock protection)
       taskMap.values().forEach(TaskRuntime::tryCanceling);
+      // Then call acceptResult for each canceled task (while holding
+      // TableOptimizingProcess.this.lock)
+      // This avoids deadlock by ensuring consistent lock acquisition order (acquire
+      // TableOptimizingProcess.this.lock first, then database lock)
+      taskMap.values().forEach(this::acceptResult);
     }
 
     private void loadTaskRuntimes(OptimizingProcess optimizingProcess) {
@@ -905,7 +919,9 @@ public class OptimizingQueue extends PersistentBase {
         Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
         taskRuntimes.forEach(
             taskRuntime -> {
-              taskRuntime.getCompletedFuture().whenCompleted(() -> acceptResult(taskRuntime));
+              // Remove whenCompleted callback registration to avoid deadlock caused by
+              // synchronously calling acceptResult while holding database lock
+              // acceptResult will be explicitly called in completeTask
               taskRuntime
                   .getTaskDescriptor()
                   .setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
@@ -935,7 +951,9 @@ public class OptimizingQueue extends PersistentBase {
             tableRuntime.getTableIdentifier(),
             taskRuntime.getTaskId(),
             taskRuntime.getSummary());
-        taskRuntime.getCompletedFuture().whenCompleted(() -> acceptResult(taskRuntime));
+        // Remove whenCompleted callback registration to avoid deadlock caused by synchronously
+        // calling acceptResult while holding database lock
+        // acceptResult will be explicitly called in completeTask
         taskMap.put(taskRuntime.getTaskId(), taskRuntime);
         taskQueue.offer(taskRuntime);
       }
