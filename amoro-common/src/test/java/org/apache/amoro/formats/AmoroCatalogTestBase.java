@@ -19,16 +19,16 @@
 package org.apache.amoro.formats;
 
 import org.apache.amoro.AmoroCatalog;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 public abstract class AmoroCatalogTestBase {
 
-  @Rule public TemporaryFolder temp = new TemporaryFolder();
+  @TempDir Path tempDir;
 
   protected AmoroCatalogTestHelper<?> catalogTestHelper;
 
@@ -36,20 +36,37 @@ public abstract class AmoroCatalogTestBase {
 
   protected Object originalCatalog;
 
+  public AmoroCatalogTestBase() {
+    this.catalogTestHelper = null;
+  }
+
   public AmoroCatalogTestBase(AmoroCatalogTestHelper<?> catalogTestHelper) {
     this.catalogTestHelper = catalogTestHelper;
   }
 
-  @Before
-  public void setupCatalog() throws IOException {
-    String path = temp.newFolder().getPath();
+  protected AmoroCatalogTestHelper<?> createHelper() {
+    return null;
+  }
+
+  @BeforeEach
+  protected void setupCatalog() throws IOException {
+    if (catalogTestHelper == null) {
+      catalogTestHelper = createHelper();
+      if (catalogTestHelper == null) {
+        throw new IllegalStateException(
+            "catalogTestHelper must be set either via constructor or createHelper() method");
+      }
+    }
+    String path = tempDir.toFile().getAbsolutePath();
     catalogTestHelper.initWarehouse(path);
     this.amoroCatalog = catalogTestHelper.amoroCatalog();
     this.originalCatalog = catalogTestHelper.originalCatalog();
   }
 
-  @After
-  public void cleanCatalog() {
-    catalogTestHelper.clean();
+  @AfterEach
+  void cleanCatalog() {
+    if (catalogTestHelper != null) {
+      catalogTestHelper.clean();
+    }
   }
 }

@@ -18,11 +18,10 @@
 
 package org.apache.amoro;
 
-import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TestAms extends ExternalResource {
+public class TestAms {
   private static final Logger LOG = LoggerFactory.getLogger(TestAms.class);
   private static MockAmoroManagementServer SINGLETON;
 
@@ -54,7 +53,6 @@ public class TestAms extends ExternalResource {
     return mockAms.optimizerHandler();
   }
 
-  @Override
   public void before() throws Exception {
     if (SingletonResourceUtil.isUseSingletonResource()) {
       if (!mockAms.isStarted()) {
@@ -74,7 +72,6 @@ public class TestAms extends ExternalResource {
     }
   }
 
-  @Override
   public void after() {
     if (!SingletonResourceUtil.isUseSingletonResource()) {
       mockAms.stopAndCleanUp();
