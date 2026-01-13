@@ -47,6 +47,7 @@ public class DataSourceFactory {
   private static final String DERBY_INIT_SQL_SCRIPT = "derby/ams-derby-init.sql";
   private static final String MYSQL_INIT_SQL_SCRIPT = "mysql/ams-mysql-init.sql";
   private static final String POSTGRES_INIT_SQL_SCRIPT = "postgres/ams-postgres-init.sql";
+  private static final String DAMENG_INIT_SQL_SCRIPT = "dameng/ams-dameng-init.sql";
 
   public static DataSource createDataSource(Configurations config) {
     BasicDataSource dataSource = new BasicDataSource();
@@ -54,7 +55,8 @@ public class DataSourceFactory {
     dataSource.setDriverClassName(config.getString(AmoroManagementConf.DB_DRIVER_CLASS_NAME));
     String dbType = config.getString(AmoroManagementConf.DB_TYPE);
     if (AmoroManagementConf.DB_TYPE_MYSQL.equals(dbType)
-        || AmoroManagementConf.DB_TYPE_POSTGRES.equals(dbType)) {
+        || AmoroManagementConf.DB_TYPE_POSTGRES.equals(dbType)
+        || AmoroManagementConf.DB_TYPE_DAMENG.equals(dbType)) {
       dataSource.setUsername(config.getString(AmoroManagementConf.DB_USER_NAME));
       dataSource.setPassword(config.getString(AmoroManagementConf.DB_PASSWORD));
     }
@@ -104,6 +106,9 @@ public class DataSourceFactory {
             String.format(
                 "SELECT 1 FROM information_schema.tables WHERE table_schema = %s AND table_name = '%s'",
                 "current_schema()", "catalog_metadata");
+      } else if (AmoroManagementConf.DB_TYPE_DAMENG.equals(dbTypeConfig)) {
+        query =
+            String.format("SELECT 1 FROM user_tables WHERE table_name = '%s'", "catalog_metadata");
       }
       LOG.info("Start check table creation, using query: {}", query);
       try (ResultSet rs = statement.executeQuery(query)) {
@@ -131,6 +136,8 @@ public class DataSourceFactory {
       scriptPath = DERBY_INIT_SQL_SCRIPT;
     } else if (type.equals(AmoroManagementConf.DB_TYPE_POSTGRES)) {
       scriptPath = POSTGRES_INIT_SQL_SCRIPT;
+    } else if (type.equals(AmoroManagementConf.DB_TYPE_DAMENG)) {
+      scriptPath = DAMENG_INIT_SQL_SCRIPT;
     }
     URL scriptUrl = ClassLoader.getSystemResource(scriptPath);
     if (scriptUrl == null) {
