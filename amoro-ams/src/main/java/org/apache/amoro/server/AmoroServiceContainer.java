@@ -36,6 +36,8 @@ import org.apache.amoro.server.dashboard.JavalinJsonMapper;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
+import org.apache.amoro.server.ha.HighAvailabilityContainerFactory;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.DataSourceFactory;
@@ -112,10 +114,11 @@ public class AmoroServiceContainer {
   private TServer optimizingServiceServer;
   private Javalin httpServer;
   private AmsServiceMetrics amsServiceMetrics;
+  private HAState haState = HAState.INITIALIZING;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
-    haContainer = new HighAvailabilityContainer(serviceConfig);
+    haContainer = HighAvailabilityContainerFactory.create(serviceConfig);
   }
 
   public static void main(String[] args) {
@@ -132,19 +135,41 @@ public class AmoroServiceContainer {
       service.startRestServices();
       while (true) {
         try {
+          // Used to block AMS instances that have not acquired leadership
           service.waitLeaderShip();
-          service.startOptimizingService();
+          service.transitionToLeader();
+          // Used to block AMS instances that have acquired leadership
           service.waitFollowerShip();
         } catch (Exception e) {
           LOG.error("AMS start error", e);
         } finally {
-          service.disposeOptimizingService();
+          service.transitionToFollower();
         }
       }
     } catch (Throwable t) {
       LOG.error("AMS encountered an unknown exception, will exist", t);
       System.exit(1);
     }
+  }
+
+  public enum HAState {
+    INITIALIZING(0),
+    FOLLOWER(1),
+    LEADER(2);
+
+    private int code;
+
+    HAState(int code) {
+      this.code = code;
+    }
+
+    public int getCode() {
+      return code;
+    }
+  }
+
+  public HAState getHaState() {
+    return haState;
   }
 
   public void waitLeaderShip() throws Exception {
@@ -167,6 +192,22 @@ public class AmoroServiceContainer {
     initHttpService();
     startHttpService();
     registerAmsServiceMetric();
+  }
+
+  public void transitionToLeader() throws Exception {
+    if (haState == HAState.LEADER) {
+      return;
+    }
+    startOptimizingService();
+    haState = HAState.LEADER;
+  }
+
+  public void transitionToFollower() {
+    if (haState == HAState.FOLLOWER) {
+      return;
+    }
+    haState = HAState.FOLLOWER;
+    disposeOptimizingService();
   }
 
   public void startOptimizingService() throws Exception {
@@ -267,6 +308,10 @@ public class AmoroServiceContainer {
     new ConfigurationHelper().init();
   }
 
+  public Configurations getServiceConfig() {
+    return serviceConfig;
+  }
+
   private void startThriftService() {
     startThriftServer(tableManagementServer, "thrift-table-management-server-thread");
     startThriftServer(optimizingServiceServer, "thrift-optimizing-server-thread");
@@ -282,7 +327,7 @@ public class AmoroServiceContainer {
   private void initHttpService() {
     DashboardServer dashboardServer =
         new DashboardServer(
-            serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager);
+            serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager, this);
     RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
 
     httpServer =
@@ -358,7 +403,8 @@ public class AmoroServiceContainer {
   }
 
   private void registerAmsServiceMetric() {
-    amsServiceMetrics = new AmsServiceMetrics(MetricManager.getInstance().getGlobalRegistry());
+    amsServiceMetrics =
+        new AmsServiceMetrics(MetricManager.getInstance().getGlobalRegistry(), this);
     amsServiceMetrics.register();
   }
 

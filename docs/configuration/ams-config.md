@@ -71,7 +71,10 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | ha.cluster-name | default | Amoro management service cluster name. |
 | ha.connection-timeout | 5 min | The Zookeeper connection timeout in milliseconds. |
 | ha.enabled | false | Whether to enable high availability mode. |
+| ha.heartbeat-interval | 10 s | HA heartbeat interval. |
+| ha.lease-ttl | 30 s | TTL of HA lease. |
 | ha.session-timeout | 30 s | The Zookeeper session timeout in milliseconds. |
+| ha.type | zk | High availability implementation type: zk or database. |
 | ha.zookeeper-address |  | The Zookeeper address used for high availability. |
 | ha.zookeeper-auth-keytab |  | The Zookeeper authentication keytab file path when auth type is KERBEROS. |
 | ha.zookeeper-auth-principal |  | The Zookeeper authentication principal when auth type is KERBEROS. |
@@ -79,6 +82,9 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | http-server.auth-basic-provider | org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider | User-defined password authentication implementation of org.apache.amoro.authentication.PasswdAuthenticationProvider |
 | http-server.auth-jwt-provider | &lt;undefined&gt; | User-defined JWT (JSON Web Token) authentication implementation of org.apache.amoro.authentication.TokenAuthenticationProvider |
 | http-server.bind-port | 19090 | Port that the Http server is bound to. |
+| http-server.login-auth-ldap-url | &lt;undefined&gt; | LDAP connection URL(s), value could be a SPACE separated list of URLs to multiple LDAP servers for resiliency. URLs are tried in the order specified until the connection is successful |
+| http-server.login-auth-ldap-user-pattern | &lt;undefined&gt; | LDAP user pattern for authentication. The pattern defines how to construct the user's distinguished name (DN) in the LDAP directory. Use {0} as a placeholder for the username. For example, 'cn={0},ou=people,dc=example,dc=com' will search for users in the specified organizational unit. |
+| http-server.login-auth-provider | org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider | User-defined login authentication implementation of org.apache.amoro.authentication.PasswdAuthenticationProvider |
 | http-server.proxy-client-ip-header | X-Real-IP | The HTTP header to record the real client IP address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use. |
 | http-server.rest-auth-type | token | The authentication used by REST APIs, token (default), basic or jwt. |
 | http-server.session-timeout | 7 d | Timeout for http session. |

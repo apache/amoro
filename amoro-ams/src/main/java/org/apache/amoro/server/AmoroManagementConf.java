@@ -204,11 +204,23 @@ public class AmoroManagementConf {
           .defaultValue(false)
           .withDescription("Whether to enable high availability mode.");
 
+  public static final ConfigOption<String> HA_TYPE =
+      ConfigOptions.key("ha.type")
+          .stringType()
+          .defaultValue(AmoroManagementConf.HA_TYPE_ZK)
+          .withDescription("High availability implementation type: zk or database.");
+
   public static final ConfigOption<String> HA_CLUSTER_NAME =
       ConfigOptions.key("ha.cluster-name")
           .stringType()
           .defaultValue("default")
           .withDescription("Amoro management service cluster name.");
+
+  public static final ConfigOption<java.time.Duration> HA_HEARTBEAT_INTERVAL =
+      ConfigOptions.key("ha.heartbeat-interval")
+          .durationType()
+          .defaultValue(java.time.Duration.ofSeconds(10))
+          .withDescription("HA heartbeat interval.");
 
   public static final ConfigOption<String> HA_ZOOKEEPER_ADDRESS =
       ConfigOptions.key("ha.zookeeper-address")
@@ -246,6 +258,12 @@ public class AmoroManagementConf {
           .durationType()
           .defaultValue(Duration.ofSeconds(300))
           .withDescription("The Zookeeper connection timeout in milliseconds.");
+
+  public static final ConfigOption<java.time.Duration> HA_LEASE_TTL =
+      ConfigOptions.key("ha.lease-ttl")
+          .durationType()
+          .defaultValue(java.time.Duration.ofSeconds(30))
+          .withDescription("TTL of HA lease.");
 
   public static final ConfigOption<Integer> TABLE_SERVICE_THRIFT_BIND_PORT =
       ConfigOptions.key("thrift-server.table-service.bind-port")
@@ -309,6 +327,29 @@ public class AmoroManagementConf {
           .withDescription(
               "User-defined password authentication implementation of"
                   + " org.apache.amoro.authentication.PasswdAuthenticationProvider");
+
+  public static final ConfigOption<String> HTTP_SERVER_LOGIN_AUTH_PROVIDER =
+      ConfigOptions.key("http-server.login-auth-provider")
+          .stringType()
+          .defaultValue(DefaultPasswdAuthenticationProvider.class.getName())
+          .withDescription(
+              "User-defined login authentication implementation of"
+                  + " org.apache.amoro.authentication.PasswdAuthenticationProvider");
+
+  public static final ConfigOption<String> HTTP_SERVER_LOGIN_AUTH_LDAP_USER_PATTERN =
+      ConfigOptions.key("http-server.login-auth-ldap-user-pattern")
+          .stringType()
+          .noDefaultValue()
+          .withDescription(
+              "LDAP user pattern for authentication. The pattern defines how to construct the user's distinguished name (DN) in the LDAP directory. "
+                  + "Use {0} as a placeholder for the username. For example, 'cn={0},ou=people,dc=example,dc=com' will search for users in the specified organizational unit.");
+
+  public static final ConfigOption<String> HTTP_SERVER_LOGIN_AUTH_LDAP_URL =
+      ConfigOptions.key("http-server.login-auth-ldap-url")
+          .stringType()
+          .noDefaultValue()
+          .withDescription(
+              "LDAP connection URL(s), value could be a SPACE separated list of URLs to multiple LDAP servers for resiliency. URLs are tried in the order specified until the connection is successful");
 
   public static final ConfigOption<String> HTTP_SERVER_AUTH_JWT_PROVIDER =
       ConfigOptions.key("http-server.auth-jwt-provider")
@@ -535,6 +576,10 @@ public class AmoroManagementConf {
   public static final String DB_TYPE_DERBY = "derby";
   public static final String DB_TYPE_MYSQL = "mysql";
   public static final String DB_TYPE_POSTGRES = "postgres";
+
+  // HA config
+  public static final String HA_TYPE_ZK = "zk";
+  public static final String HA_TYPE_DATABASE = "database";
 
   // terminal config
   public static final List<String> TERMINAL_BACKEND_VALUES =
