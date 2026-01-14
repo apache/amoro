@@ -97,8 +97,8 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
         tableRuntime.setPendingInput(pendingInput);
       } else {
         tableRuntime.optimizingNotNecessary();
-        tableRuntime.setTableSummary(evaluator.getPendingInput());
       }
+      tableRuntime.setTableSummary(evaluator.getPendingInput());
     } else if (!optimizingEnabled) {
       tableRuntime.setLatestEvaluatedNeedOptimizing(false);
       logger.debug(
@@ -153,7 +153,7 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
         defaultTableRuntime.setLatestEvaluatedNeedOptimizing(false);
       }
 
-      // Update adaptive interval according to evaluating result.
+      // Update adaptive interval according to evaluated result.
       if (defaultTableRuntime.getOptimizingConfig().getRefreshTableAdaptiveEnabled()) {
         long newInterval = getAdaptiveExecutingInterval(defaultTableRuntime);
         defaultTableRuntime.setLatestRefreshInterval(newInterval);
