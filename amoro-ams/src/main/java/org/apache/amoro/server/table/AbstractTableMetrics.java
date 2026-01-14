@@ -37,6 +37,15 @@ public abstract class AbstractTableMetrics {
     this.identifier = identifier;
   }
 
+  /**
+   * Get the table identifier.
+   *
+   * @return ServerTableIdentifier
+   */
+  public ServerTableIdentifier getIdentifier() {
+    return identifier;
+  }
+
   protected void registerMetric(MetricRegistry registry, MetricDefine define, Metric metric) {
     MetricKey key =
         registry.register(

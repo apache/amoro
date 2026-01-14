@@ -23,7 +23,6 @@ import org.apache.amoro.maintainer.MaintainerMetrics;
 import org.apache.amoro.maintainer.OptimizingInfo;
 import org.apache.amoro.maintainer.TableMaintainerContext;
 import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.server.utils.HiveLocationUtil;
 import org.apache.amoro.table.MixedTable;
 
@@ -56,18 +55,11 @@ public class DefaultTableMaintainerContext implements TableMaintainerContext {
 
   @Override
   public MaintainerMetrics getMetrics() {
-    TableOrphanFilesCleaningMetrics metrics = tableRuntime.getOrphanFilesCleaningMetrics();
-    return new MaintainerMetrics() {
-      @Override
-      public void recordOrphanDataFilesCleaned(int expected, int cleaned) {
-        metrics.completeOrphanDataFiles(expected, cleaned);
-      }
-
-      @Override
-      public void recordOrphanMetadataFilesCleaned(int expected, int cleaned) {
-        metrics.completeOrphanMetadataFiles(expected, cleaned);
-      }
-    };
+    // Return the full TableMaintainerMetricsImpl directly
+    // This provides access to all maintainer metrics including orphan files cleaning,
+    // dangling delete files cleaning, snapshot expiration, data expiration, tag creation,
+    // and partition expiration.
+    return tableRuntime.getMaintainerMetrics();
   }
 
   @Override
