@@ -342,21 +342,16 @@ public class TableConfigurations {
                 properties,
                 TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE,
                 TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE_DEFAULT))
-        .setRefreshTableAdaptiveEnabled(
-            PropertyUtil.propertyAsBoolean(
-                properties,
-                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_ENABLED,
-                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_ENABLED_DEFAULT))
-        .setRefreshTableAdaptiveMaxInterval(
+        .setRefreshTableAdaptiveMaxIntervalMs(
             PropertyUtil.propertyAsLong(
                 properties,
-                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL,
-                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_DEFAULT))
-        .setRefreshTableAdaptiveIncreaseStep(
+                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS,
+                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS_DEFAULT))
+        .setRefreshTableAdaptiveIncreaseStepMs(
             PropertyUtil.propertyAsLong(
                 properties,
-                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP,
-                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_DEFAULT));
+                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS,
+                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS_DEFAULT));
   }
 
   /**
