@@ -97,14 +97,11 @@ public class OptimizingConfig {
   // self-optimizing.evaluation.fallback-interval
   private long evaluationFallbackInterval;
 
-  // self-optimizing.refresh-table.adaptive.enabled
-  private boolean refreshTableAdaptiveEnabled;
+  // self-optimizing.refresh-table.adaptive.max-interval-ms
+  private long refreshTableAdaptiveMaxIntervalMs;
 
-  // self-optimizing.refresh-table.adaptive.max-interval
-  private long refreshTableAdaptiveMaxInterval;
-
-  // self-optimizing.refresh-table.adaptive.increase-step
-  private long refreshTableAdaptiveIncreaseStep;
+  // self-optimizing.refresh-table.adaptive.increase-step-ms
+  private long refreshTableAdaptiveIncreaseStepMs;
 
   public OptimizingConfig() {}
 
@@ -327,31 +324,23 @@ public class OptimizingConfig {
     return this;
   }
 
-  public boolean getRefreshTableAdaptiveEnabled() {
-    return refreshTableAdaptiveEnabled;
+  public long getRefreshTableAdaptiveMaxIntervalMs() {
+    return refreshTableAdaptiveMaxIntervalMs;
   }
 
-  public OptimizingConfig setRefreshTableAdaptiveEnabled(boolean refreshTableAdaptiveEnabled) {
-    this.refreshTableAdaptiveEnabled = refreshTableAdaptiveEnabled;
+  public OptimizingConfig setRefreshTableAdaptiveMaxIntervalMs(
+      long refreshTableAdaptiveMaxIntervalMs) {
+    this.refreshTableAdaptiveMaxIntervalMs = refreshTableAdaptiveMaxIntervalMs;
     return this;
   }
 
-  public long getRefreshTableAdaptiveMaxInterval() {
-    return refreshTableAdaptiveMaxInterval;
+  public long getRefreshTableAdaptiveIncreaseStepMs() {
+    return refreshTableAdaptiveIncreaseStepMs;
   }
 
-  public OptimizingConfig setRefreshTableAdaptiveMaxInterval(long refreshTableAdaptiveMaxInterval) {
-    this.refreshTableAdaptiveMaxInterval = refreshTableAdaptiveMaxInterval;
-    return this;
-  }
-
-  public long getRefreshTableAdaptiveIncreaseStep() {
-    return refreshTableAdaptiveIncreaseStep;
-  }
-
-  public OptimizingConfig setRefreshTableAdaptiveIncreaseStep(
-      long refreshTableAdaptiveIncreaseStep) {
-    this.refreshTableAdaptiveIncreaseStep = refreshTableAdaptiveIncreaseStep;
+  public OptimizingConfig setRefreshTableAdaptiveIncreaseStepMs(
+      long refreshTableAdaptiveIncreaseStepMs) {
+    this.refreshTableAdaptiveIncreaseStepMs = refreshTableAdaptiveIncreaseStepMs;
     return this;
   }
 
@@ -388,9 +377,9 @@ public class OptimizingConfig {
         && Objects.equal(minPlanInterval, that.minPlanInterval)
         && Objects.equal(evaluationMseTolerance, that.evaluationMseTolerance)
         && Objects.equal(evaluationFallbackInterval, that.evaluationFallbackInterval)
-        && refreshTableAdaptiveEnabled == that.refreshTableAdaptiveEnabled
-        && Objects.equal(refreshTableAdaptiveMaxInterval, that.refreshTableAdaptiveMaxInterval)
-        && Objects.equal(refreshTableAdaptiveIncreaseStep, that.refreshTableAdaptiveIncreaseStep);
+        && Objects.equal(refreshTableAdaptiveMaxIntervalMs, that.refreshTableAdaptiveMaxIntervalMs)
+        && Objects.equal(
+            refreshTableAdaptiveIncreaseStepMs, that.refreshTableAdaptiveIncreaseStepMs);
   }
 
   @Override
@@ -420,9 +409,8 @@ public class OptimizingConfig {
         minPlanInterval,
         evaluationMseTolerance,
         evaluationFallbackInterval,
-        refreshTableAdaptiveEnabled,
-        refreshTableAdaptiveMaxInterval,
-        refreshTableAdaptiveIncreaseStep);
+        refreshTableAdaptiveMaxIntervalMs,
+        refreshTableAdaptiveIncreaseStepMs);
   }
 
   @Override
@@ -450,9 +438,8 @@ public class OptimizingConfig {
         .add("hiveRefreshInterval", hiveRefreshInterval)
         .add("evaluationMseTolerance", evaluationMseTolerance)
         .add("evaluationFallbackInterval", evaluationFallbackInterval)
-        .add("refreshTableAdaptiveEnabled", refreshTableAdaptiveEnabled)
-        .add("refreshTableAdaptiveMaxInterval", refreshTableAdaptiveMaxInterval)
-        .add("refreshTableAdaptiveIncreaseStep", refreshTableAdaptiveIncreaseStep)
+        .add("refreshTableAdaptiveMaxIntervalMs", refreshTableAdaptiveMaxIntervalMs)
+        .add("refreshTableAdaptiveIncreaseStepMs", refreshTableAdaptiveIncreaseStepMs)
         .toString();
   }
 }

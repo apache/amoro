@@ -160,16 +160,13 @@ public class TableProperties {
   public static final String SNAPSHOT_MIN_COUNT = "snapshot.keep.min-count";
   public static final int SNAPSHOT_MIN_COUNT_DEFAULT = 1;
 
-  public static final String SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_ENABLED =
-      "self-optimizing.refresh-table.adaptive.enabled";
-  public static final boolean SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_ENABLED_DEFAULT = false;
-  public static final String SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL =
-      "self-optimizing.refresh-table.adaptive.max-interval";
-  public static final long SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_DEFAULT =
-      3600000; // 1 hour
-  public static final String SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP =
-      "self-optimizing.refresh-table.adaptive.increase-step";
-  public static final long SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_DEFAULT =
+  public static final String SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS =
+      "self-optimizing.refresh-table.adaptive.max-interval-ms";
+  public static final long SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS_DEFAULT =
+      -1; // disabled
+  public static final String SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS =
+      "self-optimizing.refresh-table.adaptive.increase-step-ms";
+  public static final long SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS_DEFAULT =
       30000; // 30s
 
   /**

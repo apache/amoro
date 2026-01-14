@@ -306,7 +306,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime
               summary.setTotalFileCount(pendingFileCount);
             })
         .commit();
-    this.latestEvaluatedNeedOptimizing = true;
   }
 
   public void setTableSummary(AbstractOptimizingEvaluator.PendingInput tableSummary) {
@@ -481,8 +480,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime
               })
           .commit();
     }
-
-    this.latestEvaluatedNeedOptimizing = false;
   }
 
   public void beginCommitting() {
