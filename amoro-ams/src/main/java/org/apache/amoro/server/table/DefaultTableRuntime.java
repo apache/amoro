@@ -88,6 +88,8 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
   private final TableSummaryMetrics tableSummaryMetrics;
   private volatile long lastPlanTime;
+  private volatile long latestRefreshInterval = AmoroServiceConstants.INVALID_TIME;
+  private volatile boolean latestEvaluatedNeedOptimizing = true;
   private volatile OptimizingProcess optimizingProcess;
   private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
@@ -137,6 +139,22 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
 
   public void setLastPlanTime(long lastPlanTime) {
     this.lastPlanTime = lastPlanTime;
+  }
+
+  public long getLatestRefreshInterval() {
+    return latestRefreshInterval;
+  }
+
+  public void setLatestRefreshInterval(long latestRefreshInterval) {
+    this.latestRefreshInterval = latestRefreshInterval;
+  }
+
+  public boolean getLatestEvaluatedNeedOptimizing() {
+    return this.latestEvaluatedNeedOptimizing;
+  }
+
+  public void setLatestEvaluatedNeedOptimizing(boolean latestEvaluatedNeedOptimizing) {
+    this.latestEvaluatedNeedOptimizing = latestEvaluatedNeedOptimizing;
   }
 
   public OptimizingStatus getOptimizingStatus() {
@@ -246,6 +264,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
               summary.setTotalFileCount(pendingFileCount);
             })
         .commit();
+    this.latestEvaluatedNeedOptimizing = true;
   }
 
   public void setTableSummary(AbstractOptimizingEvaluator.PendingInput tableSummary) {
@@ -419,6 +438,8 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
               })
           .commit();
     }
+
+    this.latestEvaluatedNeedOptimizing = false;
   }
 
   public void beginCommitting() {
