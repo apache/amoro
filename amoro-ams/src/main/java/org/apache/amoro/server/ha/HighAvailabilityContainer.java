@@ -42,4 +42,12 @@ public interface HighAvailabilityContainer {
 
   /** Closes the container and releases resources. */
   void close();
+
+  /**
+   * In master-slave mode, this is used for AMS nodes to register and participate in the master
+   * election process.
+   *
+   * @throws Exception If registration fails or participation in the primary election fails.
+   */
+  void registAndElect() throws Exception;
 }
