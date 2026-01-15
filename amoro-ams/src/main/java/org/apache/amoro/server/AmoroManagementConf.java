@@ -474,13 +474,14 @@ public class AmoroManagementConf {
           .durationType()
           .defaultValue(Duration.ofSeconds(30))
           .withDescription("Timeout duration for task acknowledgment.");
-
+  // defaultValue must be in nanoseconds; otherwise, TimeUtils.formatWithHighestUnit will fail with
+  // a long overflow exception.
   public static final ConfigOption<Duration> OPTIMIZER_TASK_EXECUTE_TIMEOUT =
       ConfigOptions.key("optimizer.task-execute-timeout")
           .durationType()
-          .defaultValue(Duration.ofHours(1))
-          .withDescription("Timeout duration for task execution, default to 1 hour.");
-
+          .defaultValue(Duration.ofNanos(Long.MAX_VALUE))
+          .withDescription(
+              "Timeout duration for task execution, default to Long.MAX_VALUE ns(about 106,752 days).");
   public static final ConfigOption<Integer> OPTIMIZER_MAX_PLANNING_PARALLELISM =
       ConfigOptions.key("optimizer.max-planning-parallelism")
           .intType()
