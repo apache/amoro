@@ -113,17 +113,17 @@ public class DefaultOptimizingService extends StatedPersistentBase
       OptimizerManager optimizerManager,
       TableService tableService) {
     this.optimizerTouchTimeout =
-        serviceConfig.get(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT).toMillis();
+        serviceConfig.getDurationInMillis(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT);
     this.taskAckTimeout =
-        serviceConfig.get(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT).toMillis();
+        serviceConfig.getDurationInMillis(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT);
     this.taskExecuteTimeout =
-        serviceConfig.get(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT).toMillis();
+        serviceConfig.getDurationInMillis(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT);
     this.refreshGroupInterval =
-        serviceConfig.get(AmoroManagementConf.OPTIMIZING_REFRESH_GROUP_INTERVAL).toMillis();
+        serviceConfig.getDurationInMillis(AmoroManagementConf.OPTIMIZING_REFRESH_GROUP_INTERVAL);
     this.maxPlanningParallelism =
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM);
     this.pollingTimeout =
-        serviceConfig.get(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT).toMillis();
+        serviceConfig.getDurationInMillis(AmoroManagementConf.OPTIMIZER_POLLING_TIMEOUT);
     this.breakQuotaLimit =
         serviceConfig.getBoolean(AmoroManagementConf.OPTIMIZING_BREAK_QUOTA_LIMIT_ENABLED);
     this.tableService = tableService;
@@ -511,8 +511,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     private void retryTask(TaskRuntime<?> task, OptimizingQueue queue) {
-      if (task.getStatus() == TaskRuntime.Status.ACKED
-          && task.getStartTime() + taskExecuteTimeout < System.currentTimeMillis()) {
+      if (isTaskExecTimeout(task)) {
         LOG.warn(
             "Task {} has been suspended in ACK state for {} (start time: {}), put it to retry queue, optimizer {}. (Note: The task may have finished executing, but ams did not receive the COMPLETE message from the optimizer.)",
             task.getTaskId(),
@@ -543,9 +542,14 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   && task.getStatus() != TaskRuntime.Status.SUCCESS
               || task.getStatus() == TaskRuntime.Status.SCHEDULED
                   && task.getStartTime() + taskAckTimeout < System.currentTimeMillis()
-              || task.getStatus() == TaskRuntime.Status.ACKED
-                  && task.getStartTime() + taskExecuteTimeout < System.currentTimeMillis();
+              || isTaskExecTimeout(task);
     }
+  }
+
+  private boolean isTaskExecTimeout(TaskRuntime<?> task) {
+    return task.getStatus() == TaskRuntime.Status.ACKED
+        && taskExecuteTimeout > 0
+        && task.getStartTime() + taskExecuteTimeout < System.currentTimeMillis();
   }
 
   private class OptimizingConfigWatcher implements Runnable {
