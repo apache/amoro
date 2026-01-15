@@ -141,6 +141,9 @@ public class OptimizingQueue extends PersistentBase {
               mapper -> mapper.getProcessState(tableRuntime.getProcessId()));
       process = new TableOptimizingProcess(tableRuntime, meta, state);
       tableRuntime.recover(process);
+      if (process.getStatus() == ProcessStatus.SUCCESS) {
+        tableRuntime.completeProcess(true);
+      }
     }
 
     if (tableRuntime.getOptimizingConfig().isEnabled()) {
@@ -500,6 +503,7 @@ public class OptimizingQueue extends PersistentBase {
       if (processState.getToSequence() != null) {
         toSequence = processState.getToSequence();
       }
+      this.status = processMeta.getStatus();
       if (this.status != ProcessStatus.KILLED) {
         tableRuntime.recover(this);
       }
