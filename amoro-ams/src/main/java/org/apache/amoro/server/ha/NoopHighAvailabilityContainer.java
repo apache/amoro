@@ -42,4 +42,7 @@ public class NoopHighAvailabilityContainer implements HighAvailabilityContainer 
   public void close() {
     LOG.info("Noop HA: close");
   }
+
+  @Override
+  public void registAndElect() throws Exception {}
 }
