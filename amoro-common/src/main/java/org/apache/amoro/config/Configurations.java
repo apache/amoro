@@ -20,6 +20,7 @@ package org.apache.amoro.config;
 
 import static org.apache.amoro.shade.guava32.com.google.common.base.Preconditions.checkNotNull;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -530,6 +531,21 @@ public class Configurations implements java.io.Serializable, Cloneable {
 
   public <T> T get(ConfigOption<T> option) {
     return getOptional(option).orElseGet(option::defaultValue);
+  }
+
+  public long getDurationInMillis(ConfigOption<Duration> option) {
+    long result;
+    try {
+      result = getOptional(option).orElseGet(option::defaultValue).toMillis();
+    } catch (Exception e) { // may be throw java.lang.ArithmeticException: long overflow
+      throw new ConfigurationException(
+          option.key(),
+          String.format(
+              "Exception when converting duration to millis for config option '%s': %s",
+              option.key(), e.getMessage()),
+          e);
+    }
+    return result;
   }
 
   public <T> Optional<T> getOptional(ConfigOption<T> option) {
