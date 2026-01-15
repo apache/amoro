@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server;
 
+import static org.apache.amoro.server.AmoroManagementConf.USE_MASTER_SLAVE_MODE;
+
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
@@ -142,15 +144,15 @@ public class AmoroServiceContainer {
       } else {
         while (true) {
           try {
-              // Used to block AMS instances that have not acquired leadership
-              service.waitLeaderShip();
-              service.transitionToLeader();
-              // Used to block AMS instances that have acquired leadership
-              service.waitFollowerShip();
+            // Used to block AMS instances that have not acquired leadership
+            service.waitLeaderShip();
+            service.transitionToLeader();
+            // Used to block AMS instances that have acquired leadership
+            service.waitFollowerShip();
           } catch (Exception e) {
             LOG.error("AMS start error", e);
           } finally {
-              service.transitionToFollower();
+            service.transitionToFollower();
           }
         }
       }
