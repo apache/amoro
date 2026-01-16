@@ -147,6 +147,9 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
     }
   }
 
+  @Override
+  public void registAndElect() throws Exception {}
+
   private class HeartbeatRunnable implements Runnable {
     @Override
     public void run() {
