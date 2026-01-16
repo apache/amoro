@@ -125,7 +125,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | thrift-server.selector-thread-count | 2 | The number of selector threads for the Thrift server. |
 | thrift-server.table-service.bind-port | 1260 | Port that the table service thrift server is bound to. |
 | thrift-server.table-service.worker-thread-count | 20 | The number of worker threads for the Thrift server. |
-| use-master-slave-mode | false | Enable master & slave mode, which supports horizontal scaling of AMS. |
+| use-master-slave-mode | false | This setting controls whether to enable the AMS horizontal scaling feature, which is currently under development and testing. |
 
 
 ## Shade Utils Configuration

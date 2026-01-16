@@ -58,7 +58,9 @@ public class AmoroManagementConf {
       ConfigOptions.key("use-master-slave-mode")
           .booleanType()
           .defaultValue(false)
-          .withDescription("Enable master & slave mode, which supports horizontal scaling of AMS.");
+          .withDescription(
+              "This setting controls whether to enable the AMS horizontal scaling feature, "
+                  + "which is currently under development and testing.");
 
   public static final ConfigOption<Duration> CATALOG_META_CACHE_EXPIRATION_INTERVAL =
       ConfigOptions.key("catalog-meta-cache.expiration-interval")
