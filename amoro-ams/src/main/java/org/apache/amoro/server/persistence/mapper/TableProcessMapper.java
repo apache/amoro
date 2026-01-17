@@ -18,7 +18,9 @@
 
 package org.apache.amoro.server.persistence.mapper;
 
+import org.apache.amoro.Action;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.server.persistence.converter.Action2StringConverter;
 import org.apache.amoro.server.persistence.converter.Long2TsConverter;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
 import org.apache.amoro.server.persistence.extension.InListExtendedLanguageDriver;
@@ -46,7 +48,8 @@ public interface TableProcessMapper {
       "INSERT INTO table_process "
           + "(process_id, table_id, external_process_identifier, status, process_type, process_stage, execution_engine, retry_number, "
           + "create_time, process_parameters, summary) "
-          + "VALUES (#{processId}, #{tableId}, #{externalProcessIdentifier}, #{status}, #{processType}, #{processStage}, "
+          + "VALUES (#{processId}, #{tableId}, #{externalProcessIdentifier}, #{status}, "
+          + "#{action, typeHandler=org.apache.amoro.server.persistence.converter.Action2StringConverter}, #{processStage}, "
           + "#{executionEngine}, #{retryNumber}, "
           + "#{createTime, typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}, "
           + "#{processParameters, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}, "
@@ -56,7 +59,7 @@ public interface TableProcessMapper {
       @Param("processId") long processId,
       @Param("externalProcessIdentifier") String externalProcessIdentifier,
       @Param("status") ProcessStatus status,
-      @Param("processType") String processType,
+      @Param("action") Action action,
       @Param("processStage") String processStage,
       @Param("executionEngine") String executionEngine,
       @Param("retryNumber") int retryNumber,
@@ -97,7 +100,10 @@ public interface TableProcessMapper {
         @Result(column = "table_id", property = "tableId"),
         @Result(column = "external_process_identifier", property = "externalProcessIdentifier"),
         @Result(column = "status", property = "status"),
-        @Result(column = "process_type", property = "processType"),
+        @Result(
+            column = "process_type",
+            property = "action",
+            typeHandler = Action2StringConverter.class),
         @Result(column = "process_stage", property = "processStage"),
         @Result(column = "execution_engine", property = "executionEngine"),
         @Result(column = "retry_number", property = "retryNumber"),
@@ -123,14 +129,14 @@ public interface TableProcessMapper {
           + "SELECT process_id, table_id, external_process_identifier, status, process_type, process_stage, execution_engine, retry_number, "
           + "create_time, finish_time, fail_message, process_parameters, summary "
           + "FROM table_process WHERE table_id = #{tableId} "
-          + " <if test='processType != null'> AND process_type = #{processType}</if>"
+          + " <if test='action != null'> AND process_type = #{action.name}</if>"
           + " <if test='status != null'> AND status = #{status}</if>"
           + " ORDER BY process_id desc"
           + "</script>")
   @ResultMap("tableProcessMap")
   List<TableProcessMeta> listProcessMeta(
       @Param("tableId") long tableId,
-      @Param("processType") String processType,
+      @Param("action") Action action,
       @Param("status") ProcessStatus optimizingStatus);
 
   @Select(
