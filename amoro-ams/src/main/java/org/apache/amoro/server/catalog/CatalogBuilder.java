@@ -44,10 +44,18 @@ public class CatalogBuilder {
       ImmutableMap.of(
           CATALOG_TYPE_HADOOP,
           Sets.newHashSet(
-              TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON, TableFormat.HUDI),
+              TableFormat.ICEBERG,
+              TableFormat.MIXED_ICEBERG,
+              TableFormat.PAIMON,
+              TableFormat.HUDI,
+              TableFormat.LANCE),
           CATALOG_TYPE_FILESYSTEM,
           Sets.newHashSet(
-              TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON, TableFormat.HUDI),
+              TableFormat.ICEBERG,
+              TableFormat.MIXED_ICEBERG,
+              TableFormat.PAIMON,
+              TableFormat.HUDI,
+              TableFormat.LANCE),
           CATALOG_TYPE_GLUE,
           Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
           CATALOG_TYPE_REST,
