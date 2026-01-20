@@ -21,26 +21,30 @@ package org.apache.amoro.server.ha;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CountDownLatch;
+
 /** No-op HA container that never blocks and performs no leader election. */
 public class NoopHighAvailabilityContainer implements HighAvailabilityContainer {
   private static final Logger LOG = LoggerFactory.getLogger(NoopHighAvailabilityContainer.class);
+  private final CountDownLatch followerLatch = new CountDownLatch(1);
 
   @Override
   /** Returns immediately without blocking. */
   public void waitLeaderShip() {
-    LOG.info("Noop HA: waitLeaderShip returns immediately");
+    LOG.info("Noop HA: waiting leadership returns immediately");
   }
 
   @Override
-  /** Returns immediately without blocking. */
-  public void waitFollowerShip() {
-    LOG.info("Noop HA: waitFollowerShip returns immediately");
+  /** Block followership forever for noop. */
+  public void waitFollowerShip() throws InterruptedException {
+    followerLatch.await();
+    LOG.warn("Noop HA: waiting followership should not return");
   }
 
   @Override
   /** No-op close operation. */
   public void close() {
-    LOG.info("Noop HA: close");
+    LOG.info("Noop HA: closed");
   }
 
   @Override
