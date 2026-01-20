@@ -142,10 +142,6 @@ export default defineComponent({
       router.replace({ query: { ...query } })
     }
 
-    const hideTablesMenu = () => {
-      store.updateTablesMenu(false)
-    }
-
     const goBack = () => {
       state.isSecondaryNav = false
       router.back()
@@ -194,7 +190,6 @@ export default defineComponent({
       store,
       isIceberg,
       setBaseDetailInfo,
-      hideTablesMenu,
       goBack,
       onChangeTab,
       sidebarWidth,
@@ -296,7 +291,7 @@ export default defineComponent({
     width: 8px;
     height: 100%;
     cursor: col-resize;
-    z-index: 2; // 确保分隔线位于左侧侧栏和右侧内容之上，拖拽区域不被遮挡
+    z-index: 2; // Ensure divider is above sidebar and main content so drag area is not blocked
   }
 
   .tables-divider::before {

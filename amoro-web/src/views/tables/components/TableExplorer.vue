@@ -22,7 +22,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getCatalogList, getDatabaseList, getTableList } from '@/services/table.service'
 import type { ICatalogItem } from '@/types/common.type'
 
-// 节点类型：Catalog / Database / Table
+// Node types: Catalog / Database / Table
 type NodeType = 'catalog' | 'database' | 'table'
 
 interface TableItem {
@@ -35,7 +35,7 @@ interface TreeNode {
   title: string
   isLeaf?: boolean
   children?: TreeNode[]
-  // 自定义扩展字段
+  // Custom fields
   nodeType: NodeType
   catalog: string
   db?: string
@@ -64,7 +64,7 @@ const state = reactive({
   treeData: [] as TreeNode[],
   expandedKeys: [] as string[],
   selectedKeys: [] as string[],
-  // 缓存
+  // Cache
   catalogList: [] as string[],
   dbListByCatalog: {} as Record<string, string[]>,
   tablesByCatalogDb: {} as Record<string, TableItem[]>,
@@ -441,7 +441,7 @@ onBeforeMount(async () => {
 
     state.expandedKeys = restoredExpandedKeys
 
-    // 根据路由或本地存储选中最近访问的表，但不自动展开层级
+    // Select last visited table from route or local storage without auto-expanding tree
     const query = route.query || {}
     const queryCatalog = (query.catalog as string) || storageCataDBTable.catalog
     const queryDb = (query.db as string) || storageCataDBTable.database
@@ -590,9 +590,9 @@ onBeforeMount(async () => {
 .table-explorer-body .tree-node-title.node-database .tree-node-icon { transform: translateY(1px); }
 .table-explorer-body .tree-node-title.node-table .tree-node-icon { transform: none; }
 
-/* 整行是 database 或 table 时，整行左移 2px：缩进 + 开关 + 内容一起动 */
+/* Shift database and table rows left by 2px: indent + switcher + content together */
 :deep(.ant-tree-treenode:has(.tree-node-title.node-database)),
 :deep(.ant-tree-treenode:has(.tree-node-title.node-table)) {
-  transform: translateX(-1px); // 想再靠一点就调 -3 / -4
+  transform: translateX(-1px); // Adjust to -3 or -4 for a larger shift if needed
 }
 </style>
