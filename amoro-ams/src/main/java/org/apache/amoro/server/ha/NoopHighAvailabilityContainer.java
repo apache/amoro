@@ -35,7 +35,7 @@ public class NoopHighAvailabilityContainer implements HighAvailabilityContainer 
   }
 
   @Override
-  /** Block follower ship forever for noop. */
+  /** Block followership forever for noop. */
   public void waitFollowerShip() throws InterruptedException {
     followerLatch.await();
     LOG.warn("Noop HA: waiting followership should not return");
