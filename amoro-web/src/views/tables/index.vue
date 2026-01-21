@@ -164,6 +164,11 @@ export default defineComponent({
         const { catalog: oldCatalog, db: oldDb, table: oldTable } = oldVal
         if (`${catalog}${db}${table}` !== `${oldCatalog}${oldDb}${oldTable}`) {
           state.activeKey = 'Details'
+          nextTick(() => {
+            if (detailRef.value) {
+              detailRef.value.getTableDetails()
+            }
+          })
           return
         }
         state.activeKey = value.tab as string

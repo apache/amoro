@@ -37,6 +37,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.CatalogUtil;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -261,7 +262,8 @@ public class TerminalManager {
         return "iceberg";
       }
     } else if (catalogType.equalsIgnoreCase(CatalogType.HIVE.name())
-        || catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
+        || catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())
+        || catalogType.equalsIgnoreCase(CatalogMetaProperties.CATALOG_TYPE_FILESYSTEM)) {
       if (tableFormatSet.size() > 1) {
         return "unified";
       } else if (tableFormatSet.contains(TableFormat.MIXED_ICEBERG)) {
@@ -301,8 +303,12 @@ public class TerminalManager {
     TableMetaStore.Builder builder = TableMetaStore.builder();
     if (catalogMeta.getStorageConfigs() != null) {
       Map<String, String> storageConfigs = catalogMeta.getStorageConfigs();
-      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(
-          CatalogUtil.getCompatibleStorageType(storageConfigs))) {
+      String storageType = CatalogUtil.getCompatibleStorageType(storageConfigs);
+      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_LOCAL.equalsIgnoreCase(storageType)) {
+        builder.withConfiguration(new Configuration());
+        return builder.build();
+      }
+      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(storageType)) {
         builder
             .withBase64MetaStoreSite(
                 catalogMeta
@@ -393,8 +399,12 @@ public class TerminalManager {
       if (CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(catalogType)) {
         catalogMeta.putToCatalogProperties(
             CatalogMetaProperties.KEY_WAREHOUSE, catalogMeta.getCatalogName());
-      } else if (!catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
-        catalogMeta.putToCatalogProperties("type", catalogType);
+      } else {
+        String typeForIceberg = CatalogUtil.normalizeCatalogType(catalogType);
+        if (catalogMeta.getCatalogProperties() != null) {
+          catalogMeta.getCatalogProperties().remove(CatalogProperties.CATALOG_IMPL);
+        }
+        catalogMeta.putToCatalogProperties("type", typeForIceberg);
       }
     } else if (formats.contains(TableFormat.PAIMON) && "hive".equals(catalogType)) {
       catalogMeta.putToCatalogProperties("metastore", catalogType);

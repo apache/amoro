@@ -182,7 +182,7 @@ async function loadChildren(node: any) {
       const tables = (res || []) as TableItem[]
       state.tablesByCatalogDb[cacheKey] = tables
       if (!tables.length) {
-        data.isLeaf = true
+        data.isLeaf = false
         updateTreeNodeChildren(data.key as string, [])
         return
       }
