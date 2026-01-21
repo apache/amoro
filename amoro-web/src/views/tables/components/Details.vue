@@ -232,22 +232,28 @@ const propertiesColumns: IColumns[] = shallowReactive([
 
 <style lang="less" scoped>
 .table-detail {
+  display: flex;
+  column-gap: 24px;
+
   .left-content,
   .right-content {
-    padding: 0 24px 12px;
+    padding: 0 0 12px;
     flex-shrink: 0;
     flex-direction: column;
   }
+
   .left-content {
     flex: 2;
   }
+
   .right-content {
     flex: 1;
-    padding-left: 0;
   }
+
   .table-attrs {
     margin-top: 16px;
   }
+
   .attr-title {
     font-size: 16px;
     line-height: 24px;
