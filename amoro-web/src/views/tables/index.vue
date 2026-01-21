@@ -131,6 +131,8 @@ export default defineComponent({
       return state.baseInfo.tableType === 'ICEBERG'
     })
 
+    const hasSelectedTable = computed(() => !!(route.query?.catalog && route.query?.db && route.query?.table))
+
     const setBaseDetailInfo = (baseInfo: IBaseDetailInfo & { comment?: string }) => {
       state.detailLoaded = true
       state.baseInfo = { ...baseInfo }
@@ -168,11 +170,20 @@ export default defineComponent({
       },
     )
 
+    watch(
+      hasSelectedTable,
+      (value, oldVal) => {
+        if (value && !oldVal && detailRef.value) {
+          detailRef.value.getTableDetails()
+        }
+      },
+    )
+
     onMounted(() => {
       initSidebarWidth()
       state.activeKey = (route.query?.tab as string) || 'Details'
       nextTick(() => {
-        if (detailRef.value) {
+        if (detailRef.value && hasSelectedTable.value) {
           detailRef.value.getTableDetails()
         }
       })
@@ -189,6 +200,7 @@ export default defineComponent({
       tabConfigs,
       store,
       isIceberg,
+      hasSelectedTable,
       setBaseDetailInfo,
       goBack,
       onChangeTab,
@@ -210,45 +222,48 @@ export default defineComponent({
       </div>
       <div class="tables-divider" aria-hidden="true" @mousedown="startSidebarResize" />
       <div class="tables-main">
-        <div class="tables-main-header g-flex-jsb">
-          <div class="g-flex-col">
-            <div class="g-flex">
-              <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{ baseInfo.tableName }}</span>
-            </div>
-            <div v-if="baseInfo.comment" class="table-info g-flex-ac">
-              <p>{{ $t('Comment') }}: <span class="text-color">{{ baseInfo.comment }}</span></p>
-            </div>
-            <div class="table-info g-flex-ac">
-              <p>{{ $t('optimizingStatus') }}: <span class="text-color">{{ baseInfo.optimizingStatus }}</span></p>
-              <a-divider type="vertical" />
-              <p>{{ $t('records') }}: <span class="text-color">{{ baseInfo.records }}</span></p>
-              <a-divider type="vertical" />
-              <template v-if="!isIceberg">
-                <p>{{ $t('createTime') }}: <span class="text-color">{{ baseInfo.createTime }}</span></p>
+        <template v-if="hasSelectedTable">
+          <div class="tables-main-header g-flex-jsb">
+            <div class="g-flex-col">
+              <div class="g-flex">
+                <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{ baseInfo.tableName }}</span>
+              </div>
+              <div v-if="baseInfo.comment" class="table-info g-flex-ac">
+                <p>{{ $t('Comment') }}: <span class="text-color">{{ baseInfo.comment }}</span></p>
+              </div>
+              <div class="table-info g-flex-ac">
+                <p>{{ $t('optimizingStatus') }}: <span class="text-color">{{ baseInfo.optimizingStatus }}</span></p>
                 <a-divider type="vertical" />
-              </template>
-              <p>{{ $t('tableFormat') }}: <span class="text-color">{{ baseInfo.tableFormat }}</span></p>
-              <a-divider type="vertical" />
-              <p>
-                {{ $t('healthScore') }}:
-                <UHealthScore :base-info="baseInfo" />
-              </p>
+                <p>{{ $t('records') }}: <span class="text-color">{{ baseInfo.records }}</span></p>
+                <a-divider type="vertical" />
+                <template v-if="!isIceberg">
+                  <p>{{ $t('createTime') }}: <span class="text-color">{{ baseInfo.createTime }}</span></p>
+                  <a-divider type="vertical" />
+                </template>
+                <p>{{ $t('tableFormat') }}: <span class="text-color">{{ baseInfo.tableFormat }}</span></p>
+                <a-divider type="vertical" />
+                <p>
+                  {{ $t('healthScore') }}:
+                  <UHealthScore :base-info="baseInfo" />
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="tables-main-body">
-          <a-tabs v-model:activeKey="activeKey" destroy-inactive-tab-pane @change="onChangeTab">
-            <a-tab-pane key="Details" :tab="$t('details')" force-render>
-              <UDetails ref="detailRef" @set-base-detail-info="setBaseDetailInfo" />
-            </a-tab-pane>
-            <a-tab-pane v-if="detailLoaded" key="Files" :tab="$t('files')">
-              <UFiles :has-partition="baseInfo.hasPartition" />
-            </a-tab-pane>
-            <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="$t(tab.label)">
-              <component :is="`U${tab.key}`" />
-            </a-tab-pane>
-          </a-tabs>
-        </div>
+          <div class="tables-main-body">
+            <a-tabs v-model:activeKey="activeKey" destroy-inactive-tab-pane @change="onChangeTab">
+              <a-tab-pane key="Details" :tab="$t('details')" force-render>
+                <UDetails ref="detailRef" @set-base-detail-info="setBaseDetailInfo" />
+              </a-tab-pane>
+              <a-tab-pane v-if="detailLoaded" key="Files" :tab="$t('files')">
+                <UFiles :has-partition="baseInfo.hasPartition" />
+              </a-tab-pane>
+              <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="$t(tab.label)">
+                <component :is="`U${tab.key}`" />
+              </a-tab-pane>
+            </a-tabs>
+          </div>
+        </template>
+        <div v-else class="empty-page" />
       </div>
     </div>
     <!-- Create table secondary page -->
@@ -310,6 +325,10 @@ export default defineComponent({
     min-height: 0;
     padding: 0 24px 24px;
     overflow: auto;
+  }
+
+  .tables-main .empty-page {
+    height: 100%;
   }
 
   .tables-menu-wrap {

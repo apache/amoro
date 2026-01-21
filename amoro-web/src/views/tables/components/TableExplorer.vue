@@ -229,12 +229,23 @@ function handleSelectTable(catalog: string, db: string, tableName: string, table
 }
 
 function handleTreeSelect(selectedKeys: (string | number)[], info: any) {
-  state.selectedKeys = selectedKeys.map(key => String(key))
   const node = info?.node
-  if (!node || !node.isLeaf) {
+  if (!node) {
     return
   }
+
   const dataRef = node.dataRef || node
+  if (!dataRef) {
+    return
+  }
+
+  if (!dataRef.isLeaf) {
+    toggleNodeExpand(dataRef as TreeNode)
+    return
+  }
+
+  state.selectedKeys = selectedKeys.map(key => String(key))
+
   const catalog = (dataRef.catalog || '') as string
   const db = (dataRef.db || '') as string
   const tableName = (dataRef.table || dataRef.title || '') as string
@@ -258,6 +269,32 @@ async function handleTreeExpand(expandedKeys: (string | number)[], info: any) {
     return
   }
   await loadChildren(node)
+}
+
+async function toggleNodeExpand(dataRef: TreeNode) {
+  if (!dataRef || dataRef.isLeaf) {
+    return
+  }
+
+  const key = String(dataRef.key)
+  const hasExpanded = state.expandedKeys.includes(key)
+
+  let nextExpandedKeys: string[]
+  if (hasExpanded) {
+    nextExpandedKeys = state.expandedKeys.filter(item => item !== key)
+  }
+  else {
+    nextExpandedKeys = [...state.expandedKeys, key]
+    await loadChildren({ dataRef })
+  }
+
+  state.expandedKeys = nextExpandedKeys
+  try {
+    sessionStorage.setItem(expandedKeysSessionKey, JSON.stringify(state.expandedKeys))
+  }
+  catch (e) {
+    // ignore sessionStorage write errors
+  }
 }
 
 function getNodeIcon(node: TreeNode) {
@@ -485,14 +522,16 @@ onBeforeMount(async () => {
       >
         <template #title="{ dataRef }">
           <span
-              class="tree-node-title"
-              :class="`node-${dataRef.nodeType}`"
+            class="tree-node-title"
+            :class="`node-${dataRef.nodeType}`"
           >
             <svg-icon
-                :icon-class="getNodeIcon(dataRef)"
-                class="tree-node-icon"
+              :icon-class="getNodeIcon(dataRef)"
+              class="tree-node-icon"
             />
-            <span class="tree-node-text">{{ dataRef.title }}</span>
+            <span class="tree-node-text">
+              {{ dataRef.title }}
+            </span>
           </span>
         </template>
       </a-tree>
