@@ -141,6 +141,11 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
   }
 
   @Override
+  public void registAndElect() throws Exception {
+    // TODO Here you can register for AMS and participate in the election.
+  }
+
+  @Override
   public void waitFollowerShip() throws Exception {
     LOG.info("Waiting to become the follower of AMS");
     if (followerLatch != null) {

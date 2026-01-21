@@ -189,6 +189,14 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
     @AfterEach
     public void after() {
       LOG.info("Test finished.");
+      try {
+        // explicitly clean up possible residual table runtime records
+        if (catalog.tableExists(tableIdentifier)) {
+          catalog.dropTable(tableIdentifier, true);
+        }
+      } catch (Exception e) {
+        LOG.warn("Failed to drop table during cleanup", e);
+      }
       catalog.dropDatabase(database);
     }
 
