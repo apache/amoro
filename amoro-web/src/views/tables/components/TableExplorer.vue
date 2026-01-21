@@ -234,13 +234,15 @@ function handleTreeSelect(selectedKeys: (string | number)[], info: any) {
     return
   }
 
-  const dataRef = node.dataRef || node
+  const dataRef = (node.dataRef || node) as TreeNode | undefined
   if (!dataRef) {
     return
   }
 
-  if (!dataRef.isLeaf) {
-    toggleNodeExpand(dataRef as TreeNode)
+  if (dataRef.nodeType !== 'table') {
+    if (!dataRef.isLeaf) {
+      toggleNodeExpand(dataRef)
+    }
     return
   }
 
