@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server;
+package org.apache.amoro.server.ha;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.AmsHAProperties;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.CreateMode;
@@ -46,7 +47,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Test for HighAvailabilityContainer using mocked ZK to avoid connection issues. */
-public class TestHighAvailabilityContainer {
+public class TestZkHighAvailabilityContainer {
 
   private Configurations serviceConfig;
   private HighAvailabilityContainer haContainer;
@@ -258,7 +259,7 @@ public class TestHighAvailabilityContainer {
     // Test that registAndElect skips when HA is not enabled
     serviceConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
     serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
-    haContainer = new HighAvailabilityContainer(serviceConfig);
+    haContainer = new ZkHighAvailabilityContainer(serviceConfig);
 
     // Should not throw exception
     haContainer.registAndElect();
@@ -269,14 +270,14 @@ public class TestHighAvailabilityContainer {
     // Create container without ZK connection to avoid any connection attempts
     HighAvailabilityContainer container = createContainerWithoutZk();
 
-    // Inject mock ZK client and leader latch
+    // Inject mock ZK client and leader latch (fields are on ZkHighAvailabilityContainer)
     java.lang.reflect.Field zkClientField =
-        HighAvailabilityContainer.class.getDeclaredField("zkClient");
+        ZkHighAvailabilityContainer.class.getDeclaredField("zkClient");
     zkClientField.setAccessible(true);
     zkClientField.set(container, mockZkClient);
 
     java.lang.reflect.Field leaderLatchField =
-        HighAvailabilityContainer.class.getDeclaredField("leaderLatch");
+        ZkHighAvailabilityContainer.class.getDeclaredField("leaderLatch");
     leaderLatchField.setAccessible(true);
     leaderLatchField.set(container, mockLeaderLatch);
 
@@ -290,11 +291,15 @@ public class TestHighAvailabilityContainer {
   /**
    * Create a HighAvailabilityContainer without initializing ZK connection. This is used when we
    * want to completely avoid ZK connection attempts.
+   *
+   * <p>Uses ZkHighAvailabilityContainer (which has the constructor and fields);
+   * HighAvailabilityContainer is an interface without constructors or instance fields.
    */
   private HighAvailabilityContainer createContainerWithoutZk() throws Exception {
-    // Use reflection to create container without calling constructor
-    java.lang.reflect.Constructor<HighAvailabilityContainer> constructor =
-        HighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
+    // ZkHighAvailabilityContainer has constructor (Configurations); HighAvailabilityContainer is an
+    // interface
+    java.lang.reflect.Constructor<ZkHighAvailabilityContainer> constructor =
+        ZkHighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
 
     // Create a minimal config that disables HA to avoid ZK connection
     Configurations tempConfig = new Configurations(serviceConfig);
@@ -302,9 +307,9 @@ public class TestHighAvailabilityContainer {
 
     HighAvailabilityContainer container = constructor.newInstance(tempConfig);
 
-    // Now set all required fields using reflection
+    // Now set all required fields using reflection (fields are on ZkHighAvailabilityContainer)
     java.lang.reflect.Field isMasterSlaveModeField =
-        HighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
+        ZkHighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
     isMasterSlaveModeField.setAccessible(true);
     isMasterSlaveModeField.set(
         container, serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE));
@@ -313,24 +318,24 @@ public class TestHighAvailabilityContainer {
       String haClusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
 
       java.lang.reflect.Field tableServiceMasterPathField =
-          HighAvailabilityContainer.class.getDeclaredField("tableServiceMasterPath");
+          ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceMasterPath");
       tableServiceMasterPathField.setAccessible(true);
       tableServiceMasterPathField.set(
           container, AmsHAProperties.getTableServiceMasterPath(haClusterName));
 
       java.lang.reflect.Field optimizingServiceMasterPathField =
-          HighAvailabilityContainer.class.getDeclaredField("optimizingServiceMasterPath");
+          ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceMasterPath");
       optimizingServiceMasterPathField.setAccessible(true);
       optimizingServiceMasterPathField.set(
           container, AmsHAProperties.getOptimizingServiceMasterPath(haClusterName));
 
       java.lang.reflect.Field nodesPathField =
-          HighAvailabilityContainer.class.getDeclaredField("nodesPath");
+          ZkHighAvailabilityContainer.class.getDeclaredField("nodesPath");
       nodesPathField.setAccessible(true);
       nodesPathField.set(container, AmsHAProperties.getNodesPath(haClusterName));
 
       java.lang.reflect.Field tableServiceServerInfoField =
-          HighAvailabilityContainer.class.getDeclaredField("tableServiceServerInfo");
+          ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceServerInfo");
       tableServiceServerInfoField.setAccessible(true);
       AmsServerInfo tableServiceServerInfo =
           buildServerInfo(
@@ -340,7 +345,7 @@ public class TestHighAvailabilityContainer {
       tableServiceServerInfoField.set(container, tableServiceServerInfo);
 
       java.lang.reflect.Field optimizingServiceServerInfoField =
-          HighAvailabilityContainer.class.getDeclaredField("optimizingServiceServerInfo");
+          ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceServerInfo");
       optimizingServiceServerInfoField.setAccessible(true);
       AmsServerInfo optimizingServiceServerInfo =
           buildServerInfo(

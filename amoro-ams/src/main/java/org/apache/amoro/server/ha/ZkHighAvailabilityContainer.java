@@ -46,9 +46,9 @@ import javax.security.auth.login.Configuration;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, LeaderLatchListener {
@@ -246,7 +246,7 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
    *
    * @return List of alive node information
    */
-  public List<AmsServerInfo> getAliveNodes() throws Exception {
+  public List<AmsServerInfo> getAliveNodes() {
     List<AmsServerInfo> aliveNodes = new ArrayList<>();
     if (!isMasterSlaveMode) {
       LOG.debug("Master-slave mode is not enabled, return empty node list");
@@ -277,6 +277,8 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
       }
     } catch (KeeperException.NoNodeException e) {
       LOG.debug("Nodes path {} does not exist", nodesPath);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
     return aliveNodes;
   }
