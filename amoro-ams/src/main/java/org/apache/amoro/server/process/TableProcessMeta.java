@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.process;
 
+import org.apache.amoro.Action;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcessState;
 import org.apache.amoro.process.TableProcessStore;
@@ -30,7 +31,7 @@ public class TableProcessMeta {
   private long tableId;
   private volatile String externalProcessIdentifier;
   private ProcessStatus status;
-  private String processType;
+  private Action action;
   private String processStage;
   private String executionEngine;
   private int retryNumber;
@@ -64,12 +65,57 @@ public class TableProcessMeta {
     this.status = status;
   }
 
-  public String getProcessType() {
-    return processType;
+  /**
+   * Get the action of this process.
+   *
+   * @return action
+   */
+  public Action getAction() {
+    return action;
   }
 
+  /**
+   * Set the action of this process.
+   *
+   * @param action action
+   */
+  public void setAction(Action action) {
+    this.action = action;
+  }
+
+  /**
+   * Get process type (action name) for backward compatibility.
+   *
+   * @return process type name
+   * @deprecated Use {@link #getAction()} instead
+   */
+  @Deprecated
+  public String getProcessType() {
+    return action != null ? action.getName() : null;
+  }
+
+  /**
+   * Set process type (action name) for backward compatibility.
+   *
+   * @param processType process type name
+   * @deprecated Use {@link #setAction(Action)} instead
+   */
+  @Deprecated
   public void setProcessType(String processType) {
-    this.processType = processType;
+    // This method is kept for backward compatibility but should not be used
+    // Action should be set directly via setAction()
+    if (processType != null && action == null) {
+      // Try to find action by name from registry
+      org.apache.amoro.server.persistence.converter.Action2StringConverter.registerCustomAction(
+          new Action(
+              new org.apache.amoro.TableFormat[] {
+                org.apache.amoro.TableFormat.ICEBERG,
+                org.apache.amoro.TableFormat.MIXED_ICEBERG,
+                org.apache.amoro.TableFormat.MIXED_HIVE
+              },
+              0,
+              processType));
+    }
   }
 
   public String getProcessStage() {
@@ -154,7 +200,7 @@ public class TableProcessMeta {
     meta.setFinishTime(this.finishTime);
 
     meta.setExternalProcessIdentifier(this.externalProcessIdentifier);
-    meta.setProcessType(this.processType);
+    meta.setAction(this.action);
     meta.setProcessStage(this.processStage);
     meta.setExecutionEngine(this.executionEngine);
     meta.setFailMessage(this.failMessage);
@@ -177,7 +223,7 @@ public class TableProcessMeta {
     tableProcessMeta.setTableId(tableProcessStore.getTableId());
     tableProcessMeta.setExternalProcessIdentifier(tableProcessStore.getExternalProcessIdentifier());
     tableProcessMeta.setStatus(tableProcessStore.getStatus());
-    tableProcessMeta.setProcessType(tableProcessStore.getProcessType());
+    tableProcessMeta.setAction(tableProcessStore.getAction());
     tableProcessMeta.setProcessStage(tableProcessStore.getProcessStage());
     tableProcessMeta.setExecutionEngine(tableProcessStore.getExecutionEngine());
     tableProcessMeta.setRetryNumber(tableProcessStore.getRetryNumber());
@@ -196,7 +242,7 @@ public class TableProcessMeta {
     tableProcessMeta.setTableId(tableProcessState.getTableIdentifier().getId());
     tableProcessMeta.setExternalProcessIdentifier(tableProcessState.getExternalProcessIdentifier());
     tableProcessMeta.setStatus(tableProcessState.getStatus());
-    tableProcessMeta.setProcessType(tableProcessState.getAction().getName());
+    tableProcessMeta.setAction(tableProcessState.getAction());
     tableProcessMeta.setProcessStage(tableProcessState.getStage().getDesc());
     tableProcessMeta.setExecutionEngine(tableProcessState.getExecutionEngine());
     tableProcessMeta.setRetryNumber(tableProcessState.getRetryNumber());
@@ -208,10 +254,20 @@ public class TableProcessMeta {
     return tableProcessMeta;
   }
 
+  /**
+   * Create a TableProcessMeta with Action.
+   *
+   * @param processId process id
+   * @param tableId table id
+   * @param action action
+   * @param executionEngine execution engine
+   * @param processParameters process parameters
+   * @return TableProcessMeta instance
+   */
   public static TableProcessMeta of(
       long processId,
       long tableId,
-      String actionName,
+      Action action,
       String executionEngine,
       Map<String, String> processParameters) {
     TableProcessMeta tableProcessMeta = new TableProcessMeta();
@@ -219,7 +275,7 @@ public class TableProcessMeta {
     tableProcessMeta.setTableId(tableId);
     tableProcessMeta.setExternalProcessIdentifier("");
     tableProcessMeta.setStatus(ProcessStatus.UNKNOWN);
-    tableProcessMeta.setProcessType(actionName);
+    tableProcessMeta.setAction(action);
     tableProcessMeta.setProcessStage(ProcessStatus.UNKNOWN.name());
     tableProcessMeta.setExecutionEngine(executionEngine);
     tableProcessMeta.setRetryNumber(0);
@@ -229,5 +285,42 @@ public class TableProcessMeta {
     tableProcessMeta.setProcessParameters(processParameters);
     tableProcessMeta.setSummary(new HashMap<>());
     return tableProcessMeta;
+  }
+
+  /**
+   * Create a TableProcessMeta with action name (for backward compatibility).
+   *
+   * @param processId process id
+   * @param tableId table id
+   * @param actionName action name
+   * @param executionEngine execution engine
+   * @param processParameters process parameters
+   * @return TableProcessMeta instance
+   * @deprecated Use {@link #of(long, long, Action, String, Map)} instead
+   */
+  @Deprecated
+  public static TableProcessMeta of(
+      long processId,
+      long tableId,
+      String actionName,
+      String executionEngine,
+      Map<String, String> processParameters) {
+    // Try to find action from registry
+    Action action =
+        org.apache.amoro.server.persistence.converter.Action2StringConverter.getActionByName(
+            actionName);
+    if (action == null) {
+      // Create a temporary action if not found
+      action =
+          new Action(
+              new org.apache.amoro.TableFormat[] {
+                org.apache.amoro.TableFormat.ICEBERG,
+                org.apache.amoro.TableFormat.MIXED_ICEBERG,
+                org.apache.amoro.TableFormat.MIXED_HIVE
+              },
+              0,
+              actionName);
+    }
+    return of(processId, tableId, action, executionEngine, processParameters);
   }
 }
