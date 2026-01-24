@@ -19,37 +19,25 @@
 package org.apache.amoro.formats;
 
 import org.apache.amoro.AmoroCatalog;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.io.TempDir;
 
-import java.io.IOException;
+import java.io.File;
 
 public abstract class AmoroCatalogTestBase {
 
-  @Rule public TemporaryFolder temp = new TemporaryFolder();
-
-  protected AmoroCatalogTestHelper<?> catalogTestHelper;
+  @TempDir protected File temp;
 
   protected AmoroCatalog amoroCatalog;
 
   protected Object originalCatalog;
 
-  public AmoroCatalogTestBase(AmoroCatalogTestHelper<?> catalogTestHelper) {
-    this.catalogTestHelper = catalogTestHelper;
-  }
-
-  @Before
-  public void setupCatalog() throws IOException {
-    String path = temp.newFolder().getPath();
-    catalogTestHelper.initWarehouse(path);
-    this.amoroCatalog = catalogTestHelper.amoroCatalog();
-    this.originalCatalog = catalogTestHelper.originalCatalog();
-  }
-
-  @After
+  @AfterEach
   public void cleanCatalog() {
-    catalogTestHelper.clean();
+    if (catalogTestHelper != null) {
+      catalogTestHelper.clean();
+    }
   }
+
+  protected AmoroCatalogTestHelper<?> catalogTestHelper;
 }
