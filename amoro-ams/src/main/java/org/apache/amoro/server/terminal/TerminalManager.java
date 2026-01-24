@@ -251,7 +251,7 @@ public class TerminalManager {
   // ========================== private method =========================
 
   private String catalogConnectorType(CatalogMeta catalogMeta) {
-    String catalogType = catalogMeta.getCatalogType();
+    String catalogType = CatalogUtil.normalizeCatalogType(catalogMeta.getCatalogType());
     Set<TableFormat> tableFormatSet = CatalogUtil.tableFormats(catalogMeta);
     if (catalogType.equalsIgnoreCase(CatalogType.AMS.name())) {
       if (tableFormatSet.size() > 1) {
@@ -262,8 +262,7 @@ public class TerminalManager {
         return "iceberg";
       }
     } else if (catalogType.equalsIgnoreCase(CatalogType.HIVE.name())
-        || catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())
-        || catalogType.equalsIgnoreCase(CatalogMetaProperties.CATALOG_TYPE_FILESYSTEM)) {
+        || catalogType.equalsIgnoreCase(CatalogType.HADOOP.name())) {
       if (tableFormatSet.size() > 1) {
         return "unified";
       } else if (tableFormatSet.contains(TableFormat.MIXED_ICEBERG)) {
@@ -394,17 +393,13 @@ public class TerminalManager {
 
   private void applyClientProperties(CatalogMeta catalogMeta) {
     Set<TableFormat> formats = CatalogUtil.tableFormats(catalogMeta);
-    String catalogType = catalogMeta.getCatalogType();
+    String catalogType = CatalogUtil.normalizeCatalogType(catalogMeta.getCatalogType());
     if (formats.contains(TableFormat.ICEBERG)) {
       if (CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(catalogType)) {
         catalogMeta.putToCatalogProperties(
             CatalogMetaProperties.KEY_WAREHOUSE, catalogMeta.getCatalogName());
-      } else {
-        String typeForIceberg = CatalogUtil.normalizeCatalogType(catalogType);
-        if (catalogMeta.getCatalogProperties() != null) {
-          catalogMeta.getCatalogProperties().remove(CatalogProperties.CATALOG_IMPL);
-        }
-        catalogMeta.putToCatalogProperties("type", typeForIceberg);
+      } else if (!catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
+        catalogMeta.putToCatalogProperties("type", catalogType);
       }
     } else if (formats.contains(TableFormat.PAIMON) && "hive".equals(catalogType)) {
       catalogMeta.putToCatalogProperties("metastore", catalogType);
