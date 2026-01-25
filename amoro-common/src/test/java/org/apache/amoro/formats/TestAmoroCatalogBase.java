@@ -43,7 +43,7 @@ public abstract class TestAmoroCatalogBase extends AmoroCatalogTestBase {
   @BeforeEach
   public void setupCatalogHelper(AmoroCatalogTestHelper<?> helper) throws IOException {
     this.catalogTestHelper = helper;
-    String path = temp.newFolder().getPath();
+    String path = temp.getPath();
     catalogTestHelper.initWarehouse(path);
     this.amoroCatalog = catalogTestHelper.amoroCatalog();
     this.originalCatalog = catalogTestHelper.originalCatalog();
