@@ -270,14 +270,17 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .table-snapshots {
-  padding: 18px 24px;
+  padding: 18px 0;
+
   .text-active {
     color: #1890ff;
     cursor: pointer;
   }
+
   :deep(.ant-btn-link) {
     padding: 0;
   }
+
   .ant-table-wrapper {
     margin-top: 24px;
   }
