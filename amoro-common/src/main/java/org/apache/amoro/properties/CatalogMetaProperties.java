@@ -55,29 +55,17 @@ public class CatalogMetaProperties {
   public static final String KEY_TABLE_FILTER = "table-filter";
 
   /**
-   * @deprecated Use METASTORE_TYPE_FILESYSTEM. This constant is retained for legacy compatibility
-   *     with existing DB records and inbound requests using "hadoop". The system normalizes it to
-   *     METASTORE_TYPE_FILESYSTEM via CatalogUtil.normalizeMetastoreType. It can be removed after
-   *     DB migration and input enforcement stop accepting "hadoop".
+   * Use {@link #CATALOG_TYPE_FILESYSTEM} instead for front But we can't remove this until we could
+   * use filesystem and storage to determine the right catalog-impl
    */
-  @Deprecated public static final String METASTORE_TYPE_HADOOP = "hadoop";
+  @Deprecated public static final String CATALOG_TYPE_HADOOP = "hadoop";
 
-  public static final String METASTORE_TYPE_FILESYSTEM = "filesystem";
-  public static final String METASTORE_TYPE_HIVE = "hive";
-  public static final String METASTORE_TYPE_AMS = "ams";
-  public static final String METASTORE_TYPE_GLUE = "glue";
-  public static final String METASTORE_TYPE_REST = "rest";
-  public static final String METASTORE_TYPE_CUSTOM = "custom";
-
-  /** @deprecated use METASTORE_TYPE_* constants instead. */
-  @Deprecated public static final String CATALOG_TYPE_HADOOP = METASTORE_TYPE_HADOOP;
-
-  @Deprecated public static final String CATALOG_TYPE_FILESYSTEM = METASTORE_TYPE_FILESYSTEM;
-  @Deprecated public static final String CATALOG_TYPE_HIVE = METASTORE_TYPE_HIVE;
-  @Deprecated public static final String CATALOG_TYPE_AMS = METASTORE_TYPE_AMS;
-  @Deprecated public static final String CATALOG_TYPE_GLUE = METASTORE_TYPE_GLUE;
-  @Deprecated public static final String CATALOG_TYPE_REST = METASTORE_TYPE_REST;
-  @Deprecated public static final String CATALOG_TYPE_CUSTOM = METASTORE_TYPE_CUSTOM;
+  public static final String CATALOG_TYPE_FILESYSTEM = "filesystem";
+  public static final String CATALOG_TYPE_HIVE = "hive";
+  public static final String CATALOG_TYPE_AMS = "ams";
+  public static final String CATALOG_TYPE_GLUE = "glue";
+  public static final String CATALOG_TYPE_REST = "rest";
+  public static final String CATALOG_TYPE_CUSTOM = "custom";
 
   public static final String TABLE_FORMATS = "table-formats";
 
