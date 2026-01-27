@@ -34,6 +34,7 @@ import { usePagination } from '@/hooks/usePagination'
 import type { IIOptimizeGroupItem, ILableAndValue } from '@/types/common.type'
 import GroupModal from '@/views/resource/components/GroupModal.vue'
 import CreateOptimizerModal from '@/views/resource/components/CreateOptimizerModal.vue'
+import { usePageScroll } from '@/hooks/usePageScroll'
 
 export default defineComponent({
   name: 'Resource',
@@ -47,10 +48,12 @@ export default defineComponent({
     const { t } = useI18n()
     const router = useRouter()
     const route = useRoute()
+    const { pageScrollRef } = usePageScroll()
     const tabConfig: ILableAndValue[] = shallowReactive([
       { label: t('optimizerGroups'), value: 'optimizerGroups' },
       { label: t('optimizers'), value: 'optimizers' },
     ])
+
     const placeholder = reactive(usePlaceholder())
     const pagination = reactive(usePagination())
     const state = reactive({
@@ -127,81 +130,88 @@ export default defineComponent({
       editGroup,
       createOptimizer,
       t,
+      pageScrollRef,
     }
   },
 })
 </script>
 
 <template>
-  <div class="border-wrap">
-    <div class="resource-wrap">
-      <div class="content">
-        <a-tabs
-          v-model:activeKey="activeTab"
-          destroy-inactive-tab-pane
-          @change="onChangeTab"
-        >
-          <a-tab-pane
-            key="tables"
-            :tab="t('tables')"
-            :class="[activeTab === 'tables' ? 'active' : '']"
+  <div class="page-scroll" ref="pageScrollRef">
+    <div class="border-wrap">
+      <div class="resource-wrap">
+        <div class="content">
+          <a-tabs
+            v-model:activeKey="activeTab"
+            destroy-inactive-tab-pane
+            @change="onChangeTab"
           >
-            <TableList />
-          </a-tab-pane>
-          <a-tab-pane
-            key="optimizers"
-            :tab="t('optimizers')"
-            :class="[activeTab === 'optimizers' ? 'active' : '']"
-          >
-            <a-button type="primary" class="g-mb-16" @click="createOptimizer(null)">
-              {{ t("createOptimizer") }}
-            </a-button>
-            <List type="optimizers" />
-          </a-tab-pane>
-          <a-tab-pane
-            key="optimizerGroups"
-            :tab="t('optimizerGroups')"
-            :class="[activeTab === 'optimizerGroups' ? 'active' : '']"
-          >
-            <a-button type="primary" class="g-mb-16" @click="editGroup(null)">
-              {{ t("addGroup") }}
-            </a-button>
-            <List
-              :key="groupKeyCount"
-              type="optimizerGroups"
-              @edit-group="editGroup"
-            />
-          </a-tab-pane>
-        </a-tabs>
+            <a-tab-pane
+              key="tables"
+              :tab="t('tables')"
+              :class="[activeTab === 'tables' ? 'active' : '']"
+            >
+              <TableList />
+            </a-tab-pane>
+            <a-tab-pane
+              key="optimizers"
+              :tab="t('optimizers')"
+              :class="[activeTab === 'optimizers' ? 'active' : '']"
+            >
+              <a-button type="primary" class="g-mb-16" @click="createOptimizer(null)">
+                {{ t("createOptimizer") }}
+              </a-button>
+              <List type="optimizers" />
+            </a-tab-pane>
+            <a-tab-pane
+              key="optimizerGroups"
+              :tab="t('optimizerGroups')"
+              :class="[activeTab === 'optimizerGroups' ? 'active' : '']"
+            >
+              <a-button type="primary" class="g-mb-16" @click="editGroup(null)">
+                {{ t("addGroup") }}
+              </a-button>
+              <List
+                :key="groupKeyCount"
+                type="optimizerGroups"
+                @edit-group="editGroup"
+              />
+            </a-tab-pane>
+          </a-tabs>
+        </div>
       </div>
+      <GroupModal
+        v-if="showGroupModal"
+        :edit="groupEdit"
+        :edit-record="groupEditRecord"
+        @cancel="showGroupModal = false"
+        @refresh="
+          groupKeyCount++;
+          showGroupModal = false;
+        "
+      />
+      <CreateOptimizerModal
+        v-if="showCreateOptimizer"
+        @cancel="showCreateOptimizer = false"
+        @refresh="showCreateOptimizer = false"
+      />
     </div>
-    <GroupModal
-      v-if="showGroupModal"
-      :edit="groupEdit"
-      :edit-record="groupEditRecord"
-      @cancel="showGroupModal = false"
-      @refresh="
-        groupKeyCount++;
-        showGroupModal = false;
-      "
-    />
-    <CreateOptimizerModal
-      v-if="showCreateOptimizer"
-      @cancel="showCreateOptimizer = false"
-      @refresh="showCreateOptimizer = false"
-    />
   </div>
 </template>
 
 <style lang="less" scoped>
-.border-wrap {
-  padding: 16px 24px;
-  height: 100%;
-}
-.resource-wrap {
+.page-scroll {
   height: 100%;
   overflow-y: auto;
-  .status-icon {
+}
+ .border-wrap {
+   padding: 16px 24px;
+   height: 100%;
+ }
+ .resource-wrap {
+   height: 100%;
+  /* overflow-y: auto; */
+   .status-icon {
     width: 8px;
     height: 8px;
     border-radius: 8px;
