@@ -22,10 +22,13 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableRuntimeMapper;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.DefaultTableRuntimeStore;
 import org.apache.amoro.server.table.TableRuntimeHandler;
@@ -261,5 +264,68 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
     // Should always execute with NONE operation
     boolean shouldExecute = executor.shouldExecuteTaskForTest(tableRuntime, CleanupOperation.NONE);
     Assert.assertTrue("Should always execute with NONE operation", shouldExecute);
+  }
+
+  /**
+   * Validates that process info is correctly saved to table_process with proper status transitions.
+   */
+  @Test
+  public void testCleanupProcessPersistence() {
+    long baseTableId = 200L;
+    List<CleanupOperation> operations =
+        Arrays.asList(
+            CleanupOperation.ORPHAN_FILES_CLEANING,
+            CleanupOperation.DANGLING_DELETE_FILES_CLEANING,
+            CleanupOperation.DATA_EXPIRING,
+            CleanupOperation.SNAPSHOTS_EXPIRING);
+
+    for (int i = 0; i < operations.size(); i++) {
+      long tableId = baseTableId + i;
+      CleanupOperation operation = operations.get(i);
+      prepareTestEnvironment(Collections.singletonList(tableId));
+
+      PeriodicTableSchedulerTestBase executor = createTestExecutor(operation);
+      ServerTableIdentifier identifier = createTableIdentifier(tableId);
+      DefaultTableRuntime tableRuntime = createDefaultTableRuntime(identifier);
+
+      // Scenario 1: Create process - verify initial persisted state
+      TableProcessMeta processMeta =
+          executor.createCleanupProcessInfoForTest(tableRuntime, operation);
+      TableProcessMeta persistedRunning = getProcessMeta(processMeta.getProcessId());
+
+      Assert.assertEquals(ProcessStatus.RUNNING, persistedRunning.getStatus());
+
+      // Scenario 2: Success completion - verify status update and timestamps
+      executor.persistCleanupResultForTest(tableRuntime, operation, processMeta.copy(), null);
+      TableProcessMeta persistedSuccess = getProcessMeta(processMeta.getProcessId());
+      Assert.assertEquals(ProcessStatus.SUCCESS, persistedSuccess.getStatus());
+      Assert.assertTrue(persistedSuccess.getCreateTime() < persistedSuccess.getFinishTime());
+
+      // Scenario 3: Failure handling - verify error persistence
+      processMeta = executor.createCleanupProcessInfoForTest(tableRuntime, operation);
+      RuntimeException testError = new RuntimeException("Cleanup failed for " + operation);
+      executor.persistCleanupResultForTest(tableRuntime, operation, processMeta.copy(), testError);
+
+      TableProcessMeta persistedFailure = getProcessMeta(processMeta.getProcessId());
+      Assert.assertEquals(ProcessStatus.FAILED, persistedFailure.getStatus());
+      Assert.assertEquals(testError.getMessage(), persistedFailure.getFailMessage());
+
+      cleanUpTableProcess(tableId);
+    }
+  }
+
+  private TableProcessMeta getProcessMeta(long processId) {
+    return getAs(TableProcessMapper.class, m -> m.getProcessMeta(processId));
+  }
+
+  /** Clean up table_process records for a specific table */
+  private void cleanUpTableProcess(long tableId) {
+    doAs(
+        TableProcessMapper.class,
+        mapper -> {
+          mapper
+              .listProcessMeta(tableId, null, null)
+              .forEach(p -> mapper.deleteBefore(tableId, p.getProcessId()));
+        });
   }
 }
