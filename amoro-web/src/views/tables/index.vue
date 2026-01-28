@@ -50,7 +50,6 @@ export default defineComponent({
     const { pageScrollRef } = usePageScroll()
 
     const SIDEBAR_WIDTH_STORAGE_KEY = 'tables_sidebar_width'
-    const STORAGE_TABLE_KEY = 'easylake-menu-catalog-db-table'
     const SIDEBAR_MIN_WIDTH = 320
     const SIDEBAR_MAX_WIDTH = 800
     const sidebarWidth = ref(512)
@@ -190,43 +189,6 @@ export default defineComponent({
     onMounted(() => {
       initSidebarWidth()
       state.activeKey = (route.query?.tab as string) || 'Details'
-
-      if (route.path === '/tables') {
-        const hasFullQuery = !!(route.query?.catalog && route.query?.db && route.query?.table)
-        if (!hasFullQuery) {
-          let lastSelection: any = null
-          try {
-            const stored = localStorage.getItem(STORAGE_TABLE_KEY)
-            if (stored) {
-              lastSelection = JSON.parse(stored)
-            }
-          }
-          catch (e) {
-            // ignore localStorage read/parse errors
-          }
-
-          const catalog = lastSelection?.catalog
-          const db = lastSelection?.database
-          const tableName = lastSelection?.tableName
-          const type = lastSelection?.type
-
-          if (catalog && db && tableName) {
-            const nextQuery: any = {
-              ...route.query,
-              catalog,
-              db,
-              table: tableName,
-            }
-            if (type && !nextQuery.type) {
-              nextQuery.type = type
-            }
-            router.replace({
-              path: '/tables',
-              query: nextQuery,
-            })
-          }
-        }
-      }
 
       nextTick(() => {
         if (detailRef.value && hasSelectedTable.value) {
