@@ -63,7 +63,8 @@ public class PaimonCatalogFactory implements FormatCatalogFactory {
                 HiveCatalogOptions.HIVE_CONF_DIR.key(), new File(url.getPath()).getParent()));
     if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK.equalsIgnoreCase(
         metaStore.getAuthMethod())) {
-      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3.equals(metastoreType)) {
+      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3.equalsIgnoreCase(
+          metaStore.getStorageType())) {
         // s3.access-key, s3.secret-key
         catalogProperties.put(PAIMON_S3_ACCESS_KEY, metaStore.getAccessKey());
         catalogProperties.put(PAIMON_S3_SECRET_KEY, metaStore.getSecretKey());
