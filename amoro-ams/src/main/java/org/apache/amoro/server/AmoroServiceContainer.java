@@ -28,6 +28,7 @@ import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.api.AmoroTableMetastore;
 import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.config.ConfigHelpers;
+import org.apache.amoro.config.ConfigurationException;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.shade.utils.ConfigShadeUtils;
 import org.apache.amoro.exception.AmoroRuntimeException;
@@ -149,6 +150,9 @@ public class AmoroServiceContainer {
             service.transitionToLeader();
             // Used to block AMS instances that have acquired leadership
             service.waitFollowerShip();
+          } catch (ConfigurationException e) {
+            LOG.error("AMS will exit...", e);
+            System.exit(1);
           } catch (Exception e) {
             LOG.error("AMS start error", e);
           } finally {
@@ -157,7 +161,7 @@ public class AmoroServiceContainer {
         }
       }
     } catch (Throwable t) {
-      LOG.error("AMS encountered an unknown exception, will exist", t);
+      LOG.error("AMS encountered an unknown exception, will exit...", t);
       System.exit(1);
     }
   }

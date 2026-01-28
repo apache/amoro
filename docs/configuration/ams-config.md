@@ -92,7 +92,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | optimizer.max-planning-parallelism | 1 | Max planning parallelism in one optimizer group. |
 | optimizer.polling-timeout | 3 s | Optimizer polling task timeout. |
 | optimizer.task-ack-timeout | 30 s | Timeout duration for task acknowledgment. |
-| optimizer.task-execute-timeout | 1 h | Timeout duration for task execution, default to 1 hour. |
+| optimizer.task-execute-timeout | 2147483647 s | Timeout duration for task execution, default to Integer.MAX_VALUE seconds(about 24,855 days). |
 | overview-cache.max-size | 3360 | Max size of overview cache. |
 | overview-cache.refresh-interval | 3 min | Interval for refreshing overview cache. |
 | refresh-external-catalogs.interval | 3 min | Interval to refresh the external catalog. |
