@@ -192,7 +192,9 @@ public class ProcessService extends PersistentBase {
         processMeta -> {
           TableRuntime tableRuntime = tableIdToRuntimes.get(processMeta.getTableId());
           ActionCoordinatorScheduler scheduler =
-              actionCoordinators.get(processMeta.getProcessType());
+              processMeta.getAction() != null
+                  ? actionCoordinators.get(processMeta.getAction().getName())
+                  : null;
           if (tableRuntime != null && scheduler != null) {
             scheduler.recover(
                 tableRuntime,
@@ -201,7 +203,7 @@ public class ProcessService extends PersistentBase {
                     tableRuntime,
                     processMeta,
                     scheduler.getAction(),
-                    scheduler.PROCESS_MAX_RETRY_NUMBER));
+                    ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER));
           }
         });
   }
@@ -231,7 +233,8 @@ public class ProcessService extends PersistentBase {
               actionCoordinators.get(process.store().getAction().getName());
           if (scheduler != null
               && process.getStatus() == ProcessStatus.FAILED
-              && process.store().getRetryNumber() < scheduler.PROCESS_MAX_RETRY_NUMBER
+              && process.store().getRetryNumber()
+                  < ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER
               && process.getTableRuntime() != null) {
             process
                 .store()
@@ -343,7 +346,7 @@ public class ProcessService extends PersistentBase {
                 processMeta.getProcessId(),
                 processMeta.getExternalProcessIdentifier(),
                 processMeta.getStatus(),
-                processMeta.getProcessType(),
+                processMeta.getAction(),
                 processMeta.getProcessStage(),
                 processMeta.getExecutionEngine(),
                 processMeta.getRetryNumber(),
