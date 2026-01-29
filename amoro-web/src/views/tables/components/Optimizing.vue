@@ -422,6 +422,10 @@ onMounted(() => {
   :deep(.ant-table-thead > tr > th) {
     padding: 4px 16px !important;
   }
+
+  :deep(.ant-table-row-expand-icon) {
+    border-radius: 0 !important;
+  }
 }
 
 .status-icon {
