@@ -335,6 +335,7 @@ public class TableController {
     String status = ctx.queryParam("status");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    String lastSnapshot = ctx.queryParam("lastSnapshot");
 
     int offset = (page - 1) * pageSize;
     int limit = pageSize;
@@ -346,7 +347,12 @@ public class TableController {
         StringUtils.isBlank(status) ? null : ProcessStatus.valueOf(status);
     Pair<List<OptimizingProcessInfo>, Integer> optimizingProcessesInfo =
         tableDescriptor.getOptimizingProcessesInfo(
-            tableIdentifier.buildTableIdentifier(), type, processStatus, limit, offset);
+            tableIdentifier.buildTableIdentifier(),
+            type,
+            processStatus,
+            limit,
+            offset,
+            lastSnapshot);
     List<OptimizingProcessInfo> result = optimizingProcessesInfo.getLeft();
     int total = optimizingProcessesInfo.getRight();
 
@@ -407,16 +413,20 @@ public class TableController {
     String operation =
         ctx.queryParamAsClass("operation", String.class)
             .getOrDefault(OperationType.ALL.displayName());
+    String lastSnapshot = ctx.queryParam("lastSnapshot");
     OperationType operationType = OperationType.of(operation);
-
-    List<AmoroSnapshotsOfTable> snapshotsOfTables =
+    int offset = (page - 1) * pageSize;
+    int limit = pageSize;
+    Pair<List<AmoroSnapshotsOfTable>, Long> snapshotsOfTables =
         tableDescriptor.getSnapshots(
             TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(),
             ref,
-            operationType);
-    int offset = (page - 1) * pageSize;
+            operationType,
+            limit,
+            offset,
+            lastSnapshot);
     PageResult<AmoroSnapshotsOfTable> pageResult =
-        PageResult.of(snapshotsOfTables, offset, pageSize);
+        PageResult.of(snapshotsOfTables.getLeft(), snapshotsOfTables.getRight().intValue());
     ctx.json(OkResponse.of(pageResult));
   }
 

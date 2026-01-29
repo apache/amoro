@@ -54,6 +54,7 @@ const snapshotId = ref<string>('')
 const loading = ref<boolean>(false)
 const pagination = reactive(usePagination())
 const breadcrumbPagination = reactive(usePagination())
+const lastSnapshot = ref<string | null>(null) // Store last snapshot ID for cursor-based pagination
 const route = useRoute()
 const query = route.query
 const sourceData = reactive({
@@ -72,6 +73,9 @@ const operation = ref<string>('')
 function onRefChange(params: { ref: string, operation: string }) {
   tblRef.value = params.ref
   operation.value = params.operation
+  // Reset cursor-based pagination when ref or operation changes
+  lastSnapshot.value = null
+  pagination.current = 1
   getTableInfo()
 }
 function onConsumerChange(params: {
@@ -100,6 +104,7 @@ async function getTableInfo() {
       operation: operation.value,
       page: pagination.current,
       pageSize: pagination.pageSize,
+      lastSnapshot: lastSnapshot.value,
     })
     const { list = [], total } = result
     const rcData: ILineChartOriginalData = {}
@@ -115,6 +120,14 @@ async function getTableInfo() {
       p.commitTime = p.commitTime ? dateFormat(p.commitTime) : '-'
       dataSource.push(p)
     })
+    
+    // Update lastSnapshot with the last item's snapshotId from current page for cursor-based pagination
+    if (list && list.length > 0) {
+      lastSnapshot.value = list[list.length - 1].snapshotId || null
+    } else {
+      lastSnapshot.value = null
+    }
+    
     recordChartOption.value = generateLineChartOption(t('recordChartTitle'), rcData)
     fileChartOption.value = generateLineChartOption(t('fileChartTitle'), fcData)
     pagination.total = total
@@ -135,6 +148,10 @@ function change({ current = 1, pageSize = 25 }) {
     breadcrumbPagination.pageSize = pageSize
   }
   else {
+    // Reset cursor-based pagination when returning to first page or changing page size
+    if (current === 1 || pageSize !== pagination.pageSize) {
+      lastSnapshot.value = null
+    }
     pagination.current = current
     if (pageSize !== pagination.pageSize) {
       pagination.current = 1
@@ -185,6 +202,10 @@ function toggleBreadcrumb(record: SnapshotItem) {
   if (hasBreadcrumb.value) {
     breadcrumbPagination.current = 1
     getBreadcrumbTable()
+  } else {
+    // Reset cursor-based pagination when returning to main view
+    lastSnapshot.value = null
+    pagination.current = 1
   }
 }
 

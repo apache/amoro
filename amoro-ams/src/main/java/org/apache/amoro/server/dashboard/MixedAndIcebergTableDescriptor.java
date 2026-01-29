@@ -241,8 +241,13 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public List<AmoroSnapshotsOfTable> getSnapshots(
-      AmoroTable<?> amoroTable, String ref, OperationType operationType) {
+  public Pair<List<AmoroSnapshotsOfTable>, Long> getSnapshots(
+      AmoroTable<?> amoroTable,
+      String ref,
+      OperationType operationType,
+      int limit,
+      int offset,
+      String lastSnapshot) {
     MixedTable mixedTable = getTable(amoroTable);
     List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
     List<Pair<Table, Long>> tableAndSnapshotIdList = new ArrayList<>();
@@ -262,10 +267,12 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     }
     tableAndSnapshotIdList.forEach(
         tableAndSnapshotId -> collectSnapshots(snapshotsOfTables, tableAndSnapshotId));
-    return snapshotsOfTables.stream()
-        .filter(s -> validOperationType(s, operationType))
-        .sorted((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()))
-        .collect(Collectors.toList());
+    List<AmoroSnapshotsOfTable> amoroSnapshotsOfTables =
+        snapshotsOfTables.stream()
+            .filter(s -> validOperationType(s, operationType))
+            .sorted((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()))
+            .collect(Collectors.toList());
+    return Pair.of(amoroSnapshotsOfTables, (long) amoroSnapshotsOfTables.size());
   }
 
   private boolean validOperationType(AmoroSnapshotsOfTable snapshot, OperationType operationType) {
@@ -655,7 +662,12 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
+      AmoroTable<?> amoroTable,
+      String type,
+      ProcessStatus status,
+      int limit,
+      int offset,
+      String lastSnapshot) {
     TableIdentifier tableIdentifier = amoroTable.id();
     ServerTableIdentifier identifier =
         getAs(

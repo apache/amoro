@@ -77,11 +77,17 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getTableDetail(amoroTable);
   }
 
-  public List<AmoroSnapshotsOfTable> getSnapshots(
-      TableIdentifier tableIdentifier, String ref, OperationType operationType) {
+  public Pair<List<AmoroSnapshotsOfTable>, Long> getSnapshots(
+      TableIdentifier tableIdentifier,
+      String ref,
+      OperationType operationType,
+      int limit,
+      int offset,
+      String lastSnapshot) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getSnapshots(amoroTable, ref, operationType);
+    return formatTableDescriptor.getSnapshots(
+        amoroTable, ref, operationType, limit, offset, lastSnapshot);
   }
 
   public List<PartitionFileBaseInfo> getSnapshotDetail(
@@ -129,11 +135,16 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      TableIdentifier tableIdentifier, String type, ProcessStatus status, int limit, int offset) {
+      TableIdentifier tableIdentifier,
+      String type,
+      ProcessStatus status,
+      int limit,
+      int offset,
+      String lastSnapshot) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getOptimizingProcessesInfo(
-        amoroTable, type, status, limit, offset);
+        amoroTable, type, status, limit, offset, lastSnapshot);
   }
 
   public List<OptimizingTaskInfo> getOptimizingProcessTaskInfos(

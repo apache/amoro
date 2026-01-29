@@ -226,32 +226,42 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<AmoroSnapshotsOfTable> getSnapshots(
-      AmoroTable<?> amoroTable, String ref, OperationType operationType) {
+  public Pair<List<AmoroSnapshotsOfTable>, Long> getSnapshots(
+      AmoroTable<?> amoroTable,
+      String ref,
+      OperationType operationType,
+      int limit,
+      int offset,
+      String lastSnapshot) {
     HudiTable hudiTable = (HudiTable) amoroTable;
 
-    return hudiTable.getSnapshotList(ioExecutors).stream()
-        .filter(
-            s ->
-                OperationType.ALL == operationType
-                    || operationType.name().equalsIgnoreCase(s.getOperationType()))
-        .map(
-            s -> {
-              AmoroSnapshotsOfTable snapshotsOfTable = new AmoroSnapshotsOfTable();
-              snapshotsOfTable.setSnapshotId(s.getSnapshotId());
-              snapshotsOfTable.setCommitTime(s.getCommitTimestamp());
-              snapshotsOfTable.setFileCount(s.getTotalFileCount());
-              snapshotsOfTable.setFileSize((int) s.getTotalFileSize());
-              snapshotsOfTable.setSummary(s.getSummary());
-              snapshotsOfTable.setOperation(s.getOperation());
-              Map<String, String> fileSummary = new HashMap<>();
-              fileSummary.put("delta-files", "0");
-              fileSummary.put("data-files", String.valueOf(s.getBaseFileCount()));
-              fileSummary.put("changelogs", String.valueOf(s.getLogFileCount()));
-              snapshotsOfTable.setFilesSummaryForChart(fileSummary);
-              return snapshotsOfTable;
-            })
-        .collect(Collectors.toList());
+    List<AmoroSnapshotsOfTable> snapshots =
+        hudiTable.getSnapshotList(ioExecutors).stream()
+            .filter(
+                s ->
+                    OperationType.ALL == operationType
+                        || operationType.name().equalsIgnoreCase(s.getOperationType()))
+            .map(
+                s -> {
+                  AmoroSnapshotsOfTable snapshotsOfTable = new AmoroSnapshotsOfTable();
+                  snapshotsOfTable.setSnapshotId(s.getSnapshotId());
+                  snapshotsOfTable.setCommitTime(s.getCommitTimestamp());
+                  snapshotsOfTable.setFileCount(s.getTotalFileCount());
+                  snapshotsOfTable.setFileSize((int) s.getTotalFileSize());
+                  snapshotsOfTable.setSummary(s.getSummary());
+                  snapshotsOfTable.setOperation(s.getOperation());
+                  Map<String, String> fileSummary = new HashMap<>();
+                  fileSummary.put("delta-files", "0");
+                  fileSummary.put("data-files", String.valueOf(s.getBaseFileCount()));
+                  fileSummary.put("changelogs", String.valueOf(s.getLogFileCount()));
+                  snapshotsOfTable.setFilesSummaryForChart(fileSummary);
+                  return snapshotsOfTable;
+                })
+            .collect(Collectors.toList());
+
+    long total = snapshots.size();
+    snapshots = snapshots.stream().skip(offset).limit(limit).collect(Collectors.toList());
+    return Pair.of(snapshots, total);
   }
 
   @Override
@@ -340,7 +350,12 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
+      AmoroTable<?> amoroTable,
+      String type,
+      ProcessStatus status,
+      int limit,
+      int offset,
+      String lastSnapshot) {
     HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
     HoodieDefaultTimeline timeline = new HoodieActiveTimeline(hoodieTable.getMetaClient(), false);
     List<HoodieInstant> instants = timeline.getInstants();

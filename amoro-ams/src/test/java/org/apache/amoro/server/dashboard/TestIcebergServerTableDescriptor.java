@@ -301,21 +301,22 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
     doReturn(tableIdentifier).when(table).id();
 
     Pair<List<OptimizingProcessInfo>, Integer> res =
-        descriptor.getOptimizingProcessesInfo(table, null, null, 4, 4);
+        descriptor.getOptimizingProcessesInfo(table, null, null, 4, 4, null);
     Integer expectReturnItemSizeForNoTypeNoStatusOffset0Limit5 = 4;
     Integer expectTotalForNoTypeNoStatusOffset0Limit5 = 10;
     Assert.assertEquals(
         expectReturnItemSizeForNoTypeNoStatusOffset0Limit5, (Integer) res.getLeft().size());
     Assert.assertEquals(expectTotalForNoTypeNoStatusOffset0Limit5, res.getRight());
 
-    res = descriptor.getOptimizingProcessesInfo(table, null, ProcessStatus.SUCCESS, 5, 0);
+    res = descriptor.getOptimizingProcessesInfo(table, null, ProcessStatus.SUCCESS, 5, 0, null);
     Integer expectReturnItemSizeForOnlyStatusOffset0limit5 = 5;
     Integer expectedTotalForOnlyStatusOffset0Limit5 = 7;
     Assert.assertEquals(
         expectReturnItemSizeForOnlyStatusOffset0limit5, (Integer) res.getLeft().size());
     Assert.assertEquals(expectedTotalForOnlyStatusOffset0Limit5, res.getRight());
 
-    res = descriptor.getOptimizingProcessesInfo(table, OptimizingType.MINOR.name(), null, 5, 0);
+    res =
+        descriptor.getOptimizingProcessesInfo(table, OptimizingType.MINOR.name(), null, 5, 0, null);
     Integer expectedRetItemsSizeForOnlyTypeOffset0Limit5 = 4;
     Integer expectedRetTotalForOnlyTypeOffset0Limit5 = 4;
     Assert.assertEquals(
@@ -324,7 +325,7 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
 
     res =
         descriptor.getOptimizingProcessesInfo(
-            table, OptimizingType.MINOR.name(), ProcessStatus.SUCCESS, 2, 2);
+            table, OptimizingType.MINOR.name(), ProcessStatus.SUCCESS, 2, 2, null);
     Integer expectedRetItemSizeForBothTypeAndStatusOffset2Limit2 = 2;
     Integer expectedRetTotalForBothTypeAndStatusOffset2Limit2 = 4;
     Assert.assertEquals(

@@ -23,10 +23,11 @@ import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
+import org.apache.amoro.formats.paimon.utils.SnapShotsScanUtils;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.process.ProcessTaskStatus;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Streams;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.descriptor.AMSColumnInfo;
 import org.apache.amoro.table.descriptor.AMSPartitionField;
@@ -34,6 +35,7 @@ import org.apache.amoro.table.descriptor.AmoroSnapshotsOfTable;
 import org.apache.amoro.table.descriptor.ConsumerInfo;
 import org.apache.amoro.table.descriptor.DDLInfo;
 import org.apache.amoro.table.descriptor.DDLReverser;
+import org.apache.amoro.table.descriptor.FilesStatistics;
 import org.apache.amoro.table.descriptor.FilesStatisticsBuilder;
 import org.apache.amoro.table.descriptor.FormatTableDescriptor;
 import org.apache.amoro.table.descriptor.OperationType;
@@ -64,6 +66,8 @@ import org.apache.paimon.utils.BranchManager;
 import org.apache.paimon.utils.FileStorePathFactory;
 import org.apache.paimon.utils.SnapshotManager;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -75,6 +79,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
@@ -82,11 +87,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /** Descriptor for Paimon format tables. */
 public class PaimonTableDescriptor implements FormatTableDescriptor {
+
+  private static final Logger LOG = LoggerFactory.getLogger(PaimonTableDescriptor.class);
 
   public static final String PAIMON_MAIN_BRANCH_NAME = "main";
 
@@ -180,51 +186,76 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
-  public List<AmoroSnapshotsOfTable> getSnapshots(
-      AmoroTable<?> amoroTable, String ref, OperationType operationType) {
+  public Pair<List<AmoroSnapshotsOfTable>, Long> getSnapshots(
+      AmoroTable<?> amoroTable,
+      String ref,
+      OperationType operationType,
+      int limit,
+      int offset,
+      String lastSnapshot) {
     FileStoreTable table = getTable(amoroTable);
-    List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
-    Iterator<Snapshot> snapshots;
+    long total = 0;
     if (table.branchManager().branchExists(ref) || BranchManager.isMainBranch(ref)) {
       SnapshotManager snapshotManager = table.snapshotManager().copyWithBranch(ref);
-      try {
-        snapshots = snapshotManager.snapshots();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    } else {
-      snapshots =
-          Collections.singleton(table.tagManager().getOrThrow(ref).trimToSnapshot()).iterator();
-    }
+      total = snapshotManager.latestSnapshotId() - snapshotManager.earliestSnapshotId();
+      // Parse lastSnapshot if provided
+      Long lastSnapshotId =
+          (lastSnapshot != null && !lastSnapshot.trim().isEmpty())
+              ? Long.valueOf(lastSnapshot)
+              : null;
 
-    FileStore<?> store = table.store();
-    List<CompletableFuture<AmoroSnapshotsOfTable>> futures = new ArrayList<>();
-    Predicate<Snapshot> predicate =
-        operationType == OperationType.ALL
-            ? s -> true
-            : operationType == OperationType.OPTIMIZING
-                ? s -> s.commitKind() == Snapshot.CommitKind.COMPACT
-                : s -> s.commitKind() != Snapshot.CommitKind.COMPACT;
-    while (snapshots.hasNext()) {
-      Snapshot snapshot = snapshots.next();
-      if (!predicate.test(snapshot)) {
-        continue;
+      // Use the enhanced pagination method to get snapshots with filtering
+      // The pagination method already handles operation type filtering internally
+      Pair<List<Snapshot>, Integer> result =
+          SnapShotsScanUtils.getSnapshotsWithPaginationForGeneral(
+              snapshotManager, null, operationType, limit, offset, lastSnapshotId);
+      List<Snapshot> snapshots = result.getLeft();
+
+      // Convert to AmoroSnapshotsOfTable in parallel with improved error handling
+      FileStore<?> store = table.store();
+      List<CompletableFuture<AmoroSnapshotsOfTable>> futures = new ArrayList<>();
+
+      for (Snapshot snapshot : snapshots) {
+        futures.add(
+            CompletableFuture.supplyAsync(() -> getSnapshotsOfTable(store, snapshot), executor));
       }
-      futures.add(
-          CompletableFuture.supplyAsync(() -> getSnapshotsOfTable(store, snapshot), executor));
-    }
-    for (CompletableFuture<AmoroSnapshotsOfTable> completableFuture : futures) {
-      try {
-        snapshotsOfTables.add(completableFuture.get());
-      } catch (InterruptedException e) {
-        // ignore
-      } catch (ExecutionException e) {
-        throw new RuntimeException(e);
+
+      // Collect results and maintain order with better error handling
+      List<AmoroSnapshotsOfTable> snapshotsOfTables = new ArrayList<>();
+      for (CompletableFuture<AmoroSnapshotsOfTable> future : futures) {
+        try {
+          AmoroSnapshotsOfTable resultSnapshot = future.get();
+          if (resultSnapshot != null) {
+            snapshotsOfTables.add(resultSnapshot);
+          }
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new RuntimeException("Snapshot processing interrupted", e);
+        } catch (ExecutionException e) {
+          throw new RuntimeException("Failed to process snapshot", e.getCause());
+        }
+      }
+      // The snapshots are already in correct order from the pagination method
+      return Pair.of(snapshotsOfTables, total);
+    } else {
+      // Handle tag-based snapshots - simplified single snapshot processing
+      Snapshot tagSnapshot = table.tagManager().getOrThrow(ref).trimToSnapshot();
+      FileStore<?> store = table.store();
+      AmoroSnapshotsOfTable snapshotOfTable = getSnapshotsOfTable(store, tagSnapshot);
+
+      // Apply operation type filter for single snapshot
+      if (operationType == OperationType.ALL) {
+        return Pair.of(Collections.singletonList(snapshotOfTable), 1L);
+      } else if (operationType == OperationType.OPTIMIZING) {
+        return tagSnapshot.commitKind() == Snapshot.CommitKind.COMPACT
+            ? Pair.of(Collections.singletonList(snapshotOfTable), 1L)
+            : Pair.of(Collections.emptyList(), 0L);
+      } else { // NON_OPTIMIZING
+        return tagSnapshot.commitKind() != Snapshot.CommitKind.COMPACT
+            ? Pair.of(Collections.singletonList(snapshotOfTable), 1L)
+            : Pair.of(Collections.emptyList(), 0L);
       }
     }
-    return snapshotsOfTables.stream()
-        .sorted((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()))
-        .collect(Collectors.toList());
   }
 
   @Override
@@ -372,7 +403,12 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
+      AmoroTable<?> amoroTable,
+      String type,
+      ProcessStatus status,
+      int limit,
+      int offset,
+      String lastSnapshot) {
     // Temporary solution for Paimon. TODO: Get compaction info from Paimon compaction task
     List<OptimizingProcessInfo> processInfoList;
     TableIdentifier tableIdentifier = amoroTable.id();
@@ -380,11 +416,21 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     FileStore<?> store = fileStoreTable.store();
     boolean isPrimaryTable = !fileStoreTable.primaryKeys().isEmpty();
     int maxLevel = CoreOptions.fromMap(fileStoreTable.options()).numLevels() - 1;
+    int totalCompactSnapshots = 0;
     try {
-      List<Snapshot> compactSnapshots =
-          Streams.stream(store.snapshotManager().snapshots())
-              .filter(s -> s.commitKind() == Snapshot.CommitKind.COMPACT)
-              .collect(Collectors.toList());
+      SnapshotManager snapshotManager = store.snapshotManager();
+      // Parse lastSnapshot if provided
+      Long lastSnapshotId =
+          (lastSnapshot != null && !lastSnapshot.trim().isEmpty())
+              ? Long.valueOf(lastSnapshot)
+              : null;
+      // Use the enhanced pagination method to get compact snapshots
+      Pair<List<Snapshot>, Integer> result =
+          SnapShotsScanUtils.getSnapshotsWithPagination(
+              snapshotManager, Snapshot.CommitKind.COMPACT, limit, offset, lastSnapshotId);
+      List<Snapshot> compactSnapshots = result.getLeft();
+      ManifestFile manifestFile = store.manifestFileFactory().create();
+      ManifestList manifestList = store.manifestListFactory().create();
       processInfoList =
           compactSnapshots.stream()
               .sorted(Comparator.comparing(Snapshot::id).reversed())
@@ -399,17 +445,25 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                     optimizingProcessInfo.setFinishTime(s.timeMillis());
                     FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
                     FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
-                    ManifestFile manifestFile = store.manifestFileFactory().create();
-                    ManifestList manifestList = store.manifestListFactory().create();
                     List<ManifestFileMeta> manifestFileMetas = manifestList.readDeltaManifests(s);
                     boolean hasMaxLevels = false;
                     long minCreateTime = Long.MAX_VALUE;
                     long maxCreateTime = Long.MIN_VALUE;
                     Set<Integer> buckets = new HashSet<>();
+                    HashMap<String, String> summary = new HashMap<>(8);
+                    Long totalAddRowCount = 0L;
+                    Long deleteAddRowCount = 0L;
                     for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
                       List<ManifestEntry> compactManifestEntries =
                           manifestFile.read(manifestFileMeta.fileName());
                       for (ManifestEntry compactManifestEntry : compactManifestEntries) {
+                        long addRowCount = compactManifestEntry.file().rowCount();
+                        totalAddRowCount += addRowCount;
+                        Optional<Long> deleteRowCount =
+                            compactManifestEntry.file().deleteRowCount();
+                        if (deleteRowCount.isPresent()) {
+                          deleteAddRowCount += deleteRowCount.get();
+                        }
                         if (compactManifestEntry.file().level() == maxLevel) {
                           hasMaxLevels = true;
                         }
@@ -438,36 +492,152 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                     optimizingProcessInfo.setDuration(s.timeMillis() - minCreateTime);
                     optimizingProcessInfo.setInputFiles(inputBuilder.build());
                     optimizingProcessInfo.setOutputFiles(outputBuilder.build());
-                    optimizingProcessInfo.setSummary(Collections.emptyMap());
+                    summary.put(
+                        "input-data-files(rewrite)",
+                        String.valueOf(optimizingProcessInfo.getInputFiles().getFileCnt()));
+                    summary.put(
+                        "input-data-size(rewrite)",
+                        String.valueOf(optimizingProcessInfo.getInputFiles().getTotalSize()));
+                    summary.put("input-data-records(rewrite)", String.valueOf(totalAddRowCount));
+                    summary.put(
+                        "output-data-files",
+                        String.valueOf(optimizingProcessInfo.getOutputFiles().getFileCnt()));
+                    summary.put(
+                        "output-data-size",
+                        String.valueOf(optimizingProcessInfo.getOutputFiles().getTotalSize()));
+                    summary.put("output-data-records", String.valueOf(deleteAddRowCount));
+                    optimizingProcessInfo.setSummary(summary);
                     return optimizingProcessInfo;
                   })
               .collect(Collectors.toList());
-    } catch (IOException e) {
+      processInfoList =
+          processInfoList.stream()
+              .filter(
+                  p -> StringUtils.isBlank(type) || type.equalsIgnoreCase(p.getOptimizingType()))
+              .filter(p -> status == null || status == p.getStatus())
+              .collect(Collectors.toList());
+      // The estimated approximate number of Compactions
+      totalCompactSnapshots =
+          (int)
+              Math.ceil(
+                  ((snapshotManager.latestSnapshotId() - snapshotManager.earliestSnapshotId()) / 2L)
+                      * 0.6);
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
-    processInfoList =
-        processInfoList.stream()
-            .filter(p -> StringUtils.isBlank(type) || type.equalsIgnoreCase(p.getOptimizingType()))
-            .filter(p -> status == null || status == p.getStatus())
-            .collect(Collectors.toList());
-    int total = processInfoList.size();
-    processInfoList =
-        processInfoList.stream().skip(offset).limit(limit).collect(Collectors.toList());
-    return Pair.of(processInfoList, total);
+    return Pair.of(processInfoList, totalCompactSnapshots);
   }
 
   @Override
   public Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable) {
     Map<String, String> types = Maps.newHashMap();
-    types.put("FULL", "full");
+    types.put("FULL", "FULL");
     types.put("MINOR", "MINOR");
+    types.put("INTERNAL", "INTERNAL");
     return types;
   }
 
   @Override
   public List<OptimizingTaskInfo> getOptimizingTaskInfos(
       AmoroTable<?> amoroTable, String processId) {
-    throw new UnsupportedOperationException();
+    long id = Long.parseLong(processId);
+    FileStoreTable table = getTable(amoroTable);
+    FileStore<?> store = table.store();
+    Snapshot snapshot = null;
+    try {
+      SnapshotManager snapshotManager = store.snapshotManager();
+      ManifestList manifestList = store.manifestListFactory().create();
+      ManifestFile manifestFile = store.manifestFileFactory().create();
+      snapshot = snapshotManager.tryGetSnapshot(id);
+      Snapshot.CommitKind commitKind = snapshot.commitKind();
+      if (commitKind == Snapshot.CommitKind.COMPACT) {
+        List<ManifestFileMeta> manifestFileMetas = manifestList.readDeltaManifests(snapshot);
+
+        // Group manifest entries by bucket for per-bucket statistics
+        Map<Integer, BucketStatistics> bucketStatsMap = new HashMap<>();
+
+        for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
+          List<ManifestEntry> compactManifestEntries =
+              manifestFile.read(manifestFileMeta.fileName());
+          for (ManifestEntry compactManifestEntry : compactManifestEntries) {
+            int bucket = compactManifestEntry.bucket();
+            BucketStatistics bucketStats =
+                bucketStatsMap.computeIfAbsent(bucket, k -> new BucketStatistics());
+            if (compactManifestEntry.kind() == FileKind.DELETE) {
+              bucketStats.deletedFiles++;
+              bucketStats.inputSize += compactManifestEntry.file().fileSize();
+              bucketStats.removedFilePaths.add(fullFilePath(store, compactManifestEntry));
+            } else {
+              bucketStats.outputSize += compactManifestEntry.file().fileSize();
+              bucketStats.addedFilePaths.add(fullFilePath(store, compactManifestEntry));
+            }
+          }
+        }
+
+        // Convert bucket statistics to OptimizingTaskInfo objects
+        List<OptimizingTaskInfo> results = new ArrayList<>();
+        int taskId = 1;
+        for (Map.Entry<Integer, BucketStatistics> entry : bucketStatsMap.entrySet()) {
+          Integer bucket = entry.getKey();
+          BucketStatistics stats = entry.getValue();
+
+          // Create FilesStatistics for input and output
+          FilesStatistics inputFiles =
+              FilesStatistics.builder().addFiles(stats.inputSize, stats.deletedFiles).build();
+
+          FilesStatistics outputFiles =
+              FilesStatistics.builder()
+                  .addFiles(stats.outputSize, stats.addedFilePaths.size())
+                  .build();
+
+          // Create summary with bucket information
+          Map<String, String> summary = new HashMap<>();
+          summary.put("bucket", String.valueOf(bucket));
+          summary.put("deleted-files-count", String.valueOf(stats.deletedFiles));
+          summary.put("added-files-count", String.valueOf(stats.addedFilePaths.size()));
+          summary.put("removed-files", String.join(",", stats.removedFilePaths));
+          summary.put("added-files", String.join(",", stats.addedFilePaths));
+
+          // Create OptimizingTaskInfo
+          OptimizingTaskInfo taskInfo =
+              new OptimizingTaskInfo(
+                  null, // tableId
+                  processId, // processId
+                  taskId++, // taskId
+                  "bucket-" + bucket, // partitionData
+                  ProcessTaskStatus.SUCCESS, // status
+                  0, // retryNum
+                  "paimon-internal-optimizer", // optimizerToken
+                  0, // threadId
+                  snapshot.timeMillis(), // startTime
+                  snapshot.timeMillis(), // endTime
+                  0, // costTime (calculated automatically)
+                  null, // failReason
+                  inputFiles, // inputFiles
+                  outputFiles, // outputFiles
+                  summary, // summary
+                  new HashMap<>() // properties
+                  );
+
+          results.add(taskInfo);
+        }
+        return results;
+      }
+      return Collections.emptyList();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  // Helper class to collect bucket-level statistics
+  private static class BucketStatistics {
+    int deletedFiles = 0;
+    long inputSize = 0;
+    long outputSize = 0;
+    List<String> removedFilePaths = new ArrayList<>();
+    List<String> addedFilePaths = new ArrayList<>();
+
+    public BucketStatistics() {}
   }
 
   @NotNull

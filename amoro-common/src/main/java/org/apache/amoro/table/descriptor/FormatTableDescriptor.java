@@ -44,8 +44,13 @@ public interface FormatTableDescriptor {
   ServerTableMeta getTableDetail(AmoroTable<?> amoroTable);
 
   /** Get the snapshot information of the {@link AmoroTable}. */
-  List<AmoroSnapshotsOfTable> getSnapshots(
-      AmoroTable<?> amoroTable, String ref, OperationType operationType);
+  Pair<List<AmoroSnapshotsOfTable>, Long> getSnapshots(
+      AmoroTable<?> amoroTable,
+      String ref,
+      OperationType operationType,
+      int limit,
+      int offset,
+      String lastSnapshot);
 
   /** Get the snapshot detail information of the {@link AmoroTable}. */
   List<PartitionFileBaseInfo> getSnapshotDetail(
@@ -63,7 +68,12 @@ public interface FormatTableDescriptor {
 
   /** Get the paged optimizing process information of the {@link AmoroTable} and total size. */
   Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset);
+      AmoroTable<?> amoroTable,
+      String type,
+      ProcessStatus status,
+      int limit,
+      int offset,
+      String lastSnapshot);
 
   /** Return the optimizing types of the {@link AmoroTable} is supported. */
   Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable);

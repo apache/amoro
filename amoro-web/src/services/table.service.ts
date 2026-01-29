@@ -115,10 +115,11 @@ export function getSnapshots(
     token?: string
     ref: string
     operation: string
+    lastSnapshot?: string
   },
 ) {
-  const { catalog, db, table, page, pageSize, token, ref, operation } = params
-  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots`, { params: { page, pageSize, token, ref, operation } })
+  const { catalog, db, table, page, pageSize, token, ref, operation, lastSnapshot } = params
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/snapshots`, { params: { page, pageSize, token, ref, operation, lastSnapshot } })
 }
 
 // get Snapshot detail
@@ -162,10 +163,11 @@ export function getOptimizingProcesses(
     page: number
     pageSize: number
     token?: string
+    lastSnapshot?: string
   },
 ) {
-  const { catalog, db, table, type, status, page, pageSize, token } = params
-  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes`, { params: { page, pageSize, token, type, status } })
+  const { catalog, db, table, type, status, page, pageSize, token, lastSnapshot } = params
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes`, { params: { page, pageSize, token, type, status, lastSnapshot } })
 }
 
 // get optimizing process types
