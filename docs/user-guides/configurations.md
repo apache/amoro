@@ -62,6 +62,8 @@ Self-optimizing configurations are applicable to both Iceberg Format and Mixed s
 | self-optimizing.full.rewrite-all-files        | true             | Whether full optimizing rewrites all files or skips files that do not need to be optimized                                                                                                                                              |
 | self-optimizing.min-plan-interval             | 60000            | The minimum time interval between two self-optimizing planning action                                                                                                                                                                   |
 | self-optimizing.filter                        | NULL             | Filter conditions for self-optimizing, using SQL conditional expressions, without supporting any functions. For the timestamp column condition, the ISO date-time formatter must be used. For example: op_time > '2007-12-03T10:15:30'. |
+| self-optimizing.rewrite-all-avro              | false            | Whether to rewrite all avro files during optimizing (Ignored when write.format.default is avro). Mainly for high-throughput write scenarios. Writing with avro greatly improves write performance; enabling this option will rewrite all avro files to the file format defined by write.format.default(parquet or orc), ensuring read performance is not affected. |
+
 
 ## Data-cleaning configurations
 
