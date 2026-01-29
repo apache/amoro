@@ -106,7 +106,47 @@ export default defineComponent({
     }
 
     const navClick = (item: MenuItem) => {
-      const targetPath = item.key === 'tables' ? '/tables' : `/${item.key}`
+      if (item.key === 'tables') {
+        let catalog: string | undefined
+        let db: string | undefined
+        let tableName: string | undefined
+
+        try {
+          const stored = localStorage.getItem('easylake-menu-catalog-db-table')
+          if (stored) {
+            const parsed = JSON.parse(stored) as { catalog?: string; database?: string; tableName?: string }
+            catalog = parsed.catalog
+            db = parsed.database
+            tableName = parsed.tableName
+          }
+        }
+        catch (e) {
+          // ignore localStorage read/parse errors
+        }
+
+        if (catalog && db && tableName) {
+          router.replace({
+            path: '/tables',
+            query: {
+              catalog,
+              db,
+              table: tableName,
+            },
+          })
+        }
+        else {
+          router.replace({
+            path: '/tables',
+          })
+        }
+
+        nextTick(() => {
+          setCurMenu()
+        })
+        return
+      }
+
+      const targetPath = `/${item.key}`
       router.replace({
         path: targetPath,
       })

@@ -25,10 +25,12 @@ import { Empty as AEmpty, Modal } from 'ant-design-vue'
 import Detail from './Detail.vue'
 import { getCatalogList } from '@/services/table.service'
 import type { ICatalogItem } from '@/types/common.type'
+import { usePageScroll } from '@/hooks/usePageScroll'
 
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
+const { pageScrollRef } = usePageScroll()
 const catalogs = reactive<ICatalogItem[]>([])
 const curCatalog = reactive<ICatalogItem>({
   catalogName: '',
@@ -170,31 +172,40 @@ onBeforeRouteLeave((_to, _form, next) => {
 </script>
 
 <template>
-  <div class="catalogs-wrap g-flex">
-    <div class="catalog-list-left">
-      <div class="catalog-header">
-        {{ `${$t('catalog')} ${$t('list')}` }}
+  <div class="page-scroll" ref="pageScrollRef">
+    <div class="catalogs-wrap g-flex">
+      <div class="catalog-list-left">
+        <div class="catalog-header">
+          {{ `${$t('catalog')} ${$t('list')}` }}
+        </div>
+        <ul v-if="catalogs.length && !loading" class="catalog-list">
+          <li v-for="item in catalogs" :key="item.catalogName" class="catalog-item g-text-nowrap" :class="{ active: item.catalogName === curCatalog.catalogName }" @click="handleClick(item)">
+            {{ item.catalogName }}
+          </li>
+        </ul>
+        <a-button :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn" @click="addCatalog">
+          +
+        </a-button>
       </div>
-      <ul v-if="catalogs.length && !loading" class="catalog-list">
-        <li v-for="item in catalogs" :key="item.catalogName" class="catalog-item g-text-nowrap" :class="{ active: item.catalogName === curCatalog.catalogName }" @click="handleClick(item)">
-          {{ item.catalogName }}
-        </li>
-      </ul>
-      <a-button :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn" @click="addCatalog">
-        +
-      </a-button>
-    </div>
-    <div class="catalog-detail">
-      <AEmpty v-if="!catalogs.length && !loading" :image="simpleImage" class="detail-empty" />
-      <Detail v-else :is-edit="isEdit" @update-edit="updateEdit" @update-catalogs="updateCatalogs" />
+      <div class="catalog-detail">
+        <AEmpty v-if="!catalogs.length && !loading" :image="simpleImage" class="detail-empty" />
+        <Detail v-else :is-edit="isEdit" @update-edit="updateEdit" @update-catalogs="updateCatalogs" />
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="less" scoped>
-.catalogs-wrap {
+.page-scroll {
   height: 100%;
-  padding: 16px 24px;
+  overflow-y: auto;
+}
+
+
+
+ .catalogs-wrap {
+   height: 100%;
+   padding: 16px 24px;
   .catalog-list-left {
     width: 200px;
     height: 100%;
