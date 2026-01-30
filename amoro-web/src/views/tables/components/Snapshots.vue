@@ -20,6 +20,7 @@ limitations under the License.
 import { onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
+import { CaretDownOutlined, CaretRightOutlined } from '@ant-design/icons-vue'
 import Selector from './Selector.vue'
 import { usePagination } from '@/hooks/usePagination'
 import type { BreadcrumbSnapshotItem, IColumns, ILineChartOriginalData, SnapshotItem } from '@/types/common.type'
@@ -61,8 +62,10 @@ const sourceData = reactive({
   table: '',
   ...query,
 })
+
 const recordChartOption = ref<ECOption>({})
 const fileChartOption = ref<ECOption>({})
+const showCharts = ref(false)
 const tblRef = ref<string>('')
 const operation = ref<string>('')
 
@@ -185,6 +188,10 @@ function toggleBreadcrumb(record: SnapshotItem) {
   }
 }
 
+function toggleCharts() {
+  showCharts.value = !showCharts.value
+}
+
 onMounted(() => {
   hasBreadcrumb.value = false
 })
@@ -193,15 +200,36 @@ onMounted(() => {
 <template>
   <div class="table-snapshots">
     <template v-if="!hasBreadcrumb">
-      <a-row>
+      <Selector
+        :catalog="sourceData.catalog"
+        :db="sourceData.db"
+        :table="sourceData.table"
+        :disabled="loading"
+        @consumer-change="onConsumerChange"
+        @ref-change="onRefChange"
+      >
+        <template #extra>
+          <div class="snapshots-charts-header" @click="toggleCharts">
+            <span class="snapshots-charts-title">Charts</span>
+            <span class="snapshots-charts-icon">
+              <CaretRightOutlined v-if="!showCharts" />
+              <CaretDownOutlined v-else />
+            </span>
+          </div>
+        </template>
+      </Selector>
+      <a-row v-if="showCharts" :gutter="32">
         <a-col :span="12">
-          <Chart :loading="loading" :options="recordChartOption" />
+          <div class="snapshots-chart-wrap">
+            <Chart height="300px" :loading="loading" :options="recordChartOption" />
+          </div>
         </a-col>
         <a-col :span="12">
-          <Chart :loading="loading" :options="fileChartOption" />
+          <div class="snapshots-chart-wrap">
+            <Chart height="300px" :loading="loading" :options="fileChartOption" />
+          </div>
         </a-col>
       </a-row>
-      <Selector :catalog="sourceData.catalog" :db="sourceData.db" :table="sourceData.table" :disabled="loading" @consumer-change="onConsumerChange" @ref-change="onRefChange" />
       <a-table
         row-key="snapshotId"
         :columns="columns"
@@ -281,8 +309,29 @@ onMounted(() => {
     padding: 0;
   }
 
+  :deep(.ant-table-row-expand-icon) {
+    border-radius: 0 !important;
+  }
+
   .ant-table-wrapper {
-    margin-top: 24px;
+    margin-top: 18px;
+  }
+
+  .snapshots-charts-header {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .snapshots-charts-title {
+    margin-right: 4px;
+  }
+
+  .snapshots-charts-icon {
+    font-size: 10px;
+    color: #999;
+    display: inline-flex;
+    align-items: center;
   }
 }
 </style>
