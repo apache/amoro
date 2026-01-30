@@ -932,9 +932,15 @@ public class DefaultTableService extends PersistentBase implements TableService 
     Optional<TableRuntime> tableRuntimeOpt =
         createTableRuntime(serverTableIdentifier, meta, Collections.emptyList());
     if (!tableRuntimeOpt.isPresent()) {
-      LOG.warn("No available table runtime factory found for table {}", serverTableIdentifier);
+      LOG.info(
+          "Table {} format {} is not supported for optimization. "
+              + "Table metadata browsing is still available.",
+          serverTableIdentifier, table.format());
       return false;
     }
+
+    // Only insert to database if format is supported
+    doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
 
     TableRuntime tableRuntime = tableRuntimeOpt.get();
     tableRuntimeMap.put(serverTableIdentifier.getId(), tableRuntime);
