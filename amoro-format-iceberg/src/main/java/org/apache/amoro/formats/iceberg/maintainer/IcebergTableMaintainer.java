@@ -31,6 +31,7 @@ import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;
 import org.apache.amoro.maintainer.MaintainerMetrics;
+import org.apache.amoro.maintainer.MaintainerOperationExecutor;
 import org.apache.amoro.maintainer.MaintainerOperationType;
 import org.apache.amoro.maintainer.OptimizingInfo;
 import org.apache.amoro.maintainer.TableMaintainer;
@@ -140,15 +141,16 @@ public class IcebergTableMaintainer implements TableMaintainer {
       return;
     }
 
-    long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
+    MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
 
-    cleanContentFiles(System.currentTimeMillis() - keepTime, metrics);
-
-    // refresh
-    table.refresh();
-
-    // clear metadata files
-    cleanMetadata(System.currentTimeMillis() - keepTime, metrics);
+    executor.execute(
+        MaintainerOperationType.ORPHAN_FILES_CLEANING,
+        () -> {
+          long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
+          cleanContentFiles(System.currentTimeMillis() - keepTime, metrics);
+          table.refresh();
+          cleanMetadata(System.currentTimeMillis() - keepTime, metrics);
+        });
   }
 
   @Override
@@ -160,30 +162,37 @@ public class IcebergTableMaintainer implements TableMaintainer {
       return;
     }
 
-    Snapshot currentSnapshot = table.currentSnapshot();
-    if (currentSnapshot == null) {
-      return;
-    }
-    Optional<String> totalDeleteFiles =
-        Optional.ofNullable(currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
-    if (totalDeleteFiles.isPresent() && Long.parseLong(totalDeleteFiles.get()) > 0) {
-      // clear dangling delete files
-      LOG.info("Starting cleaning dangling delete files for table {}", table.name());
-      int danglingDeleteFilesCnt = clearInternalTableDanglingDeleteFiles();
-      runWithCondition(
-          danglingDeleteFilesCnt > 0,
-          () -> {
-            LOG.info(
-                "Deleted {} dangling delete files for table {}",
-                danglingDeleteFilesCnt,
+    MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
+
+    executor.execute(
+        MaintainerOperationType.DANGLING_DELETE_FILES_CLEANING,
+        () -> {
+          Snapshot currentSnapshot = table.currentSnapshot();
+          if (currentSnapshot == null) {
+            return;
+          }
+          Optional<String> totalDeleteFiles =
+              Optional.ofNullable(
+                  currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
+          if (totalDeleteFiles.isPresent() && Long.parseLong(totalDeleteFiles.get()) > 0) {
+            // clear dangling delete files
+            LOG.info("Starting cleaning dangling delete files for table {}", table.name());
+            int danglingDeleteFilesCnt = clearInternalTableDanglingDeleteFiles();
+            runWithCondition(
+                danglingDeleteFilesCnt > 0,
+                () -> {
+                  LOG.info(
+                      "Deleted {} dangling delete files for table {}",
+                      danglingDeleteFilesCnt,
+                      table.name());
+                  metrics.recordDanglingDeleteFilesCleaned(danglingDeleteFilesCnt);
+                });
+          } else {
+            LOG.debug(
+                "There are no delete files here, so there is no need to clean dangling delete file for table {}",
                 table.name());
-            metrics.recordDanglingDeleteFilesCleaned(danglingDeleteFilesCnt);
-          });
-    } else {
-      LOG.debug(
-          "There are no delete files here, so there is no need to clean dangling delete file for table {}",
-          table.name());
-    }
+          }
+        });
   }
 
   @Override
@@ -195,22 +204,15 @@ public class IcebergTableMaintainer implements TableMaintainer {
     long mustOlderThan = mustOlderThan(System.currentTimeMillis());
     int minCount = context.getTableConfiguration().getSnapshotMinCount();
 
-    long startTime = System.currentTimeMillis();
-    metrics.recordOperationStart(MaintainerOperationType.SNAPSHOT_EXPIRATION);
-
-    try {
-      expireSnapshotsWithMetrics(mustOlderThan, minCount, metrics, startTime);
-      long duration = System.currentTimeMillis() - startTime;
-      metrics.recordOperationSuccess(MaintainerOperationType.SNAPSHOT_EXPIRATION, duration);
-    } catch (Throwable t) {
-      long duration = System.currentTimeMillis() - startTime;
-      metrics.recordOperationFailure(MaintainerOperationType.SNAPSHOT_EXPIRATION, duration, t);
-      throw t;
-    }
+    MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
+    executor.execute(
+        MaintainerOperationType.SNAPSHOT_EXPIRATION,
+        () -> expireSnapshotsInternal(mustOlderThan, minCount, metrics));
   }
 
-  private void expireSnapshotsWithMetrics(
-      long mustOlderThan, int minCount, MaintainerMetrics metrics, long startTime) {
+  private void expireSnapshotsInternal(
+      long mustOlderThan, int minCount, MaintainerMetrics metrics) {
+    long startTime = System.currentTimeMillis();
     Set<String> exclude = expireSnapshotNeedToExcludeFiles();
     LOG.debug(
         "Starting snapshots expiration for table {}, expiring snapshots older than {} and retain last {} snapshots, excluding {}",
@@ -258,16 +260,14 @@ public class IcebergTableMaintainer implements TableMaintainer {
   @VisibleForTesting
   public void expireSnapshots(long mustOlderThan, int minCount) {
     MaintainerMetrics metrics = context.getMetrics();
-    long startTime = System.currentTimeMillis();
-    expireSnapshotsWithMetrics(mustOlderThan, minCount, metrics, startTime);
+    expireSnapshotsInternal(mustOlderThan, minCount, metrics);
   }
 
   private void expireSnapshots(long olderThan, int minCount, Set<String> exclude) {
     // This method is kept for backward compatibility with potential subclasses
     // Redirect to the new method with metrics
     MaintainerMetrics metrics = context.getMetrics();
-    long startTime = System.currentTimeMillis();
-    expireSnapshotsWithMetrics(olderThan, minCount, metrics, startTime);
+    expireSnapshotsInternal(olderThan, minCount, metrics);
   }
 
   @Override
@@ -275,26 +275,20 @@ public class IcebergTableMaintainer implements TableMaintainer {
     DataExpirationConfig expirationConfig = context.getTableConfiguration().getExpiringDataConfig();
     MaintainerMetrics metrics = context.getMetrics();
 
-    long startTime = System.currentTimeMillis();
-    metrics.recordOperationStart(MaintainerOperationType.DATA_EXPIRATION);
+    MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
+    executor.execute(
+        MaintainerOperationType.DATA_EXPIRATION,
+        () -> {
+          Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
+          if (!isValidDataExpirationField(expirationConfig, field, table.name())) {
+            return;
+          }
 
-    try {
-      Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
-      if (!isValidDataExpirationField(expirationConfig, field, table.name())) {
-        long duration = System.currentTimeMillis() - startTime;
-        metrics.recordOperationSuccess(MaintainerOperationType.DATA_EXPIRATION, duration);
-        return;
-      }
-
-      expireDataFromWithMetrics(
-          expirationConfig, expireBaseOnRule(expirationConfig, field), metrics, startTime);
-      long duration = System.currentTimeMillis() - startTime;
-      metrics.recordOperationSuccess(MaintainerOperationType.DATA_EXPIRATION, duration);
-    } catch (Throwable t) {
-      long duration = System.currentTimeMillis() - startTime;
-      metrics.recordOperationFailure(MaintainerOperationType.DATA_EXPIRATION, duration, t);
-      LOG.error("Unexpected purge error for table {} ", tableIdentifier, t);
-    }
+          Instant expireInstant = expireBaseOnRule(expirationConfig, field);
+          if (!expireInstant.equals(Instant.MIN)) {
+            doExpireData(expirationConfig, expireInstant, metrics);
+          }
+        });
   }
 
   public Instant expireBaseOnRule(DataExpirationConfig expirationConfig, Types.NestedField field) {
@@ -329,15 +323,19 @@ public class IcebergTableMaintainer implements TableMaintainer {
       return;
     }
     MaintainerMetrics metrics = context.getMetrics();
-    long startTime = System.currentTimeMillis();
-    expireDataFromWithMetrics(expirationConfig, instant, metrics, startTime);
+    MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
+    executor.execute(
+        MaintainerOperationType.DATA_EXPIRATION,
+        () -> doExpireData(expirationConfig, instant, metrics));
   }
 
-  private void expireDataFromWithMetrics(
-      DataExpirationConfig expirationConfig,
-      Instant instant,
-      MaintainerMetrics metrics,
-      long startTime) {
+  private void doExpireData(
+      DataExpirationConfig expirationConfig, Instant instant, MaintainerMetrics metrics) {
+    // Add defensive check
+    if (instant.equals(Instant.MIN)) {
+      return;
+    }
+    long startTime = System.currentTimeMillis();
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
     Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
     LOG.info(
@@ -374,24 +372,20 @@ public class IcebergTableMaintainer implements TableMaintainer {
     TagConfiguration tagConfiguration = context.getTableConfiguration().getTagConfiguration();
     MaintainerMetrics metrics = context.getMetrics();
 
-    long startTime = System.currentTimeMillis();
-    metrics.recordOperationStart(MaintainerOperationType.TAG_CREATION);
-
-    try {
-      int tagsCreated = autoCreateTagsWithMetrics(tagConfiguration);
-      long duration = System.currentTimeMillis() - startTime;
-      if (tagsCreated > 0) {
-        metrics.recordTagsCreated(tagsCreated, duration);
-      }
-      metrics.recordOperationSuccess(MaintainerOperationType.TAG_CREATION, duration);
-    } catch (Throwable t) {
-      long duration = System.currentTimeMillis() - startTime;
-      metrics.recordOperationFailure(MaintainerOperationType.TAG_CREATION, duration, t);
-      throw t;
-    }
+    MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
+    executor.execute(
+        MaintainerOperationType.TAG_CREATION,
+        () -> {
+          long startTime = System.currentTimeMillis();
+          int tagsCreated = autoCreateTagsInternal(tagConfiguration);
+          long duration = System.currentTimeMillis() - startTime;
+          if (tagsCreated > 0) {
+            metrics.recordTagsCreated(tagsCreated, duration);
+          }
+        });
   }
 
-  private int autoCreateTagsWithMetrics(TagConfiguration tagConfiguration) {
+  private int autoCreateTagsInternal(TagConfiguration tagConfiguration) {
     LocalDateTime checkTime = LocalDateTime.now();
 
     if (!tagConfiguration.isAutoCreateTag()) {

@@ -21,8 +21,6 @@ package org.apache.amoro.maintainer;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
@@ -38,29 +36,25 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class TestMaintainerOperationTemplate {
+public class TestMaintainerOperationExecutor {
 
   @Mock private MaintainerMetrics mockMetrics;
 
-  private MaintainerOperationTemplate template;
+  private MaintainerOperationExecutor executor;
 
   @BeforeEach
   public void setUp() {
-    template = new MaintainerOperationTemplate(mockMetrics);
+    executor = new MaintainerOperationExecutor(mockMetrics);
   }
 
   @Test
-  public void testSuccessfulOperation() throws Throwable {
+  public void testSuccessfulOperation() {
     // Execute operation
-    boolean result =
-        template.execute(
-            MaintainerOperationType.ORPHAN_FILES_CLEANING,
-            () -> {
-              // Operation logic here
-            });
-
-    // Verify result
-    assertTrue(result);
+    executor.execute(
+        MaintainerOperationType.ORPHAN_FILES_CLEANING,
+        () -> {
+          // Operation logic here
+        });
 
     // Verify metrics recorded
     InOrder inOrder = inOrder(mockMetrics);
@@ -69,19 +63,18 @@ public class TestMaintainerOperationTemplate {
         .verify(mockMetrics)
         .recordOperationSuccess(eq(MaintainerOperationType.ORPHAN_FILES_CLEANING), anyLong());
     verify(mockMetrics, never())
-        .recordOperationFailure(
-            eq(MaintainerOperationType.ORPHAN_FILES_CLEANING), anyLong(), any());
+        .recordOperationFailure(eq(MaintainerOperationType.ORPHAN_FILES_CLEANING), anyLong());
   }
 
   @Test
-  public void testFailedOperation() throws Throwable {
+  public void testFailedOperation() {
     RuntimeException exception = new RuntimeException("Test error");
 
     // Execute operation and expect exception
     assertThrows(
         RuntimeException.class,
         () ->
-            template.execute(
+            executor.execute(
                 MaintainerOperationType.SNAPSHOT_EXPIRATION,
                 () -> {
                   throw exception;
@@ -92,19 +85,18 @@ public class TestMaintainerOperationTemplate {
     inOrder.verify(mockMetrics).recordOperationStart(MaintainerOperationType.SNAPSHOT_EXPIRATION);
     inOrder
         .verify(mockMetrics)
-        .recordOperationFailure(
-            eq(MaintainerOperationType.SNAPSHOT_EXPIRATION), anyLong(), eq(exception));
+        .recordOperationFailure(eq(MaintainerOperationType.SNAPSHOT_EXPIRATION), anyLong());
     verify(mockMetrics, never())
         .recordOperationSuccess(eq(MaintainerOperationType.SNAPSHOT_EXPIRATION), anyLong());
   }
 
   @Test
-  public void testOperationWithResult() throws Throwable {
+  public void testOperationWithResult() {
     Integer expected = 42;
 
     // Execute operation with result
     Integer result =
-        template.executeAndReturn(
+        executor.executeAndReturn(
             MaintainerOperationType.DATA_EXPIRATION,
             () -> {
               return expected;
@@ -122,14 +114,14 @@ public class TestMaintainerOperationTemplate {
   }
 
   @Test
-  public void testOperationWithResultFailure() throws Throwable {
+  public void testOperationWithResultFailure() {
     IllegalStateException exception = new IllegalStateException("Test state error");
 
     // Execute operation and expect exception
     assertThrows(
         IllegalStateException.class,
         () ->
-            template.executeAndReturn(
+            executor.executeAndReturn(
                 MaintainerOperationType.TAG_CREATION,
                 () -> {
                   throw exception;
@@ -137,19 +129,18 @@ public class TestMaintainerOperationTemplate {
 
     // Verify metrics recorded
     verify(mockMetrics).recordOperationStart(MaintainerOperationType.TAG_CREATION);
-    verify(mockMetrics)
-        .recordOperationFailure(eq(MaintainerOperationType.TAG_CREATION), anyLong(), eq(exception));
+    verify(mockMetrics).recordOperationFailure(eq(MaintainerOperationType.TAG_CREATION), anyLong());
   }
 
   @Test
-  public void testNullMetricsUsesNoop() throws Throwable {
-    // Create template with null metrics
-    MaintainerOperationTemplate noopTemplate = new MaintainerOperationTemplate(null);
+  public void testNullMetricsUsesNoop() {
+    // Create executor with null metrics
+    MaintainerOperationExecutor noopExecutor = new MaintainerOperationExecutor(null);
 
     // Should not throw exception
     assertDoesNotThrow(
         () ->
-            noopTemplate.execute(
+            noopExecutor.execute(
                 MaintainerOperationType.DANGLING_DELETE_FILES_CLEANING,
                 () -> {
                   // Operation logic here
@@ -159,21 +150,21 @@ public class TestMaintainerOperationTemplate {
     Integer result =
         assertDoesNotThrow(
             () ->
-                noopTemplate.executeAndReturn(
+                noopExecutor.executeAndReturn(
                     MaintainerOperationType.PARTITION_EXPIRATION, () -> 123));
     assertEquals(123, result);
   }
 
   @Test
-  public void testMultipleOperations() throws Throwable {
+  public void testMultipleOperations() {
     // Execute multiple operations
-    template.execute(
+    executor.execute(
         MaintainerOperationType.ORPHAN_FILES_CLEANING,
         () -> {
           // First operation
         });
 
-    template.execute(
+    executor.execute(
         MaintainerOperationType.SNAPSHOT_EXPIRATION,
         () -> {
           // Second operation
@@ -190,10 +181,10 @@ public class TestMaintainerOperationTemplate {
   }
 
   @Test
-  public void testDurationIsRecorded() throws Throwable {
+  public void testDurationIsRecorded() {
     // Add a small delay to ensure duration > 0
     long startTime = System.currentTimeMillis();
-    template.execute(
+    executor.execute(
         MaintainerOperationType.DATA_EXPIRATION,
         () -> {
           try {
@@ -213,12 +204,12 @@ public class TestMaintainerOperationTemplate {
   }
 
   @Test
-  public void testAllOperationTypes() throws Throwable {
+  public void testAllOperationTypes() {
     // Test all operation types
     MaintainerOperationType[] operationTypes = MaintainerOperationType.values();
 
     for (MaintainerOperationType operationType : operationTypes) {
-      template.execute(
+      executor.execute(
           operationType,
           () -> {
             // Operation logic

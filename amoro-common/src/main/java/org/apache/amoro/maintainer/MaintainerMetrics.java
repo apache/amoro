@@ -104,8 +104,7 @@ public interface MaintainerMetrics {
    * @param durationMillis operation duration in milliseconds
    * @param throwable exception information
    */
-  void recordOperationFailure(
-      MaintainerOperationType operationType, long durationMillis, Throwable throwable);
+  void recordOperationFailure(MaintainerOperationType operationType, long durationMillis);
 
   /** No-op implementation that does nothing. */
   MaintainerMetrics NOOP =
@@ -143,6 +142,6 @@ public interface MaintainerMetrics {
 
         @Override
         public void recordOperationFailure(
-            MaintainerOperationType operationType, long durationMillis, Throwable throwable) {}
+            MaintainerOperationType operationType, long durationMillis) {}
       };
 }

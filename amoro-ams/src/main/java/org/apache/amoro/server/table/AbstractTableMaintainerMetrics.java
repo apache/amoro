@@ -41,30 +41,18 @@ import org.apache.amoro.metrics.MetricDefine;
 public abstract class AbstractTableMaintainerMetrics extends AbstractTableMetrics
     implements MaintainerMetrics {
 
-  /** Table format constant: Iceberg native table */
-  protected static final String TABLE_FORMAT_ICEBERG = "iceberg";
-
-  /** Table format constant: Paimon native table */
-  protected static final String TABLE_FORMAT_PAIMON = "paimon";
-
-  /** Table format constant: Mixed table (based on Iceberg) */
-  protected static final String TABLE_FORMAT_MIXED_ICEBERG = "mixed_iceberg";
-
-  /** Table format constant: Hive table */
-  protected static final String TABLE_FORMAT_HIVE = "hive";
-
   // ========== Orphan Files Related MetricDefine ==========
 
   /** Count of orphan data files cleaned */
-  public static final MetricDefine TABLE_ORPHAN_DATA_FILES_CLEANED_COUNT =
-      defineCounter("table_orphan_data_files_cleaned_count")
+  public static final MetricDefine TABLE_ORPHAN_CONTENT_FILE_CLEANING_COUNT =
+      defineCounter("table_orphan_content_file_cleaning_count")
           .withDescription("Count of orphan data files cleaned")
           .withTags("catalog", "database", "table", "table_format")
           .build();
 
   /** Expected count of orphan data files to clean */
-  public static final MetricDefine TABLE_ORPHAN_DATA_FILES_CLEANED_EXPECTED_COUNT =
-      defineCounter("table_orphan_data_files_cleaned_expected_count")
+  public static final MetricDefine TABLE_EXPECTED_ORPHAN_CONTENT_FILE_CLEANING_COUNT =
+      defineCounter("table_expected_orphan_content_file_cleaning_count")
           .withDescription("Expected count of orphan data files to clean")
           .withTags("catalog", "database", "table", "table_format")
           .build();

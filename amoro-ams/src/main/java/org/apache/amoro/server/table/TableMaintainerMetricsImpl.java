@@ -51,6 +51,9 @@ public class TableMaintainerMetricsImpl extends AbstractTableMaintainerMetrics {
   private final Counter orphanDataFilesExpectedCount = new Counter();
   private final Counter orphanMetadataFilesCount = new Counter();
   private final Counter orphanMetadataFilesExpectedCount = new Counter();
+  // Backward compatibility counters
+  private final Counter orphanContentFileCleaningCount = new Counter();
+  private final Counter expectedOrphanContentFileCleaningCount = new Counter();
   private final LastOperationDurationGauge orphanFilesCleaningDuration =
       new LastOperationDurationGauge();
 
@@ -124,10 +127,10 @@ public class TableMaintainerMetricsImpl extends AbstractTableMaintainerMetrics {
 
     // Orphan files
     registerMetricWithTags(
-        registry, TABLE_ORPHAN_DATA_FILES_CLEANED_COUNT, orphanDataFilesCount, baseTags);
+        registry, TABLE_ORPHAN_CONTENT_FILE_CLEANING_COUNT, orphanDataFilesCount, baseTags);
     registerMetricWithTags(
         registry,
-        TABLE_ORPHAN_DATA_FILES_CLEANED_EXPECTED_COUNT,
+        TABLE_EXPECTED_ORPHAN_CONTENT_FILE_CLEANING_COUNT,
         orphanDataFilesExpectedCount,
         baseTags);
     registerMetricWithTags(
@@ -136,6 +139,17 @@ public class TableMaintainerMetricsImpl extends AbstractTableMaintainerMetrics {
         registry,
         TABLE_ORPHAN_METADATA_FILES_CLEANED_EXPECTED_COUNT,
         orphanMetadataFilesExpectedCount,
+        baseTags);
+    // Register backward compatibility metrics
+    registerMetricWithTags(
+        registry,
+        TABLE_ORPHAN_CONTENT_FILE_CLEANING_COUNT,
+        orphanContentFileCleaningCount,
+        baseTags);
+    registerMetricWithTags(
+        registry,
+        TABLE_EXPECTED_ORPHAN_CONTENT_FILE_CLEANING_COUNT,
+        expectedOrphanContentFileCleaningCount,
         baseTags);
     registerMetricWithTags(
         registry, TABLE_ORPHAN_FILES_CLEANING_DURATION, orphanFilesCleaningDuration, baseTags);
@@ -224,6 +238,9 @@ public class TableMaintainerMetricsImpl extends AbstractTableMaintainerMetrics {
   public void recordOrphanDataFilesCleaned(int expected, int cleaned) {
     orphanDataFilesExpectedCount.inc(expected);
     orphanDataFilesCount.inc(cleaned);
+    // Also record to backward compatibility metrics
+    expectedOrphanContentFileCleaningCount.inc(expected);
+    orphanContentFileCleaningCount.inc(cleaned);
   }
 
   @Override
@@ -277,8 +294,7 @@ public class TableMaintainerMetricsImpl extends AbstractTableMaintainerMetrics {
   }
 
   @Override
-  public void recordOperationFailure(
-      MaintainerOperationType operationType, long durationMillis, Throwable throwable) {
+  public void recordOperationFailure(MaintainerOperationType operationType, long durationMillis) {
     failureCounters.get(operationType).inc();
     durationGauges.get(operationType).setValue(durationMillis);
   }

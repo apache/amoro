@@ -18,10 +18,12 @@
 
 package org.apache.amoro.maintainer;
 
+import java.util.function.Supplier;
+
 /**
- * Template for executing maintainer operations with consistent metrics recording.
+ * Executor for running maintainer operations with consistent metrics recording.
  *
- * <p>This template ensures that all maintainer operations record metrics in a consistent way:
+ * <p>This executor ensures that all maintainer operations record metrics in a consistent way:
  *
  * <ul>
  *   <li>Record operation start
@@ -32,8 +34,8 @@ package org.apache.amoro.maintainer;
  * <p>Usage example:
  *
  * <pre>{@code
- * MaintainerOperationTemplate template = new MaintainerOperationTemplate(metrics);
- * template.execute(
+ * MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
+ * executor.execute(
  *     MaintainerOperationType.ORPHAN_FILES_CLEANING,
  *     () -> {
  *       // Operation logic here
@@ -42,16 +44,16 @@ package org.apache.amoro.maintainer;
  * );
  * }</pre>
  */
-public class MaintainerOperationTemplate {
+public class MaintainerOperationExecutor {
 
   private final MaintainerMetrics metrics;
 
   /**
-   * Creates a new operation template with the given metrics collector.
+   * Creates a new operation executor with the given metrics collector.
    *
    * @param metrics the metrics collector (can be null, will use NOOP in that case)
    */
-  public MaintainerOperationTemplate(MaintainerMetrics metrics) {
+  public MaintainerOperationExecutor(MaintainerMetrics metrics) {
     this.metrics = metrics != null ? metrics : MaintainerMetrics.NOOP;
   }
 
@@ -70,22 +72,18 @@ public class MaintainerOperationTemplate {
    *
    * @param operationType the type of operation being executed
    * @param operation the operation to execute
-   * @return true if operation succeeded, false otherwise
-   * @throws Throwable if the operation throws an exception
    */
-  public boolean execute(MaintainerOperationType operationType, MaintainerOperation operation)
-      throws Throwable {
+  public void execute(MaintainerOperationType operationType, Runnable operation) {
     long startTime = System.currentTimeMillis();
     metrics.recordOperationStart(operationType);
 
     try {
-      operation.execute();
+      operation.run();
       long duration = System.currentTimeMillis() - startTime;
       metrics.recordOperationSuccess(operationType, duration);
-      return true;
     } catch (Throwable t) {
       long duration = System.currentTimeMillis() - startTime;
-      metrics.recordOperationFailure(operationType, duration, t);
+      metrics.recordOperationFailure(operationType, duration);
       throw t;
     }
   }
@@ -107,45 +105,20 @@ public class MaintainerOperationTemplate {
    * @param operation the operation to execute
    * @param <T> the result type
    * @return the operation result
-   * @throws Throwable if the operation throws an exception
    */
-  public <T> T executeAndReturn(
-      MaintainerOperationType operationType, MaintainerOperationWithResult<T> operation)
-      throws Throwable {
+  public <T> T executeAndReturn(MaintainerOperationType operationType, Supplier<T> operation) {
     long startTime = System.currentTimeMillis();
     metrics.recordOperationStart(operationType);
 
     try {
-      T result = operation.execute();
+      T result = operation.get();
       long duration = System.currentTimeMillis() - startTime;
       metrics.recordOperationSuccess(operationType, duration);
       return result;
     } catch (Throwable t) {
       long duration = System.currentTimeMillis() - startTime;
-      metrics.recordOperationFailure(operationType, duration, t);
+      metrics.recordOperationFailure(operationType, duration);
       throw t;
     }
-  }
-
-  /** Functional interface for maintainer operation without return value. */
-  @FunctionalInterface
-  public interface MaintainerOperation {
-    /** Executes the operation. */
-    void execute() throws Throwable;
-  }
-
-  /**
-   * Functional interface for maintainer operation with return value.
-   *
-   * @param <T> the result type
-   */
-  @FunctionalInterface
-  public interface MaintainerOperationWithResult<T> {
-    /**
-     * Executes the operation.
-     *
-     * @return the operation result
-     */
-    T execute() throws Throwable;
   }
 }

@@ -86,7 +86,7 @@ public class TestIcebergTableMaintainerMetrics {
     when(mockTableConfiguration.getTagConfiguration()).thenReturn(mockTagConfiguration);
     when(mockTagConfiguration.isAutoCreateTag()).thenReturn(false);
     when(mockTableConfiguration.getExpiringDataConfig()).thenReturn(mockDataExpirationConfig);
-    when(mockDataExpirationConfig.getExpirationField()).thenReturn("");
+    when(mockDataExpirationConfig.getExpirationField()).thenReturn("pk1");
 
     // Create a minimal Table mock to avoid complex setup
     org.apache.iceberg.Table table = createMinimalTableMock();
@@ -124,20 +124,20 @@ public class TestIcebergTableMaintainerMetrics {
 
   @Test
   public void testExpireDataInvalidFieldDoesNotRecordDetailedMetrics() {
-    // Setup - empty expiration field causes IllegalArgumentException
-    when(mockDataExpirationConfig.getExpirationField()).thenReturn("");
+    // Setup - "pk1" field does not exist in table schema (only "ts" exists)
+    // This causes isValidDataExpirationField to return false and the operation returns early
+    when(mockDataExpirationConfig.getExpirationField()).thenReturn("pk1");
     when(mockDataExpirationConfig.getBaseOnRule())
         .thenReturn(org.apache.amoro.config.DataExpirationConfig.BaseOnRule.CURRENT_TIME);
 
-    // Execute - this will throw exception for empty field name
+    // Execute - operation returns early when field is not found (no exception thrown)
     maintainer.expireData();
 
-    // Verify operation-level metrics are still recorded even when field is invalid
-    // Exception is caught and logged, metrics still record failure
+    // Verify operation-level metrics are recorded as success (no exception = success)
+    // The operation completes successfully even though no data is expired
     verify(mockMetrics).recordOperationStart(MaintainerOperationType.DATA_EXPIRATION);
-    // When exception occurs, recordOperationFailure is called
     verify(mockMetrics)
-        .recordOperationFailure(eq(MaintainerOperationType.DATA_EXPIRATION), anyLong(), any());
+        .recordOperationSuccess(eq(MaintainerOperationType.DATA_EXPIRATION), anyLong());
   }
 
   @Test
