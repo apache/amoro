@@ -77,10 +77,7 @@ export default defineComponent({
     transition: width 0.3s;
     overflow: hidden;
     .content {
-      height: calc(100% - 48px);
-      overflow: auto;
-    }
-    .content--workspace {
+      height: calc(100vh - 48px);
       overflow: hidden;
     }
   }
