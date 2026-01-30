@@ -18,49 +18,30 @@
 
 package org.apache.amoro.server.table;
 
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
-import org.apache.amoro.table.StateKey;
 import org.apache.amoro.table.TableRuntimeFactory;
 import org.apache.amoro.table.TableRuntimeStore;
 
+import javax.annotation.Nullable;
+
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
-public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
-  @Override
-  public void open(Map<String, String> properties) {}
+public interface TableRuntimePlugin {
 
-  @Override
-  public void close() {}
+  boolean accept(ServerTableIdentifier tableIdentifier);
 
-  @Override
-  public String name() {
-    return "default";
-  }
+  void initialize(List<TableRuntime> tableRuntimes);
 
-  @Override
-  public Optional<Creator> accept(
-      ServerTableIdentifier tableIdentifier, Map<String, String> tableProperties) {
-    if (tableIdentifier
-        .getFormat()
-        .in(TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE, TableFormat.ICEBERG)) {
-      return Optional.of(new TableRuntimeCreatorImpl());
-    }
-    return Optional.empty();
-  }
+  void onTableCreated(@Nullable AmoroTable<?> amoroTable, TableRuntime tableRuntime);
 
-  private static class TableRuntimeCreatorImpl implements TableRuntimeFactory.Creator {
-    @Override
-    public List<StateKey<?>> requiredStateKeys() {
-      return DefaultTableRuntime.REQUIRED_STATES;
-    }
+  void onTableDropped(TableRuntime tableRuntime);
 
-    @Override
-    public TableRuntime create(TableRuntimeStore store) {
-      return new DefaultTableRuntime(store);
-    }
+  void dispose();
+
+  default TableRuntime createTableRuntime(
+      TableRuntimeFactory.Creator creator, TableRuntimeStore store) {
+    return creator.create(store);
   }
 }

@@ -54,9 +54,10 @@ import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.scheduler.inline.InlineTableExecutors;
 import org.apache.amoro.server.table.DefaultTableManager;
 import org.apache.amoro.server.table.DefaultTableService;
-import org.apache.amoro.server.table.RuntimeHandlerChain;
+import org.apache.amoro.server.table.IcebergTablePlugin;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntimeFactoryManager;
+import org.apache.amoro.server.table.TableRuntimePlugin;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.server.utils.ThriftServiceProxy;
@@ -198,7 +199,7 @@ public class AmoroServiceContainer {
     haContainer.waitFollowerShip();
   }
 
-  public void startRestServices() throws Exception {
+  public void startRestServices() {
     EventsManager.getInstance();
     MetricManager.getInstance();
 
@@ -239,33 +240,32 @@ public class AmoroServiceContainer {
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
 
     processService = new ProcessService(serviceConfig, tableService);
-
-    LOG.info("Setting up AMS table executors...");
-    InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
-    addHandlerChain(optimizingService.getTableRuntimeHandler());
-    addHandlerChain(processService.getTableHandlerChain());
-    addHandlerChain(InlineTableExecutors.getInstance().getDataExpiringExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getSnapshotsExpiringExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getDanglingDeleteFilesCleaningExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getOptimizingCommitExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getOptimizingExpiringExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getBlockerExpiringExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getHiveCommitSyncExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getTableRefreshingExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getTagsAutoCreatingExecutor());
-    tableService.initialize();
+    tableService.initialize(initTablePlugins());
     LOG.info("AMS table service have been initialized");
-    tableManager.setTableService(tableService);
 
     initThriftService();
     startThriftService();
   }
 
-  private void addHandlerChain(RuntimeHandlerChain chain) {
-    if (chain != null) {
-      tableService.addHandlerChain(chain);
-    }
+  private List<TableRuntimePlugin> initTablePlugins() {
+    LOG.info("Setting up AMS table executors...");
+    InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
+    IcebergTablePlugin icebergTablePlugin =
+        IcebergTablePlugin.builder()
+            .addHandler(optimizingService.getTableRuntimeHandler())
+            .addHandler(processService.getTableHandlerChain())
+            .addHandler(InlineTableExecutors.getInstance().getDataExpiringExecutor())
+            .addHandler(InlineTableExecutors.getInstance().getSnapshotsExpiringExecutor())
+            .addHandler(InlineTableExecutors.getInstance().getOrphanFilesCleaningExecutor())
+            .addHandler(InlineTableExecutors.getInstance().getDanglingDeleteFilesCleaningExecutor())
+            .addHandler(InlineTableExecutors.getInstance().getOptimizingCommitExecutor())
+            .addHandler(InlineTableExecutors.getInstance().getOptimizingExpiringExecutor())
+            .addHandler(InlineTableExecutors.getInstance().getBlockerExpiringExecutor())
+            .addHandler(InlineTableExecutors.getInstance().getHiveCommitSyncExecutor())
+            .addHandler(InlineTableExecutors.getInstance().getTableRefreshingExecutor())
+            .addHandler(InlineTableExecutors.getInstance().getTagsAutoCreatingExecutor())
+            .build();
+    return List.of(icebergTablePlugin);
   }
 
   public void disposeOptimizingService() {
