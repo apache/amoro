@@ -22,10 +22,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { IColumns, IContainerSetting, IKeyAndValue } from '@/types/common.type'
 import { getContainersSetting, getSystemSetting } from '@/services/setting.services'
+import { usePageScroll } from '@/hooks/usePageScroll'
 
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
+const { pageScrollRef } = usePageScroll()
 const loading = ref<boolean>(false)
 const systemSettingArray = reactive<IKeyAndValue[]>([])
 const containerSetting = reactive<IContainerSetting[]>([])
@@ -117,73 +119,78 @@ function getSettingInfo() {
 </script>
 
 <template>
-  <div class="setting-wrap">
-    <a-tabs v-model:activeKey="activeKeyTab" @change="onChangeTab">
-      <a-tab-pane :key="tabMap.system.key" :tab="tabMap.system.title">
-        <div class="system-setting">
-          <a-table
-            v-if="systemSettingArray.length"
-            row-key="key"
-            :columns="basicColumns"
-            :data-source="systemSettingArray"
-            :pagination="false"
-          />
-        </div>
-      </a-tab-pane>
-      <a-tab-pane :key="tabMap.container.key" :tab="tabMap.container.title">
-        <div class="container-setting">
-          <a-collapse v-model:activeKey="activeKey">
-            <a-collapse-panel v-for="container in containerSetting" :key="container.name" :header="container.name">
-              <ul class="content">
-                <li class="item">
-                  <h3 class="left">
-                    {{ $t('name') }}
-                  </h3>
-                  <span class="right">{{ container.name }}</span>
-                </li>
-                <li v-if="container.classpath" class="item">
-                  <h3 class="left">
-                    {{ $t('implementation') }}
-                  </h3>
-                  <span class="right">{{ container.classpath }}</span>
-                </li>
-              </ul>
-              <h3 class="g-mb-12 g-mt-12">
-                {{ $t('properties') }}
-              </h3>
-              <a-table
-                row-key="key"
-                :columns="basicColumns"
-                :data-source="container.propertiesArray"
-                :pagination="false"
-              />
-              <h3 class="g-mb-12 g-mt-12">
-                {{ $t('optimizerGroups') }}
-              </h3>
-              <a-collapse>
-                <a-collapse-panel v-for="innerGroup in container.optimizeGroup" :key="innerGroup.name" :header="innerGroup.name">
-                  <a-table
-                    row-key="name"
-                    :columns="basicColumns"
-                    :data-source="innerGroup.innerPropertiesArray"
-                    :pagination="false"
-                  />
-                </a-collapse-panel>
-              </a-collapse>
-            </a-collapse-panel>
-          </a-collapse>
-        </div>
-      </a-tab-pane>
-    </a-tabs>
+  <div class="page-scroll" ref="pageScrollRef">
+    <div class="setting-wrap">
+      <a-tabs v-model:activeKey="activeKeyTab" @change="onChangeTab">
+        <a-tab-pane :key="tabMap.system.key" :tab="tabMap.system.title">
+          <div class="system-setting">
+            <a-table
+              v-if="systemSettingArray.length"
+              row-key="key"
+              :columns="basicColumns"
+              :data-source="systemSettingArray"
+              :pagination="false"
+            />
+          </div>
+        </a-tab-pane>
+        <a-tab-pane :key="tabMap.container.key" :tab="tabMap.container.title">
+          <div class="container-setting">
+            <a-collapse v-model:activeKey="activeKey">
+              <a-collapse-panel v-for="container in containerSetting" :key="container.name" :header="container.name">
+                <ul class="content">
+                  <li class="item">
+                    <h3 class="left">
+                      {{ $t('name') }}
+                    </h3>
+                    <span class="right">{{ container.name }}</span>
+                  </li>
+                  <li v-if="container.classpath" class="item">
+                    <h3 class="left">
+                      {{ $t('implementation') }}
+                    </h3>
+                    <span class="right">{{ container.classpath }}</span>
+                  </li>
+                </ul>
+                <h3 class="g-mb-12 g-mt-12">
+                  {{ $t('properties') }}
+                </h3>
+                <a-table
+                  row-key="key"
+                  :columns="basicColumns"
+                  :data-source="container.propertiesArray"
+                  :pagination="false"
+                />
+                <h3 class="g-mb-12 g-mt-12">
+                  {{ $t('optimizerGroups') }}
+                </h3>
+                <a-collapse>
+                  <a-collapse-panel v-for="innerGroup in container.optimizeGroup" :key="innerGroup.name" :header="innerGroup.name">
+                    <a-table
+                      row-key="name"
+                      :columns="basicColumns"
+                      :data-source="innerGroup.innerPropertiesArray"
+                      :pagination="false"
+                    />
+                  </a-collapse-panel>
+                </a-collapse>
+              </a-collapse-panel>
+            </a-collapse>
+          </div>
+        </a-tab-pane>
+      </a-tabs>
+    </div>
   </div>
   <u-loading v-if="loading" />
 </template>
 
 <style lang="less" scoped>
-.setting-wrap {
+.page-scroll {
   height: 100%;
-  overflow: auto;
-  padding: 16px 24px;
+  overflow-y: auto;
+}
+ .setting-wrap {
+   height: 100%;
+   padding: 16px 24px;
   h1,h2,h3 {
     font-weight: 500;
   }

@@ -43,18 +43,10 @@ interface TreeNode {
   tableType?: string
 }
 
-interface StorageValue {
-  catalog?: string
-  database?: string
-  tableName?: string
-  type?: string
-}
-
 const router = useRouter()
 const route = useRoute()
 
 const storageTableKey = 'easylake-menu-catalog-db-table'
-const storageCataDBTable = JSON.parse(localStorage.getItem(storageTableKey) || '{}') as StorageValue
 const expandedKeysSessionKey = 'tables_expanded_keys'
 
 const state = reactive({
@@ -193,6 +185,42 @@ async function loadChildren(node: any) {
     finally {
       state.loading = false
     }
+  }
+}
+
+async function expandPathBySelected(catalog: string, db: string) {
+  const safeCatalog = (catalog || '').trim()
+  const safeDb = (db || '').trim()
+
+  if (!safeCatalog) {
+    return
+  }
+
+  const nextExpandedKeys = new Set(state.expandedKeys)
+
+  const catalogKey = `catalog:${safeCatalog}`
+  const catalogNode = state.treeData.find(node => node.key === catalogKey)
+  if (catalogNode) {
+    await loadChildren({ dataRef: catalogNode })
+    nextExpandedKeys.add(catalogKey)
+  }
+
+  if (safeDb) {
+    const dbKey = `catalog:${safeCatalog}/db:${safeDb}`
+    const latestCatalogNode = state.treeData.find(node => node.key === catalogKey)
+    const dbNode = latestCatalogNode?.children?.find(child => child.key === dbKey)
+    if (dbNode) {
+      await loadChildren({ dataRef: dbNode })
+      nextExpandedKeys.add(dbKey)
+    }
+  }
+
+  state.expandedKeys = Array.from(nextExpandedKeys)
+  try {
+    sessionStorage.setItem(expandedKeysSessionKey, JSON.stringify(state.expandedKeys))
+  }
+  catch (e) {
+    // ignore sessionStorage write errors
   }
 }
 
@@ -424,6 +452,36 @@ watch(
   },
 )
 
+watch(
+  () => route.query,
+  async (value, oldValue) => {
+    const { catalog, db, table } = value as any
+    const { catalog: oldCatalog, db: oldDb, table: oldTable } = (oldValue || {}) as any
+
+    if (`${catalog || ''}${db || ''}${table || ''}` === `${oldCatalog || ''}${oldDb || ''}${oldTable || ''}`) {
+      return
+    }
+
+    const catalogStr = (catalog as string) || ''
+    const dbStr = (db as string) || ''
+    const tableStr = (table as string) || ''
+
+    if (catalogStr && dbStr) {
+      await expandPathBySelected(catalogStr, dbStr)
+      if (tableStr) {
+        const tableKey = `catalog:${catalogStr}/db:${dbStr}/table:${tableStr}`
+        state.selectedKeys = [tableKey]
+      }
+      else {
+        state.selectedKeys = []
+      }
+    }
+    else {
+      state.selectedKeys = []
+    }
+  },
+)
+
 const searchResult = computed(() => {
   const keyword = normalizeKeyword(state.filterKey)
   if (!keyword) {
@@ -479,14 +537,16 @@ onBeforeMount(async () => {
     }
 
     state.expandedKeys = restoredExpandedKeys
+  }
 
-    // Select last visited table from route or local storage without auto-expanding tree
-    const query = route.query || {}
-    const queryCatalog = (query.catalog as string) || storageCataDBTable.catalog
-    const queryDb = (query.db as string) || storageCataDBTable.database
-    const queryTable = (query.table as string) || storageCataDBTable.tableName
+  const query = route.query || {}
+  const queryCatalog = (query.catalog as string) || ''
+  const queryDb = (query.db as string) || ''
+  const queryTable = (query.table as string) || ''
 
-    if (queryCatalog && queryDb && queryTable) {
+  if (queryCatalog && queryDb) {
+    await expandPathBySelected(queryCatalog, queryDb)
+    if (queryTable) {
       const tableKey = `catalog:${queryCatalog}/db:${queryDb}/table:${queryTable}`
       state.selectedKeys = [tableKey]
     }
