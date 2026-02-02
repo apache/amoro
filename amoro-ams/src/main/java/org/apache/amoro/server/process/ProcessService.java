@@ -23,7 +23,9 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.config.ConfigurationManager;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.config.DynamicConfigurations;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.process.ProcessEvent;
 import org.apache.amoro.process.ProcessStatus;
@@ -74,6 +76,17 @@ public class ProcessService extends PersistentBase {
 
   public ProcessService(Configurations serviceConfig, TableService tableService) {
     this(serviceConfig, tableService, new ActionCoordinatorManager(), new ExecuteEngineManager());
+  }
+
+  public ProcessService(
+      DynamicConfigurations dynamicConfigurations,
+      ConfigurationManager configurationManager,
+      TableService tableService) {
+    this(
+        dynamicConfigurations,
+        tableService,
+        new ActionCoordinatorManager(configurationManager),
+        new ExecuteEngineManager(configurationManager));
   }
 
   public ProcessService(
@@ -557,12 +570,20 @@ public class ProcessService extends PersistentBase {
     public ActionCoordinatorManager() {
       super("action-coordinators");
     }
+
+    public ActionCoordinatorManager(ConfigurationManager configurationManager) {
+      super("action-coordinators", configurationManager);
+    }
   }
 
   /** Manager for {@link ExecuteEngine} plugins. */
   public static class ExecuteEngineManager extends AbstractPluginManager<ExecuteEngine> {
     public ExecuteEngineManager() {
       super("execute-engines");
+    }
+
+    public ExecuteEngineManager(ConfigurationManager configurationManager) {
+      super("execute-engines", configurationManager);
     }
   }
 }

@@ -281,3 +281,14 @@ CREATE TABLE IF NOT EXISTS ha_lease (
   KEY `idx_ha_lease_expire` (lease_expire_ts) COMMENT 'Index for querying expired leases',
   KEY `idx_ha_lease_node` (node_id) COMMENT 'Index for querying leases by node ID'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='HA lease table for leader election and heartbeat renewal';
+
+CREATE TABLE `dynamic_conf`
+(
+    `id`          bigint(20) NOT NULL AUTO_INCREMENT,
+    `conf_key`    varchar(256) NOT NULL,
+    `conf_value`  varchar(256) NOT NULL,
+    `conf_group`  varchar(256) NOT NULL COMMENT 'Group: AMS for service, PLUGIN_{category} for plugins',
+    `plugin_name` varchar(256) DEFAULT NULL COMMENT 'Plugin identifier; valid only when conf_group = PLUGIN_*',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_conf` (`conf_group`, `plugin_name`, `conf_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Dynamic configuration overrides for AMS and plugins';

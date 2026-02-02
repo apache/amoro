@@ -18,6 +18,8 @@
 
 package org.apache.amoro;
 
+import org.apache.amoro.config.Configurations;
+
 import java.util.Map;
 
 /** Plugins that need to initialize and close */
@@ -29,6 +31,15 @@ public interface ActivePlugin extends AmoroPlugin {
    * @param properties plugin properties
    */
   void open(Map<String, String> properties);
+
+  /**
+   * Initialize and open the plugin
+   *
+   * @param configurations plugin configurations
+   */
+  default void open(Configurations configurations) {
+    open(configurations.toMap());
+  }
 
   /** Close the plugin */
   void close();
