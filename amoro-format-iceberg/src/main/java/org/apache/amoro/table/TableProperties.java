@@ -163,7 +163,7 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS =
       "self-optimizing.refresh-table.adaptive.max-interval-ms";
   public static final long SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS_DEFAULT =
-      -1; // disabled
+      0; // disabled
   public static final String SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS =
       "self-optimizing.refresh-table.adaptive.increase-step-ms";
   public static final long SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS_DEFAULT =

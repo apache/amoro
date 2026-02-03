@@ -28,6 +28,7 @@ import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.table.TableRuntimeStore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,44 +81,40 @@ public class TestTableRuntimeRefreshExecutor extends AMSTableTestBase {
 
   private static final long INTERVAL = 60000L; // 1 minute
   private static final long MAX_INTERVAL = 300000L; // 5 minutes
-  private static final long DEFAULT_MAX_INTERVAL = -1L;
   private static final long STEP = 30000L; // 30s
   private static final int MAX_PENDING_PARTITIONS = 1;
   private static final int MINOR_LEAST_INTERVAL = 3600000; // 1h
 
-  // Create DefaultTableRuntime for adaptive interval tests
-  private DefaultTableRuntime buildTableRuntimeWithAdaptiveRefresh(
-      DefaultTableRuntime tableRuntime, boolean needOptimizing, long interval, long step) {
-    return buildTableRuntimeWithConfig(tableRuntime, needOptimizing, interval, MAX_INTERVAL, step);
+  /**
+   * A test helper class that allows configuration updates. Reuses the same TableRuntime instance
+   * across different test scenarios.
+   */
+  private static class TestTableRuntime extends DefaultTableRuntime {
+    private OptimizingConfig testOptimizingConfig;
+
+    TestTableRuntime(TableRuntimeStore store, OptimizingConfig optimizingConfig) {
+      super(store);
+      this.testOptimizingConfig = optimizingConfig;
+    }
+
+    /** Update the optimizing config without creating a new instance */
+    void updateOptimizingConfig(OptimizingConfig newConfig) {
+      this.testOptimizingConfig = newConfig;
+    }
+
+    @Override
+    public OptimizingConfig getOptimizingConfig() {
+      return this.testOptimizingConfig;
+    }
   }
 
-  private DefaultTableRuntime buildTableRuntimeWithAdaptiveMaxInterval(
-      DefaultTableRuntime tableRuntime, long interval, long maxInterval) {
-    return buildTableRuntimeWithConfig(tableRuntime, true, interval, maxInterval, STEP);
-  }
-
-  private DefaultTableRuntime buildTableRuntimeWithConfig(
-      DefaultTableRuntime tableRuntime,
-      boolean needOptimizing,
-      long interval,
-      long maxInterval,
-      long step) {
-    OptimizingConfig optimizingConfig = new OptimizingConfig();
-    optimizingConfig.setRefreshTableAdaptiveMaxIntervalMs(maxInterval);
-    optimizingConfig.setMinorLeastInterval(MINOR_LEAST_INTERVAL);
-    optimizingConfig.setRefreshTableAdaptiveIncreaseStepMs(step);
-
-    DefaultTableRuntime newRuntime =
-        new DefaultTableRuntime(tableRuntime.store()) {
-          @Override
-          public OptimizingConfig getOptimizingConfig() {
-            return optimizingConfig;
-          }
-        };
-    newRuntime.setLatestEvaluatedNeedOptimizing(needOptimizing);
-    newRuntime.setLatestRefreshInterval(interval);
-
-    return newRuntime;
+  /** Create OptimizingConfig with specified parameters */
+  private OptimizingConfig createOptimizingConfig(long maxInterval, long step) {
+    OptimizingConfig config = new OptimizingConfig();
+    config.setRefreshTableAdaptiveMaxIntervalMs(maxInterval);
+    config.setMinorLeastInterval(MINOR_LEAST_INTERVAL);
+    config.setRefreshTableAdaptiveIncreaseStepMs(step);
+    return config;
   }
 
   @Test
@@ -125,42 +122,48 @@ public class TestTableRuntimeRefreshExecutor extends AMSTableTestBase {
     createDatabase();
     createTable();
 
-    DefaultTableRuntime tableRuntime =
+    // Get the original table runtime
+    DefaultTableRuntime baseRuntime =
         (DefaultTableRuntime) tableService().getRuntime(serverTableIdentifier().getId());
     TableRuntimeRefreshExecutor executor =
         new TableRuntimeRefreshExecutor(tableService(), 1, INTERVAL, MAX_PENDING_PARTITIONS);
 
-    // Test healthy table (not need optimizing) - interval should increase
-    DefaultTableRuntime newTableRuntime =
-        buildTableRuntimeWithAdaptiveRefresh(tableRuntime, false, 0, STEP);
-    long adaptiveExecutingInterval = executor.getAdaptiveExecutingInterval(newTableRuntime);
+    // Create a tableRuntime instance with initial config
+    OptimizingConfig initialConfig = createOptimizingConfig(MAX_INTERVAL, STEP);
+    TestTableRuntime tableRuntime = new TestTableRuntime(baseRuntime.store(), initialConfig);
+
+    // Test 1: Healthy table (not need optimizing) - interval should increase by STEP
+    // Initial state: needOptimizing=false, latestRefreshInterval=0 (will use default INTERVAL)
+    tableRuntime.setLatestEvaluatedNeedOptimizing(false);
+    tableRuntime.setLatestRefreshInterval(0);
+    long adaptiveExecutingInterval = executor.getAdaptiveExecutingInterval(tableRuntime);
     long expectedInterval = INTERVAL + STEP;
     Assert.assertEquals(expectedInterval, adaptiveExecutingInterval);
 
-    // Test minimum boundary - interval should not below INTERVAL
-    // The unhealthy table (need optimizing) - interval should decrease half
-    // The currentInterval is INTERVAL + STEP, the latest interval is INTERVAL not (INTERVAL + STEP)
-    // / 2
-    newTableRuntime =
-        buildTableRuntimeWithAdaptiveRefresh(
-            newTableRuntime, true, adaptiveExecutingInterval, STEP);
-    adaptiveExecutingInterval = executor.getAdaptiveExecutingInterval(newTableRuntime);
+    // Test 2: Test minimum boundary - interval should not below INTERVAL
+    // Unhealthy table (need optimizing) - interval should decrease to half
+    // current interval is INTERVAL + STEP, the latest interval is INTERVAL
+    // not (INTERVAL + STEP) / 2
+    tableRuntime.setLatestEvaluatedNeedOptimizing(true);
+    tableRuntime.setLatestRefreshInterval(adaptiveExecutingInterval);
+    adaptiveExecutingInterval = executor.getAdaptiveExecutingInterval(tableRuntime);
     expectedInterval = INTERVAL;
     Assert.assertEquals(expectedInterval, adaptiveExecutingInterval);
 
-    // Test healthy table (not need optimizing) with different step values
-    newTableRuntime =
-        buildTableRuntimeWithAdaptiveRefresh(
-            newTableRuntime, false, adaptiveExecutingInterval, 8 * STEP);
-    adaptiveExecutingInterval = executor.getAdaptiveExecutingInterval(newTableRuntime);
+    // Test 3: Healthy table with larger step value - interval should increase by 8 * STEP
+    tableRuntime.setLatestEvaluatedNeedOptimizing(false);
+    tableRuntime.setLatestRefreshInterval(adaptiveExecutingInterval);
+    tableRuntime.updateOptimizingConfig(createOptimizingConfig(MAX_INTERVAL, 8 * STEP));
+    adaptiveExecutingInterval = executor.getAdaptiveExecutingInterval(tableRuntime);
     expectedInterval = expectedInterval + 8 * STEP;
     Assert.assertEquals(expectedInterval, adaptiveExecutingInterval);
 
-    // Test maximum boundary - interval should not exceed MAX_INTERVAL
-    newTableRuntime =
-        buildTableRuntimeWithAdaptiveRefresh(
-            newTableRuntime, false, adaptiveExecutingInterval, STEP);
-    adaptiveExecutingInterval = executor.getAdaptiveExecutingInterval(newTableRuntime);
+    // Test 4: Maximum boundary - interval should not exceed MAX_INTERVAL
+    tableRuntime.setLatestRefreshInterval(adaptiveExecutingInterval);
+    tableRuntime.updateOptimizingConfig(createOptimizingConfig(MAX_INTERVAL, STEP));
+    // current interval is INTERVAL + 8 * STEP, the latest interval is MAX_INTERVAL
+    // rather than INTERVAL + 9 * STEP
+    adaptiveExecutingInterval = executor.getAdaptiveExecutingInterval(tableRuntime);
     Assert.assertEquals(MAX_INTERVAL, adaptiveExecutingInterval);
 
     dropTable();
@@ -172,31 +175,35 @@ public class TestTableRuntimeRefreshExecutor extends AMSTableTestBase {
     createDatabase();
     createTable();
 
-    DefaultTableRuntime tableRuntime =
+    // Get the original table runtime
+    DefaultTableRuntime baseRuntime =
         (DefaultTableRuntime) tableService().getRuntime(serverTableIdentifier().getId());
     TableRuntimeRefreshExecutor executor =
         new TableRuntimeRefreshExecutor(tableService(), 1, INTERVAL, MAX_PENDING_PARTITIONS);
 
-    // Test getNextExecutingTime with adaptive interval enabled
-    DefaultTableRuntime newTableRuntime =
-        buildTableRuntimeWithAdaptiveMaxInterval(tableRuntime, MAX_INTERVAL, MAX_INTERVAL);
-    // Should use adaptive interval rather than default interval
-    long nextExecutingTime = executor.getNextExecutingTime(newTableRuntime);
+    // Create a tableRuntime instance with adaptive interval enabled
+    OptimizingConfig configWithAdaptiveEnabled = createOptimizingConfig(MAX_INTERVAL, STEP);
+    TestTableRuntime tableRuntime =
+        new TestTableRuntime(baseRuntime.store(), configWithAdaptiveEnabled);
+
+    // Test 1: getNextExecutingTime with adaptive interval enabled and positive
+    // latestRefreshInterval
+    // Set a positive latestRefreshInterval to enable adaptive behavior
+    tableRuntime.setLatestRefreshInterval(MAX_INTERVAL);
+    long nextExecutingTime = executor.getNextExecutingTime(tableRuntime);
     Assert.assertEquals(MAX_INTERVAL, nextExecutingTime);
 
-    // Test getNextExecutingTime with adaptive interval disabled
-    newTableRuntime =
-        buildTableRuntimeWithAdaptiveMaxInterval(
-            newTableRuntime, MAX_INTERVAL, DEFAULT_MAX_INTERVAL);
-    // Should use default interval rather than adaptive interval
-    nextExecutingTime = executor.getNextExecutingTime(newTableRuntime);
-    Assert.assertEquals(INTERVAL, nextExecutingTime);
+    // Test 2: getNextExecutingTime with adaptive interval enabled but latestRefreshInterval is 0
+    // Should fall back to min(minorLeastInterval * 4/5, INTERVAL)
+    tableRuntime.setLatestRefreshInterval(0);
+    nextExecutingTime = executor.getNextExecutingTime(tableRuntime);
+    long expectedFallbackInterval = Math.min(MINOR_LEAST_INTERVAL * 4L / 5, INTERVAL);
+    Assert.assertEquals(expectedFallbackInterval, nextExecutingTime);
 
-    // Test getNextExecutingTime with zero adaptive interval
-    newTableRuntime = buildTableRuntimeWithAdaptiveMaxInterval(newTableRuntime, 0, MAX_INTERVAL);
-    // Should fallback to default interval when adaptive interval is 0
-    nextExecutingTime = executor.getNextExecutingTime(newTableRuntime);
-    Assert.assertEquals(INTERVAL, nextExecutingTime);
+    // Test 3: getNextExecutingTime with adaptive interval disabled (maxInterval <= INTERVAL)
+    tableRuntime.updateOptimizingConfig(createOptimizingConfig(INTERVAL, STEP));
+    nextExecutingTime = executor.getNextExecutingTime(tableRuntime);
+    Assert.assertEquals(expectedFallbackInterval, nextExecutingTime);
 
     dropTable();
     dropDatabase();
