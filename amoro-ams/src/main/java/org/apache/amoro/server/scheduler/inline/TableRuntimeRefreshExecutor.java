@@ -58,7 +58,7 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
     DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
 
-    if (defaultTableRuntime.getOptimizingConfig().getRefreshTableAdaptiveMaxIntervalMs() > 0) {
+    if (defaultTableRuntime.getOptimizingConfig().isRefreshTableAdaptiveEnabled(interval)) {
       long newInterval = defaultTableRuntime.getLatestRefreshInterval();
       if (newInterval > 0) {
         return newInterval;
@@ -81,6 +81,7 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
         logger.debug(
             "{} optimizing is not necessary due to metadata based trigger",
             tableRuntime.getTableIdentifier());
+        // indicates no optimization demand now
         return false;
       }
 
@@ -105,10 +106,13 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
       logger.debug(
           "{} optimizing is not enabled, skip evaluating pending input",
           tableRuntime.getTableIdentifier());
+      // indicates no optimization demand now
       return false;
     } else {
       logger.debug(
           "{} optimizing is processing or is in preparation", tableRuntime.getTableIdentifier());
+      // indicates optimization demand exists (preparation or processing),
+      // even though we don't trigger a new evaluation in this loop.
       return true;
     }
   }
@@ -143,25 +147,25 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
       AmoroTable<?> table = loadTable(tableRuntime);
       defaultTableRuntime.refresh(table);
       MixedTable mixedTable = (MixedTable) table.originalTable();
-      boolean needOptimizing = false;
+      // Check if there is any optimizing demand now.
+      boolean hasOptimizingDemand = false;
       if ((mixedTable.isKeyedTable()
               && (lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId()
                   || lastOptimizedChangeSnapshotId
                       != defaultTableRuntime.getCurrentChangeSnapshotId()))
           || (mixedTable.isUnkeyedTable()
               && lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId())) {
-        needOptimizing = tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
+        hasOptimizingDemand = tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
       } else {
         logger.debug("{} optimizing is not necessary", defaultTableRuntime.getTableIdentifier());
       }
 
       // Update adaptive interval according to evaluated result.
-      if (defaultTableRuntime.getOptimizingConfig().getRefreshTableAdaptiveMaxIntervalMs() > 0) {
-        defaultTableRuntime.setLatestEvaluatedNeedOptimizing(needOptimizing);
+      if (defaultTableRuntime.getOptimizingConfig().isRefreshTableAdaptiveEnabled(interval)) {
+        defaultTableRuntime.setLatestEvaluatedNeedOptimizing(hasOptimizingDemand);
         long newInterval = getAdaptiveExecutingInterval(defaultTableRuntime);
         defaultTableRuntime.setLatestRefreshInterval(newInterval);
       }
-
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
     }
@@ -234,7 +238,6 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
   private long decreaseInterval(long currentInterval, long minInterval) {
     long newInterval = currentInterval / 2;
     long boundedInterval = Math.max(newInterval, minInterval);
-
     if (newInterval < minInterval) {
       logger.debug(
           "Interval reached minimum boundary: attempted {}ms, capped at {}ms",
@@ -261,7 +264,6 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
     long step = tableRuntime.getOptimizingConfig().getRefreshTableAdaptiveIncreaseStepMs();
     long newInterval = currentInterval + step;
     long boundedInterval = Math.min(newInterval, maxInterval);
-
     if (newInterval > maxInterval) {
       logger.debug(
           "Interval reached maximum boundary: currentInterval is {}ms, attempted {}ms, capped at {}ms",
