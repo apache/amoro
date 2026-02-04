@@ -935,7 +935,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
       LOG.info(
           "Table {} format {} is not supported for optimization. "
               + "Table metadata browsing is still available.",
-          serverTableIdentifier, table.format());
+          serverTableIdentifier,
+          table.format());
       return false;
     }
 

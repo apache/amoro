@@ -84,7 +84,7 @@ public class MetadataBasedEvaluationEvent {
       return provider.collect(table);
     } else {
       // Unsupported table format for metadata-based evaluation
-      // PAIMON and HUDI formats are currently not supported because obtaining basic statistics
+      // PAIMON format is currently not supported because obtaining basic statistics
       // requires traversing manifest files, which would add extra planning overhead.
       // In the future, if there is a more efficient way to get these stats,
       // we can extend TableStatsProvider to support these formats.

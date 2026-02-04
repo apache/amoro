@@ -41,7 +41,7 @@ ON (c.ID = o.CUSTOMER_ID)
 In the past, data lakes were managed using the Hive Metastore (HMS) to handle metadata. Unfortunately, HMS does not support multi-catalog, which
 limits the capabilities of engines on the data lake. For example, some users may want to use Spark to perform federated computation across different
 Hive clusters by specifying the catalog name, requiring them to develop a Hive catalog plugin in the upper layer. Additionally, data lake formats are
-moving from a single Hive-centric approach to a landscape of competing formats such as Iceberg, Delta, and Hudi. These new data lake formats are more
+moving from a single Hive-centric approach to a landscape of competing formats such as Iceberg, Delta, and Paimon. These new data lake formats are more
 cloud-friendly and will facilitate the migration of data lakes to the cloud. In this context, a management system that supports multi-catalog is
 needed to help users govern data lakes with different environments and formats.
 

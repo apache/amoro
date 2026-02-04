@@ -43,11 +43,9 @@ public class CatalogBuilder {
   private static final Map<String, Set<TableFormat>> formatSupportedMatrix =
       ImmutableMap.of(
           CATALOG_TYPE_HADOOP,
-          Sets.newHashSet(
-              TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON, TableFormat.HUDI),
+          Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON),
           CATALOG_TYPE_FILESYSTEM,
-          Sets.newHashSet(
-              TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON, TableFormat.HUDI),
+          Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON),
           CATALOG_TYPE_GLUE,
           Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
           CATALOG_TYPE_REST,
@@ -59,8 +57,7 @@ public class CatalogBuilder {
               TableFormat.ICEBERG,
               TableFormat.MIXED_ICEBERG,
               TableFormat.MIXED_HIVE,
-              TableFormat.PAIMON,
-              TableFormat.HUDI),
+              TableFormat.PAIMON),
           CATALOG_TYPE_AMS,
           Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
 

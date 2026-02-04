@@ -27,8 +27,6 @@ Alternatively, you can manually deploy the following components to set up the te
 | Trino    | 380     | Trino is used to execute TPC-H queries for Iceberg and Mixed-Iceberg format tables. | [Trino Installation Guide](https://trino.io/docs/current/installation/deployment.html) |
 | Amoro Trino Connector | 0.4.0 | To query Mixed-Iceberg Format tables in Trino, you need to install and configure the Amoro connector in Trino. | [Amoro Trino Connector](https://amoro.netease.com/docs/latest/trino/)    |
 | Iceberg Trino Connector | 0.13.0 | To query Iceberg Format tables in Trino, you need to install and configure the Iceberg connector in Trino. | [Iceberg Trino Connector](https://trino.io/docs/current/connector/iceberg.html)    |
-| Presto    | 274 | Presto is used to execute TPC-H queries for Hudi format tables. | [Presto Installation Guide](https://prestodb.io/docs/current/installation/deployment.html) |
-| Hudi Presto Connector | 0.11.1  | To query Iceberg Format tables in Trino, you need to install and configure the Iceberg connector in Presto. | [Hudi Presto Connector](https://prestodb.io/docs/current/connector/hudi.html)    |
 | AMS    | 0.4.0 | Amoro Management Service, support self-optimizing on tables during the test. | [AMS Installation Guide](https://amoro.netease.com/docs/latest/deployment/) |
 | data-lake-benchmark | 21  | The core program of Benchmark which is responsible for generating test data, executing the testing process, and generating test results. | [Data Lake Benchmark](https://github.com/NetEase/data-lake-benchmark#readme)    |
 | lakehouse-benchmark-ingestion | 1.0  | Data synchronization tool based on Flink-CDC which can synchronize data from  database to data lake in real-time. | [Lakehouse Benchmark Ingestion](https://github.com/NetEase/lakehouse-benchmark-ingestion)    |
@@ -46,7 +44,7 @@ Alternatively, you can manually deploy the following components to set up the te
 
 4. Start the ingestion job to synchronize data form MySQL to data lake tables witch command:
   ```shell
-  java -cp lakehouse-benchmark-ingestion-1.0-SNAPSHOT.jar com.netease.arctic.benchmark.ingestion.MainRunner -confDir [confDir] -sinkType [arctic/iceberg/hudi] -sinkDatabase [dbName]
+  java -cp lakehouse-benchmark-ingestion-1.0-SNAPSHOT.jar com.netease.arctic.benchmark.ingestion.MainRunner -confDir [confDir] -sinkType [arctic/iceberg] -sinkDatabase [dbName]
   ```
 
 5. Execute TPC-H benchmark on static data with command:

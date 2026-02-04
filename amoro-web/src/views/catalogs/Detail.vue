@@ -118,7 +118,6 @@ const tableFormatMap = {
   ICEBERG: 'ICEBERG',
   MIXED_ICEBERG: 'MIXED_ICEBERG',
   PAIMON: 'PAIMON',
-  HUDI: 'HUDI',
 }
 
 const tableFormatText = {
@@ -126,7 +125,6 @@ const tableFormatText = {
   [tableFormatMap.MIXED_HIVE]: 'Mixed Hive',
   [tableFormatMap.MIXED_ICEBERG]: 'Mixed Iceberg',
   [tableFormatMap.PAIMON]: 'Paimon',
-  [tableFormatMap.HUDI]: 'Hudi',
 }
 
 const storageConfigFileNameMap = {

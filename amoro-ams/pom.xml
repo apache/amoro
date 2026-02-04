@@ -358,14 +358,6 @@
             </exclusions>
         </dependency>
 
-        <!-- runtime dependencies -->
-        <dependency>
-            <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-format-mixed-spark-${spark.major.version}_${scala.binary.version}</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-optimizer-standalone</artifactId>
@@ -616,24 +608,11 @@
             </dependencies>
         </profile>
         <profile>
-            <id>support-hudi-format</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.amoro</groupId>
-                    <artifactId>amoro-format-hudi</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
             <id>support-all-formats</id>
             <dependencies>
                 <dependency>
                     <groupId>org.apache.amoro</groupId>
                     <artifactId>amoro-format-paimon</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.apache.amoro</groupId>
-                    <artifactId>amoro-format-hudi</artifactId>
                 </dependency>
             </dependencies>
         </profile>

@@ -52,7 +52,6 @@
         <module>amoro-metrics</module>
         <module>amoro-format-iceberg</module>
         <module>amoro-format-mixed</module>
-        <module>amoro-format-hudi</module>
         <module>amoro-format-paimon</module>
         <module>dist</module>
     </modules>
@@ -164,7 +163,6 @@
         <kyuubi-hive-jdbc-shaded.version>1.10.2</kyuubi-hive-jdbc-shaded.version>
         <rocksdb.version>7.10.2</rocksdb.version>
         <kryo.version>4.0.3</kryo.version>
-        <trino.version>406</trino.version>
         <lucene.version>8.11.2</lucene.version>
         <bitmap.version>1.0.1</bitmap.version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -179,7 +177,6 @@
         <annotation-api.version>1.3.2</annotation-api.version>
         <guava.version>32.1.1-jre</guava.version>
         <guava-hive.version>32.1.1-jre</guava-hive.version>
-        <hudi.version>0.14.1</hudi.version>
         <pagehelper.version>6.1.0</pagehelper.version>
         <jsqlparser.version>4.7</jsqlparser.version>
         <jcasbin.version>1.99.0</jcasbin.version>
@@ -208,12 +205,6 @@
             <dependency>
                 <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-format-paimon</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.amoro</groupId>
-                <artifactId>amoro-format-hudi</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -1179,68 +1170,6 @@
             </dependency>
 
             <dependency>
-                <groupId>io.trino</groupId>
-                <artifactId>trino-memory-context</artifactId>
-                <version>${trino.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.trino</groupId>
-                <artifactId>trino-plugin-toolkit</artifactId>
-                <version>${trino.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.trino</groupId>
-                <artifactId>trino-hive</artifactId>
-                <version>${trino.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.trino.hive</groupId>
-                        <artifactId>hive-apache</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>io.trino</groupId>
-                <artifactId>trino-parquet</artifactId>
-                <version>${trino.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.parquet</groupId>
-                        <artifactId>parquet-format</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.trino.hive</groupId>
-                        <artifactId>hive-apache</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>io.trino</groupId>
-                <artifactId>trino-iceberg</artifactId>
-                <version>${trino.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.iceberg</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.trino.hive</groupId>
-                        <artifactId>hive-apache</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>io.trino</groupId>
-                <artifactId>trino-spi</artifactId>
-                <version>${trino.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
                 <version>${lucene.version}</version>
@@ -1276,13 +1205,6 @@
                 <groupId>javax.annotation</groupId>
                 <artifactId>javax.annotation-api</artifactId>
                 <version>${annotation-api.version}</version>
-            </dependency>
-
-            <!--  apache hudi dependencies management -->
-            <dependency>
-                <groupId>org.apache.hudi</groupId>
-                <artifactId>hudi-java-client</artifactId>
-                <version>${hudi.version}</version>
             </dependency>
 
             <dependency>
@@ -1901,20 +1823,6 @@
             </properties>
         </profile>
         <profile>
-            <id>spark-3.3</id>
-            <properties>
-                <spark.version>3.3.4</spark.version>
-                <spark.major.version>3.3</spark.major.version>
-            </properties>
-        </profile>
-        <profile>
-            <id>spark-3.4</id>
-            <properties>
-                <spark.version>3.4.4</spark.version>
-                <spark.major.version>3.4</spark.major.version>
-            </properties>
-        </profile>
-        <profile>
             <id>spark-3.5</id>
             <properties>
                 <spark.version>3.5.8</spark.version>
@@ -1934,7 +1842,7 @@
                 <scala.version>2.13.8</scala.version>
                 <scala.binary.version>2.13</scala.binary.version>
                 <!-- paimon-1.2.0 does not support scala-2.13 and datasource lookup will cause UT failre -->
-                <paimon.version>1.1.1</paimon.version>
+                <paimon.version>1.3.1</paimon.version>
             </properties>
         </profile>
         <profile>

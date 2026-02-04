@@ -105,7 +105,6 @@ Amoro contains modules as below:
 - `amoro-web` is the dashboard frontend for ams
 - `amoro-optimizer` provides default optimizer implementation
 - `amoro-format-iceberg` contains integration of Apache Iceberg format
-- `amoro-format-hudi` contains integration of Apache Hudi format
 - `amoro-format-paimon` contains integration of Apache Paimon format
 - `amoro-format-mixed` provides Mixed format implementation
     - `amoro-mixed-hive` integrates with Apache Hive and implements Mixed Hive format
@@ -131,7 +130,6 @@ Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixe
 * Build all modules: `./mvnw clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
 * Build a distribution package with all formats integrated: `./mvnw clean package -Psupport-all-formats`
   * Build a distribution package with Apache Paimon format: `./mvnw clean package -Psupport-paimon-format`
-  * Build a distribution package with Apache Hudi format: `./mvnw clean package -Psupport-hudi-format`
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
