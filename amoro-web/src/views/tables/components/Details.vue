@@ -19,7 +19,7 @@ limitations under the License.
 <script setup lang="ts">
 import { computed, onMounted, reactive, shallowReactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { ColumnProps } from 'ant-design-vue/es/table'
 import type { DetailColumnItem, IBaseDetailInfo, IColumns, IMap, PartitionColumnItem } from '@/types/common.type'
 import { getTableDetail } from '@/services/table.service'
@@ -27,9 +27,13 @@ import { dateFormat } from '@/utils'
 
 const emit = defineEmits<{
   (e: 'setBaseDetailInfo', data: IBaseDetailInfo): void
+  (e: 'tableNotFound', info: { catalog: string; db: string; table: string }): void
 }>()
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
+
+const STORAGE_TABLE_KEY = 'easylake-menu-catalog-db-table'
 
 const params = computed(() => {
   return {
@@ -124,6 +128,22 @@ async function getTableDetails() {
     setBaseDetailInfo()
   }
   catch (error) {
+    const errorMessage = (error as Error)?.message || ''
+    const isNotFoundError = /not exist|not found/i.test(errorMessage)
+
+    if (isNotFoundError) {
+      const { catalog, db, table } = params.value
+
+      localStorage.removeItem(STORAGE_TABLE_KEY)
+
+      emit('tableNotFound', {
+        catalog: catalog as string,
+        db: db as string,
+        table: table as string,
+      })
+
+      router.replace({ path: '/tables', query: {} })
+    }
   }
   finally {
     state.detailLoading = false
