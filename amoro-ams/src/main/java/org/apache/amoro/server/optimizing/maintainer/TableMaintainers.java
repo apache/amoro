@@ -19,12 +19,8 @@
 package org.apache.amoro.server.optimizing.maintainer;
 
 import org.apache.amoro.AmoroTable;
-import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
-import org.apache.amoro.formats.iceberg.maintainer.MixedTableMaintainer;
 import org.apache.amoro.maintainer.TableMaintainer;
-import org.apache.amoro.table.MixedTable;
-import org.apache.iceberg.Table;
 
 /** Factory for creating {@link TableMaintainer}. */
 @Deprecated
@@ -38,25 +34,5 @@ public class TableMaintainers {
    */
   public static TableMaintainer create(AmoroTable<?> amoroTable, TableRuntime tableRuntime) {
     return TableMaintainerFactory.create(amoroTable, tableRuntime);
-  }
-
-  /**
-   * Create a {@link TableMaintainer} for the given table with TableRuntime.
-   *
-   * @deprecated since 0.9.0, will be removed in 0.10.0. Use {@link
-   *     TableMaintainerFactory#createIcebergMaintainer(Table, TableRuntime)} instead.
-   */
-  public static TableMaintainer create(AmoroTable<?> amoroTable, TableRuntime tableRuntime) {
-    TableFormat format = amoroTable.format();
-    if (format.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)) {
-      MixedTable mixedTable = (MixedTable) amoroTable.originalTable();
-      return new MixedTableMaintainer(
-          mixedTable, new DefaultTableMaintainerContext(tableRuntime, mixedTable));
-    } else if (TableFormat.ICEBERG.equals(format)) {
-      return TableMaintainerFactory.createIcebergMaintainer(
-          (Table) amoroTable.originalTable(), tableRuntime);
-    } else {
-      throw new RuntimeException("Unsupported table type" + amoroTable.originalTable().getClass());
-    }
   }
 }

@@ -26,6 +26,7 @@ import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.iceberg.Constants;
+import org.apache.amoro.maintainer.MaintainerMetrics;
 import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.TableRuntimeOptimizingState;
