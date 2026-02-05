@@ -509,7 +509,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
+            <version>${guava-hive.version}</version>
         </dependency>
 
         <dependency>
