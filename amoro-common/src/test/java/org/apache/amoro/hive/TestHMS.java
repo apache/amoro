@@ -21,28 +21,27 @@ package org.apache.amoro.hive;
 import org.apache.amoro.SingletonResourceUtil;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
-import org.junit.rules.ExternalResource;
-import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-public class TestHMS extends ExternalResource {
+public class TestHMS {
   private static final Logger LOG = LoggerFactory.getLogger(TestHMS.class);
   private static HMSMockServer SINGLETON;
-  private static TemporaryFolder SINGLETON_FOLDER;
+  private static Path SINGLETON_TEMP_DIR;
 
   private final HMSMockServer mockHms;
-  private TemporaryFolder hmsFolder;
+  private Path tempDir;
 
   static {
     try {
       if (SingletonResourceUtil.isUseSingletonResource()) {
-        SINGLETON_FOLDER = new TemporaryFolder();
-        SINGLETON_FOLDER.create();
-        SINGLETON = new HMSMockServer(SINGLETON_FOLDER.newFile());
+        SINGLETON_TEMP_DIR = Files.createTempDirectory("amoro-test-hms-");
+        SINGLETON = new HMSMockServer(SINGLETON_TEMP_DIR.resolve("hms").toFile());
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
@@ -50,13 +49,19 @@ public class TestHMS extends ExternalResource {
   }
 
   public TestHMS() {
+    this(null);
+  }
+
+  public TestHMS(Path tempDir) {
+    this.tempDir = tempDir;
     if (SingletonResourceUtil.isUseSingletonResource()) {
       mockHms = SINGLETON;
     } else {
       try {
-        hmsFolder = new TemporaryFolder();
-        hmsFolder.create();
-        mockHms = new HMSMockServer(hmsFolder.newFile());
+        if (tempDir == null) {
+          this.tempDir = Files.createTempDirectory("amoro-test-hms-");
+        }
+        mockHms = new HMSMockServer(this.tempDir.resolve("hms").toFile());
       } catch (IOException e) {
         throw new UncheckedIOException(e);
       }
@@ -79,7 +84,6 @@ public class TestHMS extends ExternalResource {
     return mockHms.getWareHouseLocation();
   }
 
-  @Override
   public void before() throws Exception {
     if (SingletonResourceUtil.isUseSingletonResource()) {
       if (!mockHms.isStarted()) {
@@ -89,7 +93,11 @@ public class TestHMS extends ExternalResource {
                 new Thread(
                     () -> {
                       SINGLETON.stop();
-                      SINGLETON_FOLDER.delete();
+                      try {
+                        deleteDirectory(SINGLETON_TEMP_DIR.toFile());
+                      } catch (IOException e) {
+                        // ignore
+                      }
                       LOG.info("Stop singleton mock HMS after testing.");
                     }));
         LOG.info("Start singleton mock HMS before testing.");
@@ -100,12 +108,33 @@ public class TestHMS extends ExternalResource {
     }
   }
 
-  @Override
   public void after() {
     if (!SingletonResourceUtil.isUseSingletonResource()) {
       mockHms.stop();
-      hmsFolder.delete();
+      if (tempDir != null) {
+        try {
+          deleteDirectory(tempDir.toFile());
+        } catch (IOException e) {
+          // ignore
+        }
+      }
       LOG.info("Stop mock HMS after testing.");
+    }
+  }
+
+  private void deleteDirectory(java.io.File directory) throws IOException {
+    if (directory.exists()) {
+      java.io.File[] files = directory.listFiles();
+      if (files != null) {
+        for (java.io.File file : files) {
+          if (file.isDirectory()) {
+            deleteDirectory(file);
+          } else {
+            file.delete();
+          }
+        }
+      }
+      directory.delete();
     }
   }
 }
