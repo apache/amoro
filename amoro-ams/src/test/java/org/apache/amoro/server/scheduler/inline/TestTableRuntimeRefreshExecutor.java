@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.scheduler.inline;
 
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS;
+
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
@@ -26,6 +28,7 @@ import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.table.TableRuntimeStore;
@@ -166,6 +169,23 @@ public class TestTableRuntimeRefreshExecutor extends AMSTableTestBase {
     adaptiveExecutingInterval = executor.getAdaptiveExecutingInterval(tableRuntime);
     Assert.assertEquals(MAX_INTERVAL, adaptiveExecutingInterval);
 
+    // Test5: MaxInterval should be greater than minInterval
+    long maxInterval = INTERVAL - 1000;
+    tableRuntime.updateOptimizingConfig(createOptimizingConfig(maxInterval, STEP));
+    try {
+      executor.getAdaptiveExecutingInterval(tableRuntime);
+    } catch (IllegalArgumentException e) {
+
+      Assert.assertEquals(
+          e.getMessage(),
+          String.format(
+              "The adaptive refresh configuration %s(%d ms) must be greater than %s(%d ms).",
+              SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS,
+              maxInterval,
+              AmoroManagementConf.REFRESH_TABLES_INTERVAL.key(),
+              INTERVAL));
+    }
+
     dropTable();
     dropDatabase();
   }
@@ -198,11 +218,6 @@ public class TestTableRuntimeRefreshExecutor extends AMSTableTestBase {
     tableRuntime.setLatestRefreshInterval(0);
     nextExecutingTime = executor.getNextExecutingTime(tableRuntime);
     long expectedFallbackInterval = Math.min(MINOR_LEAST_INTERVAL * 4L / 5, INTERVAL);
-    Assert.assertEquals(expectedFallbackInterval, nextExecutingTime);
-
-    // Test 3: getNextExecutingTime with adaptive interval disabled (maxInterval <= INTERVAL)
-    tableRuntime.updateOptimizingConfig(createOptimizingConfig(INTERVAL, STEP));
-    nextExecutingTime = executor.getNextExecutingTime(tableRuntime);
     Assert.assertEquals(expectedFallbackInterval, nextExecutingTime);
 
     dropTable();
