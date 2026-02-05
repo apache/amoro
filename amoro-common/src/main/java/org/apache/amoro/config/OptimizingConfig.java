@@ -324,12 +324,8 @@ public class OptimizingConfig {
     return this;
   }
 
-  public boolean isRefreshTableAdaptiveEnabled(long minInterval) {
-    if (refreshTableAdaptiveMaxIntervalMs <= minInterval) {
-      return false;
-    }
-
-    return true;
+  public boolean isRefreshTableAdaptiveEnabled() {
+    return refreshTableAdaptiveMaxIntervalMs > 0;
   }
 
   public long getRefreshTableAdaptiveMaxIntervalMs() {

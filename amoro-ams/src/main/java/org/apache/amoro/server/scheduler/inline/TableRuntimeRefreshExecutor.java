@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.scheduler.inline;
 
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS;
+
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.OptimizingConfig;
@@ -25,6 +27,7 @@ import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.optimizing.evaluation.MetadataBasedEvaluationEvent;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
@@ -58,7 +61,7 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
     DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
 
-    if (defaultTableRuntime.getOptimizingConfig().isRefreshTableAdaptiveEnabled(interval)) {
+    if (defaultTableRuntime.getOptimizingConfig().isRefreshTableAdaptiveEnabled()) {
       long newInterval = defaultTableRuntime.getLatestRefreshInterval();
       if (newInterval > 0) {
         return newInterval;
@@ -161,7 +164,7 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
       }
 
       // Update adaptive interval according to evaluated result.
-      if (defaultTableRuntime.getOptimizingConfig().isRefreshTableAdaptiveEnabled(interval)) {
+      if (defaultTableRuntime.getOptimizingConfig().isRefreshTableAdaptiveEnabled()) {
         defaultTableRuntime.setLatestEvaluatedNeedOptimizing(hasOptimizingDemand);
         long newInterval = getAdaptiveExecutingInterval(defaultTableRuntime);
         defaultTableRuntime.setLatestRefreshInterval(newInterval);
@@ -195,6 +198,16 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
     final long minInterval = interval;
     final long maxInterval =
         tableRuntime.getOptimizingConfig().getRefreshTableAdaptiveMaxIntervalMs();
+
+    Preconditions.checkArgument(
+        minInterval < maxInterval,
+        String.format(
+            "The adaptive refresh configuration %s(%d ms) must be greater than %s(%d ms).",
+            SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS,
+            maxInterval,
+            AmoroManagementConf.REFRESH_TABLES_INTERVAL.key(),
+            minInterval));
+
     long currentInterval = tableRuntime.getLatestRefreshInterval();
 
     // Initialize interval on first run or after restart
