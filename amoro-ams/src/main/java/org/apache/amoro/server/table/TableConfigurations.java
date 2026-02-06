@@ -226,6 +226,22 @@ public class TableConfigurations {
    */
   @VisibleForTesting
   public static OptimizingConfig parseOptimizingConfig(Map<String, String> properties) {
+    boolean rewriteAllAvro =
+        CompatiblePropertyUtil.propertyAsBoolean(
+            properties,
+            TableProperties.SELF_OPTIMIZING_REWRITE_ALL_AVRO,
+            TableProperties.SELF_OPTIMIZING_REWRITE_ALL_AVRO_DEFAULT);
+    String defaultFileFormat =
+        CompatiblePropertyUtil.propertyAsString(
+            properties,
+            TableProperties.DEFAULT_FILE_FORMAT,
+            TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
+    if (TableProperties.FILE_FORMAT_AVRO.equalsIgnoreCase(defaultFileFormat) && rewriteAllAvro) {
+      LOG.warn(
+          "Table output format is avro, {} will be ignored.",
+          TableProperties.SELF_OPTIMIZING_REWRITE_ALL_AVRO);
+      rewriteAllAvro = false;
+    }
     return new OptimizingConfig()
         .setEnabled(
             CompatiblePropertyUtil.propertyAsBoolean(
@@ -307,6 +323,7 @@ public class TableConfigurations {
                 properties,
                 TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES,
                 TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT))
+        .setRewriteAllAvro(rewriteAllAvro)
         .setFilter(
             CompatiblePropertyUtil.propertyAsString(
                 properties,
