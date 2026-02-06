@@ -32,6 +32,7 @@ import org.apache.amoro.optimizing.TableRuntimeOptimizingState;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.AmoroProcess;
 import org.apache.amoro.process.ProcessFactory;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
@@ -118,6 +119,9 @@ public class DefaultTableRuntime extends AbstractTableRuntime
       throw new IllegalStateException("Table runtime and processing are not matched!");
     }
     this.optimizingProcess = optimizingProcess;
+    if (this.optimizingProcess.getStatus() == ProcessStatus.SUCCESS) {
+      completeProcess(true);
+    }
   }
 
   @Override
