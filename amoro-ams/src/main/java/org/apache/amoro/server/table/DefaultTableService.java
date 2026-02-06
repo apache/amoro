@@ -181,7 +181,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
             tableRuntimeMeta.getTableId());
         continue;
       }
-      List<TableRuntimeState> states = statesMap.get(tableRuntimeMeta.getTableId());
+      List<TableRuntimeState> states =
+          statesMap.getOrDefault(tableRuntimeMeta.getTableId(), Collections.emptyList());
       Optional<TableRuntime> tableRuntime =
           createTableRuntime(identifier, tableRuntimeMeta, states);
       if (!tableRuntime.isPresent()) {

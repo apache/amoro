@@ -21,9 +21,10 @@ package org.apache.amoro.formats;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,8 +38,15 @@ public abstract class TestAmoroCatalogBase extends AmoroCatalogTestBase {
 
   private static final String TABLE = "table";
 
-  public TestAmoroCatalogBase(AmoroCatalogTestHelper<?> catalogTestHelper) {
-    super(catalogTestHelper);
+  protected AmoroCatalogTestHelper<?> catalogTestHelper;
+
+  @BeforeEach
+  public void setupCatalogHelper(AmoroCatalogTestHelper<?> helper) throws IOException {
+    this.catalogTestHelper = helper;
+    String path = temp.getPath();
+    catalogTestHelper.initWarehouse(path);
+    this.amoroCatalog = catalogTestHelper.amoroCatalog();
+    this.originalCatalog = catalogTestHelper.originalCatalog();
   }
 
   protected abstract void createDatabase(String dbName);
@@ -48,55 +56,49 @@ public abstract class TestAmoroCatalogBase extends AmoroCatalogTestBase {
 
   protected abstract List<String> listDatabases();
 
-  @Test
-  public void testListDatabases() {
+  protected void testListDatabases() {
     createDatabase(DB1);
     createDatabase(DB2);
     createDatabase(DB3);
     HashSet<String> databases = Sets.newHashSet(amoroCatalog.listDatabases());
-    Assert.assertTrue(databases.contains(DB1));
-    Assert.assertTrue(databases.contains(DB2));
-    Assert.assertTrue(databases.contains(DB3));
+    Assertions.assertTrue(databases.contains(DB1));
+    Assertions.assertTrue(databases.contains(DB2));
+    Assertions.assertTrue(databases.contains(DB3));
   }
 
-  @Test
-  public void testDropDatabases() {
+  protected void testDropDatabases() {
     createDatabase(DB1);
     amoroCatalog.dropDatabase(DB1);
 
-    Assert.assertFalse(amoroCatalog.listDatabases().contains(DB1));
+    Assertions.assertFalse(amoroCatalog.listDatabases().contains(DB1));
   }
 
-  @Test
-  public void testCreateDatabases() {
+  protected void testCreateDatabases() {
     amoroCatalog.createDatabase(DB1);
-    Assert.assertTrue(listDatabases().contains(DB1));
+    Assertions.assertTrue(listDatabases().contains(DB1));
   }
 
-  @Test
-  public void testExistsDatabase() {
+  protected void testExistsDatabase() {
     createDatabase(DB1);
-    Assert.assertTrue(amoroCatalog.databaseExists(DB1));
+    Assertions.assertTrue(amoroCatalog.databaseExists(DB1));
   }
 
-  @Test
-  public void testExistsTable() {
+  protected void testExistsTable() {
     createDatabase(DB1);
     createTable(DB1, TABLE, new HashMap<>());
-    Assert.assertTrue(amoroCatalog.tableExists(DB1, TABLE));
+    Assertions.assertTrue(amoroCatalog.tableExists(DB1, TABLE));
   }
 
-  @Test
-  public void testLoadTable() {
+  protected void testLoadTable() {
     createDatabase(DB1);
     Map<String, String> properties = new HashMap<>();
     properties.put("key1", "value1");
     createTable(DB1, TABLE, properties);
     AmoroTable<?> amoroTable = amoroCatalog.loadTable(DB1, TABLE);
-    Assert.assertEquals(amoroTable.properties().get("key1"), "value1");
-    Assert.assertEquals(
-        amoroTable.name(), catalogTestHelper.catalogName() + "." + DB1 + "." + TABLE);
-    Assert.assertEquals(
-        amoroTable.id(), TableIdentifier.of(catalogTestHelper.catalogName(), DB1, TABLE));
+    Assertions.assertEquals("value1", amoroTable.properties().get("key1"));
+    Assertions.assertEquals(
+        catalogTestHelper.catalogName() + "." + DB1 + "." + TABLE, amoroTable.name());
+    Assertions.assertEquals(
+        TableIdentifier.of(catalogTestHelper.catalogName(), DB1, TABLE), amoroTable.id());
   }
 }
