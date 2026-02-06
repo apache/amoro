@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.manager;
 
+import org.apache.amoro.config.ConfigurationManager;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.events.Event;
 import org.apache.amoro.events.EventListener;
 
@@ -34,10 +36,19 @@ public class EventsManager extends AbstractPluginManager<EventListener> {
 
   /** @return Get the singleton object. */
   public static EventsManager getInstance() {
+    return getInstance(null, null);
+  }
+
+  public static EventsManager getInstance(ConfigurationManager configurationManager) {
+    return getInstance(null, configurationManager);
+  }
+
+  public static EventsManager getInstance(
+      Configurations serviceConfig, ConfigurationManager configurationManager) {
     if (INSTANCE == null) {
       synchronized (EventsManager.class) {
         if (INSTANCE == null) {
-          INSTANCE = new EventsManager();
+          INSTANCE = new EventsManager(serviceConfig, configurationManager);
           INSTANCE.initialize();
         }
       }
@@ -58,7 +69,15 @@ public class EventsManager extends AbstractPluginManager<EventListener> {
   private Executor pluginVisitorPool;
 
   public EventsManager() {
-    super(PLUGIN_TYPE);
+    this(null, null);
+  }
+
+  public EventsManager(ConfigurationManager configurationManager) {
+    this(null, configurationManager);
+  }
+
+  public EventsManager(Configurations serviceConfig, ConfigurationManager configurationManager) {
+    super(PLUGIN_TYPE, serviceConfig, configurationManager);
   }
 
   @Override

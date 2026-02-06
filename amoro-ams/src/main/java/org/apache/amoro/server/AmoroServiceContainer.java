@@ -29,11 +29,15 @@ import org.apache.amoro.api.AmoroTableMetastore;
 import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.config.ConfigHelpers;
 import org.apache.amoro.config.ConfigurationException;
+import org.apache.amoro.config.ConfigurationManager;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.config.DynamicConfigurations;
 import org.apache.amoro.config.shade.utils.ConfigShadeUtils;
 import org.apache.amoro.exception.AmoroRuntimeException;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
+import org.apache.amoro.server.config.DbConfigurationManager;
+import org.apache.amoro.server.config.DynamicConfigStore;
 import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.server.dashboard.JavalinJsonMapper;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
@@ -114,6 +118,8 @@ public class AmoroServiceContainer {
   private ProcessService processService;
   private TerminalManager terminalManager;
   private Configurations serviceConfig;
+  private ConfigurationManager configurationManager;
+  private DynamicConfigurations dynamicConfigurations;
   private TServer tableManagementServer;
   private TServer optimizingServiceServer;
   private Javalin httpServer;
@@ -199,13 +205,17 @@ public class AmoroServiceContainer {
   }
 
   public void startRestServices() throws Exception {
-    EventsManager.getInstance();
-    MetricManager.getInstance();
+    EventsManager.getInstance(serviceConfig, configurationManager);
+    MetricManager.getInstance(serviceConfig, configurationManager);
 
     catalogManager = new DefaultCatalogManager(serviceConfig);
     tableManager = new DefaultTableManager(serviceConfig, catalogManager);
     optimizerManager = new DefaultOptimizerManager(serviceConfig, catalogManager);
-    terminalManager = new TerminalManager(serviceConfig, catalogManager);
+    if (dynamicConfigurations != null) {
+      terminalManager = new TerminalManager(dynamicConfigurations, catalogManager);
+    } else {
+      terminalManager = new TerminalManager(serviceConfig, catalogManager);
+    }
 
     initHttpService();
     startHttpService();
@@ -229,16 +239,26 @@ public class AmoroServiceContainer {
   }
 
   public void startOptimizingService() throws Exception {
-    TableRuntimeFactoryManager tableRuntimeFactoryManager = new TableRuntimeFactoryManager();
+    TableRuntimeFactoryManager tableRuntimeFactoryManager =
+        new TableRuntimeFactoryManager(serviceConfig, configurationManager);
     tableRuntimeFactoryManager.initialize();
 
-    tableService =
-        new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
-
-    optimizingService =
-        new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
-
-    processService = new ProcessService(serviceConfig, tableService);
+    if (dynamicConfigurations != null) {
+      tableService =
+          new DefaultTableService(
+              dynamicConfigurations, catalogManager, tableRuntimeFactoryManager);
+      optimizingService =
+          new DefaultOptimizingService(
+              dynamicConfigurations, catalogManager, optimizerManager, tableService);
+      processService = new ProcessService(dynamicConfigurations, tableService);
+    } else {
+      tableService =
+          new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
+      optimizingService =
+          new DefaultOptimizingService(
+              serviceConfig, catalogManager, optimizerManager, tableService);
+      processService = new ProcessService(serviceConfig, tableService);
+    }
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
@@ -319,6 +339,11 @@ public class AmoroServiceContainer {
   public void dispose() {
     disposeOptimizingService();
     disposeRestService();
+    if (configurationManager != null) {
+      configurationManager.stop();
+      configurationManager = null;
+      dynamicConfigurations = null;
+    }
   }
 
   private void initConfig() throws Exception {
@@ -528,6 +553,7 @@ public class AmoroServiceContainer {
     public void init() throws Exception {
       Map<String, Object> envConfig = initEnvConfig();
       initServiceConfig(envConfig);
+      initDynamicConfiguration();
       setIcebergSystemProperties();
       initContainerConfig();
     }
@@ -555,6 +581,24 @@ public class AmoroServiceContainer {
       AmoroManagementConfValidator.validateConfig(serviceConfig);
       dataSource = DataSourceFactory.createDataSource(serviceConfig);
       SqlSessionFactoryProvider.getInstance().init(dataSource);
+    }
+
+    private void initDynamicConfiguration() {
+      boolean dynamicEnabled = serviceConfig.getBoolean(AmoroManagementConf.DYNAMIC_CONFIG_ENABLED);
+      if (!dynamicEnabled) {
+        LOG.info(
+            "Dynamic configuration is disabled by {}",
+            AmoroManagementConf.DYNAMIC_CONFIG_ENABLED.key());
+        return;
+      }
+      java.time.Duration refreshInterval =
+          serviceConfig.get(AmoroManagementConf.DYNAMIC_CONFIG_REFRESH_INTERVAL);
+      configurationManager = new DbConfigurationManager(new DynamicConfigStore(), refreshInterval);
+      configurationManager.start();
+      dynamicConfigurations = new DynamicConfigurations(serviceConfig, configurationManager);
+      LOG.info(
+          "Dynamic configuration enabled for AMS service with refresh interval {} ms",
+          refreshInterval.toMillis());
     }
 
     private Map<String, Object> initEnvConfig() {

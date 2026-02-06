@@ -463,3 +463,16 @@ COMMENT ON COLUMN server_info_json IS 'JSON encoded server info (AmsServerInfo)'
 COMMENT ON COLUMN lease_expire_ts IS 'Lease expiration timestamp (ms since epoch)';
 COMMENT ON COLUMN version IS 'Optimistic lock version of the lease row';
 COMMENT ON COLUMN updated_at IS 'Last update timestamp (ms since epoch)';
+CREATE TABLE dynamic_conf
+(
+    id          BIGSERIAL PRIMARY KEY,
+    conf_key    varchar(256) NOT NULL,
+    conf_value  varchar(256) NOT NULL,
+    conf_group  varchar(256) NOT NULL,
+    plugin_name varchar(256),
+    CONSTRAINT uk_conf UNIQUE (conf_group, plugin_name, conf_key)
+);
+
+COMMENT ON TABLE dynamic_conf IS 'Dynamic configuration overrides for AMS and plugins';
+COMMENT ON COLUMN dynamic_conf.conf_group IS 'Group: AMS for service, PLUGIN_{category} for plugins';
+COMMENT ON COLUMN dynamic_conf.plugin_name IS 'Plugin identifier; valid only when conf_group = PLUGIN_*';

@@ -93,6 +93,12 @@ public class TerminalManager {
     gcThread.start();
   }
 
+  public TerminalManager(
+      org.apache.amoro.config.DynamicConfigurations dynamicConfigurations,
+      CatalogManager catalogManager) {
+    this((Configurations) dynamicConfigurations, catalogManager);
+  }
+
   /**
    * execute script, return terminal sessionId
    *

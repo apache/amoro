@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.table;
 
+import org.apache.amoro.config.ConfigurationManager;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.manager.AbstractPluginManager;
 import org.apache.amoro.table.TableRuntimeFactory;
 
@@ -25,6 +27,15 @@ public class TableRuntimeFactoryManager extends AbstractPluginManager<TableRunti
   public static final String PLUGIN_CATEGORY = "table-runtime-factories";
 
   public TableRuntimeFactoryManager() {
-    super(PLUGIN_CATEGORY);
+    this(null, null);
+  }
+
+  public TableRuntimeFactoryManager(ConfigurationManager configurationManager) {
+    this(null, configurationManager);
+  }
+
+  public TableRuntimeFactoryManager(
+      Configurations serviceConfig, ConfigurationManager configurationManager) {
+    super(PLUGIN_CATEGORY, serviceConfig, configurationManager);
   }
 }

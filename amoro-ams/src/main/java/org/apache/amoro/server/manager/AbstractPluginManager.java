@@ -19,8 +19,11 @@
 package org.apache.amoro.server.manager;
 
 import org.apache.amoro.ActivePlugin;
+import org.apache.amoro.config.ConfigurationManager;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.AlreadyExistsException;
 import org.apache.amoro.exception.LoadingPluginException;
+import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.Environments;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -69,11 +72,28 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   private final Map<String, T> foundedPlugins = new ConcurrentHashMap<>();
   private final Map<String, PluginConfiguration> pluginConfigs = Maps.newLinkedHashMap();
   private final String pluginCategory;
+  protected final Configurations serviceConfig;
   private final Class<T> pluginType;
+  private final ConfigurationManager configurationManager;
 
   @SuppressWarnings("unchecked")
   public AbstractPluginManager(String pluginCategory) {
+    this(pluginCategory, null, null);
+  }
+
+  @SuppressWarnings("unchecked")
+  public AbstractPluginManager(String pluginCategory, ConfigurationManager configurationManager) {
+    this(pluginCategory, null, configurationManager);
+  }
+
+  @SuppressWarnings("unchecked")
+  public AbstractPluginManager(
+      String pluginCategory,
+      Configurations serviceConfig,
+      ConfigurationManager configurationManager) {
     this.pluginCategory = pluginCategory;
+    this.serviceConfig = serviceConfig;
+    this.configurationManager = configurationManager;
     Type superclass = this.getClass().getGenericSuperclass();
     Preconditions.checkArgument(
         superclass instanceof ParameterizedType, "%s isn't parameterized", superclass);
@@ -116,7 +136,32 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
             throw new LoadingPluginException(
                 "Cannot find an implement class for the plugin:" + name);
           }
-          plugin.open(pluginConfig.getProperties());
+
+          Map<String, String> properties = pluginConfig.getProperties();
+          Map<String, String> augmentedProperties = Maps.newHashMap(properties);
+
+          // determine property keys for plugin category and name, configurable via
+          // AmoroManagementConf.PLUGIN_CATEGORY_PROPERTY_KEY and
+          // AmoroManagementConf.PLUGIN_NAME_PROPERTY_KEY
+          String categoryKey =
+              serviceConfig.getString(AmoroManagementConf.PLUGIN_CATEGORY_PROPERTY_KEY);
+          String nameKey = serviceConfig.getString(AmoroManagementConf.PLUGIN_NAME_PROPERTY_KEY);
+
+          // expose key names to plugins so that they can resolve category/name in their open()
+          // methods
+          augmentedProperties.put(
+              AmoroManagementConf.PLUGIN_CATEGORY_PROPERTY_KEY.key(), categoryKey);
+          augmentedProperties.put(AmoroManagementConf.PLUGIN_NAME_PROPERTY_KEY.key(), nameKey);
+
+          // inject identifiers so that plugins can locate their own dynamic configs
+          augmentedProperties.put(categoryKey, pluginCategory());
+          augmentedProperties.put(nameKey, pluginConfig.getName());
+
+          if (configurationManager != null) {
+            plugin.open(augmentedProperties, configurationManager);
+          } else {
+            plugin.open(augmentedProperties);
+          }
           exists.set(false);
           return plugin;
         });

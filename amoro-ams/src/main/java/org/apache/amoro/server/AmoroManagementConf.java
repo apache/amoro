@@ -472,6 +472,41 @@ public class AmoroManagementConf {
           .defaultValue(30000L)
           .withDescription("Max wait time before getting a connection timeout.");
 
+  public static final ConfigOption<Boolean> DYNAMIC_CONFIG_ENABLED =
+      ConfigOptions.key("dynamic-config.enabled")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription(
+              "Whether to enable dynamic configuration backed by database table `dynamic_conf`.");
+
+  public static final ConfigOption<Duration> DYNAMIC_CONFIG_REFRESH_INTERVAL =
+      ConfigOptions.key("dynamic-config.refresh-interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(30))
+          .withDescription(
+              "Refresh interval for reloading dynamic configuration overrides from database.");
+
+  public static final ConfigOption<String> DYNAMIC_CONFIG_NAMESPACE =
+      ConfigOptions.key("dynamic-config.namespace")
+          .stringType()
+          .defaultValue("AMS")
+          .withDescription(
+              "Logical namespace used when loading dynamic configuration overrides for AMS.");
+
+  public static final ConfigOption<String> PLUGIN_CATEGORY_PROPERTY_KEY =
+      ConfigOptions.key("plugin.property.category-key")
+          .stringType()
+          .defaultValue("plugin.category")
+          .withDescription(
+              "The property key used to store plugin category identifier in plugin properties.");
+
+  public static final ConfigOption<String> PLUGIN_NAME_PROPERTY_KEY =
+      ConfigOptions.key("plugin.property.name-key")
+          .stringType()
+          .defaultValue("plugin.name")
+          .withDescription(
+              "The property key used to store plugin name identifier in plugin properties.");
+
   public static final ConfigOption<Duration> OPTIMIZER_HB_TIMEOUT =
       ConfigOptions.key("optimizer.heart-beat-timeout")
           .durationType()

@@ -77,6 +77,16 @@ public class ProcessService extends PersistentBase {
   }
 
   public ProcessService(
+      org.apache.amoro.config.DynamicConfigurations dynamicConfigurations,
+      TableService tableService) {
+    this(
+        dynamicConfigurations,
+        tableService,
+        new ActionCoordinatorManager(),
+        new ExecuteEngineManager());
+  }
+
+  public ProcessService(
       Configurations serviceConfig,
       TableService tableService,
       ActionCoordinatorManager actionCoordinatorManager,

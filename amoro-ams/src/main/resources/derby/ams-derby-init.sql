@@ -265,3 +265,12 @@ CREATE TABLE ha_lease (
 
 CREATE INDEX idx_ha_lease_expire ON ha_lease (lease_expire_ts);
 CREATE INDEX idx_ha_lease_node   ON ha_lease (node_id);
+CREATE TABLE dynamic_conf (
+    id          BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+    conf_key    VARCHAR(256) NOT NULL,
+    conf_value  VARCHAR(256) NOT NULL,
+    conf_group  VARCHAR(256) NOT NULL,
+    plugin_name VARCHAR(256),
+    PRIMARY KEY (id),
+    CONSTRAINT uk_conf UNIQUE (conf_group, plugin_name, conf_key)
+);

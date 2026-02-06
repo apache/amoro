@@ -18,6 +18,8 @@
 
 package org.apache.amoro;
 
+import org.apache.amoro.config.ConfigurationManager;
+
 import java.util.Map;
 
 /** Plugins that need to initialize and close */
@@ -29,6 +31,19 @@ public interface ActivePlugin extends AmoroPlugin {
    * @param properties plugin properties
    */
   void open(Map<String, String> properties);
+
+  /**
+   * Initialize and open the plugin with a {@link ConfigurationManager}.
+   *
+   * <p>The default implementation delegates to {@link #open(Map)} to keep existing plugins
+   * compatible. New plugins can override this method to make use of dynamic configuration.
+   *
+   * @param properties plugin properties
+   * @param configurationManager configuration manager used to fetch dynamic overrides
+   */
+  default void open(Map<String, String> properties, ConfigurationManager configurationManager) {
+    open(properties);
+  }
 
   /** Close the plugin */
   void close();
