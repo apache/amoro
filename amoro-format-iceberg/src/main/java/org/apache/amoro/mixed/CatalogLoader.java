@@ -82,6 +82,7 @@ public class CatalogLoader {
     String catalogImpl;
     switch (metastoreType) {
       case CatalogMetaProperties.CATALOG_TYPE_HADOOP:
+      case CatalogMetaProperties.CATALOG_TYPE_FILESYSTEM:
       case CatalogMetaProperties.CATALOG_TYPE_GLUE:
       case CatalogMetaProperties.CATALOG_TYPE_REST:
       case CatalogMetaProperties.CATALOG_TYPE_CUSTOM:
@@ -168,7 +169,7 @@ public class CatalogLoader {
     String catalogImpl = catalogImpl(metastoreType, properties);
     MixedFormatCatalog catalog = buildCatalog(catalogImpl);
     if (!properties.containsKey(ICEBERG_CATALOG_TYPE)) {
-      properties.put(ICEBERG_CATALOG_TYPE, metastoreType);
+      properties.put(ICEBERG_CATALOG_TYPE, CatalogUtil.normalizeCatalogType(metastoreType));
     }
     catalog.initialize(catalogName, properties, metaStore);
     return catalog;
