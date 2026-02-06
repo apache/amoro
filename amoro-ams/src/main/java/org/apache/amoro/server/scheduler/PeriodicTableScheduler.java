@@ -24,17 +24,24 @@ import org.apache.amoro.IcebergActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.persistence.PersistentBase;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
+import org.apache.amoro.server.utils.SnowflakeIdGenerator;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -48,6 +55,12 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
   protected final Logger logger = LoggerFactory.getLogger(getClass());
 
   private static final long START_DELAY = 10 * 1000L;
+  private static final String CLEANUP_EXECUTION_ENGINE = "AMORO";
+  private static final String CLEANUP_PROCESS_STAGE = "CLEANUP";
+  private static final String EXTERNAL_PROCESS_IDENTIFIER = "";
+
+  private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator();
+  private final PersistencyHelper persistencyHelper = new PersistencyHelper();
 
   protected final Set<ServerTableIdentifier> scheduledTables =
       Collections.synchronizedSet(new HashSet<>());
@@ -123,14 +136,22 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
   }
 
   private void executeTask(TableRuntime tableRuntime) {
+    TableProcessMeta cleanProcessMeta = null;
+    CleanupOperation cleanupOperation = null;
+    Throwable executionError = null;
+
     try {
       if (isExecutable(tableRuntime)) {
+        cleanupOperation = getCleanupOperation();
+        cleanProcessMeta = createCleanupProcessInfo(tableRuntime, cleanupOperation);
+
         execute(tableRuntime);
-        // Different tables take different amounts of time to execute the end of execute(),
-        // so you need to perform the update operation separately for each table.
-        persistUpdatingCleanupTime(tableRuntime);
       }
+    } catch (Throwable t) {
+      executionError = t;
     } finally {
+      persistCleanupResult(tableRuntime, cleanupOperation, cleanProcessMeta, executionError);
+
       scheduledTables.remove(tableRuntime.getTableIdentifier());
       scheduleIfNecessary(tableRuntime, getNextExecutingTime(tableRuntime));
     }
@@ -154,25 +175,125 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
     return true;
   }
 
-  private void persistUpdatingCleanupTime(TableRuntime tableRuntime) {
-    CleanupOperation cleanupOperation = getCleanupOperation();
+  @VisibleForTesting
+  public TableProcessMeta createCleanupProcessInfo(
+      TableRuntime tableRuntime, CleanupOperation cleanupOperation) {
+
     if (shouldSkipOperation(tableRuntime, cleanupOperation)) {
+      return null;
+    }
+
+    TableProcessMeta cleanProcessMeta = buildProcessMeta(tableRuntime, cleanupOperation);
+    persistencyHelper.beginAndPersistCleanupProcess(cleanProcessMeta);
+
+    logger.debug(
+        "Successfully persist cleanup process [processId={}, tableId={}, processType={}]",
+        cleanProcessMeta.getProcessId(),
+        cleanProcessMeta.getTableId(),
+        cleanProcessMeta.getProcessType());
+
+    return cleanProcessMeta;
+  }
+
+  @VisibleForTesting
+  public void persistCleanupResult(
+      TableRuntime tableRuntime,
+      CleanupOperation cleanupOperation,
+      TableProcessMeta cleanProcessMeta,
+      Throwable executionError) {
+
+    if (cleanProcessMeta == null) {
       return;
     }
 
-    try {
-      long currentTime = System.currentTimeMillis();
-      ((DefaultTableRuntime) tableRuntime).updateLastCleanTime(cleanupOperation, currentTime);
+    if (executionError != null) {
+      cleanProcessMeta.setStatus(ProcessStatus.FAILED);
+      String message = executionError.getMessage();
+      if (message == null) {
+        message = executionError.getClass().getName();
+      }
 
-      logger.debug(
-          "Update lastCleanTime for table {} with cleanup operation {}",
-          tableRuntime.getTableIdentifier().getTableName(),
-          cleanupOperation);
-    } catch (Exception e) {
-      logger.error(
-          "Failed to update lastCleanTime for table {}",
-          tableRuntime.getTableIdentifier().getTableName(),
-          e);
+      cleanProcessMeta.setFailMessage(message);
+    } else {
+      cleanProcessMeta.setStatus(ProcessStatus.SUCCESS);
+    }
+
+    long endTime = System.currentTimeMillis();
+    persistencyHelper.persistAndSetCompleted(
+        tableRuntime, cleanupOperation, cleanProcessMeta, endTime);
+
+    logger.debug(
+        "Successfully updated lastCleanTime and cleanupProcess for table {} with cleanup operation {}",
+        tableRuntime.getTableIdentifier().getTableName(),
+        cleanupOperation);
+  }
+
+  private TableProcessMeta buildProcessMeta(
+      TableRuntime tableRuntime, CleanupOperation cleanupOperation) {
+    TableProcessMeta cleanProcessMeta = new TableProcessMeta();
+    cleanProcessMeta.setTableId(tableRuntime.getTableIdentifier().getId());
+    cleanProcessMeta.setProcessId(idGenerator.generateId());
+    cleanProcessMeta.setExternalProcessIdentifier(EXTERNAL_PROCESS_IDENTIFIER);
+    cleanProcessMeta.setStatus(ProcessStatus.RUNNING);
+    cleanProcessMeta.setProcessType(cleanupOperation.name());
+    cleanProcessMeta.setProcessStage(CLEANUP_PROCESS_STAGE);
+    cleanProcessMeta.setExecutionEngine(CLEANUP_EXECUTION_ENGINE);
+    cleanProcessMeta.setRetryNumber(0);
+    cleanProcessMeta.setCreateTime(System.currentTimeMillis());
+    cleanProcessMeta.setProcessParameters(new HashMap<>());
+    cleanProcessMeta.setSummary(new HashMap<>());
+
+    return cleanProcessMeta;
+  }
+
+  private static class PersistencyHelper extends PersistentBase {
+
+    public PersistencyHelper() {}
+
+    private void beginAndPersistCleanupProcess(TableProcessMeta meta) {
+      doAsTransaction(
+          () ->
+              doAs(
+                  TableProcessMapper.class,
+                  mapper ->
+                      mapper.insertProcess(
+                          meta.getTableId(),
+                          meta.getProcessId(),
+                          meta.getExternalProcessIdentifier(),
+                          meta.getStatus(),
+                          meta.getProcessType(),
+                          meta.getProcessStage(),
+                          meta.getExecutionEngine(),
+                          meta.getRetryNumber(),
+                          meta.getCreateTime(),
+                          meta.getProcessParameters(),
+                          meta.getSummary())));
+    }
+
+    private void persistAndSetCompleted(
+        TableRuntime tableRuntime,
+        CleanupOperation cleanupOperation,
+        TableProcessMeta meta,
+        long endTime) {
+
+      doAsTransaction(
+          () ->
+              doAs(
+                  TableProcessMapper.class,
+                  mapper ->
+                      mapper.updateProcess(
+                          meta.getTableId(),
+                          meta.getProcessId(),
+                          meta.getExternalProcessIdentifier(),
+                          meta.getStatus(),
+                          meta.getProcessStage(),
+                          meta.getRetryNumber(),
+                          endTime,
+                          meta.getFailMessage(),
+                          meta.getProcessParameters(),
+                          meta.getSummary())),
+          () ->
+              ((DefaultTableRuntime) tableRuntime).updateLastCleanTime(cleanupOperation, endTime));
     }
   }
 
