@@ -230,7 +230,6 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
 
   private TableProcessMeta buildProcessMeta(
       TableRuntime tableRuntime, CleanupOperation cleanupOperation) {
-
     TableProcessMeta cleanProcessMeta = new TableProcessMeta();
     cleanProcessMeta.setTableId(tableRuntime.getTableIdentifier().getId());
     cleanProcessMeta.setProcessId(idGenerator.generateId());
