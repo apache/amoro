@@ -28,6 +28,7 @@ import org.apache.amoro.optimizing.evaluation.MetadataBasedEvaluationEvent;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
@@ -199,14 +200,21 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
     final long maxInterval =
         tableRuntime.getOptimizingConfig().getRefreshTableAdaptiveMaxIntervalMs();
 
-    Preconditions.checkArgument(
-        minInterval < maxInterval,
-        String.format(
-            "The adaptive refresh configuration %s(%d ms) must be greater than %s(%d ms).",
-            SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS,
-            maxInterval,
-            AmoroManagementConf.REFRESH_TABLES_INTERVAL.key(),
-            minInterval));
+    if (maxInterval <= minInterval) {
+      tableRuntime
+          .getOptimizingConfig()
+          .setRefreshTableAdaptiveMaxIntervalMs(AmoroServiceConstants.INVALID_TIME);
+      logger.warn(
+          "Invalid adaptive refresh configuration for table {}: {} = {}ms is not greater than {} = {}ms. Setting {} to default value 0 to disable dynamic refresh logic.",
+          tableRuntime.getTableIdentifier(),
+          SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS,
+          maxInterval,
+          AmoroManagementConf.REFRESH_TABLES_INTERVAL.key(),
+          minInterval,
+          SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS);
+
+      return AmoroServiceConstants.INVALID_TIME;
+    }
 
     long currentInterval = tableRuntime.getLatestRefreshInterval();
 
