@@ -30,8 +30,21 @@ import org.apache.ibatis.annotations.Update;
 
 import java.util.Map;
 
+/**
+ * Mapper for table_process_state table.
+ *
+ * @deprecated This mapper is deprecated as of AMORO-3951. Use {@link TableProcessMapper} instead.
+ *     The table_process_state table has been merged into table_process.
+ */
+@Deprecated
 public interface ProcessStateMapper {
 
+  /**
+   * Create a new process state.
+   *
+   * @deprecated Use {@link TableProcessMapper#insertProcess} instead.
+   */
+  @Deprecated
   @Insert(
       "INSERT INTO table_process_state "
           + "(process_id, action, table_id, retry_num, status, start_time, end_time, fail_reason, summary) "
@@ -40,24 +53,48 @@ public interface ProcessStateMapper {
   @Options(useGeneratedKeys = true, keyProperty = "id")
   void createProcessState(TableProcessState state);
 
+  /**
+   * Update process state to running.
+   *
+   * @deprecated Use {@link TableProcessMapper#updateProcess} instead.
+   */
+  @Deprecated
   @Update(
       "UPDATE table_process_state "
           + "SET status = #{status}, start_time = #{startTime} "
           + "WHERE process_id = #{id} and retry_num = #{retryNumber}")
   void updateProcessRunning(TableProcessState state);
 
+  /**
+   * Update process state to completed.
+   *
+   * @deprecated Use {@link TableProcessMapper#updateProcess} instead.
+   */
+  @Deprecated
   @Update(
       "UPDATE table_process_state "
           + "SET status = #{status}, end_time = #{endTime} "
           + "WHERE process_id = #{id} and retry_num = #{retryNumber}")
   void updateProcessCompleted(TableProcessState state);
 
+  /**
+   * Update process state to failed.
+   *
+   * @deprecated Use {@link TableProcessMapper#updateProcess} instead.
+   */
+  @Deprecated
   @Update(
       "UPDATE table_process_state "
           + "SET status = #{status}, end_time = #{endTime}, fail_reason = #{failedReason} "
           + "WHERE process_id = #{id} and retry_num = #{retryNumber}")
   void updateProcessFailed(TableProcessState state);
 
+  /**
+   * Query TableProcessState by process_id.
+   *
+   * @deprecated Use {@link TableProcessMapper#getProcessMeta} instead.
+   */
+  @Deprecated
   @Select(
       "SELECT process_id, action, table_id, retry_num, status, start_time, end_time, fail_reason, summary "
           + "FROM table_process_state "
@@ -77,7 +114,12 @@ public interface ProcessStateMapper {
       })
   TableProcessState getProcessStateById(@Param("processId") long processId);
 
-  /** Query TableProcessState by table_id */
+  /**
+   * Query TableProcessState by table_id.
+   *
+   * @deprecated Use {@link TableProcessMapper#listProcessMeta} instead.
+   */
+  @Deprecated
   @Select(
       "SELECT process_id, action, table_id, retry_num, status, start_time, end_time, fail_reason, summary "
           + "FROM table_process_state "

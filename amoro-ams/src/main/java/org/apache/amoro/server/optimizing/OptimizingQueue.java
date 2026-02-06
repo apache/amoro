@@ -490,7 +490,7 @@ public class OptimizingQueue extends PersistentBase {
         OptimizingProcessState processState) {
       this.tableRuntime = tableRuntime;
       processId = tableRuntime.getProcessId();
-      optimizingType = OptimizingType.valueOf(processMeta.getProcessType());
+      optimizingType = getOptimizingTypeFromAction(processMeta.getAction());
       targetSnapshotId = processState.getTargetSnapshotId();
       targetChangeSnapshotId = processState.getTargetChangeSnapshotId();
       planTime = processMeta.getCreateTime();
@@ -526,6 +526,53 @@ public class OptimizingQueue extends PersistentBase {
     @Override
     public OptimizingType getOptimizingType() {
       return optimizingType;
+    }
+
+    /**
+     * Convert OptimizingType to corresponding Action.
+     *
+     * @param optimizingType optimizing type
+     * @return corresponding Action
+     */
+    private org.apache.amoro.Action getOptimizingAction(OptimizingType optimizingType) {
+      switch (optimizingType) {
+        case MINOR:
+          return org.apache.amoro.IcebergActions.OPTIMIZING_MINOR;
+        case MAJOR:
+          return org.apache.amoro.IcebergActions.OPTIMIZING_MAJOR;
+        case FULL:
+          return org.apache.amoro.IcebergActions.OPTIMIZING_FULL;
+        default:
+          throw new IllegalArgumentException("Unknown optimizing type: " + optimizingType);
+      }
+    }
+
+    /**
+     * Convert Action to corresponding OptimizingType.
+     *
+     * @param action action
+     * @return corresponding OptimizingType
+     */
+    private OptimizingType getOptimizingTypeFromAction(org.apache.amoro.Action action) {
+      if (action == null) {
+        throw new IllegalArgumentException("Action cannot be null");
+      }
+      String actionName = action.getName();
+      if (org.apache.amoro.IcebergActions.OPTIMIZING_MINOR.getName().equals(actionName)) {
+        return OptimizingType.MINOR;
+      } else if (org.apache.amoro.IcebergActions.OPTIMIZING_MAJOR.getName().equals(actionName)) {
+        return OptimizingType.MAJOR;
+      } else if (org.apache.amoro.IcebergActions.OPTIMIZING_FULL.getName().equals(actionName)) {
+        return OptimizingType.FULL;
+      } else {
+        // Fallback to old behavior for backward compatibility
+        try {
+          return OptimizingType.valueOf(actionName.toUpperCase());
+        } catch (IllegalArgumentException e) {
+          throw new IllegalArgumentException(
+              "Cannot convert action " + actionName + " to OptimizingType", e);
+        }
+      }
     }
 
     @Override
@@ -838,7 +885,7 @@ public class OptimizingQueue extends PersistentBase {
                           processId,
                           "",
                           status,
-                          optimizingType.name().toUpperCase(),
+                          getOptimizingAction(optimizingType),
                           tableRuntime.getOptimizingStatus().name().toLowerCase(),
                           "AMORO",
                           0,

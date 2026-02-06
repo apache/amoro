@@ -28,4 +28,11 @@ public class IcebergActions {
   public static final Action DELETE_ORPHANS = new Action(DEFAULT_FORMATS, 2, "delete-orphans");
   public static final Action SYNC_HIVE = new Action(DEFAULT_FORMATS, 3, "sync-hive");
   public static final Action EXPIRE_DATA = new Action(DEFAULT_FORMATS, 1, "expire-data");
+
+  // Optimizing Actions
+  public static final Action OPTIMIZING_MINOR =
+      new Action(DEFAULT_FORMATS, 100, "optimizing-minor");
+  public static final Action OPTIMIZING_MAJOR =
+      new Action(DEFAULT_FORMATS, 200, "optimizing-major");
+  public static final Action OPTIMIZING_FULL = new Action(DEFAULT_FORMATS, 300, "optimizing-full");
 }
