@@ -241,6 +241,7 @@ public class AmoroServiceContainer {
 
     processService = new ProcessService(serviceConfig, tableService);
     tableService.initialize(initTablePlugins());
+    tableManager.setTableService(tableService);
     LOG.info("AMS table service have been initialized");
 
     initThriftService();
