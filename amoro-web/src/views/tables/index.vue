@@ -140,6 +140,24 @@ export default defineComponent({
       state.baseInfo = { ...baseInfo }
     }
 
+    const handleTableNotFound = () => {
+      state.baseInfo = {
+        optimizingStatus: '',
+        records: '',
+        tableType: '',
+        tableName: '',
+        createTime: '',
+        tableFormat: '',
+        hasPartition: false,
+        healthScore: -1,
+        smallFileScore: 0,
+        equalityDeleteScore: 0,
+        positionalDeleteScore: 0,
+        comment: '',
+      } as IBaseDetailInfo
+      state.detailLoaded = false
+    }
+
     const onChangeTab = (key: string | number) => {
       const query = { ...route.query }
       query.tab = key.toString()
@@ -210,6 +228,7 @@ export default defineComponent({
       isIceberg,
       hasSelectedTable,
       setBaseDetailInfo,
+      handleTableNotFound,
       goBack,
       onChangeTab,
       sidebarWidth,
@@ -262,7 +281,7 @@ export default defineComponent({
             <div class="tables-main-body">
               <a-tabs v-model:activeKey="activeKey" destroy-inactive-tab-pane @change="onChangeTab">
                 <a-tab-pane key="Details" :tab="$t('details')" force-render>
-                  <UDetails ref="detailRef" @set-base-detail-info="setBaseDetailInfo" />
+                  <UDetails ref="detailRef" @set-base-detail-info="setBaseDetailInfo" @table-not-found="handleTableNotFound" />
                 </a-tab-pane>
                 <a-tab-pane v-if="detailLoaded" key="Files" :tab="$t('files')">
                   <UFiles :has-partition="baseInfo.hasPartition" />
