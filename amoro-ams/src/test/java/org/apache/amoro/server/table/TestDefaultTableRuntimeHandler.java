@@ -77,8 +77,7 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
     tableService =
         new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactoryManager);
     TestHandler handler = new TestHandler();
-    tableService.addHandlerChain(handler);
-    tableService.initialize();
+    tableService.initialize(List.of(IcebergTablePlugin.builder().addHandler(handler).build()));
     if (!(catalogTestHelper().tableFormat().equals(TableFormat.MIXED_HIVE)
         && TEST_HMS.getHiveClient().getDatabase(TableTestHelper.TEST_DB_NAME) != null)) {
       createDatabase();
@@ -97,8 +96,7 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
     tableService =
         new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactoryManager);
     handler = new TestHandler();
-    tableService.addHandlerChain(handler);
-    tableService.initialize();
+    tableService.initialize(List.of(IcebergTablePlugin.builder().addHandler(handler).build()));
     Assert.assertEquals(1, handler.getInitTables().size());
     Assert.assertEquals(
         (Long) createTableId.getId().longValue(),
