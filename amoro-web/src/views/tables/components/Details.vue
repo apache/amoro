@@ -83,14 +83,15 @@ const state = reactive({
 })
 
 async function getTableDetails() {
+  const requestParams = { ...params.value }
+  const { catalog, db, table } = requestParams
+  if (!catalog || !db || !table) {
+    return
+  }
   try {
-    const { catalog, db, table } = params.value
-    if (!catalog || !db || !table) {
-      return
-    }
     state.detailLoading = true
     const result = await getTableDetail({
-      ...params.value,
+      ...requestParams,
     })
     const { pkList = [], tableType, partitionColumnList = [], properties, changeMetrics, schema, createTime, tableIdentifier, baseMetrics, tableSummary, comment } = result
     state.baseDetailInfo = {
@@ -132,8 +133,6 @@ async function getTableDetails() {
     const isNotFoundError = /not exist|not found/i.test(errorMessage)
 
     if (isNotFoundError) {
-      const { catalog, db, table } = params.value
-
       localStorage.removeItem(STORAGE_TABLE_KEY)
 
       emit('tableNotFound', {
