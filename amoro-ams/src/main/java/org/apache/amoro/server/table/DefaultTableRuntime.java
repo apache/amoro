@@ -309,8 +309,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   public DefaultTableRuntime refresh(AmoroTable<?> table) {
     Map<String, String> tableConfig = table.properties();
     TableConfiguration newConfiguration = TableConfigurations.parseTableConfig(tableConfig);
-    TableConfiguration oldConfiguration = getTableConfiguration();
-    boolean configChanged = !newConfiguration.equals(oldConfiguration);
     String newGroupName = newConfiguration.getOptimizingConfig().getOptimizerGroup();
 
     if (!Objects.equals(getGroupName(), newGroupName)) {
