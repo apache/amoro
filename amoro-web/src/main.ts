@@ -32,6 +32,7 @@ import './utils/editor'
 import './assets/icons'
 import loginService from './services/login.service'
 import { getQueryString } from './utils'
+import { resetLoginTip } from './utils/request'
 import SvgIcon from '@/components/svg-icon.vue'
 
 import 'virtual:svg-icons-register'
@@ -72,11 +73,21 @@ RegisterComponents(app);
   finally {
     const store = useStore()
     router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
-      // if no username in store and not go to login page, should redirect to login page
       store.setHistoryPath({
         path: from.path,
         query: from.query,
       })
+      if (to.path === '/login') {
+        resetLoginTip()
+        next()
+        return
+      }
+      if (!store.userInfo.userName && to.path !== '/login') {
+        next({
+          path: '/login',
+        })
+        return
+      }
       next()
     })
 

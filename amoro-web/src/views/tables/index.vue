@@ -52,7 +52,7 @@ export default defineComponent({
     const SIDEBAR_WIDTH_STORAGE_KEY = 'tables_sidebar_width'
     const SIDEBAR_MIN_WIDTH = 320
     const SIDEBAR_MAX_WIDTH = 800
-    const sidebarWidth = ref(512)
+    const sidebarWidth = ref(320)
 
     let isResizing = false
     let startX = 0
@@ -71,7 +71,7 @@ export default defineComponent({
     const initSidebarWidth = () => {
       const stored = localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY)
       const parsed = stored ? Number.parseInt(stored, 10) : Number.NaN
-      const base = Number.isFinite(parsed) ? clampSidebarWidth(parsed) : 512
+      const base = Number.isFinite(parsed) ? clampSidebarWidth(parsed) : 320
       sidebarWidth.value = base
       startWidth = base
     }
@@ -317,6 +317,8 @@ export default defineComponent({
     display: flex;
     height: 100%;
     align-items: stretch;
+    margin-top: -12px;
+    margin-bottom: -12px;
   }
 
   .tables-sidebar {
@@ -324,6 +326,7 @@ export default defineComponent({
     height: 100%;
     background-color: #fff;
     position: relative;
+    padding-top: 12px;
   }
 
   .tables-main {
@@ -332,12 +335,13 @@ export default defineComponent({
     flex-direction: column;
     min-width: 0;
     height: 100%;
+    padding-top: 12px;
   }
 
   .tables-divider {
     position: relative;
-    flex: 0 0 8px;
-    width: 8px;
+    flex: 0 0 5px;
+    width: 5px;
     height: 100%;
     cursor: col-resize;
     z-index: 2; // Ensure divider is above sidebar and main content so drag area is not blocked
@@ -348,9 +352,8 @@ export default defineComponent({
     position: absolute;
     top: 0;
     bottom: 0;
-    left: 50%;
+    right: 2px;
     width: 1px;
-    transform: translateX(-50%);
     background: #e8e8f0;
   }
 
