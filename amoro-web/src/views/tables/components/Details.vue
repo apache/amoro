@@ -19,7 +19,7 @@ limitations under the License.
 <script setup lang="ts">
 import { computed, onMounted, reactive, shallowReactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { ColumnProps } from 'ant-design-vue/es/table'
 import type { DetailColumnItem, IBaseDetailInfo, IColumns, IMap, PartitionColumnItem } from '@/types/common.type'
 import { getTableDetail } from '@/services/table.service'
@@ -27,9 +27,13 @@ import { dateFormat } from '@/utils'
 
 const emit = defineEmits<{
   (e: 'setBaseDetailInfo', data: IBaseDetailInfo): void
+  (e: 'tableNotFound', info: { catalog: string; db: string; table: string }): void
 }>()
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
+
+const STORAGE_TABLE_KEY = 'easylake-menu-catalog-db-table'
 
 const params = computed(() => {
   return {
@@ -79,14 +83,15 @@ const state = reactive({
 })
 
 async function getTableDetails() {
+  const requestParams = { ...params.value }
+  const { catalog, db, table } = requestParams
+  if (!catalog || !db || !table) {
+    return
+  }
   try {
-    const { catalog, db, table } = params.value
-    if (!catalog || !db || !table) {
-      return
-    }
     state.detailLoading = true
     const result = await getTableDetail({
-      ...params.value,
+      ...requestParams,
     })
     const { pkList = [], tableType, partitionColumnList = [], properties, changeMetrics, schema, createTime, tableIdentifier, baseMetrics, tableSummary, comment } = result
     state.baseDetailInfo = {
@@ -124,6 +129,20 @@ async function getTableDetails() {
     setBaseDetailInfo()
   }
   catch (error) {
+    const errorMessage = (error as Error)?.message || ''
+    const isNotFoundError = /not exist|not found/i.test(errorMessage)
+
+    if (isNotFoundError) {
+      localStorage.removeItem(STORAGE_TABLE_KEY)
+
+      emit('tableNotFound', {
+        catalog: catalog as string,
+        db: db as string,
+        table: table as string,
+      })
+
+      router.replace({ path: '/tables', query: {} })
+    }
   }
   finally {
     state.detailLoading = false
