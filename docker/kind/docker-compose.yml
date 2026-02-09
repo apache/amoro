@@ -1,0 +1,98 @@
+services:
+  # PostgreSQL database for Amoro metadata
+  postgres:
+    image: postgres:15
+    container_name: iceberg-postgres
+    networks:
+      kind:
+        ipv4_address: 172.22.0.99
+    environment:
+      - POSTGRES_USER=iceberg
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=iceberg
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "iceberg", "-d", "iceberg"]
+      interval: 2s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres-data:/var/lib/postgresql/data
+    command: postgres -c max_connections=300
+
+  # Amoro Management Service
+  # Prerequisites:
+  #   1. Kind cluster: ./setup-all.sh
+  #   2. Spark binaries: ./download-spark.sh
+  amoro:
+    image: apache/amoro
+    container_name: amoro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8081:8081"    # REST API
+      - "1630:1630"    # Web UI
+      - "1260:1260"    # Thrift (table service)
+      - "1261:1261"    # Thrift (optimizing service)
+    environment:
+      - JVM_XMS=1024
+      - JVM_XMX=2048
+      - KUBECONFIG=/root/.kube/config
+    volumes:
+      - ./amoro:/tmp/warehouse
+      - ./kubeconfig/config:/root/.kube/config:ro
+      - ./config.yaml:/usr/local/amoro/conf/config.yaml:ro
+      - ./data/spark:/opt/spark:ro
+    command: ["/entrypoint.sh", "ams"]
+    tty: true
+    stdin_open: true
+    networks:
+      kind:
+        ipv4_address: 172.22.0.100
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-03T14-56-28Z
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password
+      - MINIO_DOMAIN=minio
+    networks:
+      kind:
+        ipv4_address: 172.22.0.101
+
+    ports:
+      - 9001:9001
+      - 9000:9000
+    volumes:
+      - ./data/minio-data:/data
+    command: [ "server", "/data", "--console-address", ":9001" ]
+
+  mc:
+    depends_on:
+      - minio
+    image: minio/mc:RELEASE.2025-04-03T17-07-56Z
+    container_name: mc
+    networks:
+      kind:
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+    entrypoint: |
+      /bin/sh -c "
+      until (/usr/bin/mc config host add minio http://minio:9000 admin password) do echo '...waiting...' && sleep 1; done;
+      if ! /usr/bin/mc ls minio/warehouse > /dev/null 2>&1; then
+        /usr/bin/mc mb minio/warehouse;
+        /usr/bin/mc policy set public minio/warehouse;
+      fi;
+      tail -f /dev/null
+      "
+
+networks:
+  kind:
+    external: true
+    name: kind

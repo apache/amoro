@@ -32,7 +32,9 @@ DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
 FLINK_OPTIMIZER_JOB_PATH=amoro-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${AMORO_VERSION}-jar-with-dependencies.jar
 FLINK_OPTIMIZER_JOB=${PROJECT_HOME}/${FLINK_OPTIMIZER_JOB_PATH}
-SPARK_OPTIMIZER_JOB_PATH=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${AMORO_VERSION}-jar-with-dependencies.jar
+# Note: Spark optimizer JAR includes Spark major version and Scala version in name
+# The actual path is computed in build_optimizer_spark() after parsing SPARK_MAJOR_VERSION
+SPARK_OPTIMIZER_JOB_PATH_TEMPLATE=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-SPARK_MAJOR_2.12-${AMORO_VERSION}-jar-with-dependencies.jar
 SPARK_OPTIMIZER_JOB=${PROJECT_HOME}/${SPARK_OPTIMIZER_JOB_PATH}
 AMORO_TAG=$AMORO_VERSION
 MAVEN_MIRROR=https://repo.maven.apache.org/maven2
@@ -182,7 +184,10 @@ function build_optimizer_spark() {
     local IMAGE_TAG=$AMORO_TAG-spark${SPARK_MAJOR_VERSION}
     print_image $IMAGE_REF $IMAGE_TAG
 
-    OPTIMIZER_JOB=${SPARK_OPTIMIZER_JOB}
+    # JAR name includes Spark major version and Scala version (e.g., spark-3.5_2.12)
+    local SPARK_OPTIMIZER_JAR_NAME="amoro-optimizer-spark-${SPARK_MAJOR_VERSION}_2.12-${AMORO_VERSION}-jar-with-dependencies.jar"
+    local SPARK_OPTIMIZER_JOB_PATH="amoro-optimizer/amoro-optimizer-spark/target/${SPARK_OPTIMIZER_JAR_NAME}"
+    local OPTIMIZER_JOB="${PROJECT_HOME}/${SPARK_OPTIMIZER_JOB_PATH}"
 
     if [ ! -f "${OPTIMIZER_JOB}" ]; then
       BUILD_CMD="$MVN clean package -pl amoro-optimizer/amoro-optimizer-spark -am -e -DskipTests -Pspark-${SPARK_MAJOR_VERSION}"

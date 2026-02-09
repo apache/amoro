@@ -1,0 +1,172 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+ams:
+  admin-username: admin
+  admin-password: admin
+  server-bind-host: "0.0.0.0"
+  # Use static IP on 'kind' network so K8s pods can reach the thrift server
+  server-expose-host: "172.22.0.100"
+
+  thrift-server:
+    max-message-size: 100MB # 104857600
+    selector-thread-count: 2
+    selector-queue-size: 4
+    table-service:
+      bind-port: 1260
+      worker-thread-count: 20
+    optimizing-service:
+      bind-port: 1261
+
+  http-server:
+    session-timeout: 7d
+    bind-port: 1630
+    rest-auth-type: token
+
+  refresh-external-catalogs:
+    interval: 3min # 180000
+    thread-count: 10
+    queue-size: 1000000
+
+  refresh-tables:
+    thread-count: 10
+    interval: 1min # 60000
+    max-pending-partition-count: 100 # default 100
+
+  self-optimizing:
+    commit-thread-count: 10
+    runtime-data-keep-days: 30
+    runtime-data-expire-interval-hours: 1
+    refresh-group-interval: 30s
+
+  optimizer:
+    heart-beat-timeout: 1min # 60000
+    task-ack-timeout: 30s # 30000
+    task-execute-timeout: 1h # 3600000
+    polling-timeout: 3s # 3000
+    max-planning-parallelism: 1 # default 1
+
+  blocker:
+    timeout: 1min # 60000
+
+  # optional features
+  expire-snapshots:
+    enabled: true
+    thread-count: 10
+
+  clean-orphan-files:
+    enabled: true
+    thread-count: 10
+    interval: 1d
+
+  clean-dangling-delete-files:
+    enabled: true
+    thread-count: 10
+
+  sync-hive-tables:
+    enabled: false
+    thread-count: 10
+
+  data-expiration:
+    enabled: true
+    thread-count: 10
+    interval: 1d
+
+  auto-create-tags:
+    enabled: true
+    thread-count: 3
+    interval: 1min # 60000
+
+  table-manifest-io:
+    thread-count: 20
+
+  catalog-meta-cache:
+    expiration-interval: 60s
+
+  # Support for encrypted sensitive configuration items
+  shade:
+    identifier: default # Built-in support for default/base64. Defaults to "default", indicating no encryption
+    sensitive-keywords: admin-password;database.password
+
+  overview-cache:
+    refresh-interval: 3min          # 3 min
+    max-size: 3360                # Keep 7 days history by default, 7 * 24 * 60 / 3 = 3360
+
+  database:
+    type: postgres
+    jdbc-driver-class: org.postgresql.Driver
+    url: jdbc:postgresql://172.22.0.99:5432/iceberg
+    username: iceberg
+    password: password
+    connection-pool-max-total: 20
+    connection-pool-max-idle: 16
+    connection-pool-max-wait-millis: 30000
+
+  terminal:
+    backend: local
+    result:
+      limit: 1000
+    stop-on-error: false
+    session:
+      timeout: 30min # 1800000
+    local:
+      using-session-catalog-for-hive: false
+      spark.sql.iceberg.handle-timestamp-without-timezone: false
+
+# Spark Optimizer Container for Kind Kubernetes Cluster
+containers:
+  - name: sparkContainer
+    container-impl: org.apache.amoro.server.manager.SparkOptimizerContainer
+    properties:
+      # Spark installation directory (inside Amoro container)
+      spark-home: /opt/spark/
+      
+      # Kubernetes master URL - using internal Docker network IP
+      master: k8s://https://172.22.0.3:6443
+      
+      # Deploy mode - must be 'cluster' for Kubernetes
+      deploy-mode: cluster
+      
+      # Job URI - path to the optimizer JAR inside the Spark optimizer Docker image
+      job-uri: "local:///opt/spark/usrlib/optimizer-job.jar"
+      
+      # Hadoop user
+      export.HADOOP_USER_NAME: spark
+      
+      # Spark configuration directory
+      export.SPARK_CONF_DIR: /opt/spark/conf/
+      
+      # Spark Kubernetes Image Configuration
+      spark-conf.spark.kubernetes.container.image: "apache/amoro-spark-optimizer:latest"
+      spark-conf.spark.kubernetes.container.image.pullPolicy: "IfNotPresent"
+      
+      # Kubernetes namespace where Spark pods will be created
+      spark-conf.spark.kubernetes.namespace: spark
+      
+      # Service account for driver and executors
+      spark-conf.spark.kubernetes.authenticate.driver.serviceAccountName: spark
+      spark-conf.spark.kubernetes.authenticate.executor.serviceAccountName: spark
+      
+      # Dynamic Resource Allocation (DRA) - recommended for better resource utilization
+      spark-conf.spark.dynamicAllocation.enabled: "true"
+      spark-conf.spark.shuffle.service.enabled: "false"
+      spark-conf.spark.dynamicAllocation.shuffleTracking.enabled: "true"
+      
+      # Resource limits (adjust based on your needs)
+      spark-conf.spark.driver.memory: "1g"
+      spark-conf.spark.executor.memory: "1g"
+      spark-conf.spark.executor.cores: "1"

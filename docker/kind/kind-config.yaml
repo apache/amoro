@@ -1,0 +1,48 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: amoro-spark-cluster
+networking:
+  # Pod and Service subnets for the cluster
+  podSubnet: "10.244.0.0/16"
+  serviceSubnet: "10.96.0.0/12"
+  # Disable default CNI to use kindnet which works better with Docker networking
+  disableDefaultCNI: false
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.28.0
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+      - |
+        kind: ClusterConfiguration
+        apiServer:
+          certSANs:
+            - "127.0.0.1"
+            - "0.0.0.0"
+            - "localhost"
+            - "amoro-spark-cluster-control-plane"
+    extraPortMappings:
+      # Expose API server on host for kubectl access
+      - containerPort: 6443
+        hostPort: 6443
+        protocol: TCP
+  - role: worker
+    image: kindest/node:v1.28.0
+    kubeadmConfigPatches:
+      - |
+        kind: JoinConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            # Ensure pods can pull images from Kind's internal registry
+            max-pods: "110"
+  - role: worker
+    image: kindest/node:v1.28.0
+    kubeadmConfigPatches:
+      - |
+        kind: JoinConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            max-pods: "110"
