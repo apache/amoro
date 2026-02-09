@@ -80,6 +80,12 @@
             <outputDirectory/>
             <fileMode>0644</fileMode>
         </file>
+        <file>
+            <source>../docker/amoro/entrypoint.sh</source>
+            <outputDirectory/>
+            <destName>entrypoint.sh</destName>
+            <fileMode>0644</fileMode>
+        </file>
     </files>
     <fileSets>
         <fileSet>
