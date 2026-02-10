@@ -19,8 +19,9 @@ ams:
   admin-username: admin
   admin-password: admin
   server-bind-host: "0.0.0.0"
-  # Use static IP on 'kind' network so K8s pods can reach the thrift server
-  server-expose-host: "172.22.0.100"
+  # Static IP on iceberg-net so both the local optimizer and K8s Spark pods can
+  # reach the thrift optimizing service without any manual IP edits.
+  server-expose-host: "172.30.0.10"
 
   thrift-server:
     max-message-size: 100MB # 104857600
@@ -106,10 +107,11 @@ ams:
     refresh-interval: 3min          # 3 min
     max-size: 3360                # Keep 7 days history by default, 7 * 24 * 60 / 3 = 3360
 
+  # PostgreSQL — resolved via Docker Compose DNS (service name "postgres")
   database:
     type: postgres
     jdbc-driver-class: org.postgresql.Driver
-    url: jdbc:postgresql://172.22.0.99:5432/iceberg
+    url: jdbc:postgresql://postgres:5432/iceberg
     username: iceberg
     password: password
     connection-pool-max-total: 20
@@ -127,46 +129,47 @@ ams:
       using-session-catalog-for-hive: false
       spark.sql.iceberg.handle-timestamp-without-timezone: false
 
-# Spark Optimizer Container for Kind Kubernetes Cluster
+# ---------------------------------------------------------------------------
+# Optimizer Containers
+# ---------------------------------------------------------------------------
+# localContainer  — runs inside the Amoro JVM; zero external dependencies.
+#
+# sparkContainer  — submits Spark jobs to the Kind K8s cluster.
+#                   The docker-compose "amoro-init" service auto-creates the
+#                   'spark-container' optimizer group + 1 optimizer using this.
+#                   Requires the apache/amoro-spark-optimizer:latest image to
+#                   be built and loaded into Kind (done automatically by the
+#                   kind-load-image service).
+# ---------------------------------------------------------------------------
 containers:
+  - name: localContainer
+    container-impl: org.apache.amoro.server.manager.LocalOptimizerContainer
+    properties:
+      export.JAVA_HOME: "/opt/java/openjdk"   # eclipse-temurin JDK path
+
   - name: sparkContainer
     container-impl: org.apache.amoro.server.manager.SparkOptimizerContainer
     properties:
-      # Spark installation directory (inside Amoro container)
       spark-home: /opt/spark/
-      
-      # Kubernetes master URL - using internal Docker network IP
-      master: k8s://https://172.22.0.3:6443
-      
-      # Deploy mode - must be 'cluster' for Kubernetes
+      # Kind control-plane hostname — resolved via Docker DNS (amoro-net)
+      master: k8s://https://amoro-cluster-control-plane:6443
       deploy-mode: cluster
-      
-      # Job URI - path to the optimizer JAR inside the Spark optimizer Docker image
       job-uri: "local:///opt/spark/usrlib/optimizer-job.jar"
-      
-      # Hadoop user
       export.HADOOP_USER_NAME: spark
-      
-      # Spark configuration directory
       export.SPARK_CONF_DIR: /opt/spark/conf/
-      
-      # Spark Kubernetes Image Configuration
       spark-conf.spark.kubernetes.container.image: "apache/amoro-spark-optimizer:latest"
       spark-conf.spark.kubernetes.container.image.pullPolicy: "IfNotPresent"
-      
-      # Kubernetes namespace where Spark pods will be created
       spark-conf.spark.kubernetes.namespace: spark
-      
-      # Service account for driver and executors
       spark-conf.spark.kubernetes.authenticate.driver.serviceAccountName: spark
       spark-conf.spark.kubernetes.authenticate.executor.serviceAccountName: spark
-      
-      # Dynamic Resource Allocation (DRA) - recommended for better resource utilization
       spark-conf.spark.dynamicAllocation.enabled: "true"
       spark-conf.spark.shuffle.service.enabled: "false"
       spark-conf.spark.dynamicAllocation.shuffleTracking.enabled: "true"
-      
-      # Resource limits (adjust based on your needs)
       spark-conf.spark.driver.memory: "1g"
       spark-conf.spark.executor.memory: "1g"
       spark-conf.spark.executor.cores: "1"
+      # AWS/MinIO credentials for S3FileIO (Spark optimizer pods need these)
+      spark-conf.spark.kubernetes.driver.secretKeyRef.AWS_ACCESS_KEY_ID: "amoro-s3-credentials:access-key-id"
+      spark-conf.spark.kubernetes.driver.secretKeyRef.AWS_SECRET_ACCESS_KEY: "amoro-s3-credentials:secret-access-key"
+      spark-conf.spark.kubernetes.executor.secretKeyRef.AWS_ACCESS_KEY_ID: "amoro-s3-credentials:access-key-id"
+      spark-conf.spark.kubernetes.executor.secretKeyRef.AWS_SECRET_ACCESS_KEY: "amoro-s3-credentials:secret-access-key"

@@ -12,6 +12,17 @@ metadata:
   name: spark
   namespace: spark
 ---
+# AWS/MinIO credentials for Spark optimizer S3 access
+apiVersion: v1
+kind: Secret
+metadata:
+  name: amoro-s3-credentials
+  namespace: spark
+type: Opaque
+stringData:
+  access-key-id: admin
+  secret-access-key: password
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
