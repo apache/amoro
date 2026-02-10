@@ -25,7 +25,6 @@ on:
   push:
     branches:
       - "feat/olake_compactor_releasor"
-    # Git tag pattern: workflow runs when you push a tag like v1.0.0 (not the Docker image tag)
     tags:
       - "v*"
   workflow_dispatch:
@@ -45,7 +44,7 @@ jobs:
   docker-amoro:
     name: Push Amoro Docker Image to Docker Hub
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.repository, 'apache/') }}
+    if: ${{ startsWith(github.repository, 'datazip-inc/') }}
     strategy:
       matrix:
         hadoop: [ "v2", "v3" ]
@@ -110,7 +109,7 @@ jobs:
   docker-optimizer-spark:
     name: Push Amoro Optimizer-Spark Docker Image to Docker Hub
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.repository, 'apache/') }}
+    if: ${{ startsWith(github.repository, 'datazip-inc/') }}
     strategy:
       matrix:
         spark: [ "3.5.7" ]  # spark version supported
