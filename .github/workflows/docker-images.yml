@@ -42,7 +42,7 @@ concurrency:
 
 jobs:
   docker-amoro:
-    name: Push Amoro Docker Image to Docker Hub
+    name: Push Compactor Docker Image to olakego/compactor
     runs-on: ubuntu-latest
     if: ${{ startsWith(github.repository, 'datazip-inc/') }}
     strategy:
@@ -70,7 +70,7 @@ jobs:
           flavor: |
             latest=false
           images: |
-            name=apache/amoro
+            name=olakego/compactor-server
           tags: |
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},suffix=-snapshot-hadoop2
@@ -97,7 +97,7 @@ jobs:
       - name: Build dist module with Maven
         run: ./mvnw clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats -Pno-extended-disk-storage -Pno-plugin-bin
 
-      - name: Build and Push Amoro Docker Image
+      - name: Build and Push Compactor Docker Image to olakego/compactor
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -107,7 +107,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
 
   docker-optimizer-spark:
-    name: Push Amoro Optimizer-Spark Docker Image to Docker Hub
+    name: Push Compactor Optimizer-Spark Docker Image to olakego/compactor-optimizer
     runs-on: ubuntu-latest
     if: ${{ startsWith(github.repository, 'datazip-inc/') }}
     strategy:
@@ -136,7 +136,7 @@ jobs:
           flavor: |
             latest=false
           images: |
-            name=apache/amoro-spark-optimizer
+            name=olakego/compactor-spark-optimizer
           tags: |
             type=ref,event=branch,enable=${{ matrix.spark == '3.5.7' }},suffix=-snapshot
             type=ref,event=branch,enable=${{ matrix.spark == '3.5.7' }},suffix=-snapshot-spark3.5
@@ -174,7 +174,7 @@ jobs:
       - name: Build optimizer module with Maven
         run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${SPARK_VERSION} -DskipTests -B -ntp
 
-      - name: Build and Push Spark Optimizer Docker Image
+      - name: Build and Push Spark Optimizer Docker Image to olakego/compactor-optimizer
         uses: docker/build-push-action@v4
         env:
           AMORO_VERSION: ${{ steps.version.outputs.AMORO_VERSION }}
