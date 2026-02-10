@@ -44,6 +44,7 @@ jobs:
   docker-amoro:
     name: Push Compactor Docker Image to olakego/compactor
     runs-on: ubuntu-latest
+    environment: publish compactor
     if: ${{ startsWith(github.repository, 'datazip-inc/') }}
     strategy:
       matrix:
@@ -109,6 +110,7 @@ jobs:
   docker-optimizer-spark:
     name: Push Compactor Optimizer-Spark Docker Image to olakego/compactor-optimizer
     runs-on: ubuntu-latest
+    environment: publish compactor
     if: ${{ startsWith(github.repository, 'datazip-inc/') }}
     strategy:
       matrix:
