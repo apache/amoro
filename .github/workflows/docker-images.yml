@@ -31,7 +31,6 @@ on:
       tag:
         description: 'Version tag for the image (e.g. v1.0.0, stag-testing1).'
         type: string
-        default: 'stag-latest'
 
 
 concurrency:
@@ -62,8 +61,13 @@ jobs:
       - name: Set Docker tags
         id: meta
         run: |
-          VERSION_TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || 'stag-latest' }}"
-          echo "tags=olakego/fusion:latest,olakego/fusion:${VERSION_TAG}" >> $GITHUB_OUTPUT
+          VERSION_TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || 'dev-latest' }}"
+          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            case "${VERSION_TAG}" in v*) ;; *) echo "::error::On master branch, version tag must start with 'v' (e.g. v1.0.0). Got: ${VERSION_TAG}"; exit 1 ;; esac
+            echo "tags=olakego/fusion:latest,olakego/fusion:${VERSION_TAG}" >> $GITHUB_OUTPUT
+          else
+            echo "tags=olakego/fusion:latest-${VERSION_TAG},olakego/fusion:${VERSION_TAG}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
@@ -114,7 +118,12 @@ jobs:
         id: meta
         run: |
           VERSION_TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || 'stag-latest' }}"
-          echo "tags=olakego/fusion-spark:latest,olakego/fusion-spark:${VERSION_TAG}" >> $GITHUB_OUTPUT
+          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            case "${VERSION_TAG}" in v*) ;; *) echo "::error::On master branch, version tag must start with 'v' (e.g. v1.0.0). Got: ${VERSION_TAG}"; exit 1 ;; esac
+            echo "tags=olakego/fusion-spark:latest,olakego/fusion-spark:${VERSION_TAG}" >> $GITHUB_OUTPUT
+          else
+            echo "tags=olakego/fusion-spark:latest-${VERSION_TAG},olakego/fusion-spark:${VERSION_TAG}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
