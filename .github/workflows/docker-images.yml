@@ -21,6 +21,9 @@
 name: Publish Docker Image
 
 on:
+  push:
+    branches:
+      - "*"
   workflow_dispatch:
     inputs:
       tag:
