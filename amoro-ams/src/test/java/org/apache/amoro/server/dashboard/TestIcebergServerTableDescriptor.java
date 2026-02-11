@@ -107,15 +107,20 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
     Assert.assertEquals("Should have 1 file total", 1, totalFiles);
 
     // Verify we used PARTITIONS metadata table which provides fileSize and lastCommitTime
+    // Year 2100 in milliseconds - any reasonable timestamp must be below this
+    long year2100InMillis = 4102444800000L;
     for (org.apache.amoro.table.descriptor.PartitionBaseInfo partition : partitions) {
       // File size should be available from PARTITIONS metadata table
       Assert.assertTrue(
           "FileSize should be available from PARTITIONS metadata table",
           partition.getFileSize() >= 0);
-      // Last commit time should be available from PARTITIONS metadata table
+      // Last commit time should be available and in milliseconds (not microseconds)
+      Assert.assertTrue("LastCommitTime should be positive", partition.getLastCommitTime() > 0);
       Assert.assertTrue(
-          "LastCommitTime should be available from PARTITIONS metadata table",
-          partition.getLastCommitTime() >= 0);
+          "LastCommitTime should be in milliseconds, not microseconds (got "
+              + partition.getLastCommitTime()
+              + ")",
+          partition.getLastCommitTime() < year2100InMillis);
     }
   }
 

@@ -553,7 +553,9 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             // This will be updated once Iceberg supports reporting delete file sizes.
             // See: https://github.com/apache/iceberg/issues/14803
             partitionInfo.setFileSize(totalDataFileSize != null ? totalDataFileSize : 0L);
-            partitionInfo.setLastCommitTime(lastUpdatedAt != null ? lastUpdatedAt : 0L);
+            // last_updated_at from Iceberg PARTITIONS metadata table is in microseconds,
+            // convert to milliseconds for consistency with snapshot.timestampMillis()
+            partitionInfo.setLastCommitTime(lastUpdatedAt != null ? lastUpdatedAt / 1000 : 0L);
 
             partitions.add(partitionInfo);
           }
