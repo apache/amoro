@@ -52,7 +52,7 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.AMSTableTestBase;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
@@ -106,7 +106,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     return new ResourceGroup.Builder("test", "local").build();
   }
 
-  protected OptimizingQueue buildOptimizingGroupService(DefaultTableRuntime tableRuntime) {
+  protected OptimizingQueue buildOptimizingGroupService(CompatibleTableRuntime tableRuntime) {
     return new OptimizingQueue(
         CATALOG_MANAGER,
         testResourceGroup(),
@@ -128,7 +128,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testPollNoTask() {
-    DefaultTableRuntime tableRuntimeMeta =
+    CompatibleTableRuntime tableRuntimeMeta =
         buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntimeMeta);
     Assert.assertNull(queue.pollTask(optimizerThread, 0));
@@ -139,7 +139,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   public void testRefreshAndReleaseTable() {
     OptimizingQueue queue = buildOptimizingGroupService();
     Assert.assertEquals(0, queue.getSchedulingPolicy().getTableRuntimeMap().size());
-    DefaultTableRuntime tableRuntime =
+    CompatibleTableRuntime tableRuntime =
         buildTableRuntimeMeta(OptimizingStatus.IDLE, defaultResourceGroup());
     queue.refreshTable(tableRuntime);
     Assert.assertEquals(1, queue.getSchedulingPolicy().getTableRuntimeMap().size());
@@ -156,7 +156,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testPollTask() {
-    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    CompatibleTableRuntime tableRuntime = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
 
     // 1.poll task
@@ -170,7 +170,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testPollTaskWithOverQuotaDisabled() {
-    DefaultTableRuntime tableRuntime = initTableWithPartitionedFiles();
+    CompatibleTableRuntime tableRuntime = initTableWithPartitionedFiles();
     OptimizingQueue queue =
         new OptimizingQueue(
             CATALOG_MANAGER,
@@ -204,7 +204,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testPollTaskWithOverQuotaEnabled() {
-    DefaultTableRuntime tableRuntime = initTableWithPartitionedFiles();
+    CompatibleTableRuntime tableRuntime = initTableWithPartitionedFiles();
     OptimizingQueue queue =
         new OptimizingQueue(
             CATALOG_MANAGER,
@@ -238,7 +238,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testQuotaSchedulePolicy() throws InterruptedException {
-    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    CompatibleTableRuntime tableRuntime = initTableWithFiles();
 
     OptimizingQueue queue =
         new OptimizingQueue(
@@ -273,7 +273,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
                 serverTableIdentifier().getCatalog(), "db", "new_table"),
             TableFormat.ICEBERG);
     serverTableIdentifier.setId(100L);
-    DefaultTableRuntime tableRuntime2 = createTable(serverTableIdentifier);
+    CompatibleTableRuntime tableRuntime2 = createTable(serverTableIdentifier);
     queue.refreshTable(tableRuntime2);
     queue.refreshTable(tableRuntime);
 
@@ -289,7 +289,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testRetryTask() {
-    DefaultTableRuntime tableRuntimeMeta = initTableWithFiles();
+    CompatibleTableRuntime tableRuntimeMeta = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntimeMeta);
 
     // 1.poll task
@@ -320,7 +320,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testCommitTask() {
-    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    CompatibleTableRuntime tableRuntime = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
     Assert.assertEquals(0, queue.collectTasks().size());
 
@@ -351,7 +351,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testCommitTaskWithFailed() {
-    DefaultTableRuntime tableRuntime = initTableWithPartitionedFiles();
+    CompatibleTableRuntime tableRuntime = initTableWithPartitionedFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
     Assert.assertEquals(0, queue.collectTasks().size());
 
@@ -399,7 +399,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testCollectingTasks() {
-    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    CompatibleTableRuntime tableRuntime = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
     Assert.assertEquals(0, queue.collectTasks().size());
 
@@ -413,7 +413,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   @Test
   public void testTaskAndTableMetrics() {
-    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    CompatibleTableRuntime tableRuntime = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
     MetricRegistry registry = MetricManager.getInstance().getGlobalRegistry();
     Map<String, String> tagValues = ImmutableMap.of(GROUP_TAG, testResourceGroup().getName());
@@ -526,7 +526,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     queue.dispose();
   }
 
-  protected DefaultTableRuntime initTableWithFiles() {
+  protected CompatibleTableRuntime initTableWithFiles() {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     mixedTable
@@ -536,29 +536,29 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         .commit();
     appendData(mixedTable.asUnkeyedTable(), 1);
     appendData(mixedTable.asUnkeyedTable(), 2);
-    DefaultTableRuntime tableRuntime =
+    CompatibleTableRuntime tableRuntime =
         buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
 
     tableRuntime.refresh(tableService().loadTable(serverTableIdentifier()));
     return tableRuntime;
   }
 
-  protected DefaultTableRuntime initTableWithPartitionedFiles() {
+  protected CompatibleTableRuntime initTableWithPartitionedFiles() {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     appendPartitionedData(mixedTable.asUnkeyedTable(), 1);
     appendPartitionedData(mixedTable.asUnkeyedTable(), 2);
-    DefaultTableRuntime tableRuntime =
+    CompatibleTableRuntime tableRuntime =
         buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
 
     tableRuntime.refresh(tableService().loadTable(serverTableIdentifier()));
     return tableRuntime;
   }
 
-  private DefaultTableRuntime buildTableRuntimeMeta(
+  private CompatibleTableRuntime buildTableRuntimeMeta(
       OptimizingStatus status, ResourceGroup resourceGroup) {
-    DefaultTableRuntime tableRuntime =
-        (DefaultTableRuntime) tableService().getRuntime(serverTableIdentifier().getId());
+    CompatibleTableRuntime tableRuntime =
+        (CompatibleTableRuntime) tableService().getRuntime(serverTableIdentifier().getId());
     tableRuntime
         .store()
         .begin()
@@ -594,7 +594,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     appendFiles.commit();
   }
 
-  private DefaultTableRuntime createTable(ServerTableIdentifier serverTableIdentifier) {
+  private CompatibleTableRuntime createTable(ServerTableIdentifier serverTableIdentifier) {
     org.apache.iceberg.catalog.Catalog catalog =
         catalogTestHelper().buildIcebergCatalog(catalogMeta());
     catalog.createTable(
@@ -613,8 +613,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     appendPartitionedData(mixedTable.asUnkeyedTable(), 1);
     appendPartitionedData(mixedTable.asUnkeyedTable(), 2);
 
-    DefaultTableRuntime tableRuntime =
-        (DefaultTableRuntime) tableService().getRuntime(serverTableIdentifier.getId());
+    CompatibleTableRuntime tableRuntime =
+        (CompatibleTableRuntime) tableService().getRuntime(serverTableIdentifier.getId());
 
     tableRuntime
         .store()

@@ -19,7 +19,6 @@
 package org.apache.amoro.server.process;
 
 import org.apache.amoro.process.ProcessStatus;
-import org.apache.amoro.process.TableProcessState;
 import org.apache.amoro.process.TableProcessStore;
 
 import java.util.HashMap;
@@ -186,25 +185,6 @@ public class TableProcessMeta {
     tableProcessMeta.setFailMessage(tableProcessStore.getFailMessage());
     tableProcessMeta.setProcessParameters(tableProcessStore.getProcessParameters());
     tableProcessMeta.setSummary(tableProcessStore.getSummary());
-    return tableProcessMeta;
-  }
-
-  @Deprecated
-  public static TableProcessMeta fromTableProcessState(TableProcessState tableProcessState) {
-    TableProcessMeta tableProcessMeta = new TableProcessMeta();
-    tableProcessMeta.setProcessId(tableProcessState.getId());
-    tableProcessMeta.setTableId(tableProcessState.getTableIdentifier().getId());
-    tableProcessMeta.setExternalProcessIdentifier(tableProcessState.getExternalProcessIdentifier());
-    tableProcessMeta.setStatus(tableProcessState.getStatus());
-    tableProcessMeta.setProcessType(tableProcessState.getAction().getName());
-    tableProcessMeta.setProcessStage(tableProcessState.getStage().getDesc());
-    tableProcessMeta.setExecutionEngine(tableProcessState.getExecutionEngine());
-    tableProcessMeta.setRetryNumber(tableProcessState.getRetryNumber());
-    tableProcessMeta.setCreateTime(tableProcessState.getStartTime());
-    tableProcessMeta.setFinishTime(tableProcessState.getEndTime());
-    tableProcessMeta.setFailMessage(tableProcessState.getFailedReason());
-    tableProcessMeta.setProcessParameters(tableProcessState.getProcessParameters());
-    tableProcessMeta.setSummary(tableProcessState.getSummary());
     return tableProcessMeta;
   }
 

@@ -22,7 +22,7 @@ import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.maintainer.MaintainerMetrics;
 import org.apache.amoro.maintainer.OptimizingInfo;
 import org.apache.amoro.maintainer.TableMaintainerContext;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.server.utils.HiveLocationUtil;
 import org.apache.amoro.table.MixedTable;
@@ -31,20 +31,20 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Default implementation of TableMaintainerContext for AMS. Adapts DefaultTableRuntime to
+ * Default implementation of TableMaintainerContext for AMS. Adapts CompatibleTableRuntime to
  * TableMaintainerContext interface.
  */
 public class DefaultTableMaintainerContext implements TableMaintainerContext {
 
-  private final DefaultTableRuntime tableRuntime;
+  private final CompatibleTableRuntime tableRuntime;
   private final MixedTable mixedTable;
 
-  public DefaultTableMaintainerContext(DefaultTableRuntime tableRuntime) {
+  public DefaultTableMaintainerContext(CompatibleTableRuntime tableRuntime) {
     this.tableRuntime = tableRuntime;
     this.mixedTable = null;
   }
 
-  public DefaultTableMaintainerContext(DefaultTableRuntime tableRuntime, MixedTable mixedTable) {
+  public DefaultTableMaintainerContext(CompatibleTableRuntime tableRuntime, MixedTable mixedTable) {
     this.tableRuntime = tableRuntime;
     this.mixedTable = mixedTable;
   }
@@ -84,12 +84,12 @@ public class DefaultTableMaintainerContext implements TableMaintainerContext {
     return HiveLocationUtil.getHiveLocation(mixedTable);
   }
 
-  /** OptimizingInfo implementation based on DefaultTableRuntime. */
+  /** OptimizingInfo implementation based on CompatibleTableRuntime. */
   private static class DefaultOptimizingInfo implements OptimizingInfo {
 
-    private final DefaultTableRuntime tableRuntime;
+    private final CompatibleTableRuntime tableRuntime;
 
-    DefaultOptimizingInfo(DefaultTableRuntime tableRuntime) {
+    DefaultOptimizingInfo(CompatibleTableRuntime tableRuntime) {
       this.tableRuntime = tableRuntime;
     }
 

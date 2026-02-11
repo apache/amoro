@@ -16,19 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.server.process.executor;
 
-import org.apache.amoro.metrics.MetricRegistry;
-import org.apache.amoro.table.TableRuntimeStore;
+import org.apache.amoro.server.manager.AbstractPluginManager;
 
-public class DefaultTableRuntime extends AbstractTableRuntime {
-  protected DefaultTableRuntime(TableRuntimeStore store) {
-    super(store);
+/** Manager for {@link org.apache.amoro.server.process.executor.ExecuteEngine} plugins. */
+public class ExecuteEngineManager extends AbstractPluginManager<ExecuteEngine> {
+  public ExecuteEngineManager() {
+    super("execute-engines");
   }
-
-  @Override
-  public void registerMetric(MetricRegistry metricRegistry) {}
-
-  @Override
-  public void unregisterMetric() {}
 }

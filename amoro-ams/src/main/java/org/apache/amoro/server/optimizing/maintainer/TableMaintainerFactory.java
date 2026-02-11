@@ -24,7 +24,7 @@ import org.apache.amoro.TableRuntime;
 import org.apache.amoro.formats.iceberg.maintainer.IcebergTableMaintainer;
 import org.apache.amoro.formats.iceberg.maintainer.MixedTableMaintainer;
 import org.apache.amoro.maintainer.TableMaintainer;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.Table;
@@ -40,7 +40,7 @@ public class TableMaintainerFactory {
    * @return IcebergTableMaintainer instance
    */
   public static IcebergTableMaintainer createIcebergMaintainer(
-      Table table, DefaultTableRuntime tableRuntime) {
+      Table table, CompatibleTableRuntime tableRuntime) {
     return new IcebergTableMaintainer(
         table,
         tableRuntime.getTableIdentifier().getIdentifier(),
@@ -55,8 +55,8 @@ public class TableMaintainerFactory {
    * @return TableMaintainer instance
    */
   public static TableMaintainer create(AmoroTable<?> amoroTable, TableRuntime tableRuntime) {
-    Preconditions.checkArgument(tableRuntime instanceof DefaultTableRuntime);
-    DefaultTableRuntime runtime = (DefaultTableRuntime) tableRuntime;
+    Preconditions.checkArgument(tableRuntime instanceof CompatibleTableRuntime);
+    CompatibleTableRuntime runtime = (CompatibleTableRuntime) tableRuntime;
     TableFormat format = amoroTable.format();
 
     if (format.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)) {

@@ -26,7 +26,7 @@ import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.persistence.mapper.TableRuntimeMapper;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.server.table.DefaultTableRuntimeStore;
 import org.apache.amoro.server.table.TableRuntimeHandler;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
@@ -81,12 +81,12 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
   }
 
   /**
-   * Create a test DefaultTableRuntime with the given identifier
+   * Create a test CompatibleTableRuntime with the given identifier
    *
    * @param identifier the table identifier
-   * @return a DefaultTableRuntime instance
+   * @return a CompatibleTableRuntime instance
    */
-  private DefaultTableRuntime createDefaultTableRuntime(ServerTableIdentifier identifier) {
+  private CompatibleTableRuntime createDefaultTableRuntime(ServerTableIdentifier identifier) {
     // Create table runtime meta
     TableRuntimeMeta meta = new TableRuntimeMeta();
     meta.setTableId(identifier.getId());
@@ -98,9 +98,9 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
     // Create table runtime store
     TableRuntimeStore store =
         new DefaultTableRuntimeStore(
-            identifier, meta, DefaultTableRuntime.REQUIRED_STATES, Collections.emptyList());
+            identifier, meta, CompatibleTableRuntime.REQUIRED_STATES, Collections.emptyList());
 
-    return new DefaultTableRuntime(store);
+    return new CompatibleTableRuntime(store);
   }
 
   private void cleanUpTableRuntimeData(List<Long> tableIds) {
@@ -178,7 +178,7 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
 
       PeriodicTableSchedulerTestBase executor = createTestExecutor(operation);
       ServerTableIdentifier identifier = createTableIdentifier(1L);
-      DefaultTableRuntime tableRuntime = createDefaultTableRuntime(identifier);
+      CompatibleTableRuntime tableRuntime = createDefaultTableRuntime(identifier);
 
       boolean shouldExecute = executor.shouldExecuteTaskForTest(tableRuntime, operation);
       Assert.assertTrue(
@@ -203,9 +203,9 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
 
       PeriodicTableSchedulerTestBase executor = createTestExecutor(operation);
 
-      // Create DefaultTableRuntime and set recent cleanup time
+      // Create CompatibleTableRuntime and set recent cleanup time
       ServerTableIdentifier identifier = createTableIdentifier(1L);
-      DefaultTableRuntime tableRuntime = createDefaultTableRuntime(identifier);
+      CompatibleTableRuntime tableRuntime = createDefaultTableRuntime(identifier);
 
       // Simulate recent cleanup
       long recentTime = System.currentTimeMillis() - 10000L;
@@ -233,9 +233,9 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
 
       PeriodicTableSchedulerTestBase executor = createTestExecutor(operation);
 
-      // Create DefaultTableRuntime and set old cleanup time
+      // Create CompatibleTableRuntime and set old cleanup time
       ServerTableIdentifier identifier = createTableIdentifier(1L);
-      DefaultTableRuntime tableRuntime = createDefaultTableRuntime(identifier);
+      CompatibleTableRuntime tableRuntime = createDefaultTableRuntime(identifier);
 
       // Simulate old cleanup time (30 hours ago)
       long oldTime = System.currentTimeMillis() - 30 * 60 * 60 * 1000L;
@@ -256,7 +256,7 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
 
     PeriodicTableSchedulerTestBase executor = createTestExecutor(CleanupOperation.NONE);
     ServerTableIdentifier identifier = createTableIdentifier(1L);
-    DefaultTableRuntime tableRuntime = createDefaultTableRuntime(identifier);
+    CompatibleTableRuntime tableRuntime = createDefaultTableRuntime(identifier);
 
     // Should always execute with NONE operation
     boolean shouldExecute = executor.shouldExecuteTaskForTest(tableRuntime, CleanupOperation.NONE);

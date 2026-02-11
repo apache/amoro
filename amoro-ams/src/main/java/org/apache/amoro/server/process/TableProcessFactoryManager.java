@@ -16,19 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.server.process;
 
-import org.apache.amoro.metrics.MetricRegistry;
-import org.apache.amoro.table.TableRuntimeStore;
+import org.apache.amoro.process.ProcessFactory;
+import org.apache.amoro.server.manager.AbstractPluginManager;
 
-public class DefaultTableRuntime extends AbstractTableRuntime {
-  protected DefaultTableRuntime(TableRuntimeStore store) {
-    super(store);
+public class TableProcessFactoryManager extends AbstractPluginManager<ProcessFactory> {
+  public TableProcessFactoryManager() {
+    super("process-factories");
   }
-
-  @Override
-  public void registerMetric(MetricRegistry metricRegistry) {}
-
-  @Override
-  public void unregisterMetric() {}
 }

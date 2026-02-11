@@ -19,11 +19,13 @@
 package org.apache.amoro.server;
 
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.process.ProcessService;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.process.executor.ExecuteEngineManager;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.server.table.DefaultTableRuntimeFactory;
 import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.server.table.TableRuntimeFactoryManager;
@@ -34,6 +36,8 @@ import org.junit.BeforeClass;
 import org.mockito.Mockito;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class AMSServiceTestBase extends AMSManagerTestBase {
   private static DefaultTableService TABLE_SERVICE = null;
@@ -48,6 +52,10 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
     tableRuntimeFactoryManager = Mockito.mock(TableRuntimeFactoryManager.class);
     Mockito.when(tableRuntimeFactoryManager.installedPlugins())
         .thenReturn(Lists.newArrayList(runtimeFactory));
+    List<ActionCoordinator> actionCoordinators =
+        tableRuntimeFactoryManager.installedPlugins().stream()
+            .flatMap(factory -> factory.supportedCoordinators().stream())
+            .collect(Collectors.toList());
     try {
       Configurations configurations = new Configurations();
       configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, Duration.ofMillis(800L));
@@ -55,11 +63,13 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
           AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT, Duration.ofMillis(30000L));
       TABLE_SERVICE =
           new DefaultTableService(
-              new Configurations(), CATALOG_MANAGER, tableRuntimeFactoryManager);
+              new Configurations(), CATALOG_MANAGER, Lists.newArrayList(runtimeFactory));
       OPTIMIZING_SERVICE =
           new DefaultOptimizingService(
               configurations, CATALOG_MANAGER, OPTIMIZER_MANAGER, TABLE_SERVICE);
-      PROCESS_SERVICE = new ProcessService(configurations, TABLE_SERVICE);
+      PROCESS_SERVICE =
+          new ProcessService(
+              configurations, TABLE_SERVICE, actionCoordinators, new ExecuteEngineManager());
 
       TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
       TABLE_SERVICE.addHandlerChain(PROCESS_SERVICE.getTableHandlerChain());
@@ -87,8 +97,8 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
     return TABLE_SERVICE;
   }
 
-  protected DefaultTableRuntime getDefaultTableRuntime(long tableId) {
-    return (DefaultTableRuntime) tableService().getRuntime(tableId);
+  protected CompatibleTableRuntime getDefaultTableRuntime(long tableId) {
+    return (CompatibleTableRuntime) tableService().getRuntime(tableId);
   }
 
   protected DefaultOptimizingService optimizingService() {

@@ -31,7 +31,7 @@ import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
 import org.apache.amoro.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.optimizing.OptimizingTestHelpers;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
@@ -66,7 +66,7 @@ import java.util.stream.Collectors;
 
 public abstract class MixedTablePlanTestBase extends TableTestBase {
 
-  protected DefaultTableRuntime tableRuntime;
+  protected CompatibleTableRuntime tableRuntime;
 
   public MixedTablePlanTestBase(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -75,7 +75,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   @Before
   public void mock() {
-    tableRuntime = Mockito.mock(DefaultTableRuntime.class);
+    tableRuntime = Mockito.mock(CompatibleTableRuntime.class);
     ServerTableIdentifier id = ServerTableIdentifier.of(getMixedTable().id(), getTestFormat());
     id.setId(0L);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(id);
@@ -555,7 +555,7 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
     }
   }
 
-  protected DefaultTableRuntime getTableRuntime() {
+  protected CompatibleTableRuntime getTableRuntime() {
     return tableRuntime;
   }
 
