@@ -117,7 +117,7 @@ jobs:
       - name: Set Docker tags
         id: meta
         run: |
-          VERSION_TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || 'stag-latest' }}"
+          VERSION_TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || 'dev-latest' }}"
           if [ "${{ github.ref }}" = "refs/heads/master" ]; then
             case "${VERSION_TAG}" in v*) ;; *) echo "::error::On master branch, version tag must start with 'v' (e.g. v1.0.0). Got: ${VERSION_TAG}"; exit 1 ;; esac
             echo "tags=olakego/fusion-spark:latest,olakego/fusion-spark:${VERSION_TAG}" >> $GITHUB_OUTPUT
