@@ -8,7 +8,7 @@ on:
 
 jobs:
   create_draft_release:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'staging' && github.event.pull_request.head.ref == 'staging'
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'staging'
     name: Create Draft Release
     runs-on: ubuntu-latest
     permissions:
