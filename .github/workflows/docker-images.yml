@@ -40,7 +40,7 @@ concurrency:
 
 jobs:
   docker-amoro:
-    name: Push Fusion Server Docker Image
+    name: Push Fusion Docker Image
     runs-on: ubuntu-latest
     environment: docker publish
     if: ${{ startsWith(github.repository, 'datazip-inc/') }}
@@ -63,7 +63,7 @@ jobs:
         id: meta
         run: |
           VERSION_TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || 'stag-latest' }}"
-          echo "tags=olakego/fusion-server:latest,olakego/fusion-server:${VERSION_TAG}" >> $GITHUB_OUTPUT
+          echo "tags=olakego/fusion:latest,olakego/fusion:${VERSION_TAG}" >> $GITHUB_OUTPUT
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
@@ -77,7 +77,7 @@ jobs:
       - name: Build dist module with Maven
         run: ./mvnw clean package -pl 'dist' -am -e -DskipTests -B -ntp -Psupport-all-formats -Pno-extended-disk-storage -Pno-plugin-bin
 
-      - name: Build and Push Fusion Server Docker Image to olakego/fusion
+      - name: Build and Push Fusion Docker Image to olakego/fusion
         uses: docker/build-push-action@v4
         with:
           context: .
