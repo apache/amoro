@@ -29,21 +29,23 @@ import org.apache.amoro.server.table.cleanup.CleanupOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.concurrent.ThreadLocalRandom;
 
 /** Service for expiring tables periodically. */
 public class SnapshotsExpiringExecutor extends PeriodicTableScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(SnapshotsExpiringExecutor.class);
 
-  private static final long INTERVAL = 60 * 60 * 1000L; // 1 hour
+  private final Duration interval;
 
-  public SnapshotsExpiringExecutor(TableService tableService, int poolSize) {
+  public SnapshotsExpiringExecutor(TableService tableService, int poolSize, Duration interval) {
     super(tableService, poolSize);
+    this.interval = interval;
   }
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return INTERVAL;
+    return interval.toMillis();
   }
 
   @Override
@@ -58,7 +60,7 @@ public class SnapshotsExpiringExecutor extends PeriodicTableScheduler {
 
   @Override
   protected boolean shouldExecute(Long lastCleanupEndTime) {
-    return System.currentTimeMillis() - lastCleanupEndTime >= INTERVAL;
+    return System.currentTimeMillis() - lastCleanupEndTime >= interval.toMillis();
   }
 
   @Override
@@ -68,7 +70,7 @@ public class SnapshotsExpiringExecutor extends PeriodicTableScheduler {
 
   @Override
   protected long getExecutorDelay() {
-    return ThreadLocalRandom.current().nextLong(INTERVAL);
+    return ThreadLocalRandom.current().nextLong(interval.toMillis());
   }
 
   @Override

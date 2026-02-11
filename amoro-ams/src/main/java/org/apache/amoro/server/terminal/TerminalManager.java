@@ -37,6 +37,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.CatalogUtil;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -250,7 +251,7 @@ public class TerminalManager {
   // ========================== private method =========================
 
   private String catalogConnectorType(CatalogMeta catalogMeta) {
-    String catalogType = catalogMeta.getCatalogType();
+    String catalogType = CatalogUtil.normalizeCatalogType(catalogMeta.getCatalogType());
     Set<TableFormat> tableFormatSet = CatalogUtil.tableFormats(catalogMeta);
     if (catalogType.equalsIgnoreCase(CatalogType.AMS.name())) {
       if (tableFormatSet.size() > 1) {
@@ -301,8 +302,12 @@ public class TerminalManager {
     TableMetaStore.Builder builder = TableMetaStore.builder();
     if (catalogMeta.getStorageConfigs() != null) {
       Map<String, String> storageConfigs = catalogMeta.getStorageConfigs();
-      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(
-          CatalogUtil.getCompatibleStorageType(storageConfigs))) {
+      String storageType = CatalogUtil.getCompatibleStorageType(storageConfigs);
+      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_LOCAL.equalsIgnoreCase(storageType)) {
+        builder.withConfiguration(new Configuration());
+        return builder.build();
+      }
+      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(storageType)) {
         builder
             .withBase64MetaStoreSite(
                 catalogMeta
@@ -388,7 +393,7 @@ public class TerminalManager {
 
   private void applyClientProperties(CatalogMeta catalogMeta) {
     Set<TableFormat> formats = CatalogUtil.tableFormats(catalogMeta);
-    String catalogType = catalogMeta.getCatalogType();
+    String catalogType = CatalogUtil.normalizeCatalogType(catalogMeta.getCatalogType());
     if (formats.contains(TableFormat.ICEBERG)) {
       if (CatalogMetaProperties.CATALOG_TYPE_AMS.equalsIgnoreCase(catalogType)) {
         catalogMeta.putToCatalogProperties(

@@ -123,6 +123,12 @@ public class AmoroManagementConf {
           .defaultValue(10)
           .withDescription("The number of threads used for snapshots expiring.");
 
+  public static final ConfigOption<Duration> EXPIRE_SNAPSHOTS_INTERVAL =
+      ConfigOptions.key("expire-snapshots.interval")
+          .durationType()
+          .defaultValue(Duration.ofHours(1))
+          .withDescription("Interval for expiring snapshots.");
+
   public static final ConfigOption<Boolean> CLEAN_ORPHAN_FILES_ENABLED =
       ConfigOptions.key("clean-orphan-files.enabled")
           .booleanType()
@@ -152,6 +158,12 @@ public class AmoroManagementConf {
           .intType()
           .defaultValue(10)
           .withDescription("The number of threads used for dangling delete files cleaning.");
+
+  public static final ConfigOption<Duration> CLEAN_DANGLING_DELETE_FILES_INTERVAL =
+      ConfigOptions.key("clean-dangling-delete-files.interval")
+          .durationType()
+          .defaultValue(Duration.ofDays(1))
+          .withDescription("Interval for cleaning dangling delete files.");
 
   public static final ConfigOption<Boolean> SYNC_HIVE_TABLES_ENABLED =
       ConfigOptions.key("sync-hive-tables.enabled")
@@ -487,9 +499,9 @@ public class AmoroManagementConf {
   public static final ConfigOption<Duration> OPTIMIZER_TASK_EXECUTE_TIMEOUT =
       ConfigOptions.key("optimizer.task-execute-timeout")
           .durationType()
-          .defaultValue(Duration.ofHours(1))
-          .withDescription("Timeout duration for task execution, default to 1 hour.");
-
+          .defaultValue(Duration.ofSeconds(Integer.MAX_VALUE))
+          .withDescription(
+              "Timeout duration for task execution, default to Integer.MAX_VALUE seconds(about 24,855 days).");
   public static final ConfigOption<Integer> OPTIMIZER_MAX_PLANNING_PARALLELISM =
       ConfigOptions.key("optimizer.max-planning-parallelism")
           .intType()

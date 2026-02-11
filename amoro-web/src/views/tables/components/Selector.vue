@@ -171,12 +171,14 @@ onMounted(() => {
         </a-select-option>
       </a-select>
     </div>
+    <div class="selector-extra">
+      <slot name="extra" />
+    </div>
   </div>
 </template>
 
 <style lang="less">
 .branch-selector {
-  margin-top: 32px;
   display: flex;
   align-items: center;
 
@@ -251,6 +253,12 @@ onMounted(() => {
     width: 100%;
     text-align: center;
     color: #102048;
+  }
+
+  .selector-extra {
+    display: flex;
+    align-items: center;
+    padding-left: 18px;
   }
 }
 </style>

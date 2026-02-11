@@ -43,7 +43,7 @@ function sortLineChartDataByKey(obj: ILineChartOriginalData = {}, sortCallback: 
  * @param data
  * @returns Echarts options
  */
-export function generateLineChartOption(titleText: string, data: ILineChartOriginalData) {
+export function generateLineChartOption(_titleText: string, data: ILineChartOriginalData) {
   if (!data) {
     return {}
   }
@@ -55,26 +55,30 @@ export function generateLineChartOption(titleText: string, data: ILineChartOrigi
     },
     yAxis: {
       type: 'value',
+      boundaryGap: [0, '1%'],
+      splitNumber: 6,
     },
     xAxis: {
       type: 'category',
       data: dataKeys.map(d => dateFormat(d)),
+      axisLabel: {
+        show: false,
+      },
       axisTick: {
-        alignWithLabel: true,
-        interval: 0,
+        show: false,
+      },
+      axisLine: {
+        show: false,
       },
     },
     grid: {
-      top: 40,
-      bottom: 50,
-      left: '1%',
+      left: 0,
+      right: 0,
+      top: 36,
+      bottom: 6,
       containLabel: true,
     },
   }
-  titleText && (option.title = {
-    left: 'center',
-    text: titleText,
-  })
   const legendMap: Record<string, number[]> = {}
   Object.values(data).forEach((val) => {
     const keys = Object.keys(val)
@@ -86,8 +90,22 @@ export function generateLineChartOption(titleText: string, data: ILineChartOrigi
       legendMap[tKey].push(val[key])
     })
   })
-  option.legend = { top: 'bottom', data: Object.keys(legendMap), lineStyle: { opacity: 0 } }
-  option.series = Object.keys(legendMap).map(key => ({
+  const legendKeys = Object.keys(legendMap)
+  option.legend = {
+    show: true,
+    top: 0,
+    left: 'center',
+    orient: 'horizontal',
+    itemWidth: 7,
+    itemHeight: 7,
+    icon: 'circle',
+    itemGap: 6,
+    textStyle: {
+      fontSize: 13,
+      lineHeight: 24,
+    },
+  }
+  option.series = legendKeys.map(key => ({
     name: key,
     type: 'line',
     symbol: 'circle',

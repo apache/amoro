@@ -253,7 +253,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
             new PartitionFileBaseInfo(
                 null,
                 "BASE_FILE",
-                entry.file().creationTimeEpochMillis(),
+                getFileCreationTimeMillis(entry),
                 partitionString(entry.partition(), entry.bucket(), fileStorePathFactory),
                 fullFilePath(store, entry),
                 entry.file().fileSize(),
@@ -294,7 +294,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         for (ManifestEntry manifestEntry : groupByBucketEntry.getValue()) {
           fileCount++;
           fileSize += manifestEntry.file().fileSize();
-          lastCommitTime = Math.max(lastCommitTime, manifestEntry.file().creationTimeEpochMillis());
+          lastCommitTime = Math.max(lastCommitTime, getFileCreationTimeMillis(manifestEntry));
         }
         partitionBaseInfoList.add(
             new PartitionBaseInfo(partitionSt, 0, fileCount, fileSize, lastCommitTime));
@@ -360,7 +360,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
           new PartitionFileBaseInfo(
               snapshotId == null ? null : snapshotId.toString(),
               "INSERT_FILE",
-              manifestEntry.file().creationTimeEpochMillis(),
+              getFileCreationTimeMillis(manifestEntry),
               partitionSt,
               0,
               fullFilePath(store, manifestEntry),
@@ -374,7 +374,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
     // Temporary solution for Paimon. TODO: Get compaction info from Paimon compaction task
-    List<OptimizingProcessInfo> processInfoList = new ArrayList<>();
+    List<OptimizingProcessInfo> processInfoList;
     TableIdentifier tableIdentifier = amoroTable.id();
     FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
     FileStore<?> store = fileStoreTable.store();
@@ -419,12 +419,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                         } else {
                           minCreateTime =
                               Math.min(
-                                  minCreateTime,
-                                  compactManifestEntry.file().creationTimeEpochMillis());
+                                  minCreateTime, getFileCreationTimeMillis(compactManifestEntry));
                           maxCreateTime =
                               Math.max(
-                                  maxCreateTime,
-                                  compactManifestEntry.file().creationTimeEpochMillis());
+                                  maxCreateTime, getFileCreationTimeMillis(compactManifestEntry));
                           outputBuilder.addFile(compactManifestEntry.file().fileSize());
                         }
                       }
@@ -630,5 +628,11 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   private FileStoreTable getTable(AmoroTable<?> amoroTable) {
     return (FileStoreTable) amoroTable.originalTable();
+  }
+
+  private long getFileCreationTimeMillis(ManifestEntry manifestEntry) {
+    // DataFileMeta.creationTimeEpochMillis() may mislead user about the creation time
+    // See: https://github.com/apache/paimon/issues/7151
+    return manifestEntry.file().creationTime().getMillisecond();
   }
 }

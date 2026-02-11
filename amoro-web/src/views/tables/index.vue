@@ -28,6 +28,7 @@ import UHealthScore from './components/HealthScoreDetails.vue'
 import TableExplorer from './components/TableExplorer.vue'
 import useStore from '@/store/index'
 import type { IBaseDetailInfo } from '@/types/common.type'
+import { usePageScroll } from '@/hooks/usePageScroll'
 
 export default defineComponent({
   name: 'Tables',
@@ -46,6 +47,7 @@ export default defineComponent({
     const store = useStore()
 
     const detailRef = ref()
+    const { pageScrollRef } = usePageScroll()
 
     const SIDEBAR_WIDTH_STORAGE_KEY = 'tables_sidebar_width'
     const SIDEBAR_MIN_WIDTH = 320
@@ -138,6 +140,24 @@ export default defineComponent({
       state.baseInfo = { ...baseInfo }
     }
 
+    const handleTableNotFound = () => {
+      state.baseInfo = {
+        optimizingStatus: '',
+        records: '',
+        tableType: '',
+        tableName: '',
+        createTime: '',
+        tableFormat: '',
+        hasPartition: false,
+        healthScore: -1,
+        smallFileScore: 0,
+        equalityDeleteScore: 0,
+        positionalDeleteScore: 0,
+        comment: '',
+      } as IBaseDetailInfo
+      state.detailLoaded = false
+    }
+
     const onChangeTab = (key: string | number) => {
       const query = { ...route.query }
       query.tab = key.toString()
@@ -164,6 +184,11 @@ export default defineComponent({
         const { catalog: oldCatalog, db: oldDb, table: oldTable } = oldVal
         if (`${catalog}${db}${table}` !== `${oldCatalog}${oldDb}${oldTable}`) {
           state.activeKey = 'Details'
+          nextTick(() => {
+            if (detailRef.value) {
+              detailRef.value.getTableDetails()
+            }
+          })
           return
         }
         state.activeKey = value.tab as string
@@ -182,6 +207,7 @@ export default defineComponent({
     onMounted(() => {
       initSidebarWidth()
       state.activeKey = (route.query?.tab as string) || 'Details'
+
       nextTick(() => {
         if (detailRef.value && hasSelectedTable.value) {
           detailRef.value.getTableDetails()
@@ -202,79 +228,87 @@ export default defineComponent({
       isIceberg,
       hasSelectedTable,
       setBaseDetailInfo,
+      handleTableNotFound,
       goBack,
       onChangeTab,
       sidebarWidth,
       startSidebarResize,
+      pageScrollRef,
     }
   },
 })
 </script>
 
 <template>
-  <div class="tables-wrap">
-    <div v-if="!isSecondaryNav" class="tables-content">
-      <div
-        class="tables-sidebar"
-        :style="{ width: `${sidebarWidth}px`, flex: `0 0 ${sidebarWidth}px` }"
-      >
-        <TableExplorer />
-      </div>
-      <div class="tables-divider" aria-hidden="true" @mousedown="startSidebarResize" />
-      <div class="tables-main">
-        <template v-if="hasSelectedTable">
-          <div class="tables-main-header g-flex-jsb">
-            <div class="g-flex-col">
-              <div class="g-flex">
-                <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{ baseInfo.tableName }}</span>
-              </div>
-              <div v-if="baseInfo.comment" class="table-info g-flex-ac">
-                <p>{{ $t('Comment') }}: <span class="text-color">{{ baseInfo.comment }}</span></p>
-              </div>
-              <div class="table-info g-flex-ac">
-                <p>{{ $t('optimizingStatus') }}: <span class="text-color">{{ baseInfo.optimizingStatus }}</span></p>
-                <a-divider type="vertical" />
-                <p>{{ $t('records') }}: <span class="text-color">{{ baseInfo.records }}</span></p>
-                <a-divider type="vertical" />
-                <template v-if="!isIceberg">
-                  <p>{{ $t('createTime') }}: <span class="text-color">{{ baseInfo.createTime }}</span></p>
+  <div class="page-scroll" ref="pageScrollRef">
+    <div class="tables-wrap">
+      <div v-if="!isSecondaryNav" class="tables-content">
+        <div
+          class="tables-sidebar"
+          :style="{ width: `${sidebarWidth}px`, flex: `0 0 ${sidebarWidth}px` }"
+        >
+          <TableExplorer />
+        </div>
+        <div class="tables-divider" aria-hidden="true" @mousedown="startSidebarResize" />
+        <div class="tables-main">
+          <template v-if="hasSelectedTable">
+            <div class="tables-main-header g-flex-jsb">
+              <div class="g-flex-col">
+                <div class="g-flex">
+                  <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{ baseInfo.tableName }}</span>
+                </div>
+                <div v-if="baseInfo.comment" class="table-info g-flex-ac">
+                  <p>{{ $t('Comment') }}: <span class="text-color">{{ baseInfo.comment }}</span></p>
+                </div>
+                <div class="table-info g-flex-ac">
+                  <p>{{ $t('optimizingStatus') }}: <span class="text-color">{{ baseInfo.optimizingStatus }}</span></p>
                   <a-divider type="vertical" />
-                </template>
-                <p>{{ $t('tableFormat') }}: <span class="text-color">{{ baseInfo.tableFormat }}</span></p>
-                <a-divider type="vertical" />
-                <p>
-                  {{ $t('healthScore') }}:
-                  <UHealthScore :base-info="baseInfo" />
-                </p>
+                  <p>{{ $t('records') }}: <span class="text-color">{{ baseInfo.records }}</span></p>
+                  <a-divider type="vertical" />
+                  <template v-if="!isIceberg">
+                    <p>{{ $t('createTime') }}: <span class="text-color">{{ baseInfo.createTime }}</span></p>
+                    <a-divider type="vertical" />
+                  </template>
+                  <p>{{ $t('tableFormat') }}: <span class="text-color">{{ baseInfo.tableFormat }}</span></p>
+                  <a-divider type="vertical" />
+                  <p>
+                    {{ $t('healthScore') }}:
+                    <UHealthScore :base-info="baseInfo" />
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="tables-main-body">
-            <a-tabs v-model:activeKey="activeKey" destroy-inactive-tab-pane @change="onChangeTab">
-              <a-tab-pane key="Details" :tab="$t('details')" force-render>
-                <UDetails ref="detailRef" @set-base-detail-info="setBaseDetailInfo" />
-              </a-tab-pane>
-              <a-tab-pane v-if="detailLoaded" key="Files" :tab="$t('files')">
-                <UFiles :has-partition="baseInfo.hasPartition" />
-              </a-tab-pane>
-              <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="$t(tab.label)">
-                <component :is="`U${tab.key}`" />
-              </a-tab-pane>
-            </a-tabs>
-          </div>
-        </template>
-        <div v-else class="empty-page" />
+            <div class="tables-main-body">
+              <a-tabs v-model:activeKey="activeKey" destroy-inactive-tab-pane @change="onChangeTab">
+                <a-tab-pane key="Details" :tab="$t('details')" force-render>
+                  <UDetails ref="detailRef" @set-base-detail-info="setBaseDetailInfo" @table-not-found="handleTableNotFound" />
+                </a-tab-pane>
+                <a-tab-pane v-if="detailLoaded" key="Files" :tab="$t('files')">
+                  <UFiles :has-partition="baseInfo.hasPartition" />
+                </a-tab-pane>
+                <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="$t(tab.label)">
+                  <component :is="`U${tab.key}`" />
+                </a-tab-pane>
+              </a-tabs>
+            </div>
+          </template>
+          <div v-else class="empty-page" />
+        </div>
       </div>
+      <!-- Create table secondary page -->
+      <router-view v-else @go-back="goBack" />
     </div>
-    <!-- Create table secondary page -->
-    <router-view v-else @go-back="goBack" />
   </div>
 </template>
 
 <style lang="less" scoped>
+.page-scroll {
+  height: 100%;
+  overflow-y: auto;
+}
 .tables-wrap {
-  font-size: 14px;
-  border: 1px solid #e8e8f0;
+   font-size: 14px;
+   border: 1px solid #e8e8f0;
   padding: 12px 0;
   height: 100%;
   min-height: 100%;
@@ -367,7 +401,7 @@ export default defineComponent({
   }
 
   :deep(.ant-tabs-nav) {
-    padding-left: 12px;
+    padding-left: 0;
     margin-bottom: 0;
   }
 }

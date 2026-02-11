@@ -299,6 +299,8 @@ public class DashboardServer {
             get("", tableController::getCatalogs);
             post("", catalogController::createCatalog);
             get("metastore/types", catalogController::getCatalogTypeList);
+            get("metastore/{type}/table-formats", catalogController::getMetastoreTableFormats);
+            get("metastore/{type}/storage-types", catalogController::getMetastoreStorageTypes);
             get("/{catalogName}", catalogController::getCatalogDetail);
             delete("/{catalogName}", catalogController::deleteCatalog);
             put("/{catalogName}", catalogController::updateCatalog);
