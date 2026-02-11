@@ -644,7 +644,7 @@ You can download apache-amoro-x.y.z-bin.tar.gz (x.y.z is the release number), an
 Unzip it to create the amoro-x.y.z directory in the same directory, and then go to the amoro-x.y.z directory.</p>
 <h2 id="source-code-compilation">Source code compilation</h2>
 <p>You can build based on the master branch without compiling Trino. The compilation method and the directory of results are described below:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ git clone https://github.com/apache/amoro.git
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ git clone https://github.com/apache/amoro.git
 </span></span><span style="display:flex;"><span>$ cd amoro
 </span></span><span style="display:flex;"><span>$ base_dir<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>pwd<span style="color:#66d9ef">)</span> 
 </span></span><span style="display:flex;"><span>$ ./mvnw clean package -DskipTests
@@ -674,7 +674,7 @@ Unzip it to create the amoro-x.y.z directory in the same directory, and then go 
 <li>The <code>ams.http-server.auth-jwt-provider</code> configuration specifies the REST API JWT authentication provider. Set this to the fully qualified class name of your custom provider implementing the <code>org.apache.amoro.authentication.TokenAuthenticationProvider</code> interface. This is required when <code>ams.http-server.rest-auth-type</code> is set to <code>jwt</code>.</li>
 <li>The <code>ams.http-server.proxy-client-ip-header</code> configuration specifies the HTTP header to use for extracting the real client IP address when AMS is deployed behind a reverse proxy (such as Nginx or a load balancer). Common values include <code>X-Forwarded-For</code> or <code>X-Real-IP</code>. If not set, AMS will use the remote address from the connection.</li>
 </ul>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">server-bind-host</span>: <span style="color:#e6db74">&#34;0.0.0.0&#34;</span> <span style="color:#75715e">#The IP address for service listening, default is 0.0.0.0.</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">server-expose-host</span>: <span style="color:#e6db74">&#34;127.0.0.1&#34;</span> <span style="color:#75715e">#The IP address for service external exposure, default is 127.0.0.1.</span>
 </span></span><span style="display:flex;"><span>  
@@ -699,7 +699,7 @@ and move it into the <code>${AMORO_HOME}/lib/</code> directory.</p>
 </blockquote>
 <p>You need to create an empty database in the RDBMS before to start the server, then AMS will automatically create tables in the database when it first started.</p>
 <p>One thing you need to do is adding configuration under <code>config.yaml</code> of Ams:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">database</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">${database_type}</span> <span style="color:#75715e"># postgres or mysql</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">jdbc-driver-class</span>: <span style="color:#ae81ff">${your_driver_name}</span>
@@ -711,7 +711,7 @@ and move it into the <code>${AMORO_HOME}/lib/</code> directory.</p>
 <p>To improve stability, AMS supports a one-master-multi-backup HA mode. Zookeeper is used to implement leader election,
 and the AMS cluster name and Zookeeper address are specified. The AMS cluster name is used to bind different AMS clusters
 on the same Zookeeper cluster to avoid mutual interference.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">ha</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>  <span style="color:#75715e">#Enable HA</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">cluster-name</span>: <span style="color:#ae81ff">default</span> <span style="color:#75715e"># Differentiating binding multiple sets of AMS on the same ZooKeeper.</span>
@@ -720,7 +720,7 @@ on the same Zookeeper cluster to avoid mutual interference.</p>
 <p>To scale out the optimizer through AMS, container configuration is required.
 If you choose to manually start an external optimizer, no additional container configuration is required. AMS will initialize a container named <code>external</code> by default to store all externally started optimizers.
 AMS provides implementations of <code>LocalContainer</code> and <code>FlinkContainer</code> by default. Configuration for both container types can be found below:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">localContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.LocalOptimizerContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
@@ -750,7 +750,7 @@ AMS provides implementations of <code>LocalContainer</code> and <code>FlinkConta
 <p>The Terminal module in the AMS Dashboard allows users to execute SQL directly on the platform. Currently, the Terminal backend supports two implementations: <code>local</code> and <code>kyuubi</code>.
 In local mode, an embedded Spark environment will be started in AMS. In kyuubi mode, an additional kyuubi service needs to be deployed.
 The configuration for kyuubi mode can refer to: <a href="../using-kyuubi/">Using Kyuubi with Terminal</a>. Below is the configuration for the local mode:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">terminal</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">backend</span>: <span style="color:#ae81ff">local</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">local.spark.sql.iceberg.handle-timestamp-without-timezone</span>: <span style="color:#66d9ef">false</span>
@@ -797,7 +797,7 @@ The configuration for kyuubi mode can refer to: <a href="../using-kyuubi/">Using
 <p>Amoro provides metric reporters by plugin mechanism to connect to  external metric systems.</p>
 <p>All metric-reporter plugins are configured in <code>$AMORO_CONF_DIR/plugins/metric-repoters.yaml</code> .</p>
 <p>The configuration format of the plug-in is:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">metric-reporters</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>:                 <span style="color:#75715e"># the unified plugin name.</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>:              <span style="color:#75715e"># if this plugin is enabled, default is true.</span>
@@ -805,13 +805,13 @@ The configuration for kyuubi mode can refer to: <a href="../using-kyuubi/">Using
 </span></span></code></pre></div><p>Currently, there is only one reporter is available.</p>
 <h4 id="prometheus-exporter">Prometheus Exporter</h4>
 <p>By enable the <code>prometheus-exporter</code> plugin, the AMS will start a prometheus http exporter server.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">metric-reporters</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">metric-reporters</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">prometheus-exporter           </span> <span style="color:#75715e"># configs for prometheus exporter</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
 </span></span><span style="display:flex;"><span>       <span style="color:#f92672">port</span>: <span style="color:#ae81ff">9090</span>                        <span style="color:#75715e"># the port that the prometheus-exporter listens on.</span>
 </span></span></code></pre></div><p>You can add a scrape job in your prometheus configs</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Your prometheus configs file.</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Your prometheus configs file.</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">scrape_configs</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">job_name</span>: <span style="color:#e6db74">&#39;amoro-exporter&#39;</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">15s</span>
@@ -826,7 +826,7 @@ Currently, AMS provides built-in support for base64 decryption, and users can al
 <li>The <code>ams.shade.sensitive-keywords</code> configuration specifies which configuration items under <code>ams</code> are encrypted. The default value is <code>admin-password;database.password</code>, and multiple keywords should be separated by semicolons (<code>;</code>). The values of these items must be replaced with their encrypted counterparts.</li>
 </ul>
 <p>Example Configuration (Partial):</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">admin-username</span>: <span style="color:#ae81ff">admin</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">admin-password</span>: <span style="color:#ae81ff">YWRtaW4=   </span> <span style="color:#75715e"># Ciphertext for &#34;admin&#34;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">server-bind-host</span>: <span style="color:#e6db74">&#34;0.0.0.0&#34;</span>
@@ -902,12 +902,12 @@ you can set up those environments to overwrite the default value.</p>
 </table>
 <h2 id="start-ams">Start AMS</h2>
 <p>Enter the directory amoro-x.y.z and execute bin/ams.sh start to start AMS.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd amoro-x.y.z
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd amoro-x.y.z
 </span></span><span style="display:flex;"><span>$ bin/ams.sh start
 </span></span></code></pre></div><p>Then, access http://localhost:1630 through a browser to see the login page. If it appears, it means that the startup is
 successful. The default username and password for login are both &ldquo;admin&rdquo;.</p>
 <p>You can also restart/stop AMS with the following command:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ bin/ams.sh restart
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ bin/ams.sh restart
 </span></span><span style="display:flex;"><span>$ bin/ams.sh stop
 </span></span></code></pre></div><h2 id="upgrade-ams">Upgrade AMS</h2>
 <h3 id="upgrade-system-databases">Upgrade system databases</h3>
@@ -923,7 +923,7 @@ Replace all contents in the original <code>{AMORO_HOME}/plugin</code> directory 
 <p>The old configuration file <code>{AMORO_HOME}/conf/config.yaml</code> is usually compatible with the new version, but the new version may introduce new parameters. Try to compare the configuration files of the old and new versions, and reconfigure the parameters if necessary.</p>
 <h3 id="restart-ams">Restart AMS</h3>
 <p>Restart AMS with the following commands:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>bin/ams.sh restart
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>bin/ams.sh restart
 </span></span></code></pre></div></div>
                 
                     

@@ -689,7 +689,7 @@
 <ul>
 <li>You can create a table after selecting a specific Catalog on the Amoro <a href="http://localhost:1630">Dashboard</a> - Terminal page</li>
 </ul>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> db.log_table (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> db.log_table (
 </span></span><span style="display:flex;"><span>    id int,
 </span></span><span style="display:flex;"><span>    name string,
 </span></span><span style="display:flex;"><span>    ts <span style="color:#66d9ef">timestamp</span>,
@@ -703,7 +703,7 @@
 </span></span></code></pre></div><ul>
 <li>You can also use Flink SQL to create tables in Flink-SQL-Client</li>
 </ul>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- First use the use catalog command to switch to the mixed-format catalog.
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- First use the use catalog command to switch to the mixed-format catalog.
 </span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> db.log_table (
 </span></span><span style="display:flex;"><span>    id int,
 </span></span><span style="display:flex;"><span>    name string,
@@ -716,7 +716,7 @@
 </span></span></code></pre></div><h3 id="double-write-logstore-and-filestore">Double write LogStore and FileStore</h3>
 <p><img src="../../images/flink/double-write.png" alt="Introduce"></p>
 <p>Amoro Connector writes data to LogStore and ChangeStore at the same time through double-write operations, without opening Kafka transactions to ensure data consistency between the two, because opening transactions will bring a few minutes of delay to downstream tasks (the specific delay time depends on upstream tasks checkpoint interval).</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.log_table <span style="color:#75715e">/*+ OPTIONS(&#39;mixed-format.emit.mode&#39;=&#39;log&#39;) */</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.log_table <span style="color:#75715e">/*+ OPTIONS(&#39;mixed-format.emit.mode&#39;=&#39;log&#39;) */</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> id, name, ts <span style="color:#66d9ef">from</span> sourceTable;
 </span></span></code></pre></div><blockquote>
 <p>Currently, only the Apache Flink engine implements the dual-write LogStore and FileStore.</p>

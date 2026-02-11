@@ -633,7 +633,7 @@
 <h1 id="flink-datastream">Flink DataStream</h1>
 <h2 id="add-maven-dependency">Add maven dependency</h2>
 <p>To add a dependency on Mixed-format flink connector in Maven, add the following to your pom.xml:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;dependencies&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;dependencies&gt;</span>
 </span></span><span style="display:flex;"><span>  ...
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;dependency&gt;</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;groupId&gt;</span>org.apache.amoro<span style="color:#f92672">&lt;/groupId&gt;</span>
@@ -652,7 +652,7 @@
 <li>Non-primary key tables support reading full data in batch mode, snapshot data with a specified snapshot-id or timestamp, and incremental data with a specified snapshot interval.</li>
 <li>The primary key table temporarily only supports reading the current full amount and later CDC data.</li>
 </ul>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.FlinkSource;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.MixedFormatTableLoader;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.table.TableIdentifier;
@@ -744,7 +744,7 @@
 <h3 id="streaming-mode">Streaming mode</h3>
 <p>Amoro supports reading incremental data in FileStore or LogStore through Java API in Streaming mode</p>
 <h3 id="streaming-mode-logstore">Streaming mode (LogStore)</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.read.source.log.kafka.LogKafkaSource;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.MixedFormatTableLoader;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.util.MixedFormatUtils;
@@ -789,7 +789,7 @@
 </span></span><span style="display:flex;"><span>    }
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><h3 id="streaming-mode-filestore">Streaming mode (FileStore)</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.FlinkSource;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.MixedFormatTableLoader;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.table.TableIdentifier;
@@ -835,7 +835,7 @@
 <p>Amoro table supports writing data to LogStore or FileStore through Java API</p>
 <h3 id="overwrite-data">Overwrite data</h3>
 <p>Amoro table currently Only supports the existing data in the dynamic Overwrite table of the non-primary key table</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.MixedFormatTableLoader;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.write.FlinkSink;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.table.TableIdentifier;
@@ -879,7 +879,7 @@
 </span></span><span style="display:flex;"><span>} 
 </span></span></code></pre></div><h3 id="appending-data">Appending data</h3>
 <p>For the Amoro table, it supports specifying to write data to FileStore or LogStore through Java API.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.InternalCatalogBuilder;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.table.MixedFormatTableLoader;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.util.MixedFormatUtils;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.flink.write.FlinkSink;

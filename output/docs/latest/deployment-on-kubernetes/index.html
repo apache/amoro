@@ -650,44 +650,44 @@
 <p>This is an image built based on the official version of Spark for deploying the Spark optimizer.</p>
 <h2 id="build-ams-docker-image">Build AMS Docker Image</h2>
 <p>If you want to build images locally, you can find the <code>build.sh</code> script in the docker folder of the project and pass the following command:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./docker/build.sh amoro
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./docker/build.sh amoro
 </span></span></code></pre></div><p>or build the <code>amoro-flink-optimizer</code> image by:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./docker/build.sh amoro-flink-optimizer --flink-version &lt;flink-version&gt;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./docker/build.sh amoro-flink-optimizer --flink-version &lt;flink-version&gt;
 </span></span></code></pre></div><p>or build the <code>amoro-spark-optimizer</code> image by:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./docker/build.sh amoro-spark-optimizer --spark-version &lt;spark-version&gt;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./docker/build.sh amoro-spark-optimizer --spark-version &lt;spark-version&gt;
 </span></span></code></pre></div><h2 id="get-helm-charts">Get Helm Charts</h2>
 <p>You can find the latest charts directly from the Github source code.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ git clone https://github.com/apache/amoro.git
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ git clone https://github.com/apache/amoro.git
 </span></span><span style="display:flex;"><span>$ cd amoro/charts
 </span></span><span style="display:flex;"><span>$ helm dependency build ./amoro
 </span></span></code></pre></div><h2 id="install">Install</h2>
 <p>When you are ready, you can use the following helm command to start</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install &lt;deployment-name&gt; ./amoro 
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install &lt;deployment-name&gt; ./amoro 
 </span></span></code></pre></div><p>After successful installation, you can access WebUI through the following command.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl port-forward services/&lt;deployment-name&gt;-amoro-rest 1630:1630
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl port-forward services/&lt;deployment-name&gt;-amoro-rest 1630:1630
 </span></span></code></pre></div><p>Open browser to go web: http://localhost:1630</p>
 <h2 id="access-logs">Access logs</h2>
 <p>Then, use pod name to get logs:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pod
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pod
 </span></span><span style="display:flex;"><span>$ kubectl logs <span style="color:#f92672">{</span>amoro-pod-name<span style="color:#f92672">}</span>
 </span></span></code></pre></div><h2 id="uninstall">Uninstall</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm uninstall &lt;deployment-name&gt;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm uninstall &lt;deployment-name&gt;
 </span></span></code></pre></div><h2 id="configuring-helm-application">Configuring Helm application.</h2>
 <p>Helm uses <code>&lt;chart&gt;/values.yaml</code> files as configuration files, and you can also copy this file for separate maintenance.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cp amoro/values.yaml my-values.yaml
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cp amoro/values.yaml my-values.yaml
 </span></span><span style="display:flex;"><span>$ vim my-values.yaml
 </span></span></code></pre></div><p>And deploy Helm applications using independent configuration files.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install &lt;deployment-name&gt; ./amoro -f my-values.yaml
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm install &lt;deployment-name&gt; ./amoro -f my-values.yaml
 </span></span></code></pre></div><h3 id="enable-ingress">Enable Ingress</h3>
 <p>Ingress is not enabled by default. In production environments, it is recommended to enable Ingress to access the AMS Dashboard from outside the cluster.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ingress</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ingress</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">ingressClassName</span>: <span style="color:#e6db74">&#34;nginx&#34;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">hostname</span>: <span style="color:#ae81ff">minikube.amoro.com</span>
 </span></span></code></pre></div><h3 id="configure-the-database">Configure the database.</h3>
 <p>AMS uses embedded <a href="https://db.apache.org/derby/">Apache Derby</a> as its backend storage by default.
 In production environments, we recommend using a RDBMS(Relational Database Management System) with higher availability guarantees as the storage for system data, you can ref to <a href="../deployment/#configure-system-database">Database Configuration</a> for more detail.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">amoroConf</span>: 
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">amoroConf</span>: 
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">database</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">type</span>: <span style="color:#ae81ff">${your_database_type}</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">driver</span>: <span style="color:#ae81ff">${your_database_driver}</span>
@@ -697,7 +697,7 @@ In production environments, we recommend using a RDBMS(Relational Database Manag
 </span></span></code></pre></div><h3 id="configure-the-images">Configure the Images</h3>
 <p>Helm charts deploy images by default using the latest tag.
 If you need to modify the image address, such as using a private repository or building your own image</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">image</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">image</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">repository</span>: <span style="color:#ae81ff">&lt;your repository&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">pullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">tag</span>: <span style="color:#ae81ff">&lt;your tag&gt;</span>
@@ -705,7 +705,7 @@ If you need to modify the image address, such as using a private repository or b
 </span></span></code></pre></div><h3 id="configure-the-flink-optimizer-container">Configure the Flink Optimizer Container</h3>
 <p>By default, the Flink Optimizer Container is enabled.
 You can modify the container configuration by changing the <code>optimizer.flink</code> section.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">optimizer</span>: 
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">optimizer</span>: 
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">flink</span>: 
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">## container name, default is flink</span>
@@ -726,7 +726,7 @@ You can modify the container configuration by changing the <code>optimizer.flink
 </span></span></code></pre></div><h3 id="configure-the-kubernetes-optimizer-container">Configure the Kubernetes Optimizer Container</h3>
 <p>By default, the Kubernetes Optimizer Container is enabled.
 You can modify the container configuration by changing the <code>optimizer.Kubernetes</code> section.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">optimizer</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">optimizer</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">kubernetes</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e"># enable the kubernetes optimizer container</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
@@ -740,7 +740,7 @@ You can modify the container configuration by changing the <code>optimizer.Kuber
 </span></span></code></pre></div><p>To use PodTemplate, you need to copy and paste the following into the <code>kubernetes.properties</code>.</p>
 <p>This is the default podTemplate, and when the user doesn&rsquo;t specify any additional parameters, the default is to use the template&rsquo;s parameters</p>
 <p>Therefore, there will be a priority issue that needs to be elaborated: <em>Resource(WebUi) &gt; Independent User Profile Configuration &gt; PodTemplate</em></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">podTemplate</span>: |<span style="color:#e6db74">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">podTemplate</span>: |<span style="color:#e6db74">
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  apiVersion: apps/v1
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  kind: PodTemplate
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  metadata:
@@ -767,7 +767,7 @@ You can modify the container configuration by changing the <code>optimizer.Kuber
 </span></span></code></pre></div><h3 id="configure-the-rbac">Configure the RBAC</h3>
 <p>By default, Helm Chart creates a service account, role, and role bind for Amoro deploy.
 You can also modify this configuration to use an existing account.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># ServiceAccount of Amoro to schedule optimizer.</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># ServiceAccount of Amoro to schedule optimizer.</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">serviceAccount</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Specifies whether a service account should be created or using an existed account</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">create</span>: <span style="color:#66d9ef">true</span>

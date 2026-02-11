@@ -636,7 +636,7 @@
 <p>To integrate a custom encryption algorithm, you need to create a Java class that implements the <code>ConfigShade</code> interface and package it as a service.</p>
 <h3 id="add-maven-dependency">Add Maven Dependency</h3>
 <p>If using a Maven project, add the following dependency to your <code>pom.xml</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;dependency&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;dependency&gt;</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;groupId&gt;</span>org.apache.amoro<span style="color:#f92672">&lt;/groupId&gt;</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;artifactId&gt;</span>amoro-common<span style="color:#f92672">&lt;/artifactId&gt;</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;version&gt;</span>${amoro.version}<span style="color:#f92672">&lt;/version&gt;</span>
@@ -644,7 +644,7 @@
 </span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/dependency&gt;</span>
 </span></span></code></pre></div><h3 id="implement-the-configshade-interface">Implement the <code>ConfigShade</code> Interface</h3>
 <p>Create a Java class that implements the <code>ConfigShade</code> interface. This class will handle decryption for sensitive configuration values.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#75715e">/**
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#75715e">/**
 </span></span></span><span style="display:flex;"><span><span style="color:#75715e"> * The interface that provides the ability to decrypt {@link
 </span></span></span><span style="display:flex;"><span><span style="color:#75715e"> * org.apache.amoro.config.Configurations}.
 </span></span></span><span style="display:flex;"><span><span style="color:#75715e"> */</span>
@@ -676,7 +676,7 @@
 <li><code>decrypt(String content)</code>: Implements the decryption logic for converting encrypted values back to plaintext.</li>
 </ul>
 <p>Here is an example implementation:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">package</span> com.example.shade;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">package</span> com.example.shade;
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.config.Configurations;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> org.apache.amoro.config.shade.ConfigShade;
@@ -698,10 +698,10 @@
 </span></span><span style="display:flex;"><span>}
 </span></span></code></pre></div><h3 id="register-the-custom-implementation">Register the Custom Implementation</h3>
 <p>Create a file named <code>org.apache.amoro.config.shade.ConfigShade</code> under <code>resources/META-INF/services/</code> and add the fully qualified class name of your implementation:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-j" data-lang="j"><span style="display:flex;"><span>com<span style="color:#f92672">.</span>example<span style="color:#f92672">.</span>shade<span style="color:#f92672">.</span>Base64CustomConfigShade
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-j" data-lang="j"><span style="display:flex;"><span>com<span style="color:#f92672">.</span>example<span style="color:#f92672">.</span>shade<span style="color:#f92672">.</span>Base64CustomConfigShade
 </span></span></code></pre></div><h3 id="build-the-jar">Build the JAR</h3>
 <p>Package your implementation into a JAR file using Maven:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./mvnw clean package
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./mvnw clean package
 </span></span></code></pre></div><h2 id="deploy-the-custom-implementation">Deploy the Custom Implementation</h2>
 <p>Once you&rsquo;ve developed and packaged the custom encryption algorithm, you can deploy it to AMS by following these steps.</p>
 <h3 id="copy-the-jar-to-ams">Copy the JAR to AMS</h3>
@@ -709,13 +709,13 @@
 <h3 id="configure-ams-to-use-the-custom-encryption">Configure AMS to Use the Custom Encryption</h3>
 <p>Modify <code>${AMORO_HOME}/conf/config.yaml</code> to specify the custom encryption algorithm by setting the <code>ams.shade.identifier</code> to match the value returned by <code>getIdentifier()</code> in your Java class.
 Then, replace sensitive configuration values with their encrypted versions.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">shade</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">identifier</span>: <span style="color:#ae81ff">base64-custom </span> <span style="color:#75715e"># Use the custom encryption algorithm</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">sensitive-keywords</span>: <span style="color:#ae81ff">admin-password;database.password</span>
 </span></span></code></pre></div><h3 id="restart-ams">Restart AMS</h3>
 <p>Restart the AMS service to apply the new encryption settings.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>bin/ams restart
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>bin/ams restart
 </span></span></code></pre></div><p>By following these steps, you can successfully integrate and deploy a custom encryption algorithm in AMS, ensuring that sensitive information is securely stored in the configuration file.</p>
 </div>
                 

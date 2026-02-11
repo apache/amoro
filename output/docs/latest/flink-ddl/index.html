@@ -634,7 +634,7 @@
 <h2 id="create-catalogs">Create catalogs</h2>
 <h3 id="flink-sql">Flink SQL</h3>
 <p>The following statement can be executed to create a Flink catalog:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">CATALOG</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">catalog_name</span><span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">WITH</span> (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">CATALOG</span> <span style="color:#f92672">&lt;</span><span style="color:#66d9ef">catalog_name</span><span style="color:#f92672">&gt;</span> <span style="color:#66d9ef">WITH</span> (
 </span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#39;type&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;mixed_iceberg&#39;</span>,
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">`&lt;</span>config_key<span style="color:#f92672">&gt;`=`&lt;</span>config_value<span style="color:#f92672">&gt;`</span>
 </span></span><span style="display:flex;"><span>); 
@@ -747,7 +747,7 @@ or specify the authentication information and configuration file paths when crea
 <h3 id="yaml-configuration">YAML configuration</h3>
 <p>Refer to the Flink SQL Client <a href="https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sqlClient.html#environment-files">official configuration</a>.
 Modify the <code>conf/sql-client-defaults.yaml</code> file in the Flink directory.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">catalogs</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">catalogs</span>:
 </span></span><span style="display:flex;"><span>- <span style="color:#f92672">name</span>: <span style="color:#ae81ff">&lt;catalog_name&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">mixed_iceberg</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">ams.uri</span>: <span style="color:#ae81ff">...</span>
@@ -755,11 +755,11 @@ Modify the <code>conf/sql-client-defaults.yaml</code> file in the Flink director
 </span></span></code></pre></div><h2 id="create-statement">CREATE statement</h2>
 <h3 id="create-database">CREATE DATABASE</h3>
 <p>By default, the default-database configuration (default value: default) when creating catalog is used. You can create a database using the following example:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">DATABASE</span> [<span style="color:#66d9ef">catalog_name</span>.]mixed_db;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">DATABASE</span> [<span style="color:#66d9ef">catalog_name</span>.]mixed_db;
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>USE mixed_db;
 </span></span></code></pre></div><h3 id="create-table">CREATE TABLE</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>mixed_db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span> (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>mixed_db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span> (
 </span></span><span style="display:flex;"><span>    id BIGINT,
 </span></span><span style="display:flex;"><span>    name STRING,
 </span></span><span style="display:flex;"><span>    op_time <span style="color:#66d9ef">TIMESTAMP</span>,
@@ -780,7 +780,7 @@ Modify the <code>conf/sql-client-defaults.yaml</code> file in the Flink director
 </ul>
 <h4 id="partitioned-by">PARTITIONED BY</h4>
 <p>Create a partitioned table using PARTITIONED BY.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span><span style="color:#66d9ef">new</span><span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span> (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span><span style="color:#66d9ef">new</span><span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span> (
 </span></span><span style="display:flex;"><span>    id BIGINT,
 </span></span><span style="display:flex;"><span>    name STRING,
 </span></span><span style="display:flex;"><span>    op_time <span style="color:#66d9ef">TIMESTAMP</span>
@@ -789,7 +789,7 @@ Modify the <code>conf/sql-client-defaults.yaml</code> file in the Flink director
 </span></span><span style="display:flex;"><span>);
 </span></span></code></pre></div><p>Amoro tables support hidden partitions, but Flink does not support function-based partitions. Therefore, currently only partitions with the same value can be created through Flink SQL.</p>
 <p>Alternatively, tables can be created without creating a Flink catalog:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span> (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span> (
 </span></span><span style="display:flex;"><span>    id BIGINT,
 </span></span><span style="display:flex;"><span>    name STRING,
 </span></span><span style="display:flex;"><span>    op_time <span style="color:#66d9ef">TIMESTAMP</span>,
@@ -805,7 +805,7 @@ Modify the <code>conf/sql-client-defaults.yaml</code> file in the Flink director
 </span></span></code></pre></div><p>where <code>&lt;ams.uri&gt;</code> is the URI of the Amoro Metastore, and <code>mixed_format.catalog</code>, <code>mixed_format.database</code> and <code>mixed_format.table</code> are the catalog name, database name and table name of this table under the AMS, respectively.</p>
 <h3 id="create-table-like">CREATE TABLE LIKE</h3>
 <p>Create a table with the same table structure, partitions, and table properties as an existing table. This can be achieved using CREATE TABLE LIKE.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>mixed_db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span> (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>mixed_db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span> (
 </span></span><span style="display:flex;"><span>    id BIGINT,
 </span></span><span style="display:flex;"><span>    name STRING,
 </span></span><span style="display:flex;"><span>    op_time <span style="color:#66d9ef">TIMESTAMP</span>
@@ -816,22 +816,22 @@ Modify the <code>conf/sql-client-defaults.yaml</code> file in the Flink director
 </span></span></code></pre></div><p>Further details can be found in <a href="https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sql/create.html#like">Flink create table like</a></p>
 <h2 id="drop-statement">DROP statement</h2>
 <h3 id="drop-database">DROP DATABASE</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">DATABASE</span> <span style="color:#66d9ef">catalog_name</span>.mixed_db
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">DATABASE</span> <span style="color:#66d9ef">catalog_name</span>.mixed_db
 </span></span></code></pre></div><h3 id="drop-table">DROP TABLE</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>mixed_db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span>;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#f92672">`</span>mixed_catalog<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>mixed_db<span style="color:#f92672">`</span>.<span style="color:#f92672">`</span>test_table<span style="color:#f92672">`</span>;
 </span></span></code></pre></div><h2 id="show-statement">SHOW statement</h2>
 <h3 id="show-databases">SHOW DATABASES</h3>
 <p>View all database names under the current catalog:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> DATABASES;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> DATABASES;
 </span></span></code></pre></div><h3 id="show-tables">SHOW TABLES</h3>
 <p>View all table names in the current database:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> TABLES;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> TABLES;
 </span></span></code></pre></div><h3 id="show-create-table">SHOW CREATE TABLE</h3>
 <p>View table details:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> <span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span>;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> <span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span>;
 </span></span></code></pre></div><h2 id="desc-statement">DESC statement</h2>
 <p>View table description:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DESC</span> <span style="color:#66d9ef">TABLE</span>;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DESC</span> <span style="color:#66d9ef">TABLE</span>;
 </span></span></code></pre></div><h2 id="alter-statement">ALTER statement</h2>
 <p>Not supported at the moment</p>
 <h2 id="supported-types">Supported types</h2>

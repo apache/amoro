@@ -636,7 +636,7 @@
 <li>There must be a running Kyuubi. To deploy and run Kyuubi, please refer to <a href="https://kyuubi.readthedocs.io/en/master/">Kyuubi doc</a></li>
 </ul>
 <p>Terminal supports interfacing with Kyuubi to submit SQL to Kyuubi for execution. All you need to do is add the Kyuubi configuration as instructed below:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>ams:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>ams:
 </span></span><span style="display:flex;"><span>    terminal:
 </span></span><span style="display:flex;"><span>      backend: kyuubi
 </span></span><span style="display:flex;"><span>      kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/ <span style="color:#75715e"># kyuubi Connection Address</span>
@@ -654,7 +654,7 @@
 <h2 id="ldap-authentication">LDAP Authentication</h2>
 <p>Except for the configuration of Kerberos authentication, everything else is the same. You can integrate with LDAP using the following configuration:
 set kyuubi.ldap.enabled to true, and then specify the username and password for LDAP in the URL.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>ams:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>ams:
 </span></span><span style="display:flex;"><span>    terminal:
 </span></span><span style="display:flex;"><span>      backend: kyuubi
 </span></span><span style="display:flex;"><span>      kyuubi.ldap.enabled: true

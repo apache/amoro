@@ -666,7 +666,7 @@
       </tr>
   </tbody>
 </table>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">localContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.LocalOptimizerContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
@@ -789,7 +789,7 @@ with container-impl as <code>org.apache.amoro.server.manager.KubernetesOptimizer
       </tr>
   </tbody>
 </table>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">KubernetesContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.KubernetesOptimizerContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
@@ -888,7 +888,7 @@ you need to add a new container configuration. with container-impl as <code>org.
 </ul>
 </div>
 <p>An example for yarn-per-job mode:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">flinkContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.FlinkOptimizerContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
@@ -898,7 +898,7 @@ you need to add a new container configuration. with container-impl as <code>org.
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.JVM_ARGS</span>: -<span style="color:#ae81ff">Djava.security.krb5.conf=/opt/krb5.conf      </span> <span style="color:#75715e">#flink launch jvm args, like kerberos config when ues kerberos</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.FLINK_CONF_DIR</span>: <span style="color:#ae81ff">/etc/hadoop/conf/                       </span> <span style="color:#75715e">#flink config dir</span>
 </span></span></code></pre></div><p>An example for kubernetes-application mode:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">flinkContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.FlinkOptimizerContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
@@ -911,7 +911,7 @@ you need to add a new container configuration. with container-impl as <code>org.
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-conf.kubernetes.container.image</span>: <span style="color:#e6db74">&#34;apache/amoro-flink-optimizer:{version}&#34;</span>   <span style="color:#75715e"># Optimizer image ref</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">flink-conf.kubernetes.service-account</span>: <span style="color:#ae81ff">flink                                  </span> <span style="color:#75715e"># Service account that is used within kubernetes cluster.</span>
 </span></span></code></pre></div><p>An example for flink session mode:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">flinkContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.FlinkOptimizerContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
@@ -1030,7 +1030,7 @@ If you don&rsquo;t want this feature, you can use these settings:</p>
 </ul>
 </div>
 <p>An example for yarn client mode:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sparkContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.SparkOptimizerContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
@@ -1042,7 +1042,7 @@ If you don&rsquo;t want this feature, you can use these settings:</p>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.JVM_ARGS</span>: -<span style="color:#ae81ff">Djava.security.krb5.conf=/opt/krb5.conf      </span> <span style="color:#75715e"># Spark launch jvm args, like kerberos config when ues kerberos</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">export.SPARK_CONF_DIR</span>: <span style="color:#ae81ff">/etc/hadoop/conf/                       </span> <span style="color:#75715e"># Spark config dir</span>
 </span></span></code></pre></div><p>An example for kubernetes cluster mode:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">containers</span>:
 </span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sparkContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">container-impl</span>: <span style="color:#ae81ff">org.apache.amoro.server.manager.SparkOptimizerContainer</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
@@ -1189,7 +1189,7 @@ If the optimizer runs normally, you will see an optimizer with the status <code>
 </div>
 <h3 id="deploy-external-optimizer">Deploy external optimizer</h3>
 <p>You can submit optimizer in your own Flink task development platform or local Flink environment with the following configuration. The main parameters include:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./bin/flink run-application -t yarn-application <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./bin/flink run-application -t yarn-application <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span> -Djobmanager.memory.process.size<span style="color:#f92672">=</span>1024mb <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span> -Dtaskmanager.memory.process.size<span style="color:#f92672">=</span>2048mb <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span> -Dtaskmanager.memory.managed.size<span style="color:#f92672">=</span>32mb <span style="color:#ae81ff">\
@@ -1268,7 +1268,7 @@ If the optimizer runs normally, you will see an optimizer with the status <code>
   </tbody>
 </table>
 <p>Or you can submit optimizer in your own Spark task development platform or local Spark environment with the following configuration. The main parameters include:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./bin/spark-submit --master yarn --deploy-mode cluster <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./bin/spark-submit --master yarn --deploy-mode cluster <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span> --conf <span style="color:#e6db74">&#34;spark.driver.cores=1&#34;</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span> --conf <span style="color:#e6db74">&#34;spark.driver.memory=g&#34;</span> <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span> --conf <span style="color:#e6db74">&#34;spark.executor.cores=1&#34;</span> <span style="color:#ae81ff">\

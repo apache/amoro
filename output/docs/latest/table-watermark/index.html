@@ -648,7 +648,7 @@ computing to gauge table freshness.</p>
 indicates that data with timestamps earlier than this watermark have been written to the table. It is typically used to monitor the progress of table
 writes and can also serve as a trigger indicator for downstream batch computing tasks.</p>
 <p>Mixed Format uses the following configurations to configure watermark:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span>  <span style="color:#e6db74">&#39;table.event-time-field&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;op_time&#39;</span>,
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span>  <span style="color:#e6db74">&#39;table.event-time-field&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;op_time&#39;</span>,
 </span></span><span style="display:flex;"><span>  <span style="color:#e6db74">&#39;table.watermark-allowed-lateness-second&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;60&#39;</span>
 </span></span></code></pre></div><p>In the example above, <code>op_time</code> is set as the event time field for the table, and the watermark for the table is calculated using the <code>op_time</code> of the
 data being written. To handle out-of-order writes, a maximum delay of 60 seconds is allowed for calculating the watermark. Unlike in stream
@@ -656,10 +656,10 @@ processing, data with event_time values smaller than the watermark will not be r
 either.</p>
 <p>You can view the current watermark of a table in the AMS Dashboard&rsquo;s table details, or you can use the following SQL query in the terminal to query
 the watermark of a table:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-SQL" data-lang="SQL"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> TBLPROPERTIES test_db.test_log_store (<span style="color:#e6db74">&#39;watermark.table&#39;</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-SQL" data-lang="SQL"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> TBLPROPERTIES test_db.test_log_store (<span style="color:#e6db74">&#39;watermark.table&#39;</span>);
 </span></span></code></pre></div><p>You can also query the table watermark of the BaseStore using the following command, which can be combined with native reads from Hive or Iceberg for
 greater flexibility:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-SQL" data-lang="SQL"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> TBLPROPERTIES test_db.test_log_store (<span style="color:#e6db74">&#39;watermark.base&#39;</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-SQL" data-lang="SQL"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> TBLPROPERTIES test_db.test_log_store (<span style="color:#e6db74">&#39;watermark.base&#39;</span>);
 </span></span></code></pre></div><p>You can learn about how to use Watermark in detail by referring to <a href="../using-tables/">Using tables</a>.</p>
 </div>
                 

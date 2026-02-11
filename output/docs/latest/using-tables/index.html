@@ -636,7 +636,7 @@ It is also available in <a href="../spark-ddl/">Spark</a> and <a href="../flink-
 <h2 id="create-table">Create table</h2>
 <p>After logging into AMS dashboard, go to <code>Terminal</code>, enter the table creation statement and execute it to complete the table creation.
 The following is an example of table creation:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">create</span> <span style="color:#66d9ef">table</span> test_db.test_log_store(
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">create</span> <span style="color:#66d9ef">table</span> test_db.test_log_store(
 </span></span><span style="display:flex;"><span>  id int,
 </span></span><span style="display:flex;"><span>  name string,
 </span></span><span style="display:flex;"><span>  op_time <span style="color:#66d9ef">timestamp</span>,
@@ -664,9 +664,9 @@ To handle out-of-order writes, the permitted lateness of data when calculating t
 You can view the current watermark of the table in the table details on the AMS Dashboard at AMS dashboard.</p>
 <p><img src="../images/admin/watermark_table_detail.png" alt="mixed-format-table-watermark"></p>
 <p>You can also use the following SQL statement in the <code>Terminal</code> to query the watermark of a table:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> TBLPROPERTIES test_db.test_log_store (<span style="color:#e6db74">&#39;watermark.table&#39;</span>);
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> TBLPROPERTIES test_db.test_log_store (<span style="color:#e6db74">&#39;watermark.table&#39;</span>);
 </span></span></code></pre></div><p>You can expect to get the following results:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>+-----------------+---------------+
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>+-----------------+---------------+
 </span></span><span style="display:flex;"><span>| key             | value         |
 </span></span><span style="display:flex;"><span>+-----------------+---------------+
 </span></span><span style="display:flex;"><span>| watermark.table | 1668579055000 |
@@ -690,42 +690,42 @@ more information on modifying tables, please refer to the syntax guide <a href="
 <h3 id="modify-optimizer-group">Modify optimizer group</h3>
 <p>To use an optimizer launched under a specific optimizer group to perform self-optimizing, you need to modify the <code>self-optimizing.group</code> parameter of the table to specify a specific resource pool for the table.
 The setting method is as follows:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;self-optimizing.group&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;group_name&#39;</span>);
 </span></span></code></pre></div><p>In default，<code>'self-optimizing.group' = 'default'</code>。</p>
 <h3 id="adjust-optimizing-resources">Adjust optimizing resources</h3>
 <p>If there are multiple tables to be optimized under the same Optimizer Group, you can manually adjust the resource proportion of each table by adjusting the <code>quota</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;self-optimizing.quota&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;0.1&#39;</span>);
 </span></span></code></pre></div><p>For more information, please refer to <a href="../self-optimizing/#quota">Self-optimizing quota</a>。</p>
 <h3 id="adjust-optimizing-parameters">Adjust optimizing parameters</h3>
 <p>You can manually set parameters such as execution interval, task size, and execution timeout for different types of Optimize.
 For example, to set the execution interval for minor optimizing, you can do the following:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;self-optimizing.minor.trigger.interval&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;3600000&#39;</span>);
 </span></span></code></pre></div><p>More optimization parameter adjustment refer to <a href="../configurations/#self-optimizing-configurations">Self-optimizing configuration</a>。</p>
 <h3 id="enable-or-disable-self-optimizing">Enable or disable self-optimizing</h3>
 <p>The Optimize of the table is enabled by default. If you want to disable the Optimize feature, execute the following command.
 Conversely, you can re-enable it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;self-optimizing.enabled&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;false&#39;</span>);
 </span></span></code></pre></div><h2 id="configure-data-expiration">Configure data expiration</h2>
 <p>Amoro can periodically clean data based on the table&rsquo;s expiration policy, which includes properties such as whether to enable expiration, retention duration, expiration level, and the selection of the field for expiration.
 it&rsquo;s also necessary for AMS to have the data expiration thread enabled. You can enable the &lsquo;data-expiration&rsquo; property in the configuration file</p>
 <h3 id="enable-or-disable-data-expiration">Enable or disable data expiration</h3>
 <p>By default, Amoro has data expiration disabled. If you want to enable data expiration, please execute the following command.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;data-expire.enabled&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;true&#39;</span>);
 </span></span></code></pre></div><h3 id="set-retention-period">Set retention period</h3>
 <p>The configuration for data retention duration consists of a number and a unit. For example, &lsquo;90d&rsquo; represents retaining data for 90 days, and &lsquo;12h&rsquo; indicates 12 hours.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;data-expire.retention-time&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;90d&#39;</span>);
 </span></span></code></pre></div><h3 id="select-expiration-field">Select expiration field</h3>
 <p>Data expiration requires users to specify a field for determining expiration.
 In addition to supporting timestampz/timestamp field types for this purpose, it also supports string and long field type.
 String field require a date pattern for proper parsing, with the default format being &lsquo;yyyy-MM-dd&rsquo;. Additionally, long fields can be chosen as the expiration event time, but you need to specify the timestamp&rsquo;s unit, which can be in <code>TIMESTAMP_MS</code> or <code>TIMESTAMP_S</code>.
 Note that timestamp, timestampz, and long field types use UTC, while others use the local time zone.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;data-expire.field&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;op_time&#39;</span>);
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e">-- select string field
@@ -739,16 +739,16 @@ Note that timestamp, timestampz, and long field types use UTC, while others use 
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;data-expire.datetime-number-format&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;TIMESTAMP_MS&#39;</span>);
 </span></span></code></pre></div><h3 id="adjust-expiration-level">Adjust expiration level</h3>
 <p>Data expiration supports two levels, including <code>PARTITION</code> and <code>FILE</code>. The default level is <code>PARTITION</code>, which means that AMS deletes files only when all the files within a partition have expired.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;data-expire.level&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;partition&#39;</span>);
 </span></span></code></pre></div><h3 id="specify-start-time">Specify start time</h3>
 <p>Amoro expire data since <code>LAST_COMMIT_TIME</code> or <code>CURRENT_TIME</code>. <code>LAST_COMMIT_TIME</code> will follow the timestamp of the table&rsquo;s most recent snapshot as the start time of the expiration, which ensures that the table has <code>data-expire.retention-time</code> data; while <code>CURRENT_TIME</code> will follow the current time of the service.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;data-expire.base-on-rule&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;CURRENT_TIME&#39;</span>);
 </span></span></code></pre></div><h2 id="delete-table">Delete table</h2>
 <p>After logging into the AMS Dashboard. To modify a table, enter the modification statement in the <code>terminal</code> and execute it.</p>
 <p>Here is an example of how to delete a table：</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store;
 </span></span></code></pre></div><p>The current terminal is using the Spark engine to execute SQL. For more information about deleting tables, you can refer to  <a href="../spark-ddl/#drop-table">Spark DDL</a>.</p>
 <h2 id="explore-table-details">Explore table details</h2>
 <p>The Amoro Tables details page provides multiple tabs to display the status of the table from various dimensions, mainly including:</p>
