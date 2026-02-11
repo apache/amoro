@@ -28,8 +28,8 @@ on:
     inputs:
       tag:
         description: 'Version tag for the image (e.g. v1.0.0, stag-testing1).'
-        required: true
         type: string
+        default: 'stag-v0.0.1'
 
 
 concurrency:
@@ -71,13 +71,8 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set Maven Build Properties
-        if: ${{ matrix.hadoop == 'v2' }}
-        run: |
-          echo "MVN_HADOOP=-Phadoop2" >> $GITHUB_ENV
-
       - name: Build dist module with Maven
-        run: ./mvnw clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats -Pno-extended-disk-storage -Pno-plugin-bin
+        run: ./mvnw clean package -pl 'dist' -am -e -DskipTests -B -ntp -Psupport-all-formats -Pno-extended-disk-storage -Pno-plugin-bin
 
       - name: Build and Push Fusion Server Docker Image to olakego/fusion
         uses: docker/build-push-action@v4
