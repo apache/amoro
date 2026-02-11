@@ -161,7 +161,7 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
   }
 
   @Override
-  public void registAndElect() throws Exception {
+  public void registerAndElect() throws Exception {
     if (!isMasterSlaveMode) {
       LOG.debug("Master-slave mode is not enabled, skip node registration");
       return;

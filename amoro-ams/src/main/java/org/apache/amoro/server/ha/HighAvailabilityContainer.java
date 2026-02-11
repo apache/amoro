@@ -53,7 +53,7 @@ public interface HighAvailabilityContainer {
    *
    * @throws Exception If registration fails or participation in the primary election fails.
    */
-  void registAndElect() throws Exception;
+  void registerAndElect() throws Exception;
 
   /**
    * Used in master-slave mode to obtain information about all currently registered AMS nodes.

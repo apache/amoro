@@ -81,13 +81,13 @@ public class TestZkHighAvailabilityContainer {
   }
 
   @Test
-  public void testRegistAndElectWithoutMasterSlaveMode() throws Exception {
+  public void testRegisterAndElectWithoutMasterSlaveMode() throws Exception {
     // Test that node registration is skipped when master-slave mode is disabled
     serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, false);
     haContainer = createContainerWithMockZk();
 
     // Should not throw exception and should not register node
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Verify no node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
@@ -97,13 +97,13 @@ public class TestZkHighAvailabilityContainer {
   }
 
   @Test
-  public void testRegistAndElectWithMasterSlaveMode() throws Exception {
+  public void testRegisterAndElectWithMasterSlaveMode() throws Exception {
     // Test that node registration works when master-slave mode is enabled
     serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
     haContainer = createContainerWithMockZk();
 
     // Register node
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Verify node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
@@ -146,7 +146,7 @@ public class TestZkHighAvailabilityContainer {
     haContainer = createContainerWithMockZk();
 
     // Register node
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Since we're not the leader, should return empty list
     List<AmsServerInfo> aliveNodes = haContainer.getAliveNodes();
@@ -162,7 +162,7 @@ public class TestZkHighAvailabilityContainer {
     haContainer = createContainerWithMockZk();
 
     // Register node
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Verify we are leader
     Assert.assertTrue("Should be leader", haContainer.hasLeadership());
@@ -189,7 +189,7 @@ public class TestZkHighAvailabilityContainer {
     haContainer = createContainerWithMockZk();
 
     // Register first node
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Verify first node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
@@ -220,7 +220,7 @@ public class TestZkHighAvailabilityContainer {
     haContainer = createContainerWithMockZk();
 
     // Register node
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Verify node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
@@ -255,14 +255,14 @@ public class TestZkHighAvailabilityContainer {
   }
 
   @Test
-  public void testRegistAndElectWithoutHAEnabled() throws Exception {
+  public void testRegisterAndElectWithoutHAEnabled() throws Exception {
     // Test that registAndElect skips when HA is not enabled
     serviceConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
     serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
     haContainer = new ZkHighAvailabilityContainer(serviceConfig);
 
     // Should not throw exception
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
   }
 
   /** Create HighAvailabilityContainer with mocked ZK components using reflection. */

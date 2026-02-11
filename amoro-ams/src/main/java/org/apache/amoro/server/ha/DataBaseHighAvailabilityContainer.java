@@ -138,7 +138,7 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
   }
 
   @Override
-  public void registAndElect() throws Exception {
+  public void registerAndElect() throws Exception {
     boolean isMasterSlaveMode = serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
     if (!isMasterSlaveMode) {
       LOG.debug("Master-slave mode is not enabled, skip node registration");

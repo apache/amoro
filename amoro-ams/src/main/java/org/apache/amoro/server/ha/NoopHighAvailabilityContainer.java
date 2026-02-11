@@ -50,7 +50,7 @@ public class NoopHighAvailabilityContainer implements HighAvailabilityContainer 
   }
 
   @Override
-  public void registAndElect() throws Exception {}
+  public void registerAndElect() throws Exception {}
 
   @Override
   public List<AmsServerInfo> getAliveNodes() {

@@ -163,7 +163,7 @@ public class AmoroServiceContainer {
   }
 
   public void registAndElect() throws Exception {
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
   }
 
   public enum HAState {
