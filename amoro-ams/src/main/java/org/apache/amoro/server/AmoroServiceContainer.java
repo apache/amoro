@@ -32,6 +32,7 @@ import org.apache.amoro.config.ConfigurationException;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.shade.utils.ConfigShadeUtils;
 import org.apache.amoro.exception.AmoroRuntimeException;
+import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.dashboard.DashboardServer;
@@ -47,6 +48,7 @@ import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.process.ProcessService;
+import org.apache.amoro.server.process.executor.ExecuteEngineManager;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.DefaultOptimizerManager;
@@ -96,6 +98,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.stream.Collectors;
 
 public class AmoroServiceContainer {
 
@@ -231,6 +234,12 @@ public class AmoroServiceContainer {
   public void startOptimizingService() throws Exception {
     TableRuntimeFactoryManager tableRuntimeFactoryManager = new TableRuntimeFactoryManager();
     tableRuntimeFactoryManager.initialize();
+    List<ActionCoordinator> actionCoordinators =
+        tableRuntimeFactoryManager.installedPlugins().stream()
+            .flatMap(f -> f.supportedCoordinators().stream())
+            .collect(Collectors.toList());
+
+    ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
 
     tableService =
         new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
@@ -238,7 +247,8 @@ public class AmoroServiceContainer {
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
 
-    processService = new ProcessService(serviceConfig, tableService);
+    processService =
+        new ProcessService(serviceConfig, tableService, actionCoordinators, executeEngineManager);
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);

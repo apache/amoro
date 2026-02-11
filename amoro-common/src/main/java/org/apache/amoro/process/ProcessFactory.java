@@ -20,6 +20,10 @@ package org.apache.amoro.process;
 
 import org.apache.amoro.Action;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.table.StateKey;
+
+import java.util.List;
 
 /**
  * A factory to create a process. Normally, There will be default ProcessFactories for each action
@@ -28,6 +32,12 @@ import org.apache.amoro.TableRuntime;
  */
 public interface ProcessFactory {
 
+  default List<StateKey<?>> requiredStates() {
+    return Lists.newArrayList();
+  }
+
+  boolean readyForAction(TableRuntime tableRuntime, Action action);
+
   /**
    * Create a process for the action.
    *
@@ -35,7 +45,7 @@ public interface ProcessFactory {
    * @param action action type
    * @return target process which has not been submitted yet.
    */
-  AmoroProcess create(TableRuntime tableRuntime, Action action);
+  TableProcess create(TableRuntime tableRuntime, Action action);
 
   /**
    * Recover a process for the action from a state.
@@ -44,5 +54,5 @@ public interface ProcessFactory {
    * @param state state of the process
    * @return target process which has not been submitted yet.
    */
-  AmoroProcess recover(TableRuntime tableRuntime, TableProcessState state);
+  TableProcess recover(TableRuntime tableRuntime, TableProcessStore state);
 }

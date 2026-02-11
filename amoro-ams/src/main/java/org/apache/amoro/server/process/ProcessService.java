@@ -25,15 +25,16 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.process.ProcessEvent;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.server.manager.AbstractPluginManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.process.executor.EngineType;
 import org.apache.amoro.server.process.executor.ExecuteEngine;
+import org.apache.amoro.server.process.executor.ExecuteEngineManager;
 import org.apache.amoro.server.process.executor.TableProcessExecutor;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
@@ -59,11 +60,11 @@ public class ProcessService extends PersistentBase {
   private static final Logger LOG = LoggerFactory.getLogger(ProcessService.class);
   private final TableService tableService;
 
+  private final List<ActionCoordinator> actionCoordinatorLists;
   private final Map<String, ActionCoordinatorScheduler> actionCoordinators =
       new ConcurrentHashMap<>();
   private final Map<EngineType, ExecuteEngine> executeEngines = new ConcurrentHashMap<>();
 
-  private final ActionCoordinatorManager actionCoordinatorManager;
   private final ExecuteEngineManager executeEngineManager;
   private final ProcessRuntimeHandler tableRuntimeHandler = new ProcessRuntimeHandler();
   private final ThreadPoolExecutor processExecutionPool =
@@ -72,17 +73,13 @@ public class ProcessService extends PersistentBase {
   private final Map<ServerTableIdentifier, Map<Long, TableProcess>> activeTableProcess =
       new ConcurrentHashMap<>();
 
-  public ProcessService(Configurations serviceConfig, TableService tableService) {
-    this(serviceConfig, tableService, new ActionCoordinatorManager(), new ExecuteEngineManager());
-  }
-
   public ProcessService(
       Configurations serviceConfig,
       TableService tableService,
-      ActionCoordinatorManager actionCoordinatorManager,
+      List<ActionCoordinator> actionCoordinators,
       ExecuteEngineManager executeEngineManager) {
     this.tableService = tableService;
-    this.actionCoordinatorManager = actionCoordinatorManager;
+    this.actionCoordinatorLists = actionCoordinators;
     this.executeEngineManager = executeEngineManager;
   }
 
@@ -127,15 +124,6 @@ public class ProcessService extends PersistentBase {
   }
 
   /**
-   * Retry a failed table process.
-   *
-   * @param process process to retry
-   */
-  public void retry(TableProcess process) {
-    executeOrTraceProcess(process);
-  }
-
-  /**
    * Cancel a table process and release related resources.
    *
    * @param process process to cancel
@@ -147,7 +135,7 @@ public class ProcessService extends PersistentBase {
 
   /** Dispose the service, shutdown engines and clear active processes. */
   public void dispose() {
-    actionCoordinatorManager.close();
+    this.actionCoordinators.values().forEach(RuntimeHandlerChain::dispose);
     executeEngineManager.close();
     processExecutionPool.shutdown();
     activeTableProcess.clear();
@@ -155,16 +143,12 @@ public class ProcessService extends PersistentBase {
 
   private void initialize(List<TableRuntime> tableRuntimes) {
     LOG.info("Initializing process service");
-    actionCoordinatorManager.initialize();
-    actionCoordinatorManager
-        .installedPlugins()
-        .forEach(
-            actionCoordinator -> {
-              actionCoordinators.put(
-                  actionCoordinator.action().getName(),
-                  new ActionCoordinatorScheduler(
-                      actionCoordinator, tableService, ProcessService.this));
-            });
+    actionCoordinatorLists.forEach(
+        actionCoordinator -> {
+          actionCoordinators.put(
+              actionCoordinator.action().getName(),
+              new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this));
+        });
     executeEngineManager.initialize();
     executeEngineManager
         .installedPlugins()
@@ -242,7 +226,7 @@ public class ProcessService extends PersistentBase {
                     "Regular Retry.",
                     process.getProcessParameters(),
                     process.getSummary());
-            scheduler.retry(process);
+            executeOrTraceProcess(process);
           } else {
             untrackTableProcessInstance(
                 process.getTableRuntime().getTableIdentifier(), process.getId());
@@ -549,20 +533,6 @@ public class ProcessService extends PersistentBase {
     @Override
     protected void doDispose() {
       // TODO: dispose
-    }
-  }
-
-  /** Manager for {@link ActionCoordinator} plugins. */
-  public static class ActionCoordinatorManager extends AbstractPluginManager<ActionCoordinator> {
-    public ActionCoordinatorManager() {
-      super("action-coordinators");
-    }
-  }
-
-  /** Manager for {@link ExecuteEngine} plugins. */
-  public static class ExecuteEngineManager extends AbstractPluginManager<ExecuteEngine> {
-    public ExecuteEngineManager() {
-      super("execute-engines");
     }
   }
 }

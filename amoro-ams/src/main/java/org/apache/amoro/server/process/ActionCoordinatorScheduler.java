@@ -20,6 +20,7 @@ package org.apache.amoro.server.process;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
@@ -108,16 +109,6 @@ public class ActionCoordinatorScheduler extends PeriodicTableScheduler {
   protected void recover(TableRuntime tableRuntime, TableProcessStore processStore) {
     TableProcess process = coordinator.recoverTableProcess(tableRuntime, processStore);
     processService.recover(tableRuntime, process);
-  }
-
-  /**
-   * Retry a failed table process.
-   *
-   * @param process process to retry
-   */
-  protected void retry(TableProcess process) {
-    process = coordinator.retryTableProcess(process);
-    processService.retry(process);
   }
 
   /**

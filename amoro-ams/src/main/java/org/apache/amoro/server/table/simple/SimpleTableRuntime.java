@@ -16,28 +16,20 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.table;
+package org.apache.amoro.server.table.simple;
 
-import org.apache.amoro.ActivePlugin;
-import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.TableRuntime;
-import org.apache.amoro.process.ActionCoordinator;
+import org.apache.amoro.metrics.MetricRegistry;
+import org.apache.amoro.server.table.AbstractTableRuntime;
+import org.apache.amoro.table.TableRuntimeStore;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-/** Table runtime factory. */
-public interface TableRuntimeFactory extends ActivePlugin {
-
-  List<ActionCoordinator> supportedCoordinators();
-
-  Optional<TableRuntimeCreator> accept(
-      ServerTableIdentifier tableIdentifier, Map<String, String> tableProperties);
-
-  interface TableRuntimeCreator {
-    List<StateKey<?>> requiredStateKeys();
-
-    TableRuntime create(TableRuntimeStore store);
+public class SimpleTableRuntime extends AbstractTableRuntime {
+  protected SimpleTableRuntime(TableRuntimeStore store) {
+    super(store);
   }
+
+  @Override
+  public void registerMetric(MetricRegistry metricRegistry) {}
+
+  @Override
+  public void unregisterMetric() {}
 }

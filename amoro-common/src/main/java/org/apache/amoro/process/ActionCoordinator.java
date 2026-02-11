@@ -16,25 +16,17 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.process;
+package org.apache.amoro.process;
 
 import org.apache.amoro.Action;
-import org.apache.amoro.ActivePlugin;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
-import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.process.TableProcessStore;
-import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 
 /**
  * Coordinator for a specific {@link org.apache.amoro.Action} to manage table processes. Provides
  * scheduling parameters and lifecycle hooks to create/recover/cancel/retry table processes.
  */
-public interface ActionCoordinator extends ActivePlugin {
-
-  String PROPERTY_PARALLELISM = "parallelism";
-
-  SnowflakeIdGenerator SNOWFLAKE_ID_GENERATOR = new SnowflakeIdGenerator();
+public interface ActionCoordinator {
 
   /**
    * Check whether the given table format is supported by this coordinator.
@@ -59,13 +51,6 @@ public interface ActionCoordinator extends ActivePlugin {
   Action action();
 
   /**
-   * Get the execution engine name used by this coordinator.
-   *
-   * @return execution engine name
-   */
-  String executionEngine();
-
-  /**
    * Calculate the next executing time for the given table runtime.
    *
    * @param tableRuntime table runtime
@@ -88,6 +73,9 @@ public interface ActionCoordinator extends ActivePlugin {
    */
   long getExecutorDelay();
 
+  /** Check whether the given table runtime is ready to create a process. */
+  boolean isReady(TableRuntime tableRuntime);
+
   /**
    * Create a new {@link TableProcess} instance for the given table runtime.
    *
@@ -104,21 +92,4 @@ public interface ActionCoordinator extends ActivePlugin {
    * @return recovered table process
    */
   TableProcess recoverTableProcess(TableRuntime tableRuntime, TableProcessStore processStore);
-
-  /**
-   * Prepare a {@link TableProcess} for cancellation.
-   *
-   * @param tableRuntime table runtime
-   * @param process table process to cancel
-   * @return the process instance to be canceled
-   */
-  TableProcess cancelTableProcess(TableRuntime tableRuntime, TableProcess process);
-
-  /**
-   * Prepare a {@link TableProcess} for retrying.
-   *
-   * @param process table process to retry
-   * @return the process instance to be retried
-   */
-  TableProcess retryTableProcess(TableProcess process);
 }

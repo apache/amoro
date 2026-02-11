@@ -16,28 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.table;
+package org.apache.amoro.server.process.executor;
 
-import org.apache.amoro.ActivePlugin;
-import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.TableRuntime;
-import org.apache.amoro.process.ActionCoordinator;
+import org.apache.amoro.server.manager.AbstractPluginManager;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-/** Table runtime factory. */
-public interface TableRuntimeFactory extends ActivePlugin {
-
-  List<ActionCoordinator> supportedCoordinators();
-
-  Optional<TableRuntimeCreator> accept(
-      ServerTableIdentifier tableIdentifier, Map<String, String> tableProperties);
-
-  interface TableRuntimeCreator {
-    List<StateKey<?>> requiredStateKeys();
-
-    TableRuntime create(TableRuntimeStore store);
+/** Manager for {@link org.apache.amoro.server.process.executor.ExecuteEngine} plugins. */
+public class ExecuteEngineManager extends AbstractPluginManager<ExecuteEngine> {
+  public ExecuteEngineManager() {
+    super("execute-engines");
   }
 }
