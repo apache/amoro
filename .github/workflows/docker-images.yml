@@ -31,7 +31,7 @@ on:
       tag:
         description: 'Version tag for the image (e.g. v1.0.0, stag-testing1).'
         type: string
-        default: 'stag-v0.0.1'
+        default: 'stag-latest'
 
 
 concurrency:
@@ -62,7 +62,8 @@ jobs:
       - name: Set Docker tags
         id: meta
         run: |
-          echo "tags=olakego/fusion-server:latest,olakego/fusion-server:${{ inputs.tag }}" >> $GITHUB_OUTPUT
+          VERSION_TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || 'stag-latest' }}"
+          echo "tags=olakego/fusion-server:latest,olakego/fusion-server:${VERSION_TAG}" >> $GITHUB_OUTPUT
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
@@ -112,7 +113,8 @@ jobs:
       - name: Set Docker tags
         id: meta
         run: |
-          echo "tags=olakego/fusion-spark:latest,olakego/fusion-spark:${{ inputs.tag }}" >> $GITHUB_OUTPUT
+          VERSION_TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || 'stag-latest' }}"
+          echo "tags=olakego/fusion-spark:latest,olakego/fusion-spark:${VERSION_TAG}" >> $GITHUB_OUTPUT
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
