@@ -44,7 +44,9 @@ public class InlineTableExecutors {
     if (conf.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
       this.snapshotsExpiringExecutor =
           new SnapshotsExpiringExecutor(
-              tableService, conf.getInteger(AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT));
+              tableService,
+              conf.getInteger(AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT),
+              conf.get(AmoroManagementConf.EXPIRE_SNAPSHOTS_INTERVAL));
     }
     if (conf.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
       this.orphanFilesCleaningExecutor =
@@ -57,7 +59,8 @@ public class InlineTableExecutors {
       this.danglingDeleteFilesCleaningExecutor =
           new DanglingDeleteFilesCleaningExecutor(
               tableService,
-              conf.getInteger(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT));
+              conf.getInteger(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT),
+              conf.get(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_INTERVAL));
     }
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
