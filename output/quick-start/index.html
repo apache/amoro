@@ -296,7 +296,7 @@
 <p>If you are more interested in the <code>Mixed-Hive Format</code> or the <code>Paimon Format</code>, you can refer to: <a href="/docs/latest/mixed-hive-format/">Mixed-Hive Format</a> and <a href="/docs/latest/paimon-format/">Paimon Format</a>. For specific information on the different formats supported by Amoro, please refer to: <a href="/docs/latest/formats-overview/">Table Format</a>.</p>
 <p>Before starting the quick demo, some steps are required to prepare the environment. The fastest way to get started is to use a docker-compose file that uses the apache/amoro image. To use this, you&rsquo;ll need to install the <a href="https://docs.docker.com/get-docker/">Docker CLI</a> as well as the <a href="https://github.com/docker/compose-cli/blob/main/INSTALL.md">Docker Compose CLI</a>.</p>
 <p>Once you have those, save the yaml below into a file named docker-compose.yml:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#34;3&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#34;3&#34;</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">services</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">minio</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">minio/minio</span>
@@ -353,7 +353,7 @@
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">amoro_network</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">driver</span>: <span style="color:#ae81ff">bridge</span>
 </span></span></code></pre></div><p>Next, start up the docker containers with this command:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker-compose up
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker-compose up
 </span></span></code></pre></div><h2 id="prepare-steps">Prepare steps</h2>
 <h3 id="create-optimizer-group">Create optimizer group</h3>
 <p>Open <a href="http://localhost:1630">http://localhost:1630</a> in a browser, enter <code>admin/admin</code> to log in to the dashboard.</p>
@@ -393,7 +393,7 @@
 <input id="spark-shell" type="radio" name="CreateATable" onclick="selectExampleLanguage('spark-queries', 'spark-shell')">
 <label for="spark-shell">Mixed-Iceberg Format</label>
 <codeblock class="spark-sql">
-      <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">DATABASE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> db;
+      <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">DATABASE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> db;
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> db.<span style="color:#66d9ef">user</span> (
 </span></span><span style="display:flex;"><span>    id INT,
 </span></span><span style="display:flex;"><span>    name string,
@@ -410,7 +410,7 @@
 </span></span></code></pre></div>
 </codeblock>
 <codeblock class="spark-shell">
-      <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">DATABASE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> db;
+      <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">DATABASE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> db;
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> db.<span style="color:#66d9ef">user</span> (
 </span></span><span style="display:flex;"><span>    id INT,
 </span></span><span style="display:flex;"><span>    name string,
@@ -431,7 +431,7 @@
 <p>Click on the <code>RUN</code> button uppon the SQL editor, and wait for the SQL query to finish executing. You can then see the query results under the SQL editor.</p>
 <h3 id="make-some-changes">Make some changes</h3>
 <p>Execute the following SQL statements one by one in the <code>Terminal</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- insert a few rows first
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- insert a few rows first
 </span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.<span style="color:#66d9ef">user</span> (id, name, ts) <span style="color:#66d9ef">VALUES</span> (<span style="color:#ae81ff">4</span>, <span style="color:#e6db74">&#39;rock&#39;</span>,  <span style="color:#66d9ef">CAST</span>(<span style="color:#e6db74">&#39;2022-07-02 01:11:20&#39;</span> <span style="color:#66d9ef">AS</span> <span style="color:#66d9ef">TIMESTAMP</span>));
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.<span style="color:#66d9ef">user</span> (id, name, ts) <span style="color:#66d9ef">VALUES</span> (<span style="color:#ae81ff">5</span>, <span style="color:#e6db74">&#39;jack&#39;</span>,  <span style="color:#66d9ef">CAST</span>(<span style="color:#e6db74">&#39;2022-07-02 05:22:10&#39;</span> <span style="color:#66d9ef">AS</span> <span style="color:#66d9ef">TIMESTAMP</span>));
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.<span style="color:#66d9ef">user</span> (id, name, ts) <span style="color:#66d9ef">VALUES</span> (<span style="color:#ae81ff">6</span>, <span style="color:#e6db74">&#39;mars&#39;</span>,  <span style="color:#66d9ef">CAST</span>(<span style="color:#e6db74">&#39;2022-07-02 08:23:20&#39;</span> <span style="color:#66d9ef">AS</span> <span style="color:#66d9ef">TIMESTAMP</span>));
@@ -459,7 +459,7 @@
 <div class="info">
     After finishing the demo, you can run the following command in the directory of docker-compose.yml to stop all containers:
 </div>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker-compose down
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>docker-compose down
 </span></span></code></pre></div></div>
                 
                     

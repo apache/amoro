@@ -381,7 +381,7 @@ The detailed steps reference: <a href="https://github.com/NetEase/lakehouse-benc
 <p>Generate static data into MySQL with command：</p>
 </li>
 </ol>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>java -jar lakehouse-benchmark.jar -b tpcc,chbenchmark -c config/mysql/sample_chbenchmark_config.xml --create<span style="color:#f92672">=</span>true --load<span style="color:#f92672">=</span>true
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>java -jar lakehouse-benchmark.jar -b tpcc,chbenchmark -c config/mysql/sample_chbenchmark_config.xml --create<span style="color:#f92672">=</span>true --load<span style="color:#f92672">=</span>true
 </span></span></code></pre></div><ol start="3">
 <li>
 <p>Configure the configuration file <code>config/ingestion-conf.yaml</code> file of program <code>lakehouse-benchmark-ingestion</code>. Fill in the information of MySQL.</p>
@@ -390,19 +390,19 @@ The detailed steps reference: <a href="https://github.com/NetEase/lakehouse-benc
 <p>Start the ingestion job to synchronize data form MySQL to data lake tables witch command:</p>
 </li>
 </ol>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>java -cp lakehouse-benchmark-ingestion-1.0-SNAPSHOT.jar com.netease.arctic.benchmark.ingestion.MainRunner -confDir <span style="color:#f92672">[</span>confDir<span style="color:#f92672">]</span> -sinkType <span style="color:#f92672">[</span>arctic/iceberg/hudi<span style="color:#f92672">]</span> -sinkDatabase <span style="color:#f92672">[</span>dbName<span style="color:#f92672">]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>java -cp lakehouse-benchmark-ingestion-1.0-SNAPSHOT.jar com.netease.arctic.benchmark.ingestion.MainRunner -confDir <span style="color:#f92672">[</span>confDir<span style="color:#f92672">]</span> -sinkType <span style="color:#f92672">[</span>arctic/iceberg/hudi<span style="color:#f92672">]</span> -sinkDatabase <span style="color:#f92672">[</span>dbName<span style="color:#f92672">]</span>
 </span></span></code></pre></div><ol start="5">
 <li>Execute TPC-H benchmark on static data with command:</li>
 </ol>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>java -jar lakehouse-benchmark.jar -b chbenchmarkForTrino -c config/trino/trino_chbenchmark_config.xml --create<span style="color:#f92672">=</span>false --load<span style="color:#f92672">=</span>false --execute<span style="color:#f92672">=</span>true
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>java -jar lakehouse-benchmark.jar -b chbenchmarkForTrino -c config/trino/trino_chbenchmark_config.xml --create<span style="color:#f92672">=</span>false --load<span style="color:#f92672">=</span>false --execute<span style="color:#f92672">=</span>true
 </span></span></code></pre></div><ol start="6">
 <li>Execute TPC-C program to continuously write data into MYSQL witch command:</li>
 </ol>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>java -jar lakehouse-benchmark.jar -b tpcc,chbenchmark -c config/mysql/sample_chbenchmark_config.xml --execute<span style="color:#f92672">=</span>true -s <span style="color:#ae81ff">5</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>java -jar lakehouse-benchmark.jar -b tpcc,chbenchmark -c config/mysql/sample_chbenchmark_config.xml --execute<span style="color:#f92672">=</span>true -s <span style="color:#ae81ff">5</span>
 </span></span></code></pre></div><ol start="7">
 <li>Execute TPC-H benchmark on dynamic data with command:</li>
 </ol>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>java -jar lakehouse-benchmark.jar -b chbenchmarkForTrino -c config/trino/trino_chbenchmark_config.xml --create<span style="color:#f92672">=</span>false --load<span style="color:#f92672">=</span>false --execute<span style="color:#f92672">=</span>true
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>java -jar lakehouse-benchmark.jar -b chbenchmarkForTrino -c config/trino/trino_chbenchmark_config.xml --create<span style="color:#f92672">=</span>false --load<span style="color:#f92672">=</span>false --execute<span style="color:#f92672">=</span>true
 </span></span></code></pre></div><ol start="8">
 <li>
 <p>Obtain the benchmark results in the <code>result</code> directory of the <code>data-lake-benchmark</code> project.</p>

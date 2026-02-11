@@ -324,7 +324,7 @@
 <div class="info">
     You should replace <code>amoro</code> with your <code>Apache ID</code> in following guides.
 </div>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ gpg --full-gen-key
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ gpg --full-gen-key
 </span></span><span style="display:flex;"><span>gpg <span style="color:#f92672">(</span>GnuPG<span style="color:#f92672">)</span> 2.2.27; Copyright <span style="color:#f92672">(</span>C<span style="color:#f92672">)</span> <span style="color:#ae81ff">2021</span> Free Software Foundation, Inc.
 </span></span><span style="display:flex;"><span>This is free software: you are free to change and redistribute it.
 </span></span><span style="display:flex;"><span>There is NO WARRANTY, to the extent permitted by law.
@@ -391,7 +391,7 @@
 </span></span><span style="display:flex;"><span>uid                      amoro <span style="color:#f92672">(</span>amoro<span style="color:#f92672">)</span> &lt;amoro@apache.org&gt;
 </span></span><span style="display:flex;"><span>sub   rsa4096 2023-05-01 <span style="color:#f92672">[</span>E<span style="color:#f92672">]</span>
 </span></span></code></pre></div><p>Then you can follow the steps below to upload the GPG key to the public server:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ gpg --keyid-format SHORT --list-keys
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ gpg --keyid-format SHORT --list-keys
 </span></span><span style="display:flex;"><span>/root/.gnupg/pubring.kbx
 </span></span><span style="display:flex;"><span>------------------------
 </span></span><span style="display:flex;"><span>pub   rsa4096/05016886 2023-05-01 <span style="color:#f92672">[</span>SC<span style="color:#f92672">]</span>
@@ -403,12 +403,12 @@
 </span></span><span style="display:flex;"><span>$ gpg --keyserver keyserver.ubuntu.com --send-key <span style="color:#ae81ff">05016886</span> <span style="color:#75715e"># send key should be found in the --list-keys result</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Among them, keyserver.ubuntu.com is the selected keyserver, it is recommended to use this, because the Apache Nexus verification uses this keyserver</span>
 </span></span></code></pre></div><p>Check if the key is uploaded successfully:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ gpg --keyserver keyserver.ubuntu.com --recv-keys <span style="color:#ae81ff">05016886</span>   <span style="color:#75715e"># If the following content appears, it means success</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ gpg --keyserver keyserver.ubuntu.com --recv-keys <span style="color:#ae81ff">05016886</span>   <span style="color:#75715e"># If the following content appears, it means success</span>
 </span></span><span style="display:flex;"><span>gpg: key ACFB69E705016886: <span style="color:#e6db74">&#34;amoro (amoro) &lt;amoro@apache.org&gt;&#34;</span> not changed
 </span></span><span style="display:flex;"><span>gpg: Total number processed: <span style="color:#ae81ff">1</span>
 </span></span><span style="display:flex;"><span>gpg:              unchanged: <span style="color:#ae81ff">1</span>
 </span></span></code></pre></div><p>Add the GPG public key to the KEYS file of the Apache SVN project warehouse:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Add public key to KEYS in dev branch</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Add public key to KEYS in dev branch</span>
 </span></span><span style="display:flex;"><span>$ mkdir -p ~/amoro_svn/dev
 </span></span><span style="display:flex;"><span>$ cd ~/amoro_svn/dev
 </span></span><span style="display:flex;"><span>$ svn co https://dist.apache.org/repos/dist/dev/incubator/amoro
@@ -431,15 +431,15 @@
 </span></span><span style="display:flex;"><span>$ svn ci -m <span style="color:#e6db74">&#34;add gpg key for amoro&#34;</span>
 </span></span></code></pre></div><h3 id="maven-settings">Maven settings</h3>
 <p>During the release process, frequent access to your Apache password is required. To prevent exposure in plaintext storage, we need to encrypt it.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Generate master password</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Generate master password</span>
 </span></span><span style="display:flex;"><span>$ mvn --encrypt-master-password &lt;apache password&gt;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>EM+4/TYVDXYHRbkwjjAS3mE1RhRJXJUSG8aIO5RSxuHU26rKCjuS2vG+/wMjz9te<span style="color:#f92672">}</span>
 </span></span></code></pre></div><p>Create the file <code>${user.home}/.m2/settings-security.xml</code> and configure the password created in the previous step:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;settingsSecurity&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;settingsSecurity&gt;</span>
 </span></span><span style="display:flex;"><span> <span style="color:#f92672">&lt;master&gt;</span>{EM+4/TYVDXYHRbkwjjAS3mE1RhRJXJUSG8aIO5RSxuHU26rKCjuS2vG+/wMjz9te}<span style="color:#f92672">&lt;/master&gt;</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/settingsSecurity&gt;</span>
 </span></span></code></pre></div><p>In the maven configuration file <code>~/.m2/settings.xml</code>, add the following item:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;settings</span> <span style="color:#a6e22e">xmlns=</span><span style="color:#e6db74">&#34;http://maven.apache.org/SETTINGS/1.0.0&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;settings</span> <span style="color:#a6e22e">xmlns=</span><span style="color:#e6db74">&#34;http://maven.apache.org/SETTINGS/1.0.0&#34;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">xmlns:xsi=</span><span style="color:#e6db74">&#34;http://www.w3.org/2001/XMLSchema-instance&#34;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">xsi:schemaLocation=</span><span style="color:#e6db74">&#34;http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd&#34;</span><span style="color:#f92672">&gt;</span>
 </span></span><span style="display:flex;"><span>  
@@ -473,7 +473,7 @@
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;/profiles&gt;</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/settings&gt;</span>
 </span></span></code></pre></div><p>Generate the final encrypted password and add it to the <code>~/.m2/settings.xml</code> file:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ mvn --encrypt-password &lt;apache password&gt;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ mvn --encrypt-password &lt;apache password&gt;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">{</span>/ZLaH78TWboH5IRqNv9pgU4uamuqm9fCIbw0gRWT01c<span style="color:#f92672">=}</span>
 </span></span></code></pre></div><h2 id="build-release">Build release</h2>
 <h3 id="cut-the-release-branch">Cut the release branch</h3>
@@ -481,7 +481,7 @@
 <p>The version of Apache Amoro follows the <a href="https://semver.org/">Semantic Versioning</a>, which looks like <code>{major}.{mior}.{patch}</code></p>
 </blockquote>
 <p>Cut a branch for the <code>minor</code> version if it is not created in the Apache remote repository, if it already exists, check it out and pull the latest changes.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd <span style="color:#e6db74">${</span>AMORO_SOURCE_HOME<span style="color:#e6db74">}</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd <span style="color:#e6db74">${</span>AMORO_SOURCE_HOME<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Cut the release branch if it is not created, then push to the remote </span>
 </span></span><span style="display:flex;"><span>$ git checkout -b 0.8.x
@@ -493,7 +493,7 @@
 </span></span></code></pre></div><p>Checkout a <code>patch</code> branch using the following command</p>
 <pre tabindex="0"><code>$ git checkout -b 0.8.0-branch
 </code></pre><p>Update the version in the new branch using the tool <code>tools/change-version.sh</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>OLD<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.8-SNAPSHOT&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>OLD<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.8-SNAPSHOT&#34;</span>
 </span></span><span style="display:flex;"><span>NEW<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0.8.0-incubating&#34;</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>HERE<span style="color:#f92672">=</span><span style="color:#e6db74">`</span> basename <span style="color:#e6db74">&#34;</span>$PWD<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">`</span>
@@ -505,7 +505,7 @@
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># change version in all pom files</span>
 </span></span><span style="display:flex;"><span>find .. -name <span style="color:#e6db74">&#39;pom.xml&#39;</span> -type f -exec perl -pi -e <span style="color:#e6db74">&#39;s#&lt;version&gt;&#39;</span><span style="color:#e6db74">&#34;</span>$OLD<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">&#39;&lt;/version&gt;#&lt;version&gt;&#39;</span><span style="color:#e6db74">&#34;</span>$NEW<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">&#39;&lt;/version&gt;#&#39;</span> <span style="color:#f92672">{}</span> <span style="color:#ae81ff">\;</span>
 </span></span></code></pre></div><p>Then run the scripts and commit the change:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd tools
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd tools
 </span></span><span style="display:flex;"><span>$ bash change-version.sh
 </span></span><span style="display:flex;"><span>$ cd ..
 </span></span><span style="display:flex;"><span>$ git add *
@@ -513,25 +513,25 @@
 </span></span><span style="display:flex;"><span>$ git push apache 0.8.0-branch
 </span></span></code></pre></div><h3 id="create-the-release-tag">Create the release tag</h3>
 <p>Create the release tag and push it to the Apache repo:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ git tag -a v0.8.0-rc1 -m <span style="color:#e6db74">&#34;Release Apache Amoro 0.8.0 rc1&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ git tag -a v0.8.0-rc1 -m <span style="color:#e6db74">&#34;Release Apache Amoro 0.8.0 rc1&#34;</span>
 </span></span><span style="display:flex;"><span>$ git push apache v0.8.0-rc1
 </span></span></code></pre></div><h3 id="build-binary-and-source-release">Build binary and source release</h3>
 <p>Build Amoro binary release with scripts:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd <span style="color:#e6db74">${</span>AMORO_SOURCE_HOME<span style="color:#e6db74">}</span>/tools
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd <span style="color:#e6db74">${</span>AMORO_SOURCE_HOME<span style="color:#e6db74">}</span>/tools
 </span></span><span style="display:flex;"><span>$ RELEASE_VERSION<span style="color:#f92672">=</span>0.8.0-incubating bash ./releasing/create_binary_release.sh
 </span></span></code></pre></div><p>Then build source release with scripts:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd <span style="color:#e6db74">${</span>AMORO_SOURCE_HOME<span style="color:#e6db74">}</span>/tools
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd <span style="color:#e6db74">${</span>AMORO_SOURCE_HOME<span style="color:#e6db74">}</span>/tools
 </span></span><span style="display:flex;"><span>$ RELEASE_VERSION<span style="color:#f92672">=</span>0.8.0-incubating bash ./releasing/create_source_release.sh
 </span></span></code></pre></div><p>Validate the source and binary packages according to the <a href="../validate-release/">How to validate a new release</a> guides.
 After that, publish the dev directory of the Apache SVN warehouse of the material package:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd ~/amoro_svn/dev/amoro
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd ~/amoro_svn/dev/amoro
 </span></span><span style="display:flex;"><span>$ mkdir 0.8.0-incubating-RC1
 </span></span><span style="display:flex;"><span>$ cp <span style="color:#e6db74">${</span>AMORO_SOURCE_HOME<span style="color:#e6db74">}</span>/tools/releasing/release/* 0.8.0-incubating-RC1
 </span></span><span style="display:flex;"><span>$ svn add 0.8.0-incubating-RC1
 </span></span><span style="display:flex;"><span>$ svn commit -m <span style="color:#e6db74">&#34;Release Apache Amoro 0.8.0 rc1&#34;</span>
 </span></span></code></pre></div><h3 id="release-apache-nexus">Release Apache Nexus</h3>
 <p>Next, we will publish the required JAR files to the ​Apache Nexus​ repository to achieve the final goal of releasing them to the ​Maven Central Repository.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd <span style="color:#e6db74">${</span>$AMORO_SOURCE_HOME<span style="color:#e6db74">}</span>/tools
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd <span style="color:#e6db74">${</span>$AMORO_SOURCE_HOME<span style="color:#e6db74">}</span>/tools
 </span></span><span style="display:flex;"><span>$ RELEASE_VERSION<span style="color:#f92672">=</span>0.8.0-incubating bash ./releasing/deploy_staging_jars.sh
 </span></span></code></pre></div><p>You can visit <a href="https://repository.apache.org/">https://repository.apache.org/</a> and log in to check the publishment status. You can find the publishment process in the <code>Staging Repositories</code> section. You need to close the process when all jars are publised.</p>
 <h2 id="vote-for-the-new-release">Vote for the new release</h2>
@@ -549,7 +549,7 @@ After that, publish the dev directory of the Apache SVN warehouse of the materia
 <h2 id="complete-the-final-publishing-steps">Complete the final publishing steps</h2>
 <h3 id="migrate-source-and-binary-packages">Migrate source and binary packages</h3>
 <p>Migrate the source and binary packages to the release directory of the Apache SVN warehouse:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ svn mv https://dist.apache.org/repos/dist/dev/incubator/amoro/0.8.0-incubating-RC1 https://dist.apache.org/repos/dist/release/incubator/amoro/0.8.0-incubating  -m <span style="color:#e6db74">&#34;Release Apache Amoro 0.8.0-incubating&#34;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ svn mv https://dist.apache.org/repos/dist/dev/incubator/amoro/0.8.0-incubating-RC1 https://dist.apache.org/repos/dist/release/incubator/amoro/0.8.0-incubating  -m <span style="color:#e6db74">&#34;Release Apache Amoro 0.8.0-incubating&#34;</span>
 </span></span></code></pre></div><h3 id="publish-releases-in-the-apache-staging-repository">Publish releases in the Apache Staging repository</h3>
 <ul>
 <li>Log in to <a href="http://repository.apache.org">http://repository.apache.org</a> , log in with your Apache account</li>

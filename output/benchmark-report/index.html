@@ -483,7 +483,7 @@
 <p>Before starting TPC-H testing, start a Flink job to synchronize both the history data and real-time data from MySQL into the data lake.
 Afterwards, execute TPC-H testing through query engines such as Trino or Presto.</p>
 <p>TPC-H contains 22 query statements, only three of which are listed here due to space limitation:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- query1 
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- query1 
 </span></span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> ol_number,
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">sum</span>(ol_quantity) <span style="color:#66d9ef">AS</span> sum_qty,
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">sum</span>(ol_amount) <span style="color:#66d9ef">AS</span> sum_amount,

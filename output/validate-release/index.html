@@ -293,17 +293,17 @@
             <div id="content" class="markdown-body">
                 <div class="margin-for-toc"><h1 id="how-to-validate-a-new-release">How to validate a new release</h1>
 <h2 id="download-candidate">Download candidate</h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># If there is svn locally, you can clone to the local</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># If there is svn locally, you can clone to the local</span>
 </span></span><span style="display:flex;"><span>$ svn co https://dist.apache.org/repos/dist/dev/incubator/amoro/<span style="color:#e6db74">${</span>release_version<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>rc_version<span style="color:#e6db74">}</span>/
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># or download the material file directly</span>
 </span></span><span style="display:flex;"><span>$ wget https://dist.apache.org/repos/dist/dev/incubator/amoro/<span style="color:#e6db74">${</span>release_version<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>rc_version<span style="color:#e6db74">}</span>/
 </span></span></code></pre></div><h2 id="validate-candidate">validate candidate</h2>
 <h3 id="check-gpg-signature">Check GPG signature</h3>
 <p>Download the KEYS and import it:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ curl  https://downloads.apache.org/incubator/amoro/KEYS &gt; KEYS <span style="color:#75715e"># Download KEYS</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ curl  https://downloads.apache.org/incubator/amoro/KEYS &gt; KEYS <span style="color:#75715e"># Download KEYS</span>
 </span></span><span style="display:flex;"><span>$ gpg --import KEYS <span style="color:#75715e"># Import KEYS to local</span>
 </span></span></code></pre></div><p>Trust the KEY used in this version:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ gpg --edit-key xxxxxxxxxx <span style="color:#75715e">#KEY user used in this version</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ gpg --edit-key xxxxxxxxxx <span style="color:#75715e">#KEY user used in this version</span>
 </span></span><span style="display:flex;"><span>gpg <span style="color:#f92672">(</span>GnuPG<span style="color:#f92672">)</span> 2.2.21; Copyright <span style="color:#f92672">(</span>C<span style="color:#f92672">)</span> <span style="color:#ae81ff">2020</span> Free Software Foundation, Inc.
 </span></span><span style="display:flex;"><span>This is free software: you are free to change and redistribute it.
 </span></span><span style="display:flex;"><span>There is NO WARRANTY, to the extent permitted by law.
@@ -323,15 +323,15 @@
 </span></span><span style="display:flex;"><span>Your decision? <span style="color:#ae81ff">5</span> <span style="color:#75715e">#choose 5</span>
 </span></span><span style="display:flex;"><span>Do you really want to set this key to ultimate trust? <span style="color:#f92672">(</span>y/N<span style="color:#f92672">)</span> y  <span style="color:#75715e">#choose y</span>
 </span></span></code></pre></div><p>Check the gpg signature:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ <span style="color:#66d9ef">for</span> i in *.tar.gz; <span style="color:#66d9ef">do</span> echo $i; gpg --verify $i.asc $i; <span style="color:#66d9ef">done</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ <span style="color:#66d9ef">for</span> i in *.tar.gz; <span style="color:#66d9ef">do</span> echo $i; gpg --verify $i.asc $i; <span style="color:#66d9ef">done</span>
 </span></span></code></pre></div><h3 id="check-sha512-hash">Check sha512 hash</h3>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Command for Linux</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Command for Linux</span>
 </span></span><span style="display:flex;"><span>$ <span style="color:#66d9ef">for</span> i in *.tar.gz; <span style="color:#66d9ef">do</span> echo $i; sha512sum --check  $i.sha512; <span style="color:#66d9ef">done</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Command for MacOS</span>
 </span></span><span style="display:flex;"><span>$ <span style="color:#66d9ef">for</span> i in *.tar.gz; <span style="color:#66d9ef">do</span> echo $i; shasum -a <span style="color:#ae81ff">512</span> -c $i.sha512; <span style="color:#66d9ef">done</span>
 </span></span></code></pre></div><h3 id="check-the-binary-package">Check the binary package</h3>
 <p>Unzip the binary pakcages: <code>apache-amoro-${AMORO_VERSION}-bin-${HADOOP_VERSION}.tar.gz</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Hadoop2</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Hadoop2</span>
 </span></span><span style="display:flex;"><span>$ tar -xzvf apache-amoro-0.8.0-incubating-bin-hadoop2.tar.gz
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Hadoop3 </span>
@@ -346,7 +346,7 @@
 </ul>
 <h3 id="check-the-source-package">Check the source package</h3>
 <p>Unzip the binary pakcages: <code>apache-amoro-${AMORO_VERSION}-src.tar.gz</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ tar -xzvf apache-amoro-0.8.0-incubating-src.tar.gz
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ tar -xzvf apache-amoro-0.8.0-incubating-src.tar.gz
 </span></span></code></pre></div><p>Check as follows:</p>
 <ul>
 <li>There are LICENSE and NOTICE files</li>
@@ -355,7 +355,7 @@
 <li>Only source files exist, not binary files</li>
 </ul>
 <p>Compile from source:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Compile from source</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Compile from source</span>
 </span></span><span style="display:flex;"><span>$ mvn clean package
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Or skip the unit test</span>
