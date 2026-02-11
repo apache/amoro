@@ -11,7 +11,7 @@ on:
 
 jobs:
   build_all_drivers:
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master')
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/staging')
     name: Build and Release Drivers
     uses: ./.github/workflows/docker-images.yml
     with:
