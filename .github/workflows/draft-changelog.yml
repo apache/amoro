@@ -4,11 +4,11 @@ on:
   pull_request:
     types: [closed]
     branches:
-      - staging
+      - master
 
 jobs:
   create_draft_release:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'staging'
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master'
     name: Create Draft Release
     runs-on: ubuntu-latest
     permissions:
