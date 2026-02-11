@@ -17,7 +17,7 @@
 # Modified by Olake by Datazip Inc. in 2026
 
 
-# Build and publish Docker images: latest and version tag from workflow_dispatch input.
+# Build and publish Docker images. Triggered by push (dev-latest) or workflow_call with tag (e.g. release).
 
 name: Publish Docker Image
 
@@ -26,11 +26,12 @@ on:
     branches:
       - "*"
       - "feat/olake_compactor_releasor"
-  workflow_dispatch:
+  workflow_call:
     inputs:
       tag:
-        description: 'Version tag for the image (e.g. v1.0.0, stag-testing1).'
+        description: 'Version tag for the image (e.g. v1.0.0).'
         type: string
+        required: true
 
 
 concurrency:
@@ -61,7 +62,7 @@ jobs:
       - name: Set Docker tags
         id: meta
         run: |
-          VERSION_TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || 'dev-latest' }}"
+          VERSION_TAG="${{ github.event_name == 'workflow_call' && inputs.tag || 'dev-latest' }}"
           if [ "${{ github.ref }}" = "refs/heads/master" ]; then
             case "${VERSION_TAG}" in v*) ;; *) echo "::error::On master branch, version tag must start with 'v' (e.g. v1.0.0). Got: ${VERSION_TAG}"; exit 1 ;; esac
             echo "tags=olakego/fusion:latest,olakego/fusion:${VERSION_TAG}" >> $GITHUB_OUTPUT
@@ -117,7 +118,7 @@ jobs:
       - name: Set Docker tags
         id: meta
         run: |
-          VERSION_TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || 'dev-latest' }}"
+          VERSION_TAG="${{ github.event_name == 'workflow_call' && inputs.tag || 'dev-latest' }}"
           if [ "${{ github.ref }}" = "refs/heads/master" ]; then
             case "${VERSION_TAG}" in v*) ;; *) echo "::error::On master branch, version tag must start with 'v' (e.g. v1.0.0). Got: ${VERSION_TAG}"; exit 1 ;; esac
             echo "tags=olakego/fusion-spark:latest,olakego/fusion-spark:${VERSION_TAG}" >> $GITHUB_OUTPUT
