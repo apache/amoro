@@ -19,6 +19,7 @@
 package org.apache.amoro;
 
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.maintainer.MaintainerMetrics;
 import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.process.TableProcessStore;
@@ -77,6 +78,15 @@ public interface TableRuntime {
   /** Get table format */
   default TableFormat getFormat() {
     return getTableIdentifier().getFormat();
+  }
+
+  /**
+   * Get the maintainer metrics collector.
+   *
+   * @return maintainer metrics collector
+   */
+  default MaintainerMetrics getMaintainerMetrics() {
+    return MaintainerMetrics.NOOP;
   }
 
   /** Dispose the table runtime. */

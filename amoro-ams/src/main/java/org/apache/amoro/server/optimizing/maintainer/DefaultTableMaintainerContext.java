@@ -18,12 +18,12 @@
 
 package org.apache.amoro.server.optimizing.maintainer;
 
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.maintainer.MaintainerMetrics;
 import org.apache.amoro.maintainer.OptimizingInfo;
 import org.apache.amoro.maintainer.TableMaintainerContext;
 import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.server.utils.HiveLocationUtil;
 import org.apache.amoro.table.MixedTable;
 
@@ -31,20 +31,20 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Default implementation of TableMaintainerContext for AMS. Adapts DefaultTableRuntime to
+ * Default implementation of TableMaintainerContext for AMS. Adapts TableRuntime to
  * TableMaintainerContext interface.
  */
 public class DefaultTableMaintainerContext implements TableMaintainerContext {
 
-  private final DefaultTableRuntime tableRuntime;
+  private final TableRuntime tableRuntime;
   private final MixedTable mixedTable;
 
-  public DefaultTableMaintainerContext(DefaultTableRuntime tableRuntime) {
+  public DefaultTableMaintainerContext(TableRuntime tableRuntime) {
     this.tableRuntime = tableRuntime;
     this.mixedTable = null;
   }
 
-  public DefaultTableMaintainerContext(DefaultTableRuntime tableRuntime, MixedTable mixedTable) {
+  public DefaultTableMaintainerContext(TableRuntime tableRuntime, MixedTable mixedTable) {
     this.tableRuntime = tableRuntime;
     this.mixedTable = mixedTable;
   }
@@ -56,23 +56,21 @@ public class DefaultTableMaintainerContext implements TableMaintainerContext {
 
   @Override
   public MaintainerMetrics getMetrics() {
-    TableOrphanFilesCleaningMetrics metrics = tableRuntime.getOrphanFilesCleaningMetrics();
-    return new MaintainerMetrics() {
-      @Override
-      public void recordOrphanDataFilesCleaned(int expected, int cleaned) {
-        metrics.completeOrphanDataFiles(expected, cleaned);
-      }
-
-      @Override
-      public void recordOrphanMetadataFilesCleaned(int expected, int cleaned) {
-        metrics.completeOrphanMetadataFiles(expected, cleaned);
-      }
-    };
+    // Return the full TableMaintainerMetricsImpl directly
+    // This provides access to all maintainer metrics including orphan files cleaning,
+    // dangling delete files cleaning, snapshot expiration, data expiration, tag creation,
+    // and partition expiration.
+    return tableRuntime.getMaintainerMetrics();
   }
 
   @Override
   public OptimizingInfo getOptimizingInfo() {
-    return new DefaultOptimizingInfo(tableRuntime);
+    // For AMS DefaultTableRuntime, provide full optimizing info.
+    // For other TableRuntime implementations, return empty info.
+    if (tableRuntime instanceof DefaultTableRuntime) {
+      return new DefaultOptimizingInfo((DefaultTableRuntime) tableRuntime);
+    }
+    return OptimizingInfo.EMPTY;
   }
 
   @Override
