@@ -13,7 +13,7 @@ COMPOSE_DIR := docker/kind
 KIND_CLUSTER := amoro-cluster
 KUBECTL := kubectl --context kind-$(KIND_CLUSTER)
 
-.PHONY: setup-amoro stop-amoro teardown logs status pods shell help
+.PHONY: setup-amoro stop-amoro teardown logs status pods shell alias help
 
 # Default target
 .DEFAULT_GOAL := help
@@ -30,6 +30,7 @@ help:
 	@echo "  make status        Show cluster and service status"
 	@echo "  make pods          List Spark pods in Kubernetes"
 	@echo "  make shell         Shell into Amoro container"
+	@echo "  make alias         Set default namespace to spark"
 	@echo ""
 	@echo "Access:"
 	@echo "  Amoro Web UI : http://localhost:1630  (admin / admin)"
@@ -78,8 +79,9 @@ status:
 	@echo "=== Spark Pods ==="
 	@$(KUBECTL) get pods -n spark 2>/dev/null || echo "  No pods or cannot connect"
 
-pods:
-	@$(KUBECTL) get pods -n spark -o wide 2>/dev/null || echo "No pods or cannot connect"
+alias:
+	@$(KUBECTL) config set-context --current --namespace=spark
+	@echo "alias k='kubectl'"
 
 shell:
 	@docker exec -it amoro /bin/bash

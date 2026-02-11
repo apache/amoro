@@ -16,24 +16,17 @@
 #
 
 
-# This workflow will build docker images when commit merged or pushed to master.
-# or tags pushed. Can also be run manually with an optional custom tag (e.g. stag, staging).
+# Build and publish Docker images: latest and version tag from workflow_dispatch input.
 
 name: Publish Docker Image
 
 on:
-  push:
-    branches:
-      - "feat/olake_compactor_releasor"
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Optional custom tag for the image (e.g. stag, staging). Leave empty to use default tags.'
-        required: false
+        description: 'Version tag for the image (e.g. v1.0.0, stag-testing1).'
+        required: true
         type: string
-        default: 'stag-testing1'
 
 
 concurrency:
@@ -42,13 +35,10 @@ concurrency:
 
 jobs:
   docker-amoro:
-    name: Push Compactor Docker Image to olakego/compactor
+    name: Push Fusion Server Docker Image
     runs-on: ubuntu-latest
-    environment: publish compactor
+    environment: docker publish
     if: ${{ startsWith(github.repository, 'datazip-inc/') }}
-    strategy:
-      matrix:
-        hadoop: [ "v2", "v3" ]
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11
@@ -64,22 +54,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Set up Docker tags
-        uses: docker/metadata-action@v5
+      - name: Set Docker tags
         id: meta
-        with:
-          flavor: |
-            latest=false
-          images: |
-            name=olakego/compactor-server
-          tags: |
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},suffix=-snapshot-hadoop2
-            type=raw,enable=${{ matrix.hadoop == 'v3' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master') }},value=latest
-            type=raw,enable=${{ github.event_name == 'workflow_dispatch' && inputs.tag != '' }},value=${{ inputs.tag }}
-            type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}
-            type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}, suffix=-hadoop3
-            type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}, suffix=-hadoop2
+        run: |
+          echo "tags=olakego/fusion-server:latest,olakego/fusion-server:${{ inputs.tag }}" >> $GITHUB_OUTPUT
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
@@ -98,7 +76,7 @@ jobs:
       - name: Build dist module with Maven
         run: ./mvnw clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats -Pno-extended-disk-storage -Pno-plugin-bin
 
-      - name: Build and Push Compactor Docker Image to olakego/compactor
+      - name: Build and Push Fusion Server Docker Image to olakego/fusion
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -108,9 +86,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
 
   docker-optimizer-spark:
-    name: Push Compactor Optimizer-Spark Docker Image to olakego/compactor-optimizer
+    name: Push Fusion Spark Optimizer Docker Image to olakego/fusion-spark
     runs-on: ubuntu-latest
-    environment: publish compactor
+    environment: docker publish
     if: ${{ startsWith(github.repository, 'datazip-inc/') }}
     strategy:
       matrix:
@@ -131,21 +109,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Set up Docker tags
-        uses: docker/metadata-action@v5
+      - name: Set Docker tags
         id: meta
-        with:
-          flavor: |
-            latest=false
-          images: |
-            name=olakego/compactor-spark-optimizer
-          tags: |
-            type=ref,event=branch,enable=${{ matrix.spark == '3.5.7' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.spark == '3.5.7' }},suffix=-snapshot-spark3.5
-            type=raw,enable=${{ matrix.spark == '3.5.7' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master') }},value=latest
-            type=raw,enable=${{ github.event_name == 'workflow_dispatch' && inputs.tag != '' }},value=${{ inputs.tag }}
-            type=semver,enable=${{ matrix.spark == '3.5.7' }},pattern={{version}}
-            type=semver,enable=${{ matrix.spark == '3.5.7' }},pattern={{version}}, suffix=-spark3.5
+        run: |
+          echo "tags=olakego/fusion-spark:latest,olakego/fusion-spark:${{ inputs.tag }}" >> $GITHUB_OUTPUT
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
@@ -176,7 +143,7 @@ jobs:
       - name: Build optimizer module with Maven
         run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${SPARK_VERSION} -DskipTests -B -ntp
 
-      - name: Build and Push Spark Optimizer Docker Image to olakego/compactor-optimizer
+      - name: Build and Push Spark Optimizer Docker Image to olakego/fusion-spark
         uses: docker/build-push-action@v4
         env:
           AMORO_VERSION: ${{ steps.version.outputs.AMORO_VERSION }}
