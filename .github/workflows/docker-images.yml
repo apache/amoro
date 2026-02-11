@@ -25,6 +25,7 @@ on:
   push:
     branches:
       - "*"
+      - "feat/olake_compactor_releasor"
   workflow_dispatch:
     inputs:
       tag:
