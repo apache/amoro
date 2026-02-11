@@ -17,11 +17,10 @@
  / -->
 
 <script lang="ts">
-import { computed, defineComponent, nextTick, reactive, ref, toRefs, watchEffect, onMounted, onBeforeUnmount } from 'vue'
+import { computed, defineComponent, nextTick, reactive, toRefs, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import useStore from '@/store/index'
-import TableMenu from '@/components/tables-sub-menu/TablesMenu.vue'
 import { getQueryString } from '@/utils'
 
 interface MenuItem {
@@ -32,9 +31,6 @@ interface MenuItem {
 
 export default defineComponent({
   name: 'Sidebar',
-  components: {
-    TableMenu,
-  },
   setup() {
     const { t } = useI18n()
     const router = useRouter()
@@ -48,7 +44,6 @@ export default defineComponent({
     const hasToken = computed(() => {
       return !!(getQueryString('token') || '')
     })
-    const timer = ref(0)
     const menuList = computed(() => {
       const menu: MenuItem[] = [
         {
@@ -111,40 +106,13 @@ export default defineComponent({
     }
 
     const navClick = (item: MenuItem) => {
-      if (item.key === 'tables') {
-        nextTick(() => {
-          setCurMenu()
-        })
-        return
-      }
+      const targetPath = item.key === 'tables' ? '/tables' : `/${item.key}`
       router.replace({
-        path: `/${item.key}`,
+        path: targetPath,
       })
       nextTick(() => {
         setCurMenu()
       })
-    }
-
-    const mouseenter = (item: MenuItem) => {
-      toggleTablesMenu(item.key === 'tables')
-    }
-
-    const goCreatePage = () => {
-      toggleTablesMenu(false)
-      router.push({
-        path: '/tables/create',
-      })
-    }
-
-    function toggleTablesMenu(flag = false) {
-      if (hasToken.value) {
-        return
-      }
-      timer.value && clearTimeout(timer.value)
-      const time = flag ? 0 : 200
-      timer.value = setTimeout(() => {
-        store.updateTablesMenu(flag)
-      }, time)
     }
 
     const viewOverview = () => {
@@ -153,32 +121,13 @@ export default defineComponent({
       })
     }
 
-    const tableMenusRef = ref(null)
-    function handleClickOutside(event: Event) {
-      if (tableMenusRef?.value && !(tableMenusRef.value as any).contains(event.target)) {
-        toggleTablesMenu(false)
-      }
-    }
-
-    onBeforeUnmount(() => {
-      document.removeEventListener('click', handleClickOutside)
-    })
-
-    onMounted(() => {
-      document.addEventListener('click', handleClickOutside)
-    })
-
     return {
       ...toRefs(state),
       hasToken,
       menuList,
       toggleCollapsed,
       navClick,
-      mouseenter,
       store,
-      toggleTablesMenu,
-      tableMenusRef,
-      goCreatePage,
       viewOverview,
     }
   },
@@ -187,7 +136,7 @@ export default defineComponent({
 
 <template>
   <div :class="{ 'side-bar-collapsed': collapsed }" class="side-bar">
-    <div :class="{ 'logo-collapsed': collapsed }" class="logo g-flex-ae" @mouseenter="toggleTablesMenu(false)" @click="viewOverview">
+    <div :class="{ 'logo-collapsed': collapsed }" class="logo g-flex-ae" @click="viewOverview">
       <img src="../assets/images/logo1.svg" class="logo-img" alt="">
       <img v-show="!collapsed" src="../assets/images/arctic-dashboard1.svg" class="arctic-name" alt="">
     </div>
@@ -197,7 +146,7 @@ export default defineComponent({
       theme="dark"
       :inline-collapsed="collapsed"
     >
-      <a-menu-item v-for="item in menuList" :key="item.key" :class="{ 'active-color': (store.isShowTablesMenu && item.key === 'tables'), 'table-item-tab': item.key === 'tables' }" @click="navClick(item)" @mouseenter="mouseenter(item)">
+      <a-menu-item v-for="item in menuList" :key="item.key" :class="{ 'active-color': (store.isShowTablesMenu && item.key === 'tables'), 'table-item-tab': item.key === 'tables' }" @click="navClick(item)">
         <template #icon>
           <svg-icon :icon-class="item.icon" class="svg-icon" />
         </template>
@@ -208,9 +157,6 @@ export default defineComponent({
       <MenuUnfoldOutlined v-if="collapsed" />
       <MenuFoldOutlined v-else />
     </a-button>
-    <div ref="tableMenusRef" v-if="store.isShowTablesMenu && !hasToken" :class="{ 'collapsed-sub-menu': collapsed }" class="tables-menu-wrap" @click.self="toggleTablesMenu(false)" @mouseenter="toggleTablesMenu(true)">
-      <TableMenu @go-create-page="goCreatePage" />
-    </div>
   </div>
 </template>
 

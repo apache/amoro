@@ -14,19 +14,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# Modified by Olake by Datazip Inc. in 2026
 
 
-# This workflow will build docker images when commit merged or pushed to master.
-# or tags pushed.
+# Build and publish Docker images. Triggered by push (dev-latest) or workflow_call with tag (e.g. release).
 
 name: Publish Docker Image
 
 on:
   push:
     branches:
-      - "master"
-    tags:
-      - "v*"
+      - "*"
+      - "feat/olake_compactor_releasor"
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Version tag for the image (e.g. v1.0.0).'
+        type: string
+        required: true
 
 
 concurrency:
@@ -35,12 +40,10 @@ concurrency:
 
 jobs:
   docker-amoro:
-    name: Push Amoro Docker Image to Docker Hub
+    name: Push Fusion Docker Image
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.repository, 'apache/') }}
-    strategy:
-      matrix:
-        hadoop: [ "v2", "v3" ]
+    environment: docker publish
+    if: ${{ startsWith(github.repository, 'datazip-inc/') }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11
@@ -56,21 +59,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Set up Docker tags
-        uses: docker/metadata-action@v5
+      - name: Set Docker tags
         id: meta
-        with:
-          flavor: |
-            latest=false
-          images: |
-            name=apache/amoro
-          tags: |
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v3' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.hadoop == 'v2' }},suffix=-snapshot-hadoop2
-            type=raw,enable=${{ matrix.hadoop == 'v3' && startsWith(github.ref, 'refs/tags/v') }},value=latest
-            type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}
-            type=semver,event=tag,enable=${{ matrix.hadoop == 'v3' }},pattern={{version}}, suffix=-hadoop3
-            type=semver,event=tag,enable=${{ matrix.hadoop == 'v2' }},pattern={{version}}, suffix=-hadoop2
+        run: |
+          VERSION_TAG="${{ github.event_name == 'workflow_call' && inputs.tag || 'dev-latest' }}"
+          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            case "${VERSION_TAG}" in v*) ;; *) echo "::error::On master branch, version tag must start with 'v' (e.g. v1.0.0). Got: ${VERSION_TAG}"; exit 1 ;; esac
+            echo "tags=olakego/fusion:latest,olakego/fusion:${VERSION_TAG}" >> $GITHUB_OUTPUT
+          else
+            echo "tags=olakego/fusion:latest-${VERSION_TAG},olakego/fusion:${VERSION_TAG}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
@@ -78,18 +76,13 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Set Maven Build Properties
-        if: ${{ matrix.hadoop == 'v2' }}
-        run: |
-          echo "MVN_HADOOP=-Phadoop2" >> $GITHUB_ENV
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build dist module with Maven
-        run: ./mvnw clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats -Pno-extended-disk-storage -Pno-plugin-bin
+        run: ./mvnw clean package -pl 'dist' -am -e -DskipTests -B -ntp -Psupport-all-formats -Pno-extended-disk-storage -Pno-plugin-bin
 
-      - name: Build and Push Amoro Docker Image
+      - name: Build and Push Fusion Docker Image to olakego/fusion
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -98,13 +91,15 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
 
-  docker-optimizer-flink:
-    name: Push Amoro Optimizer-Flink Docker Image to Docker Hub
+  docker-optimizer-spark:
+    name: Push Fusion Spark Optimizer Docker Image to olakego/fusion-spark
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.repository, 'apache/') }}
+    environment: docker publish
+    if: ${{ startsWith(github.repository, 'datazip-inc/') }}
     strategy:
       matrix:
-        flink: [ "1.14.6", "1.20.0" ]
+        spark: [ "3.5.7" ]  # spark version supported
+        scala: [ "2.12.15" ] # scala version supported
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11
@@ -120,112 +115,25 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Set up Docker tags
-        uses: docker/metadata-action@v5
+      - name: Set Docker tags
         id: meta
-        with:
-          flavor: |
-            latest=false
-          images: |
-            name=apache/amoro-flink-optimizer
-          tags: |
-            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot-flink1.14
-            type=ref,event=branch,enable=${{ matrix.flink == '1.20.0' }},suffix=-snapshot-flink1.20
-            type=raw,enable=${{ matrix.hadoop == '1.14.6' && startsWith(github.ref, 'refs/tags/v') }},value=latest
-            type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}
-            type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}, suffix=-flink1.14
-            type=semver,enable=${{ matrix.flink == '1.20.0' }},pattern={{version}}, suffix=-flink1.20
-
-      - name: Print tags
-        run: echo '${{ steps.meta.outputs.tags }}'
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Set optimizer flink version
         run: |
-          OPTIMIZER_FLINK=${{ matrix.flink }} && \
-          echo "OPTIMIZER_FLINK=-Dflink-optimizer.flink-version${OPTIMIZER_FLINK}" >> $GITHUB_ENV
-          if [[ "$OPTIMIZER_FLINK" < "1.15" ]]; then
-            echo "Adding -Pflink-optimizer-pre-1.15 for Flink version less than 1.15"
-            echo "OPTIMIZER_FLINK=-Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=${OPTIMIZER_FLINK}" >> $GITHUB_ENV
+          VERSION_TAG="${{ github.event_name == 'workflow_call' && inputs.tag || 'dev-latest' }}"
+          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            case "${VERSION_TAG}" in v*) ;; *) echo "::error::On master branch, version tag must start with 'v' (e.g. v1.0.0). Got: ${VERSION_TAG}"; exit 1 ;; esac
+            echo "tags=olakego/fusion-spark:latest,olakego/fusion-spark:${VERSION_TAG}" >> $GITHUB_OUTPUT
+          else
+            echo "tags=olakego/fusion-spark:latest-${VERSION_TAG},olakego/fusion-spark:${VERSION_TAG}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Set ENV Amoro version
-        id: version
-        run: |
-          AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
-          && echo "$AMORO_VERSION" \
-          && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_ENV \
-          && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Build optimizer module with Maven
-        run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
-
-      - name: Build and Push Flink Optimizer Docker Image
-        uses: docker/build-push-action@v4
-        env:
-          AMORO_VERSION: ${{ steps.version.outputs.AMORO_VERSION }}
-        with:
-          context: .
-          push: true
-          file: docker/optimizer-flink/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.meta.outputs.tags }}
-          build-args: |
-            FLINK_VERSION=${{ matrix.flink }}
-            OPTIMIZER_JOB=amoro-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
-
-  docker-optimizer-spark:
-    name: Push Amoro Optimizer-Spark Docker Image to Docker Hub
-    runs-on: ubuntu-latest
-    if: ${{ startsWith(github.repository, 'apache/') }}
-    strategy:
-      matrix:
-        spark: [ "3.5.7" ]
-        scala: [ "2.12.15" ]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK 11
-        uses: actions/setup-java@v3
-        with:
-          java-version: '11'
-          distribution: 'temurin'
-          cache: maven
-          check-latest: false
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Set up Docker tags
-        uses: docker/metadata-action@v5
-        id: meta
-        with:
-          flavor: |
-            latest=false
-          images: |
-            name=apache/amoro-spark-optimizer
-          tags: |
-            type=ref,event=branch,enable=${{ matrix.spark == '3.5.7' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.spark == '3.5.7' }},suffix=-snapshot-spark3.5
-            type=raw,enable=${{ matrix.hadoop == '3.5.7' && startsWith(github.ref, 'refs/tags/v') }},value=latest
-            type=semver,enable=${{ matrix.spark == '3.5.7' }},pattern={{version}}
-            type=semver,enable=${{ matrix.spark == '3.5.7' }},pattern={{version}}, suffix=-spark3.5
-
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Set optimizer spark version and extract versions
         id: versions
@@ -247,7 +155,7 @@ jobs:
       - name: Build optimizer module with Maven
         run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${SPARK_VERSION} -DskipTests -B -ntp
 
-      - name: Build and Push Spark Optimizer Docker Image
+      - name: Build and Push Spark Optimizer Docker Image to olakego/fusion-spark
         uses: docker/build-push-action@v4
         env:
           AMORO_VERSION: ${{ steps.version.outputs.AMORO_VERSION }}

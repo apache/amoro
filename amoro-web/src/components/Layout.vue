@@ -17,7 +17,8 @@
  / -->
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { computed, defineComponent } from 'vue'
+import { useRoute } from 'vue-router'
 import SideBar from '@/components/Sidebar.vue'
 import TopBar from '@/components/Topbar.vue'
 
@@ -37,6 +38,14 @@ export default defineComponent({
       default: true,
     },
   },
+  setup() {
+    const route = useRoute()
+    const isTablesPage = computed(() => route.path.includes('/tables'))
+
+    return {
+      isTablesPage,
+    }
+  },
 })
 </script>
 
@@ -48,7 +57,7 @@ export default defineComponent({
       <!-- topbar -->
       <TopBar v-if="showTopBar" />
       <!-- content -->
-      <div class="content">
+      <div class="content" :class="{ 'content--workspace': isTablesPage }">
         <router-view />
       </div>
     </div>
@@ -66,10 +75,13 @@ export default defineComponent({
     flex: 1;
     flex-direction: column;
     transition: width 0.3s;
-    overflow: auto;
+    overflow: hidden;
     .content {
       height: calc(100% - 48px);
       overflow: auto;
+    }
+    .content--workspace {
+      overflow: hidden;
     }
   }
 }
