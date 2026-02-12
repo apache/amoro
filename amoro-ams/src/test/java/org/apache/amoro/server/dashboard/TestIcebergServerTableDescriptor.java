@@ -21,7 +21,9 @@ package org.apache.amoro.server.dashboard;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
+import org.apache.amoro.Action;
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.IcebergActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.formats.AmoroCatalogTestHelper;
@@ -392,6 +394,7 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
         MetricsSummary summary,
         Map<String, Long> fromSequence,
         Map<String, Long> toSequence) {
+      Action action = getOptimizingAction(type);
       doAs(
           TableProcessMapper.class,
           mapper ->
@@ -400,7 +403,7 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
                   processId,
                   "",
                   status,
-                  type.name(),
+                  action,
                   type.name(),
                   "AMORO",
                   0,
@@ -417,6 +420,25 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
                   targetChangeSnapshotId,
                   fromSequence,
                   toSequence));
+    }
+
+    /**
+     * Convert OptimizingType to corresponding Action.
+     *
+     * @param optimizingType optimizing type
+     * @return corresponding Action
+     */
+    private Action getOptimizingAction(OptimizingType optimizingType) {
+      switch (optimizingType) {
+        case MINOR:
+          return IcebergActions.OPTIMIZING_MINOR;
+        case MAJOR:
+          return IcebergActions.OPTIMIZING_MAJOR;
+        case FULL:
+          return IcebergActions.OPTIMIZING_FULL;
+        default:
+          throw new IllegalArgumentException("Unknown optimizing type: " + optimizingType);
+      }
     }
   }
 }

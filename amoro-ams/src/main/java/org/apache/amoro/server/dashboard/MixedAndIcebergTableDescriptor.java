@@ -673,10 +673,17 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     int pageNumber = (offset / limit) + 1;
     List<TableProcessMeta> processMetaList = Collections.emptyList();
     try (Page<?> ignored = PageHelper.startPage(pageNumber, limit, true)) {
+      org.apache.amoro.Action action = null;
+      if (type != null && !type.isEmpty()) {
+        action =
+            org.apache.amoro.server.persistence.converter.Action2StringConverter.getActionByName(
+                type);
+      }
+      final org.apache.amoro.Action finalAction = action;
       processMetaList =
           getAs(
               TableProcessMapper.class,
-              mapper -> mapper.listProcessMeta(identifier.getId(), type, status));
+              mapper -> mapper.listProcessMeta(identifier.getId(), finalAction, status));
       PageInfo<TableProcessMeta> pageInfo = new PageInfo<>(processMetaList);
       total = (int) pageInfo.getTotal();
       LOG.info(
