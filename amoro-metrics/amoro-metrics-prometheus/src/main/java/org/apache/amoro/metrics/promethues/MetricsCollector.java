@@ -30,8 +30,10 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -43,9 +45,16 @@ public class MetricsCollector extends Collector {
   private static final Pattern NAME_PATTERN = Pattern.compile("[a-zA-Z_:][a-zA-Z0-9_:]*");
   private static final Pattern LABEL_PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
   MetricSet metrics;
+  private final Set<MetricCategory> disabledCategories;
 
   public MetricsCollector(MetricSet metrics) {
+    this(metrics, Collections.emptySet());
+  }
+
+  public MetricsCollector(MetricSet metrics, Set<MetricCategory> disabledCategories) {
     this.metrics = metrics;
+    this.disabledCategories =
+        disabledCategories != null ? disabledCategories : Collections.emptySet();
   }
 
   @Override
@@ -76,8 +85,17 @@ public class MetricsCollector extends Collector {
     boolean valid = nameIsValid && labelIsValid;
     if (!valid) {
       LOGGER.warn("Metric {} is not a valid prometheus metric.", define);
+      return false;
     }
-    return valid;
+
+    if (!disabledCategories.isEmpty()) {
+      MetricCategory category = MetricCategory.findCategory(define.getName());
+      if (category != null && disabledCategories.contains(category)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private MetricFamilySamples createFamilySample(

@@ -23,4 +23,10 @@ metric-reporters:
 #    enabled: false
 #    properties:
 #       port: 7001
+#       # Metric category filtering (all enabled by default)
+#       # category.self-optimizing.enabled: "true"
+#       # category.optimizer-group.enabled: "true"
+#       # category.orphan-files.enabled: "true"
+#       # category.ams-jvm.enabled: "true"
+#       # category.table-summary.enabled: "true"
 

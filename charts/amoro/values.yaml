@@ -287,7 +287,7 @@ plugin:
   ## metric reporters
   ##
   metricReporters: ~
-## e.g:  
+## e.g:
 #  metricReporters:
 #    ## @param Configure Prometheus exporter
 #    ##
@@ -302,6 +302,13 @@ plugin:
 #      ## @param Prometheus port
 #      ##
 #        port: 7001
+#      ## @param Metric category filtering (all enabled by default)
+#      ##
+#        category.self-optimizing.enabled: "true"
+#        category.optimizer-group.enabled: "true"
+#        category.orphan-files.enabled: "true"
+#        category.ams-jvm.enabled: "true"
+#        category.table-summary.enabled: "true"
 
 ## Configure the ingress resource that allows you to access the
 ## Amoro installation. Set up the URL
