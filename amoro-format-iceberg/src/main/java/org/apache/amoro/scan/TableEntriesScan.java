@@ -37,6 +37,7 @@ import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.Metrics;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Partitioning;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
@@ -46,6 +47,7 @@ import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.expressions.InclusiveMetricsEvaluator;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.StructProjection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +79,7 @@ public class TableEntriesScan {
   private InclusiveMetricsEvaluator lazyMetricsEvaluator = null;
   private Map<String, Integer> lazyIndexOfDataFileType;
   private Map<String, Integer> lazyIndexOfEntryType;
+  private Types.StructType lazyUnifiedPartitionType;
 
   public static Builder builder(Table table) {
     return new Builder(table);
@@ -340,7 +343,7 @@ public class TableEntriesScan {
     if (spec.isPartitioned()) {
       StructLike partition =
           fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
-      builder.withPartition(partition);
+      builder.withPartition(projectPartition(spec, partition));
     }
     return builder.build();
   }
@@ -372,7 +375,7 @@ public class TableEntriesScan {
     if (spec.isPartitioned()) {
       StructLike partition =
           fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
-      builder.withPartition(partition);
+      builder.withPartition(projectPartition(spec, partition));
     }
     if (fileContent == FileContent.EQUALITY_DELETES) {
       builder.ofEqualityDeletes();
@@ -427,6 +430,20 @@ public class TableEntriesScan {
       lazyIndexOfDataFileType = map;
     }
     return lazyIndexOfDataFileType.get(fieldName);
+  }
+
+  private StructLike projectPartition(PartitionSpec spec, StructLike partition) {
+    StructProjection projected =
+        StructProjection.createAllowMissing(unifiedPartitionType(), spec.partitionType());
+    projected.wrap(partition);
+    return projected;
+  }
+
+  private Types.StructType unifiedPartitionType() {
+    if (lazyUnifiedPartitionType == null) {
+      lazyUnifiedPartitionType = Partitioning.partitionType(table);
+    }
+    return lazyUnifiedPartitionType;
   }
 
   private InclusiveMetricsEvaluator metricsEvaluator() {
