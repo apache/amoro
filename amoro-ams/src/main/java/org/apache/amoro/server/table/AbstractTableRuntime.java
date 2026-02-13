@@ -18,17 +18,26 @@
 
 package org.apache.amoro.server.table;
 
+import org.apache.amoro.Action;
 import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.SupportsProcessPlugins;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.persistence.PersistentBase;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.zookeeper3.org.apache.curator.shaded.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableRuntimeStore;
 
-public abstract class AbstractTableRuntime extends PersistentBase
-    implements TableRuntime, SupportsProcessPlugins {
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+
+public abstract class AbstractTableRuntime extends PersistentBase implements TableRuntime {
 
   private final TableRuntimeStore store;
+  private final Map<Action, TableProcessContainer> processContainerMap = Maps.newConcurrentMap();
 
   protected AbstractTableRuntime(TableRuntimeStore store) {
     this.store = store;
@@ -49,6 +58,44 @@ public abstract class AbstractTableRuntime extends PersistentBase
   }
 
   @Override
+  public List<TableProcessStore> getProcessStates() {
+    return processContainerMap.values().stream()
+        .flatMap(container -> container.getProcessStates().stream())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<TableProcessStore> getProcessStates(Action action) {
+    return processContainerMap.get(action).getProcessStates();
+  }
+
+  @Override
+  public void registerProcess(TableProcessStore processStore) {
+    processContainerMap
+        .computeIfAbsent(processStore.getAction(), k -> new TableProcessContainer())
+        .processLock
+        .lock();
+    try {
+      processContainerMap
+          .get(processStore.getAction())
+          .processMap
+          .put(processStore.getProcessId(), processStore);
+    } finally {
+      processContainerMap.get(processStore.getAction()).processLock.unlock();
+    }
+  }
+
+  @Override
+  public void removeProcess(TableProcessStore processStore) {
+    processContainerMap.computeIfPresent(
+        processStore.getAction(),
+        (action, container) -> {
+          container.processMap.remove(processStore.getProcessId());
+          return container;
+        });
+  }
+
+  @Override
   public String getGroupName() {
     return store().getGroupName();
   }
@@ -60,5 +107,14 @@ public abstract class AbstractTableRuntime extends PersistentBase
   @Override
   public void dispose() {
     store().dispose();
+  }
+
+  private static class TableProcessContainer {
+    private final Lock processLock = new ReentrantLock();
+    private final Map<Long, TableProcessStore> processMap = Maps.newConcurrentMap();
+
+    public List<TableProcessStore> getProcessStates() {
+      return Lists.newArrayList(processMap.values());
+    }
   }
 }

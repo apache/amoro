@@ -107,18 +107,6 @@ CREATE TABLE `table_runtime`
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table running information of each table' ROW_FORMAT=DYNAMIC;
 
 
-CREATE TABLE `table_runtime_state` (
-  `state_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'Primary key',
-  `table_id` bigint unsigned NOT NULL COMMENT 'Table identifier id',
-  `state_key` varchar(256) NOT NULL COMMENT 'Table Runtime state key',
-  `state_value` mediumtext COMMENT 'Table Runtime state value, string type',
-  `state_version` bigint NOT NULL DEFAULT '0' COMMENT 'Table runtime state version, auto inc when update',
-  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
-  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
-  PRIMARY KEY (`state_id`),
-  UNIQUE KEY `uniq_table_state_key` (`table_id`,`state_key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='State of Table Runtimes';
-
 INSERT INTO table_runtime
 (`table_id`, `group_name`, `status_code`, `status_code_update_time`, `table_config`, `table_summary`)
 SELECT `table_id`, `optimizer_group`, `optimizing_status_code`, `optimizing_status_start_time`,
