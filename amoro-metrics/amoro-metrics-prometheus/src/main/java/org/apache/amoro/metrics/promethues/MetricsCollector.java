@@ -30,10 +30,8 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -45,16 +43,15 @@ public class MetricsCollector extends Collector {
   private static final Pattern NAME_PATTERN = Pattern.compile("[a-zA-Z_:][a-zA-Z0-9_:]*");
   private static final Pattern LABEL_PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
   MetricSet metrics;
-  private final Set<MetricCategory> disabledCategories;
+  private final MetricFilter metricFilter;
 
   public MetricsCollector(MetricSet metrics) {
-    this(metrics, Collections.emptySet());
+    this(metrics, MetricFilter.ACCEPT_ALL);
   }
 
-  public MetricsCollector(MetricSet metrics, Set<MetricCategory> disabledCategories) {
+  public MetricsCollector(MetricSet metrics, MetricFilter metricFilter) {
     this.metrics = metrics;
-    this.disabledCategories =
-        disabledCategories != null ? disabledCategories : Collections.emptySet();
+    this.metricFilter = metricFilter != null ? metricFilter : MetricFilter.ACCEPT_ALL;
   }
 
   @Override
@@ -88,11 +85,8 @@ public class MetricsCollector extends Collector {
       return false;
     }
 
-    if (!disabledCategories.isEmpty()) {
-      MetricCategory category = MetricCategory.findCategory(define.getName());
-      if (category != null && disabledCategories.contains(category)) {
-        return false;
-      }
+    if (!metricFilter.matches(define.getName())) {
+      return false;
     }
 
     return true;

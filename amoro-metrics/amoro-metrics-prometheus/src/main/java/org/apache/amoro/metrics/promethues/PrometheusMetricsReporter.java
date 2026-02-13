@@ -23,10 +23,8 @@ import org.apache.amoro.metrics.MetricReporter;
 import org.apache.amoro.metrics.MetricSet;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /** Prometheus exporter */
 public class PrometheusMetricsReporter implements MetricReporter {
@@ -34,7 +32,7 @@ public class PrometheusMetricsReporter implements MetricReporter {
   public static final String PORT = "port";
 
   private HTTPServer server;
-  private Set<MetricCategory> disabledCategories = Collections.emptySet();
+  private MetricFilter metricFilter = MetricFilter.ACCEPT_ALL;
 
   @Override
   public void open(Map<String, String> properties) {
@@ -43,7 +41,7 @@ public class PrometheusMetricsReporter implements MetricReporter {
             .map(Integer::valueOf)
             .orElseThrow(() -> new IllegalArgumentException("Lack required property: " + PORT));
 
-    this.disabledCategories = MetricCategory.parseDisabledCategories(properties);
+    this.metricFilter = MetricFilter.fromProperties(properties);
 
     try {
       this.server = new HTTPServer(port);
@@ -64,7 +62,7 @@ public class PrometheusMetricsReporter implements MetricReporter {
 
   @Override
   public void setGlobalMetricSet(MetricSet globalMetricSet) {
-    MetricsCollector collector = new MetricsCollector(globalMetricSet, disabledCategories);
+    MetricsCollector collector = new MetricsCollector(globalMetricSet, metricFilter);
     collector.register();
   }
 }

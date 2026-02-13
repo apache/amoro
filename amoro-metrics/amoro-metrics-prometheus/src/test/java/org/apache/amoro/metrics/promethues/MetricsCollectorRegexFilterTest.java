@@ -32,39 +32,29 @@ import org.apache.amoro.metrics.MetricSet;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class MetricsCollectorFilterTest {
+public class MetricsCollectorRegexFilterTest {
 
   private MetricSet createMetricSet(Map<MetricKey, Metric> metrics) {
     return () -> Collections.unmodifiableMap(metrics);
   }
 
-  private MetricKey registerMetric(
-      Map<MetricKey, Metric> metrics, String name, Metric metric, String... tags) {
+  private void registerMetric(Map<MetricKey, Metric> metrics, String name, Metric metric) {
     MetricDefine.Builder builder;
     if (metric instanceof Counter) {
       builder = MetricDefine.defineCounter(name);
     } else {
       builder = MetricDefine.defineGauge(name);
     }
-    if (tags.length > 0) {
-      builder.withTags(tags);
-    }
     MetricDefine define = builder.build();
-
-    Map<String, String> tagValues = new HashMap<>();
-    for (String tag : tags) {
-      tagValues.put(tag, "test_value");
-    }
-    MetricKey key = new MetricKey(define, tagValues);
+    MetricKey key = new MetricKey(define, Collections.emptyMap());
     metrics.put(key, metric);
-    return key;
   }
 
   @Test
@@ -81,75 +71,67 @@ public class MetricsCollectorFilterTest {
   }
 
   @Test
-  public void testCollectWithDisabledCategory() {
+  public void testCollectWithIncludesFilter() {
     Map<MetricKey, Metric> metrics = new HashMap<>();
     registerMetric(metrics, "table_optimizing_status_in_idle", (Gauge<Long>) () -> 1L);
     registerMetric(metrics, "optimizer_group_pending_tasks", (Gauge<Long>) () -> 5L);
     registerMetric(metrics, "ams_jvm_cpu_load", (Gauge<Double>) () -> 0.5);
 
-    Set<MetricCategory> disabled = EnumSet.of(MetricCategory.SELF_OPTIMIZING);
-    MetricsCollector collector = new MetricsCollector(createMetricSet(metrics), disabled);
+    MetricFilter filter = new MetricFilter(Pattern.compile("table_optimizing_.*"), null);
+    MetricsCollector collector = new MetricsCollector(createMetricSet(metrics), filter);
     List<Collector.MetricFamilySamples> result = collector.collect();
 
-    assertEquals(2, result.size());
-    Set<String> names = result.stream().map(s -> s.name).collect(Collectors.toSet());
-    assertFalse(names.contains("amoro_table_optimizing_status_in_idle"));
-    assertTrue(names.contains("amoro_optimizer_group_pending_tasks"));
-    assertTrue(names.contains("amoro_ams_jvm_cpu_load"));
+    assertEquals(1, result.size());
+    assertEquals("amoro_table_optimizing_status_in_idle", result.get(0).name);
   }
 
   @Test
-  public void testCollectWithMultipleDisabledCategories() {
+  public void testCollectWithExcludesFilter() {
     Map<MetricKey, Metric> metrics = new HashMap<>();
     registerMetric(metrics, "table_optimizing_status_in_idle", (Gauge<Long>) () -> 1L);
     registerMetric(metrics, "optimizer_group_pending_tasks", (Gauge<Long>) () -> 5L);
-    registerMetric(metrics, "ams_jvm_cpu_load", (Gauge<Double>) () -> 0.5);
     registerMetric(metrics, "table_summary_total_files", (Gauge<Long>) () -> 100L);
 
-    Set<MetricCategory> disabled =
-        EnumSet.of(MetricCategory.SELF_OPTIMIZING, MetricCategory.TABLE_SUMMARY);
-    MetricsCollector collector = new MetricsCollector(createMetricSet(metrics), disabled);
+    MetricFilter filter = new MetricFilter(null, Pattern.compile("table_summary_.*"));
+    MetricsCollector collector = new MetricsCollector(createMetricSet(metrics), filter);
     List<Collector.MetricFamilySamples> result = collector.collect();
 
     assertEquals(2, result.size());
     Set<String> names = result.stream().map(s -> s.name).collect(Collectors.toSet());
+    assertFalse(names.contains("amoro_table_summary_total_files"));
+    assertTrue(names.contains("amoro_table_optimizing_status_in_idle"));
     assertTrue(names.contains("amoro_optimizer_group_pending_tasks"));
-    assertTrue(names.contains("amoro_ams_jvm_cpu_load"));
   }
 
   @Test
-  public void testUnknownMetricNotFiltered() {
+  public void testCollectWithIncludesAndExcludes() {
     Map<MetricKey, Metric> metrics = new HashMap<>();
-    registerMetric(metrics, "custom_unknown_metric", (Gauge<Long>) () -> 42L);
+    registerMetric(metrics, "table_optimizing_status_in_idle", (Gauge<Long>) () -> 1L);
+    registerMetric(metrics, "table_summary_total_files", (Gauge<Long>) () -> 100L);
+    registerMetric(metrics, "table_orphan_content_file_cleaning_count", new Counter());
+    registerMetric(metrics, "optimizer_group_pending_tasks", (Gauge<Long>) () -> 5L);
 
-    Set<MetricCategory> disabled =
-        EnumSet.of(
-            MetricCategory.SELF_OPTIMIZING,
-            MetricCategory.OPTIMIZER_GROUP,
-            MetricCategory.ORPHAN_FILES,
-            MetricCategory.AMS_JVM,
-            MetricCategory.TABLE_SUMMARY);
-    MetricsCollector collector = new MetricsCollector(createMetricSet(metrics), disabled);
+    MetricFilter filter =
+        new MetricFilter(Pattern.compile("table_.*"), Pattern.compile("table_summary_.*"));
+    MetricsCollector collector = new MetricsCollector(createMetricSet(metrics), filter);
     List<Collector.MetricFamilySamples> result = collector.collect();
 
-    assertEquals(1, result.size());
-    assertEquals("amoro_custom_unknown_metric", result.get(0).name);
+    assertEquals(2, result.size());
+    Set<String> names = result.stream().map(s -> s.name).collect(Collectors.toSet());
+    assertTrue(names.contains("amoro_table_optimizing_status_in_idle"));
+    assertTrue(names.contains("amoro_table_orphan_content_file_cleaning_count"));
   }
 
   @Test
-  public void testOrphanFilesMultiplePrefixes() {
+  public void testCollectWithAcceptAllFilter() {
     Map<MetricKey, Metric> metrics = new HashMap<>();
-    Counter counter1 = new Counter();
-    Counter counter2 = new Counter();
-    registerMetric(metrics, "table_orphan_content_file_cleaning_count", counter1);
-    registerMetric(metrics, "table_expected_orphan_metadata_file_cleaning_count", counter2);
-    registerMetric(metrics, "ams_jvm_cpu_load", (Gauge<Double>) () -> 0.5);
+    registerMetric(metrics, "table_optimizing_status_in_idle", (Gauge<Long>) () -> 1L);
+    registerMetric(metrics, "custom_metric", (Gauge<Long>) () -> 42L);
 
-    Set<MetricCategory> disabled = EnumSet.of(MetricCategory.ORPHAN_FILES);
-    MetricsCollector collector = new MetricsCollector(createMetricSet(metrics), disabled);
+    MetricsCollector collector =
+        new MetricsCollector(createMetricSet(metrics), MetricFilter.ACCEPT_ALL);
     List<Collector.MetricFamilySamples> result = collector.collect();
 
-    assertEquals(1, result.size());
-    assertEquals("amoro_ams_jvm_cpu_load", result.get(0).name);
+    assertEquals(2, result.size());
   }
 }

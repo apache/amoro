@@ -302,13 +302,10 @@ plugin:
 #      ## @param Prometheus port
 #      ##
 #        port: 7001
-#      ## @param Metric category filtering (all enabled by default)
+#      ## @param Metric filtering by regex (optional, all metrics included by default)
 #      ##
-#        category.self-optimizing.enabled: "true"
-#        category.optimizer-group.enabled: "true"
-#        category.orphan-files.enabled: "true"
-#        category.ams-jvm.enabled: "true"
-#        category.table-summary.enabled: "true"
+#        metric-filter.includes: "table_optimizing_.*|optimizer_group_.*"
+#        metric-filter.excludes: "table_summary_.*"
 
 ## Configure the ingress resource that allows you to access the
 ## Amoro installation. Set up the URL

@@ -152,7 +152,7 @@ tests:
           pattern:
             |
               name: prometheus-exporter
-  - it: Amoro configMap should reflect metric category filtering
+  - it: Amoro configMap should reflect metric regex filtering
     set:
       plugin:
         metricReporters:
@@ -161,9 +161,8 @@ tests:
             enabled: true
             properties:
               port: 7001
-              category.self-optimizing.enabled: "true"
-              category.table-summary.enabled: "false"
+              metric-filter.excludes: "table_summary_.*"
     asserts:
       - matchRegex:
           path: data["metric-reporters.yaml"]
-          pattern: "category.table-summary.enabled.*false"
+          pattern: "metric-filter.excludes.*table_summary_"
