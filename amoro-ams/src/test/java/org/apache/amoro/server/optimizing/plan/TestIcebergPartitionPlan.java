@@ -24,6 +24,7 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.optimizing.IcebergRewriteExecutorFactory;
+import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
 import org.apache.amoro.optimizing.plan.IcebergPartitionPlan;
@@ -32,10 +33,15 @@ import org.apache.amoro.optimizing.scan.TableFileScanHelper;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.table.TableProperties;
+import org.apache.iceberg.DataFile;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @RunWith(Parameterized.class)
@@ -71,6 +77,56 @@ public class TestIcebergPartitionPlan extends TestUnkeyedPartitionPlan {
   @Test
   public void testOnlyOneFragmentFiles() {
     testOnlyOneFragmentFileBase();
+  }
+
+  @Test
+  public void testRewriteAllAvroWithFragmentFile() {
+    testRewriteAllAvro(
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT
+            / TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT);
+  }
+
+  @Test
+  public void testRewriteAllAvroWithUndersizedSegmentFile() {
+    testRewriteAllAvro(
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT
+                / TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT
+            + 1);
+  }
+
+  @Test
+  public void testRewriteAllAvroWithTargetSizeReachedFile() {
+    testRewriteAllAvro(
+        (long)
+                (TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT
+                    * TableProperties.SELF_OPTIMIZING_MIN_TARGET_SIZE_RATIO_DEFAULT)
+            + 1);
+  }
+
+  @Test
+  public void testRewriteAllAvroWithTargetSizeReachedFile2() {
+    testRewriteAllAvro(TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT + 1);
+  }
+
+  private void testRewriteAllAvro(long fileSizeBytes) {
+    closeFullOptimizingInterval();
+    updateTableProperty(TableProperties.SELF_OPTIMIZING_REWRITE_ALL_AVRO, "false");
+    DataFile avroFile = appendAvroDataFile(fileSizeBytes);
+    Assert.assertTrue(planWithCurrentFiles().isEmpty());
+
+    updateTableProperty(TableProperties.SELF_OPTIMIZING_REWRITE_ALL_AVRO, "true");
+    List<RewriteStageTask> tasks = planWithCurrentFiles();
+    Assert.assertEquals(1, tasks.size());
+    assertTask(
+        tasks.get(0),
+        Collections.singletonList(avroFile),
+        Collections.emptyList(),
+        Collections.emptyList(),
+        Collections.emptyList());
+
+    updateTableProperty(TableProperties.DEFAULT_FILE_FORMAT, TableProperties.FILE_FORMAT_AVRO);
+    updateTableProperty(TableProperties.SELF_OPTIMIZING_REWRITE_ALL_AVRO, "true");
+    Assert.assertTrue(planWithCurrentFiles().isEmpty());
   }
 
   @Override

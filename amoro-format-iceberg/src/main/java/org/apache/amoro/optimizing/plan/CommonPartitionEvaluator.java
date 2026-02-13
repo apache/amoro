@@ -26,6 +26,7 @@ import org.apache.amoro.optimizing.evaluation.MetadataBasedEvaluationEvent;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.utils.ContentFiles;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -54,6 +55,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   protected final long planTime;
 
   private final boolean reachFullInterval;
+
+  protected boolean needRewriteAvroFile = false;
 
   // fragment files
   protected int fragmentFileCount = 0;
@@ -161,6 +164,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     fragmentFileSize += dataFile.fileSizeInBytes();
     fragmentFileCount++;
     fragmentFileRecords += dataFile.recordCount();
+    needRewriteAvroFile = needRewriteAvroFile || isAvroFileAndNeedRewrite(dataFile);
 
     for (ContentFile<?> delete : deletes) {
       addDelete(delete);
@@ -250,7 +254,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
       return true;
     }
     // If a file is related any delete files or is not big enough, it should full optimizing
-    return !deleteFiles.isEmpty() || isFragmentFile(dataFile) || isUndersizedSegmentFile(dataFile);
+    return !deleteFiles.isEmpty()
+        || isFragmentFile(dataFile)
+        || isUndersizedSegmentFile(dataFile)
+        || isAvroFileAndNeedRewrite(dataFile);
   }
 
   public boolean fileShouldRewrite(DataFile dataFile, List<ContentFile<?>> deletes) {
@@ -258,6 +265,9 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
       return fileShouldFullOptimizing(dataFile, deletes);
     }
     if (isFragmentFile(dataFile)) {
+      return true;
+    }
+    if (isAvroFileAndNeedRewrite(dataFile)) {
       return true;
     }
     // When Upsert writing is enabled in the Flink engine, both INSERT and UPDATE_AFTER will
@@ -269,6 +279,10 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     // pos-delete record count is calculated here.
     return getPosDeletesRecordCount(deletes)
         > dataFile.recordCount() * config.getMajorDuplicateRatio();
+  }
+
+  private boolean isAvroFileAndNeedRewrite(DataFile dataFile) {
+    return config.isRewriteAllAvro() && ContentFiles.isAvroFile(dataFile);
   }
 
   public boolean segmentShouldRewritePos(DataFile dataFile, List<ContentFile<?>> deletes) {
@@ -407,7 +421,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   public boolean isMinorNecessary() {
     int smallFileCount = fragmentFileCount + equalityDeleteFileCount;
     return smallFileCount >= config.getMinorLeastFileCount()
-        || (smallFileCount > 1 && reachMinorInterval())
+        || ((smallFileCount > 1 || needRewriteAvroFile) && reachMinorInterval())
         || combinePosSegmentFileCount > 0;
   }
 
