@@ -19,6 +19,7 @@
 package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
@@ -87,5 +88,18 @@ class PeriodicTableSchedulerTestBase extends PeriodicTableScheduler {
   public boolean shouldExecuteTaskForTest(
       TableRuntime tableRuntime, CleanupOperation cleanupOperation) {
     return shouldExecuteTask(tableRuntime, cleanupOperation);
+  }
+
+  public TableProcessMeta createCleanupProcessInfoForTest(
+      TableRuntime tableRuntime, CleanupOperation operation) {
+    return createCleanupProcessInfo(tableRuntime, operation);
+  }
+
+  public void persistCleanupResultForTest(
+      TableRuntime tableRuntime,
+      CleanupOperation operation,
+      TableProcessMeta meta,
+      Throwable error) {
+    persistCleanupResult(tableRuntime, operation, meta, error);
   }
 }
