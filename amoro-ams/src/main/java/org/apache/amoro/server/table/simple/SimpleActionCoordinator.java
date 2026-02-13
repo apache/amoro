@@ -23,51 +23,37 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.process.ProcessFactory;
+import org.apache.amoro.process.ProcessTriggerStrategy;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
-import java.time.Duration;
-import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 
 public class SimpleActionCoordinator implements ActionCoordinator {
 
-  private static final String PARALLELISM = "parallelism";
-  private static final int PARALLELISM_DEFAULT = 1;
-  private static final String CHECK_INTERVAL = "check-interval";
-  private static final long CHECK_INTERVAL_DEFAULT = Duration.ofMinutes(5).toMillis();
-
   private final Action action;
   private final ProcessFactory factory;
-  private final Set<TableFormat> supportedFormats;
+  private final TableFormat format;
+  private final ProcessTriggerStrategy strategy;
 
-  private final int parallelism;
-  private final long checkInterval;
-
-  public SimpleActionCoordinator(
-      Action action,
-      ProcessFactory factory,
-      Set<TableFormat> supportedFormats,
-      Map<String, String> configuration) {
+  public SimpleActionCoordinator(TableFormat format, Action action, ProcessFactory factory) {
     this.action = action;
     this.factory = factory;
-    this.supportedFormats = supportedFormats;
-    this.parallelism =
-        Integer.parseInt(
-            configuration.getOrDefault(PARALLELISM, Integer.toString(PARALLELISM_DEFAULT)));
-    this.checkInterval =
-        Long.parseLong(
-            configuration.getOrDefault(CHECK_INTERVAL, Long.toString(CHECK_INTERVAL_DEFAULT)));
+    this.format = format;
+    this.strategy = factory.triggerStrategy(format, action);
+    Preconditions.checkArgument(
+        strategy != null, "ProcessTriggerStrategy cannot be null for %s: %s", format, action);
   }
 
   @Override
   public boolean formatSupported(TableFormat format) {
-    return supportedFormats.contains(format);
+    return this.format.equals(format);
   }
 
   @Override
   public int parallelism() {
-    return parallelism;
+    return strategy.getTriggerParallelism();
   }
 
   @Override
@@ -77,7 +63,7 @@ public class SimpleActionCoordinator implements ActionCoordinator {
 
   @Override
   public long getNextExecutingTime(TableRuntime tableRuntime) {
-    return checkInterval;
+    return strategy.getTriggerInterval().toMillis();
   }
 
   @Override
@@ -87,17 +73,12 @@ public class SimpleActionCoordinator implements ActionCoordinator {
 
   @Override
   public long getExecutorDelay() {
-    return checkInterval;
+    return strategy.getTriggerInterval().toMillis();
   }
 
   @Override
-  public boolean isReady(TableRuntime tableRuntime) {
-    return factory.readyForAction(tableRuntime, action);
-  }
-
-  @Override
-  public TableProcess createTableProcess(TableRuntime tableRuntime) {
-    return factory.create(tableRuntime, action);
+  public Optional<TableProcess> trigger(TableRuntime tableRuntime) {
+    return factory.trigger(tableRuntime, action);
   }
 
   @Override

@@ -63,7 +63,7 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
           AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT, Duration.ofMillis(30000L));
       TABLE_SERVICE =
           new DefaultTableService(
-              new Configurations(), CATALOG_MANAGER, tableRuntimeFactoryManager);
+              new Configurations(), CATALOG_MANAGER, Lists.newArrayList(runtimeFactory));
       OPTIMIZING_SERVICE =
           new DefaultOptimizingService(
               configurations, CATALOG_MANAGER, OPTIMIZER_MANAGER, TABLE_SERVICE);

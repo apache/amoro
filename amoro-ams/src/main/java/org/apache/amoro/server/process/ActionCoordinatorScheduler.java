@@ -28,6 +28,8 @@ import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+
 /**
  * Periodic scheduler that delegates scheduling decisions to an {@link ActionCoordinator}. It
  * creates, recovers and retries table processes via {@link ProcessService}.
@@ -96,8 +98,8 @@ public class ActionCoordinatorScheduler extends PeriodicTableScheduler {
    */
   @Override
   protected void execute(TableRuntime tableRuntime) {
-    TableProcess process = coordinator.createTableProcess(tableRuntime);
-    processService.register(tableRuntime, process);
+    Optional<TableProcess> process = coordinator.trigger(tableRuntime);
+    process.ifPresent(p -> processService.register(tableRuntime, p));
   }
 
   /**

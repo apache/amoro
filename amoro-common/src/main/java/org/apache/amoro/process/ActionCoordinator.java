@@ -22,6 +22,8 @@ import org.apache.amoro.Action;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 
+import java.util.Optional;
+
 /**
  * Coordinator for a specific {@link org.apache.amoro.Action} to manage table processes. Provides
  * scheduling parameters and lifecycle hooks to create/recover/cancel/retry table processes.
@@ -73,16 +75,13 @@ public interface ActionCoordinator {
    */
   long getExecutorDelay();
 
-  /** Check whether the given table runtime is ready to create a process. */
-  boolean isReady(TableRuntime tableRuntime);
-
   /**
    * Create a new {@link TableProcess} instance for the given table runtime.
    *
    * @param tableRuntime table runtime
    * @return a new table process
    */
-  TableProcess createTableProcess(TableRuntime tableRuntime);
+  Optional<TableProcess> trigger(TableRuntime tableRuntime);
 
   /**
    * Recover a {@link TableProcess} from persisted store.

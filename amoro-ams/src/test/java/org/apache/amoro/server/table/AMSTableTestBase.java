@@ -37,6 +37,7 @@ import org.apache.amoro.server.AMSServiceTestBase;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableRuntimeFactory;
 import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.ConvertStructUtil;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
@@ -69,6 +70,8 @@ public class AMSTableTestBase extends AMSServiceTestBase {
   private final boolean autoInitTable;
   private ServerTableIdentifier serverTableIdentifier;
 
+  protected final TableRuntimeFactory tableRuntimeFactory;
+
   public AMSTableTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     this(catalogTestHelper, tableTestHelper, false);
   }
@@ -78,6 +81,7 @@ public class AMSTableTestBase extends AMSServiceTestBase {
     this.catalogTestHelper = catalogTestHelper;
     this.tableTestHelper = tableTestHelper;
     this.autoInitTable = autoInitTable;
+    this.tableRuntimeFactory = new DefaultTableRuntimeFactory();
   }
 
   @Before

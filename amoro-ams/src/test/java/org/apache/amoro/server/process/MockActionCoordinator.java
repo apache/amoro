@@ -27,6 +27,7 @@ import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 
 import java.util.HashMap;
+import java.util.Optional;
 
 /** Mock implementation of {@link ActionCoordinator} used in tests. */
 public class MockActionCoordinator implements ActionCoordinator {
@@ -94,7 +95,7 @@ public class MockActionCoordinator implements ActionCoordinator {
    * @return mock process
    */
   @Override
-  public TableProcess createTableProcess(TableRuntime tableRuntime) {
+  public Optional<TableProcess> trigger(TableRuntime tableRuntime) {
     TableProcessMeta tableProcessMeta =
         TableProcessMeta.of(
             SNOWFLAKE_ID_GENERATOR.generateId(),
@@ -106,7 +107,7 @@ public class MockActionCoordinator implements ActionCoordinator {
         new DefaultTableProcessStore(
             tableProcessMeta.getProcessId(), tableRuntime, tableProcessMeta, action(), 3);
     MockTableProcess mockTableProcess = new MockTableProcess(tableRuntime, tableProcessStore);
-    return mockTableProcess;
+    return Optional.of(mockTableProcess);
   }
 
   /**

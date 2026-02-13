@@ -22,6 +22,7 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.ActionCoordinator;
+import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.StateKey;
 import org.apache.amoro.table.TableRuntimeFactory;
@@ -47,6 +48,9 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
   public List<ActionCoordinator> supportedCoordinators() {
     return Lists.newArrayList();
   }
+
+  @Override
+  public void initialize(List<ProcessFactory> factories) {}
 
   @Override
   public Optional<TableRuntimeCreator> accept(

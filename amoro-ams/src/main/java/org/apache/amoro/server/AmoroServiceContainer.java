@@ -33,6 +33,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.shade.utils.ConfigShadeUtils;
 import org.apache.amoro.exception.AmoroRuntimeException;
 import org.apache.amoro.process.ActionCoordinator;
+import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.dashboard.DashboardServer;
@@ -48,6 +49,7 @@ import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.process.ProcessService;
+import org.apache.amoro.server.process.TableProcessFactoryManager;
 import org.apache.amoro.server.process.executor.ExecuteEngineManager;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
@@ -60,9 +62,12 @@ import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntimeFactoryManager;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.table.simple.SimpleTableRuntimeFactory;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.server.utils.ThriftServiceProxy;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
@@ -77,6 +82,7 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TNonblockingSer
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportFactory;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramedTransport;
+import org.apache.amoro.table.TableRuntimeFactory;
 import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.JacksonUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -234,6 +240,16 @@ public class AmoroServiceContainer {
   public void startOptimizingService() throws Exception {
     TableRuntimeFactoryManager tableRuntimeFactoryManager = new TableRuntimeFactoryManager();
     tableRuntimeFactoryManager.initialize();
+    List<TableRuntimeFactory> tableRuntimeFactories = tableRuntimeFactoryManager.installedPlugins();
+    Preconditions.checkArgument(
+        tableRuntimeFactories.size() == 1, "Only one table runtime factory is supported");
+    TableRuntimeFactory tableRuntimeFactory = new SimpleTableRuntimeFactory();
+
+    TableProcessFactoryManager tableProcessFactoryManager = new TableProcessFactoryManager();
+    tableProcessFactoryManager.initialize();
+    List<ProcessFactory> processFactories = tableProcessFactoryManager.installedPlugins();
+    tableRuntimeFactory.initialize(processFactories);
+
     List<ActionCoordinator> actionCoordinators =
         tableRuntimeFactoryManager.installedPlugins().stream()
             .flatMap(f -> f.supportedCoordinators().stream())
@@ -242,7 +258,8 @@ public class AmoroServiceContainer {
     ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
 
     tableService =
-        new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
+        new DefaultTableService(
+            serviceConfig, catalogManager, Lists.newArrayList(tableRuntimeFactory));
 
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
