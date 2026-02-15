@@ -34,6 +34,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableBuilder;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.MixedTableUtil;
@@ -41,6 +42,7 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.expressions.Expressions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -197,7 +199,22 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       } catch (Exception e) {
         LOG.warn("Failed to drop table during cleanup", e);
       }
-      catalog.dropDatabase(database);
+      try {
+        catalog.dropDatabase(database);
+      } catch (AlreadyExistsException e) {
+        // fix:org.apache.iceberg.exceptions.AlreadyExistsException: Database: test_ns already
+        // exists.
+        List<TableIdentifier> tableIdentifiers = catalog.listTables(database);
+        for (TableIdentifier tableId : tableIdentifiers) {
+          LOG.info("Cleaning up residual table: {}", tableId);
+          try {
+            catalog.dropTable(tableId, true);
+          } catch (Exception sub) {
+            LOG.warn("Failed to drop table {} during cleanup", tableId, sub);
+          }
+        }
+        catalog.dropDatabase(database);
+      }
     }
 
     @ParameterizedTest(name = "CatalogTableOperationTest[withPrimaryKey={0}]")

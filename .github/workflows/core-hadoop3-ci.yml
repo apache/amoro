@@ -43,6 +43,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Setup Docker for Testcontainers
+        uses: ./.github/workflows/setup-docker-java
+
       - name: Set up JDK ${{ matrix.jdk }}
         uses: actions/setup-java@v3
         with:
