@@ -248,7 +248,9 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     Assertions.assertThrows(PluginRetryAuthException.class, () -> optimizingService().touch(token));
     Assertions.assertThrows(
         PluginRetryAuthException.class, () -> optimizingService().pollTask(token, THREAD_ID));
-    assertTaskStatus(TaskRuntime.Status.SCHEDULED);
+    // After optimizer expires, its tasks are immediately reset to PLANNED
+    // because unregister happens before task scan in OptimizerKeeper
+    assertTaskStatus(TaskRuntime.Status.PLANNED);
     token = optimizingService().authenticate(buildRegisterInfo());
     toucher = new Toucher();
     Thread.sleep(1000);
@@ -333,13 +335,19 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
 
+    // After reload, SCHEDULED tasks are reset to PLANNED during recovery
     reload();
-    assertTaskStatus(TaskRuntime.Status.SCHEDULED);
-    optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
+    assertTaskStatus(TaskRuntime.Status.PLANNED);
+
+    // Re-poll the task to get it scheduled again
+    OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task2);
+    Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    optimizingService().ackTask(token, THREAD_ID, task2.getTaskId());
 
     TaskRuntime taskRuntime =
         optimizingService().listTasks(defaultResourceGroup().getName()).get(0);
-    optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
+    optimizingService().completeTask(token, buildOptimizingTaskResult(task2.getTaskId()));
     assertTaskCompleted(taskRuntime);
   }
 
@@ -350,12 +358,19 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     Assertions.assertNotNull(task);
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
 
+    // After reload, ACKED tasks are reset to PLANNED during recovery
     reload();
-    assertTaskStatus(TaskRuntime.Status.ACKED);
+    assertTaskStatus(TaskRuntime.Status.PLANNED);
+
+    // Re-poll and re-ack the task
+    OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task2);
+    Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
+    optimizingService().ackTask(token, THREAD_ID, task2.getTaskId());
 
     TaskRuntime<?> taskRuntime =
         optimizingService().listTasks(defaultResourceGroup().getName()).get(0);
-    optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
+    optimizingService().completeTask(token, buildOptimizingTaskResult(task2.getTaskId()));
     assertTaskCompleted(taskRuntime);
   }
 

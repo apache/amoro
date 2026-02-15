@@ -913,6 +913,14 @@ public class OptimizingQueue extends PersistentBase {
               taskMap.put(taskRuntime.getTaskId(), taskRuntime);
               if (taskRuntime.getStatus() == TaskRuntime.Status.PLANNED) {
                 taskQueue.offer(taskRuntime);
+              } else if (taskRuntime.getStatus() == TaskRuntime.Status.SCHEDULED
+                  || taskRuntime.getStatus() == TaskRuntime.Status.ACKED) {
+                LOG.info(
+                    "Reset task {} from {} to PLANNED during recovery",
+                    taskRuntime.getTaskId(),
+                    taskRuntime.getStatus());
+                taskRuntime.reset();
+                taskQueue.offer(taskRuntime);
               } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
                 retryTask(taskRuntime);
               }
