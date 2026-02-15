@@ -618,7 +618,7 @@ onBeforeMount(async () => {
   flex-direction: column;
 
   .table-explorer-header {
-    padding: 0 12px;
+    padding: 0 7px 0 8px;
     margin-bottom: 8px;
 
     .search-input {
@@ -656,7 +656,7 @@ onBeforeMount(async () => {
     flex: 1;
     min-height: 0;
     overflow: auto;
-    padding: 0 12px;
+    padding: 0 7px 0 8px;
 
     :deep(.ant-tree) {
       background-color: #fff;
