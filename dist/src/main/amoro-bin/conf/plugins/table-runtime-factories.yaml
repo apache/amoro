@@ -23,15 +23,3 @@ table-runtime-factories:
     enabled: true
     priority: 100
 
-  - name: simple
-    enabled: true
-    priority: 1
-    properties:
-      process-factory-impl: org.apache.amoro.server.table.simple.SimpleProcessFactory
-      support-formats: paimon, lance
-      support-actions: snapshot-expires, compact
-      support-format-actions.lance: optimizing-index
-      action.compact.check-interval: 5min
-      action.snapshot-expires.check-interval: 5min
-      action.training.check-interval: 10min
-

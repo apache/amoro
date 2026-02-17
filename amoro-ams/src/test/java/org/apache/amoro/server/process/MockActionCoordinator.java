@@ -64,12 +64,6 @@ public class MockActionCoordinator implements ActionCoordinator {
     return DEFAULT_ACTION;
   }
 
-  /** Get execution engine name. */
-  @Override
-  public String executionEngine() {
-    return "default";
-  }
-
   /** Next executing time. */
   @Override
   public long getNextExecutingTime(TableRuntime tableRuntime) {
@@ -121,17 +115,5 @@ public class MockActionCoordinator implements ActionCoordinator {
   public TableProcess recoverTableProcess(
       TableRuntime tableRuntime, TableProcessStore processStore) {
     return new MockTableProcess(tableRuntime, processStore);
-  }
-
-  /** Return same process to cancel. */
-  @Override
-  public TableProcess cancelTableProcess(TableRuntime tableRuntime, TableProcess process) {
-    return process;
-  }
-
-  /** Return same process to retry. */
-  @Override
-  public TableProcess retryTableProcess(TableProcess process) {
-    return process;
   }
 }
