@@ -105,7 +105,7 @@ public class TestTableSummaryMetrics extends AMSTableTestBase {
             .asUnkeyedTable();
     appendData(table);
     appendPosDelete(table);
-    DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
+    CompatibleTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
     runtime.refresh(tableService().loadTable(serverTableIdentifier()));
   }
 

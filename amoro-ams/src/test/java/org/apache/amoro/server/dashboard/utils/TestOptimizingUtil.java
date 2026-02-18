@@ -37,7 +37,7 @@ import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.AMSTableTestBase;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
@@ -90,7 +90,7 @@ public class TestOptimizingUtil extends AMSTableTestBase {
 
     Assertions.assertEquals(0, OptimizingUtil.calculateQuotaOccupy(null, null, startTime, endTime));
 
-    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    CompatibleTableRuntime tableRuntime = initTableWithFiles();
     OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
     Assert.assertEquals(0, queue.collectTasks().size());
     TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
@@ -126,7 +126,7 @@ public class TestOptimizingUtil extends AMSTableTestBase {
             > OptimizingUtil.calculateQuotaOccupy(tasks, null, startTime, endTime));
   }
 
-  protected OptimizingQueue buildOptimizingGroupService(DefaultTableRuntime tableRuntime) {
+  protected OptimizingQueue buildOptimizingGroupService(CompatibleTableRuntime tableRuntime) {
     return new OptimizingQueue(
         CATALOG_MANAGER,
         testResourceGroup(),
@@ -140,12 +140,12 @@ public class TestOptimizingUtil extends AMSTableTestBase {
     return new ResourceGroup.Builder("test", "local").build();
   }
 
-  protected DefaultTableRuntime initTableWithFiles() {
+  protected CompatibleTableRuntime initTableWithFiles() {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     appendData(mixedTable.asUnkeyedTable(), 1);
     appendData(mixedTable.asUnkeyedTable(), 2);
-    DefaultTableRuntime tableRuntime =
+    CompatibleTableRuntime tableRuntime =
         buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
 
     tableRuntime.refresh(tableService().loadTable(serverTableIdentifier()));
@@ -163,12 +163,12 @@ public class TestOptimizingUtil extends AMSTableTestBase {
     appendFiles.commit();
   }
 
-  private DefaultTableRuntime buildTableRuntimeMeta(
+  private CompatibleTableRuntime buildTableRuntimeMeta(
       OptimizingStatus status, ResourceGroup resourceGroup) {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
-    DefaultTableRuntime tableRuntime =
-        (DefaultTableRuntime) tableService().getRuntime(serverTableIdentifier().getId());
+    CompatibleTableRuntime tableRuntime =
+        (CompatibleTableRuntime) tableService().getRuntime(serverTableIdentifier().getId());
     tableRuntime
         .store()
         .begin()

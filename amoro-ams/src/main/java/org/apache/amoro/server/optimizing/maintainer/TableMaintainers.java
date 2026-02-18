@@ -23,7 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.formats.iceberg.maintainer.MixedTableMaintainer;
 import org.apache.amoro.maintainer.TableMaintainer;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.Table;
 
@@ -42,12 +42,13 @@ public class TableMaintainers {
   }
 
   /**
-   * Create a {@link TableMaintainer} for the given table with DefaultTableRuntime.
+   * Create a {@link TableMaintainer} for the given table with CompatibleTableRuntime.
    *
    * @deprecated since 0.9.0, will be removed in 0.10.0. Use {@link
-   *     TableMaintainerFactory#createIcebergMaintainer(Table, DefaultTableRuntime)} instead.
+   *     TableMaintainerFactory#createIcebergMaintainer(Table, CompatibleTableRuntime)} instead.
    */
-  public static TableMaintainer create(AmoroTable<?> amoroTable, DefaultTableRuntime tableRuntime) {
+  public static TableMaintainer create(
+      AmoroTable<?> amoroTable, CompatibleTableRuntime tableRuntime) {
     TableFormat format = amoroTable.format();
     if (format.in(TableFormat.MIXED_HIVE, TableFormat.MIXED_ICEBERG)) {
       MixedTable mixedTable = (MixedTable) amoroTable.originalTable();

@@ -39,7 +39,7 @@ import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.scheduler.inline.TableRuntimeRefreshExecutor;
 import org.apache.amoro.server.table.AMSTableTestBase;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
@@ -114,7 +114,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
     appendData(mixedTable.asUnkeyedTable(), 1);
     appendData(mixedTable.asUnkeyedTable(), 2);
-    DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
+    CompatibleTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
 
     runtime.refresh(tableService().loadTable(serverTableIdentifier()));
   }
