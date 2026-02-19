@@ -116,6 +116,7 @@
         <log4j.version>2.20.0</log4j.version>
         <junit4.version>4.13.2</junit4.version>
         <junit5.version>5.9.1</junit5.version>
+        <testcontainers.version>1.21.3</testcontainers.version>
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <commons-codec.version>1.17.2</commons-codec.version>
         <commons-compress.version>1.23.0</commons-compress.version>
