@@ -86,23 +86,23 @@ public class TestTableManagerQuery extends AMSTableTestBase {
     // 1.1 add tables with IDLE status
     // the status will be OptimizingStatus.IDLE default
     String idle1InGroup1 = "idle1InGroup1";
-    DefaultTableRuntime idle1 =
+    CompatibleTableRuntime idle1 =
         persistent.newTableRuntime(catalog, db1, idle1InGroup1, TableFormat.ICEBERG, properties);
 
     // the status will be OptimizingStatus.IDLE default
     String idle2InGroup1 = "idle2InGroup1";
-    DefaultTableRuntime idle2 =
+    CompatibleTableRuntime idle2 =
         persistent.newTableRuntime(catalog, db1, idle2InGroup1, TableFormat.ICEBERG, properties);
 
     // 1.2 add tables with PENDING status
     String pending1InGroup1 = "pending1InGroup1";
-    DefaultTableRuntime pending1 =
+    CompatibleTableRuntime pending1 =
         persistent.newTableRuntime(catalog, db1, pending1InGroup1, TableFormat.ICEBERG, properties);
     // update status
     pending1.setPendingInput(new AbstractOptimizingEvaluator.PendingInput());
 
     String pending2InGroup1 = "pending2InGroup1";
-    DefaultTableRuntime pending2 =
+    CompatibleTableRuntime pending2 =
         persistent.newTableRuntime(catalog, db1, pending2InGroup1, TableFormat.ICEBERG, properties);
     // update status
     pending2.setPendingInput(new AbstractOptimizingEvaluator.PendingInput());
@@ -110,31 +110,31 @@ public class TestTableManagerQuery extends AMSTableTestBase {
     // 1.3 add tables with PLANNING status
     String db2 = "db2";
     String plan1InGroup1 = "plan1InGroup1";
-    DefaultTableRuntime plan1 =
+    CompatibleTableRuntime plan1 =
         persistent.newTableRuntime(catalog, db2, plan1InGroup1, TableFormat.ICEBERG, properties);
     plan1.beginPlanning();
 
     String plan2InGroup1 = "plan2InGroup1";
-    DefaultTableRuntime plan2 =
+    CompatibleTableRuntime plan2 =
         persistent.newTableRuntime(catalog, db2, plan2InGroup1, TableFormat.ICEBERG, properties);
     plan2.beginPlanning();
 
     // 1.4 add tables with COMMITTING status
     String committing1InGroup1 = "committing1InGroup1";
-    DefaultTableRuntime committing1 =
+    CompatibleTableRuntime committing1 =
         persistent.newTableRuntime(
             catalog, db2, committing1InGroup1, TableFormat.ICEBERG, properties);
     committing1.beginCommitting();
 
     String commiting2InGroup1 = "committing2InGroup1";
-    DefaultTableRuntime committing2 =
+    CompatibleTableRuntime committing2 =
         persistent.newTableRuntime(
             catalog, db2, commiting2InGroup1, TableFormat.ICEBERG, properties);
     committing2.beginCommitting();
 
     // 1.5 add tables with MINOR_OPTIMIZING status
     String minor1InGroup1 = "minor1InGroup1";
-    DefaultTableRuntime minor1 =
+    CompatibleTableRuntime minor1 =
         persistent.newTableRuntime(catalog, db2, minor1InGroup1, TableFormat.ICEBERG, properties);
     OptimizingProcess process = mock(OptimizingProcess.class);
     doReturn(1L).when(process).getProcessId();
@@ -142,7 +142,7 @@ public class TestTableManagerQuery extends AMSTableTestBase {
     minor1.beginProcess(process);
 
     String minor2InGroup1 = "minor2InGroup1";
-    DefaultTableRuntime minor2 =
+    CompatibleTableRuntime minor2 =
         persistent.newTableRuntime(catalog, db2, minor2InGroup1, TableFormat.ICEBERG, properties);
     OptimizingProcess process2 = mock(OptimizingProcess.class);
     doReturn(2L).when(process2).getProcessId();
@@ -151,7 +151,7 @@ public class TestTableManagerQuery extends AMSTableTestBase {
 
     // 1.6 add tables with MAJOR_OPTIMIZING status
     String major1InGroup1 = "major1InGroup1";
-    DefaultTableRuntime major1 =
+    CompatibleTableRuntime major1 =
         persistent.newTableRuntime(catalog, db1, major1InGroup1, TableFormat.ICEBERG, properties);
     OptimizingProcess process3 = mock(OptimizingProcess.class);
     doReturn(3L).when(process3).getProcessId();
@@ -159,7 +159,7 @@ public class TestTableManagerQuery extends AMSTableTestBase {
     major1.beginProcess(process3);
 
     String major2InGroup1 = "major2InGroup1";
-    DefaultTableRuntime major2 =
+    CompatibleTableRuntime major2 =
         persistent.newTableRuntime(catalog, db1, major2InGroup1, TableFormat.ICEBERG, properties);
     OptimizingProcess process4 = mock(OptimizingProcess.class);
     doReturn(4L).when(process4).getProcessId();
@@ -168,7 +168,7 @@ public class TestTableManagerQuery extends AMSTableTestBase {
 
     // 1.7 add tables with FULL_OPTIMIZING status
     String full1InGroup1 = "full1InGroup1";
-    DefaultTableRuntime full1 =
+    CompatibleTableRuntime full1 =
         persistent.newTableRuntime(catalog, db1, full1InGroup1, TableFormat.ICEBERG, properties);
     OptimizingProcess process5 = mock(OptimizingProcess.class);
     doReturn(5L).when(process5).getProcessId();
@@ -176,7 +176,7 @@ public class TestTableManagerQuery extends AMSTableTestBase {
     full1.beginProcess(process5);
 
     String full2InGroup1 = "full2InGroup1";
-    DefaultTableRuntime full2 =
+    CompatibleTableRuntime full2 =
         persistent.newTableRuntime(catalog, db1, full2InGroup1, TableFormat.ICEBERG, properties);
     OptimizingProcess process6 = mock(OptimizingProcess.class);
     doReturn(6L).when(process6).getProcessId();
@@ -188,7 +188,7 @@ public class TestTableManagerQuery extends AMSTableTestBase {
     String opGroup2 = "opGroup2-other";
     properties.put(TableProperties.SELF_OPTIMIZING_GROUP, opGroup2);
     String minor1InOtherGroup1 = "minor1-InOtherGroup";
-    DefaultTableRuntime minor1Other =
+    CompatibleTableRuntime minor1Other =
         persistent.newTableRuntime(
             catalog, db1, minor1InOtherGroup1, TableFormat.ICEBERG, properties);
     OptimizingProcess process7 = mock(OptimizingProcess.class);
@@ -197,7 +197,7 @@ public class TestTableManagerQuery extends AMSTableTestBase {
     minor1Other.beginProcess(process7);
 
     String minor2InOtherGroup1 = "minor2-InOtherGroup";
-    DefaultTableRuntime minor2Other =
+    CompatibleTableRuntime minor2Other =
         persistent.newTableRuntime(
             catalog, db1, minor2InOtherGroup1, TableFormat.ICEBERG, properties);
     OptimizingProcess process8 = mock(OptimizingProcess.class);
@@ -206,7 +206,7 @@ public class TestTableManagerQuery extends AMSTableTestBase {
     minor2Other.beginProcess(process8);
 
     String minor3InOtherGroup1 = "minor3-InOtherGroup";
-    DefaultTableRuntime minor3Other =
+    CompatibleTableRuntime minor3Other =
         persistent.newTableRuntime(
             catalog, db1, minor3InOtherGroup1, TableFormat.ICEBERG, properties);
     OptimizingProcess process9 = mock(OptimizingProcess.class);
@@ -300,7 +300,7 @@ public class TestTableManagerQuery extends AMSTableTestBase {
       return identifier;
     }
 
-    public DefaultTableRuntime newTableRuntime(
+    public CompatibleTableRuntime newTableRuntime(
         String catalog,
         String database,
         String tableName,
@@ -317,8 +317,8 @@ public class TestTableManagerQuery extends AMSTableTestBase {
       doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
       DefaultTableRuntimeStore store =
           new DefaultTableRuntimeStore(
-              identifier, meta, DefaultTableRuntime.REQUIRED_STATES, Collections.emptyList());
-      return new DefaultTableRuntime(store);
+              identifier, meta, CompatibleTableRuntime.REQUIRED_STATES, Collections.emptyList());
+      return new CompatibleTableRuntime(store);
     }
   }
 }

@@ -21,7 +21,7 @@ package org.apache.amoro.server.scheduler.inline;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.server.table.TableService;
 
 import java.util.Optional;
@@ -42,8 +42,8 @@ public class OptimizingCommitExecutor extends PeriodicTableScheduler {
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
     return Optional.of(tableRuntime)
-        .filter(t -> t instanceof DefaultTableRuntime)
-        .map(t -> (DefaultTableRuntime) t)
+        .filter(t -> t instanceof CompatibleTableRuntime)
+        .map(t -> (CompatibleTableRuntime) t)
         .map(t -> t.getOptimizingStatus() == OptimizingStatus.COMMITTING)
         .orElse(false);
   }
@@ -56,9 +56,9 @@ public class OptimizingCommitExecutor extends PeriodicTableScheduler {
   @Override
   protected void execute(TableRuntime tableRuntime) {
     Optional.of(tableRuntime)
-        .filter(t -> t instanceof DefaultTableRuntime)
-        .map(t -> (DefaultTableRuntime) t)
-        .map(DefaultTableRuntime::getOptimizingProcess)
+        .filter(t -> t instanceof CompatibleTableRuntime)
+        .map(t -> (CompatibleTableRuntime) t)
+        .map(CompatibleTableRuntime::getOptimizingProcess)
         .orElseThrow(
             () ->
                 new IllegalStateException(

@@ -23,9 +23,9 @@ public class IcebergActions {
   private static final TableFormat[] DEFAULT_FORMATS =
       new TableFormat[] {TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE};
 
-  public static final Action SYSTEM = new Action(DEFAULT_FORMATS, 0, "system");
-  public static final Action REWRITE = new Action(DEFAULT_FORMATS, 10, "rewrite");
-  public static final Action DELETE_ORPHANS = new Action(DEFAULT_FORMATS, 2, "delete-orphans");
-  public static final Action SYNC_HIVE = new Action(DEFAULT_FORMATS, 3, "sync-hive");
-  public static final Action EXPIRE_DATA = new Action(DEFAULT_FORMATS, 1, "expire-data");
+  public static final Action SYSTEM = Action.register("system");
+  public static final Action REWRITE = Action.register("rewrite");
+  public static final Action DELETE_ORPHANS = Action.register("delete-orphans");
+  public static final Action SYNC_HIVE = Action.register("sync-hive");
+  public static final Action EXPIRE_DATA = Action.register("expire-data");
 }

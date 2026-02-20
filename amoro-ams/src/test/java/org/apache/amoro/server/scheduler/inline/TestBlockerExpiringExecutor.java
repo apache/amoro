@@ -24,7 +24,7 @@ import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.server.AMSServiceTestBase;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.junit.Assert;
@@ -41,12 +41,12 @@ public class TestBlockerExpiringExecutor extends AMSServiceTestBase {
           0L, "test_catalog", "test_db", "test_table_blocker", TableFormat.MIXED_ICEBERG);
 
   private final Persistency persistency = new Persistency();
-  private DefaultTableRuntime tableRuntime;
+  private CompatibleTableRuntime tableRuntime;
   private TableService tableService;
 
   @Before
   public void mock() {
-    tableRuntime = Mockito.mock(DefaultTableRuntime.class);
+    tableRuntime = Mockito.mock(CompatibleTableRuntime.class);
     tableService = Mockito.mock(TableService.class);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(tableIdentifier);
   }

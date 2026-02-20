@@ -29,7 +29,7 @@ import org.apache.amoro.optimizing.plan.AbstractPartitionPlan;
 import org.apache.amoro.optimizing.plan.IcebergPartitionPlan;
 import org.apache.amoro.optimizing.scan.IcebergTableFileScanHelper;
 import org.apache.amoro.optimizing.scan.TableFileScanHelper;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.junit.Test;
@@ -75,7 +75,7 @@ public class TestIcebergPartitionPlan extends TestUnkeyedPartitionPlan {
 
   @Override
   protected AbstractPartitionPlan getPartitionPlan() {
-    DefaultTableRuntime tableRuntime = getTableRuntime();
+    CompatibleTableRuntime tableRuntime = getTableRuntime();
     return new IcebergPartitionPlan(
         tableRuntime.getTableIdentifier(),
         tableRuntime.getOptimizingConfig(),

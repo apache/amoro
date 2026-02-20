@@ -28,7 +28,7 @@ import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -50,17 +50,17 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime instanceof DefaultTableRuntime;
+    return tableRuntime instanceof CompatibleTableRuntime;
   }
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
+    CompatibleTableRuntime defaultTableRuntime = (CompatibleTableRuntime) tableRuntime;
     return Math.min(
         defaultTableRuntime.getOptimizingConfig().getMinorLeastInterval() * 4L / 5, interval);
   }
 
-  private void tryEvaluatingPendingInput(DefaultTableRuntime tableRuntime, MixedTable table) {
+  private void tryEvaluatingPendingInput(CompatibleTableRuntime tableRuntime, MixedTable table) {
     // only evaluate pending input when optimizing is enabled and in idle state
     OptimizingConfig optimizingConfig = tableRuntime.getOptimizingConfig();
     if (optimizingConfig.isEnabled()
@@ -94,8 +94,8 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
 
   @Override
   public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
-    Preconditions.checkArgument(tableRuntime instanceof DefaultTableRuntime);
-    DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
+    Preconditions.checkArgument(tableRuntime instanceof CompatibleTableRuntime);
+    CompatibleTableRuntime defaultTableRuntime = (CompatibleTableRuntime) tableRuntime;
     // After disabling self-optimizing, close the currently running optimizing process.
     if (originalConfig.getOptimizingConfig().isEnabled()
         && !tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
@@ -114,8 +114,8 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
   @Override
   public void execute(TableRuntime tableRuntime) {
     try {
-      Preconditions.checkArgument(tableRuntime instanceof DefaultTableRuntime);
-      DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
+      Preconditions.checkArgument(tableRuntime instanceof CompatibleTableRuntime);
+      CompatibleTableRuntime defaultTableRuntime = (CompatibleTableRuntime) tableRuntime;
 
       long lastOptimizedSnapshotId = defaultTableRuntime.getLastOptimizedSnapshotId();
       long lastOptimizedChangeSnapshotId = defaultTableRuntime.getLastOptimizedChangeSnapshotId();

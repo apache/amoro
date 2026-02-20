@@ -41,7 +41,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.mockito.Mockito;
 
 import java.util.List;
 
@@ -49,7 +48,6 @@ import java.util.List;
 public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
 
   private DefaultTableService tableService;
-  private final TableRuntimeFactoryManager runtimeFactoryManager;
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
@@ -66,16 +64,13 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
   public TestDefaultTableRuntimeHandler(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper, false);
-    DefaultTableRuntimeFactory runtimeFactory = new DefaultTableRuntimeFactory();
-    runtimeFactoryManager = Mockito.mock(TableRuntimeFactoryManager.class);
-    Mockito.when(runtimeFactoryManager.installedPlugins())
-        .thenReturn(Lists.newArrayList(runtimeFactory));
   }
 
   @Test
   public void testInitialize() throws Exception {
     tableService =
-        new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactoryManager);
+        new DefaultTableService(
+            new Configurations(), CATALOG_MANAGER, Lists.newArrayList(tableRuntimeFactory));
     TestHandler handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();
@@ -95,7 +90,8 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
 
     // initialize with a history table
     tableService =
-        new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactoryManager);
+        new DefaultTableService(
+            new Configurations(), CATALOG_MANAGER, Lists.newArrayList(tableRuntimeFactory));
     handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();
@@ -133,7 +129,8 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
   @Test
   public void testRefreshUpdatesOptimizerGroup() throws Exception {
     tableService =
-        new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactoryManager);
+        new DefaultTableService(
+            new Configurations(), CATALOG_MANAGER, Lists.newArrayList(tableRuntimeFactory));
     TestHandler handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();
@@ -144,7 +141,7 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
     createTable();
 
     ServerTableIdentifier tableId = tableManager().listManagedTables().get(0);
-    DefaultTableRuntime runtime = getDefaultTableRuntime(tableId.getId());
+    CompatibleTableRuntime runtime = getDefaultTableRuntime(tableId.getId());
 
     // Verify initial group name is "default"
     String initialGroup = runtime.getGroupName();
