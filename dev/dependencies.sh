@@ -27,8 +27,8 @@ PWD=$(cd "$(dirname "$0")"/.. || exit; pwd)
 MVN="${PWD}/mvnw"
 
 function build_classpath() {
-  $MVN clean install -DskipTests --no-snapshot-updates -pl dist -am "$@"
-  $MVN dependency:build-classpath --no-snapshot-updates -pl dist -am "$@" |\
+  $MVN clean install -DskipTests -B -ntp --no-snapshot-updates -pl dist -am "$@"
+  $MVN dependency:build-classpath -B -ntp --no-snapshot-updates -pl dist -am "$@" |\
     grep -v "INFO\|WARN" | \
     tail -1 | \
     tr ":" "\n" | \
