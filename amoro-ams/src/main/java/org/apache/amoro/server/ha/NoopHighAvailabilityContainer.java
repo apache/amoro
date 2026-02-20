@@ -18,9 +18,11 @@
 
 package org.apache.amoro.server.ha;
 
+import org.apache.amoro.client.AmsServerInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /** No-op HA container that never blocks and performs no leader election. */
@@ -48,5 +50,15 @@ public class NoopHighAvailabilityContainer implements HighAvailabilityContainer 
   }
 
   @Override
-  public void registAndElect() throws Exception {}
+  public void registerAndElect() throws Exception {}
+
+  @Override
+  public List<AmsServerInfo> getAliveNodes() {
+    return List.of();
+  }
+
+  @Override
+  public boolean hasLeadership() {
+    return false;
+  }
 }
