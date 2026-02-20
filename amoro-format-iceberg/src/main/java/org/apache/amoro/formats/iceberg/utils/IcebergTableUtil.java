@@ -25,12 +25,14 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Predicate;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.utils.TableFileUtil;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.HasTableOperations;
+import org.apache.iceberg.ManifestFile;
+import org.apache.iceberg.ManifestFiles;
+import org.apache.iceberg.ManifestReader;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.ReachableFileUtil;
@@ -40,6 +42,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.CloseableIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,21 +144,23 @@ public class IcebergTableUtil {
     }
 
     Set<DeleteFile> danglingDeleteFiles = new HashSet<>();
-    TableEntriesScan entriesScan =
-        TableEntriesScan.builder(internalTable)
-            .useSnapshot(snapshotId)
-            .includeFileContent(FileContent.EQUALITY_DELETES, FileContent.POSITION_DELETES)
-            .build();
-    try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
-      for (IcebergFileEntry entry : entries) {
-        ContentFile<?> file = entry.getFile();
-        String path = file.path().toString();
-        if (!deleteFilesPath.contains(path)) {
-          danglingDeleteFiles.add((DeleteFile) file);
+    List<ManifestFile> deleteManifests =
+        internalTable.snapshot(snapshotId).deleteManifests(internalTable.io());
+    for (ManifestFile manifest : deleteManifests) {
+      try (ManifestReader<DeleteFile> reader =
+          ManifestFiles.readDeleteManifest(manifest, internalTable.io(), internalTable.specs())) {
+        try (CloseableIterator<DeleteFile> iterable = reader.iterator()) {
+          while (iterable.hasNext()) {
+            DeleteFile deleteFile = iterable.next();
+            String path = deleteFile.path().toString();
+            if (!deleteFilesPath.contains(path)) {
+              danglingDeleteFiles.add(deleteFile);
+            }
+          }
         }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
       }
-    } catch (IOException e) {
-      throw new RuntimeException("Error when fetch iceberg entries", e);
     }
 
     return danglingDeleteFiles;
