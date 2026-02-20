@@ -197,7 +197,8 @@ public class OptimizingQueue extends PersistentBase {
   private void resetTableForRecovery(
       TableOptimizingProcess process, DefaultTableRuntime tableRuntime) {
     closeProcessIfRunning(process);
-    if (tableRuntime.getOptimizingStatus() != OptimizingStatus.IDLE) {
+    if (tableRuntime.getOptimizingStatus() != OptimizingStatus.IDLE
+        && tableRuntime.getOptimizingStatus() != OptimizingStatus.PENDING) {
       LOG.warn(
           "Resetting table {} from {} to IDLE during recovery (process: {})",
           tableRuntime.getTableIdentifier(),

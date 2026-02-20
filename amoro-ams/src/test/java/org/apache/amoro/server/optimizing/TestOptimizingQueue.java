@@ -91,6 +91,15 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         }
       };
 
+  private final OptimizerThread optimizerThread2 =
+      new OptimizerThread(2, null) {
+
+        @Override
+        public String getToken() {
+          return "aah";
+        }
+      };
+
   public TestOptimizingQueue(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper, true);
   }
@@ -188,7 +197,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
     Assert.assertNotNull(task);
 
-    TaskRuntime<?> task2 = queue.pollTask(optimizerThread, MAX_POLLING_TIME, false);
+    // Use a different thread to avoid resetStaleTasksForThread resetting the ACKED task
+    TaskRuntime<?> task2 = queue.pollTask(optimizerThread2, MAX_POLLING_TIME, false);
     Assert.assertNull(task2);
 
     queue.completeTask(
@@ -222,16 +232,17 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
     Assert.assertNotNull(task);
 
-    TaskRuntime<?> task2 = queue.pollTask(optimizerThread, MAX_POLLING_TIME, true);
+    // Use a different thread to avoid resetStaleTasksForThread resetting the ACKED task
+    TaskRuntime<?> task2 = queue.pollTask(optimizerThread2, MAX_POLLING_TIME, true);
     Assert.assertNotNull(task2);
 
     queue.completeTask(
         optimizerThread,
         buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
-    TaskRuntime<?> task4 = queue.pollTask(optimizerThread, MAX_POLLING_TIME, false);
+    TaskRuntime<?> task4 = queue.pollTask(optimizerThread2, MAX_POLLING_TIME, false);
     Assert.assertNull(task4);
-    TaskRuntime<?> retryTask = queue.pollTask(optimizerThread, MAX_POLLING_TIME, true);
+    TaskRuntime<?> retryTask = queue.pollTask(optimizerThread2, MAX_POLLING_TIME, true);
     Assert.assertNotNull(retryTask);
     queue.dispose();
   }
