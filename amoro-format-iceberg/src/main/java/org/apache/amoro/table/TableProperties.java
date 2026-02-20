@@ -126,6 +126,9 @@ public class TableProperties {
       "self-optimizing.full.rewrite-all-files";
   public static final boolean SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT = true;
 
+  public static final String SELF_OPTIMIZING_REWRITE_ALL_AVRO = "self-optimizing.rewrite-all-avro";
+  public static final boolean SELF_OPTIMIZING_REWRITE_ALL_AVRO_DEFAULT = false;
+
   public static final String SELF_OPTIMIZING_FILTER = "self-optimizing.filter";
   public static final String SELF_OPTIMIZING_FILTER_DEFAULT = null;
 
@@ -249,6 +252,8 @@ public class TableProperties {
   public static final String FILE_FORMAT_PARQUET = "parquet";
 
   public static final String FILE_FORMAT_ORC = "orc";
+
+  public static final String FILE_FORMAT_AVRO = "avro";
 
   public static final String BASE_FILE_FORMAT = "base.write.format";
   public static final String BASE_FILE_FORMAT_DEFAULT = FILE_FORMAT_PARQUET;

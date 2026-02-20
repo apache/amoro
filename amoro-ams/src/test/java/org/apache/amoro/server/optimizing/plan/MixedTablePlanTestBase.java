@@ -39,9 +39,12 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.MixedDataFiles;
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionData;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
@@ -67,6 +70,7 @@ import java.util.stream.Collectors;
 public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   protected DefaultTableRuntime tableRuntime;
+  private long avroFileSeq = 0;
 
   public MixedTablePlanTestBase(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -411,6 +415,24 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
 
   protected void updateTableProperty(String key, String value) {
     getMixedTable().updateProperties().set(key, value).commit();
+  }
+
+  protected DataFile appendAvroDataFile(long fileSizeBytes) {
+    DataFile dataFile =
+        DataFiles.builder(getMixedTable().spec())
+            .withPath(String.format("avro-data-%s.avro", avroFileSeq++))
+            .withFileSizeInBytes(fileSizeBytes)
+            .withPartitionPath(getPartitionPath())
+            .withRecordCount(1)
+            .withFormat(FileFormat.AVRO)
+            .build();
+    AppendFiles appendFiles =
+        getMixedTable().isKeyedTable()
+            ? getMixedTable().asKeyedTable().baseTable().newAppend()
+            : getMixedTable().asUnkeyedTable().newAppend();
+    appendFiles.appendFile(dataFile);
+    appendFiles.commit();
+    return dataFile;
   }
 
   protected void updatePartitionProperty(StructLike partition, String key, String value) {

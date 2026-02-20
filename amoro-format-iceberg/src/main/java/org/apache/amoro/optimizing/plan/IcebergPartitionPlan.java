@@ -24,6 +24,7 @@ import org.apache.amoro.optimizing.IcebergRewriteExecutorFactory;
 import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.utils.ContentFiles;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.util.Pair;
 
@@ -75,7 +76,9 @@ public class IcebergPartitionPlan extends AbstractPartitionPlan {
     boolean only1DataFile =
         splitTask.getRewriteDataFiles().size() == 1
             && splitTask.getRewritePosDataFiles().size() == 0
-            && splitTask.getDeleteFiles().size() == 0;
+            && splitTask.getDeleteFiles().size() == 0
+            && !(config.isRewriteAllAvro()
+                && ContentFiles.isAvroFile(splitTask.getRewriteDataFiles().iterator().next()));
     return !only1DataFile;
   }
 }

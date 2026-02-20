@@ -76,6 +76,9 @@ public class OptimizingConfig {
   // self-optimizing.full.rewrite-all-files
   private boolean fullRewriteAllFiles;
 
+  // self-optimizing.rewrite-all-avro
+  private boolean rewriteAllAvro;
+
   // self-optimizing.filter
   private String filter;
 
@@ -260,6 +263,15 @@ public class OptimizingConfig {
     return this;
   }
 
+  public boolean isRewriteAllAvro() {
+    return rewriteAllAvro;
+  }
+
+  public OptimizingConfig setRewriteAllAvro(boolean rewriteAllAvro) {
+    this.rewriteAllAvro = rewriteAllAvro;
+    return this;
+  }
+
   public OptimizingConfig setFilter(String filter) {
     this.filter = filter;
     return this;
@@ -343,6 +355,7 @@ public class OptimizingConfig {
         && Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0
         && fullTriggerInterval == that.fullTriggerInterval
         && fullRewriteAllFiles == that.fullRewriteAllFiles
+        && rewriteAllAvro == that.rewriteAllAvro
         && Objects.equal(filter, that.filter)
         && baseHashBucket == that.baseHashBucket
         && baseRefreshInterval == that.baseRefreshInterval
@@ -373,6 +386,7 @@ public class OptimizingConfig {
         majorDuplicateRatio,
         fullTriggerInterval,
         fullRewriteAllFiles,
+        rewriteAllAvro,
         filter,
         baseHashBucket,
         baseRefreshInterval,
@@ -401,6 +415,7 @@ public class OptimizingConfig {
         .add("majorDuplicateRatio", majorDuplicateRatio)
         .add("fullTriggerInterval", fullTriggerInterval)
         .add("fullRewriteAllFiles", fullRewriteAllFiles)
+        .add("rewriteAllAvro", rewriteAllAvro)
         .add("filter", filter)
         .add("baseHashBucket", baseHashBucket)
         .add("baseRefreshInterval", baseRefreshInterval)

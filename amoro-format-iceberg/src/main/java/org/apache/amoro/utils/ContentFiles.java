@@ -23,6 +23,7 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileFormat;
 
 public class ContentFiles {
 
@@ -36,6 +37,10 @@ public class ContentFiles {
 
   public static boolean isDataFile(ContentFile<?> contentFile) {
     return contentFile.content() == FileContent.DATA;
+  }
+
+  public static boolean isAvroFile(DataFile dataFile) {
+    return FileFormat.AVRO.equals(dataFile.format());
   }
 
   public static DataFile asDataFile(ContentFile<?> contentFile) {
