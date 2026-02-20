@@ -55,12 +55,12 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
   private static class TableRuntimeCreatorImpl implements TableRuntimeFactory.TableRuntimeCreator {
     @Override
     public List<StateKey<?>> requiredStateKeys() {
-      return DefaultTableRuntime.REQUIRED_STATES;
+      return CompatibleTableRuntime.REQUIRED_STATES;
     }
 
     @Override
     public TableRuntime create(TableRuntimeStore store) {
-      return new DefaultTableRuntime(store);
+      return new CompatibleTableRuntime(store);
     }
   }
 }

@@ -24,7 +24,7 @@ import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.maintainer.TableMaintainer;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
 import org.slf4j.Logger;
@@ -64,7 +64,7 @@ public class DanglingDeleteFilesCleaningExecutor extends PeriodicTableScheduler 
 
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
-    return tableRuntime instanceof DefaultTableRuntime
+    return tableRuntime instanceof CompatibleTableRuntime
         && tableRuntime.getTableConfiguration().isDeleteDanglingDeleteFilesEnabled();
   }
 

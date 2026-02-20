@@ -25,7 +25,7 @@ import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
@@ -162,7 +162,7 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
 
     try {
       long currentTime = System.currentTimeMillis();
-      ((DefaultTableRuntime) tableRuntime).updateLastCleanTime(cleanupOperation, currentTime);
+      ((CompatibleTableRuntime) tableRuntime).updateLastCleanTime(cleanupOperation, currentTime);
 
       logger.debug(
           "Update lastCleanTime for table {} with cleanup operation {}",
@@ -193,7 +193,7 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
     }
 
     long lastCleanupEndTime =
-        ((DefaultTableRuntime) tableRuntime).getLastCleanTime(cleanupOperation);
+        ((CompatibleTableRuntime) tableRuntime).getLastCleanTime(cleanupOperation);
 
     // If it's zero, execute the task
     if (lastCleanupEndTime == 0L) {
@@ -233,9 +233,9 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
       return true;
     }
 
-    if (!(tableRuntime instanceof DefaultTableRuntime)) {
+    if (!(tableRuntime instanceof CompatibleTableRuntime)) {
       logger.debug(
-          "Table runtime is not DefaultTableRuntime, skipping cleanup time check for table {}",
+          "Table runtime is not CompatibleTableRuntime, skipping cleanup time check for table {}",
           tableRuntime.getTableIdentifier().getTableName());
       return true;
     }

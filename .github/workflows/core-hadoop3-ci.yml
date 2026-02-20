@@ -51,6 +51,11 @@ jobs:
           cache: maven
           check-latest: false
 
+      - name: Debug docker
+        run: |
+          docker version
+          docker info || true
+
       - name: Validate checkstyle first
         run: ./mvnw validate
 

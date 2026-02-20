@@ -48,7 +48,7 @@ import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
@@ -112,7 +112,7 @@ public class OptimizingQueue extends PersistentBase {
       ResourceGroup optimizerGroup,
       QuotaProvider quotaProvider,
       Executor planExecutor,
-      List<DefaultTableRuntime> tableRuntimeList,
+      List<CompatibleTableRuntime> tableRuntimeList,
       int maxPlanningParallelism) {
     Preconditions.checkNotNull(optimizerGroup, "Optimizer group can not be null");
     this.planExecutor = planExecutor;
@@ -128,7 +128,7 @@ public class OptimizingQueue extends PersistentBase {
     tableRuntimeList.forEach(this::initTableRuntime);
   }
 
-  private void initTableRuntime(DefaultTableRuntime tableRuntime) {
+  private void initTableRuntime(CompatibleTableRuntime tableRuntime) {
     TableOptimizingProcess process = null;
     if (tableRuntime.getOptimizingStatus().isProcessing() && tableRuntime.getProcessId() != 0) {
       TableProcessMeta meta =
@@ -172,7 +172,7 @@ public class OptimizingQueue extends PersistentBase {
     return optimizerGroup.getContainer();
   }
 
-  public void refreshTable(DefaultTableRuntime tableRuntime) {
+  public void refreshTable(CompatibleTableRuntime tableRuntime) {
     if (tableRuntime.getOptimizingConfig().isEnabled()
         && !tableRuntime.getOptimizingStatus().isProcessing()) {
       LOG.info(
@@ -185,7 +185,7 @@ public class OptimizingQueue extends PersistentBase {
     }
   }
 
-  public void releaseTable(DefaultTableRuntime tableRuntime) {
+  public void releaseTable(CompatibleTableRuntime tableRuntime) {
     scheduler.removeTable(tableRuntime);
     List<OptimizingProcess> processList =
         tableQueue.stream()
@@ -280,7 +280,7 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   private void triggerAsyncPlanning(
-      DefaultTableRuntime tableRuntime, Set<ServerTableIdentifier> skipTables, long startTime) {
+      CompatibleTableRuntime tableRuntime, Set<ServerTableIdentifier> skipTables, long startTime) {
     LOG.info(
         "Trigger planning table {} by policy {}",
         tableRuntime.getTableIdentifier(),
@@ -325,7 +325,7 @@ public class OptimizingQueue extends PersistentBase {
             });
   }
 
-  private TableOptimizingProcess planInternal(DefaultTableRuntime tableRuntime) {
+  private TableOptimizingProcess planInternal(CompatibleTableRuntime tableRuntime) {
     tableRuntime.beginPlanning();
     try {
       ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
@@ -427,7 +427,7 @@ public class OptimizingQueue extends PersistentBase {
     private final Lock lock = new ReentrantLock();
     private final long processId;
     private final OptimizingType optimizingType;
-    private final DefaultTableRuntime tableRuntime;
+    private final CompatibleTableRuntime tableRuntime;
     private final long planTime;
     private final long targetSnapshotId;
     private final long targetChangeSnapshotId;
@@ -471,7 +471,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     public TableOptimizingProcess(
-        AbstractOptimizingPlanner planner, DefaultTableRuntime tableRuntime) {
+        AbstractOptimizingPlanner planner, CompatibleTableRuntime tableRuntime) {
       processId = planner.getProcessId();
       this.tableRuntime = tableRuntime;
       optimizingType = planner.getOptimizingType();
@@ -485,7 +485,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     public TableOptimizingProcess(
-        DefaultTableRuntime tableRuntime,
+        CompatibleTableRuntime tableRuntime,
         TableProcessMeta processMeta,
         OptimizingProcessState processState) {
       this.tableRuntime = tableRuntime;

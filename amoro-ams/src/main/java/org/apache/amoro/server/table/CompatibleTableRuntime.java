@@ -69,10 +69,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /** Default table runtime implementation. */
-public class DefaultTableRuntime extends AbstractTableRuntime
+public class CompatibleTableRuntime extends AbstractTableRuntime
     implements TableRuntime, SupportsProcessPlugins {
 
-  private static final Logger LOG = LoggerFactory.getLogger(DefaultTableRuntime.class);
+  private static final Logger LOG = LoggerFactory.getLogger(CompatibleTableRuntime.class);
 
   private static final StateKey<TableRuntimeOptimizingState> OPTIMIZING_STATE_KEY =
       StateKey.stateKey("optimizing_state")
@@ -104,7 +104,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   private volatile OptimizingProcess optimizingProcess;
   private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
-  public DefaultTableRuntime(TableRuntimeStore store) {
+  public CompatibleTableRuntime(TableRuntimeStore store) {
     super(store);
     this.optimizingMetrics =
         new TableOptimizingMetrics(store.getTableIdentifier(), store.getGroupName());
@@ -310,7 +310,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
     tableSummaryMetrics.refresh(tableSummary);
   }
 
-  public DefaultTableRuntime refresh(AmoroTable<?> table) {
+  public CompatibleTableRuntime refresh(AmoroTable<?> table) {
     Map<String, String> tableConfig = table.properties();
     TableConfiguration newConfiguration = TableConfigurations.parseTableConfig(tableConfig);
     String newGroupName = newConfiguration.getOptimizingConfig().getOptimizerGroup();
@@ -599,7 +599,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
     public AmoroProcess trigger(Action action) {
       processLock.lock();
       try {
-        AmoroProcess process = processFactory.create(DefaultTableRuntime.this, action);
+        AmoroProcess process = processFactory.create(CompatibleTableRuntime.this, action);
         process.getCompleteFuture().whenCompleted(() -> processMap.remove(process.getId()));
         processMap.put(process.getId(), process);
         return process;

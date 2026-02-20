@@ -144,7 +144,7 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
     createTable();
 
     ServerTableIdentifier tableId = tableManager().listManagedTables().get(0);
-    DefaultTableRuntime runtime = getDefaultTableRuntime(tableId.getId());
+    CompatibleTableRuntime runtime = getDefaultTableRuntime(tableId.getId());
 
     // Verify initial group name is "default"
     String initialGroup = runtime.getGroupName();

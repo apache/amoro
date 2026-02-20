@@ -33,7 +33,7 @@ import org.apache.amoro.optimizing.plan.IcebergOptimizingPlanner;
 import org.apache.amoro.optimizing.plan.MixedIcebergOptimizingEvaluator;
 import org.apache.amoro.optimizing.plan.MixedIcebergOptimizingPlanner;
 import org.apache.amoro.scan.TableEntriesScan;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.base.Predicate;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
@@ -89,7 +89,8 @@ public class IcebergTableUtil {
     }
   }
 
-  public static TableSnapshot getSnapshot(MixedTable mixedTable, DefaultTableRuntime tableRuntime) {
+  public static TableSnapshot getSnapshot(
+      MixedTable mixedTable, CompatibleTableRuntime tableRuntime) {
     if (mixedTable.isUnkeyedTable()) {
       return new BasicTableSnapshot(tableRuntime.getCurrentSnapshotId());
     } else {
@@ -220,7 +221,7 @@ public class IcebergTableUtil {
   }
 
   public static AbstractOptimizingEvaluator createOptimizingEvaluator(
-      DefaultTableRuntime tableRuntime,
+      CompatibleTableRuntime tableRuntime,
       MixedTable table,
       TableSnapshot snapshot,
       int maxPendingPartitions) {
@@ -264,13 +265,13 @@ public class IcebergTableUtil {
   }
 
   public static AbstractOptimizingEvaluator createOptimizingEvaluator(
-      DefaultTableRuntime tableRuntime, MixedTable table, int maxPendingPartitions) {
+      CompatibleTableRuntime tableRuntime, MixedTable table, int maxPendingPartitions) {
     TableSnapshot snapshot = IcebergTableUtil.getSnapshot(table, tableRuntime);
     return createOptimizingEvaluator(tableRuntime, table, snapshot, maxPendingPartitions);
   }
 
   public static AbstractOptimizingPlanner createOptimizingPlanner(
-      DefaultTableRuntime tableRuntime,
+      CompatibleTableRuntime tableRuntime,
       MixedTable table,
       double availableCore,
       long maxInputSizePerThread) {

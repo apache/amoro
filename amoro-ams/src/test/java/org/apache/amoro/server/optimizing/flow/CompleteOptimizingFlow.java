@@ -38,7 +38,7 @@ import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
-import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.CompatibleTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.MixedTable;
@@ -181,7 +181,7 @@ public class CompleteOptimizingFlow {
 
   private AbstractOptimizingPlanner planner() {
     table.refresh();
-    DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
+    CompatibleTableRuntime tableRuntime = Mockito.mock(CompatibleTableRuntime.class);
 
     Mockito.when(tableRuntime.getCurrentSnapshotId()).thenAnswer(f -> getCurrentSnapshotId());
     Mockito.when(tableRuntime.getCurrentChangeSnapshotId())
