@@ -54,6 +54,7 @@
         <module>amoro-format-mixed</module>
         <module>amoro-format-hudi</module>
         <module>amoro-format-paimon</module>
+        <module>amoro-format-lance</module>
         <module>dist</module>
     </modules>
 
@@ -194,6 +195,12 @@
             <dependency>
                 <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-format-hudi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-format-lance</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

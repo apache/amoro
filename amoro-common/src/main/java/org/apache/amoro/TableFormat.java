@@ -42,6 +42,7 @@ public final class TableFormat implements Serializable {
   /** Open-source table formats */
   public static final TableFormat ICEBERG = register("ICEBERG");
 
+  public static final TableFormat LANCE = register("LANCE");
   public static final TableFormat MIXED_ICEBERG = register("MIXED_ICEBERG");
   public static final TableFormat MIXED_HIVE = register("MIXED_HIVE");
   public static final TableFormat PAIMON = register("PAIMON");
