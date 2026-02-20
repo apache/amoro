@@ -21,18 +21,20 @@ package org.apache.amoro.server.process;
 import org.apache.amoro.Action;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /** Mock implementation of {@link ActionCoordinator} used in tests. */
 public class MockActionCoordinator implements ActionCoordinator {
   public static final int PROCESS_MAX_POOL_SIZE = 1000;
-  private static final TableFormat[] DEFAULT_FORMATS = new TableFormat[] {TableFormat.PAIMON};
-
-  public static final Action DEFAULT_ACTION = new Action(DEFAULT_FORMATS, 0, "default_action");
+  public static final Action DEFAULT_ACTION = Action.register("default_action");
+  public static final SnowflakeIdGenerator SNOWFLAKE_ID_GENERATOR = new SnowflakeIdGenerator();
 
   /**
    * Whether the format is supported.
@@ -61,12 +63,6 @@ public class MockActionCoordinator implements ActionCoordinator {
     return DEFAULT_ACTION;
   }
 
-  /** Get execution engine name. */
-  @Override
-  public String executionEngine() {
-    return "default";
-  }
-
   /** Next executing time. */
   @Override
   public long getNextExecutingTime(TableRuntime tableRuntime) {
@@ -92,19 +88,19 @@ public class MockActionCoordinator implements ActionCoordinator {
    * @return mock process
    */
   @Override
-  public TableProcess createTableProcess(TableRuntime tableRuntime) {
+  public Optional<TableProcess> trigger(TableRuntime tableRuntime) {
     TableProcessMeta tableProcessMeta =
         TableProcessMeta.of(
             SNOWFLAKE_ID_GENERATOR.generateId(),
             tableRuntime.getTableIdentifier().getId(),
             action().getName(),
-            executionEngine(),
+            "default",
             new HashMap<>());
     TableProcessStore tableProcessStore =
         new DefaultTableProcessStore(
             tableProcessMeta.getProcessId(), tableRuntime, tableProcessMeta, action(), 3);
     MockTableProcess mockTableProcess = new MockTableProcess(tableRuntime, tableProcessStore);
-    return mockTableProcess;
+    return Optional.of(mockTableProcess);
   }
 
   /**
@@ -118,18 +114,6 @@ public class MockActionCoordinator implements ActionCoordinator {
   public TableProcess recoverTableProcess(
       TableRuntime tableRuntime, TableProcessStore processStore) {
     return new MockTableProcess(tableRuntime, processStore);
-  }
-
-  /** Return same process to cancel. */
-  @Override
-  public TableProcess cancelTableProcess(TableRuntime tableRuntime, TableProcess process) {
-    return process;
-  }
-
-  /** Return same process to retry. */
-  @Override
-  public TableProcess retryTableProcess(TableProcess process) {
-    return process;
   }
 
   /** Open plugin. */
