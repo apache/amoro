@@ -129,42 +129,88 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   private void initTableRuntime(DefaultTableRuntime tableRuntime) {
-    TableOptimizingProcess process = null;
-    if (tableRuntime.getOptimizingStatus().isProcessing() && tableRuntime.getProcessId() != 0) {
-      TableProcessMeta meta =
-          getAs(
-              TableProcessMapper.class,
-              mapper -> mapper.getProcessMeta(tableRuntime.getProcessId()));
-      OptimizingProcessState state =
-          getAs(
-              OptimizingProcessMapper.class,
-              mapper -> mapper.getProcessState(tableRuntime.getProcessId()));
-      process = new TableOptimizingProcess(tableRuntime, meta, state);
-      tableRuntime.recover(process);
-    }
+    try {
+      TableOptimizingProcess process = loadProcess(tableRuntime);
 
-    if (tableRuntime.getOptimizingConfig().isEnabled()) {
+      if (!tableRuntime.getOptimizingConfig().isEnabled()) {
+        closeProcessIfRunning(process);
+        return;
+      }
+
       tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
-      // Close the committing process to avoid duplicate commit on the table.
-      if (tableRuntime.getOptimizingStatus() == OptimizingStatus.COMMITTING) {
-        if (process != null) {
-          LOG.warn(
-              "Close the committing process {} on table {}",
+
+      if (canResumeProcess(process, tableRuntime)) {
+        tableQueue.offer(process);
+        if (process.allTasksPrepared()) {
+          LOG.info(
+              "All tasks already completed for process {} on table {} during recovery,"
+                  + " triggering commit",
               process.getProcessId(),
               tableRuntime.getTableIdentifier());
-          process.close(false);
+          tableRuntime.beginCommitting();
         }
-      }
-      if (!tableRuntime.getOptimizingStatus().isProcessing()) {
+      } else {
+        resetTableForRecovery(process, tableRuntime);
         scheduler.addTable(tableRuntime);
-      } else if (process != null) {
-        tableQueue.offer(process);
       }
-    } else {
-      if (process != null) {
-        process.close(false);
-      }
+    } catch (Exception e) {
+      LOG.error(
+          "Failed to initialize table runtime for table {}, skipping",
+          tableRuntime.getTableIdentifier(),
+          e);
+    }
+  }
+
+  private TableOptimizingProcess loadProcess(DefaultTableRuntime tableRuntime) {
+    if (tableRuntime.getProcessId() == 0) {
+      return null;
+    }
+    TableProcessMeta meta =
+        getAs(
+            TableProcessMapper.class, mapper -> mapper.getProcessMeta(tableRuntime.getProcessId()));
+    if (meta == null) {
+      return null;
+    }
+    OptimizingProcessState state =
+        getAs(
+            OptimizingProcessMapper.class,
+            mapper -> mapper.getProcessState(tableRuntime.getProcessId()));
+    if (state == null) {
+      LOG.warn(
+          "No optimizing process state found for process {} on table {}, skipping process recovery",
+          tableRuntime.getProcessId(),
+          tableRuntime.getTableIdentifier());
+      return null;
+    }
+    return new TableOptimizingProcess(tableRuntime, meta, state);
+  }
+
+  private boolean canResumeProcess(
+      TableOptimizingProcess process, DefaultTableRuntime tableRuntime) {
+    return process != null
+        && process.getStatus() == ProcessStatus.RUNNING
+        && tableRuntime.getOptimizingStatus().isProcessing()
+        && tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING;
+  }
+
+  private void resetTableForRecovery(
+      TableOptimizingProcess process, DefaultTableRuntime tableRuntime) {
+    closeProcessIfRunning(process);
+    if (tableRuntime.getOptimizingStatus() != OptimizingStatus.IDLE
+        && tableRuntime.getOptimizingStatus() != OptimizingStatus.PENDING) {
+      LOG.warn(
+          "Resetting table {} from {} to IDLE during recovery (process: {})",
+          tableRuntime.getTableIdentifier(),
+          tableRuntime.getOptimizingStatus(),
+          process != null ? process.getStatus() : "null");
+      tableRuntime.completeEmptyProcess();
+    }
+  }
+
+  private void closeProcessIfRunning(TableOptimizingProcess process) {
+    if (process != null && process.getStatus() == ProcessStatus.RUNNING) {
+      process.close(false);
     }
   }
 
@@ -207,6 +253,7 @@ public class OptimizingQueue extends PersistentBase {
 
   public TaskRuntime<?> pollTask(
       OptimizerThread thread, long maxWaitTime, boolean breakQuotaLimit) {
+    resetStaleTasksForThread(thread);
     long deadline = calculateDeadline(maxWaitTime);
     TaskRuntime<?> task = fetchScheduledTask(thread, true);
     while (task == null && waitTask(deadline)) {
@@ -372,6 +419,26 @@ public class OptimizingQueue extends PersistentBase {
 
   public void retryTask(TaskRuntime<?> taskRuntime) {
     findProcess(taskRuntime.getTaskId()).resetTask((TaskRuntime<RewriteStageTask>) taskRuntime);
+  }
+
+  private void resetStaleTasksForThread(OptimizerThread thread) {
+    // Only reset ACKED tasks: if the same (token, threadId) is polling again,
+    // the executor must have finished execution (poll → ack → execute → complete → poll).
+    // SCHEDULED tasks are NOT reset because the executor can still ack them normally,
+    // even after AMS restart.
+    collectTasks(
+            task ->
+                task.getStatus() == TaskRuntime.Status.ACKED
+                    && Objects.equals(task.getToken(), thread.getToken())
+                    && task.getThreadId() == thread.getThreadId())
+        .forEach(
+            task -> {
+              LOG.warn(
+                  "Resetting stale ACKED task {} because optimizer thread {} is polling new task",
+                  task.getTaskId(),
+                  thread);
+              retryTask(task);
+            });
   }
 
   public ResourceGroup getOptimizerGroup() {
@@ -913,6 +980,15 @@ public class OptimizingQueue extends PersistentBase {
               taskMap.put(taskRuntime.getTaskId(), taskRuntime);
               if (taskRuntime.getStatus() == TaskRuntime.Status.PLANNED) {
                 taskQueue.offer(taskRuntime);
+              } else if (taskRuntime.getStatus() == TaskRuntime.Status.SCHEDULED
+                  || taskRuntime.getStatus() == TaskRuntime.Status.ACKED) {
+                // Don't reset — let the optimizer finish execution and report
+                // the result. If the optimizer is dead, OptimizerKeeper will
+                // detect the stale token and reset the task via retryTask().
+                LOG.info(
+                    "Keeping task {} in {} during recovery, waiting for optimizer to complete",
+                    taskRuntime.getTaskId(),
+                    taskRuntime.getStatus());
               } else if (taskRuntime.getStatus() == TaskRuntime.Status.FAILED) {
                 retryTask(taskRuntime);
               }
