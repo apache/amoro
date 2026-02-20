@@ -67,6 +67,9 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | database.type | derby | Database type. |
 | database.url | jdbc:derby:/tmp/amoro/derby;create=true | Database connection address |
 | database.username | root | The username for connecting to the database. |
+| dynamic-config.enabled | false | Whether to enable dynamic configuration backed by database table `dynamic_conf`. |
+| dynamic-config.namespace | AMS | Logical namespace used when loading dynamic configuration overrides for AMS. |
+| dynamic-config.refresh-interval | 30 s | Refresh interval for reloading dynamic configuration overrides from database. |
 | expire-snapshots.enabled | true | Enable snapshots expiring. |
 | expire-snapshots.interval | 1 h | Interval for expiring snapshots. |
 | expire-snapshots.thread-count | 10 | The number of threads used for snapshots expiring. |
@@ -97,6 +100,8 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | optimizer.task-execute-timeout | 2147483647 s | Timeout duration for task execution, default to Integer.MAX_VALUE seconds(about 24,855 days). |
 | overview-cache.max-size | 3360 | Max size of overview cache. |
 | overview-cache.refresh-interval | 3 min | Interval for refreshing overview cache. |
+| plugin.property.category-key | plugin.category | The property key used to store plugin category identifier in plugin properties. |
+| plugin.property.name-key | plugin.name | The property key used to store plugin name identifier in plugin properties. |
 | refresh-external-catalogs.interval | 3 min | Interval to refresh the external catalog. |
 | refresh-external-catalogs.queue-size | 1000000 | The queue size of the executors of the external catalog explorer. |
 | refresh-external-catalogs.thread-count | 10 | The number of threads used for discovering tables in external catalogs. |

@@ -23,6 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.config.ConfigOptions;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.config.DynamicConfigurations;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.catalog.CatalogManager;
@@ -91,6 +92,11 @@ public class TerminalManager {
     gcThread = new Thread(new SessionCleanTask());
     gcThread.setName("terminal-session-gc");
     gcThread.start();
+  }
+
+  public TerminalManager(
+      DynamicConfigurations dynamicConfigurations, CatalogManager catalogManager) {
+    this((Configurations) dynamicConfigurations, catalogManager);
   }
 
   /**
