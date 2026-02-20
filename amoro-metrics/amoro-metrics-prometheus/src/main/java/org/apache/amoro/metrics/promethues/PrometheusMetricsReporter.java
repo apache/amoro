@@ -32,6 +32,7 @@ public class PrometheusMetricsReporter implements MetricReporter {
   public static final String PORT = "port";
 
   private HTTPServer server;
+  private MetricFilter metricFilter = MetricFilter.ACCEPT_ALL;
 
   @Override
   public void open(Map<String, String> properties) {
@@ -39,6 +40,8 @@ public class PrometheusMetricsReporter implements MetricReporter {
         Optional.ofNullable(properties.get(PORT))
             .map(Integer::valueOf)
             .orElseThrow(() -> new IllegalArgumentException("Lack required property: " + PORT));
+
+    this.metricFilter = MetricFilter.fromProperties(properties);
 
     try {
       this.server = new HTTPServer(port);
@@ -59,7 +62,7 @@ public class PrometheusMetricsReporter implements MetricReporter {
 
   @Override
   public void setGlobalMetricSet(MetricSet globalMetricSet) {
-    MetricsCollector collector = new MetricsCollector(globalMetricSet);
+    MetricsCollector collector = new MetricsCollector(globalMetricSet, metricFilter);
     collector.register();
   }
 }

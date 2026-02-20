@@ -23,4 +23,7 @@ metric-reporters:
 #    enabled: false
 #    properties:
 #       port: 7001
+#       # Metric filtering by regex (optional, all metrics included by default)
+#       # metric-filter.includes: "table_optimizing_.*|optimizer_group_.*"
+#       # metric-filter.excludes: "table_summary_.*"
 

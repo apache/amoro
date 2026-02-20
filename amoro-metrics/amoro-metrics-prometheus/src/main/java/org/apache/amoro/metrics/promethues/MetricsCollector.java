@@ -43,9 +43,15 @@ public class MetricsCollector extends Collector {
   private static final Pattern NAME_PATTERN = Pattern.compile("[a-zA-Z_:][a-zA-Z0-9_:]*");
   private static final Pattern LABEL_PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
   MetricSet metrics;
+  private final MetricFilter metricFilter;
 
   public MetricsCollector(MetricSet metrics) {
+    this(metrics, MetricFilter.ACCEPT_ALL);
+  }
+
+  public MetricsCollector(MetricSet metrics, MetricFilter metricFilter) {
     this.metrics = metrics;
+    this.metricFilter = metricFilter != null ? metricFilter : MetricFilter.ACCEPT_ALL;
   }
 
   @Override
@@ -76,8 +82,14 @@ public class MetricsCollector extends Collector {
     boolean valid = nameIsValid && labelIsValid;
     if (!valid) {
       LOGGER.warn("Metric {} is not a valid prometheus metric.", define);
+      return false;
     }
-    return valid;
+
+    if (!metricFilter.matches(define.getName())) {
+      return false;
+    }
+
+    return true;
   }
 
   private MetricFamilySamples createFamilySample(
