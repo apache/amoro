@@ -514,6 +514,23 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofSeconds(3))
           .withDescription("Optimizer polling task timeout.");
 
+  public static final ConfigOption<Duration> OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL =
+      ConfigOptions.key("optimizer-group.min-parallelism-check-interval")
+          .durationType()
+          .defaultValue(Duration.ofMinutes(5))
+          .withDescription(
+              "The interval for checking and ensuring the optimizer group meets its minimum parallelism requirement. "
+                  + "When the current parallelism falls below the configured min-parallelism, "
+                  + "the system will attempt to scale out optimizers at this interval. "
+                  + "The actual scale-out timing is calculated as: consecutive keeping attempts * this interval.");
+
+  public static final ConfigOption<Integer> OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS =
+      ConfigOptions.key("optimizer-group.max-keeping-attempts")
+          .intType()
+          .defaultValue(3)
+          .withDescription(
+              "The maximum number of consecutive attempts to keep the optimizer group at its current parallelism.");
+
   public static final ConfigOption<Duration> OPTIMIZING_REFRESH_GROUP_INTERVAL =
       ConfigOptions.key("self-optimizing.refresh-group-interval")
           .durationType()
