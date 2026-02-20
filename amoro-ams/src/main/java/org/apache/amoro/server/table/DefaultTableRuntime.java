@@ -26,6 +26,7 @@ import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.iceberg.Constants;
+import org.apache.amoro.maintainer.MaintainerMetrics;
 import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.TableRuntimeOptimizingState;
@@ -98,7 +99,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
 
   private final Map<Action, TableProcessContainer> processContainerMap = Maps.newConcurrentMap();
   private final TableOptimizingMetrics optimizingMetrics;
-  private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
+  private final TableMaintainerMetrics maintainerMetrics;
   private final TableSummaryMetrics tableSummaryMetrics;
   private volatile long lastPlanTime;
   private volatile OptimizingProcess optimizingProcess;
@@ -108,8 +109,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
     super(store);
     this.optimizingMetrics =
         new TableOptimizingMetrics(store.getTableIdentifier(), store.getGroupName());
-    this.orphanFilesCleaningMetrics =
-        new TableOrphanFilesCleaningMetrics(store.getTableIdentifier());
+    this.maintainerMetrics = new TableMaintainerMetrics(store.getTableIdentifier());
     this.tableSummaryMetrics = new TableSummaryMetrics(store.getTableIdentifier());
   }
 
@@ -128,7 +128,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   public void registerMetric(MetricRegistry metricRegistry) {
     // TODO: extract method to interface.
     this.optimizingMetrics.register(metricRegistry);
-    this.orphanFilesCleaningMetrics.register(metricRegistry);
+    this.maintainerMetrics.register(metricRegistry);
     this.tableSummaryMetrics.register(metricRegistry);
   }
 
@@ -165,8 +165,14 @@ public class DefaultTableRuntime extends AbstractTableRuntime
     return processContainerMap.get(action).getProcessStates();
   }
 
-  public TableOrphanFilesCleaningMetrics getOrphanFilesCleaningMetrics() {
-    return orphanFilesCleaningMetrics;
+  /**
+   * Get the maintainer metrics implementation.
+   *
+   * @return MaintainerMetrics instance
+   */
+  @Override
+  public MaintainerMetrics getMaintainerMetrics() {
+    return maintainerMetrics;
   }
 
   public long getCurrentSnapshotId() {
@@ -475,7 +481,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   @Override
   public void unregisterMetric() {
     tableSummaryMetrics.unregister();
-    orphanFilesCleaningMetrics.unregister();
+    maintainerMetrics.unregister();
     optimizingMetrics.unregister();
   }
 

@@ -31,6 +31,8 @@ import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;
 import org.apache.amoro.maintainer.MaintainerMetrics;
+import org.apache.amoro.maintainer.MaintainerOperationExecutor;
+import org.apache.amoro.maintainer.MaintainerOperationType;
 import org.apache.amoro.maintainer.OptimizingInfo;
 import org.apache.amoro.maintainer.TableMaintainer;
 import org.apache.amoro.maintainer.TableMaintainerContext;
@@ -139,38 +141,63 @@ public class IcebergTableMaintainer implements TableMaintainer {
       return;
     }
 
-    long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
+    MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
 
-    cleanContentFiles(System.currentTimeMillis() - keepTime, metrics);
+    executor.execute(
+        MaintainerOperationType.ORPHAN_FILES_CLEANING,
+        () -> {
+          long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
 
-    // refresh
-    table.refresh();
+          cleanContentFiles(System.currentTimeMillis() - keepTime, metrics);
 
-    // clear metadata files
-    cleanMetadata(System.currentTimeMillis() - keepTime, metrics);
+          // refresh
+          table.refresh();
+
+          // clear metadata files
+          cleanMetadata(System.currentTimeMillis() - keepTime, metrics);
+        });
   }
 
   @Override
   public void cleanDanglingDeleteFiles() {
     TableConfiguration tableConfiguration = context.getTableConfiguration();
+    MaintainerMetrics metrics = context.getMetrics();
+
     if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
       return;
     }
 
-    Snapshot currentSnapshot = table.currentSnapshot();
-    if (currentSnapshot == null) {
-      return;
-    }
-    Optional<String> totalDeleteFiles =
-        Optional.ofNullable(currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
-    if (totalDeleteFiles.isPresent() && Long.parseLong(totalDeleteFiles.get()) > 0) {
-      // clear dangling delete files
-      doCleanDanglingDeleteFiles();
-    } else {
-      LOG.debug(
-          "There are no delete files here, so there is no need to clean dangling delete file for table {}",
-          table.name());
-    }
+    MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
+
+    executor.execute(
+        MaintainerOperationType.DANGLING_DELETE_FILES_CLEANING,
+        () -> {
+          Snapshot currentSnapshot = table.currentSnapshot();
+          if (currentSnapshot == null) {
+            return;
+          }
+          Optional<String> totalDeleteFiles =
+              Optional.ofNullable(
+                  currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
+          if (totalDeleteFiles.isPresent() && Long.parseLong(totalDeleteFiles.get()) > 0) {
+            // clear dangling delete files
+            LOG.info("Starting cleaning dangling delete files for table {}", table.name());
+            int danglingDeleteFilesCnt = clearInternalTableDanglingDeleteFiles();
+            runWithCondition(
+                danglingDeleteFilesCnt > 0,
+                () -> {
+                  LOG.info(
+                      "Deleted {} dangling delete files for table {}",
+                      danglingDeleteFilesCnt,
+                      table.name());
+                  metrics.recordDanglingDeleteFilesCleaned(danglingDeleteFilesCnt);
+                });
+          } else {
+            LOG.debug(
+                "There are no delete files here, so there is no need to clean dangling delete file for table {}",
+                table.name());
+          }
+        });
   }
 
   @Override
@@ -178,9 +205,56 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (!expireSnapshotEnabled()) {
       return;
     }
-    expireSnapshots(
-        mustOlderThan(System.currentTimeMillis()),
-        context.getTableConfiguration().getSnapshotMinCount());
+    MaintainerMetrics metrics = context.getMetrics();
+    long mustOlderThan = mustOlderThan(System.currentTimeMillis());
+    int minCount = context.getTableConfiguration().getSnapshotMinCount();
+
+    MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
+    executor.execute(
+        MaintainerOperationType.SNAPSHOT_EXPIRATION,
+        () -> expireSnapshotsInternal(mustOlderThan, minCount, metrics));
+  }
+
+  private void expireSnapshotsInternal(
+      long mustOlderThan, int minCount, MaintainerMetrics metrics) {
+    long startTime = System.currentTimeMillis();
+    Set<String> exclude = expireSnapshotNeedToExcludeFiles();
+    LOG.debug(
+        "Starting snapshots expiration for table {}, expiring snapshots older than {} and retain last {} snapshots, excluding {}",
+        table.name(),
+        mustOlderThan,
+        minCount,
+        exclude);
+    RollingFileCleaner expiredFileCleaner = new RollingFileCleaner(fileIO(), exclude);
+    table
+        .expireSnapshots()
+        .retainLast(Math.max(minCount, 1))
+        .expireOlderThan(mustOlderThan)
+        .deleteWith(expiredFileCleaner::addFile)
+        .cleanExpiredFiles(
+            true) /* enable clean only for collecting the expired files, will delete them later */
+        .commit();
+
+    int snapshotCount = expiredFileCleaner.fileCount();
+    int dataFilesDeleted = expiredFileCleaner.cleanedFileCount();
+    expiredFileCleaner.clear();
+
+    long duration = System.currentTimeMillis() - startTime;
+
+    if (snapshotCount > 0) {
+      LOG.info(
+          "Expired {}/{} files for table {} older than {}",
+          snapshotCount,
+          dataFilesDeleted,
+          table.name(),
+          DateTimeUtil.formatTimestampMillis(mustOlderThan));
+      metrics.recordSnapshotsExpired(snapshotCount, dataFilesDeleted, duration);
+    } else {
+      LOG.debug(
+          "No expired files found for table {} older than {}",
+          table.name(),
+          DateTimeUtil.formatTimestampMillis(mustOlderThan));
+    }
   }
 
   public boolean expireSnapshotEnabled() {
@@ -190,56 +264,36 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   @VisibleForTesting
   public void expireSnapshots(long mustOlderThan, int minCount) {
-    expireSnapshots(mustOlderThan, minCount, expireSnapshotNeedToExcludeFiles());
+    MaintainerMetrics metrics = context.getMetrics();
+    expireSnapshotsInternal(mustOlderThan, minCount, metrics);
   }
 
   private void expireSnapshots(long olderThan, int minCount, Set<String> exclude) {
-    LOG.debug(
-        "Starting snapshots expiration for table {}, expiring snapshots older than {} and retain last {} snapshots, excluding {}",
-        table.name(),
-        olderThan,
-        minCount,
-        exclude);
-    RollingFileCleaner expiredFileCleaner = new RollingFileCleaner(fileIO(), exclude);
-    table
-        .expireSnapshots()
-        .retainLast(Math.max(minCount, 1))
-        .expireOlderThan(olderThan)
-        .deleteWith(expiredFileCleaner::addFile)
-        .cleanExpiredFiles(
-            true) /* enable clean only for collecting the expired files, will delete them later */
-        .commit();
-
-    int collectedFiles = expiredFileCleaner.fileCount();
-    expiredFileCleaner.clear();
-    if (collectedFiles > 0) {
-      LOG.info(
-          "Expired {}/{} files for table {} order than {}",
-          collectedFiles,
-          expiredFileCleaner.cleanedFileCount(),
-          table.name(),
-          DateTimeUtil.formatTimestampMillis(olderThan));
-    } else {
-      LOG.debug(
-          "No expired files found for table {} order than {}",
-          table.name(),
-          DateTimeUtil.formatTimestampMillis(olderThan));
-    }
+    // This method is kept for backward compatibility with potential subclasses
+    // Redirect to the new method with metrics
+    MaintainerMetrics metrics = context.getMetrics();
+    expireSnapshotsInternal(olderThan, minCount, metrics);
   }
 
   @Override
   public void expireData() {
     DataExpirationConfig expirationConfig = context.getTableConfiguration().getExpiringDataConfig();
-    try {
-      Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
-      if (!isValidDataExpirationField(expirationConfig, field, table.name())) {
-        return;
-      }
+    MaintainerMetrics metrics = context.getMetrics();
 
-      expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
-    } catch (Throwable t) {
-      LOG.error("Unexpected purge error for table {} ", tableIdentifier, t);
-    }
+    MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
+    executor.execute(
+        MaintainerOperationType.DATA_EXPIRATION,
+        () -> {
+          Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
+          if (!isValidDataExpirationField(expirationConfig, field, table.name())) {
+            return;
+          }
+
+          Instant expireInstant = expireBaseOnRule(expirationConfig, field);
+          if (!expireInstant.equals(Instant.MIN)) {
+            doExpireData(expirationConfig, expireInstant, metrics);
+          }
+        });
   }
 
   public Instant expireBaseOnRule(DataExpirationConfig expirationConfig, Types.NestedField field) {
@@ -273,26 +327,191 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (instant.equals(Instant.MIN)) {
       return;
     }
+    MaintainerMetrics metrics = context.getMetrics();
+    MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
+    executor.execute(
+        MaintainerOperationType.DATA_EXPIRATION,
+        () -> doExpireData(expirationConfig, instant, metrics));
+  }
 
+  private void doExpireData(
+      DataExpirationConfig expirationConfig, Instant instant, MaintainerMetrics metrics) {
+    // Add defensive check
+    if (instant.equals(Instant.MIN)) {
+      return;
+    }
+    long startTime = System.currentTimeMillis();
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
+    Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
     LOG.info(
         "Expiring data older than {} in table {} ",
-        Instant.ofEpochMilli(expireTimestamp)
-            .atZone(
-                getDefaultZoneId(table.schema().findField(expirationConfig.getExpirationField())))
-            .toLocalDateTime(),
+        Instant.ofEpochMilli(expireTimestamp).atZone(getDefaultZoneId(field)).toLocalDateTime(),
         table.name());
 
     Expression dataFilter = getDataExpression(table.schema(), expirationConfig, expireTimestamp);
 
     ExpireFiles expiredFiles = expiredFileScan(expirationConfig, dataFilter, expireTimestamp);
-    expireFiles(expiredFiles, expireTimestamp);
+
+    int dataFilesCount = expiredFiles.dataFiles.size();
+    int deleteFilesCount = expiredFiles.deleteFiles.size();
+
+    if (dataFilesCount > 0 || deleteFilesCount > 0) {
+      expireFiles(expiredFiles, expireTimestamp);
+    }
+
+    long duration = System.currentTimeMillis() - startTime;
+
+    if (dataFilesCount > 0 || deleteFilesCount > 0) {
+      LOG.info(
+          "Data expiration completed for table {}, {} data files and {} delete files expired, duration: {}ms",
+          table.name(),
+          dataFilesCount,
+          deleteFilesCount,
+          duration);
+      metrics.recordDataExpired(dataFilesCount, deleteFilesCount, duration);
+    }
   }
 
   @Override
   public void autoCreateTags() {
     TagConfiguration tagConfiguration = context.getTableConfiguration().getTagConfiguration();
-    new AutoCreateIcebergTagAction(table, tagConfiguration, LocalDateTime.now()).execute();
+    MaintainerMetrics metrics = context.getMetrics();
+
+    MaintainerOperationExecutor executor = new MaintainerOperationExecutor(metrics);
+    executor.execute(
+        MaintainerOperationType.TAG_CREATION,
+        () -> {
+          long startTime = System.currentTimeMillis();
+          int tagsCreated = autoCreateTagsInternal(tagConfiguration);
+          long duration = System.currentTimeMillis() - startTime;
+          if (tagsCreated > 0) {
+            metrics.recordTagsCreated(tagsCreated, duration);
+          }
+        });
+  }
+
+  private int autoCreateTagsInternal(TagConfiguration tagConfiguration) {
+    LocalDateTime checkTime = LocalDateTime.now();
+
+    if (!tagConfiguration.isAutoCreateTag()) {
+      return 0;
+    }
+    LOG.debug("Start checking the automatic creation of tags for {}", table.name());
+    if (tagExists(tagConfiguration, checkTime)) {
+      LOG.debug("Found the expected tag on {}, skip", table.name());
+      return 0;
+    }
+    boolean success = createTagWithConfig(tagConfiguration, checkTime);
+    if (success) {
+      LOG.info("Created a tag successfully on {}", table.name());
+      return 1;
+    } else {
+      LOG.info("Skipped tag creation on {}", table.name());
+      return 0;
+    }
+  }
+
+  /**
+   * Check if tag exists for the given tag configuration.
+   *
+   * @param tagConfiguration tag configuration
+   * @param checkTime check time
+   * @return true if tag exists, false otherwise
+   */
+  private boolean tagExists(TagConfiguration tagConfiguration, LocalDateTime checkTime) {
+    LocalDateTime tagTime =
+        tagConfiguration
+            .getTriggerPeriod()
+            .getTagTime(checkTime, tagConfiguration.getTriggerOffsetMinutes());
+    LocalDateTime triggerTime = tagTime.plusMinutes(tagConfiguration.getTriggerOffsetMinutes());
+    String tagName =
+        tagConfiguration
+            .getTriggerPeriod()
+            .generateTagName(tagTime, tagConfiguration.getTagFormat());
+
+    String tag =
+        table.refs().entrySet().stream()
+            .filter(entry -> entry.getValue().isTag())
+            .map(Map.Entry::getKey)
+            .filter(tagName::equals)
+            .findFirst()
+            .orElse(null);
+    return tag != null;
+  }
+
+  /**
+   * Create tag using the provided configuration.
+   *
+   * @param tagConfiguration the tag configuration
+   * @param checkTime the check time
+   * @return true if tag was created, false otherwise
+   */
+  private boolean createTagWithConfig(TagConfiguration tagConfiguration, LocalDateTime checkTime) {
+    LocalDateTime tagTime =
+        tagConfiguration
+            .getTriggerPeriod()
+            .getTagTime(checkTime, tagConfiguration.getTriggerOffsetMinutes());
+    String tagName =
+        tagConfiguration
+            .getTriggerPeriod()
+            .generateTagName(tagTime, tagConfiguration.getTagFormat());
+
+    // Create the tag
+    long tagTriggerTimestampMillis =
+        tagTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
+    org.apache.iceberg.Snapshot snapshot = findSnapshotForTag(table, tagTriggerTimestampMillis);
+    if (snapshot == null) {
+      LOG.info("Found no snapshot at {} for {}", tagTriggerTimestampMillis, table.name());
+      return false;
+    }
+
+    if (exceedMaxDelayForTag(snapshot, tagConfiguration, tagTriggerTimestampMillis)) {
+      LOG.info(
+          "{}'s snapshot {} at {} exceeds max delay {}, and the expected trigger time is {}",
+          table.name(),
+          snapshot.snapshotId(),
+          snapshot.timestampMillis(),
+          tagConfiguration.getMaxDelayMinutes(),
+          tagTriggerTimestampMillis);
+      return false;
+    }
+
+    org.apache.iceberg.ManageSnapshots tag =
+        table.manageSnapshots().createTag(tagName, snapshot.snapshotId());
+    if (tagConfiguration.getTagMaxAgeMs() > 0) {
+      tag.setMaxRefAgeMs(tagName, tagConfiguration.getTagMaxAgeMs());
+    }
+    tag.commit();
+    LOG.info(
+        "Created a tag {} for {} on snapshot {} at {}",
+        tagName,
+        table.name(),
+        snapshot.snapshotId(),
+        snapshot.timestampMillis());
+    return true;
+  }
+
+  private static org.apache.iceberg.Snapshot findSnapshotForTag(
+      org.apache.iceberg.Table table, long tagTriggerTime) {
+    Iterable<org.apache.iceberg.Snapshot> snapshots = table.snapshots();
+    for (org.apache.iceberg.Snapshot snapshot : snapshots) {
+      long waterMark = snapshot.timestampMillis();
+      if (waterMark >= tagTriggerTime) {
+        return snapshot;
+      }
+    }
+    return null;
+  }
+
+  private boolean exceedMaxDelayForTag(
+      org.apache.iceberg.Snapshot snapshot,
+      TagConfiguration tagConfig,
+      long tagTriggerTimestampMillis) {
+    if (tagConfig.getMaxDelayMinutes() <= 0) {
+      return false;
+    }
+    long delay = snapshot.timestampMillis() - tagTriggerTimestampMillis;
+    return delay > tagConfig.getMaxDelayMinutes() * 60_000L;
   }
 
   public void cleanContentFiles(long lastTime, MaintainerMetrics metrics) {

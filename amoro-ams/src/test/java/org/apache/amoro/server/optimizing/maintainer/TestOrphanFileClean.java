@@ -22,14 +22,13 @@ import static org.apache.amoro.formats.iceberg.maintainer.IcebergTableMaintainer
 import static org.apache.amoro.formats.iceberg.maintainer.IcebergTableMaintainer.FLINK_JOB_ID;
 
 import org.apache.amoro.BasicTableTestHelper;
-import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.formats.iceberg.maintainer.MixedTableMaintainer;
+import org.apache.amoro.maintainer.MaintainerMetrics;
 import org.apache.amoro.server.scheduler.inline.ExecutorTestBase;
-import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
@@ -110,23 +109,17 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       Assert.assertTrue(getMixedTable().io().exists(changeOrphanFilePath));
     }
     TableIdentifier tableIdentifier = getMixedTable().id();
-    TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
-        new TableOrphanFilesCleaningMetrics(
-            ServerTableIdentifier.of(
-                tableIdentifier.getCatalog(),
-                tableIdentifier.getDatabase(),
-                tableIdentifier.getTableName(),
-                getTestFormat()));
+    MaintainerMetrics metrics = MaintainerMetrics.NOOP;
     MixedTableMaintainer maintainer =
         new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()));
     maintainer.cleanContentFiles(
         System.currentTimeMillis()
             - TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT * 60 * 1000,
-        orphanFilesCleaningMetrics);
+        metrics);
     maintainer.cleanMetadata(
         System.currentTimeMillis()
             - TableProperties.MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT * 60 * 1000,
-        orphanFilesCleaningMetrics);
+        metrics);
 
     Assert.assertTrue(getMixedTable().io().exists(baseOrphanFileDir));
     Assert.assertTrue(getMixedTable().io().exists(baseOrphanFilePath));
@@ -135,8 +128,8 @@ public class TestOrphanFileClean extends ExecutorTestBase {
       Assert.assertTrue(getMixedTable().io().exists(changeOrphanFilePath));
     }
 
-    maintainer.cleanContentFiles(System.currentTimeMillis(), orphanFilesCleaningMetrics);
-    maintainer.cleanMetadata(System.currentTimeMillis(), orphanFilesCleaningMetrics);
+    maintainer.cleanContentFiles(System.currentTimeMillis(), metrics);
+    maintainer.cleanMetadata(System.currentTimeMillis(), metrics);
 
     Assert.assertFalse(getMixedTable().io().exists(baseOrphanFileDir));
     Assert.assertFalse(getMixedTable().io().exists(baseOrphanFilePath));
@@ -204,15 +197,8 @@ public class TestOrphanFileClean extends ExecutorTestBase {
 
     MixedTableMaintainer maintainer =
         new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()));
-    TableIdentifier tableIdentifier = getMixedTable().id();
-    TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
-        new TableOrphanFilesCleaningMetrics(
-            ServerTableIdentifier.of(
-                tableIdentifier.getCatalog(),
-                tableIdentifier.getDatabase(),
-                tableIdentifier.getTableName(),
-                getTestFormat()));
-    maintainer.cleanMetadata(System.currentTimeMillis(), orphanFilesCleaningMetrics);
+    MaintainerMetrics metrics = MaintainerMetrics.NOOP;
+    maintainer.cleanMetadata(System.currentTimeMillis(), metrics);
 
     Assert.assertFalse(getMixedTable().io().exists(baseOrphanFilePath));
     if (isKeyedTable()) {
@@ -298,16 +284,8 @@ public class TestOrphanFileClean extends ExecutorTestBase {
 
     MixedTableMaintainer tableMaintainer =
         new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()));
-    TableIdentifier tableIdentifier = getMixedTable().id();
-    TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
-        new TableOrphanFilesCleaningMetrics(
-            ServerTableIdentifier.of(
-                tableIdentifier.getCatalog(),
-                tableIdentifier.getDatabase(),
-                tableIdentifier.getTableName(),
-                getTestFormat()));
-
-    tableMaintainer.cleanMetadata(System.currentTimeMillis(), orphanFilesCleaningMetrics);
+    MaintainerMetrics metrics = MaintainerMetrics.NOOP;
+    tableMaintainer.cleanMetadata(System.currentTimeMillis(), metrics);
     Assert.assertFalse(getMixedTable().io().exists(baseOrphanFilePath));
     if (isKeyedTable()) {
       // files whose file name starts with flink.job-id should not be deleted
@@ -334,22 +312,15 @@ public class TestOrphanFileClean extends ExecutorTestBase {
     StatisticsFile file3 =
         commitStatisticsFile(unkeyedTable, unkeyedTable.location() + "/data/puffin/test3.puffin");
 
-    TableIdentifier tableIdentifier = getMixedTable().id();
-    TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics =
-        new TableOrphanFilesCleaningMetrics(
-            ServerTableIdentifier.of(
-                tableIdentifier.getCatalog(),
-                tableIdentifier.getDatabase(),
-                tableIdentifier.getTableName(),
-                getTestFormat()));
+    MaintainerMetrics metrics = MaintainerMetrics.NOOP;
 
     Assert.assertTrue(unkeyedTable.io().exists(file1.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file2.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file3.path()));
     new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()))
-        .cleanContentFiles(System.currentTimeMillis() + 1, orphanFilesCleaningMetrics);
+        .cleanContentFiles(System.currentTimeMillis() + 1, metrics);
     new MixedTableMaintainer(getMixedTable(), TestTableMaintainerContext.of(getMixedTable()))
-        .cleanMetadata(System.currentTimeMillis() + 1, orphanFilesCleaningMetrics);
+        .cleanMetadata(System.currentTimeMillis() + 1, metrics);
     Assert.assertTrue(unkeyedTable.io().exists(file1.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file2.path()));
     Assert.assertTrue(unkeyedTable.io().exists(file3.path()));
