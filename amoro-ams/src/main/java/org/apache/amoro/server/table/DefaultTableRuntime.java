@@ -114,8 +114,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
-    if (!getOptimizingStatus().isProcessing()
-        || !Objects.equals(optimizingProcess.getProcessId(), getProcessId())) {
+    if (!Objects.equals(optimizingProcess.getProcessId(), getProcessId())) {
       throw new IllegalStateException("Table runtime and processing are not matched!");
     }
     this.optimizingProcess = optimizingProcess;
@@ -434,22 +433,22 @@ public class DefaultTableRuntime extends AbstractTableRuntime
 
   public void completeEmptyProcess() {
     OptimizingStatus originalStatus = getOptimizingStatus();
-    boolean needUpdate =
-        originalStatus == OptimizingStatus.PLANNING || originalStatus == OptimizingStatus.PENDING;
-    if (needUpdate) {
-      store()
-          .begin()
-          .updateStatusCode(code -> OptimizingStatus.IDLE.getCode())
-          .updateState(
-              OPTIMIZING_STATE_KEY,
-              state -> {
-                state.setLastOptimizedSnapshotId(state.getCurrentSnapshotId());
-                state.setLastOptimizedChangeSnapshotId(state.getCurrentChangeSnapshotId());
-                return state;
-              })
-          .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
-          .commit();
+    if (originalStatus == OptimizingStatus.IDLE) {
+      return;
     }
+    store()
+        .begin()
+        .updateStatusCode(code -> OptimizingStatus.IDLE.getCode())
+        .updateState(
+            OPTIMIZING_STATE_KEY,
+            state -> {
+              state.setLastOptimizedSnapshotId(state.getCurrentSnapshotId());
+              state.setLastOptimizedChangeSnapshotId(state.getCurrentChangeSnapshotId());
+              return state;
+            })
+        .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
+        .commit();
+    optimizingProcess = null;
   }
 
   public void optimizingNotNecessary() {
