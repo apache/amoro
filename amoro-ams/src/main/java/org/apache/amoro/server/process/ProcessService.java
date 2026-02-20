@@ -25,6 +25,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.process.ProcessEvent;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
@@ -242,7 +243,7 @@ public class ProcessService extends PersistentBase {
                     "Regular Retry.",
                     process.getProcessParameters(),
                     process.getSummary());
-            scheduler.retry(process);
+            executeOrTraceProcess(process);
           } else {
             untrackTableProcessInstance(
                 process.getTableRuntime().getTableIdentifier(), process.getId());

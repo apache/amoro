@@ -19,6 +19,7 @@
 package org.apache.amoro.process;
 
 import org.apache.amoro.Action;
+import org.apache.amoro.ActivePlugin;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 
@@ -28,7 +29,7 @@ import java.util.Optional;
  * Coordinator for a specific {@link org.apache.amoro.Action} to manage table processes. Provides
  * scheduling parameters and lifecycle hooks to create/recover/cancel/retry table processes.
  */
-public interface ActionCoordinator {
+public interface ActionCoordinator extends ActivePlugin {
 
   /**
    * Check whether the given table format is supported by this coordinator.
