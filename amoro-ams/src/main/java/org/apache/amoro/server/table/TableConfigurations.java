@@ -341,7 +341,17 @@ public class TableConfigurations {
             PropertyUtil.propertyAsLong(
                 properties,
                 TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE,
-                TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE_DEFAULT));
+                TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE_DEFAULT))
+        .setRefreshTableAdaptiveMaxIntervalMs(
+            PropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS,
+                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS_DEFAULT))
+        .setRefreshTableAdaptiveIncreaseStepMs(
+            PropertyUtil.propertyAsLong(
+                properties,
+                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS,
+                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS_DEFAULT));
   }
 
   /**

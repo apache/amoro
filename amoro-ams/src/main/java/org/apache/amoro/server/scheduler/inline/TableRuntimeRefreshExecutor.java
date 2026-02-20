@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.scheduler.inline;
 
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS;
+
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.OptimizingConfig;
@@ -25,12 +27,15 @@ import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.optimizing.evaluation.MetadataBasedEvaluationEvent;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.IcebergTableUtil;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.MixedTable;
 
@@ -56,15 +61,23 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
     DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
+
+    if (defaultTableRuntime.getOptimizingConfig().isRefreshTableAdaptiveEnabled()) {
+      long newInterval = defaultTableRuntime.getLatestRefreshInterval();
+      if (newInterval > 0) {
+        return newInterval;
+      }
+    }
+
     return Math.min(
         defaultTableRuntime.getOptimizingConfig().getMinorLeastInterval() * 4L / 5, interval);
   }
 
-  private void tryEvaluatingPendingInput(DefaultTableRuntime tableRuntime, MixedTable table) {
+  private boolean tryEvaluatingPendingInput(DefaultTableRuntime tableRuntime, MixedTable table) {
     // only evaluate pending input when optimizing is enabled and in idle state
     OptimizingConfig optimizingConfig = tableRuntime.getOptimizingConfig();
-    if (optimizingConfig.isEnabled()
-        && tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
+    boolean optimizingEnabled = optimizingConfig.isEnabled();
+    if (optimizingEnabled && tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
 
       if (optimizingConfig.isMetadataBasedTriggerEnabled()
           && !MetadataBasedEvaluationEvent.isEvaluatingNecessary(
@@ -72,12 +85,14 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
         logger.debug(
             "{} optimizing is not necessary due to metadata based trigger",
             tableRuntime.getTableIdentifier());
-        return;
+        // indicates no optimization demand now
+        return false;
       }
 
       AbstractOptimizingEvaluator evaluator =
           IcebergTableUtil.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
-      if (evaluator.isNecessary()) {
+      boolean evaluatorIsNecessary = evaluator.isNecessary();
+      if (evaluatorIsNecessary) {
         AbstractOptimizingEvaluator.PendingInput pendingInput =
             evaluator.getOptimizingPendingInput();
         logger.debug(
@@ -88,7 +103,21 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
       } else {
         tableRuntime.optimizingNotNecessary();
       }
+
       tableRuntime.setTableSummary(evaluator.getPendingInput());
+      return evaluatorIsNecessary;
+    } else if (!optimizingEnabled) {
+      logger.debug(
+          "{} optimizing is not enabled, skip evaluating pending input",
+          tableRuntime.getTableIdentifier());
+      // indicates no optimization demand now
+      return false;
+    } else {
+      logger.debug(
+          "{} optimizing is processing or is in preparation", tableRuntime.getTableIdentifier());
+      // indicates optimization demand exists (preparation or processing),
+      // even though we don't trigger a new evaluation in this loop.
+      return true;
     }
   }
 
@@ -122,16 +151,148 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
       AmoroTable<?> table = loadTable(tableRuntime);
       defaultTableRuntime.refresh(table);
       MixedTable mixedTable = (MixedTable) table.originalTable();
+      // Check if there is any optimizing demand now.
+      boolean hasOptimizingDemand = false;
       if ((mixedTable.isKeyedTable()
               && (lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId()
                   || lastOptimizedChangeSnapshotId
                       != defaultTableRuntime.getCurrentChangeSnapshotId()))
           || (mixedTable.isUnkeyedTable()
               && lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId())) {
-        tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
+        hasOptimizingDemand = tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
+      } else {
+        logger.debug("{} optimizing is not necessary", defaultTableRuntime.getTableIdentifier());
+      }
+
+      // Update adaptive interval according to evaluated result.
+      if (defaultTableRuntime.getOptimizingConfig().isRefreshTableAdaptiveEnabled()) {
+        defaultTableRuntime.setLatestEvaluatedNeedOptimizing(hasOptimizingDemand);
+        long newInterval = getAdaptiveExecutingInterval(defaultTableRuntime);
+        defaultTableRuntime.setLatestRefreshInterval(newInterval);
       }
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
     }
+  }
+
+  /**
+   * Calculate adaptive execution interval based on table optimization status.
+   *
+   * <p>Uses AIMD (Additive Increase Multiplicative Decrease) algorithm inspired by TCP congestion
+   * control:
+   *
+   * <ul>
+   *   <li>If table does not need to be optimized: additive increase - gradually extend interval to
+   *       reduce resource consumption
+   *   <li>If table needs optimization: multiplicative decrease - rapidly reduce interval for quick
+   *       response
+   * </ul>
+   *
+   * <p>Interval is bounded by [interval_min, interval_max] and kept in memory only (resets to
+   * interval_min on restart).
+   *
+   * @param tableRuntime The table runtime information containing current status and configuration
+   * @return The next execution interval in milliseconds
+   */
+  @VisibleForTesting
+  public long getAdaptiveExecutingInterval(DefaultTableRuntime tableRuntime) {
+    final long minInterval = interval;
+    final long maxInterval =
+        tableRuntime.getOptimizingConfig().getRefreshTableAdaptiveMaxIntervalMs();
+
+    if (maxInterval <= minInterval) {
+      tableRuntime
+          .getOptimizingConfig()
+          .setRefreshTableAdaptiveMaxIntervalMs(AmoroServiceConstants.INVALID_TIME);
+      logger.warn(
+          "Invalid adaptive refresh configuration for table {}: {} = {}ms is not greater than {} = {}ms. Setting {} to default value 0 to disable dynamic refresh logic.",
+          tableRuntime.getTableIdentifier(),
+          SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS,
+          maxInterval,
+          AmoroManagementConf.REFRESH_TABLES_INTERVAL.key(),
+          minInterval,
+          SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS);
+
+      return AmoroServiceConstants.INVALID_TIME;
+    }
+
+    long currentInterval = tableRuntime.getLatestRefreshInterval();
+
+    // Initialize interval on first run or after restart
+    if (currentInterval == 0) {
+      currentInterval = minInterval;
+    }
+
+    // Determine whether table needs optimization
+    boolean needOptimizing = tableRuntime.getLatestEvaluatedNeedOptimizing();
+
+    long nextInterval;
+    if (needOptimizing) {
+      nextInterval = decreaseInterval(currentInterval, minInterval);
+      logger.debug(
+          "Table {} needs optimization, decreasing interval from {}ms to {}ms",
+          tableRuntime.getTableIdentifier(),
+          currentInterval,
+          nextInterval);
+    } else {
+      nextInterval = increaseInterval(tableRuntime, currentInterval, maxInterval);
+      logger.debug(
+          "Table {} does not need optimization, increasing interval from {}ms to {}ms",
+          tableRuntime.getTableIdentifier(),
+          currentInterval,
+          nextInterval);
+    }
+
+    return nextInterval;
+  }
+
+  /**
+   * Decrease interval when table needs optimization.
+   *
+   * <p>Uses multiplicative decrease (halving) inspired by TCP Fast Recovery algorithm for rapid
+   * response to table health issues.
+   *
+   * @param currentInterval Current refresh interval in milliseconds
+   * @param minInterval Minimum allowed interval in milliseconds
+   * @return New interval after decrease.
+   */
+  private long decreaseInterval(long currentInterval, long minInterval) {
+    long newInterval = currentInterval / 2;
+    long boundedInterval = Math.max(newInterval, minInterval);
+    if (newInterval < minInterval) {
+      logger.debug(
+          "Interval reached minimum boundary: attempted {}ms, capped at {}ms",
+          newInterval,
+          minInterval);
+    }
+
+    return boundedInterval;
+  }
+
+  /**
+   * Increase interval when table does not need optimization.
+   *
+   * <p>Uses additive increase inspired by TCP Congestion Avoidance algorithm for gradual and stable
+   * growth.
+   *
+   * @param tableRuntime The table runtime information containing configuration
+   * @param currentInterval Current refresh interval in milliseconds
+   * @param maxInterval Maximum allowed interval in milliseconds
+   * @return New interval after increase.
+   */
+  private long increaseInterval(
+      DefaultTableRuntime tableRuntime, long currentInterval, long maxInterval) {
+    long step = tableRuntime.getOptimizingConfig().getRefreshTableAdaptiveIncreaseStepMs();
+    long newInterval = currentInterval + step;
+    long boundedInterval = Math.min(newInterval, maxInterval);
+    if (newInterval > maxInterval) {
+      logger.debug(
+          "Interval reached maximum boundary: currentInterval is {}ms, attempted {}ms, capped at {}ms",
+          currentInterval,
+          newInterval,
+          maxInterval);
+    }
+
+    return boundedInterval;
   }
 }
