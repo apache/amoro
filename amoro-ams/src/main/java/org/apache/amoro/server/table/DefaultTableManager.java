@@ -114,7 +114,7 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
     }
 
     ServerTableIdentifier serverTableIdentifier = internalCatalog.dropTable(database, table);
-    tableService().ifPresent(s -> s.onTableDropped(internalCatalog, serverTableIdentifier));
+    tableService().ifPresent(s -> s.removeTable(serverTableIdentifier));
   }
 
   @Override
@@ -128,7 +128,7 @@ public class DefaultTableManager extends PersistentBase implements TableManager 
     }
 
     TableMetadata metadata = catalog.createTable(tableMetadata);
-    tableService().ifPresent(s -> s.onTableCreated(catalog, metadata.getTableIdentifier()));
+    tableService().ifPresent(s -> s.addTable(metadata));
   }
 
   @Override

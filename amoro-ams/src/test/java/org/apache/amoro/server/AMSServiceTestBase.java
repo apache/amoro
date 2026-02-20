@@ -26,6 +26,7 @@ import org.apache.amoro.server.process.ProcessService;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.DefaultTableRuntimeFactory;
 import org.apache.amoro.server.table.DefaultTableService;
+import org.apache.amoro.server.table.IcebergTablePlugin;
 import org.apache.amoro.server.table.TableRuntimeFactoryManager;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.junit.AfterClass;
@@ -34,6 +35,7 @@ import org.junit.BeforeClass;
 import org.mockito.Mockito;
 
 import java.time.Duration;
+import java.util.List;
 
 public abstract class AMSServiceTestBase extends AMSManagerTestBase {
   private static DefaultTableService TABLE_SERVICE = null;
@@ -61,9 +63,12 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
               configurations, CATALOG_MANAGER, OPTIMIZER_MANAGER, TABLE_SERVICE);
       PROCESS_SERVICE = new ProcessService(configurations, TABLE_SERVICE);
 
-      TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
-      TABLE_SERVICE.addHandlerChain(PROCESS_SERVICE.getTableHandlerChain());
-      TABLE_SERVICE.initialize();
+      TABLE_SERVICE.initialize(
+          List.of(
+              IcebergTablePlugin.builder()
+                  .addHandler(OPTIMIZING_SERVICE.getTableRuntimeHandler())
+                  .addHandler(PROCESS_SERVICE.getTableHandlerChain())
+                  .build()));
       try {
         ResourceGroup group = defaultResourceGroup();
         OPTIMIZER_MANAGER.createResourceGroup(group);
