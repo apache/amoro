@@ -26,23 +26,18 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.types.Types;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestIcebergAmoroCatalog extends TestAmoroCatalogBase {
 
-  public TestIcebergAmoroCatalog(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
-    super(amoroCatalogTestHelper);
-  }
-
-  @Parameterized.Parameters(name = "{0}")
-  public static Object[] parameters() {
-    return new Object[] {IcebergHadoopCatalogTestHelper.defaultHelper()};
+  static Stream<AmoroCatalogTestHelper<?>> parameters() {
+    return Stream.of(IcebergHadoopCatalogTestHelper.defaultHelper());
   }
 
   @Override
@@ -78,5 +73,47 @@ public class TestIcebergAmoroCatalog extends TestAmoroCatalogBase {
 
   private Catalog catalog() {
     return (Catalog) originalCatalog;
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("parameters")
+  public void testListDatabases(AmoroCatalogTestHelper<?> helper) throws Exception {
+    setupCatalogHelper(helper);
+    super.testListDatabases();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("parameters")
+  public void testDropDatabases(AmoroCatalogTestHelper<?> helper) throws Exception {
+    setupCatalogHelper(helper);
+    super.testDropDatabases();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("parameters")
+  public void testCreateDatabases(AmoroCatalogTestHelper<?> helper) throws Exception {
+    setupCatalogHelper(helper);
+    super.testCreateDatabases();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("parameters")
+  public void testExistsDatabase(AmoroCatalogTestHelper<?> helper) throws Exception {
+    setupCatalogHelper(helper);
+    super.testExistsDatabase();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("parameters")
+  public void testExistsTable(AmoroCatalogTestHelper<?> helper) throws Exception {
+    setupCatalogHelper(helper);
+    super.testExistsTable();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("parameters")
+  public void testLoadTable(AmoroCatalogTestHelper<?> helper) throws Exception {
+    setupCatalogHelper(helper);
+    super.testLoadTable();
   }
 }
