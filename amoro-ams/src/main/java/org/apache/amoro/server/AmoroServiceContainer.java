@@ -249,7 +249,7 @@ public class AmoroServiceContainer {
   }
 
   private List<TableRuntimePlugin> initTablePlugins() {
-    LOG.info("Setting up AMS table executors...");
+    LOG.info("Setting up Iceberg table runtime plugins...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
     IcebergTablePlugin icebergTablePlugin =
         IcebergTablePlugin.builder()

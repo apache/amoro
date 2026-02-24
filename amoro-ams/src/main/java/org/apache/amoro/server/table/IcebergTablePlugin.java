@@ -68,35 +68,25 @@ public class IcebergTablePlugin implements TableRuntimePlugin, TableRuntimeHandl
 
   @Override
   public void onTableCreated(@Nullable AmoroTable<?> amoroTable, TableRuntime tableRuntime) {
-    if (headHandler != null) {
-      headHandler.fireTableAdded(amoroTable, tableRuntime);
-    }
+    headHandler.fireTableAdded(amoroTable, tableRuntime);
   }
 
   @Override
   public void onTableDropped(TableRuntime tableRuntime) {
-    if (headHandler != null) {
-      headHandler.fireTableRemoved(tableRuntime);
-    }
+    headHandler.fireTableRemoved(tableRuntime);
   }
 
   @Override
   public void dispose() {
-    if (headHandler != null) {
-      headHandler.dispose();
-    }
+    headHandler.dispose();
   }
 
   public void handleTableChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-    if (headHandler != null) {
-      headHandler.fireStatusChanged(tableRuntime, originalStatus);
-    }
+    headHandler.fireStatusChanged(tableRuntime, originalStatus);
   }
 
   public void handleTableChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
-    if (headHandler != null) {
-      headHandler.fireConfigChanged(tableRuntime, originalConfig);
-    }
+    headHandler.fireConfigChanged(tableRuntime, originalConfig);
   }
 
   public static IcebergTablePluginBuilder builder() {
