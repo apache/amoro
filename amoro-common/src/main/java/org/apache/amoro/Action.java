@@ -20,38 +20,33 @@ package org.apache.amoro;
 
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 
-import java.util.Arrays;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class Action {
 
   private static final int MAX_NAME_LENGTH = 16;
-
-  /** supported table formats of this action */
-  private final TableFormat[] formats;
+  private static final Map<String, Action> registeredActions = new ConcurrentHashMap<>();
 
   private final String name;
-  /**
-   * the weight number of this action, the bigger the weight number, the higher positions of
-   * schedulers or front pages
-   */
-  private final int weight;
 
-  public Action(TableFormat[] formats, int weight, String name) {
+  public static Action register(String name) {
+    final String regularName = name.trim().toUpperCase(Locale.ROOT);
+    return registeredActions.computeIfAbsent(regularName, s -> new Action(regularName));
+  }
+
+  public static Action valueOf(String name) {
+    final String regularName = name.trim().toUpperCase(Locale.ROOT);
+    return registeredActions.get(regularName);
+  }
+
+  private Action(String name) {
     Preconditions.checkArgument(
         name.length() <= MAX_NAME_LENGTH,
         "Action name length should be less than " + MAX_NAME_LENGTH);
-    this.formats = formats;
     this.name = name;
-    this.weight = weight;
-  }
-
-  public int getWeight() {
-    return weight;
-  }
-
-  public TableFormat[] supportedFormats() {
-    return formats;
   }
 
   public String getName() {
@@ -67,13 +62,11 @@ public final class Action {
       return false;
     }
     Action action = (Action) o;
-    return Objects.equals(name, action.name) && Arrays.equals(formats, action.formats);
+    return Objects.equals(name, action.name);
   }
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(name);
-    result = 31 * result + Arrays.hashCode(formats);
-    return result;
+    return Objects.hash(name);
   }
 }

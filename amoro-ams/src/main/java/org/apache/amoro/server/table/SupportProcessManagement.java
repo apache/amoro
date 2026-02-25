@@ -16,31 +16,25 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.table;
+package org.apache.amoro.server.table;
 
-import org.apache.amoro.ActivePlugin;
-import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
-import org.apache.amoro.process.ActionCoordinator;
-import org.apache.amoro.process.ProcessFactory;
+import org.apache.amoro.process.TableProcessStore;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+/** Interface for AMS inner used. */
+public interface SupportProcessManagement extends TableRuntime {
 
-/** Table runtime factory. */
-public interface TableRuntimeFactory extends ActivePlugin {
+  /**
+   * Register a process store to the table runtime.
+   *
+   * @param processStore the process store to register
+   */
+  void registerProcess(TableProcessStore processStore);
 
-  List<ActionCoordinator> supportedCoordinators();
-
-  void initialize(List<ProcessFactory> factories);
-
-  Optional<TableRuntimeCreator> accept(
-      ServerTableIdentifier tableIdentifier, Map<String, String> tableProperties);
-
-  interface TableRuntimeCreator {
-    List<StateKey<?>> requiredStateKeys();
-
-    TableRuntime create(TableRuntimeStore store);
-  }
+  /**
+   * Remove a process store from the table runtime.
+   *
+   * @param processStore the process store to remove
+   */
+  void removeProcess(TableProcessStore processStore);
 }
