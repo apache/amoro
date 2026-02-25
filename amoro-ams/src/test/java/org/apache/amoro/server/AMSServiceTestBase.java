@@ -26,7 +26,7 @@ import org.apache.amoro.server.process.ProcessService;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.DefaultTableRuntimeFactory;
 import org.apache.amoro.server.table.DefaultTableService;
-import org.apache.amoro.server.table.IcebergTablePlugin;
+import org.apache.amoro.server.table.IcebergBasedPlugin;
 import org.apache.amoro.server.table.TableRuntimeFactoryManager;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.junit.AfterClass;
@@ -65,7 +65,7 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
 
       TABLE_SERVICE.initialize(
           List.of(
-              IcebergTablePlugin.builder()
+              IcebergBasedPlugin.builder()
                   .addHandler(OPTIMIZING_SERVICE.getTableRuntimeHandler())
                   .addHandler(PROCESS_SERVICE.getTableHandlerChain())
                   .build()));

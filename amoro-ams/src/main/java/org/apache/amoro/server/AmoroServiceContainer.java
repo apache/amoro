@@ -54,7 +54,7 @@ import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.scheduler.inline.InlineTableExecutors;
 import org.apache.amoro.server.table.DefaultTableManager;
 import org.apache.amoro.server.table.DefaultTableService;
-import org.apache.amoro.server.table.IcebergTablePlugin;
+import org.apache.amoro.server.table.IcebergBasedPlugin;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntimeFactoryManager;
 import org.apache.amoro.server.table.TableRuntimePlugin;
@@ -251,8 +251,8 @@ public class AmoroServiceContainer {
   private List<TableRuntimePlugin> initTablePlugins() {
     LOG.info("Setting up Iceberg table runtime plugins...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
-    IcebergTablePlugin icebergTablePlugin =
-        IcebergTablePlugin.builder()
+    IcebergBasedPlugin icebergBasedPlugin =
+        IcebergBasedPlugin.builder()
             .addHandler(optimizingService.getTableRuntimeHandler())
             .addHandler(processService.getTableHandlerChain())
             .addHandler(InlineTableExecutors.getInstance().getDataExpiringExecutor())
@@ -266,7 +266,7 @@ public class AmoroServiceContainer {
             .addHandler(InlineTableExecutors.getInstance().getTableRefreshingExecutor())
             .addHandler(InlineTableExecutors.getInstance().getTagsAutoCreatingExecutor())
             .build();
-    return List.of(icebergTablePlugin);
+    return List.of(icebergBasedPlugin);
   }
 
   public void disposeOptimizingService() {

@@ -32,11 +32,11 @@ import javax.annotation.Nullable;
 
 import java.util.List;
 
-public class IcebergTablePlugin implements TableRuntimePlugin, TableRuntimeHandler {
+public class IcebergBasedPlugin implements TableRuntimePlugin, TableRuntimeHandler {
 
   private final RuntimeHandlerChain headHandler;
 
-  private IcebergTablePlugin(RuntimeHandlerChain headHandler) {
+  private IcebergBasedPlugin(RuntimeHandlerChain headHandler) {
     Preconditions.checkNotNull(headHandler);
     this.headHandler = headHandler;
   }
@@ -110,8 +110,8 @@ public class IcebergTablePlugin implements TableRuntimePlugin, TableRuntimeHandl
       return this;
     }
 
-    public IcebergTablePlugin build() {
-      return new IcebergTablePlugin(headHandler);
+    public IcebergBasedPlugin build() {
+      return new IcebergBasedPlugin(headHandler);
     }
   }
 }
