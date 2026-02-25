@@ -29,10 +29,10 @@ import java.util.Optional;
 /** Table runtime factory. */
 public interface TableRuntimeFactory extends ActivePlugin {
 
-  Optional<TableRuntimeCreator> accept(
+  Optional<Creator> accept(
       ServerTableIdentifier tableIdentifier, Map<String, String> tableProperties);
 
-  interface TableRuntimeCreator {
+  interface Creator {
     List<StateKey<?>> requiredStateKeys();
 
     TableRuntime create(TableRuntimeStore store);
