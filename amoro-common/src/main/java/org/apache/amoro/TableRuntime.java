@@ -49,10 +49,6 @@ public interface TableRuntime {
    */
   List<? extends TableProcessStore> getProcessStates(Action action);
 
-  void registerProcess(TableProcessStore processStore);
-
-  void removeProcess(TableProcessStore processStore);
-
   /** Get the group name of the table runtime. */
   String getGroupName();
 

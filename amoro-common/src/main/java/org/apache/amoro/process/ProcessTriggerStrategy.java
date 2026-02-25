@@ -23,6 +23,9 @@ import java.time.Duration;
 /** Process trigger strategy. */
 public final class ProcessTriggerStrategy {
 
+  public static final ProcessTriggerStrategy METADATA_TRIGGER =
+      new ProcessTriggerStrategy(Duration.ofDays(1), true, 1);
+
   private final Duration triggerInterval;
 
   private final boolean triggerOnNewSnapshot;

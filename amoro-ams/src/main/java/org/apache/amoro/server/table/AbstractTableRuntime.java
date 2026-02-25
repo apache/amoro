@@ -20,7 +20,6 @@ package org.apache.amoro.server.table;
 
 import org.apache.amoro.Action;
 import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.persistence.PersistentBase;
@@ -34,7 +33,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-public abstract class AbstractTableRuntime extends PersistentBase implements TableRuntime {
+public abstract class AbstractTableRuntime extends PersistentBase
+    implements SupportProcessManagement {
 
   private final TableRuntimeStore store;
   private final Map<Action, TableProcessContainer> processContainerMap = Maps.newConcurrentMap();

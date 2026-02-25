@@ -45,7 +45,9 @@ public interface ProcessFactory extends ActivePlugin {
   Map<TableFormat, Set<Action>> supportedActions();
 
   /** How to trigger a process for the action. */
-  ProcessTriggerStrategy triggerStrategy(TableFormat format, Action action);
+  default ProcessTriggerStrategy triggerStrategy(TableFormat format, Action action) {
+    return ProcessTriggerStrategy.METADATA_TRIGGER;
+  }
 
   /**
    * Try trigger a process for the action.
@@ -60,8 +62,10 @@ public interface ProcessFactory extends ActivePlugin {
    * Recover a process for the action from a state.
    *
    * @param tableRuntime table runtime
-   * @param state state of the process
+   * @param store storage of the process
    * @return target process which has not been submitted yet.
+   * @throws RecoverProcessFailedException if recover failed
    */
-  TableProcess recover(TableRuntime tableRuntime, TableProcessStore store);
+  TableProcess recover(TableRuntime tableRuntime, TableProcessStore store)
+      throws RecoverProcessFailedException;
 }
