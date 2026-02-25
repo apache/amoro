@@ -58,6 +58,11 @@ public abstract class AbstractTableRuntime extends PersistentBase implements Tab
   }
 
   @Override
+  public Map<String, String> getTableConfig() {
+    return store().getTableConfig();
+  }
+
+  @Override
   public List<TableProcessStore> getProcessStates() {
     return processContainerMap.values().stream()
         .flatMap(container -> container.getProcessStates().stream())
