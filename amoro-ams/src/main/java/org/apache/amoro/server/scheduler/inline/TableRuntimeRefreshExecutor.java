@@ -201,17 +201,13 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
         tableRuntime.getOptimizingConfig().getRefreshTableAdaptiveMaxIntervalMs();
 
     if (maxInterval <= minInterval) {
-      tableRuntime
-          .getOptimizingConfig()
-          .setRefreshTableAdaptiveMaxIntervalMs(AmoroServiceConstants.INVALID_TIME);
       logger.warn(
-          "Invalid adaptive refresh configuration for table {}: {} = {}ms is not greater than {} = {}ms. Setting {} to default value 0 to disable dynamic refresh logic.",
+          "Invalid adaptive refresh configuration for table {}: {} = {}ms is not greater than {} = {}ms. Adaptive refresh will be disabled.",
           tableRuntime.getTableIdentifier(),
           SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS,
           maxInterval,
           AmoroManagementConf.REFRESH_TABLES_INTERVAL.key(),
-          minInterval,
-          SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_MAX_INTERVAL_MS);
+          minInterval);
 
       return AmoroServiceConstants.INVALID_TIME;
     }

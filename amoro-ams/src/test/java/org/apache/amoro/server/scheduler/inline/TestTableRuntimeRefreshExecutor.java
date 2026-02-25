@@ -168,16 +168,13 @@ public class TestTableRuntimeRefreshExecutor extends AMSTableTestBase {
     Assert.assertEquals(MAX_INTERVAL, adaptiveExecutingInterval);
 
     // Test5: MaxInterval should be greater than minInterval
-    // If maxInterval <= minInterval, the latest interval and the maxInterval will be reset to
+    // If maxInterval <= minInterval, the latest interval will be reset to
     // default value 0
     long maxInterval = INTERVAL - 1000;
     tableRuntime.updateOptimizingConfig(createOptimizingConfig(maxInterval, STEP));
     tableRuntime.setLatestRefreshInterval(adaptiveExecutingInterval);
     adaptiveExecutingInterval = executor.getAdaptiveExecutingInterval(tableRuntime);
     Assert.assertEquals(AmoroServiceConstants.INVALID_TIME, adaptiveExecutingInterval);
-    Assert.assertEquals(
-        AmoroServiceConstants.INVALID_TIME,
-        tableRuntime.getOptimizingConfig().getRefreshTableAdaptiveMaxIntervalMs());
 
     dropTable();
     dropDatabase();
