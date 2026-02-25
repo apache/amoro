@@ -32,6 +32,7 @@ import org.apache.amoro.optimizing.TableRuntimeOptimizingState;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.AmoroProcess;
 import org.apache.amoro.process.ProcessFactory;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
@@ -118,6 +119,9 @@ public class DefaultTableRuntime extends AbstractTableRuntime
       throw new IllegalStateException("Table runtime and processing are not matched!");
     }
     this.optimizingProcess = optimizingProcess;
+    if (this.optimizingProcess.getStatus() == ProcessStatus.SUCCESS) {
+      completeProcess(true);
+    }
   }
 
   @Override
@@ -309,11 +313,9 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   public DefaultTableRuntime refresh(AmoroTable<?> table) {
     Map<String, String> tableConfig = table.properties();
     TableConfiguration newConfiguration = TableConfigurations.parseTableConfig(tableConfig);
-    TableConfiguration oldConfiguration = getTableConfiguration();
-    boolean configChanged = !newConfiguration.equals(oldConfiguration);
+    String newGroupName = newConfiguration.getOptimizingConfig().getOptimizerGroup();
 
-    if (!Objects.equals(
-        getGroupName(), newConfiguration.getOptimizingConfig().getOptimizerGroup())) {
+    if (!Objects.equals(getGroupName(), newGroupName)) {
       if (optimizingProcess != null) {
         optimizingProcess.close(false);
       }
@@ -327,6 +329,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
               config.clear();
               config.putAll(tableConfig);
             })
+        .updateGroup(g -> newGroupName)
         .updateState(
             OPTIMIZING_STATE_KEY,
             s -> {

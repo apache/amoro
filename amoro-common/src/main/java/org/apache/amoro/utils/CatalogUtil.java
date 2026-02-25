@@ -168,7 +168,9 @@ public class CatalogUtil {
               authType)) {
             String accessKey = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY);
             String secretKey = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY);
-            builder.withAkSkAuth(accessKey, secretKey);
+            String storageType =
+                catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE);
+            builder.withAkSkAuth(accessKey, secretKey, storageType);
           }
         }
       }
@@ -204,7 +206,9 @@ public class CatalogUtil {
               catalogMeta
                   .getCatalogProperties()
                   .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY);
-          builder.withAkSkAuth(accessKey, secretKey);
+          String storageType =
+              catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE);
+          builder.withAkSkAuth(accessKey, secretKey, storageType);
         }
       }
     }

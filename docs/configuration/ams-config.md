@@ -50,6 +50,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | blocker.timeout | 1 min | Session timeout. Default unit is milliseconds if not specified. |
 | catalog-meta-cache.expiration-interval | 1 min | TTL for catalog metadata. |
 | clean-dangling-delete-files.enabled | true | Enable dangling delete files cleaning. |
+| clean-dangling-delete-files.interval | 1 d | Interval for cleaning dangling delete files. |
 | clean-dangling-delete-files.thread-count | 10 | The number of threads used for dangling delete files cleaning. |
 | clean-orphan-files.enabled | true | Enable orphan files cleaning. |
 | clean-orphan-files.interval | 1 d | Interval for cleaning orphan files. |
@@ -67,6 +68,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | database.url | jdbc:derby:/tmp/amoro/derby;create=true | Database connection address |
 | database.username | root | The username for connecting to the database. |
 | expire-snapshots.enabled | true | Enable snapshots expiring. |
+| expire-snapshots.interval | 1 h | Interval for expiring snapshots. |
 | expire-snapshots.thread-count | 10 | The number of threads used for snapshots expiring. |
 | ha.cluster-name | default | Amoro management service cluster name. |
 | ha.connection-timeout | 5 min | The Zookeeper connection timeout in milliseconds. |
