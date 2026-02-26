@@ -569,9 +569,7 @@ public class OptimizingQueue extends PersistentBase {
         toSequence = processState.getToSequence();
       }
       this.status = processMeta.getStatus();
-      if (this.status != ProcessStatus.KILLED) {
-        tableRuntime.recover(this);
-      }
+      tableRuntime.recover(this);
       loadTaskRuntimes(this);
     }
 
