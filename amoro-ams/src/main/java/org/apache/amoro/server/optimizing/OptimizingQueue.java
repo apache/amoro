@@ -141,7 +141,6 @@ public class OptimizingQueue extends PersistentBase {
           System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
 
       if (canResumeProcess(process, tableRuntime)) {
-        tableQueue.offer(process);
         if (process.allTasksPrepared()) {
           LOG.info(
               "All tasks already completed for process {} on table {} during recovery,"
@@ -149,6 +148,8 @@ public class OptimizingQueue extends PersistentBase {
               process.getProcessId(),
               tableRuntime.getTableIdentifier());
           tableRuntime.beginCommitting();
+        } else {
+          tableQueue.offer(process);
         }
       } else {
         resetTableForRecovery(process, tableRuntime);
