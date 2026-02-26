@@ -64,8 +64,8 @@ public class ProcessService extends PersistentBase {
       new ConcurrentHashMap<>();
   private final Map<EngineType, ExecuteEngine> executeEngines = new ConcurrentHashMap<>();
 
-  private final ActionCoordinatorManager actionCoordinatorManager;
   private final ExecuteEngineManager executeEngineManager;
+  private final List<ActionCoordinator> actionCoordinatorList;
   private final ProcessRuntimeHandler tableRuntimeHandler = new ProcessRuntimeHandler();
   private final ThreadPoolExecutor processExecutionPool =
       new ThreadPoolExecutor(10, 100, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
@@ -74,16 +74,25 @@ public class ProcessService extends PersistentBase {
       new ConcurrentHashMap<>();
 
   public ProcessService(Configurations serviceConfig, TableService tableService) {
-    this(serviceConfig, tableService, new ActionCoordinatorManager(), new ExecuteEngineManager());
+    this(serviceConfig, tableService, Collections.emptyList(), new ExecuteEngineManager());
   }
 
+  @Deprecated
   public ProcessService(
       Configurations serviceConfig,
       TableService tableService,
       ActionCoordinatorManager actionCoordinatorManager,
       ExecuteEngineManager executeEngineManager) {
+    this(serviceConfig, tableService, Collections.emptyList(), executeEngineManager);
+  }
+
+  public ProcessService(
+      Configurations serviceConfig,
+      TableService tableService,
+      List<ActionCoordinator> actionCoordinators,
+      ExecuteEngineManager executeEngineManager) {
     this.tableService = tableService;
-    this.actionCoordinatorManager = actionCoordinatorManager;
+    this.actionCoordinatorList = actionCoordinators;
     this.executeEngineManager = executeEngineManager;
   }
 
@@ -148,7 +157,6 @@ public class ProcessService extends PersistentBase {
 
   /** Dispose the service, shutdown engines and clear active processes. */
   public void dispose() {
-    actionCoordinatorManager.close();
     executeEngineManager.close();
     processExecutionPool.shutdown();
     activeTableProcess.clear();
@@ -156,16 +164,12 @@ public class ProcessService extends PersistentBase {
 
   private void initialize(List<TableRuntime> tableRuntimes) {
     LOG.info("Initializing process service");
-    actionCoordinatorManager.initialize();
-    actionCoordinatorManager
-        .installedPlugins()
-        .forEach(
-            actionCoordinator -> {
-              actionCoordinators.put(
-                  actionCoordinator.action().getName(),
-                  new ActionCoordinatorScheduler(
-                      actionCoordinator, tableService, ProcessService.this));
-            });
+    // Pre-configured coordinators built from TableRuntimeFactory / ProcessFactory
+    for (ActionCoordinator actionCoordinator : actionCoordinatorList) {
+      actionCoordinators.put(
+          actionCoordinator.action().getName(),
+          new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this));
+    }
     executeEngineManager.initialize();
     executeEngineManager
         .installedPlugins()

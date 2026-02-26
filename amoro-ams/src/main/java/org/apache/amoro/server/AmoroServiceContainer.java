@@ -32,6 +32,8 @@ import org.apache.amoro.config.ConfigurationException;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.shade.utils.ConfigShadeUtils;
 import org.apache.amoro.exception.AmoroRuntimeException;
+import org.apache.amoro.process.ActionCoordinator;
+import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.dashboard.DashboardServer;
@@ -47,6 +49,8 @@ import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.process.ProcessService;
+import org.apache.amoro.server.process.ProcessService.ExecuteEngineManager;
+import org.apache.amoro.server.process.TableProcessFactoryManager;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.DefaultOptimizerManager;
@@ -75,6 +79,7 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TNonblockingSer
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportFactory;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramedTransport;
+import org.apache.amoro.table.TableRuntimeFactory;
 import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.JacksonUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -96,6 +101,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.stream.Collectors;
 
 public class AmoroServiceContainer {
 
@@ -238,7 +244,23 @@ public class AmoroServiceContainer {
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
 
-    processService = new ProcessService(serviceConfig, tableService);
+    // Load process factories and build action coordinators from all table runtime factories.
+    TableProcessFactoryManager tableProcessFactoryManager = new TableProcessFactoryManager();
+    tableProcessFactoryManager.initialize();
+    List<ProcessFactory> processFactories = tableProcessFactoryManager.installedPlugins();
+
+    List<TableRuntimeFactory> tableRuntimeFactories = tableRuntimeFactoryManager.installedPlugins();
+    tableRuntimeFactories.forEach(factory -> factory.initialize(processFactories));
+
+    List<ActionCoordinator> actionCoordinators =
+        tableRuntimeFactories.stream()
+            .flatMap(factory -> factory.supportedCoordinators().stream())
+            .collect(Collectors.toList());
+
+    ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
+
+    processService =
+        new ProcessService(serviceConfig, tableService, actionCoordinators, executeEngineManager);
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
