@@ -431,6 +431,11 @@ public class DefaultTableRuntime extends AbstractTableRuntime
     optimizingProcess = null;
   }
 
+  /**
+   * Resets the table to IDLE from any non-IDLE state. This is used both when planning determines
+   * that optimization is unnecessary (from PLANNING state) and during startup recovery to reset
+   * tables with unrecoverable processes (from any processing state).
+   */
   public void completeEmptyProcess() {
     OptimizingStatus originalStatus = getOptimizingStatus();
     if (originalStatus == OptimizingStatus.IDLE) {
