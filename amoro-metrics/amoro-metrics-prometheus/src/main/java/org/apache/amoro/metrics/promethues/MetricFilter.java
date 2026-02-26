@@ -18,11 +18,17 @@
 
 package org.apache.amoro.metrics.promethues;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /** Regex-based metric filter for Prometheus exporter. */
 public class MetricFilter {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(MetricFilter.class);
 
   public static final String INCLUDES_KEY = "metric-filter.includes";
   public static final String EXCLUDES_KEY = "metric-filter.excludes";
@@ -46,9 +52,19 @@ public class MetricFilter {
       return ACCEPT_ALL;
     }
 
-    Pattern includePattern = includes != null ? Pattern.compile(includes) : null;
-    Pattern excludePattern = excludes != null ? Pattern.compile(excludes) : null;
-    return new MetricFilter(includePattern, excludePattern);
+    try {
+      Pattern includePattern = includes != null ? Pattern.compile(includes) : null;
+      Pattern excludePattern = excludes != null ? Pattern.compile(excludes) : null;
+      return new MetricFilter(includePattern, excludePattern);
+    } catch (PatternSyntaxException e) {
+      LOGGER.warn(
+          "Invalid metric filter regex pattern, falling back to accept-all. "
+              + "includes='{}', excludes='{}'",
+          includes,
+          excludes,
+          e);
+      return ACCEPT_ALL;
+    }
   }
 
   /** Check if a metric name passes the filter. */

@@ -94,6 +94,25 @@ public class MetricFilterTest {
   }
 
   @Test
+  public void testInvalidRegexFallsBackToAcceptAll() {
+    Map<String, String> props = new HashMap<>();
+    props.put("metric-filter.includes", "[invalid(regex");
+
+    MetricFilter filter = MetricFilter.fromProperties(props);
+    assertSame(MetricFilter.ACCEPT_ALL, filter);
+  }
+
+  @Test
+  public void testInvalidExcludesRegexFallsBackToAcceptAll() {
+    Map<String, String> props = new HashMap<>();
+    props.put("metric-filter.includes", "table_.*");
+    props.put("metric-filter.excludes", "[invalid(regex");
+
+    MetricFilter filter = MetricFilter.fromProperties(props);
+    assertSame(MetricFilter.ACCEPT_ALL, filter);
+  }
+
+  @Test
   public void testExactMatchPattern() {
     Map<String, String> props = new HashMap<>();
     props.put("metric-filter.includes", "ams_jvm_cpu_load");

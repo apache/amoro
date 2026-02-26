@@ -166,3 +166,17 @@ tests:
       - matchRegex:
           path: data["metric-reporters.yaml"]
           pattern: "metric-filter.excludes.*table_summary_"
+  - it: Amoro configMap should reflect metric regex includes filtering
+    set:
+      plugin:
+        metricReporters:
+          prometheusExporter:
+            name: prometheus-exporter
+            enabled: true
+            properties:
+              port: 7001
+              metric-filter.includes: "table_optimizing_.*|optimizer_group_.*"
+    asserts:
+      - matchRegex:
+          path: data["metric-reporters.yaml"]
+          pattern: "metric-filter.includes.*table_optimizing_"
