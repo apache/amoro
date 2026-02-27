@@ -8,23 +8,36 @@ menu:
         parent: Admin Guides
         weight: 100
 ---
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
 # Deployment
 
 You can choose to download the stable release package from [download page](../../../download/), or the source code form [Github](https://github.com/apache/amoro) and compile it according to the README.
 
 ## System requirements
 
-- Java 8 is required. Java 17 is required for Trino.
-- Optional: MySQL 5.5 or higher
-- Optional: PostgreSQL 14.x or higher
+- Java 11 is required.
+- Optional: A RDBMS (PostgreSQL 14.x or higher, MySQL 5.5 or higher)
 - Optional: ZooKeeper 3.4.x or higher
-- Optional: Hive (2.x or 3.x)
-- Optional: Hadoop (2.9.x or 3.x)
 
 ## Download the distribution
 
 All released package can be downloaded from [download page](../../../download/).
-You can download amoro-x.y.z-bin.zip (x.y.z is the release number), and you can also download the runtime packages for each engine version according to the engine you are using.
+You can download apache-amoro-x.y.z-bin.tar.gz (x.y.z is the release number), and you can also download the runtime packages for each engine version according to the engine you are using.
 Unzip it to create the amoro-x.y.z directory in the same directory, and then go to the amoro-x.y.z directory.
 
 ## Source code compilation
@@ -32,54 +45,24 @@ Unzip it to create the amoro-x.y.z directory in the same directory, and then go 
 You can build based on the master branch without compiling Trino. The compilation method and the directory of results are described below:
 
 ```shell
-git clone https://github.com/apache/amoro.git
-cd amoro
-base_dir=$(pwd) 
-mvn clean package -DskipTests
-cd amoro-ams/dist/target/
-ls
+$ git clone https://github.com/apache/amoro.git
+$ cd amoro
+$ base_dir=$(pwd) 
+$ ./mvnw clean package -DskipTests
+$ cd dist/target/
+$ ls
 amoro-x.y.z-bin.zip # AMS release package
-dist-x.y.z-tests.jar
-dist-x.y.z.jar
-archive-tmp/
-maven-archiver/
 
-cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-flink/v1.15/amoro-mixed-format-flink-runtime-1.15/target
-ls 
-amoro-mixed-format-flink-runtime-1.15-x.y.z-tests.jar
-amoro-mixed-format-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
-original-amoro-mixed-format-flink-runtime-1.15-x.y.z.jar
-maven-archiver/
+$ cd ${base_dir}/amoro-format-mixed/amoro-format-mixed-flink/v1.15/amoro-format-mixed-flink-runtime-1.15/target
+$ ls 
+amoro-format-mixed-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
 
-cd ${base_dir}/amoro-mixed-format/amoro-mixed-format-spark/v3.2/amoro-mixed-format-spark-runtime-3.2/target
-ls
-amoro-mixed-format-spark-runtime-3.2-x.y.z.jar # Spark v3.2 runtime package)
-amoro-mixed-format-spark-runtime-3.2-x.y.z-tests.jar
-amoro-mixed-format-spark-runtime-3.2-x.y.z-sources.jar
-original-amoro-mixed-format-spark-runtime-3.2-x.y.z.jar
+$ cd ${base_dir}/amoro-format-mixed/amoro-format-mixed-spark/v3.2/amoro-format-mixed-spark-runtime-3.2/target
+$ ls
+amoro-format-mixed-spark-runtime-3.2-x.y.z.jar # Spark v3.2 runtime package)
 ```
 
-If the Flink version in the amoro-ams/amoro-ams-optimizer/amoro-optimizer-flink module you compiled is lower than 1.15, you must add the `-Pflink-pre-1.15` parameter before mvn.
-for example `mvn clean package -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6 -DskipTests` to compile.
-
-If you need to compile the Trino module at the same time, you need to install jdk17 locally and configure `toolchains.xml` in the user's `${user.home}/.m2/` directory,
-then run `mvn package -Ptoolchain,build-mixed-format-trino` to compile the entire project.
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<toolchains>
-    <toolchain>
-        <type>jdk</type>
-        <provides>
-            <version>17</version>
-            <vendor>sun</vendor>
-        </provides>
-        <configuration>
-            <jdkHome>${YourJDK17Home}</jdkHome>
-        </configuration>
-    </toolchain>
-</toolchains>
-```
+More build guide can be found in the project's [README](https://github.com/apache/amoro?tab=readme-ov-file#building).
 
 ## Configuration
 
@@ -92,7 +75,10 @@ If you want to use AMS in a production environment, it is recommended to modify 
 - The `ams.thrift-server.table-service.bind-port` configuration specifies the binding port of the Thrift Server that provides the table service. The compute engines access AMS through this port, and the default value is 1260.
 - The `ams.thrift-server.optimizing-service.bind-port` configuration specifies the binding port of the Thrift Server that provides the optimizing service. The optimizers access AMS through this port, and the default value is 1261.
 - The `ams.http-server.bind-port` configuration specifies the port to which the HTTP service is bound. The Dashboard and Open API are bound to this port, and the default value is 1630.
-- The `ams.http-server.rest-auth-type` configuration specifies the REST API auth type, which could be token(default) or basic. The basic auth would reuse `ams.admin-username` and `ams.admin-password` for authentication. 
+- The `ams.http-server.rest-auth-type` configuration specifies the REST API auth type, which could be token(default), basic or jwt (JSON Web Token).
+- The `ams.http-server.auth-basic-provider` configuration specifies the REST API basic authentication provider. By default, it uses `ams.admin-username` and `ams.admin-password` for authentication. You can also specify a custom implementation by providing the fully qualified class name of a class that implements the `org.apache.amoro.authentication.PasswdAuthenticationProvider` interface.
+- The `ams.http-server.auth-jwt-provider` configuration specifies the REST API JWT authentication provider. Set this to the fully qualified class name of your custom provider implementing the `org.apache.amoro.authentication.TokenAuthenticationProvider` interface. This is required when `ams.http-server.rest-auth-type` is set to `jwt`.
+- The `ams.http-server.proxy-client-ip-header` configuration specifies the HTTP header to use for extracting the real client IP address when AMS is deployed behind a reverse proxy (such as Nginx or a load balancer). Common values include `X-Forwarded-For` or `X-Real-IP`. If not set, AMS will use the remote address from the connection.
 
 ```yaml
 ams:
@@ -106,6 +92,7 @@ ams:
       bind-port: 1261 #The port for accessing AMS optimizing service.
 
   http-server:
+    session-timeout: 7d #Re-login after 7days
     bind-port: 1630 #The port for accessing AMS Dashboard.
 ```
 
@@ -115,38 +102,26 @@ Make sure the port is not used before configuring it.
 
 ### Configure system database
 
-You can use MySQL/PostgreSQL as the system database instead of the default Derby.
+AMS uses embedded [Apache Derby](https://db.apache.org/derby/) as the backend storage by default, so you can use `Derby` directly without any additional configuration.
 
-If you would like to use MySQL as the system database, you need to manually download the [MySQL JDBC Connector](https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.1.0/mysql-connector-j-8.1.0.jar)
-and move it into the `{AMORO_HOME}/lib/` directory. You can use the following command to complete these operations:
-```shell
-cd ${AMORO_HOME}
-MYSQL_JDBC_DRIVER_VERSION=8.0.30
-wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_JDBC_DRIVER_VERSION}/mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar
-mv mysql-connector-java-${MYSQL_JDBC_DRIVER_VERSION}.jar lib
-```
+You can also configure a relational backend storage as you needed.
 
-Create an empty database in MySQL/PostgreSQL, then AMS will automatically create table structures in this MySQL/PostgreSQL database when it first started.
+> If you would like to use MySQL as the system database, you need to manually download the [MySQL JDBC Connector](https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.1.0/mysql-connector-j-8.1.0.jar)
+and move it into the `${AMORO_HOME}/lib/` directory.
 
-One thing you need to do is Adding MySQL/PostgreSQL configuration under `config.yaml` of Ams:
+You need to create an empty database in the RDBMS before to start the server, then AMS will automatically create tables in the database when it first started.
+
+One thing you need to do is adding configuration under `config.yaml` of Ams:
 
 ```yaml
-# MySQL
 ams:
   database:
-    type: mysql
-    jdbc-driver-class: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/amoro?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: root
-# PostgreSQL
-#ams:
-#  database:
-#    type: postgres
-#    jdbc-driver-class: org.postgresql.Driver
-#    url: jdbc:postgresql://127.0.0.1:5432/amoro
-#    username: user
-#    password: passwd
+    type: ${database_type} # postgres or mysql
+    jdbc-driver-class: ${your_driver_name}
+    url: ${your_jdbc_url}
+    username: ${your_username}
+    password: ${your_password}
+    auto-create-tables: true
 ```
 
 ### Configure high availability
@@ -172,19 +147,32 @@ AMS provides implementations of `LocalContainer` and `FlinkContainer` by default
 ```yaml
 containers:
   - name: localContainer
-    container-impl: org.apache.amoro.optimizer.LocalOptimizerContainer
+    container-impl: org.apache.amoro.server.manager.LocalOptimizerContainer
     properties:
       export.JAVA_HOME: "/opt/java"   # JDK environment
   
   - name: flinkContainer
-    container-impl: org.apache.amoro.optimizer.FlinkOptimizerContainer
+    container-impl: org.apache.amoro.server.manager.FlinkOptimizerContainer
     properties:
       flink-home: "/opt/flink/"                                     # The installation directory of Flink
       export.JVM_ARGS: "-Djava.security.krb5.conf=/opt/krb5.conf"   # Submitting Flink jobs with Java parameters, such as Kerberos parameters.
       export.HADOOP_CONF_DIR: "/etc/hadoop/conf/"                   # Hadoop configuration file directory
       export.HADOOP_USER_NAME: "hadoop"                             # Hadoop user
       export.FLINK_CONF_DIR: "/etc/hadoop/conf/"                    # Flink configuration file directory
+
+  - name: sparkContainer
+    container-impl: org.apache.amoro.server.manager.SparkOptimizerContainer
+    properties:
+      spark-home: /opt/spark/                                     # Spark install home
+      master: yarn                                                # The cluster manager to connect to. See the list of https://spark.apache.org/docs/latest/submitting-applications.html#master-urls.
+      deploy-mode: cluster                                        # Spark deploy mode, client or cluster
+      export.JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf   # Spark launch jvm args, like kerberos config when ues kerberos
+      export.HADOOP_CONF_DIR: /etc/hadoop/conf/                   # Hadoop config dir
+      export.HADOOP_USER_NAME: hadoop                             # Hadoop user submit on yarn
+      export.SPARK_CONF_DIR: /opt/spark/conf/                     # Spark config dir
 ```
+
+More optimizer container configurations can be found in [managing optimizers](../managing-optimizers/).
 
 ### Configure terminal
 
@@ -200,6 +188,16 @@ ams:
     # When the catalog type is Hive, it automatically uses the Spark session catalog to access Hive tables.
     local.using-session-catalog-for-hive: true
 ```
+
+More properties the terminal supports including:
+
+| Key                      | Default | Description                                                                                       |
+|--------------------------|---------|---------------------------------------------------------------------------------------------------|
+| terminal.backend         | local   | Terminal backend implementation. local, kyuubi and custom are valid values.                       |
+| terminal.factory         | -       | Session factory implement of terminal, `terminal.backend` must be `custom` if this is set.        |
+| terminal.result.limit    | 1000    | Row limit of result-set                                                                           |
+| terminal.stop-on-error   | false   | When a statement fails to execute, stop execution or continue executing the remaining statements. |
+| terminal.session.timeout | 30      | Session timeout in minutes.                                                                       |
 
 ### Configure metric reporter
 
@@ -242,6 +240,34 @@ scrape_configs:
       - targets: ['localhost:9090']  # The host and port that you configured in Amoro plugins configs file.
 ```
 
+### Configure encrypted configuration items
+For enhanced security, AMS supports encrypted values for sensitive configuration items such as passwords within `config.yaml`. This prevents plaintext passwords and other critical information from being directly exposed in the configuration file. 
+Currently, AMS provides built-in support for base64 decryption, and users can also implement custom decryption algorithms if needed (see [Using Customized Encryption Method for Configurations](../using-customized-encryption-method/)).
+
+To enable encrypted sensitive configuration items, add the following configurations under `config.yaml` of AMS:
+- The `ams.shade.identifier` configuration specifies the encryption method used for the sensitive values. The default value is `default`, which means no encryption is applied. To enable encrypted values, set it to `base64` or another supported encryption method.
+- The `ams.shade.sensitive-keywords` configuration specifies which configuration items under `ams` are encrypted. The default value is `admin-password;database.password`, and multiple keywords should be separated by semicolons (`;`). The values of these items must be replaced with their encrypted counterparts.
+
+Example Configuration (Partial):
+```yaml
+ams:
+  admin-username: admin
+  admin-password: YWRtaW4=    # Ciphertext for "admin"
+  server-bind-host: "0.0.0.0"
+  server-expose-host: "127.0.0.1"
+
+  shade:
+    identifier: base64
+    sensitive-keywords: admin-password;database.password
+
+  database:
+    type: mysql
+    jdbc-driver-class: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/amoro?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: cGFzc3dvcmQ=    # Ciphertext for "password"
+```
+
 
 ### Environments variables
 
@@ -266,26 +292,13 @@ The following JVM options could be set in `${AMORO_CONF_DIR}/jvm.properties`.
 | jmx.remote.port | "-Dcom.sun.management.jmxremote.port=${value}  | Enable remote debug      |
 | extra.options   | "JAVA_OPTS="${JAVA_OPTS} ${JVM_EXTRA_CONFIG}"  | The addition jvm options |
 
-### Terminal configurations
-
-Terminal support local and kyuubi, the default is local. If the user uses local to run in the spark local context, you can set the **spark.*** configuration, and if you use kyuubi, you can set the **kyuubi.*** configuration
-
-| Key                      | Default | Description                                                                                       |
-|--------------------------|---------|---------------------------------------------------------------------------------------------------|
-| terminal.backend         | local   | Terminal backend implementation. local, kyuubi and custom are valid values.                       |
-| terminal.factory         | -       | Session factory implement of terminal, `terminal.backend` must be `custom` if this is set.        |
-| terminal.result.limit    | 1000    | Row limit of result-set                                                                           |
-| terminal.stop-on-error   | false   | When a statement fails to execute, stop execution or continue executing the remaining statements. |
-| terminal.session.timeout | 30      | Session timeout in minutes.                                                                       |
-
-
 ## Start AMS
 
 Enter the directory amoro-x.y.z and execute bin/ams.sh start to start AMS.
 
 ```shell
-cd amoro-x.y.z
-bin/ams.sh start
+$ cd amoro-x.y.z
+$ bin/ams.sh start
 ```
 
 Then, access http://localhost:1630 through a browser to see the login page. If it appears, it means that the startup is
@@ -294,14 +307,15 @@ successful. The default username and password for login are both "admin".
 You can also restart/stop AMS with the following command:
 
 ```shell
-bin/ams.sh restart/stop
+$ bin/ams.sh restart
+$ bin/ams.sh stop
 ```
 
 ## Upgrade AMS
 
 ### Upgrade system databases
 
-You can find all the upgrade SQL scripts under `{AMORO_HOME}/conf/mysql/` with name pattern `upgrade-a.b.c-to-x.y.z.sql`.
+You can find all the upgrade SQL scripts under `${AMORO_HOME}/conf/${db_type}/` with name pattern `upgrade-a.b.c-to-x.y.z.sql`.
 Execute the upgrade SQL scripts one by one to your system database based on your starting and target versions.
 
 ### Replace all libs and plugins
@@ -313,7 +327,7 @@ Replace all contents in the original `{AMORO_HOME}/plugin` directory with the co
 Backup the old content before replacing it, so that you can roll back the upgrade operation if necessary.
 {{< /hint >}}
 
-### Configure new parameters
+### Configure new properties
 
 The old configuration file `{AMORO_HOME}/conf/config.yaml` is usually compatible with the new version, but the new version may introduce new parameters. Try to compare the configuration files of the old and new versions, and reconfigure the parameters if necessary.
 

@@ -8,6 +8,22 @@ menu:
         parent: User Guides
         weight: 300
 ---
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
 # Table Configurations
 
 ## Multi-level configuration management
@@ -27,23 +43,25 @@ modified through [Alter Table](../using-tables/#modify-table) operations.
 
 Self-optimizing configurations are applicable to both Iceberg Format and Mixed streaming Format.
 
-| Key                                           | Default          | Description                                                                                                                              |
-|-----------------------------------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| self-optimizing.enabled                       | true             | Enables Self-optimizing                                                                                                                  |
-| self-optimizing.group                         | default          | Optimizer group for Self-optimizing                                                                                                      |
-| self-optimizing.quota                         | 0.1              | Quota for Self-optimizing, indicating the CPU resource the table can take up                                                             |
-| self-optimizing.execute.num-retries           | 5                | Number of retries after failure of Self-optimizing                                                                                       |
-| self-optimizing.target-size                   | 134217728(128MB) | Target size for Self-optimizing                                                                                                          |
-| self-optimizing.max-file-count                | 10000            | Maximum number of files processed by a Self-optimizing process                                                                           |
-| self-optimizing.max-task-size-bytes           | 134217728(128MB) | Maximum file size bytes in a single task for splitting tasks                                                                             |
-| self-optimizing.fragment-ratio                | 8                | The fragment file size threshold. We could divide self-optimizing.target-size by this ratio to get the actual fragment file size         |
-| self-optimizing.min-target-size-ratio         | 0.75             | The undersized segment file size threshold. Segment files under this threshold will be considered for rewriting                          |
-| self-optimizing.minor.trigger.file-count      | 12               | The minimum number of files to trigger minor optimizing is determined by the sum of fragment file count and equality delete file count   |
-| self-optimizing.minor.trigger.interval        | 3600000(1 hour)  | The time interval in milliseconds to trigger minor optimizing                                                                            |
-| self-optimizing.major.trigger.duplicate-ratio | 0.1              | The ratio of duplicate data of segment files to trigger major optimizing                                                                 |
-| self-optimizing.full.trigger.interval         | -1(closed)       | The time interval in milliseconds to trigger full optimizing                                                                             |
-| self-optimizing.full.rewrite-all-files        | true             | Whether full optimizing rewrites all files or skips files that do not need to be optimized                                               |
-| self-optimizing.min-plan-interval             | 60000            | The minimum time interval between two self-optimizing planning action                                                                    |
+| Key                                           | Default          | Description                                                                                                                                                                                                                             |
+|-----------------------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| self-optimizing.enabled                       | true             | Enables Self-optimizing                                                                                                                                                                                                                 |
+| self-optimizing.allow-partial-commit          | false            | Whether to allow partial commit when self-optimizing fails or process is cancelled                                                                                                                                                                          |
+| self-optimizing.group                         | default          | Optimizer group for Self-optimizing                                                                                                                                                                                                     |
+| self-optimizing.quota                         | 0.5              | Quota for Self-optimizing, indicating the optimizer resources the table can take up                                                                                                                                                            |
+| self-optimizing.execute.num-retries           | 5                | Number of retries after failure of Self-optimizing                                                                                                                                                                                      |
+| self-optimizing.target-size                   | 134217728(128MB) | Target size for Self-optimizing                                                                                                                                                                                                         |
+| self-optimizing.max-file-count                | 10000            | Maximum number of files processed by a Self-optimizing process                                                                                                                                                                          |
+| self-optimizing.max-task-size-bytes           | 134217728(128MB) | Maximum file size bytes in a single task for splitting tasks                                                                                                                                                                            |
+| self-optimizing.fragment-ratio                | 8                | The fragment file size threshold. We could divide self-optimizing.target-size by this ratio to get the actual fragment file size                                                                                                        |
+| self-optimizing.min-target-size-ratio         | 0.75             | The undersized segment file size threshold. Segment files under this threshold will be considered for rewriting                                                                                                                         |
+| self-optimizing.minor.trigger.file-count      | 12               | The minimum number of files to trigger minor optimizing is determined by the sum of fragment file count and equality delete file count                                                                                                  |
+| self-optimizing.minor.trigger.interval        | 3600000(1 hour)  | The time interval in milliseconds to trigger minor optimizing                                                                                                                                                                           |
+| self-optimizing.major.trigger.duplicate-ratio | 0.1              | The ratio of duplicate data of segment files to trigger major optimizing                                                                                                                                                                |
+| self-optimizing.full.trigger.interval         | -1(closed)       | The time interval in milliseconds to trigger full optimizing                                                                                                                                                                            |
+| self-optimizing.full.rewrite-all-files        | true             | Whether full optimizing rewrites all files or skips files that do not need to be optimized                                                                                                                                              |
+| self-optimizing.min-plan-interval             | 60000            | The minimum time interval between two self-optimizing planning action                                                                                                                                                                   |
+| self-optimizing.filter                        | NULL             | Filter conditions for self-optimizing, using SQL conditional expressions, without supporting any functions. For the timestamp column condition, the ISO date-time formatter must be used. For example: op_time > '2007-12-03T10:15:30'. |
 
 ## Data-cleaning configurations
 
@@ -53,7 +71,9 @@ Data-cleaning configurations are applicable to both Iceberg Format and Mixed str
 |---------------------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | table-expire.enabled                        | true             | Enables periodically expire table                                                                                                                                                                                                                                     |
 | change.data.ttl.minutes                     | 10080(7 days)    | Time to live in minutes for data of ChangeStore                                                                                                                                                                                                                       |
-| snapshot.base.keep.minutes                  | 720(12 hours)    | Table-Expiration keeps the latest snapshots of BaseStore within a specified time in minutes                                                                                                                                                                           |
+| snapshot.keep.duration                      | 720min(12 hours) | Table-Expiration keeps the latest snapshots within a specified duration                                                                                                                                                                                               |
+| snapshot.keep.min-count                     | 1                | Minimum number of snapshots retained for table expiration                                                                                                                                                                                                             |
+| snapshot.keep.flink.checkpoint-retention    | 7d(7 days)       | The retention period for snapshots created by Flink checkpoints. Snapshots older than this duration may be cleaned up. The value should be specified as a duration string (e.g., "7d", "168h", "10080min")                                                            |
 | clean-orphan-file.enabled                   | false            | Enables periodically clean orphan files                                                                                                                                                                                                                               |
 | clean-orphan-file.min-existing-time-minutes | 2880(2 days)     | Cleaning orphan files keeps the files modified within a specified time in minutes                                                                                                                                                                                     |
 | clean-dangling-delete-files.enabled         | true             | Whether to enable cleaning of dangling delete files                                                                                                                                                                                                                   |
@@ -94,18 +114,18 @@ If using Iceberg Format，please refer to [Iceberg configurations](https://icebe
 
 ### Writing configurations
 
-| Key                            | Default         | Description                                                                                                     |
-|--------------------------------|-----------------|-----------------------------------------------------------------------------------------------------------------|
-| base.write.format              | parquet         | File format for the table for BaseStore, applicable to KeyedTable                                               |
-| change.write.format            | parquet         | File format for the table for ChangeStore, applicable to KeyedTable                                             |
-| write.format.default           | parquet         | Default file format for the table, applicable to UnkeyedTable                                                   |
-| base.file-index.hash-bucket    | 4               | Initial number of buckets for BaseStore auto-bucket                                                             |
-| change.file-index.hash-bucket  | 4               | Initial number of buckets for ChangeStore auto-bucket                                                           |
-| write.target-file-size-bytes   | 134217728(128MB) | Target size when writing                                                                                        |
-| write.upsert.enabled           | false           | Enable upsert mode, multiple insert data with the same primary key will be merged if enabled                    |
-| write.distribution-mode        | hash            | Shuffle rules for writing. UnkeyedTable can choose between none and hash, while KeyedTable can only choose hash |
-| write.distribution.hash-mode   | auto            | Auto-bucket mode, which supports primary-key, partition-key, primary-partition-key, and auto                    |
-
+| Key                           | Default          | Description                                                                                                     |
+|-------------------------------|------------------|-----------------------------------------------------------------------------------------------------------------|
+| base.write.format             | parquet          | File format for the table for BaseStore, applicable to KeyedTable                                               |
+| change.write.format           | parquet          | File format for the table for ChangeStore, applicable to KeyedTable                                             |
+| write.format.default          | parquet          | Default file format for the table, applicable to UnkeyedTable                                                   |
+| base.file-index.hash-bucket   | 4                | Initial number of buckets for BaseStore auto-bucket                                                             |
+| change.file-index.hash-bucket | 4                | Initial number of buckets for ChangeStore auto-bucket                                                           |
+| write.target-file-size-bytes  | 134217728(128MB) | Target size when writing                                                                                        |
+| write.upsert.enabled          | false            | Enable upsert mode, multiple insert data with the same primary key will be merged if enabled                    |
+| write.distribution-mode       | hash             | Shuffle rules for writing. UnkeyedTable can choose between none and hash, while KeyedTable can only choose hash |
+| write.distribution.hash-mode  | auto             | Auto-bucket mode, which supports primary-key, partition-key, primary-partition-key, and auto                    |
+| base.refresh-interval         | -1 (Closed)      | The interval for refreshing the BaseStore                                                                       |
 
 ### LogStore configurations
 

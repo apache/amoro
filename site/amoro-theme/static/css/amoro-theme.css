@@ -1,0 +1,811 @@
+/*!
+ * Start Bootstrap - Landing Page Bootstrap Theme (http://startbootstrap.com)
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+body,
+html {
+    width: 100%;
+    height: 100%;
+    font-size: 15px;
+    scroll-padding-top: 4rem;
+    scroll-behavior: smooth;
+}
+
+section {
+    display: flex;
+    margin-left: 150px;
+    margin-right: 0;
+}
+
+topsection {
+    display: flex;
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: "Lato","Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-weight: 400;
+}
+
+.lead {
+    font-size: 18px;
+    font-weight: 400;
+}
+
+section#intro {
+    display: block;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+section#contact {
+    display: block;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+section#services {
+    display: block;
+}
+
+.navbar-default {
+    background-color: #F5F6FA;
+    border-color: #F5F6FA;
+}
+
+.intro-message {
+    position: relative;
+    padding-top: 20%;
+    padding-bottom: 20%;
+}
+
+.intro-message > h1 {
+    margin: 0;
+    text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+    font-size: 5em;
+}
+
+.intro-divider {
+    width: 400px;
+    border-top: 1px solid #f8f8f8;
+    border-bottom: 1px solid rgba(0,0,0,0.2);
+}
+
+.intro-message > h3 {
+    text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+}
+
+.button-box {
+    padding-top: 1rem;
+}
+
+@media(max-width:767px) {
+    .intro-message {
+        padding-bottom: 15%;
+    }
+
+    .intro-message > h1 {
+        font-size: 3em;
+    }
+
+    ul.intro-social-buttons > li {
+        display: block;
+        margin-bottom: 20px;
+        padding: 0;
+    }
+
+    ul.intro-social-buttons > li:last-child {
+        margin-bottom: 0;
+    }
+
+    .intro-divider {
+        width: 100%;
+    }
+}
+
+.network-name {
+    text-transform: uppercase;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 2px;
+}
+
+.content-section-a {
+    padding: 50px 0;
+}
+
+.content-section-b {
+    padding: 50px 0;
+}
+
+.section-heading {
+    margin-bottom: 30px;
+}
+
+.section-heading-spacer {
+    float: left;
+    width: 200px;
+}
+
+.contact {
+    padding: 100px 0;
+    color: #f8f8f8;
+    background: url(../img/contact-bg.jpg) no-repeat center center;
+    background-size: cover;
+}
+
+.contact h2 {
+    margin: 0;
+    text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+    font-size: 3em;
+}
+
+.contact ul {
+    margin-bottom: 0;
+}
+
+.contact-social-buttons {
+    float: right;
+    margin-top: 0;
+}
+
+@media(max-width:1199px) {
+    ul.contact-social-buttons {
+        float: left;
+        margin-top: 15px;
+    }
+}
+
+@media(max-width:767px) {
+    .contact h2 {
+        margin: 0;
+        text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+        font-size: 3em;
+    }
+
+    ul.contact-social-buttons > li {
+        display: block;
+        margin-bottom: 20px;
+        padding: 0;
+    }
+
+    ul.contact-social-buttons > li:last-child {
+        margin-bottom: 0;
+    }
+}
+
+footer {
+    padding: 50px 0;
+}
+
+p.copyright {
+    margin: 15px 0 0;
+}
+
+.top-navbar-logo {
+    height: 25px;
+    vertical-align: top;
+}
+
+.footer-creds {
+    font-size: 0.8rem;
+}
+
+a.page-scroll {
+    font-size: 15px;
+    color: red;
+}
+
+.pad-for-navbar {
+    padding-top: 80px;
+}
+
+.center-content {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+
+.termynal-container {
+    padding-top: 3rem;
+}
+
+/* Anchor tags for headers */
+.anchortag { font-size: 80%; visibility: hidden;}
+
+h1:hover a { visibility: visible}
+h2:hover a { visibility: visible}
+h3:hover a { visibility: visible}
+h4:hover a { visibility: visible}
+
+/* Fixed table of contents */
+.grid-container {
+    display: grid;
+    grid-template-columns: 5fr 1fr;
+    grid-gap: 1rem;
+    overflow-y: auto;
+    height: 90vh;
+    width: 100%;
+}
+
+/* Cards at the top of each quickstart page */
+.quickstart-container {
+    display: flex;
+    flex-wrap: wrap;
+    width: 80vw;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-gap: 1rem;
+}
+
+.content-only {
+    grid-template-columns: auto;
+}
+
+.left-nav-only {
+    grid-template-columns: 1fr 5fr
+}
+
+.toc-only {
+    grid-template-columns: 1fr;
+}
+
+.leftnav-and-toc {
+    grid-template-columns: 1fr 5fr;
+    grid-column-gap: 30px;
+}
+
+.margin-for-toc {
+    margin-right: 40%;
+}
+
+.margin-without-toc {
+    margin-right: 20%;
+}
+
+#toc {
+    position: fixed;
+    right: 0;
+    top: 0;
+    background-color:#FFF;
+    top: 70px;
+    font-size: 0.95rem;
+    width: 260px;
+    list-style-type: none;
+    margin: 0 100px;
+}
+
+div.sidebar {
+    text-decoration: none;
+    left: 0;
+    top: 0;
+    overflow-y: auto;
+    background-color: #fff;
+    display: block;
+    font-size: 16px;
+    min-width: 15rem;
+    list-style-type: none;
+    padding-right: 5px;
+}
+
+.sidebar hr {
+    height: 1px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.sidebar-menu ul {
+    text-decoration: none;
+    list-style: none;
+}
+
+.sidebar-menu li a {
+    color: black;
+    display: flex;
+}
+
+.sidebar-menu li a:hover {
+    color: #2879BE;
+}
+
+#active {
+    color: #2879BE;
+}
+
+i {
+  justify-content: center;
+}
+
+.fa-caret {
+    display: flex;
+    align-items: center;
+    margin-right: 5px;
+}
+
+.topnav-page-selection i.fa.fa-caret-down {
+ font-size: 8px;
+}
+
+.chevron-toggle .fa-caret-down,
+.chevron-toggle.collapsed .fa-caret-down {
+    display: inherit;
+}
+
+.chevron-toggle .fa-caret-right,
+.chevron-toggle.collapsed .fa-caret-right {
+    display: none;
+}
+
+#toc ul {
+    list-style: none;
+}
+
+#content {
+    overflow-y: auto;
+    max-height: 100%;
+}
+
+@media screen and (max-width: 1280px) {
+    #toc { display: none; }  /* Hide the TOC if the page is less than 1280px */
+    .grid-container {
+        grid-template-columns: auto;
+    }
+    .margin-for-toc {
+        margin-right: 0;
+    }
+    section {
+        margin-left: 20px;
+    }
+    topsection {
+        display: flex;
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+  }
+
+@media screen and (max-width: 768px) {
+    div.sidebar { display: none; }  /* Hide the sidebar if the page is less than 768px. It will be available from a hamburger menu */
+}
+
+/* Style for the hint shortcode */
+.info, .success, .warning, .error {
+    margin: 10px 0px;
+    padding:12px;
+ 
+}
+.info {
+    color: #00529B;
+    background-color: #BDE5F8;
+}
+.success {
+    color: #4F8A10;
+    background-color: #DFF2BF;
+}
+.warning {
+    color: #9F6000;
+    background-color: #FEEFB3;
+}
+.error {
+    color: #D8000C;
+    background-color: #FFD2D2;
+}
+
+.fa-table {
+  color: #000000;
+}
+
+.fa-handshake-o {
+  color: #000000;
+}
+
+.fa-object-ungroup {
+  color: #000000;
+}
+
+.fa-star-o {
+  color: #E25A1D;
+}
+
+.navbar {
+    margin-bottom: 0;
+    height: 50px;
+}
+
+.navbar-fixed-top {
+    position: sticky;
+    display: flex;
+    gap: 15px;
+    justify-content: start;
+    align-items: center;
+}
+
+.navbar-menu-fixed-top {
+    position: sticky;
+    display: flex;
+    flex: 1;
+    gap: 5px;
+    justify-content: start;
+    align-items: center;
+}
+
+.navbar-pages-group {
+    justify-content: end;
+    margin-left: auto;
+    max-width: 720px;
+    position: relative;
+}
+
+/*search*/
+.container {
+    padding-right: 2rem;
+    padding-left: 2rem;
+    position: relative;
+}
+
+.vertical-center {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
+/* Add a black background color to the top navigation bar */
+.topnav {
+  overflow: hidden;
+  background-color: #e9e9e9;
+}
+
+/* Style the links inside the navigation bar */
+.topnav a {
+  float: left;
+  display: block;
+  color: black;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  font-size: 17px;
+}
+
+/* Change the color of links on hover */
+.topnav a:hover {
+  background-color: #ddd;
+  color: black;
+}
+
+/* Style the "active" element to highlight the current page */
+.topnav a.active {
+  background-color: #2196F3;
+  color: white;
+}
+
+#search-input {
+    margin-top: 20px;
+    min-width: 200px;
+    border-radius: 20px;
+}
+
+#searchclear {
+    position: absolute;
+    right: 5px;
+    top: 0;
+    bottom: 0;
+    height: 14px;
+    margin: auto;
+    font-size: 14px;
+    cursor: pointer;
+    color: #ccc;
+}
+
+/* Style the search results and search results container */
+#search-results {
+    margin-left: 5rem;
+    margin-right: 5rem;
+    max-width: 400px;  /* Add a media query here to change this to 100% below 640px */
+    max-height: 500px;
+    color: rgb(112, 128, 144);
+    background-color: #f9f9f9;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+}
+
+#search-results-container {
+    position: absolute;
+    margin-left: -150px;
+    z-index: 999;
+}
+
+ul#search-results {
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+  float: left;
+  width: 100%;
+  overflow-y: auto;
+  border-radius: 6px;
+}
+
+ul#search-results  a b mark {
+    background-color: #B8E1F3;
+}
+ul#search-results li {
+  color: rgb(112, 128, 144);
+  background-color: white;
+  padding-bottom: 15px;
+  padding-left: 10px;
+  margin: 0px;
+  display: grid;
+}
+
+ul#search-results li p {
+   font-weight: bold;
+    margin-bottom: 4px;
+}
+
+hr {
+	border: 0;
+	border-top: 1px solid #777777;
+}
+
+.topnav-page-selection {
+    margin-left: 10px;
+}
+
+.topnav-page-selection a {
+    color: #000000;
+    text-decoration: none;
+}
+
+.topnav-page-selection a:hover {
+    color: #2879BE;
+}
+
+/* When the screen is less than 600px wide, stack the links and the search field vertically instead of horizontally */
+@media screen and (max-width: 600px) {
+  .topnav a, .topnav input[type=text] {
+    float: none;
+    display: block;
+    text-align: left;
+    width: 100%;
+    margin: 0;
+    padding: 14px;
+  }
+  .topnav input[type=text] {
+    border: 1px solid #ccc;
+  }
+}
+
+@media screen and (max-width: 1040px) {
+  .topnav-page-selection {
+    display: none;
+  }
+}
+
+div#full ul {
+    padding-left: 2em;
+    padding-right: 0em;
+}
+
+#sidebar-full{
+	height: 100%;
+	overflow: hidden;
+}
+
+#sidebar-full .sidebar-menu{
+	overflow: auto;
+	height: calc(100% - 80px);
+    margin-top: 20px;
+}
+
+div#sidebar-full ul {
+    padding-left: 0em;
+    padding-right: 0em;
+}
+
+div#sidebar-full ul.sub-menu {
+    padding-left: 30px;
+}
+
+a.top-menu {
+    padding-left: 10px;
+    font-weight: bold;
+}
+
+.navbar-brand {
+    padding: 10px 0px;
+}
+
+@media screen and (max-width: 720px) {
+  .navbar-brand {
+    display: none;
+  }
+}
+
+.versions-dropdown {
+  position: relative;
+  display: inline-block;
+  z-index: 999;
+}
+
+.versions-dropdown-selection {
+    margin-left: auto;
+}
+
+.versions-dropdown-selection a {
+    color: #000000;
+    text-decoration: none;
+}
+
+.versions-dropdown-selection a:hover {
+    color: #2879BE;
+}
+
+.versions-dropdown-content {
+    display: none;
+    position: fixed;
+    background-color: #f9f9f9;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+}
+
+.versions-dropdown-content ul {
+    list-style-type: none;
+    align-items: left;
+    padding: 5px;
+    margin: 5px;
+}
+
+.versions-dropdown-content a {
+    color: black;
+    text-decoration: none;
+}
+
+.versions-dropdown:hover .versions-dropdown-content {
+    display: block;
+}
+
+.quickstart-card {
+    color: #fff;
+    width:300px;
+    position: relative;
+    -webkit-box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.3);
+    -moz-box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.3);
+    -o-box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.3);
+    box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.3);
+    background-image: linear-gradient(to bottom right, #2879be, #57A7D8);
+}
+
+.quickstart-card .quickstart-card-content {
+    padding: 30px;
+    height: 250px;
+}
+
+.quickstart-card .quickstart-card-title {
+    font-size: 25px;
+    font-family: 'Open Sans', sans-serif;
+}
+
+.quickstart-card .quickstart-card-text {
+    line-height: 1.6;
+}
+
+.quickstart-card .quickstart-card-link {
+    padding: 25px;
+    width: -webkit-fill-available;
+    border-top:1px solid #82c1bb;
+}
+
+.quickstart-card-link a {
+    text-decoration: none;
+    position: relative;
+    padding: 10px 0px;
+    color: #fff;
+}
+
+.quickstart-card .quickstart-card-link a:after {
+    top: 30px;
+    content: "";
+    display: block;
+    height: 2px;
+    left: 50%;
+    position: absolute;
+    width: 0;
+    background:#fff;
+
+    -webkit-transition: width 0.3s ease 0s, left 0.3s ease 0s;
+    -moz-transition: width 0.3s ease 0s, left 0.3s ease 0s;
+    -o-transition: width 0.3s ease 0s, left 0.3s ease 0s;
+    transition: width 0.3s ease 0s, left 0.3s ease 0s;
+}
+
+.quickstart-card .quickstart-card-link a:hover:after {
+    width: 100%;
+    left: 0;
+}
+
+.quickstart-card .quickstart-card-link a:after {
+    background:#fff;
+}
+
+/*styling for codetabs*/
+.codetabs h1 {
+  padding: 50px 0;
+  font-weight: 400;
+  text-align: center;
+}
+
+.codetabs p {
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.codetabs main {
+  min-width: 320px;
+  max-width: 800px;
+  padding: 50px;
+  margin: 0 auto;
+  background: #fff;
+}
+
+.codetabs codeblock {
+  display: none;
+  padding: 20px 0 0;
+  border-top: 1px solid #ddd;
+}
+
+.codetabs input {
+  display: none;
+  visibility:hidden;
+}
+
+.codetabs label {
+  display: inline-block;
+  margin: 0 0 -1px;
+  padding: 15px 25px;
+  font-weight: 600;
+  text-align: center;
+  color: #bbb;
+  border: 1px solid transparent;
+}
+
+.codetabs label:before {
+  font-family: fontawesome;
+  font-weight: normal;
+  margin-right: 10px;
+}
+
+.codetabs label:hover {
+  color: #888;
+  cursor: pointer;
+}
+
+.codetabs input:checked + label {
+  color: #555;
+  border: 1px solid #ddd;
+  border-top: 2px solid #277ABE;
+  border-bottom: 1px solid #fff;
+}
+
+@media screen and (max-width: 500px) {
+  .codetabs label {
+    font-size: 0;
+  }
+  #LaunchSparkClient label:before {
+    margin: 0;
+    font-size: 18px;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .codetabs label {
+    padding: 15px;
+  }
+}

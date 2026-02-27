@@ -20,31 +20,41 @@ on:
     paths:
       - ".github/workflows/**"
       - "amoro-ams/**"
-      - "amoro-core/**"
-      - "amoro-mixed-format/amoro-mixed-format-flink/**"
-      - "amoro-mixed-format/amoro-mixed-format-hive/**"
-      - "amoro-mixed-format/amoro-mixed-format-spark/**"
+      - "amoro-common/**"
+      - "amoro-metrics/**"
+      - "amoro-optimizer/**"
+      - "amoro-format-iceberg/**"
+      - "amoro-format-paimon/**"
+      - "amoro-format-hudi/**"
+      - "amoro-format-mixed/amoro-mixed-flink/**"
+      - "amoro-format-mixed/amoro-mixed-hive/**"
+      - "amoro-format-mixed/amoro-mixed-spark/**"
       - "pom.xml"
       - "tools/maven/**"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        jdk: [ '11' ]
+    name: Build Amoro with JDK ${{ matrix.jdk }}
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up JDK 8
+      - name: Set up JDK ${{ matrix.jdk }}
         uses: actions/setup-java@v3
         with:
-          java-version: '8'
+          java-version: ${{ matrix.jdk }}
           distribution: 'temurin'
           cache: maven
+          check-latest: false
 
       - name: Validate checkstyle first
-        run: mvn validate
+        run: ./mvnw validate
 
-      - name: Build all module with Maven
-        run: mvn clean install -Djacoco.flink.skip=true -B -ntp -Dhadoop=v2
+      - name: Build all modules with Maven
+        run: ./mvnw clean install -Djacoco.flink.skip=true -B -ntp -Phadoop2 -Pjava${{ matrix.jdk }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

@@ -8,6 +8,22 @@ menu:
         parent: Spark
         weight: 100
 ---
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
 # Spark Getting Started
 # Iceberg Format
 
@@ -39,10 +55,10 @@ spark-shell --packages org.apache.amoro:amoro-mixed-spark-3.3-runtime:0.7.0
 ${SPARK_HOME}/bin/spark-sql \
     --conf spark.sql.extensions=org.apache.amoro.spark.MixedFormatSparkExtensions \
     --conf spark.sql.catalog.local_catalog=org.apache.amoro.spark.MixedFormatSparkCatalog \
-    --conf spark.sql.catalog.local_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
+    --conf spark.sql.catalog.local_catalog.ams.uri=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
 ```
 
-> Amoro manages the Catalog through AMS, and Spark catalog needs to be mapped to Amoro Catalog via URL,
+> Amoro manages the Catalog through AMS, and Spark catalog needs to be mapped to Amoro Catalog via URI,
 > in the following format:
 > `thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}`,
 > The mixed-format-spark-connector will automatically download the Hadoop site configuration file through

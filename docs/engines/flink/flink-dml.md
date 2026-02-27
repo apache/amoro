@@ -8,6 +8,22 @@ menu:
         parent: Flink
         weight: 300
 ---
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
 # Flink DML
 
 ## Querying with SQL
@@ -115,13 +131,13 @@ SELECT * FROM unkeyed /*+ OPTIONS('monitor-interval'='1s')*/ ;
 ```
 Hint Options
 
-| Key                              | Default Value | Type     | Required | Description                                                                                                                                                                                                                                                                                                                                                                                                             |
-|----------------------------------|---------------|----------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| streaming                        | true          | Boolean  | No       | Reads bounded data or unbounded data in a streaming mode, false: reads bounded data, true: reads unbounded data                                                                                                                                                                                                                                                                                                         |
-| mixed-format.read.mode                 | file          | String   | No       | To specify the type of data to read from an Amoro table, either File or Log, use the mixed-format.read.mode parameter. If the value is set to log, the Log configuration must be enabled.                                                                                                                                                                                                                                    |
-| monitor-interval<img width=120/> | 10s           | Duration | No       | The mixed-format.read.mode = file parameter needs to be set for this to take effect. The time interval for monitoring newly added data files                                                                                                                                                                                                                                                                                  |
-| start-snapshot-id                | (none)        | Long     | No       | To read incremental data starting from a specified snapshot (excluding the data in the start-snapshot-id snapshot), specify the snapshot ID using the start-snapshot-id parameter. If not specified, the reader will start reading from the snapshot after the current one (excluding the data in the current snapshot).                                                                                                |
-| other table parameters           | (none)        | String   | No       | All parameters of an Amoro table can be dynamically modified through SQL Hints, but they only take effect for this specific task. For the specific parameter list, please refer to the [Table Configuration](../configurations/). For permissions-related configurations on the catalog, they can also be configured in Hint using parameters such as [properties.auth.XXX in catalog DDL](./flink-ddl.md#Flink SQL) |
+| Key                              | Default Value | Type     | Required | Description                                                                                                                                                                                                                                                                                                                                                                                                        |
+|----------------------------------|---------------|----------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| streaming                        | true          | Boolean  | No       | Reads bounded data or unbounded data in a streaming mode, false: reads bounded data, true: reads unbounded data                                                                                                                                                                                                                                                                                                    |
+| mixed-format.read.mode                 | file          | String   | No       | To specify the type of data to read from an Amoro table, either File or Log, use the mixed-format.read.mode parameter. If the value is set to log, the Log configuration must be enabled.                                                                                                                                                                                                                          |
+| monitor-interval<img width=120/> | 10s           | Duration | No       | The mixed-format.read.mode = file parameter needs to be set for this to take effect. The time interval for monitoring newly added data files                                                                                                                                                                                                                                                                       |
+| start-snapshot-id                | (none)        | Long     | No       | To read incremental data starting from a specified snapshot (excluding the data in the start-snapshot-id snapshot), specify the snapshot ID using the start-snapshot-id parameter. If not specified, the reader will start reading from the snapshot after the current one (excluding the data in the current snapshot).                                                                                           |
+| other table parameters           | (none)        | String   | No       | All parameters of an Amoro table can be dynamically modified through SQL Hints, but they only take effect for this specific task. For the specific parameter list, please refer to the [Table Configuration](../configurations/). For permissions-related configurations on the catalog, they can also be configured in Hint using parameters such as [properties.auth.XXX in catalog DDL](../flink-ddl/#flink-sql) |
 
 ### Streaming Mode (FileStore primary key table)
 
@@ -206,7 +222,7 @@ CREATE TEMPORARY TABLE Customers (
     zip STRING
 ) WITH (
     'connector' = 'mixed-format',
-    'metastore.url' = '',
+    'ams.uri' = '',
     'mixed-format.catalog' = '',
     'mixed-format.database' = '',
     'mixed-format.table' = '',

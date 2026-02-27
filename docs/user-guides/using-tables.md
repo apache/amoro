@@ -8,6 +8,22 @@ menu:
         parent: User Guides
         weight: 100
 ---
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
 # Using Tables
 
 The SQL execution tool `Terminal` is provided in AMS dashboard to help users quickly create, modify and delete tables.
@@ -23,7 +39,7 @@ create table test_db.test_log_store(
   name string,
   op_time timestamp,
   primary key(id)
-) using arctic
+) using mixed_iceberg
 partitioned by(days(op_time))
 tblproperties(
   'log-store.enable' = 'true',
@@ -248,5 +264,5 @@ The Optimizing page displays self-optimizing status of all tables.
 - **Duration**: The duration of the current status.
 - **File Count**: The total number of files involved in the current Self-optimizing, including base, insert, eq-delete, and pos-delete file types.
 - **File Size**: The total size of files involved in the current self-optimizing.
-- **Quota**: The proportion of self-optimizing execution time executed per unit time.
-- **Quota Occupation**: The actual Quota used for self-optimizing during execution of the table in the last hour. When optimizer resources are sufficient and the table requires more resources for self-optimizing, this value will be greater than 100%. When resources are scarce or the table requires fewer resources for self-optimizing, this value will be less than 100%.
+- **Quota**: The maximum number of optimizer resources that can be allocated to each table.
+- **Quota Occupation**: The ratio of the actual optimizer thread execution time used by a table to its quota execution time within the QUOTA_LOOK_BACK_TIME window (one hour). 

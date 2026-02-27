@@ -55,13 +55,23 @@ spec: {{/* TODO If Support Replica can be use more than 1 */}}
               valueFrom:
                 secretKeyRef:
                   name: {{ include "common.names.fullname" . }}
-                  key: username
+                  key: DatabaseUsername
             - name: "AMS_DATABASE_PASSWORD"
               valueFrom:
                 secretKeyRef:
                   name: {{ include "common.names.fullname" . }}
-                  key: password
+                  key: DatabasePassword
             {{- end }}
+            - name: "AMS_ADMIN__USERNAME"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "common.names.fullname" . }}
+                  key: AdminUsername
+            - name: "AMS_ADMIN__PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "common.names.fullname" . }}
+                  key: AdminPassword
             {{- with .Values.env }}
             {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
@@ -69,16 +79,11 @@ spec: {{/* TODO If Support Replica can be use more than 1 */}}
           {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
           ports:
-            - name: rest
-              containerPort: {{ .Values.server.rest.port }}
-            - name: table
-              containerPort: {{ .Values.server.table.port }}
-            - name: optimizing
-              containerPort: {{ .Values.server.optimizing.port }}
+            {{- include "amoro.pod.container.ports" . | nindent 12 }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
-              path: /health/status
+              path: /api/ams/v1/health/status
               port: rest
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
@@ -89,7 +94,7 @@ spec: {{/* TODO If Support Replica can be use more than 1 */}}
           {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
             httpGet:
-              path: /versionInfo
+              path: api/ams/v1/versionInfo
               port: rest
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}

@@ -1,0 +1,52 @@
+<!-- - Licensed to the Apache Software Foundation (ASF) under one or more-->
+<!-- - contributor license agreements.  See the NOTICE file distributed with-->
+<!-- - this work for additional information regarding copyright ownership.-->
+<!-- - The ASF licenses this file to You under the Apache License, Version 2.0-->
+<!-- - (the "License"); you may not use this file except in compliance with-->
+<!-- - the License.  You may obtain a copy of the License at-->
+<!-- - -->
+<!-- -   http://www.apache.org/licenses/LICENSE-2.0-->
+<!-- - -->
+<!-- - Unless required by applicable law or agreed to in writing, software-->
+<!-- - distributed under the License is distributed on an "AS IS" BASIS,-->
+<!-- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- - See the License for the specific language governing permissions and-->
+<!-- - limitations under the License.-->
+
+{{ if and .IsHome (not .Site.Params.disableHome) }}
+    <!-- Show the Iceberg marketing splash content only when on the homepage-->
+    <section id="intro">
+        <div class="intro-header">
+            <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                <div class="intro-message">
+                    <h1>{{ .Site.Title }}</h1>
+                    <h3>{{ .Site.Params.description }}</h3>
+                    <hr class="intro-divider">
+                    {{ if isset .Site.Params "social" }}
+                    <ul class="list-inline intro-social-buttons">
+                            {{ partial "social.html" . }}
+                    </ul>
+                    {{ end }}
+                </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </section>
+{{ end }}
+<section id="about" class="container content-section text-center">
+{{ range where .Site.RegularPages "Section" "about" | first 1 }}
+	<div class="row">
+		<div class="col-lg-8 col-lg-offset-2">
+			<br/>
+			<br/>
+			<h2>{{ .Title }}</h2>
+			<br/>
+			{{ .Content }}
+			<br/>
+		</div>
+	</div>
+{{ end }}
+</section>

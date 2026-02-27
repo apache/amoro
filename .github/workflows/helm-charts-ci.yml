@@ -48,12 +48,7 @@ jobs:
 
       - name: Install helm-unittests
         run: |
-          helm plugin install https://github.com/helm-unittest/helm-unittest.git
-
-      - name: Rebuild Chart with Dependency
-        run: |
-          cd charts/amoro
-          helm dependency build
+          helm plugin install https://github.com/helm-unittest/helm-unittest.git --verify=false
 
       - name: Run Unit Tests
         run: |

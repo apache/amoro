@@ -23,7 +23,7 @@
 #        --tag apache/amoro:tagname
 #        .
 
-FROM eclipse-temurin:8-jdk-jammy as builder
+FROM eclipse-temurin:11-jdk-jammy AS builder
 
 # Add the entire project to the build container, unzip it,
 # and remove flink-optimizer to reduce the container size.
@@ -31,19 +31,18 @@ FROM eclipse-temurin:8-jdk-jammy as builder
 ADD . /workspace/amoro
 WORKDIR /workspace/amoro
 
-RUN apt-get update \
-    && apt-get install -y unzip
-
 RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'` \
-    && cp amoro-ams/dist/target/*.zip /usr/local \
-    && unzip /usr/local/amoro-${AMORO_VERSION}-bin.zip -d /usr/local \
+    && cp dist/target/*.tar.gz /usr/local \
+    && tar -xzvf /usr/local/apache-amoro-${AMORO_VERSION}-bin.tar.gz -C /usr/local \
     && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/flink -rf \
     && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/spark -rf \
     && mv /usr/local/amoro-${AMORO_VERSION} /usr/local/amoro \
     && rm -rf /workspace/amoro
 
 
-FROM eclipse-temurin:8-jdk-jammy
+FROM eclipse-temurin:11-jdk-jammy
+
+ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 
 ENV AMORO_HOME /usr/local/amoro
 ENV AMORO_CONF_DIR ${AMORO_HOME}/conf
@@ -57,7 +56,7 @@ COPY --from=builder "/usr/local/amoro" "/usr/local/amoro"
 WORKDIR ${AMORO_HOME}
 
 RUN cd ${AMORO_HOME}/lib \
-    && wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.30/mysql-connector-java-8.0.30.jar
+    && wget ${MAVEN_MIRROR}/mysql/mysql-connector-java/8.0.30/mysql-connector-java-8.0.30.jar
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["help"]

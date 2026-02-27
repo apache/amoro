@@ -1,0 +1,35 @@
+{{ partial "head.html" . }}
+<head>
+    <script>
+        // This automatically adds an anchor tag for every h1, h2, h3, and h4 element on the page
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+{{ partial "header.html" . }}
+<body dir="{{ .Site.Language.LanguageDirection | default " ltr" }}">
+    <section>
+        <div class="grid-container {{ if and (not .Params.disableSidebar) (not .Params.disableToc) }}leftnav-and-toc{{ else if not .Params.disableSidebar }}left-nav-only{{ else if not .Params.disableToc }}toc-only{{ else }}content-only{{ end }}">
+            {{ if not .Params.disableSidebar }}
+                {{ partial "sidebar.html" . }}
+            {{ end }}
+            <div id="content" class="markdown-body">
+                <div class="{{ if not .Params.disableToc }}margin-for-toc{{ else }}margin-without-toc{{ end }}">
+                    {{- .Content -}}
+                </div>
+                {{ if not .Params.disableToc }}
+                    {{ partial "toc.html" . }}
+                {{ end }}
+            </div>
+        </div>
+    </section>
+</body>
+{{ partial "js.html" . }}
+</html>

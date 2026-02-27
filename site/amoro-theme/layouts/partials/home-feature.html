@@ -1,0 +1,16 @@
+<div id="home-feature">
+  <div class="content">
+    <div class="title">Key Features</div>
+    <div class="features">
+      {{range .Site.Params.features}}
+      <div class="feature-item">
+        <div class="item-title">
+          <img src="{{ .Site.BaseURL }}/img/{{ .icon }}.png" />
+          {{.title}}
+        </div>
+        <div class="item-desc">{{.desc}}</div>
+      </div>
+      {{end}}
+    </div>
+  </div>
+</div>

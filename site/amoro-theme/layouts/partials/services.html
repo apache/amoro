@@ -1,0 +1,112 @@
+<!-- - Licensed to the Apache Software Foundation (ASF) under one or more-->
+<!-- - contributor license agreements.  See the NOTICE file distributed with-->
+<!-- - this work for additional information regarding copyright ownership.-->
+<!-- - The ASF licenses this file to You under the Apache License, Version 2.0-->
+<!-- - (the "License"); you may not use this file except in compliance with-->
+<!-- - the License.  You may obtain a copy of the License at-->
+<!-- - -->
+<!-- -   http://www.apache.org/licenses/LICENSE-2.0-->
+<!-- - -->
+<!-- - Unless required by applicable law or agreed to in writing, software-->
+<!-- - distributed under the License is distributed on an "AS IS" BASIS,-->
+<!-- - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!-- - See the License for the specific language governing permissions and-->
+<!-- - limitations under the License.-->
+<section id="services">
+
+<!-- Page Content -->
+ {{ range $index, $element :=  .Site.RegularPages }}{{ if or (eq .Section "services") (eq .Section "post") }}
+    {{ if modBool $index 2 }}
+    <div class="content-section-a">
+
+        <div class="container">
+
+            <div class="row">
+                <div class="col-lg-5 col-sm-6">
+                    <hr class="section-heading-spacer">
+                    <div class="clearfix"></div>
+                    <h2 class="section-heading">{{ .Title }}</h2>
+                    {{ .Description }}
+                    {{ if .Params.LearnMore }}
+                    <ul class="list-inline intro-social-buttons">
+                        <li>
+                            <a href="{{ .Params.LearnMore }}" class="btn btn-default btn-lg">
+                                <span class="network-name">Learn More</span>
+                            </a>
+                        </li>
+                    </ul>
+                    {{ end }}
+                </div>
+                {{ if .Content }}
+                <div class="col-lg-5 col-lg col-sm-6">
+                    {{ .Content }}
+                </div>
+                {{ end }}
+                {{ if .Params.Img }}
+                <div class="col-lg-5 col-lg-offset-2 col-sm-6">
+                    <img src="{{ $.Site.BaseURL }}img/{{ .Params.Img }}" height="400px" width="400px">
+                </div>
+                {{ end }}
+                {{ if .Params.LottieFile }}
+                <div class="col-lg-5 col-lg-offset-2 col-sm-6">
+                    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+                    <lottie-player src="{{ $.Site.BaseURL }}lottie/{{ .Params.LottieFile }}" background="transparent"  speed="0.5"  style="width: 600px; height: 400px;"  loop autoplay></lottie-player>
+                </div>
+                {{ end }}
+            </div>
+
+        </div>
+        <!-- /.container -->
+
+    </div>
+    <!-- /.content-section-a -->
+    {{ else }}
+
+    <div class="content-section-b">
+
+        <div class="container">
+
+            <div class="row">
+                <div class="col-lg-5 col-lg-offset-1 col-sm-push-6  col-sm-6">
+                    <hr class="section-heading-spacer">
+                    <div class="clearfix"></div>
+                    <h2 class="section-heading">{{ .Title }}</h2>
+                    {{ .Description }}
+                    {{ if .Params.LearnMore }}
+                    <ul class="list-inline intro-social-buttons">
+                        <li>
+                            <a href="{{ .Params.LearnMore }}" class="btn btn-default btn-lg">
+                                <span class="network-name">Learn More</span>
+                            </a>
+                        </li>
+                    </ul>
+                    {{ end }}
+                </div>
+                {{ if .Content }}
+                <div class="col-lg-5 col-sm-pull-6  col-sm-6">
+                  {{ .Content }}
+                </div>
+                {{ end }}
+                {{ if .Params.Img }}
+                <div class="col-lg-5 col-sm-pull-6  col-sm-6">
+                    <img src="{{ $.Site.BaseURL }}img/{{ .Params.Img }}" height="600px" width="600px">
+                </div>
+                {{ end }}
+                {{ if .Params.LottieFile }}
+                <div class="col-lg-5 col-sm-pull-6  col-sm-6">
+                    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+                    <lottie-player src="{{ $.Site.BaseURL }}lottie/{{ .Params.LottieFile }}"  {{ if .Params.LottieOptions }}{{ .Params.LottieOptions }}{{ else }}background="transparent"  speed="0.5"  style="width: 600px; height: 400px;"  loop autoplay{{ end }}></lottie-player>
+                </div>
+                {{ end }}
+            </div>
+
+        </div>
+        <!-- /.container -->
+
+    </div>
+    {{ end }}
+    <!-- /.content-section-b -->
+    {{ end }}
+{{ end }}
+
+</section>

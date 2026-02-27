@@ -86,6 +86,7 @@ server:
   rest:
     enabled: true
     port: 1630
+    restAuthType: token
     service:
       ## @param type Can set as "ClusterIP" or "NodePort". If set to "NodePort", @param nodePort below should set a value
       ##
@@ -137,6 +138,18 @@ jvmOptions: ~
 ## AMS configurations files
 ##
 amoroConf:
+  ## AMS Dashboard username and password
+  ##
+  ams:
+    adminUsername: admin
+    adminPassword: admin
+
+  ## AMS config shade properties
+  ##
+  shade:
+    identifier: ~
+    sensitiveKeywords: ~
+
   ## AMS database properties, default value is derby. For production environment, suggest to use mysql
   ##
   database:
@@ -171,13 +184,19 @@ amoroConf:
   ##    backend: kyuubi
   ##    kyuubiJdbcUrl: jdbc:hive2://127.0.0.1:10009/
 
+  ## Kyuubi terminal backend configuration with ldap authentication.
+  ##  terminal:
+  ##    backend: kyuubi
+  ##    kyuubiLdapEnabled: true
+  ##    kyuubiJdbcUrl:jdbc:hive2://127.0.0.1:10009/default?user=test;password=test;
+
   ## @param amoroDefaults The value (templated string) is used for conf.yaml file
-  ## ref: https://github.com/apache/amoro/blob/master/amoro-ams/dist/src/main/amoro-bin/conf/config.yaml
+  ## ref: https://github.com/apache/amoro/blob/master/dist/src/main/amoro-bin/conf/config.yaml
   ##
   amoroDefaults: ~
   ##
   ## @param log4j2 The value (templated string) is used for conf/log4j2.xml file
-  ## ref: https://github.com/apache/amoro/blob/master/amoro-ams/dist/src/main/amoro-bin/conf/log4j2.xml
+  ## ref: https://github.com/apache/amoro/blob/master/dist/src/main/amoro-bin/conf/log4j2.xml
   log4j2: ~
 
 ## Configure the container of optimizer that allows you to submit optimizer by AMS
@@ -255,12 +274,13 @@ optimizer:
     enabled: true
     properties:
       namespace: "default"
-      kube-config-path: "～/.kube/config"
+      # if service account rbac not have, need kube config set in optimizer deployment
+      #kube-config-path: "~/.kube/config"
       image: "apache/amoro:latest"
       pullPolicy: "IfNotPresent"
   extra: []
 
-## Configure the plugin that allows you to access the metric reporters and events listeners.
+## Configure the plugin that allows you to access the metric reporters and event listeners.
 ##
 plugin:
   ##
@@ -268,29 +288,20 @@ plugin:
   ##
   metricReporters: ~
 ## e.g:  
-##  metricReporters:
-##    ## @param Configure Prometheus exporter
-##    ##
-##    - name: prometheus-exporter
-##      ## @param Enable or disable the Prometheus exporter
-##      ##
-##      enabled: true
-##      ## @param Properties for the Prometheus exporter
-##      ##
-##      properties:
-##        port: 7001
-##      ## @param Kubernetes service configuration for the Prometheus exporter
-##      ## ref: https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
-##      ##
-##      service:
-##        type: ClusterIP
-##        port: "7001"
-##        nodePort: ~
-##        annotations: {
-##          "prometheus.io/scrape": "true",
-##          "prometheus.io/path": "/metrics",
-##          "prometheus.io/port": "7001"
-##        }
+#  metricReporters:
+#    ## @param Configure Prometheus exporter
+#    ##
+#    prometheusExporter:
+#      name: prometheus-exporter
+#      ## @param Enable or disable the Prometheus exporter
+#      ##
+#      enabled: true
+#      ## @param Properties for the Prometheus exporter
+#      ##
+#      properties:
+#      ## @param Prometheus port
+#      ##
+#        port: 7001
 
 ## Configure the ingress resource that allows you to access the
 ## Amoro installation. Set up the URL

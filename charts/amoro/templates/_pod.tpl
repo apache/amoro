@@ -54,7 +54,7 @@
   readOnly: true
   subPath: "config.yaml"
 {{- if or .Values.amoroConf.log4j2 }}
-{{- /* log4j2.yaml from config-map*/ -}}
+{{/* log4j2.yaml from config-map*/}}
 - name: conf
   mountPath: {{ include "amoro.home" . }}/conf/log4j2.xml
   readOnly: true
@@ -73,6 +73,13 @@
   readOnly: true
   subPath: "metric-reporters.yaml"
 {{- end -}}
+{{- /* table-runtime-factories.yaml from config-map*/ -}}
+{{- if or .Values.plugin.metricReporters }}
+- name: conf
+  mountPath: {{ include "amoro.home" . }}/conf/plugins/table-runtime-factories.yaml
+  readOnly: true
+  subPath: "table-runtime-factories.yaml"
+{{- end -}}
 {{- /* flink install dir. if flink optimizer container enabled.
 flink distribution package will be installed to here*/ -}}
 {{- if .Values.optimizer.flink.enabled }}
@@ -84,6 +91,10 @@ spark distribution package will be installed to here*/ -}}
 {{- if .Values.optimizer.spark.enabled }}
 - name: spark-install
   mountPath: /opt/spark
+{{- end -}}
+{{- /* additional volume mounts from values */ -}}
+{{- with .Values.volumeMounts }}
+{{- tpl (toYaml .) $ | nindent 0 }}
 {{- end -}}
 {{- end -}}
 {{- /* define amoro.pod.container.mounts end */ -}}
@@ -106,5 +117,26 @@ spark distribution package will be installed to here*/ -}}
 - name: spark-install
   emptyDir: {}
 {{- end -}}
+{{- /* additional volumes from values */ -}}
+{{- with .Values.volumes }}
+{{- tpl (toYaml .) $ | nindent 0 }}
+{{- end -}}
 {{- end -}}
 {{- /* define "amoro.pod.volumes" end */ -}}
+
+{{- /* define ports for each pod */ -}}
+{{- define "amoro.pod.container.ports" -}}
+- name: rest
+  containerPort: {{ .Values.server.rest.port }}
+- name: table
+  containerPort: {{ .Values.server.table.port }}
+- name: optimizing
+  containerPort: {{ .Values.server.optimizing.port }}
+{{- if .Values.plugin.metricReporters }}
+{{- if .Values.plugin.metricReporters.prometheusExporter.enabled }}
+- name: prometheus
+  containerPort: {{ .Values.plugin.metricReporters.prometheusExporter.properties.port }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- /* define amoro.pod.container.ports end */ -}}

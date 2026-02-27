@@ -1,0 +1,29 @@
+<div id="home-footer">
+  <div class="content">
+    <div class="title">Join Community</div>
+    <div class="btns">
+      {{range .Site.Params.social}}
+      {{if eq .title "Wechat"}}
+      <span class="btn btn-primary wechat-btn">
+        <span class="img-title"><img class="" src="{{ .Site.BaseURL }}/img/{{ .icon }}.png"></img>{{.title}}</span>
+        <span class="wechat-img"><img src="{{ .Site.BaseURL }}/img/wechat-group.png"/></span>
+      </span>
+      {{else}}
+      <a target="_blank" href="{{ .url }}" class="btn btn-primary">
+        <span class="img-title"><img class="" src="{{ .Site.BaseURL }}/img/{{ .icon }}.png"></img>{{.title}}</span>
+      </a>
+      {{end}}
+
+      {{end}}
+    </div>
+    <div class="apache">
+      <a href="https://incubator.apache.org/">
+        <img class="logo" src="{{ .Site.BaseURL }}/img/apache-incubator.svg"></img>
+      </a>
+      <div class="copyright">Apache Amoro is an effort undergoing incubation at The Apache Software Foundation (ASF), sponsored by the Apache Incubator. Incubation is required of all newly accepted projects until a further review indicates that the infrastructure, communications, and decision making process have stabilized in a manner consistent with other successful ASF projects. While incubation status is not necessarily a reflection of the completeness or stability of the code, it does indicate that the project has yet to be fully endorsed by the ASF.</div>
+      <div class="copyright">Copyright © 2024 The Apache Software Foundation, Licensed under the Apache License, Version 2.0.</div>
+      <div class="copyright">Apache, the names of Apache projects, and the feather logo are either registered trademarks or trademarks of the Apache Software Foundation in the United States and/or other countries.</div>
+    </div>
+  </div>
+  </div>
+</div>

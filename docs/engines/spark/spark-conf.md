@@ -8,6 +8,22 @@ menu:
         parent: Spark
         weight: 200
 ---
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
 # Spark Configuration
 
 ## Catalogs configuration
@@ -15,11 +31,20 @@ menu:
 ### Using Mixed-Format in a standalone catalog
 
 Starting from version 3.x, Spark supports configuring an independent Catalog.
-If you want to use a Mixed-Format table in a standalone Catalog, you can configure it as follows:
+If you want to use a Mixed-Format table in a standalone Catalog, you can create a mixed_catalog and load catalog 
+metadata from AMS with following properties:
 
 ```properties
 spark.sql.catalog.mixed_catalog=org.apache.amoro.spark.MixedFormatSparkCatalog
-spark.sql.catalog.mixed_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}
+spark.sql.catalog.mixed_catalog.ams.uri=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}
+```
+
+Or create a mixed_catalog with local configurations with following properties:
+```properties
+spark.sql.catalog.mixed_catalog=org.apache.amoro.spark.MixedFormatSparkCatalog
+# Configure mixed catalog type as you needed
+spark.sql.catalog.mixed_catalog.type=hadoop
+spark.sql.catalog.mixed_catalog.warehouse=/warehouse/hadoop_mixed_catalog
 ```
 
 Then, execute the following SQL in the Spark SQL Client to switch to the corresponding catalog.
@@ -31,13 +56,13 @@ use mixed_catalog;
 Of course, you can also access Mixed-Format tables by directly using the triplet
 `mixed_catalog.{db_name}.{table_name}`.
 
-You can also set Spark's default Catalog to your configured Catalog using the following properties.
+You can also set Spark's default catalog to your configured catalog using the following properties.
 In this way, you don't need to use the `use {catalog}` command to switch the default catalog.
 
 ```properties
 spark.sql.defaultCatalog=mixed_catalog
 spark.sql.catalog.mixed_catalog=org.apache.amoro.spark.MixedFormatSparkCatalog
-spark.sql.catalog.mixed_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}
+spark.sql.catalog.mixed_catalog.ams.uri=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}
 ```
 
 In a standalone AmoroSparkCatalog scenario, only Mixed-Format tables can be created and accessed in the corresponding
@@ -51,7 +76,7 @@ The configuration method is as follows.
 
 ```properties
 spark.sql.catalog.spark_catalog=org.apache.amoro.spark.MixedFormatSparkSessionCatalog
-spark.sql.catalog.spark_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}
+spark.sql.catalog.spark_catalog.ams.uri=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HIVE}
 ```
 
 When using the `MixedFormatSparkSessionCatalog` as the implementation of the `spark_catalog`, it behaves as follows
@@ -72,12 +97,12 @@ When using the `MixedFormatSparkSessionCatalog`, there are several points to kee
 
 ## The high availability configuration
 
-If AMS is configured with high availability, you can configure the `spark.sql.catalog.{catalog_name}.url` property in
+If AMS is configured with high availability, you can configure the `spark.sql.catalog.{catalog_name}.ams.uri` property in
 the following way to achieve higher availability.
 
 ```properties
 spark.sql.catalog.mixed_catalog=org.apache.amoro.spark.MixedFormatSparkCatalog
-spark.sql.catalog.mixed_catalog.url=zookeeper://{zookeeper-endpoint-list}/{cluster-name}/{catalog-name}
+spark.sql.catalog.mixed_catalog.ams.uri=zookeeper://{zookeeper-endpoint-list}/{cluster-name}/{catalog-name}
 ```
 
 Among above:

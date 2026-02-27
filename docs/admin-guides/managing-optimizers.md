@@ -8,6 +8,22 @@ menu:
         parent: Admin Guides
         weight: 300
 ---
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
 # Managing Optimizers
 
 The optimizer is the execution unit for performing self-optimizing tasks on a table. To isolate optimizing tasks on different tables and support the deployment of optimizers in different environments, Amoro has proposed the concepts of optimizer containers and optimizer groups:
@@ -17,10 +33,17 @@ The optimizer is the execution unit for performing self-optimizing tasks on a ta
 * Optimizer: The specific unit that performs optimizing tasks, usually with multiple concurrent units.
 
 ## Optimizer container
-Before using self-optimizing, you need to configure the container information in the configuration file. Optimizer container represents a specific set of runtime environment configuration, and the scheduling scheme of optimizer in that runtime environment. The container includes three types: flink, local, and external.
+Before start exploring self-optimizing, you need to configure the container information in the configuration file. Optimizer container represents a specific set of runtime environment configuration. The supported container types include: local, kubernetes, flink, spark, and external.
 
 ### Local container
 Local container is a way to start Optimizer by local process and supports multi-threaded execution of Optimizer tasks. It is recommended to be used only in demo or local deployment scenarios. If the environment variable for jdk is not configured, the user can configure java_home to point to the jdk root directory. If already configured, this configuration item can be ignored.
+
+Local container support the following properties:
+
+| Property Name         | Required | Default Value | Description                                                                                                   |
+|-----------------------|----------|---------------|---------------------------------------------------------------------------------------------------------------|
+| ams-optimizing-uri    | false    | N/A           | URI of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available |
+| export.JAVA_HOME      | false    | N/A           | Java runtime location                                                                                         |
 
 ```yaml
 containers:
@@ -30,13 +53,27 @@ containers:
       export.JAVA_HOME: "/opt/java"   # JDK environment
 ```
 
+The format for optimizing URI is `thrift://{host}:{port}?parameter1=value2&parameter2=value2`.
+The supported parameters include:
+
+| Parameter Name | Default Value     | Description                                                |
+|----------------|-------------------|------------------------------------------------------------|
+| autoReconnect  | true              | If reconnect the server when the connection is broken      |
+| maxReconnects  | 5                 | Retry times when reconnecting                              |
+| connectTimeout | 0 (Forever)       | Timeout in milliseconds when connecting the server         |
+| socketTimeout  | 0 (Forever)       | Timeout in milliseconds when communicating with the server |
+| maxMessageSize | 104856600 (100MB) | Max message size when communicating with the server        |
+| maxMessageSize | 104856600 (100MB) | Max message size when communicating with the server        |
+| minIdle        | 0                 | Minimal idle clients in the pool                           |
+| maxIdle        | 5                 | Maximal idle clients in the pool                           |
+
 ### Kubernetes container
 
-Kubernetes Optimizer Container is a way to start Optimizer On K8s with standalone Optimizer.
-To use flink container, you need to add a new container configuration. 
+Kubernetes container is a way to start Optimizer On K8s with standalone Optimizer.
+To use Kubernetes container, you need to add a new container configuration. 
 with container-impl as `org.apache.amoro.server.manager.KubernetesOptimizerContainer`
 
-KubernetesOptimizerContainer support the following properties:
+Kubernetes container support the following properties:
 
 
 | Property Name             | Required | Default Value | Description                                                                                                   |
@@ -48,14 +85,14 @@ KubernetesOptimizerContainer support the following properties:
 | ams-optimizing-uri        | false    | N/A           | URI of AMS thrift self-optimizing endpoint. This could be used if the ams.server-expose-host is not available |
 | cpu.factor                | false    | "1.0"         | CPU factor when request kubernetes resource. Default 1 Cpu pre thread                                         |
 | memory                    | true     | N/A           | Memory usage for pre thread                                                                                   |
-
+| extra.jvm.heap.ratio      | false    | 0.8           | The ratio of JVM heap memory to total pod memory                                                              |
 
 ```yaml
 containers:
   - name: KubernetesContainer
     container-impl: org.apache.amoro.server.manager.KubernetesOptimizerContainer
     properties:
-      kube-config-path: ～/.kube/config
+      kube-config-path: ~/.kube/config
       image: apache/amoro:{version}
       pullPolicy: IfNotPresent
 ```
@@ -65,7 +102,7 @@ Flink container is a way to start Optimizer through Flink jobs. With Flink, you 
 on yarn clusters or kubernetes clusters to support large-scale data scenarios. To use flink container, 
 you need to add a new container configuration. with container-impl as `org.apache.amoro.server.manager.FlinkOptimizerContainer`
 
-FlinkOptimizerContainer support the following properties:
+Flink container support the following properties:
 
 | Property Name             | Required | Default Value    | Description                                                                                                                                                                                                                                                                           |
 |---------------------------|----------|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -145,7 +182,7 @@ Spark container is another way to start Optimizer through Spark jobs. With Spark
 on yarn clusters or kubernetes clusters to support large-scale data scenarios. To use spark container,
 you need to add a new container configuration. with container-impl as `org.apache.amoro.server.manager.SparkOptimizerContainer`
 
-SparkOptimizerContainer support the following properties:
+Spark container support the following properties:
 
 | Property Name           | Required | Default Value | Description                                                                                                                                                                                                                                                                          |
 |-------------------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -167,7 +204,13 @@ To better utilize the resources of Spark Optimizer, the DRA(Dynamic Resource All
 If you don't want this feature, you can use these settings:
 * Set `spark-conf.spark.dynamicAllocation.enabled` to `false` as you need allocate proper driver/executor resources Using [Spark Configuration Options](https://spark.apache.org/docs/latest/configuration.html).
 * Set `spark-conf.spark.dynamicAllocation.maxExecutors` to `10` as optimizer parallelism can only affect parallelism polling optimizing tasks from AMS.
-  {{< /hint >}}
+{{< /hint >}}
+
+{{< hint info >}}
+The spark optimizer may fail due to class conflicts sometimes, you can try to fix by following the steps below：
+* Set `spark-conf.spark.driver.userClassPathFirst` to `true`.
+* Set `spark-conf.spark.executor.userClassPathFirst` to `true`.
+{{< /hint >}}
 
 An example for yarn client mode:
 
@@ -239,9 +282,13 @@ The optimizer group supports the following properties:
 | Property                       | Container type | Required | Default                                                                               | Description                                                                                                                                                                                                                                                                                                                                                                                                      |
 |--------------------------------|----------------|----------|---------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | scheduling-policy              | All            | No       | quota                                                                                 | The scheduler group scheduling policy, the default value is `quota`, it will be scheduled according to the quota resources configured for each table, the larger the table quota is, the more optimizer resources it can take. There is also a configuration `balanced` that will balance the scheduling of each table, the longer the table has not been optimized, the higher the scheduling priority will be. |
-| memory                         | Local          | Yes      | N/A                                                                                   | The max memory of JVM for local optimizer, in MBs.                                                                                                                                                                                                                                                                                                                                                               |
 | max-input-file-size-per-thread | All            | No       | 536870912(512MB)                                                                      | Max input file size per optimize thread.                                                                                                                                                                                                                                                                                                                                                                         |
 | ams-optimizing-uri             | All            | No       | thrift://{ams.server-expose-host}:{ams.thrift-server.optimizing-service.binding-port} | Table optimizing service endpoint. This is used when the default service endpoint is not visitable.                                                                                                                                                                                                                                                                                                              |
+| cache-enabled                  | All            | No       | false                                                                                 | Whether enable cache in optimizer.                                                                                                                                                                                                                                                                                                                                                                               |
+| cache-max-total-size           | All            | No       | 128mb                                                                                 | Max total size in optimier cache.                                                                                                                                                                                                                                                                                                                                                                                |
+| cache-max-entry-size           | All            | No       | 64mb                                                                                  | Max entry size in optimizer cache.                                                                                                                                                                                                                                                                                                                                                                               |
+| cache-timeout                  | All            | No       | 10min                                                                                 | Timeout in optimizer cache.                                                                                                                                                                                                                                                                                                                                                                                      |
+| memory                         | Local          | Yes      | N/A                                                                                   | The max memory of JVM for local optimizer, in MBs.                                                                                                                                                                                                                                                                                                                                                               |
 | flink-conf.\<key\>             | Flink          | No       | N/A                                                                                   | Any flink config options could be overwritten, priority is optimizing-group > optimizing-container > flink-conf.yaml.                                                                                                                                                                                                                                                                                            |
 | spark-conf.\<key\>             | Spark          | No       | N/A                                                                                   | Any spark config options could be overwritten, priority is optimizing-group > optimizing-container > spark-defaults.conf.                                                                                                                                                                                                                                                                                        |
 
@@ -261,14 +308,14 @@ You can click the `edit` button on the `Optimizer Groups` page to modify the con
 You can click the `remove` button on the `Optimizer Groups` page to delete the optimizer group, but only if the group is
 not referenced by any catalog or table and no optimizer belonging to this group is running.
 
-## Optimizer Scale-out and Release
+## Optimizer Create and Release
 
-### Scale out optimizer
-You can click the `Scale-Out` button on the `Optimizer Groups` page to scale out the optimizer for the corresponding optimizer
+### Create optimizer
+You can click the `Create Optimizer` button on the `Optimizers` page to create the optimizer for the corresponding optimizer
 group, and then click `OK` to start the optimizer for this optimizer group according to the parallelism configuration.
 If the optimizer runs normally, you will see an optimizer with the status `RUNNING` on the `Optimizers` page.
 
-![optimize-scale-out](../images/admin/optimizer_scale.png)
+![optimize-create](../images/admin/optimizer_create.png)
 
 ### Release optimizer
 
@@ -293,12 +340,9 @@ You can submit optimizer in your own Flink task development platform or local Fl
  -Dtaskmanager.memory.network.min=32mb \
  -c org.apache.amoro.optimizer.flink.FlinkOptimizer \
  ${AMORO_HOME}/plugin/optimizer/flink/optimizer-job.jar \
- -a 127.0.0.1:1261 \
+ -a thrift://127.0.0.1:1261 \
  -g flinkGroup \
- -p 1 \
- -eds \
- -dsp /tmp \
- -msz 512
+ -p 1
 ```
 The description of the relevant parameters is shown in the following table:
 
@@ -311,6 +355,10 @@ The description of the relevant parameters is shown in the following table:
 | -eds     | No       | Whether extend storage to disk, default false.                                                                                                                                                                                            |
 | -dsp     | No       | Defines the directory where the storage files are saved, the default temporary-file directory is specified by the system property `java.io.tmpdir`. On UNIX systems the default value of this property is typically "/tmp" or "/var/tmp". |
 | -msz     | No       | Memory storage size limit when extending disk storage(MB), default 512(MB).                                                                                                                                                               |
+| -ce      | No       | Whether enable cache in optimizer, default false.                                                                                                                                                                                         |
+| -cmts    | No       | Max total size in optimier cache, default 128MB.                                                                                                                                                                                          |
+| -cmes    | No       | Max entry size in optimizer cache, default 64MB.                                                                                                                                                                                          |
+| -ct      | No       | Timeout in optimizer cache, default 10Min.                                                                                                                                                                                                |
 
 
 Or you can submit optimizer in your own Spark task development platform or local Spark environment with the following configuration. The main parameters include:
@@ -323,12 +371,9 @@ Or you can submit optimizer in your own Spark task development platform or local
  --conf "spark.executor.memory=2g" \
  --class org.apache.amoro.optimizer.spark.SparkOptimizer \
  ${AMORO_HOME}/plugin/optimizer/spark/optimizer-job.jar \
- -a 127.0.0.1:1261 \
+ -a thrift://127.0.0.1:1261 \
  -g sparkGroup \
- -p 1 \
- -eds \
- -dsp /tmp \
- -msz 512
+ -p 1
 ```
 The description of the relevant parameters is shown in the following table:
 
@@ -341,3 +386,7 @@ The description of the relevant parameters is shown in the following table:
 | -eds     | No       | Whether extend storage to disk, default false.                                                                                                                                                                                            |
 | -dsp     | No       | Defines the directory where the storage files are saved, the default temporary-file directory is specified by the system property `java.io.tmpdir`. On UNIX systems the default value of this property is typically "/tmp" or "/var/tmp". |
 | -msz     | No       | Memory storage size limit when extending disk storage(MB), default 512(MB).                                                                                                                                                               |
+| -ce      | No       | Whether enable cache in optimizer, default false.                                                                                                                                                                                         |
+| -cmts    | No       | Max total size in optimier cache, default 128MB.                                                                                                                                                                                          |
+| -cmes    | No       | Max entry size in optimizer cache, default 64MB.                                                                                                                                                                                          |
+| -ct      | No       | Timeout in optimizer cache, default 10Min.                                                                                                                                                                                                |

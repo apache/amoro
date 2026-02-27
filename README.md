@@ -32,11 +32,16 @@
   <a href="https://github.com/apache/amoro/actions/workflows/trino-ci.yml">
     <img src="https://github.com/apache/amoro/actions/workflows/trino-ci.yml/badge.svg" />
   </a>
+  <a href="https://deepwiki.com/apache/amoro">
+    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+  </a>
 </p>
 
 Apache Amoro (incubating) is a Lakehouse management system built on open data lake formats.
 Working with compute engines including Flink, Spark, and Trino, Amoro brings pluggable and self-managed features for Lakehouse to provide out-of-the-box data warehouse experience,
 and helps data platforms or products easily build infra-decoupled, stream-and-batch-fused and lake-native architecture.
+
+Learn more about Amoro at https://amoro.apache.org/, contact the developers and community on the [mailing list](https://amoro.apache.org/join-community/#mailing-lists) if you need any help.
 
 ## Architecture
 
@@ -77,8 +82,8 @@ Amoro support multiple processing engines for Mixed format as below:
 
 | Processing Engine | Version                | Batch Read  | Batch Write | Batch Overwrite | Streaming Read | Streaming Write | Create Table | Alter Table |
 |-------------------|------------------------|-------------|-------------|-----------------|----------------|-----------------|--------------|-------------|
-| Flink             | 1.15.x, 1.16.x, 1.17.x |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |
-| Spark             | 3.1, 3.2, 3.3          |  &#x2714;   |   &#x2714;   |       &#x2714;   |      &#x2716;   |       &#x2716;   |    &#x2714;   |   &#x2714;   |
+| Flink             | 1.16.x, 1.17.x, 1.18.x |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |
+| Spark             | 3.3, 3.4, 3.5          |  &#x2714;   |   &#x2714;   |       &#x2714;   |      &#x2716;   |       &#x2716;   |    &#x2714;   |   &#x2714;   |
 | Hive              | 2.x, 3.x               |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
 | Trino             | 406                    |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
 
@@ -95,32 +100,38 @@ Amoro support multiple processing engines for Mixed format as below:
 
 Amoro contains modules as below:
 
-- `amoro-core` contains core abstractions and common implementation for other modules
+- `amoro-common` contains core abstractions and common implementation for other modules
 - `amoro-ams` is amoro management service module
-    - `amoro-ams-api` contains ams thrift api and common interfaces
-    - `amoro-ams-dashboard` is the dashboard frontend for ams
-    - `amoro-ams-server` is the backend server for ams
-    - `amoro-ams-optimizer` provides default optimizer implementation
-- `amoro-mixed-format` provides Mixed format implementation
-    - `amoro-mixed-format-hive` integrates with Apache Hive and implements Mixed Hive format
-    - `amoro-mixed-format-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded version)
-    - `amoro-mixed-format-spark` provides Spark connectors for Mixed format tables (use amoro-spark-runtime for a shaded version)
-    - `amoro-mixed-format-trino` provides Trino connectors for Mixed format tables
+- `amoro-web` is the dashboard frontend for ams
+- `amoro-optimizer` provides default optimizer implementation
+- `amoro-format-iceberg` contains integration of Apache Iceberg format
+- `amoro-format-hudi` contains integration of Apache Hudi format
+- `amoro-format-paimon` contains integration of Apache Paimon format
+- `amoro-format-mixed` provides Mixed format implementation
+    - `amoro-mixed-hive` integrates with Apache Hive and implements Mixed Hive format
+    - `amoro-mixed-flink` provides Flink connectors for Mixed format tables (use amoro-flink-runtime for a shaded version)
+    - `amoro-mixed-spark` provides Spark connectors for Mixed format tables (use amoro-spark-runtime for a shaded version)
+    - `amoro-mixed-trino` provides Trino connectors for Mixed format tables
 
 
 ## Building
 
-Amoro is built using Maven with JDK 8 and JDK 17(only for `amoro-mixed-format/amoro-mixed-format-trino` module).
+Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixed/amoro-mixed-trino` module).
 
-* Build all modules without `amoro-mixed-format-trino`: `mvn clean package`
-* Build and skip tests: `mvn clean package -DskipTests`
-* Build and skip dashboard: `mvn clean package -Pskip-dashboard-build`
-* Build with hadoop 2.x(the default is 3.x) dependencies: `mvn clean package -DskipTests -Dhadoop=v2`
-* Specify Flink version for Flink optimizer(the default is 1.18.1): `mvn clean package -DskipTests -Dflink-optimizer.flink-version=1.15.4`
-  * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-pre-1.15` parameter: `mvn clean package -DskipTests -Pflink-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
-* Specify Spark version for Spark optimizer(the default is 3.3.3): `mvn clean package -DskipTests -Dspark-optimizer.spark-version=3.2.2`
-* Build `amoro-mixed-format-trino` module under JDK 17: `mvn clean package -DskipTests -Ptrino-spotless,build-mixed-format-trino -pl 'amoro-mixed-format/amoro-mixed-format-trino' -am`.
-* Build all modules: `mvn clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
+* Build all modules without `amoro-mixed-trino`: `./mvnw clean package`
+* Build and skip tests: `./mvnw clean package -DskipTests`
+* Build and skip dashboard: `./mvnw clean package -Pskip-dashboard-build`
+* Build and disable disk storage, RocksDB will NOT be introduced to avoid memory overflow: `./mvnw clean package -DskipTests -Pno-extented-disk-storage`
+* Build and enable aliyun-oss-sdk: `./mvnw clean package -DskipTests -Paliyun-oss-sdk`
+* Build with hadoop 2.x(the default is 3.x) dependencies: `./mvnw clean package -DskipTests -Phadoop2`
+* Specify Flink version for Flink optimizer(the default is 1.20.0): `./mvnw clean package -DskipTests -Dflink-optimizer.flink-version=1.20.0`
+  * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-optimizer-pre-1.15` parameter: `./mvnw clean package -DskipTests -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
+* Specify Spark version for Spark optimizer(the default is 3.5.7): `./mvnw clean package -DskipTests -Dspark.version=3.5.7`
+* Build `amoro-mixed-trino` module under JDK 17: `./mvnw clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-mixed-trino' -am`.
+* Build all modules: `./mvnw clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
+* Build a distribution package with all formats integrated: `./mvnw clean package -Psupport-all-formats`
+  * Build a distribution package with Apache Paimon format: `./mvnw clean package -Psupport-paimon-format`
+  * Build a distribution package with Apache Hudi format: `./mvnw clean package -Psupport-hudi-format`
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -140,7 +151,7 @@ Amoro is built using Maven with JDK 8 and JDK 17(only for `amoro-mixed-format/am
 
 ## Quickstart
 
-Visit [https://amoro.apache.org/quick-demo/](https://amoro.apache.org/quick-demo/) to quickly
+Visit [https://amoro.apache.org/quick-start/](https://amoro.apache.org/quick-start/) to quickly
 explore what amoro can do.
 
 ## Join Community
@@ -148,7 +159,17 @@ explore what amoro can do.
 If you are interested in Lakehouse, Data Lake Format, welcome to join our community, we welcome any organizations, teams
 and individuals to grow together, and sincerely hope to help users better use Data Lake Format through open source.
 
-Join the Amoro WeChat Group: Add " `kllnn999` " as a friend on WeChat and specify "Amoro lover".
+### Slack
+
+You can join the Amoro community on Slack. Amoro channel is in ASF Slack workspace.
+
+- Anyone with an @apache.org email address can become a full member of the ASF Slack workspace.
+- Search [Amoro channel](https://the-asf.slack.com/archives/C06RZ9UHUTH) and join it.
+- If you don't have an @apache.org email address, you can email to `dev@amoro.apache.org` to apply for an
+  [ASF Slack invitation](https://infra.apache.org/slack.html). Then join [Amoro channel](https://the-asf.slack.com/archives/C06RZ9UHUTH).
+
+### Wechat
+Join the Amoro WeChat Group: Add " `kllnn999` " as a friend and request to join the group.
 
 ## Contributors
 This project exists thanks to all the people who contribute.
