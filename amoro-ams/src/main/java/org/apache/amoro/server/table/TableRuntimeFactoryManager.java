@@ -18,13 +18,36 @@
 
 package org.apache.amoro.server.table;
 
-import org.apache.amoro.server.manager.AbstractPluginManager;
 import org.apache.amoro.table.TableRuntimeFactory;
 
-public class TableRuntimeFactoryManager extends AbstractPluginManager<TableRuntimeFactory> {
-  public static final String PLUGIN_CATEGORY = "table-runtime-factories";
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Simple manager for {@link TableRuntimeFactory} implementations.
+ *
+ * <p>AMS currently only ships with {@link DefaultTableRuntimeFactory}. This manager wraps a list of
+ * factories so that existing wiring code in {@link DefaultTableService} can stay unchanged while
+ * {@link TableRuntimeFactory} is no longer an {@code ActivePlugin}.
+ */
+public class TableRuntimeFactoryManager {
+
+  private final List<TableRuntimeFactory> factories = new ArrayList<>();
 
   public TableRuntimeFactoryManager() {
-    super(PLUGIN_CATEGORY);
+    this(Collections.singletonList(new DefaultTableRuntimeFactory()));
+  }
+
+  public TableRuntimeFactoryManager(List<TableRuntimeFactory> factories) {
+    this.factories.addAll(factories);
+  }
+
+  public void initialize() {
+    // kept for backward compatibility, no-op for now
+  }
+
+  public List<TableRuntimeFactory> installedPlugins() {
+    return factories;
   }
 }

@@ -57,6 +57,7 @@ import org.apache.amoro.server.resource.DefaultOptimizerManager;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.scheduler.inline.InlineTableExecutors;
 import org.apache.amoro.server.table.DefaultTableManager;
+import org.apache.amoro.server.table.DefaultTableRuntimeFactory;
 import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableManager;
@@ -94,6 +95,7 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -235,8 +237,9 @@ public class AmoroServiceContainer {
   }
 
   public void startOptimizingService() throws Exception {
-    TableRuntimeFactoryManager tableRuntimeFactoryManager = new TableRuntimeFactoryManager();
-    tableRuntimeFactoryManager.initialize();
+    DefaultTableRuntimeFactory tableRuntimeFactory = new DefaultTableRuntimeFactory();
+    TableRuntimeFactoryManager tableRuntimeFactoryManager =
+        new TableRuntimeFactoryManager(Collections.singletonList(tableRuntimeFactory));
 
     tableService =
         new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);

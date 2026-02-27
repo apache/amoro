@@ -77,15 +77,6 @@ public class ProcessService extends PersistentBase {
     this(serviceConfig, tableService, Collections.emptyList(), new ExecuteEngineManager());
   }
 
-  @Deprecated
-  public ProcessService(
-      Configurations serviceConfig,
-      TableService tableService,
-      ActionCoordinatorManager actionCoordinatorManager,
-      ExecuteEngineManager executeEngineManager) {
-    this(serviceConfig, tableService, Collections.emptyList(), executeEngineManager);
-  }
-
   public ProcessService(
       Configurations serviceConfig,
       TableService tableService,
