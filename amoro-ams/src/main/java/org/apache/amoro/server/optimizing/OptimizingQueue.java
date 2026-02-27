@@ -984,7 +984,7 @@ public class OptimizingQueue extends PersistentBase {
                 // Don't reset — let the optimizer finish execution and report
                 // the result. If the optimizer is dead, OptimizerKeeper will
                 // detect the stale token and reset the task via retryTask().
-                LOG.info(
+                LOG.debug(
                     "Keeping task {} in {} during recovery, waiting for optimizer to complete",
                     taskRuntime.getTaskId(),
                     taskRuntime.getStatus());
