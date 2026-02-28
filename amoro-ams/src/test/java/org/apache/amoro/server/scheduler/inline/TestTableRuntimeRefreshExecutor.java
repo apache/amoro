@@ -26,7 +26,6 @@ import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
-import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.table.TableRuntimeStore;
@@ -167,15 +166,6 @@ public class TestTableRuntimeRefreshExecutor extends AMSTableTestBase {
     adaptiveExecutingInterval = executor.getAdaptiveExecutingInterval(tableRuntime);
     Assert.assertEquals(MAX_INTERVAL, adaptiveExecutingInterval);
 
-    // Test5: MaxInterval should be greater than minInterval
-    // If maxInterval <= minInterval, the latest interval will be reset to
-    // default value 0
-    long maxInterval = INTERVAL - 1000;
-    tableRuntime.updateOptimizingConfig(createOptimizingConfig(maxInterval, STEP));
-    tableRuntime.setLatestRefreshInterval(adaptiveExecutingInterval);
-    adaptiveExecutingInterval = executor.getAdaptiveExecutingInterval(tableRuntime);
-    Assert.assertEquals(AmoroServiceConstants.INVALID_TIME, adaptiveExecutingInterval);
-
     dropTable();
     dropDatabase();
   }
@@ -208,6 +198,15 @@ public class TestTableRuntimeRefreshExecutor extends AMSTableTestBase {
     tableRuntime.setLatestRefreshInterval(0);
     nextExecutingTime = executor.getNextExecutingTime(tableRuntime);
     long expectedFallbackInterval = Math.min(MINOR_LEAST_INTERVAL * 4L / 5, INTERVAL);
+    Assert.assertEquals(expectedFallbackInterval, nextExecutingTime);
+
+    // Test3: MaxInterval should be greater than minInterval
+    // If maxInterval <= minInterval, getNextExecutingTime with adaptive interval disabled and
+    // fallback to min(minorLeastInterval * 4/5, INTERVAL)
+    long maxInterval = INTERVAL - 1000;
+    tableRuntime.updateOptimizingConfig(createOptimizingConfig(maxInterval, STEP));
+    tableRuntime.setLatestRefreshInterval(INTERVAL + 1000);
+    nextExecutingTime = executor.getNextExecutingTime(tableRuntime);
     Assert.assertEquals(expectedFallbackInterval, nextExecutingTime);
 
     dropTable();
