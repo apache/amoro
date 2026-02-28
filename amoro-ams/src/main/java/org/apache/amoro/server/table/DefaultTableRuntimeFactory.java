@@ -51,18 +51,6 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
   /** Coordinators derived from all installed process factories. */
   private final List<ActionCoordinator> supportedCoordinators = Lists.newArrayList();
 
-  public void open(Map<String, String> properties) {
-    // No-op: all configuration is handled by process factories themselves.
-  }
-
-  public void close() {
-    // No-op
-  }
-
-  public String name() {
-    return "default";
-  }
-
   @Override
   public List<ActionCoordinator> supportedCoordinators() {
     return supportedCoordinators;

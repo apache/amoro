@@ -61,7 +61,6 @@ import org.apache.amoro.server.table.DefaultTableRuntimeFactory;
 import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableManager;
-import org.apache.amoro.server.table.TableRuntimeFactoryManager;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.server.utils.ThriftServiceProxy;
@@ -80,7 +79,6 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TNonblockingSer
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportFactory;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramedTransport;
-import org.apache.amoro.table.TableRuntimeFactory;
 import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.JacksonUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -95,7 +93,6 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -103,7 +100,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.stream.Collectors;
 
 public class AmoroServiceContainer {
 
@@ -237,28 +233,21 @@ public class AmoroServiceContainer {
   }
 
   public void startOptimizingService() throws Exception {
-    DefaultTableRuntimeFactory tableRuntimeFactory = new DefaultTableRuntimeFactory();
-    TableRuntimeFactoryManager tableRuntimeFactoryManager =
-        new TableRuntimeFactoryManager(Collections.singletonList(tableRuntimeFactory));
+    DefaultTableRuntimeFactory defaultRuntimeFactory = new DefaultTableRuntimeFactory();
 
-    tableService =
-        new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
+    tableService = new DefaultTableService(serviceConfig, catalogManager, defaultRuntimeFactory);
 
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
 
-    // Load process factories and build action coordinators from all table runtime factories.
+    // Load process factories and build action coordinators from default table runtime factory.
     TableProcessFactoryManager tableProcessFactoryManager = new TableProcessFactoryManager();
     tableProcessFactoryManager.initialize();
     List<ProcessFactory> processFactories = tableProcessFactoryManager.installedPlugins();
 
-    List<TableRuntimeFactory> tableRuntimeFactories = tableRuntimeFactoryManager.installedPlugins();
-    tableRuntimeFactories.forEach(factory -> factory.initialize(processFactories));
+    defaultRuntimeFactory.initialize(processFactories);
 
-    List<ActionCoordinator> actionCoordinators =
-        tableRuntimeFactories.stream()
-            .flatMap(factory -> factory.supportedCoordinators().stream())
-            .collect(Collectors.toList());
+    List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
 
     ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
 
