@@ -739,6 +739,16 @@ modified through <a href="../using-tables/#modify-table">Alter Table</a> operati
           <td>NULL</td>
           <td>Filter conditions for self-optimizing, using SQL conditional expressions, without supporting any functions. For the timestamp column condition, the ISO date-time formatter must be used. For example: op_time &gt; &lsquo;2007-12-03T10:15:30&rsquo;.</td>
       </tr>
+      <tr>
+          <td>self-optimizing.refresh-table.adaptive.max-interval-ms</td>
+          <td>0</td>
+          <td>The maximum time interval in milliseconds to refresh table metadata. 0 means disable adaptive refresh. When enabled, the value must be greater than &lsquo;refresh-tables.interval&rsquo; and may exceed &lsquo;self-optimizing.minor.trigger.interval&rsquo; * 4/5; if not, adaptive refresh will be automatically disabled.</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.refresh-table.adaptive.increase-step-ms</td>
+          <td>30000(30s)</td>
+          <td>The time interval increase step in milliseconds to refresh table metadata</td>
+      </tr>
   </tbody>
 </table>
 <h2 id="data-cleaning-configurations">Data-cleaning configurations</h2>
