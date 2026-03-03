@@ -620,15 +620,15 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // reset optimizer group to "default" to simulate the scenario where the self-optimizing configs
     // have been cleared
     DefaultTableRuntime tableRuntime =
-            buildTableRuntimeMeta(OptimizingStatus.PLANNING, defaultResourceGroup());
+        buildTableRuntimeMeta(OptimizingStatus.PLANNING, defaultResourceGroup());
     // The optimizing state is converted from PLANNING to PENDING when building TableRuntime from
     // TableRuntimeMeta.
     Assert.assertEquals(OptimizingStatus.PENDING, tableRuntime.getOptimizingStatus());
     Assert.assertEquals("default", tableRuntime.getGroupName());
 
     List<DefaultTableRuntime> released =
-            simulateLoadOptimizingQueuesForNonExistentGroup(
-                    Collections.singletonList(tableRuntime), oldGroup);
+        simulateLoadOptimizingQueuesForNonExistentGroup(
+            Collections.singletonList(tableRuntime), oldGroup);
 
     Assert.assertEquals(1, released.size());
     Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
@@ -643,13 +643,13 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // reset optimizer group to "default" to simulate the scenario where the self-optimizing configs
     // have been cleared
     DefaultTableRuntime tableRuntime =
-            buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
+        buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
     Assert.assertEquals(OptimizingStatus.PENDING, tableRuntime.getOptimizingStatus());
     Assert.assertEquals("default", tableRuntime.getGroupName());
 
     List<DefaultTableRuntime> released =
-            simulateLoadOptimizingQueuesForNonExistentGroup(
-                    Collections.singletonList(tableRuntime), oldGroup);
+        simulateLoadOptimizingQueuesForNonExistentGroup(
+            Collections.singletonList(tableRuntime), oldGroup);
 
     Assert.assertEquals(1, released.size());
     Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
