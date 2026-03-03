@@ -163,9 +163,28 @@ public class DefaultOptimizingService extends StatedPersistentBase
           optimizingQueueByGroup.put(groupName, optimizingQueue);
         });
     optimizers.forEach(optimizer -> registerOptimizer(optimizer, false));
-    groupToTableRuntimes
-        .keySet()
-        .forEach(groupName -> LOG.warn("Unloaded task runtime in group {}", groupName));
+    // Avoid keeping the tables in processing/pending status forever in below cases:
+    // 1) Resource group does not exist
+    // 2) The AMS restarts after the tables disable self-optimizing but before the optimizing
+    // process is closed, which may cause the optimizing status of the tables to be still
+    // PLANNING/PENDING after AMS is restarted.
+    groupToTableRuntimes.forEach(
+        (groupName, trs) -> {
+          trs.stream()
+              .filter(
+                  tr ->
+                      tr.getOptimizingStatus() == OptimizingStatus.PLANNING
+                          || tr.getOptimizingStatus() == OptimizingStatus.PENDING)
+              .forEach(
+                  tr -> {
+                    LOG.warn(
+                        "Release {} optimizing process for table {}, since its resource group {} does not exist",
+                        tr.getOptimizingStatus().name(),
+                        tr.getTableIdentifier(),
+                        groupName);
+                    tr.completeEmptyProcess();
+                  });
+        });
   }
 
   private void registerOptimizer(OptimizerInstance optimizer, boolean needPersistent) {
@@ -384,6 +403,17 @@ public class DefaultOptimizingService extends StatedPersistentBase
       }
       getOptionalQueueByGroup(tableRuntime.getGroupName())
           .ifPresent(q -> q.refreshTable(tableRuntime));
+
+      Optional<OptimizingQueue> queue = getOptionalQueueByGroup(tableRuntime.getGroupName());
+      if (queue.isPresent()) {
+        queue.get().releaseTable(tableRuntime);
+      } else {
+        LOG.warn(
+            "Cannot find resource group: {}, try to release optimizing process of table {} directly",
+            tableRuntime.getGroupName(),
+            tableRuntime.getTableIdentifier());
+        tableRuntime.completeEmptyProcess();
+      }
     }
 
     @Override
