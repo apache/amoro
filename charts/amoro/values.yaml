@@ -287,7 +287,7 @@ plugin:
   ## metric reporters
   ##
   metricReporters: ~
-## e.g:  
+## e.g:
 #  metricReporters:
 #    ## @param Configure Prometheus exporter
 #    ##
@@ -302,6 +302,10 @@ plugin:
 #      ## @param Prometheus port
 #      ##
 #        port: 7001
+#      ## @param Metric filtering by regex (optional, all metrics included by default)
+#      ##
+#        metric-filter.includes: "table_optimizing_.*|optimizer_group_.*"
+#        metric-filter.excludes: "table_summary_.*"
 
 ## Configure the ingress resource that allows you to access the
 ## Amoro installation. Set up the URL
