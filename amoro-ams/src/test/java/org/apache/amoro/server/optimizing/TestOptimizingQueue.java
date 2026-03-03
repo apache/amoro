@@ -621,9 +621,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // have been cleared
     DefaultTableRuntime tableRuntime =
         buildTableRuntimeMeta(OptimizingStatus.PLANNING, defaultResourceGroup());
-    // The optimizing state is converted from PLANNING to PENDING when building TableRuntime from
-    // TableRuntimeMeta.
-    Assert.assertEquals(OptimizingStatus.PENDING, tableRuntime.getOptimizingStatus());
+    Assert.assertEquals(OptimizingStatus.PLANNING, tableRuntime.getOptimizingStatus());
     Assert.assertEquals("default", tableRuntime.getGroupName());
 
     List<DefaultTableRuntime> released =
