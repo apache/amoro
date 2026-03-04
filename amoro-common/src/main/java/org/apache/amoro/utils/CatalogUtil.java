@@ -27,12 +27,14 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -48,29 +50,39 @@ public class CatalogUtil {
   /** Return table format set catalog supported. */
   public static Set<TableFormat> tableFormats(
       String metastoreType, Map<String, String> catalogProperties) {
+    Set<TableFormat> parsedFormats = null;
     if (catalogProperties != null
         && catalogProperties.containsKey(CatalogMetaProperties.TABLE_FORMATS)) {
       String tableFormatsProperty = catalogProperties.get(CatalogMetaProperties.TABLE_FORMATS);
-      return Arrays.stream(tableFormatsProperty.split(","))
-          .map(
-              tableFormatString ->
-                  TableFormat.valueOf(tableFormatString.trim().toUpperCase(Locale.ROOT)))
-          .collect(Collectors.toSet());
-    } else {
-      // Generate table format from catalog type for compatibility with older versions
-      switch (metastoreType) {
-        case CatalogMetaProperties.CATALOG_TYPE_AMS:
-          return Sets.newHashSet(TableFormat.MIXED_ICEBERG);
-        case CatalogMetaProperties.CATALOG_TYPE_CUSTOM:
-        case CatalogMetaProperties.CATALOG_TYPE_REST:
-        case CatalogMetaProperties.CATALOG_TYPE_HADOOP:
-        case CatalogMetaProperties.CATALOG_TYPE_GLUE:
-          return Sets.newHashSet(TableFormat.ICEBERG);
-        case CatalogMetaProperties.CATALOG_TYPE_HIVE:
-          return Sets.newHashSet(TableFormat.MIXED_HIVE);
-        default:
-          throw new IllegalArgumentException("Unsupported catalog type:" + metastoreType);
+      if (tableFormatsProperty != null) {
+        parsedFormats =
+            Arrays.stream(tableFormatsProperty.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(s -> TableFormat.valueOf(s.toUpperCase(Locale.ROOT)))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
       }
+    }
+
+    if (parsedFormats != null && !parsedFormats.isEmpty()) {
+      return parsedFormats;
+    }
+
+    // Generate table format from catalog type for compatibility with older versions
+    switch (metastoreType) {
+      case CatalogMetaProperties.CATALOG_TYPE_AMS:
+        return Sets.newHashSet(TableFormat.MIXED_ICEBERG);
+      case CatalogMetaProperties.CATALOG_TYPE_CUSTOM:
+      case CatalogMetaProperties.CATALOG_TYPE_REST:
+      case CatalogMetaProperties.CATALOG_TYPE_HADOOP:
+      case CatalogMetaProperties.CATALOG_TYPE_FILESYSTEM:
+      case CatalogMetaProperties.CATALOG_TYPE_GLUE:
+        return Sets.newHashSet(TableFormat.ICEBERG);
+      case CatalogMetaProperties.CATALOG_TYPE_HIVE:
+        return Sets.newHashSet(TableFormat.MIXED_HIVE);
+      default:
+        throw new IllegalArgumentException("Unsupported catalog type:" + metastoreType);
     }
   }
 
@@ -111,10 +123,13 @@ public class CatalogUtil {
   public static TableMetaStore buildMetaStore(CatalogMeta catalogMeta) {
     // load storage configs
     TableMetaStore.Builder builder = TableMetaStore.builder();
+    boolean isLocalStorage = false;
     if (catalogMeta.getStorageConfigs() != null) {
       Map<String, String> storageConfigs = catalogMeta.getStorageConfigs();
-      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(
-          CatalogUtil.getCompatibleStorageType(storageConfigs))) {
+      String storageType = CatalogUtil.getCompatibleStorageType(storageConfigs);
+      isLocalStorage =
+          CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_LOCAL.equalsIgnoreCase(storageType);
+      if (CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP.equalsIgnoreCase(storageType)) {
         String coreSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE);
         String hdfsSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE);
         String hiveSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE);
@@ -122,70 +137,79 @@ public class CatalogUtil {
             .withBase64CoreSite(coreSite)
             .withBase64MetaStoreSite(hiveSite)
             .withBase64HdfsSite(hdfsSite);
+      } else if (isLocalStorage) {
+        builder.withConfiguration(new Configuration());
       }
     }
 
-    boolean loadAuthFromAMS =
-        propertyAsBoolean(
-            catalogMeta.getCatalogProperties(),
-            CatalogMetaProperties.LOAD_AUTH_FROM_AMS,
-            CatalogMetaProperties.LOAD_AUTH_FROM_AMS_DEFAULT);
-    // load auth configs from ams
-    if (loadAuthFromAMS) {
-      if (catalogMeta.getAuthConfigs() != null) {
-        Map<String, String> authConfigs = catalogMeta.getAuthConfigs();
-        String authType = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
-        LOG.info("TableMetaStore use auth config in catalog meta, authType is {}", authType);
+    if (!isLocalStorage) {
+      boolean loadAuthFromAMS =
+          propertyAsBoolean(
+              catalogMeta.getCatalogProperties(),
+              CatalogMetaProperties.LOAD_AUTH_FROM_AMS,
+              CatalogMetaProperties.LOAD_AUTH_FROM_AMS_DEFAULT);
+      // load auth configs from ams
+      if (loadAuthFromAMS) {
+        if (catalogMeta.getAuthConfigs() != null) {
+          Map<String, String> authConfigs = catalogMeta.getAuthConfigs();
+          String authType = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+          LOG.info("TableMetaStore use auth config in catalog meta, authType is {}", authType);
+          if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
+            String hadoopUsername =
+                authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
+            builder.withSimpleAuth(hadoopUsername);
+          } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equalsIgnoreCase(
+              authType)) {
+            String krb5 = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
+            String keytab = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
+            String principal = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
+            builder.withBase64KrbAuth(keytab, krb5, principal);
+          } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK.equalsIgnoreCase(
+              authType)) {
+            String accessKey = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY);
+            String secretKey = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY);
+            String storageType =
+                catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE);
+            builder.withAkSkAuth(accessKey, secretKey, storageType);
+          }
+        }
+      }
+
+      // cover auth configs from ams with auth configs in properties
+      String authType =
+          catalogMeta.getCatalogProperties().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+      if (StringUtils.isNotEmpty(authType)) {
+        LOG.info("TableMetaStore use auth config in properties, authType is {}", authType);
         if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
           String hadoopUsername =
-              authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
+              catalogMeta
+                  .getCatalogProperties()
+                  .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
           builder.withSimpleAuth(hadoopUsername);
         } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equalsIgnoreCase(
             authType)) {
-          String krb5 = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
-          String keytab = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
-          String principal = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
+          String krb5 =
+              catalogMeta.getCatalogProperties().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
+          String keytab =
+              catalogMeta.getCatalogProperties().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
+          String principal =
+              catalogMeta
+                  .getCatalogProperties()
+                  .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
           builder.withBase64KrbAuth(keytab, krb5, principal);
         } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK.equalsIgnoreCase(authType)) {
-          String accessKey = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY);
-          String secretKey = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY);
-          builder.withAkSkAuth(accessKey, secretKey);
+          String accessKey =
+              catalogMeta
+                  .getCatalogProperties()
+                  .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY);
+          String secretKey =
+              catalogMeta
+                  .getCatalogProperties()
+                  .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY);
+          String storageType =
+              catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE);
+          builder.withAkSkAuth(accessKey, secretKey, storageType);
         }
-      }
-    }
-
-    // cover auth configs from ams with auth configs in properties
-    String authType =
-        catalogMeta.getCatalogProperties().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
-    if (StringUtils.isNotEmpty(authType)) {
-      LOG.info("TableMetaStore use auth config in properties, authType is {}", authType);
-      if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
-        String hadoopUsername =
-            catalogMeta
-                .getCatalogProperties()
-                .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
-        builder.withSimpleAuth(hadoopUsername);
-      } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equalsIgnoreCase(
-          authType)) {
-        String krb5 =
-            catalogMeta.getCatalogProperties().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
-        String keytab =
-            catalogMeta.getCatalogProperties().get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
-        String principal =
-            catalogMeta
-                .getCatalogProperties()
-                .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
-        builder.withBase64KrbAuth(keytab, krb5, principal);
-      } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_AK_SK.equalsIgnoreCase(authType)) {
-        String accessKey =
-            catalogMeta
-                .getCatalogProperties()
-                .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_ACCESS_KEY);
-        String secretKey =
-            catalogMeta
-                .getCatalogProperties()
-                .get(CatalogMetaProperties.AUTH_CONFIGS_KEY_SECRET_KEY);
-        builder.withAkSkAuth(accessKey, secretKey);
       }
     }
     return builder.build();
@@ -236,6 +260,35 @@ public class CatalogUtil {
     if (StringUtils.isNotEmpty(fromProperties.get(fromKey))) {
       toProperties.put(toKey, (T) fromProperties.get(fromKey));
     }
+  }
+
+  public static String normalizeMetastoreType(String type) {
+    if (type == null) {
+      return null;
+    }
+    if (CatalogMetaProperties.CATALOG_TYPE_HADOOP.equalsIgnoreCase(type)
+        || CatalogMetaProperties.CATALOG_TYPE_FILESYSTEM.equalsIgnoreCase(type)) {
+      return CatalogMetaProperties.CATALOG_TYPE_FILESYSTEM;
+    }
+    return type;
+  }
+
+  /**
+   * Normalize catalog type for client-side and factory usage.
+   *
+   * <p>Iceberg only recognizes short catalog types like "hadoop" or "hive" in its {@code
+   * CatalogUtil}, and does not recognize "filesystem" yet. To keep AMS using "filesystem" in
+   * metadata while still working with Iceberg, we normalize "filesystem" back to "hadoop" before
+   * passing it down to Iceberg.
+   */
+  public static String normalizeCatalogType(String type) {
+    if (type == null) {
+      return null;
+    }
+    if (CatalogMetaProperties.CATALOG_TYPE_FILESYSTEM.equalsIgnoreCase(type)) {
+      return CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+    }
+    return type;
   }
 
   private static boolean propertyAsBoolean(

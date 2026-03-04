@@ -29,7 +29,7 @@ import {
   message,
 } from 'ant-design-vue'
 import Properties from './Properties.vue'
-import { checkCatalogStatus, delCatalog, getCatalogsSetting, getCatalogsTypes, saveCatalogsSetting } from '@/services/setting.services'
+import { checkCatalogStatus, delCatalog, getCatalogsSetting, getCatalogsTypes, getMetastoreStorageTypes, getMetastoreTableFormats, saveCatalogsSetting } from '@/services/setting.services'
 import type { ICatalogItem, IIOptimizeGroupItem, ILableAndValue, IMap } from '@/types/common.type'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { getResourceGroupsListAPI } from '@/services/optimize.service'
@@ -65,13 +65,10 @@ const emit = defineEmits<{
   (e: 'updateCatalogs'): void
 }>()
 
-const typeShowMap = { 'Internal Catalog': 'Internal Catalog', 'External Catalog': 'External Catalog' }
-
 const formState: FormState = reactive({
   catalog: {
     name: '',
     type: 'ams',
-    typeshow: typeShowMap['Internal Catalog'],
     optimizerGroup: undefined,
   },
   tableFormatList: [],
@@ -129,14 +126,6 @@ const tableFormatText = {
   [tableFormatMap.PAIMON]: 'Paimon',
   [tableFormatMap.HUDI]: 'Hudi',
 }
-const storeSupportFormat: { [prop: string]: string[] } = {
-  ams: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
-  hive: [tableFormatMap.MIXED_HIVE, tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON, tableFormatMap.HUDI],
-  hadoop: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG, tableFormatMap.PAIMON],
-  glue: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
-  rest: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
-  custom: [tableFormatMap.MIXED_ICEBERG, tableFormatMap.ICEBERG],
-}
 
 const storageConfigFileNameMap = {
   'hadoop.core.site': 'core-site.xml',
@@ -153,10 +142,6 @@ const newCatalogConfig = {
     'auth.kerberos.krb5': '',
   },
 }
-const typwShowOptions = ref([
-  { label: typeShowMap['Internal Catalog'], value: typeShowMap['Internal Catalog'] },
-  { label: typeShowMap['External Catalog'], value: typeShowMap['External Catalog'] },
-])
 
 const hadoopConfigTypeOps = reactive<ILableAndValue[]>([{
   label: 'SIMPLE',
@@ -195,6 +180,7 @@ const authConfigMap = {
 const defaultPropertiesMap = {
   ams: ['warehouse'],
   hadoop: ['warehouse'],
+  filesystem: ['warehouse'],
   custom: ['catalog-impl'],
   glue: ['warehouse', 'lock-impl', 'lock.table'],
   rest: ['uri'],
@@ -208,6 +194,8 @@ watch(() => route.query, (value) => {
   deep: true,
 })
 const catalogTypeOps = reactive<ILableAndValue[]>([])
+const storageTypeOptions = ref<ILableAndValue[]>([])
+const tableFormatOptions = ref<string[]>([])
 const optimizerGroupList = ref<ILableAndValue[]>([])
 function initData() {
   getConfigInfo()
@@ -237,18 +225,39 @@ async function getOptimizerGroupList() {
 }
 async function getCatalogTypeOps() {
   const res = await getCatalogsTypes();
-  (res || []).forEach((ele: any) => {
-    if (ele.value !== 'ams') {
-      catalogTypeOps.push({
-        label: ele.display,
-        value: ele.value,
-      })
-    }
+  catalogTypeOps.length = 0
+  ;(res || []).forEach((ele: any) => {
+    catalogTypeOps.push({
+      label: ele.display,
+      value: ele.value,
+    })
   })
   getMetastoreType()
 }
 function getMetastoreType() {
   metastoreType.value = (catalogTypeOps.find(ele => ele.value === formState.catalog.type) || {}).label || ''
+}
+async function loadMetastoreCapabilities(loadTableFormats: boolean) {
+  const type = formState.catalog.type as string
+  if (!type) {
+    return
+  }
+  const formats = await getMetastoreTableFormats(type)
+  const options = (formats || []) as string[]
+  tableFormatOptions.value = options
+  if (loadTableFormats) {
+    formState.tableFormatList = [...options]
+  }
+  const storageTypes = await getMetastoreStorageTypes(type)
+  storageTypeOptions.value = (storageTypes || []).map((val: string) => ({
+    label: val,
+    value: val,
+  }))
+  const availableTypes = storageTypeOptions.value.map(option => option.value)
+  const currentStorageType = formState.storageConfig['storage.type']
+  if (!currentStorageType || !availableTypes.includes(currentStorageType)) {
+    formState.storageConfig['storage.type'] = availableTypes.length > 0 ? availableTypes[0] : ''
+  }
 }
 async function getConfigInfo() {
   try {
@@ -261,7 +270,7 @@ async function getConfigInfo() {
       formState.catalog.name = ''
       formState.catalog.type = (type || 'ams') as string
       formState.catalog.optimizerGroup = undefined
-      formState.tableFormatList = [tableFormatMap.MIXED_ICEBERG]
+      formState.tableFormatList = []
       formState.authConfig = { ...newCatalogConfig.authConfig }
       formState.storageConfig = { ...newCatalogConfig.storageConfig }
       const keys = defaultPropertiesMap[formState.catalog.type as keyof typeof defaultPropertiesMap] || []
@@ -272,6 +281,7 @@ async function getConfigInfo() {
       formState.tableProperties = {}
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
+      await changeMetastore()
     }
     else {
       const res = await getCatalogsSetting(catalogname as string)
@@ -290,8 +300,8 @@ async function getConfigInfo() {
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
       getMetastoreType()
+      await loadMetastoreCapabilities(false)
     }
-    formState.catalog.typeshow = formState.catalog.type === 'ams' ? typeShowMap['Internal Catalog'] : typeShowMap['External Catalog']
 
     const { storageConfig, authConfig } = formState
     Object.keys(storageConfig).forEach((key) => {
@@ -338,20 +348,7 @@ async function getConfigInfo() {
   }
 }
 
-function changeTypeShow(val: string) {
-  if (val === typeShowMap['Internal Catalog']) {
-    formState.catalog.type = 'ams'
-  }
-  else {
-    formState.catalog.type = catalogTypeOps[0].value
-  }
-  changeMetastore()
-}
 
-const formatOptions = computed(() => {
-  const type = formState.catalog.type
-  return storeSupportFormat[type as keyof typeof storeSupportFormat] || []
-})
 
 async function changeProperties() {
   const properties = await propertiesRef.value.getPropertiesWithoputValidation()
@@ -377,53 +374,6 @@ async function changeProperties() {
   formState.properties = properties
 }
 
-const storageConfigTypeS3Oss = reactive<ILableAndValue[]>([{
-  label: 'S3',
-  value: 'S3',
-}, {
-  label: 'OSS',
-  value: 'OSS',
-}])
-
-const storageConfigTypeOSS = reactive<ILableAndValue[]>([{
-  label: 'OSS',
-  value: 'OSS',
-}])
-
-const storageConfigTypeHadoop = reactive<ILableAndValue[]>([{
-  label: 'Hadoop',
-  value: 'Hadoop',
-}])
-
-const storageConfigTypeHadoopS3Oss = reactive<ILableAndValue[]>([{
-  label: 'Hadoop',
-  value: 'Hadoop',
-}, {
-  label: 'S3',
-  value: 'S3',
-}, {
-  label: 'OSS',
-  value: 'OSS',
-}])
-
-const storageConfigTypeOps = computed(() => {
-  const type = formState.catalog.type
-  if (type === 'ams' || type === 'custom' || type === 'rest') {
-    return storageConfigTypeHadoopS3Oss
-  }
-  else if (type === 'glue') {
-    return storageConfigTypeS3Oss
-  }
-  else if (type === 'hive') {
-    return storageConfigTypeHadoop
-  }
-  else if (type === 'hadoop') {
-    return storageConfigTypeHadoopS3Oss
-  }
-  else {
-    return null
-  }
-})
 
 const authTypeOptions = computed(() => {
   const type = formState.storageConfig['storage.type']
@@ -440,10 +390,28 @@ const authTypeOptions = computed(() => {
   return null
 })
 
+const isAuthDisabled = computed(() => formState.storageConfig['storage.type'] === 'Local')
+
+watch(
+  () => formState.storageConfig['storage.type'],
+  (storageType) => {
+    if (storageType === 'Local') {
+      if (isNewCatalog.value) {
+        formState.tableFormatList = [tableFormatMap.ICEBERG]
+      }
+      if (!formState.authConfig['auth.type']) {
+        formState.authConfig['auth.type'] = 'SIMPLE'
+      }
+      const simpleUsernameKey = 'auth.simple.hadoop_username'
+      if (!formState.authConfig[simpleUsernameKey]) {
+        formState.authConfig[simpleUsernameKey] = 'local'
+      }
+    }
+  }
+)
+
 async function changeMetastore() {
-  formState.tableFormatList = [formatOptions.value[0]]
-  if (!isNewCatalog.value)
-    return
+  await loadMetastoreCapabilities(isNewCatalog.value)
 
   const index = formState.storageConfigArray.findIndex(item => item.key === 'hive.site')
   if (isHiveMetastore.value) {
@@ -472,9 +440,6 @@ async function changeMetastore() {
   await changeProperties()
 }
 
-async function changeTableFormat() {
-  await changeProperties()
-}
 
 function handleEdit() {
   emit('updateEdit', true)
@@ -531,7 +496,7 @@ function handleSave() {
         return
       }
       loading.value = true
-      const { typeshow, ...catalogParams } = catalog
+      const catalogParams = catalog
       getFileIdParams()
       await saveCatalogsSetting({
         isCreate: isNewCatalog.value,
@@ -635,37 +600,35 @@ onMounted(() => {
             <a-input v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.name" />
             <span v-else class="config-value">{{ formState.catalog.name }}</span>
           </a-form-item>
-          <a-form-item :label="$t('type')" :name="['catalog', 'typeshow']">
-            <a-select
-              v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.typeshow"
-              :options="typwShowOptions" :placeholder="placeholder.selectPh" @change="changeTypeShow"
-            />
-            <span v-else>{{ formState.catalog.typeshow }}</span>
-          </a-form-item>
           <a-form-item
-            v-if="formState.catalog.typeshow === typeShowMap['External Catalog']" :label="$t('metastore')"
+            :label="$t('metastore')"
             :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]"
           >
-            <a-select
-              v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.type" :options="catalogTypeOps"
-              :placeholder="placeholder.selectPh" @change="changeMetastore"
-            />
-            <span v-else>{{ metastoreType }}</span>
-          </a-form-item>
-          <a-form-item
+             <a-select
+               v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.type" :options="catalogTypeOps"
+               :placeholder="placeholder.selectPh" @change="changeMetastore"
+             />
+             <span v-else>{{ metastoreType }}</span>
+           </a-form-item>
+           <a-form-item
             :label="$t('tableFormat')" :name="['tableFormatList']"
-            :rules="[{ required: isEdit && isNewCatalog }]"
-          >
+           >
             <a-checkbox-group
-              v-model:value="formState.tableFormatList" :disabled="!isEdit || !isNewCatalog"
-              @change="changeTableFormat"
+              v-if="isEdit"
+              v-model:value="formState.tableFormatList"
             >
-              <a-checkbox v-for="item in formatOptions" :key="item" :value="item">
-                {{ tableFormatText[item]
-                }}
+              <a-checkbox
+                v-for="item in tableFormatOptions"
+                :key="item"
+                :value="item"
+              >
+                {{ tableFormatText[item] || item }}
               </a-checkbox>
             </a-checkbox-group>
-          </a-form-item>
+            <span v-else class="config-value">
+              {{ formState.tableFormatList.map((item) => tableFormatText[item] || item).join(', ') }}
+            </span>
+           </a-form-item>
           <a-form-item
             :label="$t('optimizerGroup')" :name="['catalog', 'optimizerGroup']"
             :rules="[{ required: isEdit }]"
@@ -684,7 +647,7 @@ onMounted(() => {
           <a-form-item label="Type" :name="['storageConfig', 'storage.type']" :rules="[{ required: isEdit }]">
             <a-select
               v-if="isEdit" v-model:value="formState.storageConfig['storage.type']"
-              :placeholder="placeholder.selectPh" :options="storageConfigTypeOps"
+              :placeholder="placeholder.selectPh" :options="storageTypeOptions"
             />
             <span v-else class="config-value">{{ formState.storageConfig['storage.type'] }}</span>
           </a-form-item>
@@ -737,25 +700,25 @@ onMounted(() => {
               {{ $t('authenticationConfig') }}
             </p>
           </a-form-item>
-          <a-form-item label="Type" :name="['authConfig', 'auth.type']" :rules="[{ required: isEdit }]">
+          <a-form-item label="Type" :name="['authConfig', 'auth.type']" :rules="[{ required: isEdit && !isAuthDisabled }]">
             <a-select
               v-if="isEdit" v-model:value="formState.authConfig['auth.type']"
-              :placeholder="placeholder.selectPh" :options="authTypeOptions"
+              :placeholder="placeholder.selectPh" :options="authTypeOptions" :disabled="isAuthDisabled"
             />
             <span v-else class="config-value">{{ formState.authConfig['auth.type'] }}</span>
           </a-form-item>
           <a-form-item
             v-if="formState.authConfig['auth.type'] === 'SIMPLE'" label="Hadoop Username"
-            :name="['authConfig', 'auth.simple.hadoop_username']" :rules="[{ required: isEdit }]"
+            :name="['authConfig', 'auth.simple.hadoop_username']" :rules="[{ required: isEdit && !isAuthDisabled }]"
           >
-            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.simple.hadoop_username']" />
+            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.simple.hadoop_username']" :disabled="isAuthDisabled" />
             <span v-else class="config-value">{{ formState.authConfig['auth.simple.hadoop_username'] }}</span>
           </a-form-item>
           <a-form-item
             v-if="formState.authConfig['auth.type'] === 'KERBEROS'" label="Kerberos Principal"
-            :name="['authConfig', 'auth.kerberos.principal']" :rules="[{ required: isEdit }]"
+            :name="['authConfig', 'auth.kerberos.principal']" :rules="[{ required: isEdit && !isAuthDisabled }]"
           >
-            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.kerberos.principal']" />
+            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.kerberos.principal']" :disabled="isAuthDisabled" />
             <span v-else class="config-value">{{ formState.authConfig['auth.kerberos.principal'] }}</span>
           </a-form-item>
           <div v-if="formState.authConfig['auth.type'] === 'KERBEROS'">
@@ -784,16 +747,16 @@ onMounted(() => {
           </div>
           <a-form-item
             v-if="formState.authConfig['auth.type'] === 'AK/SK'" label="Access Key"
-            :name="['authConfig', 'auth.ak_sk.access_key']" :rules="[{ required: isEdit }]"
+            :name="['authConfig', 'auth.ak_sk.access_key']" :rules="[{ required: isEdit && !isAuthDisabled }]"
           >
-            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.access_key']" />
+            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.access_key']" :disabled="isAuthDisabled" />
             <span v-else class="config-value">{{ formState.authConfig['auth.ak_sk.access_key'] }}</span>
           </a-form-item>
           <a-form-item
             v-if="formState.authConfig['auth.type'] === 'AK/SK'" label="Secret Key"
-            :name="['authConfig', 'auth.ak_sk.secret_key']" :rules="[{ required: isEdit }]"
+            :name="['authConfig', 'auth.ak_sk.secret_key']" :rules="[{ required: isEdit && !isAuthDisabled }]"
           >
-            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.secret_key']" />
+            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.secret_key']" :disabled="isAuthDisabled" />
             <span v-else class="config-value">{{ formState.authConfig['auth.ak_sk.secret_key'] }}</span>
           </a-form-item>
           <a-form-item>

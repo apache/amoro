@@ -35,6 +35,7 @@ import static org.apache.amoro.properties.CatalogMetaProperties.AUTH_CONFIGS_VAL
 import static org.apache.amoro.properties.CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_FILESYSTEM;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
@@ -48,6 +49,7 @@ import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_S3_ENDPOINT;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HADOOP;
+import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_LOCAL;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_OSS;
 import static org.apache.amoro.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_S3;
 import static org.apache.amoro.properties.CatalogMetaProperties.TABLE_FORMATS;
@@ -107,6 +109,8 @@ public class CatalogController {
     CATALOG_REQUIRED_PROPERTIES.put(
         CATALOG_TYPE_HADOOP, Lists.newArrayList(CatalogProperties.WAREHOUSE_LOCATION));
     CATALOG_REQUIRED_PROPERTIES.put(
+        CATALOG_TYPE_FILESYSTEM, Lists.newArrayList(CatalogProperties.WAREHOUSE_LOCATION));
+    CATALOG_REQUIRED_PROPERTIES.put(
         CATALOG_TYPE_GLUE, Lists.newArrayList(CatalogProperties.WAREHOUSE_LOCATION));
     CATALOG_REQUIRED_PROPERTIES.put(
         CATALOG_TYPE_CUSTOM, Lists.newArrayList(CatalogProperties.CATALOG_IMPL));
@@ -147,6 +151,17 @@ public class CatalogController {
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_S3, PAIMON));
     VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(
+            CATALOG_TYPE_FILESYSTEM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_FILESYSTEM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_FILESYSTEM, STORAGE_CONFIGS_VALUE_TYPE_LOCAL, ICEBERG));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_FILESYSTEM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, PAIMON));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_FILESYSTEM, STORAGE_CONFIGS_VALUE_TYPE_S3, PAIMON));
+    VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_GLUE, STORAGE_CONFIGS_VALUE_TYPE_S3, ICEBERG));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_GLUE, STORAGE_CONFIGS_VALUE_TYPE_S3, MIXED_ICEBERG));
@@ -156,6 +171,8 @@ public class CatalogController {
         CatalogDescriptor.of(CATALOG_TYPE_CUSTOM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, ICEBERG));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_OSS, PAIMON));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_FILESYSTEM, STORAGE_CONFIGS_VALUE_TYPE_OSS, PAIMON));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_GLUE, STORAGE_CONFIGS_VALUE_TYPE_OSS, ICEBERG));
     VALIDATE_CATALOGS.add(
@@ -232,9 +249,9 @@ public class CatalogController {
     List<ImmutableMap<String, String>> catalogTypes = new ArrayList<>();
     String valueKey = "value";
     String displayKey = "display";
-    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_AMS, displayKey, "Amoro Metastore"));
-    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HIVE, displayKey, "Hive Metastore"));
-    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HADOOP, displayKey, "Filesystem"));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_AMS, displayKey, "Internal"));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HIVE, displayKey, "Hive"));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_FILESYSTEM, displayKey, "FileSystem"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_GLUE, displayKey, "Glue"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_REST, displayKey, "REST"));
     catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_CUSTOM, displayKey, "Custom"));
@@ -432,14 +449,15 @@ public class CatalogController {
   private CatalogMeta constructCatalogMeta(CatalogRegisterInfo info, CatalogMeta oldCatalogMeta) {
     CatalogMeta catalogMeta = new CatalogMeta();
     catalogMeta.setCatalogName(info.getName());
-    catalogMeta.setCatalogType(info.getType());
+    String metastoreType = CatalogUtil.normalizeMetastoreType(info.getType());
+    catalogMeta.setCatalogType(metastoreType);
     catalogMeta.setCatalogProperties(
         PropertiesUtil.unionCatalogProperties(info.getTableProperties(), info.getProperties()));
     // fill catalog impl when catalog type is glue or rest
-    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(info.getType())) {
+    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(metastoreType)) {
       catalogMeta.putToCatalogProperties(
           CatalogProperties.CATALOG_IMPL, GlueCatalog.class.getName());
-    } else if (CatalogMetaProperties.CATALOG_TYPE_REST.equals(info.getType())) {
+    } else if (CatalogMetaProperties.CATALOG_TYPE_REST.equals(metastoreType)) {
       catalogMeta.putToCatalogProperties(
           CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
     }
@@ -519,6 +537,8 @@ public class CatalogController {
             STORAGE_CONFIGS_KEY_OSS_ENDPOINT,
             "fs.oss.endpoint");
       }
+    } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_LOCAL)) {
+      // Local storage type does not require additional storage configs.
     } else {
       throw new RuntimeException("Invalid storage type " + storageType);
     }
@@ -622,12 +642,11 @@ public class CatalogController {
 
     if (catalogService.catalogExist(catalogName)) {
       info.setName(catalogMeta.getCatalogName());
-      // We create ams catalog with type hadoop in v0.3, we should be compatible with it.
       if (CATALOG_TYPE_HADOOP.equals(catalogMeta.getCatalogType())
           && !catalogMeta.getCatalogProperties().containsKey(TABLE_FORMATS)) {
         info.setType(CATALOG_TYPE_AMS);
       } else {
-        info.setType(catalogMeta.getCatalogType());
+        info.setType(CatalogUtil.normalizeMetastoreType(catalogMeta.getCatalogType()));
       }
 
       // we put the table format single
@@ -730,6 +749,30 @@ public class CatalogController {
     } else {
       throw new RuntimeException("Invalid request for " + confType);
     }
+  }
+
+  public void getMetastoreTableFormats(Context ctx) {
+    String metastoreType = ctx.pathParam("type");
+    String normalizedType = CatalogUtil.normalizeMetastoreType(metastoreType);
+    List<String> tableFormats =
+        VALIDATE_CATALOGS.stream()
+            .filter(d -> d.catalogType.equalsIgnoreCase(normalizedType))
+            .map(d -> d.tableFormat.name())
+            .distinct()
+            .collect(Collectors.toList());
+    ctx.json(OkResponse.of(tableFormats));
+  }
+
+  public void getMetastoreStorageTypes(Context ctx) {
+    String metastoreType = ctx.pathParam("type");
+    String normalizedType = CatalogUtil.normalizeMetastoreType(metastoreType);
+    List<String> storageTypes =
+        VALIDATE_CATALOGS.stream()
+            .filter(d -> d.catalogType.equalsIgnoreCase(normalizedType))
+            .map(d -> d.storageType)
+            .distinct()
+            .collect(Collectors.toList());
+    ctx.json(OkResponse.of(storageTypes));
   }
 
   private static class CatalogDescriptor {

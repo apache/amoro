@@ -97,6 +97,12 @@ public class OptimizingConfig {
   // self-optimizing.evaluation.fallback-interval
   private long evaluationFallbackInterval;
 
+  // self-optimizing.refresh-table.adaptive.max-interval-ms
+  private long refreshTableAdaptiveMaxIntervalMs;
+
+  // self-optimizing.refresh-table.adaptive.increase-step-ms
+  private long refreshTableAdaptiveIncreaseStepMs;
+
   public OptimizingConfig() {}
 
   public boolean isEnabled() {
@@ -318,6 +324,36 @@ public class OptimizingConfig {
     return this;
   }
 
+  /**
+   * Adaptive refresh is enabled only when max interval is valid and greater than min interval.
+   *
+   * @param minInterval the minimum interval
+   * @return true if the adaptive refresh is enabled
+   */
+  public boolean isRefreshTableAdaptiveEnabled(long minInterval) {
+    return refreshTableAdaptiveMaxIntervalMs > 0 && refreshTableAdaptiveMaxIntervalMs > minInterval;
+  }
+
+  public long getRefreshTableAdaptiveMaxIntervalMs() {
+    return refreshTableAdaptiveMaxIntervalMs;
+  }
+
+  public OptimizingConfig setRefreshTableAdaptiveMaxIntervalMs(
+      long refreshTableAdaptiveMaxIntervalMs) {
+    this.refreshTableAdaptiveMaxIntervalMs = refreshTableAdaptiveMaxIntervalMs;
+    return this;
+  }
+
+  public long getRefreshTableAdaptiveIncreaseStepMs() {
+    return refreshTableAdaptiveIncreaseStepMs;
+  }
+
+  public OptimizingConfig setRefreshTableAdaptiveIncreaseStepMs(
+      long refreshTableAdaptiveIncreaseStepMs) {
+    this.refreshTableAdaptiveIncreaseStepMs = refreshTableAdaptiveIncreaseStepMs;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -350,7 +386,10 @@ public class OptimizingConfig {
         && Objects.equal(optimizerGroup, that.optimizerGroup)
         && Objects.equal(minPlanInterval, that.minPlanInterval)
         && Objects.equal(evaluationMseTolerance, that.evaluationMseTolerance)
-        && Objects.equal(evaluationFallbackInterval, that.evaluationFallbackInterval);
+        && Objects.equal(evaluationFallbackInterval, that.evaluationFallbackInterval)
+        && Objects.equal(refreshTableAdaptiveMaxIntervalMs, that.refreshTableAdaptiveMaxIntervalMs)
+        && Objects.equal(
+            refreshTableAdaptiveIncreaseStepMs, that.refreshTableAdaptiveIncreaseStepMs);
   }
 
   @Override
@@ -379,7 +418,9 @@ public class OptimizingConfig {
         hiveRefreshInterval,
         minPlanInterval,
         evaluationMseTolerance,
-        evaluationFallbackInterval);
+        evaluationFallbackInterval,
+        refreshTableAdaptiveMaxIntervalMs,
+        refreshTableAdaptiveIncreaseStepMs);
   }
 
   @Override
@@ -407,6 +448,8 @@ public class OptimizingConfig {
         .add("hiveRefreshInterval", hiveRefreshInterval)
         .add("evaluationMseTolerance", evaluationMseTolerance)
         .add("evaluationFallbackInterval", evaluationFallbackInterval)
+        .add("refreshTableAdaptiveMaxIntervalMs", refreshTableAdaptiveMaxIntervalMs)
+        .add("refreshTableAdaptiveIncreaseStepMs", refreshTableAdaptiveIncreaseStepMs)
         .toString();
   }
 }

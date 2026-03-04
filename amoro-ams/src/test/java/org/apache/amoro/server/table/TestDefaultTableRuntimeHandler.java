@@ -130,6 +130,49 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
     tableService = null;
   }
 
+  @Test
+  public void testRefreshUpdatesOptimizerGroup() throws Exception {
+    tableService =
+        new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactoryManager);
+    TestHandler handler = new TestHandler();
+    tableService.addHandlerChain(handler);
+    tableService.initialize();
+    if (!(catalogTestHelper().tableFormat().equals(TableFormat.MIXED_HIVE)
+        && TEST_HMS.getHiveClient().getDatabase(TableTestHelper.TEST_DB_NAME) != null)) {
+      createDatabase();
+    }
+    createTable();
+
+    ServerTableIdentifier tableId = tableManager().listManagedTables().get(0);
+    DefaultTableRuntime runtime = getDefaultTableRuntime(tableId.getId());
+
+    // Verify initial group name is "default"
+    String initialGroup = runtime.getGroupName();
+    Assert.assertEquals(TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT, initialGroup);
+
+    // Change optimizer group property
+    String newGroupName = "new-optimizer-group";
+    MixedTable mixedTable = (MixedTable) tableService().loadTable(tableId).originalTable();
+    mixedTable.updateProperties().set(TableProperties.SELF_OPTIMIZING_GROUP, newGroupName).commit();
+
+    // Refresh the runtime
+    runtime.refresh(tableService.loadTable(tableId));
+
+    // Verify that getGroupName() returns the new group name
+    Assert.assertEquals(newGroupName, runtime.getGroupName());
+
+    // Verify config changed handler was called
+    Assert.assertEquals(1, handler.getConfigChangedTables().size());
+
+    // Cleanup
+    dropTable();
+    dropDatabase();
+    tableService.dispose();
+    MetricManager.dispose();
+    EventsManager.dispose();
+    tableService = null;
+  }
+
   protected DefaultTableService tableService() {
     if (tableService != null) {
       return tableService;

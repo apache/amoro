@@ -20,6 +20,7 @@ package org.apache.amoro.server.catalog;
 
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_FILESYSTEM;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_GLUE;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
@@ -42,6 +43,9 @@ public class CatalogBuilder {
   private static final Map<String, Set<TableFormat>> formatSupportedMatrix =
       ImmutableMap.of(
           CATALOG_TYPE_HADOOP,
+          Sets.newHashSet(
+              TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON, TableFormat.HUDI),
+          CATALOG_TYPE_FILESYSTEM,
           Sets.newHashSet(
               TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.PAIMON, TableFormat.HUDI),
           CATALOG_TYPE_GLUE,
@@ -77,6 +81,7 @@ public class CatalogBuilder {
 
     switch (type) {
       case CATALOG_TYPE_HADOOP:
+      case CATALOG_TYPE_FILESYSTEM:
       case CATALOG_TYPE_GLUE:
       case CATALOG_TYPE_REST:
       case CATALOG_TYPE_CUSTOM:

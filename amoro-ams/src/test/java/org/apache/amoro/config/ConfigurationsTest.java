@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 
 /**
  * End-to-end test cases for configuration documentation.
@@ -72,6 +73,35 @@ public class ConfigurationsTest {
             "Shade Utils Configuration",
             "The configuration options for Amoro Configuration Shade Utils."));
     generateConfigurationMarkdown("ams-config.md", "AMS Configuration", 100, confInfoList);
+  }
+
+  @Test
+  public void testGetDurationInMillis() throws Exception {
+    Properties properties = new Properties();
+    properties.put(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT.key(), "1h");
+    Configurations configuration = ConfigHelpers.createConfiguration(properties);
+    long durationInMillis =
+        configuration.getDurationInMillis(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT);
+    Assertions.assertEquals(3600000, durationInMillis);
+
+    // default value test
+    properties = new Properties();
+    configuration = ConfigHelpers.createConfiguration(properties);
+    durationInMillis =
+        configuration.getDurationInMillis(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT);
+    Assertions.assertEquals(Integer.MAX_VALUE * 1000L, durationInMillis);
+
+    properties.put(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT.key(), Long.MAX_VALUE + "m");
+    final Configurations conf1 = ConfigHelpers.createConfiguration(properties);
+    Assertions.assertThrows(
+        ConfigurationException.class,
+        () -> conf1.getDurationInMillis(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT));
+
+    properties.put(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT.key(), "-1m");
+    final Configurations conf2 = ConfigHelpers.createConfiguration(properties);
+    Assertions.assertThrows(
+        ConfigurationException.class,
+        () -> conf2.getDurationInMillis(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT));
   }
 
   /**

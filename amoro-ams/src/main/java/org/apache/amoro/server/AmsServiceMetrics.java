@@ -30,7 +30,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryUsage;
+import java.lang.management.MemoryMXBean;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -108,16 +108,21 @@ public class AmsServiceMetrics {
   }
 
   private void registerHeapMetric() {
-    MemoryUsage heapMemoryUsage = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+    MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
     registerMetric(
-        registry, AMS_JVM_MEMORY_HEAP_USED, (Gauge<Long>) () -> heapMemoryUsage.getUsed());
+        registry,
+        AMS_JVM_MEMORY_HEAP_USED,
+        (Gauge<Long>) () -> memoryMXBean.getHeapMemoryUsage().getUsed());
 
     registerMetric(
         registry,
         AMS_JVM_MEMORY_HEAP_COMMITTED,
-        (Gauge<Long>) () -> heapMemoryUsage.getCommitted());
+        (Gauge<Long>) () -> memoryMXBean.getHeapMemoryUsage().getCommitted());
 
-    registerMetric(registry, AMS_JVM_MEMORY_HEAP_MAX, (Gauge<Long>) () -> heapMemoryUsage.getMax());
+    registerMetric(
+        registry,
+        AMS_JVM_MEMORY_HEAP_MAX,
+        (Gauge<Long>) () -> memoryMXBean.getHeapMemoryUsage().getMax());
   }
 
   private void registerThreadMetric() {
