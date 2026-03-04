@@ -88,6 +88,8 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
   private final TableSummaryMetrics tableSummaryMetrics;
   private volatile long lastPlanTime;
+  private volatile long latestRefreshInterval = AmoroServiceConstants.INVALID_TIME;
+  private volatile boolean latestEvaluatedNeedOptimizing = true;
   private volatile OptimizingProcess optimizingProcess;
   private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
@@ -101,8 +103,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
-    if (!getOptimizingStatus().isProcessing()
-        || !Objects.equals(optimizingProcess.getProcessId(), getProcessId())) {
+    if (!Objects.equals(optimizingProcess.getProcessId(), getProcessId())) {
       throw new IllegalStateException("Table runtime and processing are not matched!");
     }
     this.optimizingProcess = optimizingProcess;
@@ -137,6 +138,22 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
 
   public void setLastPlanTime(long lastPlanTime) {
     this.lastPlanTime = lastPlanTime;
+  }
+
+  public long getLatestRefreshInterval() {
+    return latestRefreshInterval;
+  }
+
+  public void setLatestRefreshInterval(long latestRefreshInterval) {
+    this.latestRefreshInterval = latestRefreshInterval;
+  }
+
+  public boolean getLatestEvaluatedNeedOptimizing() {
+    return this.latestEvaluatedNeedOptimizing;
+  }
+
+  public void setLatestEvaluatedNeedOptimizing(boolean latestEvaluatedNeedOptimizing) {
+    this.latestEvaluatedNeedOptimizing = latestEvaluatedNeedOptimizing;
   }
 
   public OptimizingStatus getOptimizingStatus() {
@@ -386,24 +403,29 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
     optimizingProcess = null;
   }
 
+  /**
+   * Resets the table to IDLE from any non-IDLE state. This is used both when planning determines
+   * that optimization is unnecessary (from PLANNING state) and during startup recovery to reset
+   * tables with unrecoverable processes (from any processing state).
+   */
   public void completeEmptyProcess() {
     OptimizingStatus originalStatus = getOptimizingStatus();
-    boolean needUpdate =
-        originalStatus == OptimizingStatus.PLANNING || originalStatus == OptimizingStatus.PENDING;
-    if (needUpdate) {
-      store()
-          .begin()
-          .updateStatusCode(code -> OptimizingStatus.IDLE.getCode())
-          .updateState(
-              OPTIMIZING_STATE_KEY,
-              state -> {
-                state.setLastOptimizedSnapshotId(state.getCurrentSnapshotId());
-                state.setLastOptimizedChangeSnapshotId(state.getCurrentChangeSnapshotId());
-                return state;
-              })
-          .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
-          .commit();
+    if (originalStatus == OptimizingStatus.IDLE) {
+      return;
     }
+    store()
+        .begin()
+        .updateStatusCode(code -> OptimizingStatus.IDLE.getCode())
+        .updateState(
+            OPTIMIZING_STATE_KEY,
+            state -> {
+              state.setLastOptimizedSnapshotId(state.getCurrentSnapshotId());
+              state.setLastOptimizedChangeSnapshotId(state.getCurrentChangeSnapshotId());
+              return state;
+            })
+        .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
+        .commit();
+    optimizingProcess = null;
   }
 
   public void optimizingNotNecessary() {

@@ -43,10 +43,11 @@ home = [ "HTML", "RSS", "SearchIndex" ]
     { name = "ASF", weight = 700 },
     { name = "Foundation", identifier = "_foundation", parent = "ASF", url = "https://www.apache.org/", weight = 701 },
     { name = "License", identifier = "_license", parent = "ASF", url = "https://www.apache.org/licenses/", weight = 702 },
-    { name = "Donate", identifier = "_donate", parent = "ASF", url = "https://www.apache.org/foundation/sponsorship.html", weight = 703 },
-    { name = "Sponsors", identifier = "_sponsors", parent = "ASF", url = "https://www.apache.org/foundation/thanks.html", weight = 704 },
-    { name = "Security", identifier = "_security", parent = "ASF", url = "https://www.apache.org/security/", weight = 705 },
-    { name = "Privacy", identifier = "_privacy", parent = "ASF", url = "https://privacy.apache.org/policies/privacy-policy-public.html", weight = 706 }
+    { name = "Events", identifier = "_events", parent = "ASF", url = "https://events.apache.org/", weight = 703 },
+    { name = "Donate", identifier = "_donate", parent = "ASF", url = "https://www.apache.org/foundation/sponsorship.html", weight = 704 },
+    { name = "Sponsors", identifier = "_sponsors", parent = "ASF", url = "https://www.apache.org/foundation/thanks.html", weight = 705 },
+    { name = "Security", identifier = "_security", parent = "ASF", url = "https://www.apache.org/security/", weight = 706 },
+    { name = "Privacy", identifier = "_privacy", parent = "ASF", url = "https://privacy.apache.org/policies/privacy-policy-public.html", weight = 707 }
   ]
 
   main = [ # Main menu, docs site left nav
