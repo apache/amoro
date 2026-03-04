@@ -548,13 +548,6 @@ public class ProcessService extends PersistentBase {
     }
   }
 
-  /** Manager for {@link ActionCoordinator} plugins. */
-  public static class ActionCoordinatorManager extends AbstractPluginManager<ActionCoordinator> {
-    public ActionCoordinatorManager() {
-      super("action-coordinators");
-    }
-  }
-
   /** Manager for {@link ExecuteEngine} plugins. */
   public static class ExecuteEngineManager extends AbstractPluginManager<ExecuteEngine> {
     public ExecuteEngineManager() {
