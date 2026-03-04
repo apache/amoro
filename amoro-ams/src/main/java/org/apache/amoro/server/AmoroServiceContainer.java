@@ -233,26 +233,22 @@ public class AmoroServiceContainer {
   }
 
   public void startOptimizingService() throws Exception {
-    DefaultTableRuntimeFactory defaultRuntimeFactory = new DefaultTableRuntimeFactory();
-
-    tableService = new DefaultTableService(serviceConfig, catalogManager, defaultRuntimeFactory);
-
-    optimizingService =
-        new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
-
     // Load process factories and build action coordinators from default table runtime factory.
     TableProcessFactoryManager tableProcessFactoryManager = new TableProcessFactoryManager();
     tableProcessFactoryManager.initialize();
     List<ProcessFactory> processFactories = tableProcessFactoryManager.installedPlugins();
 
+    DefaultTableRuntimeFactory defaultRuntimeFactory = new DefaultTableRuntimeFactory();
     defaultRuntimeFactory.initialize(processFactories);
 
     List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
-
     ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
 
+    tableService = new DefaultTableService(serviceConfig, catalogManager, defaultRuntimeFactory);
     processService =
         new ProcessService(serviceConfig, tableService, actionCoordinators, executeEngineManager);
+    optimizingService =
+        new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
