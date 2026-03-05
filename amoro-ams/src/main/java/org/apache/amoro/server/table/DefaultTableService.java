@@ -44,6 +44,7 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.amoro.table.TableRuntimeFactory;
 import org.apache.amoro.table.TableSummary;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.slf4j.Logger;
@@ -85,19 +86,19 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private final CompletableFuture<Boolean> initialized = new CompletableFuture<>();
   private final Configurations serverConfiguration;
   private final CatalogManager catalogManager;
-  private final TableRuntimeFactoryManager tableRuntimeFactoryManager;
+  private final TableRuntimeFactory tableRuntimeFactory;
   private RuntimeHandlerChain headHandler;
   private ExecutorService tableExplorerExecutors;
 
   public DefaultTableService(
       Configurations configuration,
       CatalogManager catalogManager,
-      TableRuntimeFactoryManager tableRuntimeFactoryManager) {
+      TableRuntimeFactory tableRuntimeFactory) {
     this.catalogManager = catalogManager;
     this.externalCatalogRefreshingInterval =
         configuration.get(AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL).toMillis();
     this.serverConfiguration = configuration;
-    this.tableRuntimeFactoryManager = tableRuntimeFactoryManager;
+    this.tableRuntimeFactory = tableRuntimeFactory;
   }
 
   @Override
@@ -515,21 +516,19 @@ public class DefaultTableService extends PersistentBase implements TableService 
       ServerTableIdentifier identifier,
       TableRuntimeMeta runtimeMeta,
       List<TableRuntimeState> restoredStates) {
-    return tableRuntimeFactoryManager.installedPlugins().stream()
-        .map(f -> f.accept(identifier, runtimeMeta.getTableConfig()))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .findFirst()
-        .map(
-            creator -> {
-              DefaultTableRuntimeStore store =
-                  new DefaultTableRuntimeStore(
-                      identifier, runtimeMeta, creator.requiredStateKeys(), restoredStates);
-              store.setRuntimeHandler(this);
-              TableRuntime tableRuntime = creator.create(store);
-              store.setTableRuntime(tableRuntime);
-              return tableRuntime;
-            });
+    Optional<TableRuntimeFactory.TableRuntimeCreator> creatorOpt =
+        tableRuntimeFactory.accept(identifier, runtimeMeta.getTableConfig());
+
+    return creatorOpt.map(
+        creator -> {
+          DefaultTableRuntimeStore store =
+              new DefaultTableRuntimeStore(
+                  identifier, runtimeMeta, creator.requiredStateKeys(), restoredStates);
+          store.setRuntimeHandler(this);
+          TableRuntime tableRuntime = creator.create(store);
+          store.setTableRuntime(tableRuntime);
+          return tableRuntime;
+        });
   }
 
   private void revertTableRuntimeAdded(

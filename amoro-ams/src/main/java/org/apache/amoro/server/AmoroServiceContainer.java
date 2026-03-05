@@ -32,6 +32,8 @@ import org.apache.amoro.config.ConfigurationException;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.shade.utils.ConfigShadeUtils;
 import org.apache.amoro.exception.AmoroRuntimeException;
+import org.apache.amoro.process.ActionCoordinator;
+import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.dashboard.DashboardServer;
@@ -47,16 +49,18 @@ import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.process.ProcessService;
+import org.apache.amoro.server.process.ProcessService.ExecuteEngineManager;
+import org.apache.amoro.server.process.TableProcessFactoryManager;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.DefaultOptimizerManager;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.scheduler.inline.InlineTableExecutors;
 import org.apache.amoro.server.table.DefaultTableManager;
+import org.apache.amoro.server.table.DefaultTableRuntimeFactory;
 import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableManager;
-import org.apache.amoro.server.table.TableRuntimeFactoryManager;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.terminal.TerminalManager;
 import org.apache.amoro.server.utils.ThriftServiceProxy;
@@ -229,16 +233,21 @@ public class AmoroServiceContainer {
   }
 
   public void startOptimizingService() throws Exception {
-    TableRuntimeFactoryManager tableRuntimeFactoryManager = new TableRuntimeFactoryManager();
-    tableRuntimeFactoryManager.initialize();
+    // Load process factories and build action coordinators from default table runtime factory.
+    TableProcessFactoryManager tableProcessFactoryManager = new TableProcessFactoryManager();
+    tableProcessFactoryManager.initialize();
+    List<ProcessFactory> processFactories = tableProcessFactoryManager.installedPlugins();
 
-    tableService =
-        new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
+    DefaultTableRuntimeFactory defaultRuntimeFactory = new DefaultTableRuntimeFactory();
+    defaultRuntimeFactory.initialize(processFactories);
 
+    List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
+    ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
+
+    tableService = new DefaultTableService(serviceConfig, catalogManager, defaultRuntimeFactory);
+    processService = new ProcessService(tableService, actionCoordinators, executeEngineManager);
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
-
-    processService = new ProcessService(serviceConfig, tableService);
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
