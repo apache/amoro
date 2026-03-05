@@ -23,8 +23,8 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
-import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.process.ProcessEvent;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
@@ -63,8 +63,8 @@ public class ProcessService extends PersistentBase {
       new ConcurrentHashMap<>();
   private final Map<EngineType, ExecuteEngine> executeEngines = new ConcurrentHashMap<>();
 
-  private final ActionCoordinatorManager actionCoordinatorManager;
   private final ExecuteEngineManager executeEngineManager;
+  private final List<ActionCoordinator> actionCoordinatorList;
   private final ProcessRuntimeHandler tableRuntimeHandler = new ProcessRuntimeHandler();
   private final ThreadPoolExecutor processExecutionPool =
       new ThreadPoolExecutor(10, 100, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
@@ -72,17 +72,16 @@ public class ProcessService extends PersistentBase {
   private final Map<ServerTableIdentifier, Map<Long, TableProcess>> activeTableProcess =
       new ConcurrentHashMap<>();
 
-  public ProcessService(Configurations serviceConfig, TableService tableService) {
-    this(serviceConfig, tableService, new ActionCoordinatorManager(), new ExecuteEngineManager());
+  public ProcessService(TableService tableService) {
+    this(tableService, Collections.emptyList(), new ExecuteEngineManager());
   }
 
   public ProcessService(
-      Configurations serviceConfig,
       TableService tableService,
-      ActionCoordinatorManager actionCoordinatorManager,
+      List<ActionCoordinator> actionCoordinators,
       ExecuteEngineManager executeEngineManager) {
     this.tableService = tableService;
-    this.actionCoordinatorManager = actionCoordinatorManager;
+    this.actionCoordinatorList = actionCoordinators;
     this.executeEngineManager = executeEngineManager;
   }
 
@@ -147,7 +146,6 @@ public class ProcessService extends PersistentBase {
 
   /** Dispose the service, shutdown engines and clear active processes. */
   public void dispose() {
-    actionCoordinatorManager.close();
     executeEngineManager.close();
     processExecutionPool.shutdown();
     activeTableProcess.clear();
@@ -155,16 +153,12 @@ public class ProcessService extends PersistentBase {
 
   private void initialize(List<TableRuntime> tableRuntimes) {
     LOG.info("Initializing process service");
-    actionCoordinatorManager.initialize();
-    actionCoordinatorManager
-        .installedPlugins()
-        .forEach(
-            actionCoordinator -> {
-              actionCoordinators.put(
-                  actionCoordinator.action().getName(),
-                  new ActionCoordinatorScheduler(
-                      actionCoordinator, tableService, ProcessService.this));
-            });
+    // Pre-configured coordinators built from TableRuntimeFactory / ProcessFactory
+    for (ActionCoordinator actionCoordinator : actionCoordinatorList) {
+      actionCoordinators.put(
+          actionCoordinator.action().getName(),
+          new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this));
+    }
     executeEngineManager.initialize();
     executeEngineManager
         .installedPlugins()
@@ -242,7 +236,7 @@ public class ProcessService extends PersistentBase {
                     "Regular Retry.",
                     process.getProcessParameters(),
                     process.getSummary());
-            scheduler.retry(process);
+            executeOrTraceProcess(process);
           } else {
             untrackTableProcessInstance(
                 process.getTableRuntime().getTableIdentifier(), process.getId());
@@ -549,13 +543,6 @@ public class ProcessService extends PersistentBase {
     @Override
     protected void doDispose() {
       // TODO: dispose
-    }
-  }
-
-  /** Manager for {@link ActionCoordinator} plugins. */
-  public static class ActionCoordinatorManager extends AbstractPluginManager<ActionCoordinator> {
-    public ActionCoordinatorManager() {
-      super("action-coordinators");
     }
   }
 

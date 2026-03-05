@@ -490,16 +490,17 @@ public class DefaultOptimizingService extends StatedPersistentBase
           OptimizerKeepingTask keepingTask = suspendingQueue.take();
           String token = keepingTask.getToken();
           boolean isExpired = !keepingTask.tryKeeping();
+          if (isExpired) {
+            LOG.info("Optimizer {} has been expired, unregister it", keepingTask.getOptimizer());
+            unregisterOptimizer(token);
+          }
           Optional.ofNullable(keepingTask.getQueue())
               .ifPresent(
                   queue ->
                       queue
                           .collectTasks(buildSuspendingPredication(authOptimizers.keySet()))
                           .forEach(task -> retryTask(task, queue)));
-          if (isExpired) {
-            LOG.info("Optimizer {} has been expired, unregister it", keepingTask.getOptimizer());
-            unregisterOptimizer(token);
-          } else {
+          if (!isExpired) {
             LOG.debug("Optimizer {} is being touched, keep it", keepingTask.getOptimizer());
             keepInTouch(keepingTask.getOptimizer());
           }

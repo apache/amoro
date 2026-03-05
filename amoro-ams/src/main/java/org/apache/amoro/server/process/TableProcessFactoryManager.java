@@ -16,30 +16,21 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.table;
+package org.apache.amoro.server.process;
 
-import org.apache.amoro.ServerTableIdentifier;
-import org.apache.amoro.TableRuntime;
-import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.process.ProcessFactory;
+import org.apache.amoro.server.manager.AbstractPluginManager;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+/**
+ * Plugin manager for {@link ProcessFactory} implementations.
+ *
+ * <p>Process factories are configured via {@code plugins/process-factories.yaml} and are
+ * responsible for describing how different {@code TableFormat} / {@code Action} combinations should
+ * be scheduled and executed.
+ */
+public class TableProcessFactoryManager extends AbstractPluginManager<ProcessFactory> {
 
-/** Table runtime factory. */
-public interface TableRuntimeFactory {
-
-  List<ActionCoordinator> supportedCoordinators();
-
-  void initialize(List<ProcessFactory> factories);
-
-  Optional<TableRuntimeCreator> accept(
-      ServerTableIdentifier tableIdentifier, Map<String, String> tableProperties);
-
-  interface TableRuntimeCreator {
-    List<StateKey<?>> requiredStateKeys();
-
-    TableRuntime create(TableRuntimeStore store);
+  public TableProcessFactoryManager() {
+    super("process-factories");
   }
 }

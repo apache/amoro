@@ -327,7 +327,7 @@ public class TableEntriesScan {
             .map(table.specs()::get)
             .orElseGet(
                 () -> {
-                  LOG.info("No specId found for the current fileRecord[%S]", filePath);
+                  LOG.warn("No specId found for the current fileRecord[{}]", filePath);
                   return table.spec();
                 });
 
@@ -359,7 +359,7 @@ public class TableEntriesScan {
             .map(table.specs()::get)
             .orElseGet(
                 () -> {
-                  LOG.info("No specId found for the current fileRecord[%S]", filePath);
+                  LOG.warn("No specId found for the current fileRecord[{}]", filePath);
                   return table.spec();
                 });
 

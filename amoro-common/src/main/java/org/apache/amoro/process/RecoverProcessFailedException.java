@@ -16,15 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.process;
 
-import org.apache.amoro.server.manager.AbstractPluginManager;
-import org.apache.amoro.table.TableRuntimeFactory;
-
-public class TableRuntimeFactoryManager extends AbstractPluginManager<TableRuntimeFactory> {
-  public static final String PLUGIN_CATEGORY = "table-runtime-factories";
-
-  public TableRuntimeFactoryManager() {
-    super(PLUGIN_CATEGORY);
+/** Exception thrown when a process recovery fails. */
+public class RecoverProcessFailedException extends RuntimeException {
+  public RecoverProcessFailedException(String message) {
+    super(message);
   }
 }

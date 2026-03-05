@@ -22,6 +22,8 @@ import { message } from 'ant-design-vue'
 import useStore from '@/store'
 import router from '@/router'
 
+let loginTipShown = false
+
 // http://10.196.98.23:19111/
 export const baseURL = import.meta.env.PROD ? '' : (import.meta.env.MODE === 'mock' ? '/mock' : '/')
 
@@ -161,8 +163,10 @@ const request: any = function (options: CustomAxiosRequestConfig) {
         store.updateUserInfo({
           userName: '',
         })
-        if (requestConfig.handleError) {
+        const currentPath = router.currentRoute.value.path
+        if (requestConfig.handleError && currentPath !== '/login' && !loginTipShown) {
           message.error(msg || 'need login')
+          loginTipShown = true
         }
         return router.push({
           path: '/login',
@@ -258,5 +262,9 @@ export function downloadWithHeader(url: string, fileName: string = 'download', _
     })
 }
 
+
+export function resetLoginTip() {
+  loginTipShown = false
+}
 
 export default request as WrapperRequest
