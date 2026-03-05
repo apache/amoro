@@ -48,7 +48,6 @@ import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
-import org.apache.amoro.server.process.AmsProcessContext;
 import org.apache.amoro.server.process.ProcessService;
 import org.apache.amoro.server.process.ProcessService.ExecuteEngineManager;
 import org.apache.amoro.server.process.TableProcessFactoryManager;
@@ -234,7 +233,6 @@ public class AmoroServiceContainer {
   }
 
   public void startOptimizingService() throws Exception {
-    AmsProcessContext.initServiceConfig(serviceConfig);
 
     // Load process factories and build action coordinators from default table runtime factory.
     TableProcessFactoryManager tableProcessFactoryManager = new TableProcessFactoryManager();
@@ -248,7 +246,6 @@ public class AmoroServiceContainer {
     ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
 
     tableService = new DefaultTableService(serviceConfig, catalogManager, defaultRuntimeFactory);
-    AmsProcessContext.initTableService(tableService);
     processService = new ProcessService(tableService, actionCoordinators, executeEngineManager);
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);

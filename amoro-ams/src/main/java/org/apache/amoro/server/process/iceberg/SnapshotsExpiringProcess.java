@@ -25,10 +25,8 @@ import org.apache.amoro.process.LocalProcess;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
-import org.apache.amoro.server.process.AmsProcessContext;
 import org.apache.amoro.server.process.executor.LocalExecutionEngine;
 import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,11 +48,7 @@ public class SnapshotsExpiringProcess extends TableProcess implements LocalProce
   @Override
   public void run() {
     try {
-      TableService tableService = AmsProcessContext.tableService();
-      if (tableService == null) {
-        throw new IllegalStateException("TableService is not initialized");
-      }
-      AmoroTable<?> amoroTable = tableService.loadTable(tableRuntime.getTableIdentifier());
+      AmoroTable<?> amoroTable = tableRuntime.loadTable();
       TableMaintainer tableMaintainer = TableMaintainers.create(amoroTable, tableRuntime);
       tableMaintainer.expireSnapshots();
     } catch (Throwable t) {

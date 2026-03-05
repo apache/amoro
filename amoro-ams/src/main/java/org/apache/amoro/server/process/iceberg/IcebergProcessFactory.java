@@ -22,14 +22,12 @@ import org.apache.amoro.Action;
 import org.apache.amoro.IcebergActions;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
-import org.apache.amoro.config.Configurations;
+import org.apache.amoro.config.ConfigHelpers;
 import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.process.ProcessTriggerStrategy;
 import org.apache.amoro.process.RecoverProcessFailedException;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
-import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.server.process.AmsProcessContext;
 import org.apache.amoro.server.process.DefaultTableProcessStore;
 import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.process.executor.LocalExecutionEngine;
@@ -50,6 +48,10 @@ public class IcebergProcessFactory implements ProcessFactory {
 
   private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator();
 
+  private boolean expireSnapshotsEnabled = true;
+  private int expireSnapshotsThreadCount = 10;
+  private Duration expireSnapshotsInterval = Duration.ofHours(1);
+
   @Override
   public Map<TableFormat, Set<Action>> supportedActions() {
     Set<Action> actions = new HashSet<>();
@@ -64,16 +66,9 @@ public class IcebergProcessFactory implements ProcessFactory {
 
   @Override
   public ProcessTriggerStrategy triggerStrategy(TableFormat format, Action action) {
-    Configurations config = AmsProcessContext.serviceConfig();
-    if (config == null) {
-      return ProcessTriggerStrategy.triggerAtFixRate(Duration.ofHours(1));
-    }
-
     if (IcebergActions.EXPIRE_SNAPSHOTS.equals(action)) {
-      Duration interval = config.get(AmoroManagementConf.EXPIRE_SNAPSHOTS_INTERVAL);
-      int parallelism =
-          Math.max(config.getInteger(AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT), 1);
-      return new ProcessTriggerStrategy(interval, false, parallelism);
+      return new ProcessTriggerStrategy(
+          expireSnapshotsInterval, false, Math.max(expireSnapshotsThreadCount, 1));
     }
 
     return ProcessTriggerStrategy.METADATA_TRIGGER;
@@ -85,11 +80,7 @@ public class IcebergProcessFactory implements ProcessFactory {
       return true;
     }
 
-    Configurations config = AmsProcessContext.serviceConfig();
-    boolean globallyEnabled =
-        config == null || config.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED);
-
-    return globallyEnabled && tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
+    return expireSnapshotsEnabled && tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
   }
 
   @Override
@@ -128,7 +119,47 @@ public class IcebergProcessFactory implements ProcessFactory {
   }
 
   @Override
-  public void open(Map<String, String> properties) {}
+  public void open(Map<String, String> properties) {
+    if (properties == null || properties.isEmpty()) {
+      return;
+    }
+
+    expireSnapshotsEnabled =
+        parseBoolean(properties.get("expire-snapshots.enabled"), expireSnapshotsEnabled);
+    expireSnapshotsThreadCount =
+        parseInt(properties.get("expire-snapshots.thread-count"), expireSnapshotsThreadCount);
+    expireSnapshotsInterval =
+        parseDuration(properties.get("expire-snapshots.interval"), expireSnapshotsInterval);
+  }
+
+  private boolean parseBoolean(String value, boolean defaultValue) {
+    if (value == null) {
+      return defaultValue;
+    }
+    return Boolean.parseBoolean(value.trim());
+  }
+
+  private int parseInt(String value, int defaultValue) {
+    if (value == null) {
+      return defaultValue;
+    }
+    try {
+      return Integer.parseInt(value.trim());
+    } catch (NumberFormatException e) {
+      return defaultValue;
+    }
+  }
+
+  private Duration parseDuration(String value, Duration defaultValue) {
+    if (value == null) {
+      return defaultValue;
+    }
+    try {
+      return ConfigHelpers.TimeUtils.parseDuration(value);
+    } catch (Exception e) {
+      return defaultValue;
+    }
+  }
 
   @Override
   public void close() {}

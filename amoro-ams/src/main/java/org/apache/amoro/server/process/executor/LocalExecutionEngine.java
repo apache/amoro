@@ -18,12 +18,9 @@
 
 package org.apache.amoro.server.process.executor;
 
-import org.apache.amoro.config.Configurations;
 import org.apache.amoro.process.LocalProcess;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.server.AmoroManagementConf;
-import org.apache.amoro.server.process.AmsProcessContext;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.util.Map;
@@ -139,17 +136,16 @@ public class LocalExecutionEngine implements ExecuteEngine {
 
   @Override
   public void open(Map<String, String> properties) {
-    int defaultSize = parseInt(properties.get("default.thread-count"), 10);
+    String defaultSizeValue = properties == null ? null : properties.get("default.thread-count");
+    int defaultSize = parseInt(defaultSizeValue, 10);
     pools.put(DEFAULT_POOL, newFixedPool(DEFAULT_POOL, defaultSize));
 
-    Configurations config = AmsProcessContext.serviceConfig();
-    if (config != null) {
-      int snapshotsExpiringSize =
-          config.getInteger(AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT);
-      pools.put(
-          SNAPSHOTS_EXPIRING_POOL,
-          newFixedPool(SNAPSHOTS_EXPIRING_POOL, Math.max(snapshotsExpiringSize, 1)));
-    }
+    String snapshotsExpiringSizeValue =
+        properties == null ? null : properties.get("snapshots-expiring.thread-count");
+    int snapshotsExpiringSize = parseInt(snapshotsExpiringSizeValue, defaultSize);
+    pools.put(
+        SNAPSHOTS_EXPIRING_POOL,
+        newFixedPool(SNAPSHOTS_EXPIRING_POOL, Math.max(snapshotsExpiringSize, 1)));
   }
 
   @Override

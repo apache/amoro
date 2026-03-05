@@ -19,6 +19,7 @@
 package org.apache.amoro.server.table;
 
 import org.apache.amoro.Action;
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.process.TableProcessStore;
@@ -38,6 +39,21 @@ public abstract class AbstractTableRuntime extends PersistentBase
 
   private final TableRuntimeStore store;
   private final Map<Action, TableProcessContainer> processContainerMap = Maps.newConcurrentMap();
+
+  private volatile TableService tableService;
+
+  void bindTableService(TableService tableService) {
+    this.tableService = tableService;
+  }
+
+  @Override
+  public AmoroTable<?> loadTable() {
+    TableService current = tableService;
+    if (current == null) {
+      throw new IllegalStateException("TableService is not bound for " + getTableIdentifier());
+    }
+    return current.loadTable(getTableIdentifier());
+  }
 
   protected AbstractTableRuntime(TableRuntimeStore store) {
     this.store = store;
