@@ -122,7 +122,9 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
       // 2) Extra states from all process factories for this format (if any)
       Map<Action, ProcessFactory> byAction = factoriesByFormat.get(format);
       if (byAction != null) {
-        byAction
+        Map<String, ProcessFactory> deFactories = new HashMap<>();
+        byAction.forEach((a, f) -> deFactories.putIfAbsent(f.name(), f));
+        deFactories
             .values()
             .forEach(
                 factory ->
