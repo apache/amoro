@@ -29,6 +29,7 @@ import org.apache.amoro.table.StateKey;
 import org.apache.amoro.table.TableRuntimeFactory;
 import org.apache.amoro.table.TableRuntimeStore;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,7 +54,7 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
 
   @Override
   public List<ActionCoordinator> supportedCoordinators() {
-    return supportedCoordinators;
+    return Collections.unmodifiableList(supportedCoordinators);
   }
 
   @Override
@@ -127,7 +128,18 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
                 factory ->
                     factory
                         .requiredStates()
-                        .forEach(stateKey -> merged.put(stateKey.getKey(), stateKey)));
+                        .forEach(
+                            stateKey -> {
+                              if (merged.containsKey(stateKey.getKey())) {
+                                throw new IllegalStateException(
+                                    "Failed to initialize table runtime creator, due to stateKey: "
+                                        + stateKey.getKey()
+                                        + " declared by process-factory: "
+                                        + factory.name()
+                                        + " has already been defined.");
+                              }
+                              merged.put(stateKey.getKey(), stateKey);
+                            }));
       }
 
       return Lists.newArrayList(merged.values());

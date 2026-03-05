@@ -23,7 +23,6 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
-import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.process.ProcessEvent;
@@ -73,12 +72,11 @@ public class ProcessService extends PersistentBase {
   private final Map<ServerTableIdentifier, Map<Long, TableProcess>> activeTableProcess =
       new ConcurrentHashMap<>();
 
-  public ProcessService(Configurations serviceConfig, TableService tableService) {
-    this(serviceConfig, tableService, Collections.emptyList(), new ExecuteEngineManager());
+  public ProcessService(TableService tableService) {
+    this(tableService, Collections.emptyList(), new ExecuteEngineManager());
   }
 
   public ProcessService(
-      Configurations serviceConfig,
       TableService tableService,
       List<ActionCoordinator> actionCoordinators,
       ExecuteEngineManager executeEngineManager) {

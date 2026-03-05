@@ -245,8 +245,7 @@ public class AmoroServiceContainer {
     ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
 
     tableService = new DefaultTableService(serviceConfig, catalogManager, defaultRuntimeFactory);
-    processService =
-        new ProcessService(serviceConfig, tableService, actionCoordinators, executeEngineManager);
+    processService = new ProcessService(tableService, actionCoordinators, executeEngineManager);
     optimizingService =
         new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
 
