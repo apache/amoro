@@ -1,0 +1,147 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+name: Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version (e.g., 0.9.0)'
+        required: true
+        type: string
+      skip_gpg:
+        description: 'Skip GPG signing (for testing)'
+        required: false
+        default: false
+        type: boolean
+      skip_deploy:
+        description: 'Skip Maven deploy (for testing)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-source:
+    name: Build Source Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Setup GPG (if not skipped)
+        if: ${{ inputs.skip_gpg != true }}
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --batch
+          echo "GPG_PASSPHRASE=${{ secrets.GPG_PASSPHRASE }}" >> $GITHUB_ENV
+
+      - name: Build source release
+        run: |
+          cd tools
+          RELEASE_VERSION=${{ inputs.release_version }} \
+          SKIP_GPG=${{ inputs.skip_gpg }} \
+          bash ./releasing/create_source_release.sh
+
+      - name: Upload source artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-release
+          path: tools/releasing/release/apache-amoro-*-src.tar.gz*
+          retention-days: 90
+
+  build-binary:
+    name: Build Binary Release (${{ matrix.hadoop }})
+    needs: build-source
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        hadoop: [hadoop2, hadoop3]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Download source artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: source-release
+          path: tools/releasing/release
+
+      - name: Setup GPG (if not skipped)
+        if: ${{ inputs.skip_gpg != true }}
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --batch
+          echo "GPG_PASSPHRASE=${{ secrets.GPG_PASSPHRASE }}" >> $GITHUB_ENV
+
+      - name: Build binary release
+        run: |
+          cd tools
+          RELEASE_VERSION=${{ inputs.release_version }} \
+          SKIP_GPG=${{ inputs.skip_gpg }} \
+          HADOOP_PROFILE=${{ matrix.hadoop }} \
+          bash ./releasing/create_binary_release.sh
+
+      - name: Upload binary artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-release-${{ matrix.hadoop }}
+          path: tools/releasing/release/apache-amoro-*-bin-${{ matrix.hadoop }}.tar.gz*
+          retention-days: 90
+
+  deploy-maven:
+    name: Deploy to Maven Staging
+    needs: build-source
+    runs-on: ubuntu-latest
+    if: ${{ inputs.skip_deploy != true && startsWith(github.repository, 'apache/') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          server-id: apache.releases.https
+          server-username: NEXUS_USER
+          server-password: NEXUS_PW
+
+      - name: Deploy to staging
+        env:
+          NEXUS_USER: ${{ secrets.NEXUS_USER }}
+          NEXUS_PW: ${{ secrets.NEXUS_PASSWORD }}
+        run: |
+          cd tools
+          RELEASE_VERSION=${{ inputs.release_version }} \
+          bash ./releasing/deploy_staging_jars.sh

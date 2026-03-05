@@ -22,6 +22,7 @@
 ##
 PROJECT_HOME=$(cd "$(dirname "$0")"/../.. || exit; pwd)
 MVN="${PROJECT_HOME}/mvnw"
+SKIP_GPG=${SKIP_GPG:-false}
 
 if [ -z "${RELEASE_VERSION:-}" ]; then
     echo "RELEASE_VERSION was not set."
@@ -81,7 +82,12 @@ mkdir -p amoro-$RELEASE_VERSION/amoro-ams/target/classes/amoro
 cp amoro-ams/target/classes/amoro/git.properties amoro-$RELEASE_VERSION/amoro-ams/target/classes/amoro/
 
 tar czf ${RELEASE_DIR}/apache-amoro-${RELEASE_VERSION}-src.tar.gz amoro-$RELEASE_VERSION
-gpg --armor --detach-sig ${RELEASE_DIR}/apache-amoro-$RELEASE_VERSION-src.tar.gz
+
+# Sign the tarball if GPG is not skipped
+if [ "$SKIP_GPG" == "false" ] ; then
+  gpg --armor --detach-sig ${RELEASE_DIR}/apache-amoro-$RELEASE_VERSION-src.tar.gz
+fi
+
 cd ${RELEASE_DIR}
 $SHASUM apache-amoro-$RELEASE_VERSION-src.tar.gz > apache-amoro-$RELEASE_VERSION-src.tar.gz.sha512
 
