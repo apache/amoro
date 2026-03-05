@@ -25,7 +25,6 @@ import org.apache.amoro.server.table.TableService;
 public class InlineTableExecutors {
 
   private static final InlineTableExecutors instance = new InlineTableExecutors();
-  private SnapshotsExpiringExecutor snapshotsExpiringExecutor;
   private TableRuntimeRefreshExecutor tableRefreshingExecutor;
   private OrphanFilesCleaningExecutor orphanFilesCleaningExecutor;
   private DanglingDeleteFilesCleaningExecutor danglingDeleteFilesCleaningExecutor;
@@ -41,13 +40,6 @@ public class InlineTableExecutors {
   }
 
   public void setup(TableService tableService, Configurations conf) {
-    if (conf.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
-      this.snapshotsExpiringExecutor =
-          new SnapshotsExpiringExecutor(
-              tableService,
-              conf.getInteger(AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT),
-              conf.get(AmoroManagementConf.EXPIRE_SNAPSHOTS_INTERVAL));
-    }
     if (conf.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
       this.orphanFilesCleaningExecutor =
           new OrphanFilesCleaningExecutor(
@@ -96,10 +88,6 @@ public class InlineTableExecutors {
               conf.getInteger(AmoroManagementConf.DATA_EXPIRATION_THREAD_COUNT),
               conf.get(AmoroManagementConf.DATA_EXPIRATION_INTERVAL));
     }
-  }
-
-  public SnapshotsExpiringExecutor getSnapshotsExpiringExecutor() {
-    return snapshotsExpiringExecutor;
   }
 
   public TableRuntimeRefreshExecutor getTableRefreshingExecutor() {

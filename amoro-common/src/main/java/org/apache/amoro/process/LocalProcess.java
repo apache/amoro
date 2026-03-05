@@ -16,17 +16,25 @@
  * limitations under the License.
  */
 
-package org.apache.amoro;
+package org.apache.amoro.process;
 
-public class IcebergActions {
+/**
+ * A {@link TableProcess} that can be executed locally by a thread pool.
+ *
+ * <p>Local processes are executed by {@code ExecuteEngine} implementations which run the logic
+ * inside the AMS JVM.
+ */
+public interface LocalProcess extends AmoroProcess {
 
-  private static final TableFormat[] DEFAULT_FORMATS =
-      new TableFormat[] {TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE};
+  /** Execute process logic locally. */
+  void run();
 
-  public static final Action SYSTEM = Action.register("system");
-  public static final Action REWRITE = Action.register("rewrite");
-  public static final Action DELETE_ORPHANS = Action.register("delete-orphans");
-  public static final Action SYNC_HIVE = Action.register("sync-hive");
-  public static final Action EXPIRE_DATA = Action.register("expire-data");
-  public static final Action EXPIRE_SNAPSHOTS = Action.register("expire-snapshots");
+  /**
+   * Tag used by local execution engines to select a thread pool.
+   *
+   * @return pool tag
+   */
+  default String tag() {
+    return "default";
+  }
 }

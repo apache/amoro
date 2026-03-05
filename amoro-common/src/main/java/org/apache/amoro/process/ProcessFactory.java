@@ -49,6 +49,11 @@ public interface ProcessFactory extends ActivePlugin {
     return ProcessTriggerStrategy.METADATA_TRIGGER;
   }
 
+  /** Whether scheduling is enabled for the given table runtime and action. */
+  default boolean enabled(TableRuntime tableRuntime, Action action) {
+    return true;
+  }
+
   /**
    * Try trigger a process for the action.
    *

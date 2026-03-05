@@ -78,5 +78,14 @@ public
 resources
 !javadoc/resources
 
+# Maven resources directories should be tracked
+!*/src/main/resources/
+!*/src/main/resources/**
+!*/src/test/resources/
+!*/src/test/resources/**
+
+# dashboard static resources
+amoro-web/src/main/resources/static/
+
 !dist/src/main/amoro-bin/bin/
 !dist/src/main/amoro-bin/conf/
