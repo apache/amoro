@@ -95,7 +95,7 @@ public class DefaultActionCoordinator implements ActionCoordinator {
 
   @Override
   public boolean enabled(TableRuntime tableRuntime) {
-    return formatSupported(tableRuntime.getFormat()) && factory.enabled(tableRuntime, action);
+    return formatSupported(tableRuntime.getFormat());
   }
 
   @Override

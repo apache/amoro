@@ -75,17 +75,10 @@ public class IcebergProcessFactory implements ProcessFactory {
   }
 
   @Override
-  public boolean enabled(TableRuntime tableRuntime, Action action) {
-    if (!IcebergActions.EXPIRE_SNAPSHOTS.equals(action)) {
-      return true;
-    }
-
-    return expireSnapshotsEnabled && tableRuntime.getTableConfiguration().isExpireSnapshotEnabled();
-  }
-
-  @Override
   public Optional<TableProcess> trigger(TableRuntime tableRuntime, Action action) {
-    if (!enabled(tableRuntime, action)) {
+    if (IcebergActions.EXPIRE_SNAPSHOTS.equals(action)
+        && (!expireSnapshotsEnabled
+            || !tableRuntime.getTableConfiguration().isExpireSnapshotEnabled())) {
       return Optional.empty();
     }
 
