@@ -22,6 +22,12 @@ import request from '@/utils/request'
 export function getCatalogsTypes() {
   return request.get('api/ams/v1/catalogs/metastore/types')
 }
+export function getMetastoreTableFormats(type: string) {
+  return request.get(`api/ams/v1/catalogs/metastore/${type}/table-formats`)
+}
+export function getMetastoreStorageTypes(type: string) {
+  return request.get(`api/ams/v1/catalogs/metastore/${type}/storage-types`)
+}
 export function getCatalogsSetting(catalogName: string) {
   return request.get(`api/ams/v1/catalogs/${catalogName}`)
 }

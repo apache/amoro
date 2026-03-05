@@ -27,6 +27,7 @@ import { debugResultBgcMap } from '@/types/common.type'
 import { executeSql, getExampleSqlCode, getJobDebugResult, getLastDebugInfo, getLogsResult, getShortcutsList, stopSql } from '@/services/terminal.service'
 import { getCatalogList } from '@/services/table.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
+import { usePageScroll } from '@/hooks/usePageScroll'
 
 interface ISessionInfo {
   sessionId: string
@@ -50,6 +51,7 @@ export default defineComponent({
     const loading = ref<boolean>(false)
     const sqlEditorRef = ref<any>(null)
     const sqlLogRef = ref<any>(null)
+    const { pageScrollRef } = usePageScroll()
     const readOnly = ref<boolean>(false)
     const sqlSource = ref<string>('')
     const showDebug = ref<boolean>(false)
@@ -339,133 +341,140 @@ export default defineComponent({
       sqlResultHeight,
       dragMounseDown,
       changeUseCatalog,
-    }
-  },
-})
+      pageScrollRef,
+     }
+   },
+ })
 </script>
 
 <template>
-  <div class="console-wrap">
-    <div class="console-content" :class="{ fullscreen }">
-      <div :style="{ height: `${sqlResultHeight}px` }" class="sql-wrap">
-        <div class="sql-block">
-          <div class="top-ops g-flex-jsb">
-            <div class="title-left g-flex-ac">
-              <div class="select-catalog g-mr-12">
-                <span class="label">{{ $t('use') }}</span>
-                <a-select
-                  v-model:value="curCatalog" style="width: 200px" :options="catalogOptions"
-                  @change="changeUseCatalog"
+  <div class="page-scroll" ref="pageScrollRef">
+    <div class="console-wrap">
+      <div class="console-content" :class="{ fullscreen }">
+        <div :style="{ height: `${sqlResultHeight}px` }" class="sql-wrap">
+          <div class="sql-block">
+            <div class="top-ops g-flex-jsb">
+              <div class="title-left g-flex-ac">
+                <div class="select-catalog g-mr-12">
+                  <span class="label">{{ $t('use') }}</span>
+                  <a-select
+                    v-model:value="curCatalog" style="width: 200px" :options="catalogOptions"
+                    @change="changeUseCatalog"
+                  />
+                </div>
+                <a-tooltip v-if="runStatus === 'Running'" :title="$t('pause')" placement="bottom">
+                  <svg-icon
+                    class-name="icon-svg" icon-class="sqlpause" class="g-mr-12" :disabled="readOnly"
+                    @click="handleIconClick('pause')"
+                  />
+                </a-tooltip>
+                <a-tooltip v-else :title="$t('run')" placement="bottom">
+                  <svg-icon
+                    class-name="icon-svg" icon-class="sqldebug" class="g-mr-12" :disabled="readOnly"
+                    @click="handleIconClick('debug')"
+                  />
+                </a-tooltip>
+                <a-tooltip :title="$t('format')" placement="bottom">
+                  <svg-icon
+                    class-name="icon-svg" :is-stroke="true" icon-class="format" :disabled="readOnly"
+                    @click="handleIconClick('format')"
+                  />
+                </a-tooltip>
+              </div>
+              <div class="title-right">
+                <a-tooltip
+                  :title="fullscreen ? $t('recovery') : $t('fullscreen')" placement="bottom"
+                  :get-popup-container="getPopupContainer"
+                >
+                  <svg-icon
+                    class-name="icon-svg" :is-stroke="true" :icon-class="fullscreen ? 'sqlinit' : 'sqlmax'"
+                    :disabled="false" class="g-ml-12" @click="handleFull"
+                  />
+                </a-tooltip>
+              </div>
+            </div>
+            <div class="sql-content">
+              <div class="sql-raw">
+                <SqlEditor
+                  ref="sqlEditorRef" v-model:value="sqlSource" :sql-value="sqlSource" :read-only="readOnly"
+                  :options="{
+                    readOnly,
+                    minimap: { enabled: false },
+                  }"
                 />
               </div>
-              <a-tooltip v-if="runStatus === 'Running'" :title="$t('pause')" placement="bottom">
-                <svg-icon
-                  class-name="icon-svg" icon-class="sqlpause" class="g-mr-12" :disabled="readOnly"
-                  @click="handleIconClick('pause')"
-                />
-              </a-tooltip>
-              <a-tooltip v-else :title="$t('run')" placement="bottom">
-                <svg-icon
-                  class-name="icon-svg" icon-class="sqldebug" class="g-mr-12" :disabled="readOnly"
-                  @click="handleIconClick('debug')"
-                />
-              </a-tooltip>
-              <a-tooltip :title="$t('format')" placement="bottom">
-                <svg-icon
-                  class-name="icon-svg" :is-stroke="true" icon-class="format" :disabled="readOnly"
-                  @click="handleIconClick('format')"
-                />
-              </a-tooltip>
-            </div>
-            <div class="title-right">
-              <a-tooltip
-                :title="fullscreen ? $t('recovery') : $t('fullscreen')" placement="bottom"
-                :get-popup-container="getPopupContainer"
-              >
-                <svg-icon
-                  class-name="icon-svg" :is-stroke="true" :icon-class="fullscreen ? 'sqlinit' : 'sqlmax'"
-                  :disabled="false" class="g-ml-12" @click="handleFull"
-                />
-              </a-tooltip>
             </div>
           </div>
-          <div class="sql-content">
-            <div class="sql-raw">
-              <SqlEditor
-                ref="sqlEditorRef" v-model:value="sqlSource" :sql-value="sqlSource" :read-only="readOnly"
-                :options="{
-                  readOnly,
-                  minimap: { enabled: false },
-                }"
-              />
+          <div class="sql-shortcuts">
+            <div class="shortcuts">
+              {{ $t('sqlShortcuts') }}
             </div>
+            <a-button
+              v-for="code in shortcuts" :key="code" type="link"
+              :disabled="runStatus === 'Running' || runStatus === 'Canceling'" class="code" @click="generateCode(code)"
+            >
+              {{
+                code
+              }}
+            </a-button>
           </div>
         </div>
-        <div class="sql-shortcuts">
-          <div class="shortcuts">
-            {{ $t('sqlShortcuts') }}
-          </div>
-          <a-button
-            v-for="code in shortcuts" :key="code" type="link"
-            :disabled="runStatus === 'Running' || runStatus === 'Canceling'" class="code" @click="generateCode(code)"
-          >
-            {{
-              code
-            }}
-          </a-button>
-        </div>
-      </div>
 
-      <div v-if="runStatus" class="run-status" :style="{ background: bgcMap[runStatus] }">
-        <template v-if="runStatus === 'Running' || runStatus === 'Canceling'">
-          <loading-outlined style="color: #1890ff" />
-        </template>
-        <template v-if="runStatus === 'Canceled' || runStatus === 'Failed'">
-          <close-circle-outlined style="color: #ff4d4f" />
-        </template>
-        <template v-if="runStatus === 'Finished'">
-          <check-circle-outlined style="color: #52c41a" />
-        </template>
-        <template v-if="runStatus === 'Created'">
-          <close-circle-outlined style="color:#333" />
-        </template>
-        <span class="g-ml-12">{{ $t(runStatus) }}</span>
-      </div>
-
-      <!-- sql result -->
-      <div
-        class="sql-result" :style="{ height: `calc(100% - ${sqlResultHeight}px)` }"
-        :class="resultFullscreen ? 'result-full' : ''"
-      >
-        <span class="drag-line" @mousedown="dragMounseDown"><svg-icon class="icon" icon-class="slide" /></span>
-        <div class="tab-operation">
-          <div class="tab">
-            <span
-              :class="{ active: operationActive === 'log' }" class="tab-item"
-              @click="operationActive = 'log'"
-            >{{ $t('log') }}</span>
-            <span
-              v-for="item in resultTabList" :key="item.id" :class="{ active: operationActive === item.id }"
-              class="tab-item" @click="operationActive = item.id"
-            >{{ item.id }}</span>
-          </div>
-        </div>
-        <div class="debug-result">
-          <SqlLog v-show="operationActive === 'log'" ref="sqlLogRef" />
-          <template v-for="item in resultTabList" :key="item.id">
-            <SqlResult v-if="operationActive === item.id" :info="item" />
+        <div v-if="runStatus" class="run-status" :style="{ background: bgcMap[runStatus] }">
+          <template v-if="runStatus === 'Running' || runStatus === 'Canceling'">
+            <loading-outlined style="color: #1890ff" />
           </template>
+          <template v-if="runStatus === 'Canceled' || runStatus === 'Failed'">
+            <close-circle-outlined style="color: #ff4d4f" />
+          </template>
+          <template v-if="runStatus === 'Finished'">
+            <check-circle-outlined style="color: #52c41a" />
+          </template>
+          <template v-if="runStatus === 'Created'">
+            <close-circle-outlined style="color:#333" />
+          </template>
+          <span class="g-ml-12">{{ $t(runStatus) }}</span>
+        </div>
+
+        <!-- sql result -->
+        <div
+          class="sql-result" :style="{ height: `calc(100% - ${sqlResultHeight}px)` }"
+          :class="resultFullscreen ? 'result-full' : ''"
+        >
+          <span class="drag-line" @mousedown="dragMounseDown"><svg-icon class="icon" icon-class="slide" /></span>
+          <div class="tab-operation">
+            <div class="tab">
+              <span
+                :class="{ active: operationActive === 'log' }" class="tab-item"
+                @click="operationActive = 'log'"
+              >{{ $t('log') }}</span>
+              <span
+                v-for="item in resultTabList" :key="item.id" :class="{ active: operationActive === item.id }"
+                class="tab-item" @click="operationActive = item.id"
+              >{{ item.id }}</span>
+            </div>
+          </div>
+          <div class="debug-result">
+            <SqlLog v-show="operationActive === 'log'" ref="sqlLogRef" />
+            <template v-for="item in resultTabList" :key="item.id">
+              <SqlResult v-if="operationActive === item.id" :info="item" />
+            </template>
+          </div>
         </div>
       </div>
+      <u-loading v-if="loading" />
     </div>
-    <u-loading v-if="loading" />
   </div>
 </template>
 
 <style lang="less" scoped>
-.console-wrap {
+.page-scroll {
   height: 100%;
-  padding: 16px 24px;
+  overflow-y: auto;
+}
+ .console-wrap {
+   height: 100%;
+   padding: 16px 24px;
 
   .console-content {
     background-color: #fff;

@@ -34,7 +34,8 @@ public class HudiCatalogFactory implements FormatCatalogFactory {
       String metastoreType,
       Map<String, String> properties,
       TableMetaStore metaStore) {
-    if (CatalogMetaProperties.CATALOG_TYPE_HADOOP.equalsIgnoreCase(metastoreType)) {
+    if (CatalogMetaProperties.CATALOG_TYPE_HADOOP.equalsIgnoreCase(metastoreType)
+        || CatalogMetaProperties.CATALOG_TYPE_FILESYSTEM.equalsIgnoreCase(metastoreType)) {
       return new HudiHadoopCatalog(catalogName, properties, metaStore);
     } else if (CatalogMetaProperties.CATALOG_TYPE_HIVE.equalsIgnoreCase(metastoreType)) {
       return new HudiHiveCatalog(catalogName, properties, metaStore);

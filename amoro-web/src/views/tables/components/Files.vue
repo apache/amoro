@@ -243,7 +243,8 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .table-partitons {
-  padding: 18px 24px;
+  padding: 18px 0;
+
   .text-active {
     color: #1890ff;
     cursor: pointer;
@@ -251,10 +252,12 @@ onMounted(() => {
 
   .filter-wrap {
     margin-bottom: 12px;
+
     .input-clear-icon {
       font-size: 12px;
     }
   }
+
   :deep(.ant-input-group-addon) {
     display: none;
   }

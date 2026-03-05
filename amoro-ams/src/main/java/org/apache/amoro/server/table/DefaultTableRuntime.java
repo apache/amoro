@@ -18,10 +18,7 @@
 
 package org.apache.amoro.server.table;
 
-import org.apache.amoro.Action;
 import org.apache.amoro.AmoroTable;
-import org.apache.amoro.SupportsProcessPlugins;
-import org.apache.amoro.TableRuntime;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
@@ -30,9 +27,7 @@ import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.TableRuntimeOptimizingState;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
-import org.apache.amoro.process.AmoroProcess;
-import org.apache.amoro.process.ProcessFactory;
-import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
@@ -47,7 +42,6 @@ import org.apache.amoro.server.table.cleanup.TableRuntimeCleanupState;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
-import org.apache.amoro.shade.zookeeper3.org.apache.curator.shaded.com.google.common.collect.Maps;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.ChangeTable;
 import org.apache.amoro.table.MixedTable;
@@ -63,13 +57,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 /** Default table runtime implementation. */
-public class DefaultTableRuntime extends AbstractTableRuntime
-    implements TableRuntime, SupportsProcessPlugins {
+public class DefaultTableRuntime extends AbstractTableRuntime {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultTableRuntime.class);
 
@@ -94,12 +84,12 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   public static final List<StateKey<?>> REQUIRED_STATES =
       Lists.newArrayList(
           OPTIMIZING_STATE_KEY, PENDING_INPUT_KEY, PROCESS_ID_KEY, CLEANUP_STATE_KEY);
-
-  private final Map<Action, TableProcessContainer> processContainerMap = Maps.newConcurrentMap();
   private final TableOptimizingMetrics optimizingMetrics;
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
   private final TableSummaryMetrics tableSummaryMetrics;
   private volatile long lastPlanTime;
+  private volatile long latestRefreshInterval = AmoroServiceConstants.INVALID_TIME;
+  private volatile boolean latestEvaluatedNeedOptimizing = true;
   private volatile OptimizingProcess optimizingProcess;
   private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
@@ -118,6 +108,9 @@ public class DefaultTableRuntime extends AbstractTableRuntime
       throw new IllegalStateException("Table runtime and processing are not matched!");
     }
     this.optimizingProcess = optimizingProcess;
+    if (this.optimizingProcess.getStatus() == ProcessStatus.SUCCESS) {
+      completeProcess(true);
+    }
   }
 
   @Override
@@ -126,39 +119,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime
     this.optimizingMetrics.register(metricRegistry);
     this.orphanFilesCleaningMetrics.register(metricRegistry);
     this.tableSummaryMetrics.register(metricRegistry);
-  }
-
-  @Override
-  public AmoroProcess trigger(Action action) {
-    return Optional.ofNullable(processContainerMap.get(action))
-        .map(container -> container.trigger(action))
-        // Define a related exception
-        .orElseThrow(() -> new IllegalArgumentException("No ProcessFactory for action " + action));
-  }
-
-  @Override
-  public void install(Action action, ProcessFactory processFactory) {
-    if (processContainerMap.putIfAbsent(action, new TableProcessContainer(processFactory))
-        != null) {
-      throw new IllegalStateException("ProcessFactory for action " + action + " already exists");
-    }
-  }
-
-  @Override
-  public boolean enabled(Action action) {
-    return processContainerMap.get(action) != null;
-  }
-
-  @Override
-  public List<TableProcessStore> getProcessStates() {
-    return processContainerMap.values().stream()
-        .flatMap(container -> container.getProcessStates().stream())
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public List<TableProcessStore> getProcessStates(Action action) {
-    return processContainerMap.get(action).getProcessStates();
   }
 
   public TableOrphanFilesCleaningMetrics getOrphanFilesCleaningMetrics() {
@@ -179,6 +139,22 @@ public class DefaultTableRuntime extends AbstractTableRuntime
 
   public void setLastPlanTime(long lastPlanTime) {
     this.lastPlanTime = lastPlanTime;
+  }
+
+  public long getLatestRefreshInterval() {
+    return latestRefreshInterval;
+  }
+
+  public void setLatestRefreshInterval(long latestRefreshInterval) {
+    this.latestRefreshInterval = latestRefreshInterval;
+  }
+
+  public boolean getLatestEvaluatedNeedOptimizing() {
+    return this.latestEvaluatedNeedOptimizing;
+  }
+
+  public void setLatestEvaluatedNeedOptimizing(boolean latestEvaluatedNeedOptimizing) {
+    this.latestEvaluatedNeedOptimizing = latestEvaluatedNeedOptimizing;
   }
 
   public OptimizingStatus getOptimizingStatus() {
@@ -309,11 +285,9 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   public DefaultTableRuntime refresh(AmoroTable<?> table) {
     Map<String, String> tableConfig = table.properties();
     TableConfiguration newConfiguration = TableConfigurations.parseTableConfig(tableConfig);
-    TableConfiguration oldConfiguration = getTableConfiguration();
-    boolean configChanged = !newConfiguration.equals(oldConfiguration);
+    String newGroupName = newConfiguration.getOptimizingConfig().getOptimizerGroup();
 
-    if (!Objects.equals(
-        getGroupName(), newConfiguration.getOptimizingConfig().getOptimizerGroup())) {
+    if (!Objects.equals(getGroupName(), newGroupName)) {
       if (optimizingProcess != null) {
         optimizingProcess.close(false);
       }
@@ -327,6 +301,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
               config.clear();
               config.putAll(tableConfig);
             })
+        .updateGroup(g -> newGroupName)
         .updateState(
             OPTIMIZING_STATE_KEY,
             s -> {
@@ -582,31 +557,5 @@ public class DefaultTableRuntime extends AbstractTableRuntime
         IcebergTableUtil.findLatestOptimizingSnapshot(table).orElse(null));
 
     return currentSnapshotId;
-  }
-
-  private class TableProcessContainer {
-    private final Lock processLock = new ReentrantLock();
-    private final ProcessFactory processFactory;
-    private final Map<Long, AmoroProcess> processMap = Maps.newConcurrentMap();
-
-    TableProcessContainer(ProcessFactory processFactory) {
-      this.processFactory = processFactory;
-    }
-
-    public AmoroProcess trigger(Action action) {
-      processLock.lock();
-      try {
-        AmoroProcess process = processFactory.create(DefaultTableRuntime.this, action);
-        process.getCompleteFuture().whenCompleted(() -> processMap.remove(process.getId()));
-        processMap.put(process.getId(), process);
-        return process;
-      } finally {
-        processLock.unlock();
-      }
-    }
-
-    public List<TableProcessStore> getProcessStates() {
-      return processMap.values().stream().map(AmoroProcess::store).collect(Collectors.toList());
-    }
   }
 }

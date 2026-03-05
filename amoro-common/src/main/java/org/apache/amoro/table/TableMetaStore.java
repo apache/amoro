@@ -127,6 +127,7 @@ public class TableMetaStore implements Serializable {
   private final boolean disableAuth;
   private final String accessKey;
   private final String secretKey;
+  private final String storageType;
 
   private transient RuntimeContext runtimeContext;
   private transient String authInformation;
@@ -146,6 +147,7 @@ public class TableMetaStore implements Serializable {
       String krbPrincipal,
       String accessKey,
       String secretKey,
+      String storageType,
       boolean disableAuth) {
     Preconditions.checkArgument(
         authMethod == null
@@ -165,6 +167,7 @@ public class TableMetaStore implements Serializable {
     this.disableAuth = disableAuth;
     this.accessKey = accessKey;
     this.secretKey = secretKey;
+    this.storageType = storageType;
   }
 
   private TableMetaStore(Configuration configuration) {
@@ -179,6 +182,7 @@ public class TableMetaStore implements Serializable {
     this.krbPrincipal = null;
     this.accessKey = null;
     this.secretKey = null;
+    this.storageType = null;
     this.runtimeContext = new RuntimeContext();
     runtimeContext.setConfiguration(configuration);
   }
@@ -217,6 +221,10 @@ public class TableMetaStore implements Serializable {
 
   public String getSecretKey() {
     return secretKey;
+  }
+
+  public String getStorageType() {
+    return storageType;
   }
 
   public boolean isKerberosAuthMethod() {
@@ -586,6 +594,7 @@ public class TableMetaStore implements Serializable {
     private String krbPrincipal;
     private String accessKey;
     private String secretKey;
+    private String storageType;
     private boolean disableAuth = true;
     private final Map<String, String> properties = Maps.newHashMap();
     private Configuration configuration;
@@ -640,11 +649,12 @@ public class TableMetaStore implements Serializable {
       return this;
     }
 
-    public Builder withAkSkAuth(String accessKey, String secretKey) {
+    public Builder withAkSkAuth(String accessKey, String secretKey, String storageType) {
       this.disableAuth = false;
       this.authMethod = AUTH_METHOD_AK_SK;
       this.accessKey = accessKey;
       this.secretKey = secretKey;
+      this.storageType = storageType;
       return this;
     }
 
@@ -785,6 +795,7 @@ public class TableMetaStore implements Serializable {
         } else if (AUTH_METHOD_AK_SK.equals(authMethod)) {
           Preconditions.checkNotNull(accessKey);
           Preconditions.checkNotNull(secretKey);
+          Preconditions.checkNotNull(storageType);
         } else if (authMethod != null) {
           throw new IllegalArgumentException("Unsupported auth method:" + authMethod);
         }
@@ -805,6 +816,7 @@ public class TableMetaStore implements Serializable {
             krbPrincipal,
             accessKey,
             secretKey,
+            storageType,
             disableAuth);
       }
     }

@@ -47,7 +47,7 @@ public interface AmoroProcess {
   SimpleFuture getCompleteFuture();
 
   /**
-   * Get {@link ProcessState} of the process
+   * Get {@link TableProcessStore} of the process
    *
    * @return the state of the process
    */

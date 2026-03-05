@@ -21,6 +21,10 @@ CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
 . $CURRENT_DIR/load-config.sh
 
+if [ -z "$OPTIMIZER_LOG_CONF_FILE" ]; then
+    export OPTIMIZER_LOG_CONF_FILE="${AMORO_CONF_DIR}/optimize/log4j2.xml"
+fi
+
 LIB_PATH=$AMORO_HOME/lib
 export CLASSPATH=$AMORO_CONF_DIR/optimize:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)
 if [ -z "$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)" ]; then

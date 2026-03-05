@@ -24,6 +24,7 @@ import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.process.TableProcessStore;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * TableRuntime is the key interface for the AMS framework to interact with the table. Typically, it
@@ -59,11 +60,19 @@ public interface TableRuntime {
   ServerTableIdentifier getTableIdentifier();
 
   /**
+   * Get the table configuration. @Deprecated use {@link #getTableConfig()} instead.
+   *
+   * @return the table configuration
+   */
+  @Deprecated
+  TableConfiguration getTableConfiguration();
+
+  /**
    * Get the table configuration.
    *
    * @return the table configuration
    */
-  TableConfiguration getTableConfiguration();
+  Map<String, String> getTableConfig();
 
   /**
    * Register the metric of the table runtime.

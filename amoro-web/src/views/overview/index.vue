@@ -20,6 +20,7 @@ limitations under the License.
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SingleDataCard from './components/SingleDataCard.vue'
+import { usePageScroll } from '@/hooks/usePageScroll'
 import MultipleDataCard from './components/MultipleDataCard.vue'
 import Top10TablesCard from './components/Top10TablesCard.vue'
 import ResourceUsageCard from './components/ResourceUsageCard.vue'
@@ -30,6 +31,7 @@ import { bytesToSize } from '@/utils'
 import type { IKeyAndValue } from '@/types/common.type'
 
 const { t } = useI18n()
+const { pageScrollRef } = usePageScroll()
 
 const singleData = ref<IKeyAndValue[]>([])
 const multipleData = ref<IKeyAndValue[]>([])
@@ -54,29 +56,35 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :style="{ background: '#F8F7F8', padding: '24px', minHeight: '900px' }" class="overview-content">
-    <a-row :gutter="[16, 8]">
-      <a-col v-for="(card, index) in singleData" :key="index" :span="6">
-        <SingleDataCard :title="t(card.key)" :value="card.value" />
-      </a-col>
-      <a-col :span="6">
-        <MultipleDataCard :title="t('resource')" :data="multipleData" />
-      </a-col>
-      <a-col :span="12">
-        <ResourceUsageCard />
-      </a-col>
-      <a-col :span="12">
-        <DataSizeCard />
-      </a-col>
-      <a-col :span="12">
-        <PieChartCard :title="t('optimizingStatus')" :data="optimizingStatusData" />
-      </a-col>
-      <a-col :span="12">
-        <Top10TablesCard />
-      </a-col>
-    </a-row>
+  <div class="page-scroll" ref="pageScrollRef">
+    <div :style="{ background: '#F8F7F8', padding: '24px', minHeight: '900px' }" class="overview-content">
+      <a-row :gutter="[16, 8]">
+        <a-col v-for="(card, index) in singleData" :key="index" :span="6">
+          <SingleDataCard :title="t(card.key)" :value="card.value" />
+        </a-col>
+        <a-col :span="6">
+          <MultipleDataCard :title="t('resource')" :data="multipleData" />
+        </a-col>
+        <a-col :span="12">
+          <ResourceUsageCard />
+        </a-col>
+        <a-col :span="12">
+          <DataSizeCard />
+        </a-col>
+        <a-col :span="12">
+          <PieChartCard :title="t('optimizingStatus')" :data="optimizingStatusData" />
+        </a-col>
+        <a-col :span="12">
+          <Top10TablesCard />
+        </a-col>
+      </a-row>
+    </div>
   </div>
 </template>
 
 <style lang="less" scoped>
+.page-scroll {
+  height: 100%;
+  overflow-y: auto;
+}
 </style>
