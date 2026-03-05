@@ -135,7 +135,7 @@ public class AdaptHiveFlinkParquetReaders {
         }
       }
 
-      return new RowDataReader(types, reorderedFields);
+      return new RowDataReader(reorderedFields);
     }
 
     @Override
@@ -622,8 +622,8 @@ public class AdaptHiveFlinkParquetReaders {
       extends ParquetValueReaders.StructReader<RowData, GenericRowData> {
     private final int numFields;
 
-    RowDataReader(List<Type> types, List<ParquetValueReader<?>> readers) {
-      super(types, readers);
+    RowDataReader(List<ParquetValueReader<?>> readers) {
+      super(readers);
       this.numFields = readers.size();
     }
 
