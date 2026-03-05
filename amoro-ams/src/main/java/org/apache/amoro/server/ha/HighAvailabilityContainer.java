@@ -65,7 +65,7 @@ public interface HighAvailabilityContainer {
   /**
    * Used to determine whether the current AMS node is the primary node.
    *
-   * @return
+   * @return true if the current AMS node is the primary node, false otherwise
    */
   boolean hasLeadership();
 }

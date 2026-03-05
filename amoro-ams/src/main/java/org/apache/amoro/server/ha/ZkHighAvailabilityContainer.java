@@ -172,7 +172,7 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
     }
     // Register node to ZK using ephemeral node
     // The node will be automatically deleted when the session expires
-    String nodeInfo = JacksonUtil.toJSONString(tableServiceServerInfo);
+    String nodeInfo = JacksonUtil.toJSONString(optimizingServiceServerInfo);
     registeredNodePath =
         zkClient
             .create()
