@@ -398,22 +398,22 @@ public class DefaultOptimizingService extends StatedPersistentBase
     public void handleConfigChanged(TableRuntime runtime, TableConfiguration originalConfig) {
       DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       String originalGroup = originalConfig.getOptimizingConfig().getOptimizerGroup();
+      Optional<OptimizingQueue> newQueue = getOptionalQueueByGroup(tableRuntime.getGroupName());
       if (!tableRuntime.getGroupName().equals(originalGroup)) {
         getOptionalQueueByGroup(originalGroup).ifPresent(q -> q.releaseTable(tableRuntime));
+        // If the new group doesn't exist, close the process to avoid the table in limbo(PENDING)
+        // status.
+        if (newQueue.isEmpty()) {
+          LOG.warn(
+              "Cannot find the resource group: {}, try to release optimizing process of table {} directly",
+              tableRuntime.getGroupName(),
+              tableRuntime.getTableIdentifier());
+          tableRuntime.completeEmptyProcess();
+        }
       }
-      getOptionalQueueByGroup(tableRuntime.getGroupName())
-          .ifPresent(q -> q.refreshTable(tableRuntime));
 
-      Optional<OptimizingQueue> queue = getOptionalQueueByGroup(tableRuntime.getGroupName());
-      if (queue.isPresent()) {
-        queue.get().releaseTable(tableRuntime);
-      } else {
-        LOG.warn(
-            "Cannot find resource group: {}, try to release optimizing process of table {} directly",
-            tableRuntime.getGroupName(),
-            tableRuntime.getTableIdentifier());
-        tableRuntime.completeEmptyProcess();
-      }
+      // Binding new queue if the new group exists
+      newQueue.ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
     @Override
