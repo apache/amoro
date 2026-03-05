@@ -62,12 +62,23 @@ mkdir -p ${RELEASE_DIR}
 git clone ${AMORO_DIR} ${CLONE_DIR}
 cd ${CLONE_DIR}
 
+# Generate git.properties before excluding .git directory
+# This ensures version information is available when building from source tarball
+echo "Generating git.properties for version ${RELEASE_VERSION}"
+${MVN} initialize -pl :amoro-ams -Dgpg.skip -Dcheckstyle.skip=true -DskipTests
+
 rsync -a \
   --exclude ".git" --exclude ".gitignore" \
   --exclude ".github" --exclude "target" \
   --exclude ".idea" --exclude "*.iml" --exclude ".DS_Store" \
+  --exclude "._*" --exclude "*/._*" \
   --exclude "*/dependency-reduced-pom.xml" \
   . amoro-$RELEASE_VERSION
+
+# Copy pre-generated git.properties to the source tarball
+# This file is needed for version information when building from source
+mkdir -p amoro-$RELEASE_VERSION/amoro-ams/target/classes/amoro
+cp amoro-ams/target/classes/amoro/git.properties amoro-$RELEASE_VERSION/amoro-ams/target/classes/amoro/
 
 tar czf ${RELEASE_DIR}/apache-amoro-${RELEASE_VERSION}-src.tar.gz amoro-$RELEASE_VERSION
 gpg --armor --detach-sig ${RELEASE_DIR}/apache-amoro-$RELEASE_VERSION-src.tar.gz

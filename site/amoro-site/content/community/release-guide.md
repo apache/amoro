@@ -290,18 +290,36 @@ $ git push apache v0.8.0-rc1
 
 ### Build binary and source release
 
-Build Amoro binary release with scripts:
+First, build the source release:
+
+```shell
+$ cd ${AMORO_SOURCE_HOME}/tools
+$ RELEASE_VERSION=0.8.0-incubating bash ./releasing/create_source_release.sh
+```
+
+Then build the binary release (this will use the source tarball):
 
 ```shell
 $ cd ${AMORO_SOURCE_HOME}/tools
 $ RELEASE_VERSION=0.8.0-incubating bash ./releasing/create_binary_release.sh
 ```
 
-Then build source release with scripts:
+{{< hint warning >}}
+**Important**: The binary release must be built AFTER the source release. The `create_binary_release.sh` script extracts and builds from the source tarball to ensure reproducibility.
+{{< /hint >}}
+
+#### Verify the release packages
+
+Before publishing, verify the packages:
 
 ```shell
-$ cd ${AMORO_SOURCE_HOME}/tools
-$ RELEASE_VERSION=0.8.0-incubating bash ./releasing/create_source_release.sh
+# Check that no AppleDouble files (._*) are included in the source tarball
+$ tar tzf ${AMORO_SOURCE_HOME}/tools/releasing/release/apache-amoro-0.8.0-incubating-src.tar.gz | grep "^\./\._"
+# The command should return nothing (no AppleDouble files)
+
+# Verify git.properties is included in the source tarball
+$ tar tzf ${AMORO_SOURCE_HOME}/tools/releasing/release/apache-amoro-0.8.0-incubating-src.tar.gz | grep "git.properties"
+# Should show: amoro-0.8.0-incubating/amoro-ams/target/classes/amoro/git.properties
 ```
 
 Validate the source and binary packages according to the [How to validate a new release](../validate-release/) guides.
