@@ -254,21 +254,6 @@ $ git checkout -b 0.8.0-branch
 ```
 
 Update the version in the new branch using the tool `tools/change-version.sh`:
-```bash
-OLD="0.8-SNAPSHOT"
-NEW="0.8.0-incubating"
-
-HERE=` basename "$PWD"`
-if [[ "$HERE" != "tools" ]]; then
-    echo "Please only execute in the tools/ directory";
-    exit 1;
-fi
-
-# change version in all pom files
-find .. -name 'pom.xml' -type f -exec perl -pi -e 's#<version>'"$OLD"'</version>#<version>'"$NEW"'</version>#' {} \;
-```
-
-Then run the scripts and commit the change:
 
 ```shell
 $ cd tools
@@ -288,25 +273,36 @@ $ git tag -a v0.8.0-rc1 -m "Release Apache Amoro 0.8.0 rc1"
 $ git push apache v0.8.0-rc1
 ```
 
-### Build binary and source release
+### Build release packages via GitHub Actions
 
-First, build the source release:
+The release packages (source and binary) are built using GitHub Actions.
 
-```shell
-$ cd ${AMORO_SOURCE_HOME}/tools
-$ RELEASE_VERSION=0.8.0-incubating bash ./releasing/create_source_release.sh
-```
+#### Configure GitHub Secrets
 
-Then build the binary release (this will use the source tarball):
+Before using the release workflow, ensure the following secrets are configured in the repository settings:
 
-```shell
-$ cd ${AMORO_SOURCE_HOME}/tools
-$ RELEASE_VERSION=0.8.0-incubating bash ./releasing/create_binary_release.sh
-```
+| Secret | Description |
+|--------|-------------|
+| `GPG_PRIVATE_KEY` | GPG private key (ASCII armored format) |
+| `GPG_PASSPHRASE` | GPG key passphrase |
+| `NEXUS_USER` | Apache Nexus username |
+| `NEXUS_PASSWORD` | Apache Nexus password |
 
-{{< hint warning >}}
-**Important**: The binary release must be built AFTER the source release. The `create_binary_release.sh` script extracts and builds from the source tarball to ensure reproducibility.
-{{< /hint >}}
+#### Trigger the Release Build
+
+1. Go to the [Actions](https://github.com/apache/amoro/actions) page
+2. Select **Release Build** workflow
+3. Click **Run workflow**
+4. Enter the release version (e.g., `0.8.0-incubating`)
+5. Click **Run workflow**
+
+#### Download Artifacts
+
+After the workflow completes, download the artifacts from the workflow run page. The artifacts include:
+- `apache-amoro-{version}-src.tar.gz` - Source release
+- `apache-amoro-{version}-bin-hadoop2.tar.gz` - Binary release for Hadoop 2
+- `apache-amoro-{version}-bin-hadoop3.tar.gz` - Binary release for Hadoop 3
+- Corresponding `.sha512` and `.asc` signature files
 
 #### Verify the release packages
 
@@ -314,11 +310,11 @@ Before publishing, verify the packages:
 
 ```shell
 # Check that no AppleDouble files (._*) are included in the source tarball
-$ tar tzf ${AMORO_SOURCE_HOME}/tools/releasing/release/apache-amoro-0.8.0-incubating-src.tar.gz | grep "^\./\._"
+$ tar tzf apache-amoro-0.8.0-incubating-src.tar.gz | grep "^\./\._"
 # The command should return nothing (no AppleDouble files)
 
 # Verify git.properties is included in the source tarball
-$ tar tzf ${AMORO_SOURCE_HOME}/tools/releasing/release/apache-amoro-0.8.0-incubating-src.tar.gz | grep "git.properties"
+$ tar tzf apache-amoro-0.8.0-incubating-src.tar.gz | grep "git.properties"
 # Should show: amoro-0.8.0-incubating/amoro-ams/target/classes/amoro/git.properties
 ```
 
@@ -333,17 +329,6 @@ $ svn add 0.8.0-incubating-RC1
 $ svn commit -m "Release Apache Amoro 0.8.0 rc1"
 
 ```
-
-### Release Apache Nexus
-
-Next, we will publish the required JAR files to the ​Apache Nexus​ repository to achieve the final goal of releasing them to the ​Maven Central Repository.
-
-```shell
-$ cd ${$AMORO_SOURCE_HOME}/tools
-$ RELEASE_VERSION=0.8.0-incubating bash ./releasing/deploy_staging_jars.sh
-```
-
-You can visit https://repository.apache.org/ and log in to check the publishment status. You can find the publishment process in the `Staging Repositories` section. You need to close the process when all jars are publised.
 
 ## Vote for the new release
 
