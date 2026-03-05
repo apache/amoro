@@ -106,8 +106,6 @@ public class AdaptHiveParquetReader<T> extends CloseableGroup implements Closeab
     private final ParquetValueReader<T> model;
     private final long totalValues;
     private final boolean reuseContainers;
-    private final long[] rowGroupsStartRowPos;
-
     private int nextRowGroup = 0;
     private long nextRowGroupStart = 0;
     private long valuesRead = 0;
@@ -119,7 +117,6 @@ public class AdaptHiveParquetReader<T> extends CloseableGroup implements Closeab
       this.model = conf.model();
       this.totalValues = conf.totalValues();
       this.reuseContainers = conf.reuseContainers();
-      this.rowGroupsStartRowPos = conf.startRowPositions();
     }
 
     @Override
@@ -156,11 +153,10 @@ public class AdaptHiveParquetReader<T> extends CloseableGroup implements Closeab
         throw new RuntimeIOException(e);
       }
 
-      long rowPosition = rowGroupsStartRowPos[nextRowGroup];
       nextRowGroupStart += pages.getRowCount();
       nextRowGroup += 1;
 
-      model.setPageSource(pages, rowPosition);
+      model.setPageSource(pages);
     }
 
     @Override
