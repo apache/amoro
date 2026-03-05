@@ -99,6 +99,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
         configuration.get(AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL).toMillis();
     this.serverConfiguration = configuration;
     this.tableRuntimeFactory = tableRuntimeFactory;
+    this.tableRuntimeFactory.withTableLoader(this::loadTable);
   }
 
   @Override
@@ -526,9 +527,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
                   identifier, runtimeMeta, creator.requiredStateKeys(), restoredStates);
           store.setRuntimeHandler(this);
           TableRuntime tableRuntime = creator.create(store);
-          if (tableRuntime instanceof AbstractTableRuntime) {
-            ((AbstractTableRuntime) tableRuntime).bindTableService(this);
-          }
           store.setTableRuntime(tableRuntime);
           return tableRuntime;
         });

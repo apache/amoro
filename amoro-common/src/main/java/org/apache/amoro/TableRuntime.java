@@ -64,9 +64,7 @@ public interface TableRuntime {
    *
    * <p>This method is mainly intended for in-AMS processes.
    */
-  default AmoroTable<?> loadTable() {
-    throw new UnsupportedOperationException("TableRuntime.loadTable is not supported");
-  }
+  AmoroTable<?> loadTable();
 
   /**
    * Get the table configuration. @Deprecated use {@link #getTableConfig()} instead.

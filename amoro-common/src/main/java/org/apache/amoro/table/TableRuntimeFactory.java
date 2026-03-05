@@ -18,6 +18,7 @@
 
 package org.apache.amoro.table;
 
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.ActionCoordinator;
@@ -26,6 +27,7 @@ import org.apache.amoro.process.ProcessFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 /** Table runtime factory. */
 public interface TableRuntimeFactory {
@@ -33,6 +35,8 @@ public interface TableRuntimeFactory {
   List<ActionCoordinator> supportedCoordinators();
 
   void initialize(List<ProcessFactory> factories);
+
+  void withTableLoader(Function<ServerTableIdentifier, AmoroTable<?>> loader);
 
   Optional<TableRuntimeCreator> accept(
       ServerTableIdentifier tableIdentifier, Map<String, String> tableProperties);
