@@ -29,7 +29,7 @@ public class OptimizingConfig {
   // self-optimizing.enabled
   private boolean enabled;
 
-  // self-optimizing.table-summary.enabled
+  // table-summary.enabled
   private boolean tableSummaryEnabled;
 
   private boolean allowPartialCommit;
