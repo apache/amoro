@@ -70,11 +70,10 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
   }
 
   private boolean tryEvaluatingPendingInput(DefaultTableRuntime tableRuntime, MixedTable table) {
-    // only evaluate pending input when optimizing is enabled and in idle state
     OptimizingConfig optimizingConfig = tableRuntime.getOptimizingConfig();
     boolean optimizingEnabled = optimizingConfig.isEnabled();
     if (optimizingEnabled && tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
-
+      // Evaluate pending input and collect table summary when optimizing is enabled and idle
       if (optimizingConfig.isMetadataBasedTriggerEnabled()
           && !MetadataBasedEvaluationEvent.isEvaluatingNecessary(
               optimizingConfig, table, tableRuntime.getLastPlanTime())) {
@@ -102,11 +101,21 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
 
       tableRuntime.setTableSummary(evaluator.getPendingInput());
       return evaluatorIsNecessary;
+    } else if (!optimizingEnabled && optimizingConfig.isTableSummaryEnabled()) {
+      // Collect table summary metrics even when optimizing is disabled
+      logger.debug(
+          "{} collecting table summary (optimizing disabled, tableSummary enabled)",
+          tableRuntime.getTableIdentifier());
+      AbstractOptimizingEvaluator evaluator =
+          IcebergTableUtil.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
+      AbstractOptimizingEvaluator.PendingInput summary = evaluator.getPendingInput();
+      logger.debug("{} table summary collected: {}", tableRuntime.getTableIdentifier(), summary);
+      tableRuntime.setTableSummary(summary);
+      return false;
     } else if (!optimizingEnabled) {
       logger.debug(
           "{} optimizing is not enabled, skip evaluating pending input",
           tableRuntime.getTableIdentifier());
-      // indicates no optimization demand now
       return false;
     } else {
       logger.debug(
@@ -147,21 +156,27 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
       AmoroTable<?> table = loadTable(tableRuntime);
       defaultTableRuntime.refresh(table);
       MixedTable mixedTable = (MixedTable) table.originalTable();
-      // Check if there is any optimizing demand now.
+      boolean snapshotChanged =
+          (mixedTable.isKeyedTable()
+                  && (lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId()
+                      || lastOptimizedChangeSnapshotId
+                          != defaultTableRuntime.getCurrentChangeSnapshotId()))
+              || (mixedTable.isUnkeyedTable()
+                  && lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId());
+      OptimizingConfig optimizingConfig = defaultTableRuntime.getOptimizingConfig();
+      boolean tableSummaryOnly =
+          !optimizingConfig.isEnabled() && optimizingConfig.isTableSummaryEnabled();
       boolean hasOptimizingDemand = false;
-      if ((mixedTable.isKeyedTable()
-              && (lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId()
-                  || lastOptimizedChangeSnapshotId
-                      != defaultTableRuntime.getCurrentChangeSnapshotId()))
-          || (mixedTable.isUnkeyedTable()
-              && lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId())) {
+      if (snapshotChanged) {
         hasOptimizingDemand = tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
       } else {
         logger.debug("{} optimizing is not necessary", defaultTableRuntime.getTableIdentifier());
       }
 
       // Update adaptive interval according to evaluated result.
-      if (defaultTableRuntime.getOptimizingConfig().isRefreshTableAdaptiveEnabled(interval)) {
+      // Skip adaptive interval for table-summary-only mode to maintain fixed collection interval.
+      if (!tableSummaryOnly
+          && defaultTableRuntime.getOptimizingConfig().isRefreshTableAdaptiveEnabled(interval)) {
         defaultTableRuntime.setLatestEvaluatedNeedOptimizing(hasOptimizingDemand);
         long newInterval = getAdaptiveExecutingInterval(defaultTableRuntime);
         defaultTableRuntime.setLatestRefreshInterval(newInterval);
