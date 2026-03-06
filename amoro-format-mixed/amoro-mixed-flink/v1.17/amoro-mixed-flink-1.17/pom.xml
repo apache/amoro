@@ -33,6 +33,7 @@
     <url>https://amoro.apache.org</url>
 
     <properties>
+        <iceberg.version>1.6.1</iceberg.version>
         <kafka.version>3.2.3</kafka.version>
         <assertj.version>3.21.0</assertj.version>
         <testcontainers.version>1.17.2</testcontainers.version>
@@ -42,7 +43,7 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-mixed-flink-common</artifactId>
+            <artifactId>amoro-mixed-flink-common-1.17</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
 
@@ -88,7 +89,7 @@
                         <configuration>
                             <artifactSet>
                                 <includes combine.children="append">
-                                    <include>org.apache.amoro:amoro-format-mixed-flink-common</include>
+                                    <include>org.apache.amoro:amoro-mixed-flink-common-1.17</include>
                                 </includes>
                             </artifactSet>
                         </configuration>
