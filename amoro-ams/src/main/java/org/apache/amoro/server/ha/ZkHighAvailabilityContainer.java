@@ -57,16 +57,6 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
 
   private final LeaderLatch leaderLatch;
   private final CuratorFramework zkClient;
-
-  // Package-private accessors for testing
-  CuratorFramework getZkClient() {
-    return zkClient;
-  }
-
-  LeaderLatch getLeaderLatch() {
-    return leaderLatch;
-  }
-
   private final String tableServiceMasterPath;
   private final String optimizingServiceMasterPath;
   private final String nodesPath;
@@ -293,6 +283,24 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
       return false;
     }
     return leaderLatch.hasLeadership();
+  }
+
+  /**
+   * Get the current node's table service server info.
+   *
+   * @return The current node's server info, null if HA is not enabled
+   */
+  public AmsServerInfo getTableServiceServerInfo() {
+    return tableServiceServerInfo;
+  }
+
+  /**
+   * Get the ZooKeeper client. This is used for creating BucketAssignStore.
+   *
+   * @return The ZooKeeper client, null if HA is not enabled
+   */
+  public CuratorFramework getZkClient() {
+    return zkClient;
   }
 
   private void createPathIfNeeded(String path) throws Exception {
