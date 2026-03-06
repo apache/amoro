@@ -241,20 +241,22 @@ public class AmoroServiceContainer {
 
     DefaultTableRuntimeFactory defaultRuntimeFactory = new DefaultTableRuntimeFactory();
     defaultRuntimeFactory.initialize(processFactories);
-    // In master-slave mode, create BucketAssignStore and AmsAssignService
-    BucketAssignStore bucketAssignStore = null;
-    if (IS_MASTER_SLAVE_MODE && haContainer != null && haContainer.getZkClient() != null) {
-      String clusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
-      bucketAssignStore = new ZkBucketAssignStore(haContainer.getZkClient(), clusterName);
-      // Create and start AmsAssignService for bucket assignment
-      amsAssignService =
-          new AmsAssignService(haContainer, serviceConfig, haContainer.getZkClient());
-      amsAssignService.start();
-      LOG.info("AmsAssignService started for master-slave mode");
+    // In master-slave mode, create AmsAssignService for bucket assignment
+    if (IS_MASTER_SLAVE_MODE && haContainer != null) {
+      try {
+        // Create and start AmsAssignService for bucket assignment
+        // The factory will handle different HA types (ZK, database, etc.)
+        amsAssignService = new AmsAssignService(haContainer, serviceConfig);
+        amsAssignService.start();
+        LOG.info("AmsAssignService started for master-slave mode");
+      } catch (UnsupportedOperationException e) {
+        LOG.info("Skip AmsAssignService: {}", e.getMessage());
+      } catch (Exception e) {
+        LOG.error("Failed to start AmsAssignService", e);
+      }
     }
 
-    tableService =
-        new DefaultTableService(serviceConfig, catalogManager, tableRuntimeFactoryManager);
+    tableService = new DefaultTableService(serviceConfig, catalogManager, defaultRuntimeFactory);
 
     List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
     ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();

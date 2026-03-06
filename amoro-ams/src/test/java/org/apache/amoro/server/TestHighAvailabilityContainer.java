@@ -27,6 +27,8 @@ import static org.mockito.Mockito.when;
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.AmsHAProperties;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
+import org.apache.amoro.server.ha.ZkHighAvailabilityContainer;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.CreateMode;
@@ -86,7 +88,7 @@ public class TestHighAvailabilityContainer {
     haContainer = createContainerWithMockZk();
 
     // Should not throw exception and should not register node
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Verify no node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
@@ -102,7 +104,7 @@ public class TestHighAvailabilityContainer {
     haContainer = createContainerWithMockZk();
 
     // Register node
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Verify node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
@@ -120,7 +122,7 @@ public class TestHighAvailabilityContainer {
     AmsServerInfo nodeInfo = JacksonUtil.parseObject(nodeInfoJson, AmsServerInfo.class);
     Assert.assertEquals("Host should match", "127.0.0.1", nodeInfo.getHost());
     Assert.assertEquals(
-        "Thrift port should match", Integer.valueOf(1260), nodeInfo.getThriftBindPort());
+        "Thrift port should match", Integer.valueOf(1261), nodeInfo.getThriftBindPort());
   }
 
   @Test
@@ -145,7 +147,7 @@ public class TestHighAvailabilityContainer {
     haContainer = createContainerWithMockZk();
 
     // Register node
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Since we're not the leader, should return empty list
     List<AmsServerInfo> aliveNodes = haContainer.getAliveNodes();
@@ -161,7 +163,7 @@ public class TestHighAvailabilityContainer {
     haContainer = createContainerWithMockZk();
 
     // Register node
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Verify we are leader
     Assert.assertTrue("Should be leader", haContainer.hasLeadership());
@@ -175,7 +177,7 @@ public class TestHighAvailabilityContainer {
     AmsServerInfo nodeInfo = aliveNodes.get(0);
     Assert.assertEquals("Host should match", "127.0.0.1", nodeInfo.getHost());
     Assert.assertEquals(
-        "Thrift port should match", Integer.valueOf(1260), nodeInfo.getThriftBindPort());
+        "Thrift port should match", Integer.valueOf(1261), nodeInfo.getThriftBindPort());
     Assert.assertEquals(
         "HTTP port should match", Integer.valueOf(1630), nodeInfo.getRestBindPort());
   }
@@ -188,7 +190,7 @@ public class TestHighAvailabilityContainer {
     haContainer = createContainerWithMockZk();
 
     // Register first node
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Verify first node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
@@ -219,7 +221,7 @@ public class TestHighAvailabilityContainer {
     haContainer = createContainerWithMockZk();
 
     // Register node
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Verify node was registered
     String nodesPath = AmsHAProperties.getNodesPath("test-cluster");
@@ -258,10 +260,10 @@ public class TestHighAvailabilityContainer {
     // Test that registAndElect skips when HA is not enabled
     serviceConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
     serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
-    haContainer = new HighAvailabilityContainer(serviceConfig);
+    haContainer = new ZkHighAvailabilityContainer(serviceConfig);
 
     // Should not throw exception
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
   }
 
   /** Create HighAvailabilityContainer with mocked ZK components using reflection. */
@@ -271,12 +273,12 @@ public class TestHighAvailabilityContainer {
 
     // Inject mock ZK client and leader latch
     java.lang.reflect.Field zkClientField =
-        HighAvailabilityContainer.class.getDeclaredField("zkClient");
+        ZkHighAvailabilityContainer.class.getDeclaredField("zkClient");
     zkClientField.setAccessible(true);
     zkClientField.set(container, mockZkClient);
 
     java.lang.reflect.Field leaderLatchField =
-        HighAvailabilityContainer.class.getDeclaredField("leaderLatch");
+        ZkHighAvailabilityContainer.class.getDeclaredField("leaderLatch");
     leaderLatchField.setAccessible(true);
     leaderLatchField.set(container, mockLeaderLatch);
 
@@ -292,9 +294,9 @@ public class TestHighAvailabilityContainer {
    * want to completely avoid ZK connection attempts.
    */
   private HighAvailabilityContainer createContainerWithoutZk() throws Exception {
-    // Use reflection to create container without calling constructor
-    java.lang.reflect.Constructor<HighAvailabilityContainer> constructor =
-        HighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
+    // Use reflection to create ZkHighAvailabilityContainer without calling constructor
+    java.lang.reflect.Constructor<ZkHighAvailabilityContainer> constructor =
+        ZkHighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
 
     // Create a minimal config that disables HA to avoid ZK connection
     Configurations tempConfig = new Configurations(serviceConfig);
@@ -304,7 +306,7 @@ public class TestHighAvailabilityContainer {
 
     // Now set all required fields using reflection
     java.lang.reflect.Field isMasterSlaveModeField =
-        HighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
+        ZkHighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
     isMasterSlaveModeField.setAccessible(true);
     isMasterSlaveModeField.set(
         container, serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE));
@@ -313,24 +315,24 @@ public class TestHighAvailabilityContainer {
       String haClusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
 
       java.lang.reflect.Field tableServiceMasterPathField =
-          HighAvailabilityContainer.class.getDeclaredField("tableServiceMasterPath");
+          ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceMasterPath");
       tableServiceMasterPathField.setAccessible(true);
       tableServiceMasterPathField.set(
           container, AmsHAProperties.getTableServiceMasterPath(haClusterName));
 
       java.lang.reflect.Field optimizingServiceMasterPathField =
-          HighAvailabilityContainer.class.getDeclaredField("optimizingServiceMasterPath");
+          ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceMasterPath");
       optimizingServiceMasterPathField.setAccessible(true);
       optimizingServiceMasterPathField.set(
           container, AmsHAProperties.getOptimizingServiceMasterPath(haClusterName));
 
       java.lang.reflect.Field nodesPathField =
-          HighAvailabilityContainer.class.getDeclaredField("nodesPath");
+          ZkHighAvailabilityContainer.class.getDeclaredField("nodesPath");
       nodesPathField.setAccessible(true);
       nodesPathField.set(container, AmsHAProperties.getNodesPath(haClusterName));
 
       java.lang.reflect.Field tableServiceServerInfoField =
-          HighAvailabilityContainer.class.getDeclaredField("tableServiceServerInfo");
+          ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceServerInfo");
       tableServiceServerInfoField.setAccessible(true);
       AmsServerInfo tableServiceServerInfo =
           buildServerInfo(
@@ -340,7 +342,7 @@ public class TestHighAvailabilityContainer {
       tableServiceServerInfoField.set(container, tableServiceServerInfo);
 
       java.lang.reflect.Field optimizingServiceServerInfoField =
-          HighAvailabilityContainer.class.getDeclaredField("optimizingServiceServerInfo");
+          ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceServerInfo");
       optimizingServiceServerInfoField.setAccessible(true);
       AmsServerInfo optimizingServiceServerInfo =
           buildServerInfo(

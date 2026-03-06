@@ -27,6 +27,8 @@ import static org.mockito.Mockito.when;
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.AmsHAProperties;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
+import org.apache.amoro.server.ha.ZkHighAvailabilityContainer;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.amoro.shade.zookeeper3.org.apache.zookeeper.CreateMode;
@@ -114,12 +116,12 @@ public class TestAmsAssignService {
   @Test
   public void testInitialAssignment() throws Exception {
     // Register nodes
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
 
     // Create second node
     Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
     HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
-    haContainer2.registAndElect();
+    haContainer2.registerAndElect();
 
     try {
       // Wait a bit for registration
@@ -156,10 +158,10 @@ public class TestAmsAssignService {
   @Test
   public void testNodeOfflineReassignment() throws Exception {
     // Setup: 2 nodes with initial assignment
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
     Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
     HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
-    haContainer2.registAndElect();
+    haContainer2.registerAndElect();
 
     try {
       Thread.sleep(100);
@@ -189,20 +191,12 @@ public class TestAmsAssignService {
       Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
       Assert.assertEquals("Should have 1 node after offline", 1, newAssignments.size());
 
-      // Verify node1 got all buckets
-      // Find node1 in the assignments (since parseNodeKey doesn't set restBindPort,
-      // we need to match by host and thriftBindPort)
-      List<String> node1Buckets = null;
-      for (Map.Entry<AmsServerInfo, List<String>> entry : newAssignments.entrySet()) {
-        AmsServerInfo node = entry.getKey();
-        if (node1.getHost().equals(node.getHost())
-            && node1.getThriftBindPort().equals(node.getThriftBindPort())) {
-          node1Buckets = entry.getValue();
-          break;
-        }
-      }
-      Assert.assertNotNull("Node1 should have assignments", node1Buckets);
-      Assert.assertEquals("Node1 should have all buckets", 100, node1Buckets.size());
+      // The only remaining node (node1) should have all buckets. ZK stores
+      // optimizingServiceServerInfo (thrift port 1261), not table port (1260), so we
+      // take the single entry instead of matching by node1's thriftBindPort.
+      List<String> remainingBuckets = newAssignments.values().iterator().next();
+      Assert.assertNotNull("Node1 should have assignments", remainingBuckets);
+      Assert.assertEquals("Node1 should have all buckets", 100, remainingBuckets.size());
     } finally {
       try {
         haContainer2.close();
@@ -215,20 +209,21 @@ public class TestAmsAssignService {
   @Test
   public void testNewNodeIncrementalAssignment() throws Exception {
     // Setup: 1 node initially
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
     Thread.sleep(100);
 
     // Initial assignment - all buckets to node1
     assignService.doAssignForTest();
     Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
-    List<String> node1InitialBuckets = initialAssignments.get(node1);
+    // ZK stores optimizing port (1261), not table port (1260); match by host only (single node).
+    List<String> node1InitialBuckets = findBucketsByHost(initialAssignments, node1.getHost());
     Assert.assertNotNull("Node1 should have assignments", node1InitialBuckets);
     Assert.assertEquals("Node1 should have all buckets initially", 100, node1InitialBuckets.size());
 
     // Add new node
     Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
     HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
-    haContainer2.registAndElect();
+    haContainer2.registerAndElect();
 
     try {
       Thread.sleep(100);
@@ -240,8 +235,9 @@ public class TestAmsAssignService {
       Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
       Assert.assertEquals("Should have 2 nodes", 2, newAssignments.size());
 
-      // Verify incremental assignment - node1 should keep most of its buckets
-      List<String> node1NewBuckets = newAssignments.get(node1);
+      // Verify incremental assignment - node1 should keep most of its buckets.
+      // ZK stores optimizing port, not table port; match by host.
+      List<String> node1NewBuckets = findBucketsByHost(newAssignments, node1.getHost());
       Assert.assertNotNull("Node1 should still have assignments", node1NewBuckets);
 
       // Node1 should have kept most buckets (incremental assignment)
@@ -267,13 +263,13 @@ public class TestAmsAssignService {
   @Test
   public void testBalanceAfterNodeChanges() throws Exception {
     // Setup: 3 nodes
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
     Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
     HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
-    haContainer2.registAndElect();
+    haContainer2.registerAndElect();
     Configurations config3 = createNodeConfig("127.0.0.3", 1263, 1633);
     HighAvailabilityContainer haContainer3 = createContainerWithMockZk(config3);
-    haContainer3.registAndElect();
+    haContainer3.registerAndElect();
 
     try {
       Thread.sleep(200);
@@ -305,10 +301,10 @@ public class TestAmsAssignService {
   @Test
   public void testIncrementalAssignmentMinimizesMigration() throws Exception {
     // Setup: 2 nodes initially
-    haContainer.registAndElect();
+    haContainer.registerAndElect();
     Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
     HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
-    haContainer2.registAndElect();
+    haContainer2.registerAndElect();
     HighAvailabilityContainer haContainer3 = null;
 
     try {
@@ -332,7 +328,7 @@ public class TestAmsAssignService {
       // Add new node
       Configurations config3 = createNodeConfig("127.0.0.3", 1263, 1633);
       haContainer3 = createContainerWithMockZk(config3);
-      haContainer3.registAndElect();
+      haContainer3.registerAndElect();
 
       Thread.sleep(100);
 
@@ -400,7 +396,7 @@ public class TestAmsAssignService {
     mockLeaderLatch = createMockLeaderLatch(false); // Not leader
     Configurations nonLeaderConfig = createNodeConfig("127.0.0.2", 1262, 1632);
     HighAvailabilityContainer nonLeaderContainer = createContainerWithMockZk(nonLeaderConfig);
-    nonLeaderContainer.registAndElect();
+    nonLeaderContainer.registerAndElect();
 
     try {
       // Wait a bit
@@ -437,6 +433,20 @@ public class TestAmsAssignService {
     return config;
   }
 
+  /**
+   * Find bucket list by node host (assignments use ZK node info with optimizing port, not table
+   * port).
+   */
+  private static List<String> findBucketsByHost(
+      Map<AmsServerInfo, List<String>> assignments, String host) {
+    for (Map.Entry<AmsServerInfo, List<String>> entry : assignments.entrySet()) {
+      if (host.equals(entry.getKey().getHost())) {
+        return entry.getValue();
+      }
+    }
+    return null;
+  }
+
   /** Create HighAvailabilityContainer with mocked ZK components using reflection. */
   private HighAvailabilityContainer createContainerWithMockZk() throws Exception {
     return createContainerWithMockZk(serviceConfig);
@@ -450,12 +460,12 @@ public class TestAmsAssignService {
 
     // Inject mock ZK client and leader latch
     java.lang.reflect.Field zkClientField =
-        HighAvailabilityContainer.class.getDeclaredField("zkClient");
+        ZkHighAvailabilityContainer.class.getDeclaredField("zkClient");
     zkClientField.setAccessible(true);
     zkClientField.set(container, mockZkClient);
 
     java.lang.reflect.Field leaderLatchField =
-        HighAvailabilityContainer.class.getDeclaredField("leaderLatch");
+        ZkHighAvailabilityContainer.class.getDeclaredField("leaderLatch");
     leaderLatchField.setAccessible(true);
     leaderLatchField.set(container, mockLeaderLatch);
 
@@ -465,8 +475,8 @@ public class TestAmsAssignService {
   /** Create a HighAvailabilityContainer without initializing ZK connection. */
   private HighAvailabilityContainer createContainerWithoutZk(Configurations config)
       throws Exception {
-    java.lang.reflect.Constructor<HighAvailabilityContainer> constructor =
-        HighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
+    java.lang.reflect.Constructor<ZkHighAvailabilityContainer> constructor =
+        ZkHighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
 
     // Create a minimal config that disables HA to avoid ZK connection
     Configurations tempConfig = new Configurations(config);
@@ -476,7 +486,7 @@ public class TestAmsAssignService {
 
     // Now set all required fields using reflection
     java.lang.reflect.Field isMasterSlaveModeField =
-        HighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
+        ZkHighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
     isMasterSlaveModeField.setAccessible(true);
     isMasterSlaveModeField.set(
         container, config.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE));
@@ -485,24 +495,24 @@ public class TestAmsAssignService {
       String haClusterName = config.getString(AmoroManagementConf.HA_CLUSTER_NAME);
 
       java.lang.reflect.Field tableServiceMasterPathField =
-          HighAvailabilityContainer.class.getDeclaredField("tableServiceMasterPath");
+          ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceMasterPath");
       tableServiceMasterPathField.setAccessible(true);
       tableServiceMasterPathField.set(
           container, AmsHAProperties.getTableServiceMasterPath(haClusterName));
 
       java.lang.reflect.Field optimizingServiceMasterPathField =
-          HighAvailabilityContainer.class.getDeclaredField("optimizingServiceMasterPath");
+          ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceMasterPath");
       optimizingServiceMasterPathField.setAccessible(true);
       optimizingServiceMasterPathField.set(
           container, AmsHAProperties.getOptimizingServiceMasterPath(haClusterName));
 
       java.lang.reflect.Field nodesPathField =
-          HighAvailabilityContainer.class.getDeclaredField("nodesPath");
+          ZkHighAvailabilityContainer.class.getDeclaredField("nodesPath");
       nodesPathField.setAccessible(true);
       nodesPathField.set(container, AmsHAProperties.getNodesPath(haClusterName));
 
       java.lang.reflect.Field tableServiceServerInfoField =
-          HighAvailabilityContainer.class.getDeclaredField("tableServiceServerInfo");
+          ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceServerInfo");
       tableServiceServerInfoField.setAccessible(true);
       AmsServerInfo tableServiceServerInfo =
           buildServerInfo(
@@ -512,7 +522,7 @@ public class TestAmsAssignService {
       tableServiceServerInfoField.set(container, tableServiceServerInfo);
 
       java.lang.reflect.Field optimizingServiceServerInfoField =
-          HighAvailabilityContainer.class.getDeclaredField("optimizingServiceServerInfo");
+          ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceServerInfo");
       optimizingServiceServerInfoField.setAccessible(true);
       AmsServerInfo optimizingServiceServerInfo =
           buildServerInfo(
@@ -542,7 +552,7 @@ public class TestAmsAssignService {
   /** Create AmsAssignService with mock BucketAssignStore. */
   private AmsAssignService createAssignServiceWithMockStore(HighAvailabilityContainer container)
       throws Exception {
-    AmsAssignService service = new AmsAssignService(container, serviceConfig, mockZkClient);
+    AmsAssignService service = new AmsAssignService(container, serviceConfig);
 
     // Use reflection to inject mock assign store
     java.lang.reflect.Field assignStoreField =

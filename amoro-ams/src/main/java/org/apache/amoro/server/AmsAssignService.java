@@ -20,8 +20,8 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,11 +57,6 @@ public class AmsAssignService {
   private final long assignIntervalSeconds;
   private volatile boolean running = false;
 
-  // Package-private accessors for testing
-  BucketAssignStore getAssignStore() {
-    return assignStore;
-  }
-
   boolean isRunning() {
     return running;
   }
@@ -70,10 +65,7 @@ public class AmsAssignService {
     doAssign();
   }
 
-  public AmsAssignService(
-      HighAvailabilityContainer haContainer,
-      Configurations serviceConfig,
-      CuratorFramework zkClient) {
+  public AmsAssignService(HighAvailabilityContainer haContainer, Configurations serviceConfig) {
     this.haContainer = haContainer;
     this.serviceConfig = serviceConfig;
     this.bucketIdTotalCount = serviceConfig.getInteger(AmoroManagementConf.BUCKET_ID_TOTAL_COUNT);
@@ -81,8 +73,7 @@ public class AmsAssignService {
         serviceConfig.get(AmoroManagementConf.NODE_OFFLINE_TIMEOUT).toMillis();
     this.assignIntervalSeconds =
         serviceConfig.get(AmoroManagementConf.ASSIGN_INTERVAL).getSeconds();
-    String clusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
-    this.assignStore = new ZkBucketAssignStore(zkClient, clusterName);
+    this.assignStore = BucketAssignStoreFactory.create(haContainer, serviceConfig);
   }
 
   /**
