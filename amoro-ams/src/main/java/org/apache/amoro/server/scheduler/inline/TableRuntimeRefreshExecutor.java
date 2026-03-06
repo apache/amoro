@@ -167,7 +167,7 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
       boolean tableSummaryOnly =
           !optimizingConfig.isEnabled() && optimizingConfig.isTableSummaryEnabled();
       boolean hasOptimizingDemand = false;
-      if (snapshotChanged || tableSummaryOnly) {
+      if (snapshotChanged) {
         hasOptimizingDemand = tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
       } else {
         logger.debug("{} optimizing is not necessary", defaultTableRuntime.getTableIdentifier());

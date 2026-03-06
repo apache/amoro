@@ -43,7 +43,6 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
-import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.data.Record;
@@ -110,13 +109,8 @@ public class TestTableSummaryWithoutOptimizing extends AMSTableTestBase {
         Lists.newArrayList(
             tableTestHelper().generateTestRecord(1, "111", 0, "2022-01-01T12:00:00"),
             tableTestHelper().generateTestRecord(2, "222", 0, "2022-01-01T12:00:00"));
-    List<DataFile> dataFiles =
-        OptimizingTestHelpers.appendBase(
-            table, tableTestHelper().writeBaseStore(table, 0L, records, false));
-
-    AppendFiles appendFiles = table.newAppend();
-    dataFiles.forEach(appendFiles::appendFile);
-    appendFiles.commit();
+    OptimizingTestHelpers.appendBase(
+        table, tableTestHelper().writeBaseStore(table, 0L, records, false));
   }
 
   private void appendPosDelete(UnkeyedTable table) {
@@ -256,7 +250,7 @@ public class TestTableSummaryWithoutOptimizing extends AMSTableTestBase {
     Assertions.assertTrue(firstTotalFiles > 0, "first refresh should collect totalFiles > 0");
     Assertions.assertTrue(firstHealthScore >= 0, "first refresh should collect healthScore >= 0");
 
-    // Second refresh without any new snapshot — should still collect (not blocked by snapshot gate)
+    // Second refresh without any new snapshot — still collected because data was never optimized
     refreshPending();
 
     Assertions.assertEquals(
