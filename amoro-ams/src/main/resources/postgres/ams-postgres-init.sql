@@ -417,7 +417,7 @@ CREATE TABLE http_session (
     last_node     VARCHAR(60),
     access_time   BIGINT,
     last_access_time  BIGINT,
-    create_time   BIGINT,
+    session_create_time BIGINT,
     cookie_time   BIGINT,
     last_save_time BIGINT,
     expiry_time   BIGINT,
@@ -433,7 +433,7 @@ COMMENT ON COLUMN http_session.virtual_host IS 'Jetty virtual host';
 COMMENT ON COLUMN http_session.last_node IS 'Last node';
 COMMENT ON COLUMN http_session.access_time IS 'Access time';
 COMMENT ON COLUMN http_session.last_access_time IS 'Last access time';
-COMMENT ON COLUMN http_session.create_time IS 'Create time';
+COMMENT ON COLUMN http_session.session_create_time IS 'Jetty session create time (epoch millis)';
 COMMENT ON COLUMN http_session.cookie_time IS 'Cookie time';
 COMMENT ON COLUMN http_session.last_save_time IS 'Last save time';
 COMMENT ON COLUMN http_session.expiry_time IS 'Expiry time';

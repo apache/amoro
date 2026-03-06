@@ -23,6 +23,8 @@ CREATE TABLE `catalog_metadata`
     `catalog_properties`     mediumtext COMMENT 'catalog properties',
     `database_count`         int(11) NOT NULL default 0,
     `table_count`            int(11) NOT NULL default 0,
+    `create_time`            timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`            timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`catalog_id`),
     UNIQUE KEY `catalog_name_index` (`catalog_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'catalog metadata';
@@ -32,6 +34,8 @@ CREATE TABLE `database_metadata`
     `catalog_name`           varchar(64) NOT NULL COMMENT 'catalog name',
     `db_name`                varchar(128) NOT NULL COMMENT 'database name',
     `table_count`            int(11) NOT NULL default 0,
+    `create_time`            timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`            timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`catalog_name`, `db_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'database metadata';
 
@@ -47,6 +51,8 @@ CREATE TABLE `optimizer`
     `thread_count`               int(11) DEFAULT NULL COMMENT 'total number of all CPU resources',
     `total_memory`               bigint(30) DEFAULT NULL COMMENT 'optimizer use memory size',
     `properties`                 mediumtext COMMENT 'optimizer state info, contains like yarn application id and flink job id',
+    `create_time`                timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`                timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`token`),
     KEY  `resource_group` (`group_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'resource table';
@@ -61,6 +67,8 @@ CREATE TABLE `resource`
     `total_memory`              bigint(30) DEFAULT NULL COMMENT 'optimizer use memory size',
     `start_time`                timestamp not null default CURRENT_TIMESTAMP COMMENT 'optimizer start time',
     `properties`                mediumtext COMMENT 'optimizer instance properties',
+    `create_time`               timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`               timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`resource_id`),
     KEY  `resource_group` (`group_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimizer instance info';
@@ -70,6 +78,8 @@ CREATE TABLE `resource_group`
     `group_name`       varchar(50) NOT NULL  COMMENT 'Optimize group name',
     `container_name`   varchar(100) DEFAULT NULL  COMMENT 'Container name',
     `properties`       mediumtext  COMMENT 'Properties',
+    `create_time`      timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`      timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`group_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Group to divide optimize resources';
 
@@ -80,6 +90,8 @@ CREATE TABLE `table_identifier`
     `db_name`         varchar(128) NOT NULL COMMENT 'Database name',
     `table_name`      varchar(256) NOT NULL COMMENT 'Table name',
     `format`          VARCHAR(32)  NOT NULL COMMENT 'Table Format',
+    `create_time`     timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`     timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`table_id`),
     UNIQUE KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table identifier for AMS' ROW_FORMAT=DYNAMIC;
@@ -118,6 +130,8 @@ CREATE TABLE `table_runtime`
     `table_config`                  mediumtext COMMENT 'table configuration cached from table.properties',
     `table_summary`                 mediumtext COMMENT 'table summary for ams',
     `bucket_id`          VARCHAR(4)  DEFAULT NULL COMMENT 'Bucket id to which the record table belongs',
+    `create_time`        timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`        timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`table_id`),
     INDEX idx_status_and_time (status_code, status_code_update_time DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table running information of each table' ROW_FORMAT=DYNAMIC;
@@ -145,11 +159,12 @@ CREATE TABLE `table_process`
     `process_stage`                 varchar(64) NOT NULL COMMENT 'Process current stage',
     `execution_engine`              varchar(64) NOT NULL COMMENT 'Execution engine',
     `retry_number`                  int(11) NOT NULL DEFAULT 0 COMMENT 'Retry times',
-    `create_time`                   timestamp DEFAULT CURRENT_TIMESTAMP COMMENT 'First plan time',
+    `create_time`                   timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `finish_time`                   timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
     `fail_message`                  mediumtext DEFAULT NULL COMMENT 'Error message after task failed',
     `process_parameters`            mediumtext COMMENT 'Table process parameters',
     `summary`                       mediumtext COMMENT 'Max change transaction id of these tasks',
+    `update_time`                   timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`, `create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
@@ -163,6 +178,8 @@ CREATE TABLE `optimizing_process_state`
     `rewrite_input`                 longblob DEFAULT NULL COMMENT 'rewrite files input',
     `from_sequence`                 mediumtext COMMENT 'from or min sequence of each partition',
     `to_sequence`                   mediumtext COMMENT 'to or max sequence of each partition',
+    `create_time`                   timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`                   timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
@@ -174,7 +191,7 @@ CREATE TABLE `task_runtime`
     `retry_num`                 int(11) DEFAULT NULL COMMENT 'Retry times',
     `table_id`                  bigint(20) NOT NULL,
     `partition_data`            varchar(128)  DEFAULT NULL COMMENT 'Partition data',
-    `create_time`               timestamp NULL DEFAULT NULL COMMENT 'Task create time',
+    `create_time`               timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `start_time`                timestamp NULL DEFAULT NULL COMMENT 'Time when task start waiting to execute',
     `end_time`                  timestamp NULL DEFAULT NULL COMMENT 'Time when task finished',
     `cost_time`                 bigint(20) DEFAULT NULL,
@@ -185,6 +202,7 @@ CREATE TABLE `task_runtime`
     `rewrite_output`            longblob DEFAULT NULL COMMENT 'rewrite files output',
     `metrics_summary`           text COMMENT 'metrics summary',
     `properties`                mediumtext COMMENT 'task properties',
+    `update_time`               timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`process_id`, `task_id`),
     KEY  `table_index` (`table_id`, `process_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';
@@ -200,6 +218,8 @@ CREATE TABLE `table_process_state`
     `end_time`                      timestamp NULL DEFAULT NULL COMMENT 'finish time or failed time',
     `fail_reason`                   varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
     `summary`                       mediumtext COMMENT 'state summary, usually a map',
+    `create_time`                   timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`                   timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`process_id`),
     KEY  `table_index` (`table_id`, `start_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
@@ -213,6 +233,8 @@ CREATE TABLE `optimizing_task_quota`
     `start_time`                timestamp default CURRENT_TIMESTAMP COMMENT 'Time when task start waiting to execute',
     `end_time`                  timestamp default CURRENT_TIMESTAMP COMMENT 'Time when task finished',
     `fail_reason`               varchar(4096) DEFAULT NULL COMMENT 'Error message after task failed',
+    `create_time`               timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`               timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`process_id`, `task_id`, `retry_num`),
     KEY  `table_index` (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimize task basic information';
@@ -224,6 +246,8 @@ CREATE TABLE `api_tokens`
     `apikey`     varchar(256) NOT NULL COMMENT 'openapi client public key',
     `secret`     varchar(256) NOT NULL COMMENT 'The key used by the client to generate the request signature',
     `apply_time` timestamp NULL DEFAULT NULL COMMENT 'apply time',
+    `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`) USING BTREE,
     UNIQUE KEY `account_unique` (`apikey`) USING BTREE COMMENT 'account unique'
 ) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC COMMENT='Openapi  secret';
@@ -234,6 +258,8 @@ CREATE TABLE `platform_file` (
   `file_content_b64` mediumtext NOT NULL COMMENT 'file content encoded with base64',
   `file_path` varchar(100) DEFAULT NULL COMMENT 'may be hdfs path , not be used now',
   `add_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'add timestamp',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='store files info saved in the platform';
 
@@ -243,10 +269,11 @@ CREATE TABLE `table_blocker` (
   `db_name` varchar(128) NOT NULL COMMENT 'Database name',
   `table_name` varchar(256) NOT NULL COMMENT 'Table name',
   `operations` varchar(128) NOT NULL COMMENT 'Blocked operations',
-  `create_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker create time',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `expiration_time` timestamp NULL DEFAULT NULL COMMENT 'Blocker expiration time',
   `properties` mediumtext COMMENT 'Blocker properties',
   `prev_blocker_id` bigint(20) NOT NULL DEFAULT -1 COMMENT 'prev blocker id when created',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`blocker_id`),
   UNIQUE KEY `uq_prev` (`catalog_name`,`db_name`,`table_name`, `prev_blocker_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers' ROW_FORMAT=DYNAMIC;
@@ -258,12 +285,14 @@ CREATE TABLE `http_session` (
     `last_node`     varchar(60) COMMENT 'Last node',
     `access_time`   bigint(20) COMMENT 'Access time',
     `last_access_time`  bigint(20) COMMENT 'Last access time',
-    `create_time`   bigint(20)  COMMENT 'Create time',
+    `session_create_time` bigint(20) COMMENT 'Jetty session create time (epoch millis)',
     `cookie_time`   bigint(20)  COMMENT 'Cookie time',
     `last_save_time` bigint(20) COMMENT 'Last save time',
     `expiry_time`   bigint(20)  COMMENT 'Expiry time',
     `max_interval`  bigint(20)  COMMENT 'Max internal',
     `data_store`    blob        COMMENT 'Session data store',
+    `create_time`   timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`   timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY(`session_id`, `context_path`, `virtual_host`),
     KEY `idx_session_expiry` (`expiry_time`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Http session store' ROW_FORMAT=DYNAMIC;
@@ -277,6 +306,8 @@ CREATE TABLE IF NOT EXISTS ha_lease (
   lease_expire_ts    BIGINT        NULL COMMENT 'Lease expiration timestamp (ms since epoch)',
   version            INT           NOT NULL DEFAULT 0 COMMENT 'Optimistic lock version of the lease row',
   updated_at         BIGINT        NOT NULL COMMENT 'Last update timestamp (ms since epoch)',
+  `create_time`      timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time`      timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (cluster_name, service_name),
   KEY `idx_ha_lease_expire` (lease_expire_ts) COMMENT 'Index for querying expired leases',
   KEY `idx_ha_lease_node` (node_id) COMMENT 'Index for querying leases by node ID'

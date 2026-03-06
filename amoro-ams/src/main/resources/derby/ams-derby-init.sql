@@ -242,7 +242,7 @@ CREATE TABLE http_session (
     last_node     VARCHAR(60),
     access_time   BIGINT,
     last_access_time  BIGINT,
-    create_time   BIGINT,
+    session_create_time BIGINT,
     cookie_time   BIGINT,
     last_save_time BIGINT,
     expiry_time   BIGINT,

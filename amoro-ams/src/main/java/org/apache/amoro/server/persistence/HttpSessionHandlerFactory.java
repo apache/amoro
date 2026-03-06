@@ -67,7 +67,7 @@ public class HttpSessionHandlerFactory {
       setLastNodeColumn("last_node");
       setAccessTimeColumn("access_time");
       setLastAccessTimeColumn("last_access_time");
-      setCreateTimeColumn("create_time");
+      setCreateTimeColumn("session_create_time");
       setCookieTimeColumn("cookie_time");
       setLastSavedTimeColumn("last_save_time");
       setExpiryTimeColumn("expiry_time");
