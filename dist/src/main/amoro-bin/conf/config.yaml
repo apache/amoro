@@ -35,6 +35,8 @@ ams:
     session-timeout: 7d
     bind-port: 1630
     rest-auth-type: token
+    iceberg-rest-catalog:
+      enabled: true
 
   refresh-external-catalogs:
     interval: 3min # 180000
