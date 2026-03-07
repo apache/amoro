@@ -380,6 +380,8 @@ public class AmsEnvironment {
         + "\n"
         + "  http-server:\n"
         + "    bind-port: 1630\n"
+        + "    iceberg-rest-catalog:\n"
+        + "       enabled: true\n"
         + "\n"
         + "  self-optimizing:\n"
         + "    commit-thread-count: 10\n"

@@ -36,6 +36,7 @@ import io.javalin.http.HttpCode;
 import io.javalin.plugin.json.JavalinJackson;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.events.IcebergReportEvent;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.properties.CatalogMetaProperties;
@@ -44,6 +45,7 @@ import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.persistence.PersistentBase;
+import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.internal.InternalTableCreator;
 import org.apache.amoro.server.table.internal.InternalTableHandler;
 import org.apache.amoro.server.table.internal.InternalTableManager;
@@ -92,7 +94,7 @@ import java.util.stream.Collectors;
  * href="https://github.com/apache/iceberg/blob/main/open-api/rest-catalog-open-api.yaml">iceberg
  * rest-catalog-open-api </a>
  */
-public class RestCatalogService extends PersistentBase {
+public class RestCatalogService extends PersistentBase implements RestExtension {
 
   private static final Logger LOG = LoggerFactory.getLogger(RestCatalogService.class);
 
@@ -117,6 +119,7 @@ public class RestCatalogService extends PersistentBase {
     this.jsonMapper = new JavalinJackson(objectMapper);
   }
 
+  @Override
   public EndpointGroup endpoints() {
     return () -> {
       // for iceberg rest catalog api
@@ -146,10 +149,12 @@ public class RestCatalogService extends PersistentBase {
     };
   }
 
+  @Override
   public boolean needHandleException(Context ctx) {
     return ctx.req.getRequestURI().startsWith(ICEBERG_REST_API_PREFIX);
   }
 
+  @Override
   public void handleException(Exception e, Context ctx) {
     IcebergRestErrorCode code = IcebergRestErrorCode.exceptionToCode(e);
     ErrorResponse response =
@@ -506,6 +511,47 @@ public class RestCatalogService extends PersistentBase {
         return Conflict;
       }
       return InternalServerError;
+    }
+  }
+
+  public static class RestCatalogServiceFactory implements RestExtensionFactory {
+
+    private CatalogManager catalogManager;
+    private TableManager tableManager;
+    private Configurations serviceConfig;
+
+    @Override
+    public RestExtensionFactory withServiceConfig(Configurations serviceConfig) {
+      this.serviceConfig = serviceConfig;
+      return this;
+    }
+
+    @Override
+    public RestExtensionFactory withCatalogManager(CatalogManager catalogManager) {
+      this.catalogManager = catalogManager;
+      return this;
+    }
+
+    @Override
+    public RestExtensionFactory withTableManager(TableManager tableManager) {
+      this.tableManager = tableManager;
+      return this;
+    }
+
+    @Override
+    public RestExtension build() {
+      return new RestCatalogService(catalogManager, tableManager);
+    }
+
+    @Override
+    public void open(Map<String, String> properties) {}
+
+    @Override
+    public void close() {}
+
+    @Override
+    public String name() {
+      return "iceberg-rest-catalog";
     }
   }
 }
