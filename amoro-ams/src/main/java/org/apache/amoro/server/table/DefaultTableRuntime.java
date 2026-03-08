@@ -385,8 +385,11 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
         .updateState(
             OPTIMIZING_STATE_KEY,
             state -> {
-              state.setLastOptimizedSnapshotId(optimizingProcess.getTargetSnapshotId());
-              state.setLastOptimizedChangeSnapshotId(optimizingProcess.getTargetChangeSnapshotId());
+              if (success) {
+                state.setLastOptimizedSnapshotId(optimizingProcess.getTargetSnapshotId());
+                state.setLastOptimizedChangeSnapshotId(
+                    optimizingProcess.getTargetChangeSnapshotId());
+              }
               if (processType == OptimizingType.MINOR) {
                 state.setLastMinorOptimizingTime(optimizingProcess.getPlanTime());
               } else if (processType == OptimizingType.MAJOR) {
