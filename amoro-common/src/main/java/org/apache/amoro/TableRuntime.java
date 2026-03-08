@@ -60,6 +60,13 @@ public interface TableRuntime {
   ServerTableIdentifier getTableIdentifier();
 
   /**
+   * Load the current table instance for this runtime.
+   *
+   * <p>This method is mainly intended for in-AMS processes.
+   */
+  AmoroTable<?> loadTable();
+
+  /**
    * Get the table configuration. @Deprecated use {@link #getTableConfig()} instead.
    *
    * @return the table configuration

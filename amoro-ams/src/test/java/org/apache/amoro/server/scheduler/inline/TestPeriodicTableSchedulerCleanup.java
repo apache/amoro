@@ -100,7 +100,7 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
         new DefaultTableRuntimeStore(
             identifier, meta, DefaultTableRuntime.REQUIRED_STATES, Collections.emptyList());
 
-    return new DefaultTableRuntime(store);
+    return new DefaultTableRuntime(store, () -> null);
   }
 
   private void cleanUpTableRuntimeData(List<Long> tableIds) {
