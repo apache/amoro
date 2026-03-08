@@ -537,6 +537,121 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     queue.dispose();
   }
 
+  @Test
+  public void testProcessCloseKeepsLastOptimizedSnapshotId() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    long snapshotIdBeforePlanning = tableRuntime.getLastOptimizedSnapshotId();
+    long changeSnapshotIdBeforePlanning = tableRuntime.getLastOptimizedChangeSnapshotId();
+
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+
+    // Poll task to trigger planning → process creation
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    Assert.assertNotNull(process);
+    Assert.assertEquals(ProcessStatus.RUNNING, process.getStatus());
+
+    // Close process without success (simulates group change / forced termination)
+    process.close(false);
+
+    // lastOptimizedSnapshotId and lastOptimizedChangeSnapshotId should NOT be updated
+    Assert.assertEquals(snapshotIdBeforePlanning, tableRuntime.getLastOptimizedSnapshotId());
+    Assert.assertEquals(
+        changeSnapshotIdBeforePlanning, tableRuntime.getLastOptimizedChangeSnapshotId());
+    Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
+    Assert.assertNull(tableRuntime.getOptimizingProcess());
+    queue.dispose();
+  }
+
+  @Test
+  public void testTableRescheduledAfterProcessClose() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+
+    // Poll task to trigger planning → process creation
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    Assert.assertNotNull(process);
+
+    // Force close instead of commit (simulates group change)
+    process.close(false);
+    Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
+
+    // Verify snapshot marker was not updated — key condition for isTablePending()
+    Assert.assertNotEquals(
+        tableRuntime.getLastOptimizedSnapshotId(), tableRuntime.getCurrentSnapshotId());
+
+    // Simulate setPendingInput() transitioning IDLE → PENDING (done by evaluator in production)
+    tableRuntime
+        .store()
+        .begin()
+        .updateStatusCode(code -> OptimizingStatus.PENDING.getCode())
+        .commit();
+    Assert.assertEquals(OptimizingStatus.PENDING, tableRuntime.getOptimizingStatus());
+
+    // Set minPlanInterval to 0 so the table is immediately eligible for re-planning
+    tableRuntime
+        .store()
+        .begin()
+        .updateTableConfig(
+            config -> config.put(TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL, "0"))
+        .commit();
+
+    // Build a new queue with the PENDING table — scheduler should NOT skip it
+    queue.dispose();
+    OptimizingQueue queue2 = buildOptimizingGroupService(tableRuntime);
+    TaskRuntime<?> task2 = queue2.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task2);
+    queue2.dispose();
+  }
+
+  @Test
+  public void testReleaseOrphanedPlanningTableOnRestart() {
+    // Scenario: Table config was changed (optimizer group: "old_group" -> "default"),
+    // the optimizing process was closed but table runtime is persisted with "old_group" and
+    // PLANNING status
+    ResourceGroup oldGroup = new ResourceGroup.Builder("old_group", "local").build();
+    // reset optimizer group to "default" to simulate the scenario where the self-optimizing configs
+    // have been cleared
+    DefaultTableRuntime tableRuntime =
+        buildTableRuntimeMeta(OptimizingStatus.PLANNING, defaultResourceGroup());
+    Assert.assertEquals(OptimizingStatus.PLANNING, tableRuntime.getOptimizingStatus());
+    Assert.assertEquals("default", tableRuntime.getGroupName());
+
+    List<DefaultTableRuntime> released =
+        simulateLoadOptimizingQueuesForNonExistentGroup(
+            Collections.singletonList(tableRuntime), oldGroup);
+
+    Assert.assertEquals(1, released.size());
+    Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
+  }
+
+  @Test
+  public void testReleaseOrphanedPendingTableOnRestart() {
+    // Scenario: Table config was changed (optimizer group: "old_group" -> "default"),
+    // the optimizing process was closed but table runtime is persisted with "default" and PENDING
+    // status
+    ResourceGroup oldGroup = new ResourceGroup.Builder("old_group", "local").build();
+    // reset optimizer group to "default" to simulate the scenario where the self-optimizing configs
+    // have been cleared
+    DefaultTableRuntime tableRuntime =
+        buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
+    Assert.assertEquals(OptimizingStatus.PENDING, tableRuntime.getOptimizingStatus());
+    Assert.assertEquals("default", tableRuntime.getGroupName());
+
+    List<DefaultTableRuntime> released =
+        simulateLoadOptimizingQueuesForNonExistentGroup(
+            Collections.singletonList(tableRuntime), oldGroup);
+
+    Assert.assertEquals(1, released.size());
+    Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
+  }
+
   protected DefaultTableRuntime initTableWithFiles() {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
