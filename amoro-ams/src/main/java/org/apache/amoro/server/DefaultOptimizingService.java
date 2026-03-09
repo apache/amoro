@@ -163,9 +163,28 @@ public class DefaultOptimizingService extends StatedPersistentBase
           optimizingQueueByGroup.put(groupName, optimizingQueue);
         });
     optimizers.forEach(optimizer -> registerOptimizer(optimizer, false));
-    groupToTableRuntimes
-        .keySet()
-        .forEach(groupName -> LOG.warn("Unloaded task runtime in group {}", groupName));
+    // Avoid keeping the tables in processing/pending status forever in below cases:
+    // 1) Resource group does not exist
+    // 2) The AMS restarts after the tables disable self-optimizing but before the optimizing
+    // process is closed, which may cause the optimizing status of the tables to be still
+    // PLANNING/PENDING after AMS is restarted.
+    groupToTableRuntimes.forEach(
+        (groupName, trs) -> {
+          trs.stream()
+              .filter(
+                  tr ->
+                      tr.getOptimizingStatus() == OptimizingStatus.PLANNING
+                          || tr.getOptimizingStatus() == OptimizingStatus.PENDING)
+              .forEach(
+                  tr -> {
+                    LOG.warn(
+                        "Release {} optimizing process for table {}, since its resource group {} does not exist",
+                        tr.getOptimizingStatus().name(),
+                        tr.getTableIdentifier(),
+                        groupName);
+                    tr.completeEmptyProcess();
+                  });
+        });
   }
 
   private void registerOptimizer(OptimizerInstance optimizer, boolean needPersistent) {
@@ -379,11 +398,22 @@ public class DefaultOptimizingService extends StatedPersistentBase
     public void handleConfigChanged(TableRuntime runtime, TableConfiguration originalConfig) {
       DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       String originalGroup = originalConfig.getOptimizingConfig().getOptimizerGroup();
+      Optional<OptimizingQueue> newQueue = getOptionalQueueByGroup(tableRuntime.getGroupName());
       if (!tableRuntime.getGroupName().equals(originalGroup)) {
         getOptionalQueueByGroup(originalGroup).ifPresent(q -> q.releaseTable(tableRuntime));
+        // If the new group doesn't exist, close the process to avoid the table in limbo(PENDING)
+        // status.
+        if (newQueue.isEmpty()) {
+          LOG.warn(
+              "Cannot find the resource group: {}, try to release optimizing process of table {} directly",
+              tableRuntime.getGroupName(),
+              tableRuntime.getTableIdentifier());
+          tableRuntime.completeEmptyProcess();
+        }
       }
-      getOptionalQueueByGroup(tableRuntime.getGroupName())
-          .ifPresent(q -> q.refreshTable(tableRuntime));
+
+      // Binding new queue if the new group exists
+      newQueue.ifPresent(q -> q.refreshTable(tableRuntime));
     }
 
     @Override
