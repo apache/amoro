@@ -675,6 +675,8 @@ Unzip it to create the amoro-x.y.z directory in the same directory, and then go 
 <li>The <code>ams.http-server.bind-port</code> configuration specifies the port to which the HTTP service is bound. The Dashboard and Open API are bound to this port, and the default value is 1630.</li>
 <li>The <code>ams.http-server.rest-auth-type</code> configuration specifies the REST API auth type, which could be token(default), basic or jwt (JSON Web Token).</li>
 <li>The <code>ams.http-server.auth-basic-provider</code> configuration specifies the REST API basic authentication provider. By default, it uses <code>ams.admin-username</code> and <code>ams.admin-password</code> for authentication. You can also specify a custom implementation by providing the fully qualified class name of a class that implements the <code>org.apache.amoro.authentication.PasswdAuthenticationProvider</code> interface.</li>
+<li>The <code>ams.http-server.login-auth-provider</code> configuration specifies the Dashboard login authentication provider. By default, it uses <code>org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider</code> (admin username/password login).</li>
+<li>To enable LDAP login for Dashboard, set <code>ams.http-server.login-auth-provider</code> to <code>org.apache.amoro.server.authentication.LdapPasswdAuthenticationProvider</code>, and configure <code>ams.http-server.login-auth-ldap-url</code> and <code>ams.http-server.login-auth-ldap-user-pattern</code>.</li>
 <li>The <code>ams.http-server.auth-jwt-provider</code> configuration specifies the REST API JWT authentication provider. Set this to the fully qualified class name of your custom provider implementing the <code>org.apache.amoro.authentication.TokenAuthenticationProvider</code> interface. This is required when <code>ams.http-server.rest-auth-type</code> is set to <code>jwt</code>.</li>
 <li>The <code>ams.http-server.proxy-client-ip-header</code> configuration specifies the HTTP header to use for extracting the real client IP address when AMS is deployed behind a reverse proxy (such as Nginx or a load balancer). Common values include <code>X-Forwarded-For</code> or <code>X-Real-IP</code>. If not set, AMS will use the remote address from the connection.</li>
 </ul>
@@ -691,6 +693,11 @@ Unzip it to create the amoro-x.y.z directory in the same directory, and then go 
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">http-server</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">session-timeout</span>: <span style="color:#ae81ff">7d</span> <span style="color:#75715e">#Re-login after 7days</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">bind-port</span>: <span style="color:#ae81ff">1630</span> <span style="color:#75715e">#The port for accessing AMS Dashboard.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">login-auth-provider</span>: <span style="color:#ae81ff">org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Enable LDAP login for Dashboard:</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># login-auth-provider: org.apache.amoro.server.authentication.LdapPasswdAuthenticationProvider</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># login-auth-ldap-url: &#34;ldap://ldap.example.com:389&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># login-auth-ldap-user-pattern: &#34;uid={0},ou=people,dc=example,dc=com&#34;</span>
 </span></span></code></pre></div><div class="info">
     Make sure the port is not used before configuring it.
 </div>
