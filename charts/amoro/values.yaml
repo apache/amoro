@@ -143,6 +143,12 @@ amoroConf:
   ams:
     adminUsername: admin
     adminPassword: admin
+    loginAuthProvider: org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider
+    ## LDAP login settings (only used when loginAuthProvider is
+    ## org.apache.amoro.server.authentication.LdapPasswdAuthenticationProvider)
+    loginAuthLdap:
+      url: ~
+      userPattern: ~
 
   ## AMS config shade properties
   ##
