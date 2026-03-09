@@ -359,7 +359,7 @@ public class AmoroServiceContainer {
     DashboardServer dashboardServer =
         new DashboardServer(
             serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager, this);
-    RestExtensionManager restExtensionManager = new RestExtensionManager(serviceConfig);
+    RestExtensionManager restExtensionManager = new RestExtensionManager();
     restExtensionManager.initialize();
     List<RestExtension> restExtensions =
         restExtensionManager.loadExtensions(serviceConfig, catalogManager, tableManager);

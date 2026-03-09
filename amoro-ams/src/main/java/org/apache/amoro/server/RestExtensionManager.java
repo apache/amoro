@@ -18,41 +18,20 @@
 
 package org.apache.amoro.server;
 
-import org.apache.amoro.config.ConfigOption;
-import org.apache.amoro.config.ConfigOptions;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.AbstractPluginManager;
-import org.apache.amoro.server.manager.PluginConfiguration;
 import org.apache.amoro.server.table.TableManager;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class RestExtensionManager extends AbstractPluginManager<RestExtensionFactory> {
 
-  private static final String REST_EXTENSION_PLUGIN_CATEGORY = "rest-extension";
-  private final Configurations configurations;
+  private static final String REST_EXTENSION_PLUGIN_CATEGORY = "rest-extensions";
 
-  public RestExtensionManager(Configurations configurations) {
+  public RestExtensionManager() {
     super(REST_EXTENSION_PLUGIN_CATEGORY);
-    this.configurations = configurations;
-  }
-
-  @Override
-  protected List<PluginConfiguration> loadPluginConfigurations() {
-    Set<String> restExtensions = getFoundedPlugins().keySet();
-    return restExtensions.stream()
-        .filter(this::enabled)
-        .map(PluginConfiguration::emptyConfig)
-        .collect(Collectors.toList());
-  }
-
-  private boolean enabled(String name) {
-    ConfigOption<Boolean> key =
-        ConfigOptions.key("http-server." + name + ".enabled").booleanType().defaultValue(false);
-    return configurations.getBoolean(key);
   }
 
   public List<RestExtension> loadExtensions(
