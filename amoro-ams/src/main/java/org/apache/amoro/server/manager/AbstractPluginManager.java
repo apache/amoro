@@ -82,6 +82,8 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
 
   /** Initialize the plugin manager, and install all plugins. */
   public void initialize() {
+    foundAvailablePlugins();
+
     List<PluginConfiguration> pluginConfigs = loadPluginConfigurations();
     pluginConfigs.stream()
         .sorted(Comparator.comparing(PluginConfiguration::getPriority))
@@ -92,7 +94,6 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
                   exists == null, "Duplicate plugin name found: %s", config.getName());
             });
 
-    foundAvailablePlugins();
     for (PluginConfiguration pluginConfig : pluginConfigs) {
       if (!pluginConfig.isEnabled()) {
         continue;
@@ -184,6 +185,10 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   protected Path pluginManagerConfigFilePath() {
     return Paths.get(
         Environments.getConfigPath(), PLUGIN_CONFIG_DIR_NAME, pluginCategory() + ".yaml");
+  }
+
+  protected Map<String, T> getFoundedPlugins() {
+    return foundedPlugins;
   }
 
   /**

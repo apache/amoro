@@ -21,6 +21,7 @@ package org.apache.amoro.server;
 import static org.apache.amoro.server.AmoroManagementConf.USE_MASTER_SLAVE_MODE;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
 import org.apache.amoro.Constants;
@@ -97,9 +98,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Function;
 
 public class AmoroServiceContainer {
 
@@ -356,7 +359,12 @@ public class AmoroServiceContainer {
     DashboardServer dashboardServer =
         new DashboardServer(
             serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager, this);
-    RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
+    RestExtensionManager restExtensionManager = new RestExtensionManager();
+    restExtensionManager.initialize();
+    List<RestExtension> restExtensions =
+        restExtensionManager.loadExtensions(serviceConfig, catalogManager, tableManager);
+    Function<Context, Optional<RestExtension>> handleExceptionByExtension =
+        ctx -> restExtensions.stream().filter(ext -> ext.needHandleException(ctx)).findFirst();
 
     httpServer =
         Javalin.create(
@@ -374,7 +382,9 @@ public class AmoroServiceContainer {
     httpServer.routes(
         () -> {
           dashboardServer.endpoints().addEndpoints();
-          restCatalogService.endpoints().addEndpoints();
+          for (RestExtension restExtension : restExtensions) {
+            restExtension.endpoints().addEndpoints();
+          }
         });
 
     httpServer.before(
@@ -389,8 +399,9 @@ public class AmoroServiceContainer {
     httpServer.exception(
         Exception.class,
         (e, ctx) -> {
-          if (restCatalogService.needHandleException(ctx)) {
-            restCatalogService.handleException(e, ctx);
+          Optional<RestExtension> extension = handleExceptionByExtension.apply(ctx);
+          if (extension.isPresent()) {
+            extension.get().handleException(e, ctx);
           } else {
             dashboardServer.handleException(e, ctx);
           }
@@ -399,7 +410,8 @@ public class AmoroServiceContainer {
     httpServer.error(
         HttpCode.NOT_FOUND.getStatus(),
         ctx -> {
-          if (!restCatalogService.needHandleException(ctx)) {
+          Optional<RestExtension> extension = handleExceptionByExtension.apply(ctx);
+          if (!extension.isPresent()) {
             ctx.json(new ErrorResponse(HttpCode.NOT_FOUND, "page not found!", ""));
           }
         });
@@ -407,7 +419,8 @@ public class AmoroServiceContainer {
     httpServer.error(
         HttpCode.INTERNAL_SERVER_ERROR.getStatus(),
         ctx -> {
-          if (!restCatalogService.needHandleException(ctx)) {
+          Optional<RestExtension> extension = handleExceptionByExtension.apply(ctx);
+          if (!extension.isPresent()) {
             ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", ""));
           }
         });
