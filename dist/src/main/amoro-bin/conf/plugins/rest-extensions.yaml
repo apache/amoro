@@ -15,8 +15,8 @@
 # limitations under the License.
 #
 
-# This file is the config file for plugin event listener
-# configurations of event listeners
+# This file is the config file for plugin rest extension
+# configurations of rest extensions
 rest-extensions:
   - name: iceberg-rest-catalog
     enabled: true
