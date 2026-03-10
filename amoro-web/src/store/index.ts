@@ -23,6 +23,7 @@ function state(): GlobalState {
   return {
     userInfo: {
       userName: '',
+      role: 'ADMIN',
     // token: ''
     } as UserInfo,
     isShowTablesMenu: false,

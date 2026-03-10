@@ -28,7 +28,10 @@ import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HttpAuthenticationFactoryTest {
   @Test
@@ -68,6 +71,74 @@ public class HttpAuthenticationFactoryTest {
   }
 
   @Test
+  public void testPasswordAuthenticationProviderWithLocalUsers() throws Exception {
+    Configurations conf = new Configurations();
+    conf.set(AmoroManagementConf.ADMIN_USERNAME, "admin");
+    conf.set(AmoroManagementConf.ADMIN_PASSWORD, "password");
+    conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, true);
+    conf.set(
+        AmoroManagementConf.AUTHORIZATION_USERS,
+        Arrays.asList(localUser("viewer", "viewer123", "READ_ONLY")));
+
+    PasswdAuthenticationProvider passwdAuthenticationProvider =
+        HttpAuthenticationFactory.getPasswordAuthenticationProvider(
+            DefaultPasswdAuthenticationProvider.class.getName(), conf);
+
+    assert passwdAuthenticationProvider
+        .authenticate(new DefaultPasswordCredential("viewer", "viewer123"))
+        .getName()
+        .equals("viewer");
+  }
+
+  @Test
+  public void testPasswordAuthenticationProviderIgnoresLocalUsersWhenAuthorizationDisabled() {
+    Configurations conf = new Configurations();
+    conf.set(AmoroManagementConf.ADMIN_USERNAME, "admin");
+    conf.set(AmoroManagementConf.ADMIN_PASSWORD, "password");
+    conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, false);
+    conf.set(
+        AmoroManagementConf.AUTHORIZATION_USERS,
+        Arrays.asList(localUser("viewer", "viewer123", "READ_ONLY")));
+
+    PasswdAuthenticationProvider passwdAuthenticationProvider =
+        HttpAuthenticationFactory.getPasswordAuthenticationProvider(
+            DefaultPasswdAuthenticationProvider.class.getName(), conf);
+
+    assertThrows(
+        SignatureCheckException.class,
+        () ->
+            passwdAuthenticationProvider.authenticate(
+                new DefaultPasswordCredential("viewer", "viewer123")));
+  }
+
+  @Test
+  public void testPasswordAuthenticationProviderKeepsLastDuplicateLocalUser() throws Exception {
+    Configurations conf = new Configurations();
+    conf.set(AmoroManagementConf.ADMIN_USERNAME, "admin");
+    conf.set(AmoroManagementConf.ADMIN_PASSWORD, "password");
+    conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, true);
+    conf.set(
+        AmoroManagementConf.AUTHORIZATION_USERS,
+        Arrays.asList(
+            localUser("viewer", "viewer123", "READ_ONLY"),
+            localUser("viewer", "viewer456", "READ_ONLY")));
+
+    PasswdAuthenticationProvider passwdAuthenticationProvider =
+        HttpAuthenticationFactory.getPasswordAuthenticationProvider(
+            DefaultPasswdAuthenticationProvider.class.getName(), conf);
+
+    assertThrows(
+        SignatureCheckException.class,
+        () ->
+            passwdAuthenticationProvider.authenticate(
+                new DefaultPasswordCredential("viewer", "viewer123")));
+    assert passwdAuthenticationProvider
+        .authenticate(new DefaultPasswordCredential("viewer", "viewer456"))
+        .getName()
+        .equals("viewer");
+  }
+
+  @Test
   public void testBearerTokenAuthenticationProvider() {
     Configurations conf = new Configurations();
     assertThrows(
@@ -95,5 +166,13 @@ public class HttpAuthenticationFactoryTest {
                   "invalidToken",
                   Collections.singletonMap(TokenCredential.CLIENT_IP_KEY, "localhost")));
         });
+  }
+
+  private static Map<String, String> localUser(String username, String password, String role) {
+    Map<String, String> user = new HashMap<>();
+    user.put("username", username);
+    user.put("password", password);
+    user.put("role", role);
+    return user;
   }
 }

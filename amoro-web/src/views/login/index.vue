@@ -22,6 +22,7 @@ import { defineComponent, reactive, ref, onMounted, onUnmounted, nextTick } from
 import { useRouter } from 'vue-router'
 import loginService from '@/services/login.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
+import useStore from '@/store'
 
 interface FormState {
   username: string
@@ -32,6 +33,7 @@ export default defineComponent({
   name: 'Login',
   setup() {
     const router = useRouter()
+    const store = useStore()
     const formState = reactive<FormState>({
       username: '',
       password: '',
@@ -114,6 +116,11 @@ export default defineComponent({
           message.error(res.message)
           return
         }
+        const result = res.result || {}
+        store.updateUserInfo({
+          userName: result.userName || formState.username,
+          role: result.role || 'ADMIN',
+        })
         setTimeout(() => {
           window.location.href = '/'
         }, 100)
