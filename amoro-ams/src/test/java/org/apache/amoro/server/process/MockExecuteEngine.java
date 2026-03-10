@@ -48,6 +48,7 @@ public class MockExecuteEngine implements ExecuteEngine {
   private final ThreadPoolExecutor executionPool =
       new ThreadPoolExecutor(10, 100, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
 
+  public static final EngineType MOCK_TYPE = EngineType.of("mock");
   private final Map<String, Future<?>> activeInstances = new ConcurrentHashMap<>();
 
   private final Map<String, Future<?>> cancelingInstances = new ConcurrentHashMap<>();
@@ -55,7 +56,7 @@ public class MockExecuteEngine implements ExecuteEngine {
   /** Engine type of this mock engine. */
   @Override
   public EngineType engineType() {
-    return EngineType.of(name());
+    return MOCK_TYPE;
   }
 
   /**
