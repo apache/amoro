@@ -24,12 +24,15 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.authentication.DefaultPasswordCredential;
 import org.apache.amoro.server.authentication.HttpAuthenticationFactory;
+import org.apache.amoro.server.authorization.Role;
+import org.apache.amoro.server.authorization.RoleResolver;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.utils.PreconditionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.security.Principal;
 import java.util.Map;
 
 /** The controller that handles login requests. */
@@ -37,11 +40,13 @@ public class LoginController {
   public static final Logger LOG = LoggerFactory.getLogger(LoginController.class);
 
   private final PasswdAuthenticationProvider loginAuthProvider;
+  private final RoleResolver roleResolver;
 
-  public LoginController(Configurations serviceConfig) {
+  public LoginController(Configurations serviceConfig, RoleResolver roleResolver) {
     this.loginAuthProvider =
         HttpAuthenticationFactory.getPasswordAuthenticationProvider(
             serviceConfig.get(AmoroManagementConf.HTTP_SERVER_LOGIN_AUTH_PROVIDER), serviceConfig);
+    this.roleResolver = roleResolver;
   }
 
   /** Get current user. */
@@ -59,15 +64,36 @@ public class LoginController {
     PreconditionUtils.checkNotNullOrEmpty(user, "user");
     PreconditionUtils.checkNotNullOrEmpty(pwd, "password");
     DefaultPasswordCredential credential = new DefaultPasswordCredential(user, pwd);
+
+    // Step 1: Authenticate the user
+    Principal principal;
     try {
-      this.loginAuthProvider.authenticate(credential);
-      ctx.sessionAttribute("user", new SessionInfo(user, System.currentTimeMillis() + ""));
-      ctx.json(OkResponse.of("success"));
+      principal = this.loginAuthProvider.authenticate(credential);
     } catch (Exception e) {
       LOG.error("authenticate user {} failed", user, e);
       String causeMessage = e.getMessage() != null ? e.getMessage() : "unknown error";
       throw new RuntimeException("invalid user " + user + " or password! Cause: " + causeMessage);
     }
+
+    // Step 2: Resolve user role (LDAP group lookup)
+    String authenticatedUser = principal.getName();
+    Role role;
+    try {
+      role = roleResolver.resolve(authenticatedUser);
+    } catch (Exception e) {
+      LOG.error(
+          "Role resolution failed for user {}. "
+              + "Authentication succeeded but LDAP group query failed. "
+              + "Check authorization.ldap-role-mapping config (bind-dn/bind-password/admin-group-dn).",
+          authenticatedUser,
+          e);
+      throw new RuntimeException("Login failed due to a server error during role resolution");
+    }
+
+    SessionInfo sessionInfo =
+        new SessionInfo(authenticatedUser, System.currentTimeMillis() + "", role);
+    ctx.sessionAttribute("user", sessionInfo);
+    ctx.json(OkResponse.of(sessionInfo));
   }
 
   /** handle logout post request. */
@@ -76,29 +102,28 @@ public class LoginController {
     ctx.json(OkResponse.ok());
   }
 
-  static class SessionInfo implements Serializable {
+  /** Session user payload persisted in the server-side HTTP session. */
+  public static class SessionInfo implements Serializable {
     String userName;
     String loginTime;
+    Role role;
 
-    public SessionInfo(String username, String loginTime) {
+    public SessionInfo(String username, String loginTime, Role role) {
       this.userName = username;
       this.loginTime = loginTime;
+      this.role = role;
     }
 
     public String getUserName() {
       return userName;
     }
 
-    public void setUserName(String userName) {
-      this.userName = userName;
-    }
-
     public String getLoginTime() {
       return loginTime;
     }
 
-    public void setLoginTime(String loginTime) {
-      this.loginTime = loginTime;
+    public Role getRole() {
+      return role;
     }
   }
 }

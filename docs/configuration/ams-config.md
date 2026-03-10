@@ -86,6 +86,16 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | ha.zookeeper-auth-type | NONE | The Zookeeper authentication type, NONE or KERBEROS. |
 | http-server.auth-basic-provider | org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider | User-defined password authentication implementation of org.apache.amoro.authentication.PasswdAuthenticationProvider |
 | http-server.auth-jwt-provider | &lt;undefined&gt; | User-defined JWT (JSON Web Token) authentication implementation of org.apache.amoro.authentication.TokenAuthenticationProvider |
+| http-server.authorization.admin-users |  | Additional usernames that should always be treated as admin users. |
+| http-server.authorization.default-role | READ_ONLY | Default role for authenticated users without an explicit role mapping. |
+| http-server.authorization.enabled | false | Whether to enable dashboard RBAC authorization. |
+| http-server.authorization.ldap-role-mapping.admin-group-dn | &lt;undefined&gt; | Full DN of the LDAP admin group, e.g. CN=amoro-admins,OU=Groups,DC=example,DC=com. |
+| http-server.authorization.ldap-role-mapping.bind-dn |  | Optional LDAP bind DN used when querying role-mapping groups. |
+| http-server.authorization.ldap-role-mapping.bind-password |  | Optional LDAP bind password used when querying role-mapping groups. |
+| http-server.authorization.ldap-role-mapping.enabled | false | Whether to resolve dashboard roles from LDAP group membership. |
+| http-server.authorization.ldap-role-mapping.group-member-attribute | member | LDAP group attribute that stores member references. |
+| http-server.authorization.ldap-role-mapping.user-dn-pattern | &lt;undefined&gt; | LDAP user DN pattern used to match group members. |
+| http-server.authorization.users | &lt;undefined&gt; | Local dashboard users with username/password/role entries. |
 | http-server.bind-port | 19090 | Port that the Http server is bound to. |
 | http-server.login-auth-ldap-url | &lt;undefined&gt; | LDAP connection URL(s), value could be a SPACE separated list of URLs to multiple LDAP servers for resiliency. URLs are tried in the order specified until the connection is successful |
 | http-server.login-auth-ldap-user-pattern | &lt;undefined&gt; | LDAP user pattern for authentication. The pattern defines how to construct the user's distinguished name (DN) in the LDAP directory. Use {0} as a placeholder for the username. For example, 'cn={0},ou=people,dc=example,dc=com' will search for users in the specified organizational unit. |
@@ -134,6 +144,47 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | thrift-server.table-service.worker-thread-count | 20 | The number of worker threads for the Thrift server. |
 | use-master-slave-mode | false | This setting controls whether to enable the AMS horizontal scaling feature, which is currently under development and testing. |
 
+## RBAC Example
+
+Enable RBAC only when you need role separation for dashboard users. When `http-server.authorization.enabled`
+is `false`, all authenticated dashboard users keep admin behavior for compatibility.
+
+```yaml
+ams:
+  http-server:
+    authorization:
+      enabled: true
+      default-role: READ_ONLY
+      admin-users:
+        - alice
+        - bob
+      users:
+        - username: admin
+          password: admin
+          role: ADMIN
+        - username: viewer
+          password: viewer123
+          role: READ_ONLY
+```
+
+```yaml
+ams:
+  http-server:
+    login-auth-provider: org.apache.amoro.server.authentication.LdapPasswdAuthenticationProvider
+    login-auth-ldap-url: "ldap://ldap.example.com:389"
+    login-auth-ldap-user-pattern: "uid={0},ou=people,dc=example,dc=com"
+    authorization:
+      enabled: true
+      default-role: READ_ONLY
+      ldap-role-mapping:
+        enabled: true
+        admin-group-dn: "cn=amoro-admins,ou=groups,dc=example,dc=com"
+        group-member-attribute: "member"
+        user-dn-pattern: "uid={0},ou=people,dc=example,dc=com"
+        bind-dn: "cn=service-account,dc=example,dc=com"
+        bind-password: "service-password"
+```
+
 
 ## Shade Utils Configuration
 
@@ -149,6 +200,4 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | Key  | Default | Description |
 | ---  | ------- | ----------- |
 | shade.identifier | default | The identifier of the encryption method for decryption. Defaults to "default", indicating no encryption |
-| shade.sensitive-keywords | admin-password;database.password | A semicolon-separated list of keywords for the configuration items to be decrypted. |
-
-
+| shade.sensitive-keywords | admin-password;database.password;http-server.authorization.ldap-role-mapping.bind-password | A semicolon-separated list of keywords for the configuration items to be decrypted. |
