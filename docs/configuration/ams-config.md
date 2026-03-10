@@ -91,7 +91,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | http-server.authorization.ldap-role-mapping.bind-password |  | Optional LDAP bind password used when querying role-mapping groups. |
 | http-server.authorization.ldap-role-mapping.enabled | false | Whether to resolve dashboard roles from LDAP group membership. |
 | http-server.authorization.ldap-role-mapping.group-member-attribute | member | LDAP group attribute that stores member references. |
-| http-server.authorization.ldap-role-mapping.user-dn-pattern | &lt;undefined&gt; | LDAP user DN pattern used to match group members. |
+| http-server.authorization.ldap-role-mapping.user-dn-pattern | &lt;undefined&gt; | LDAP user DN pattern used to match group members. Use {0} as the username placeholder. |
 | http-server.authorization.users | &lt;undefined&gt; | Local dashboard users with username/password/role entries. |
 | http-server.bind-port | 19090 | Port that the Http server is bound to. |
 | http-server.login-auth-ldap-url | &lt;undefined&gt; | LDAP connection URL(s), value could be a SPACE separated list of URLs to multiple LDAP servers for resiliency. URLs are tried in the order specified until the connection is successful |
@@ -180,7 +180,6 @@ ams:
         bind-password: "service-password"
 ```
 
-
 ## Shade Utils Configuration
 
 The configuration options for Amoro Configuration Shade Utils.
@@ -195,4 +194,6 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | Key  | Default | Description |
 | ---  | ------- | ----------- |
 | shade.identifier | default | The identifier of the encryption method for decryption. Defaults to "default", indicating no encryption |
-| shade.sensitive-keywords | admin-password;database.password;http-server.authorization.ldap-role-mapping.bind-password | A semicolon-separated list of keywords for the configuration items to be decrypted. |
+| shade.sensitive-keywords | admin-password;database.password | A semicolon-separated list of keywords for the configuration items to be decrypted. |
+
+
