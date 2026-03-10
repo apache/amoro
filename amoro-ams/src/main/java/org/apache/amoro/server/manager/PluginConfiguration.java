@@ -25,6 +25,7 @@ import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.amoro.utils.JacksonUtil;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /** Configuration of a plugin. */
@@ -62,6 +63,10 @@ public class PluginConfiguration {
       props = ImmutableMap.of();
     }
     return new PluginConfiguration(name, enabled, priority, props);
+  }
+
+  public static PluginConfiguration emptyConfig(String name) {
+    return new PluginConfiguration(name, true, -1, new HashMap<>());
   }
 
   /** @return Plugin name. */

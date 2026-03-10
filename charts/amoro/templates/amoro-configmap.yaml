@@ -70,6 +70,13 @@ data:
       http-server:
         rest-auth-type: {{ .Values.server.rest.restAuthType }}
         bind-port: {{ .Values.server.rest.port }}
+        login-auth-provider: {{ .Values.amoroConf.ams.loginAuthProvider | quote }}
+        {{- if .Values.amoroConf.ams.loginAuthLdap.url }}
+        login-auth-ldap-url: {{ .Values.amoroConf.ams.loginAuthLdap.url | quote }}
+        {{- end }}
+        {{- if .Values.amoroConf.ams.loginAuthLdap.userPattern }}
+        login-auth-ldap-user-pattern: {{ .Values.amoroConf.ams.loginAuthLdap.userPattern | quote }}
+        {{- end }}
 
       refresh-external-catalogs:
         interval: 3min # 180000
