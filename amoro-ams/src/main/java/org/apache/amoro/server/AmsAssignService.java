@@ -68,7 +68,8 @@ public class AmsAssignService {
   public AmsAssignService(HighAvailabilityContainer haContainer, Configurations serviceConfig) {
     this.haContainer = haContainer;
     this.serviceConfig = serviceConfig;
-    this.bucketIdTotalCount = serviceConfig.getInteger(AmoroManagementConf.BUCKET_ID_TOTAL_COUNT);
+    this.bucketIdTotalCount =
+        serviceConfig.getInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT);
     this.nodeOfflineTimeoutMs =
         serviceConfig.get(AmoroManagementConf.NODE_OFFLINE_TIMEOUT).toMillis();
     this.assignIntervalSeconds =
@@ -254,8 +255,7 @@ public class AmsAssignService {
 
         // Step 4: Redistribute buckets from offline nodes to alive nodes
         if (!bucketsToRedistribute.isEmpty()) {
-          redistributeBucketsIncrementally(
-              aliveNodes, bucketsToRedistribute, newAssignments, targetBucketsPerNode);
+          redistributeBucketsIncrementally(aliveNodes, bucketsToRedistribute, newAssignments);
         }
 
         // Step 5: Handle new nodes - balance buckets from existing nodes
@@ -276,8 +276,7 @@ public class AmsAssignService {
           }
         }
         if (!unassignedBuckets.isEmpty()) {
-          redistributeBucketsIncrementally(
-              aliveNodes, unassignedBuckets, newAssignments, targetBucketsPerNode);
+          redistributeBucketsIncrementally(aliveNodes, unassignedBuckets, newAssignments);
         }
 
         // Step 7: Save all new assignments
@@ -311,13 +310,11 @@ public class AmsAssignService {
    * @param aliveNodes List of alive nodes
    * @param bucketsToRedistribute Buckets to redistribute (from offline nodes)
    * @param currentAssignments Current assignments map (will be modified)
-   * @param targetBucketsPerNode Target number of buckets per node
    */
   private void redistributeBucketsIncrementally(
       List<AmsServerInfo> aliveNodes,
       List<String> bucketsToRedistribute,
-      Map<AmsServerInfo, List<String>> currentAssignments,
-      int targetBucketsPerNode) {
+      Map<AmsServerInfo, List<String>> currentAssignments) {
     if (aliveNodes.isEmpty() || bucketsToRedistribute.isEmpty()) {
       return;
     }

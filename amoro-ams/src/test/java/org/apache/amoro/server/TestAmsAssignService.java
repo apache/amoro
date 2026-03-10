@@ -78,7 +78,7 @@ public class TestAmsAssignService {
     serviceConfig.setString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS, "127.0.0.1:2181");
     serviceConfig.setString(AmoroManagementConf.HA_CLUSTER_NAME, "test-cluster");
     serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
-    serviceConfig.setInteger(AmoroManagementConf.BUCKET_ID_TOTAL_COUNT, 100);
+    serviceConfig.setInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT, 100);
     serviceConfig.set(AmoroManagementConf.NODE_OFFLINE_TIMEOUT, java.time.Duration.ofMinutes(5));
 
     haContainer = createContainerWithMockZk();
@@ -428,7 +428,7 @@ public class TestAmsAssignService {
     config.setString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS, "127.0.0.1:2181");
     config.setString(AmoroManagementConf.HA_CLUSTER_NAME, "test-cluster");
     config.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
-    config.setInteger(AmoroManagementConf.BUCKET_ID_TOTAL_COUNT, 100);
+    config.setInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT, 100);
     config.set(AmoroManagementConf.NODE_OFFLINE_TIMEOUT, java.time.Duration.ofMinutes(5));
     return config;
   }
