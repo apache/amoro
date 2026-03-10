@@ -138,8 +138,9 @@ public class TestDefaultProcessService extends AMSTableTestBase {
       awaitActiveInstances(executeEngine);
 
       ProcessService.TableProcessHolder holder = getAnyActiveTableProcessHolder();
-      ServerTableIdentifier tableIdentifier = holder.process.getTableRuntime().getTableIdentifier();
-      TableProcessStore store = holder.store;
+      ServerTableIdentifier tableIdentifier =
+          holder.getProcess().getTableRuntime().getTableIdentifier();
+      TableProcessStore store = holder.getStore();
       dropTable();
 
       // Wait until both active and canceling queues are empty
@@ -174,8 +175,8 @@ public class TestDefaultProcessService extends AMSTableTestBase {
       awaitActiveInstances(executeEngine);
 
       ProcessService.TableProcessHolder holder = getAnyActiveTableProcessHolder();
-      TableProcessStore store = holder.store;
-      org.apache.amoro.TableRuntime tableRuntime = holder.process.getTableRuntime();
+      TableProcessStore store = holder.getStore();
+      org.apache.amoro.TableRuntime tableRuntime = holder.getProcess().getTableRuntime();
 
       awaitEngineStatus(executeEngine, store.getExternalProcessIdentifier(), ProcessStatus.RUNNING);
       Assert.assertEquals(ProcessStatus.RUNNING, store.getStatus());
@@ -193,7 +194,7 @@ public class TestDefaultProcessService extends AMSTableTestBase {
           POLL_INTERVAL_MS);
 
       holder = getAnyActiveTableProcessHolder();
-      store = holder.store;
+      store = holder.getStore();
 
       awaitEngineStatus(executeEngine, store.getExternalProcessIdentifier(), ProcessStatus.RUNNING);
       Assert.assertEquals(ProcessStatus.RUNNING, store.getStatus());
@@ -278,7 +279,7 @@ public class TestDefaultProcessService extends AMSTableTestBase {
   }
 
   private TableProcessStore getAnyActiveTableProcess() {
-    return getAnyActiveTableProcessHolder().store;
+    return getAnyActiveTableProcessHolder().getStore();
   }
 
   /** Wait until the given externalProcessIdentifier reaches the specified status. */

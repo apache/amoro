@@ -275,16 +275,20 @@ public class ProcessService extends PersistentBase {
         getTableProcessInstances(tableRuntime.getTableIdentifier()).values().stream()
             .filter(
                 tableProcess ->
-                    tableProcess.store.getAction().getName().equalsIgnoreCase(action.getName()))
+                    tableProcess
+                        .getStore()
+                        .getAction()
+                        .getName()
+                        .equalsIgnoreCase(action.getName()))
             .collect(Collectors.toList());
 
     return processes.stream()
         .anyMatch(
             process -> {
               return (process != null
-                  && (process.store.getStatus() == ProcessStatus.RUNNING
-                      || process.store.getStatus() == ProcessStatus.SUBMITTED
-                      || process.store.getStatus() == ProcessStatus.PENDING));
+                  && (process.getStore().getStatus() == ProcessStatus.RUNNING
+                      || process.getStore().getStatus() == ProcessStatus.SUBMITTED
+                      || process.getStore().getStatus() == ProcessStatus.PENDING));
             });
   }
 
@@ -398,7 +402,7 @@ public class ProcessService extends PersistentBase {
     if (inner.isEmpty()) {
       activeTableProcess.remove(serverTableIdentifier, inner);
     }
-    return removed.process;
+    return removed.getProcess();
   }
 
   @VisibleForTesting
@@ -484,7 +488,7 @@ public class ProcessService extends PersistentBase {
               .collect(Collectors.toList());
       for (TableProcessHolder holder : processes) {
         if (holder != null) {
-          cancelProcess(holder.store, holder.process);
+          cancelProcess(holder.getStore(), holder.getProcess());
         }
       }
     }
@@ -508,12 +512,20 @@ public class ProcessService extends PersistentBase {
 
   @VisibleForTesting
   public static class TableProcessHolder {
-    public final TableProcess process;
-    public final TableProcessStore store;
+    private final TableProcess process;
+    private final TableProcessStore store;
 
     public TableProcessHolder(TableProcess process, TableProcessStore store) {
       this.process = process;
       this.store = store;
+    }
+
+    public TableProcess getProcess() {
+      return process;
+    }
+
+    public TableProcessStore getStore() {
+      return store;
     }
   }
 
