@@ -50,7 +50,11 @@ public interface ProcessFactory extends ActivePlugin {
     return ProcessTriggerStrategy.METADATA_TRIGGER;
   }
 
-  void availableExecuteEngines(Collection<ExecuteEngine> allAvailableEngines);
+  /**
+   * ALl execute engine registered.
+   * @param allAvailableEngines - all execute engine registered.
+   */
+  default void availableExecuteEngines(Collection<ExecuteEngine> allAvailableEngines) {}
 
   /**
    * Try trigger a process for the action.
