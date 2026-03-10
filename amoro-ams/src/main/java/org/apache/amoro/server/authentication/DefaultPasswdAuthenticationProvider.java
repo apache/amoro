@@ -74,8 +74,8 @@ public class DefaultPasswdAuthenticationProvider implements PasswdAuthentication
         .filter(DefaultPasswdAuthenticationProvider::hasRequiredLocalAuthFields)
         .collect(
             Collectors.toMap(
-                user -> user.get("username"),
-                user -> user.get("password"),
+                user -> String.valueOf(user.get("username")),
+                user -> String.valueOf(user.get("password")),
                 (existing, replacement) -> {
                   LOG.warn(
                       "Duplicate authorization.users entry for password auth, keeping last user definition");
