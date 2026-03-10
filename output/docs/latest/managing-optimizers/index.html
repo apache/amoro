@@ -1144,6 +1144,13 @@ contain several optimizers with the same container implementation to facilitate 
           <td>Timeout in optimizer cache.</td>
       </tr>
       <tr>
+          <td>min-parallelism</td>
+          <td>All</td>
+          <td>No</td>
+          <td>0</td>
+          <td>The minimum total parallelism (CPU cores) that the optimizer group should maintain. When the total cores of running optimizers fall below this value, <code>OptimizerGroupKeeper</code> will automatically scale out new optimizers. Set to <code>0</code> to disable auto-scaling. Note: The behavior of the auto-scaling mechanism is controlled by the AMS-level configurations <code>optimizer-group.min-parallelism-check-interval</code> and <code>optimizer-group.max-keeping-attempts</code>.</td>
+      </tr>
+      <tr>
           <td>memory</td>
           <td>Local</td>
           <td>Yes</td>

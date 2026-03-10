@@ -896,6 +896,16 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
           <td>Timeout for http session.</td>
       </tr>
       <tr>
+          <td>optimizer-group.max-keeping-attempts</td>
+          <td>3</td>
+          <td>The maximum number of consecutive attempts to keep the optimizer group at its current parallelism.</td>
+      </tr>
+      <tr>
+          <td>optimizer-group.min-parallelism-check-interval</td>
+          <td>5 min</td>
+          <td>The interval for checking and ensuring the optimizer group meets its minimum parallelism requirement. When the current parallelism falls below the configured min-parallelism, the system will attempt to scale out optimizers at this interval. The actual scale-out timing is calculated as: consecutive keeping attempts * this interval.</td>
+      </tr>
+      <tr>
           <td>optimizer.heart-beat-timeout</td>
           <td>1 min</td>
           <td>Timeout duration for Optimizer heartbeat.</td>
