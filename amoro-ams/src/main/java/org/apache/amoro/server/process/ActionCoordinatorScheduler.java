@@ -108,16 +108,10 @@ public class ActionCoordinatorScheduler extends PeriodicTableScheduler {
    * @param tableRuntime table runtime
    * @param processStore process store
    */
-  protected void recover(TableRuntime tableRuntime, TableProcessStore processStore) {
-    TableProcess process = coordinator.recoverTableProcess(tableRuntime, processStore);
-    processService.recover(tableRuntime, process);
+  protected TableProcess recover(TableRuntime tableRuntime, TableProcessStore processStore) {
+    return coordinator.recoverTableProcess(tableRuntime, processStore);
   }
 
-  /**
-   * Get executor delay from coordinator.
-   *
-   * @return delay in milliseconds
-   */
   @Override
   protected long getExecutorDelay() {
     return coordinator.getExecutorDelay();

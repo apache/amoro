@@ -25,9 +25,10 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.process.ProcessStatus;
-import org.apache.amoro.process.TableProcess;
+import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.process.MockActionCoordinator;
 import org.apache.amoro.server.process.MockExecuteEngine;
+import org.apache.amoro.server.process.ProcessService;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.junit.After;
 import org.junit.Assert;
@@ -74,11 +75,11 @@ public class TestDefaultProcessService extends AMSTableTestBase {
   public void prepare() {
     createDatabase();
 
-    MockActionCoordinator mockActionCoordinator = new MockActionCoordinator();
-    processServiceService().installActionCoordinator(mockActionCoordinator);
-
     MockExecuteEngine mockExecuteEngine = new MockExecuteEngine();
     processServiceService().installExecuteEngine(mockExecuteEngine);
+
+    MockActionCoordinator mockActionCoordinator = new MockActionCoordinator(mockExecuteEngine);
+    processServiceService().installActionCoordinator(mockActionCoordinator);
   }
 
   /** Clear resources after tests. */
@@ -111,15 +112,15 @@ public class TestDefaultProcessService extends AMSTableTestBase {
       awaitActiveInstances(executeEngine);
 
       // Get the current active TableProcess
-      TableProcess tableProcess = getAnyActiveTableProcess();
+      TableProcessStore store = getAnyActiveTableProcess();
 
       // Wait again for active instances to preserve the original semantics
       awaitActiveInstances(executeEngine);
 
       // Assert status and engine instance
-      Assert.assertEquals(ProcessStatus.RUNNING, tableProcess.getStatus());
+      Assert.assertEquals(ProcessStatus.RUNNING, store.getStatus());
       Future<?> future =
-          executeEngine.getActiveInstances().get(tableProcess.getExternalProcessIdentifier());
+          executeEngine.getActiveInstances().get(store.getExternalProcessIdentifier());
       Assert.assertNotNull(future);
       Assert.assertFalse(future.isDone());
       dropTable();
@@ -136,18 +137,18 @@ public class TestDefaultProcessService extends AMSTableTestBase {
     try {
       awaitActiveInstances(executeEngine);
 
-      TableProcess tableProcess = getAnyActiveTableProcess();
+      ProcessService.TableProcessHolder holder = getAnyActiveTableProcessHolder();
+      ServerTableIdentifier tableIdentifier = holder.process.getTableRuntime().getTableIdentifier();
+      TableProcessStore store = holder.store;
       dropTable();
 
       // Wait until both active and canceling queues are empty
       awaitEngineDrained(executeEngine);
 
       Assert.assertTrue(
-          processServiceService()
-              .getTableProcessInstances(tableProcess.getTableRuntime().getTableIdentifier())
-              .isEmpty());
+          processServiceService().getTableProcessInstances(tableIdentifier).isEmpty());
       Assert.assertTrue(executeEngine.getActiveInstances().isEmpty());
-      Assert.assertEquals(ProcessStatus.CANCELED, tableProcess.getStatus());
+      Assert.assertEquals(ProcessStatus.CANCELED, store.getStatus());
     } catch (Throwable t) {
       if (!processServiceService().getActiveTableProcess().isEmpty()) {
         throw new IllegalStateException(
@@ -172,20 +173,18 @@ public class TestDefaultProcessService extends AMSTableTestBase {
 
       awaitActiveInstances(executeEngine);
 
-      TableProcess tableProcess = getAnyActiveTableProcess();
+      ProcessService.TableProcessHolder holder = getAnyActiveTableProcessHolder();
+      TableProcessStore store = holder.store;
+      org.apache.amoro.TableRuntime tableRuntime = holder.process.getTableRuntime();
 
-      awaitEngineStatus(
-          executeEngine, tableProcess.getExternalProcessIdentifier(), ProcessStatus.RUNNING);
-
-      Assert.assertEquals(ProcessStatus.RUNNING, tableProcess.getStatus());
-
-      processServiceService()
-          .untrackTableProcessInstance(
-              tableProcess.getTableRuntime().getTableIdentifier(), tableProcess.getId());
+      awaitEngineStatus(executeEngine, store.getExternalProcessIdentifier(), ProcessStatus.RUNNING);
+      Assert.assertEquals(ProcessStatus.RUNNING, store.getStatus());
 
       processServiceService()
-          .recoverProcesses(
-              new ArrayList<>(Collections.singletonList(tableProcess.getTableRuntime())));
+          .untrackTableProcessInstance(tableRuntime.getTableIdentifier(), store.getProcessId());
+
+      processServiceService()
+          .recoverProcesses(new ArrayList<>(Collections.singletonList(tableRuntime)));
 
       // Wait for the active table process to reappear
       awaitCondition(
@@ -193,14 +192,13 @@ public class TestDefaultProcessService extends AMSTableTestBase {
           WAIT_TIMEOUT_MS,
           POLL_INTERVAL_MS);
 
-      tableProcess = getAnyActiveTableProcess();
+      holder = getAnyActiveTableProcessHolder();
+      store = holder.store;
 
-      awaitEngineStatus(
-          executeEngine, tableProcess.getExternalProcessIdentifier(), ProcessStatus.RUNNING);
-
-      Assert.assertEquals(ProcessStatus.RUNNING, tableProcess.getStatus());
+      awaitEngineStatus(executeEngine, store.getExternalProcessIdentifier(), ProcessStatus.RUNNING);
+      Assert.assertEquals(ProcessStatus.RUNNING, store.getStatus());
       Future<?> future =
-          executeEngine.getActiveInstances().get(tableProcess.getExternalProcessIdentifier());
+          executeEngine.getActiveInstances().get(store.getExternalProcessIdentifier());
       Assert.assertNotNull(future);
       Assert.assertFalse(future.isDone());
 
@@ -260,22 +258,27 @@ public class TestDefaultProcessService extends AMSTableTestBase {
         POLL_INTERVAL_MS);
   }
 
-  /** Get any active TableProcess; throw a clear error if none exists. */
-  private TableProcess getAnyActiveTableProcess() {
-    Map<ServerTableIdentifier, Map<Long, TableProcess>> active =
+  /** Get any active table process holder; throw a clear error if none exists. */
+  private ProcessService.TableProcessHolder getAnyActiveTableProcessHolder() {
+    Map<ServerTableIdentifier, Map<Long, ProcessService.TableProcessHolder>> active =
         processServiceService().getActiveTableProcess();
     if (active == null || active.isEmpty()) {
       throw new IllegalStateException("No active table process present");
     }
-    Map<?, TableProcess> inner = active.values().stream().findFirst().orElse(null);
+    Map<?, ProcessService.TableProcessHolder> inner =
+        active.values().stream().findFirst().orElse(null);
     if (inner == null || inner.isEmpty()) {
       throw new IllegalStateException("No active table process present");
     }
-    TableProcess tp = inner.values().stream().findFirst().orElse(null);
+    ProcessService.TableProcessHolder tp = inner.values().stream().findFirst().orElse(null);
     if (tp == null) {
       throw new IllegalStateException("No active table process present");
     }
     return tp;
+  }
+
+  private TableProcessStore getAnyActiveTableProcess() {
+    return getAnyActiveTableProcessHolder().store;
   }
 
   /** Wait until the given externalProcessIdentifier reaches the specified status. */

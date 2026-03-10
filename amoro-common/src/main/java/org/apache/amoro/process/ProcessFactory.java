@@ -25,6 +25,7 @@ import org.apache.amoro.TableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.StateKey;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,6 +49,8 @@ public interface ProcessFactory extends ActivePlugin {
   default ProcessTriggerStrategy triggerStrategy(TableFormat format, Action action) {
     return ProcessTriggerStrategy.METADATA_TRIGGER;
   }
+
+  void availableExecuteEngines(Collection<ExecuteEngine> allAvailableEngines);
 
   /**
    * Try trigger a process for the action.

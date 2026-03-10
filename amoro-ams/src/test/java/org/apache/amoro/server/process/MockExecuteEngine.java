@@ -18,11 +18,11 @@
 
 package org.apache.amoro.server.process;
 
+import org.apache.amoro.process.EngineType;
+import org.apache.amoro.process.ExecuteEngine;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.server.persistence.PersistentBase;
-import org.apache.amoro.server.process.executor.EngineType;
-import org.apache.amoro.server.process.executor.ExecuteEngine;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.parquet.Strings;
 import org.slf4j.Logger;
@@ -55,7 +55,7 @@ public class MockExecuteEngine implements ExecuteEngine {
   /** Engine type of this mock engine. */
   @Override
   public EngineType engineType() {
-    return EngineType.of("default");
+    return EngineType.of(name());
   }
 
   /**

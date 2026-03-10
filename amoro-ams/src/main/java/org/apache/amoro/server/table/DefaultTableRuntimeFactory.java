@@ -19,6 +19,7 @@
 package org.apache.amoro.server.table;
 
 import org.apache.amoro.Action;
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Default {@link TableRuntimeFactory} implementation used by AMS.
@@ -51,6 +53,8 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
 
   /** Coordinators derived from all installed process factories. */
   private final List<ActionCoordinator> supportedCoordinators = Lists.newArrayList();
+
+  private Function<ServerTableIdentifier, AmoroTable<?>> loader;
 
   @Override
   public List<ActionCoordinator> supportedCoordinators() {
@@ -86,6 +90,11 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
         }
       }
     }
+  }
+
+  @Override
+  public void withTableLoader(Function<ServerTableIdentifier, AmoroTable<?>> loader) {
+    this.loader = loader;
   }
 
   @Override
@@ -149,7 +158,7 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
 
     @Override
     public TableRuntime create(TableRuntimeStore store) {
-      return new DefaultTableRuntime(store);
+      return new DefaultTableRuntime(store, () -> loader.apply(store.getTableIdentifier()));
     }
   }
 }
