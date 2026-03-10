@@ -102,8 +102,8 @@ public class RoleResolver {
         .filter(RoleResolver::hasRequiredRoleFields)
         .collect(
             Collectors.toMap(
-                user -> user.get("username"),
-                user -> parseRole(user.get("username"), user.get("role")),
+                user -> String.valueOf(user.get("username")),
+                user -> parseRole(String.valueOf(user.get("username")), String.valueOf(user.get("role"))),
                 (existing, replacement) -> {
                   LOG.warn(
                       "Duplicate authorization.users entry for role resolution, keeping last user definition");
