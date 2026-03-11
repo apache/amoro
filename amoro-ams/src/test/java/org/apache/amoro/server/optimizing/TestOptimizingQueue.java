@@ -74,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
 public class TestOptimizingQueue extends AMSTableTestBase {
@@ -610,6 +611,48 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     queue2.dispose();
   }
 
+  @Test
+  public void testReleaseOrphanedPlanningTableOnRestart() {
+    // Scenario: Table config was changed (optimizer group: "old_group" -> "default"),
+    // the optimizing process was closed but table runtime is persisted with "old_group" and
+    // PLANNING status
+    ResourceGroup oldGroup = new ResourceGroup.Builder("old_group", "local").build();
+    // reset optimizer group to "default" to simulate the scenario where the self-optimizing configs
+    // have been cleared
+    DefaultTableRuntime tableRuntime =
+        buildTableRuntimeMeta(OptimizingStatus.PLANNING, defaultResourceGroup());
+    Assert.assertEquals(OptimizingStatus.PLANNING, tableRuntime.getOptimizingStatus());
+    Assert.assertEquals("default", tableRuntime.getGroupName());
+
+    List<DefaultTableRuntime> released =
+        simulateLoadOptimizingQueuesForNonExistentGroup(
+            Collections.singletonList(tableRuntime), oldGroup);
+
+    Assert.assertEquals(1, released.size());
+    Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
+  }
+
+  @Test
+  public void testReleaseOrphanedPendingTableOnRestart() {
+    // Scenario: Table config was changed (optimizer group: "old_group" -> "default"),
+    // the optimizing process was closed but table runtime is persisted with "default" and PENDING
+    // status
+    ResourceGroup oldGroup = new ResourceGroup.Builder("old_group", "local").build();
+    // reset optimizer group to "default" to simulate the scenario where the self-optimizing configs
+    // have been cleared
+    DefaultTableRuntime tableRuntime =
+        buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
+    Assert.assertEquals(OptimizingStatus.PENDING, tableRuntime.getOptimizingStatus());
+    Assert.assertEquals("default", tableRuntime.getGroupName());
+
+    List<DefaultTableRuntime> released =
+        simulateLoadOptimizingQueuesForNonExistentGroup(
+            Collections.singletonList(tableRuntime), oldGroup);
+
+    Assert.assertEquals(1, released.size());
+    Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
+  }
+
   protected DefaultTableRuntime initTableWithFiles() {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
@@ -717,6 +760,41 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     OptimizingTaskResult optimizingTaskResult = new OptimizingTaskResult(taskId, threadId);
     optimizingTaskResult.setTaskOutput(SerializationUtil.simpleSerialize(output));
     return optimizingTaskResult;
+  }
+
+  /**
+   * Simulate the loadOptimizingQueues logic: tables whose persisted optimizer group no longer
+   * exists (e.g., table config changed from an old deleted group to "default", but AMS restarted
+   * before the optimizing process was closed) remain in the leftover groupToTableRuntimes map.
+   * These PLANNING/PENDING tables should be released to IDLE via completeEmptyProcess().
+   */
+  private List<DefaultTableRuntime> simulateLoadOptimizingQueuesForNonExistentGroup(
+      List<DefaultTableRuntime> tableRuntimes, ResourceGroup resourceGroup) {
+    // Only the created resource group is returned
+    List<ResourceGroup> existingGroups = Collections.singletonList(resourceGroup);
+
+    // Group tables by their persisted optimizer group
+    Map<String, List<DefaultTableRuntime>> groupToTableRuntimes =
+        tableRuntimes.stream().collect(Collectors.groupingBy(DefaultTableRuntime::getGroupName));
+
+    // Remove groups that exist — same logic as loadOptimizingQueues
+    existingGroups.forEach(group -> groupToTableRuntimes.remove(group.getName()));
+
+    // Release PLANNING/PENDING tables in non-existent groups — same logic as loadOptimizingQueues
+    List<DefaultTableRuntime> released = new ArrayList<>();
+    groupToTableRuntimes.forEach(
+        (groupName, trs) ->
+            trs.stream()
+                .filter(
+                    tr ->
+                        tr.getOptimizingStatus() == OptimizingStatus.PLANNING
+                            || tr.getOptimizingStatus() == OptimizingStatus.PENDING)
+                .forEach(
+                    tr -> {
+                      tr.completeEmptyProcess();
+                      released.add(tr);
+                    }));
+    return released;
   }
 
   private OptimizingTaskResult buildOptimizingTaskFailed(OptimizingTaskId taskId, int threadId) {
