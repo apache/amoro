@@ -25,7 +25,6 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.process.ActionCoordinator;
-import org.apache.amoro.process.EngineType;
 import org.apache.amoro.process.ExecuteEngine;
 import org.apache.amoro.process.ProcessEvent;
 import org.apache.amoro.process.ProcessStatus;
@@ -62,7 +61,7 @@ public class ProcessService extends PersistentBase {
 
   private final Map<String, ActionCoordinatorScheduler> actionCoordinators =
       new ConcurrentHashMap<>();
-  private final Map<EngineType, ExecuteEngine> executeEngines = new ConcurrentHashMap<>();
+  private final Map<String, ExecuteEngine> executeEngines = new ConcurrentHashMap<>();
 
   private final ExecuteEngineManager executeEngineManager;
   private final List<ActionCoordinator> actionCoordinatorList;
@@ -134,7 +133,7 @@ public class ProcessService extends PersistentBase {
         .installedPlugins()
         .forEach(
             executeEngine -> {
-              executeEngines.put(executeEngine.engineType(), executeEngine);
+              executeEngines.put(executeEngine.name(), executeEngine);
             });
     recoverProcesses(tableRuntimes);
     actionCoordinators.values().forEach(s -> s.initialize(tableRuntimes));
@@ -186,7 +185,7 @@ public class ProcessService extends PersistentBase {
       return;
     }
 
-    ExecuteEngine executeEngine = executeEngines.get(EngineType.of(store.getExecutionEngine()));
+    ExecuteEngine executeEngine = executeEngines.get(store.getExecutionEngine());
 
     TableProcessExecutor executor = new TableProcessExecutor(process, store, executeEngine);
     executor.onProcessFinished(
@@ -237,7 +236,7 @@ public class ProcessService extends PersistentBase {
     untrackTableProcessInstance(
         process.getTableRuntime().getTableIdentifier(), store.getProcessId());
 
-    ExecuteEngine executeEngine = executeEngines.get(EngineType.of(process.getExecutionEngine()));
+    ExecuteEngine executeEngine = executeEngines.get(process.getExecutionEngine());
 
     executeEngine.tryCancelTableProcess(process, store.getExternalProcessIdentifier());
 
@@ -339,7 +338,7 @@ public class ProcessService extends PersistentBase {
    * @return engines map
    */
   @VisibleForTesting
-  public Map<EngineType, ExecuteEngine> getExecuteEngines() {
+  public Map<String, ExecuteEngine> getExecuteEngines() {
     return executeEngines;
   }
 
@@ -419,7 +418,7 @@ public class ProcessService extends PersistentBase {
 
   @VisibleForTesting
   public void installExecuteEngine(ExecuteEngine executeEngine) {
-    this.executeEngines.put(executeEngine.engineType(), executeEngine);
+    this.executeEngines.put(executeEngine.name(), executeEngine);
   }
 
   @VisibleForTesting
