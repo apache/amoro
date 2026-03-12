@@ -186,6 +186,14 @@ public class ProcessService extends PersistentBase {
     }
 
     ExecuteEngine executeEngine = executeEngines.get(store.getExecutionEngine());
+    if (executeEngine == null) {
+      LOG.error(
+          "Can't found execution engine:{} for process:{}, table:{}",
+          store.getExecutionEngine(),
+          store.getAction(),
+          process.getTableIdentifier());
+      return;
+    }
 
     TableProcessExecutor executor = new TableProcessExecutor(process, store, executeEngine);
     executor.onProcessFinished(
@@ -238,13 +246,14 @@ public class ProcessService extends PersistentBase {
 
     ExecuteEngine executeEngine = executeEngines.get(store.getExecutionEngine());
 
-    executeEngine.tryCancelTableProcess(process, store.getExternalProcessIdentifier());
-
-    LOG.info(
-        "Cancel table process {} in engine {}, process id:{}",
-        process,
-        executeEngine.engineType(),
-        store.getProcessId());
+    if (executeEngine != null) {
+      executeEngine.tryCancelTableProcess(process, store.getExternalProcessIdentifier());
+      LOG.info(
+          "Cancel table process {} in engine {}, process id:{}",
+          process,
+          executeEngine.name(),
+          store.getProcessId());
+    }
   }
 
   /**
