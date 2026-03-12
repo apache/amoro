@@ -236,7 +236,7 @@ public class ProcessService extends PersistentBase {
     untrackTableProcessInstance(
         process.getTableRuntime().getTableIdentifier(), store.getProcessId());
 
-    ExecuteEngine executeEngine = executeEngines.get(process.getExecutionEngine());
+    ExecuteEngine executeEngine = executeEngines.get(store.getExecutionEngine());
 
     executeEngine.tryCancelTableProcess(process, store.getExternalProcessIdentifier());
 
