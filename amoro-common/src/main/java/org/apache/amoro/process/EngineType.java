@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.process.executor;
+package org.apache.amoro.process;
 
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 

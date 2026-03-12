@@ -93,7 +93,7 @@ public class TestTableRuntimeRefreshExecutor extends AMSTableTestBase {
     private OptimizingConfig testOptimizingConfig;
 
     TestTableRuntime(TableRuntimeStore store, OptimizingConfig optimizingConfig) {
-      super(store);
+      super(store, () -> null);
       this.testOptimizingConfig = optimizingConfig;
     }
 

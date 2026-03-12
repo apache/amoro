@@ -18,33 +18,52 @@
 
 package org.apache.amoro.server.process;
 
+import org.apache.amoro.Action;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.process.ExecuteEngine;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.process.TableProcessStore;
+
+import java.util.Collections;
+import java.util.Map;
 
 /** Mock table process for tests. */
 public class MockTableProcess extends TableProcess {
 
-  /**
-   * Construct with runtime only.
-   *
-   * @param tableRuntime table runtime
-   */
-  MockTableProcess(TableRuntime tableRuntime) {
-    super(tableRuntime);
+  private final Action action;
+  private final Map<String, String> processParameters;
+  private final Map<String, String> summary;
+
+  MockTableProcess(TableRuntime tableRuntime, ExecuteEngine executeEngine, Action action) {
+    this(tableRuntime, executeEngine, action, Collections.emptyMap(), Collections.emptyMap());
   }
 
-  /**
-   * Construct with runtime and store.
-   *
-   * @param tableRuntime table runtime
-   * @param tableProcessStore process store
-   */
-  MockTableProcess(TableRuntime tableRuntime, TableProcessStore tableProcessStore) {
-    super(tableRuntime, tableProcessStore);
+  MockTableProcess(
+      TableRuntime tableRuntime,
+      ExecuteEngine executeEngine,
+      Action action,
+      Map<String, String> processParameters,
+      Map<String, String> summary) {
+    super(tableRuntime, executeEngine);
+    this.action = action;
+    this.processParameters =
+        processParameters == null
+            ? Collections.emptyMap()
+            : Collections.unmodifiableMap(processParameters);
+    this.summary = summary == null ? Collections.emptyMap() : Collections.unmodifiableMap(summary);
   }
 
-  /** Close mock process. */
   @Override
-  protected void closeInternal() {}
+  public Action getAction() {
+    return action;
+  }
+
+  @Override
+  public Map<String, String> getProcessParameters() {
+    return processParameters;
+  }
+
+  @Override
+  public Map<String, String> getSummary() {
+    return summary;
+  }
 }
