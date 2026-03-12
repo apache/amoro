@@ -78,14 +78,31 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 | optimizer_group_memory_bytes_allocated  | Gauge  | group | Memory bytes allocated in optimizer group        |
 | optimizer_group_threads                 | Gauge  | group | Number of total threads in optimizer group       |
 
-## Orphan Files Cleaning metrics
+## Table Maintainer metrics
 
-| Metric Name                                        | Type    | Tags                     | Description                                                                    |
-|----------------------------------------------------|---------|--------------------------|--------------------------------------------------------------------------------|
-| table_orphan_content_file_cleaning_count           | Counter | catalog, database, table | Count of orphan content files cleaned in the table since ams started           |
-| table_orphan_metadata_file_cleaning_count          | Counter | catalog, database, table | Count of orphan metadata files cleaned in the table since ams started          |
-| table_expected_orphan_content_file_cleaning_count  | Counter | catalog, database, table | Expected Count of orphan content files cleaned in the table since ams started  |
-| table_expected_orphan_metadata_file_cleaning_count | Counter | catalog, database, table | Expected Count of orphan metadata files cleaned in the table since ams started |
+| Metric Name                                     | Type    | Tags                                                   | Description                                                        |
+|-------------------------------------------------|---------|--------------------------------------------------------|--------------------------------------------------------------------|
+| table_orphan_content_file_cleaning_count           | Counter | catalog, database, table, table_format                 | Count of orphan content files cleaned in the table since ams started           |
+| table_orphan_metadata_file_cleaning_count          | Counter | catalog, database, table, table_format                 | Count of orphan metadata files cleaned in the table since ams started          |
+| table_expected_orphan_content_file_cleaning_count  | Counter | catalog, database, table, table_format                 | Expected Count of orphan content files cleaned in the table since ams started  |
+| table_expected_orphan_metadata_file_cleaning_count | Counter | catalog, database, table, table_format                 | Expected Count of orphan metadata files cleaned in the table since ams started |
+| table_orphan_files_cleaning_duration_millis        | Gauge   | catalog, database, table, table_format                 | Duration of the latest orphan files cleaning operation in milliseconds         |
+| table_dangling_delete_files_cleaned_count       | Counter | catalog, database, table, table_format                 | Count of dangling delete files cleaned                             |
+| table_dangling_delete_files_cleaning_duration_millis | Gauge | catalog, database, table, table_format             | Duration of the latest dangling delete files cleaning operation    |
+| table_snapshots_expired_count                   | Counter | catalog, database, table, table_format                 | Count of expired snapshots                                         |
+| table_snapshots_expired_data_files_deleted      | Counter | catalog, database, table, table_format                 | Count of data files deleted during snapshot expiration             |
+| table_snapshots_expiration_duration_millis      | Gauge   | catalog, database, table, table_format                 | Duration of the latest snapshot expiration operation               |
+| table_data_expired_data_files_count             | Counter | catalog, database, table, table_format                 | Count of expired data files                                        |
+| table_data_expired_delete_files_count           | Counter | catalog, database, table, table_format                 | Count of expired delete files                                      |
+| table_data_expiration_duration_millis           | Gauge   | catalog, database, table, table_format                 | Duration of the latest data expiration operation                   |
+| table_tags_created_count                        | Counter | catalog, database, table, table_format                 | Count of created tags                                              |
+| table_tag_creation_duration_millis              | Gauge   | catalog, database, table, table_format                 | Duration of the latest tag creation operation                      |
+| table_partitions_expired_count                  | Counter | catalog, database, table, table_format                 | Reserved metric for future partition expiration support            |
+| table_partitions_expired_files_count            | Counter | catalog, database, table, table_format                 | Reserved metric for files expired by future partition expiration   |
+| table_partition_expiration_duration_millis      | Gauge   | catalog, database, table, table_format                 | Reserved metric for partition expiration duration                  |
+| table_maintainer_operation_success_count        | Counter | catalog, database, table, table_format, operation_type | Count of successful maintainer operations by operation type        |
+| table_maintainer_operation_failure_count        | Counter | catalog, database, table, table_format, operation_type | Count of failed maintainer operations by operation type            |
+| table_maintainer_operation_duration_millis      | Gauge   | catalog, database, table, table_format, operation_type | Duration of the latest maintainer operation by operation type      |
 
 
 ## Ams service metrics
