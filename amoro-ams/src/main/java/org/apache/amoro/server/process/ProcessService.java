@@ -401,7 +401,7 @@ public class ProcessService extends PersistentBase {
     if (inner.isEmpty()) {
       activeTableProcess.remove(serverTableIdentifier, inner);
     }
-    return removed.getProcess();
+    return removed != null ? removed.getProcess() : null;
   }
 
   @VisibleForTesting
