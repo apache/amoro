@@ -40,6 +40,7 @@ public class AmoroRuntimeException extends RuntimeException {
 
   static {
     CODE_MAP.put(PersistenceException.class, ErrorCodes.PERSISTENCE_ERROR_CODE);
+    CODE_MAP.put(BucketAssignStoreException.class, ErrorCodes.PERSISTENCE_ERROR_CODE);
     CODE_MAP.put(ObjectNotExistsException.class, ErrorCodes.OBJECT_NOT_EXISTS_ERROR_CODE);
     CODE_MAP.put(AlreadyExistsException.class, ErrorCodes.ALREADY_EXISTS_ERROR_CODE);
     CODE_MAP.put(IllegalMetadataException.class, ErrorCodes.ILLEGAL_METADATA_ERROR_CODE);

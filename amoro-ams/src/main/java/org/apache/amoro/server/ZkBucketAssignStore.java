@@ -19,6 +19,7 @@
 package org.apache.amoro.server;
 
 import org.apache.amoro.client.AmsServerInfo;
+import org.apache.amoro.exception.BucketAssignStoreException;
 import org.apache.amoro.properties.AmsHAProperties;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
@@ -64,7 +65,8 @@ public class ZkBucketAssignStore implements BucketAssignStore {
   }
 
   @Override
-  public void saveAssignments(AmsServerInfo nodeInfo, List<String> bucketIds) throws Exception {
+  public void saveAssignments(AmsServerInfo nodeInfo, List<String> bucketIds)
+      throws BucketAssignStoreException {
     String nodeKey = getNodeKey(nodeInfo);
     String assignmentsPath = assignmentsBasePath + "/" + nodeKey + ASSIGNMENTS_SUFFIX;
     String assignmentsJson = JacksonUtil.toJSONString(bucketIds);
@@ -82,14 +84,17 @@ public class ZkBucketAssignStore implements BucketAssignStore {
       }
       updateLastUpdateTime(nodeInfo);
       LOG.debug("Saved bucket assignments for node {}: {}", nodeKey, bucketIds);
+    } catch (BucketAssignStoreException e) {
+      throw e;
     } catch (Exception e) {
       LOG.error("Failed to save bucket assignments for node {}", nodeKey, e);
-      throw e;
+      throw new BucketAssignStoreException(
+          "Failed to save bucket assignments for node " + nodeKey, e);
     }
   }
 
   @Override
-  public List<String> getAssignments(AmsServerInfo nodeInfo) throws Exception {
+  public List<String> getAssignments(AmsServerInfo nodeInfo) throws BucketAssignStoreException {
     String nodeKey = getNodeKey(nodeInfo);
     String assignmentsPath = assignmentsBasePath + "/" + nodeKey + ASSIGNMENTS_SUFFIX;
     try {
@@ -104,14 +109,17 @@ public class ZkBucketAssignStore implements BucketAssignStore {
       return OBJECT_MAPPER.readValue(assignmentsJson, LIST_STRING_TYPE);
     } catch (KeeperException.NoNodeException e) {
       return new ArrayList<>();
+    } catch (BucketAssignStoreException e) {
+      throw e;
     } catch (Exception e) {
       LOG.error("Failed to get bucket assignments for node {}", nodeKey, e);
-      throw e;
+      throw new BucketAssignStoreException(
+          "Failed to get bucket assignments for node " + nodeKey, e);
     }
   }
 
   @Override
-  public void removeAssignments(AmsServerInfo nodeInfo) throws Exception {
+  public void removeAssignments(AmsServerInfo nodeInfo) throws BucketAssignStoreException {
     String nodeKey = getNodeKey(nodeInfo);
     String nodePath = assignmentsBasePath + "/" + nodeKey;
     try {
@@ -121,14 +129,17 @@ public class ZkBucketAssignStore implements BucketAssignStore {
       }
     } catch (KeeperException.NoNodeException e) {
       // Already deleted, ignore
+    } catch (BucketAssignStoreException e) {
+      throw e;
     } catch (Exception e) {
       LOG.error("Failed to remove bucket assignments for node {}", nodeKey, e);
-      throw e;
+      throw new BucketAssignStoreException(
+          "Failed to remove bucket assignments for node " + nodeKey, e);
     }
   }
 
   @Override
-  public Map<AmsServerInfo, List<String>> getAllAssignments() throws Exception {
+  public Map<AmsServerInfo, List<String>> getAllAssignments() throws BucketAssignStoreException {
     Map<AmsServerInfo, List<String>> allAssignments = new HashMap<>();
     try {
       if (zkClient.checkExists().forPath(assignmentsBasePath) == null) {
@@ -142,21 +153,25 @@ public class ZkBucketAssignStore implements BucketAssignStore {
           if (!bucketIds.isEmpty()) {
             allAssignments.put(nodeInfo, bucketIds);
           }
+        } catch (BucketAssignStoreException e) {
+          throw e;
         } catch (Exception e) {
           LOG.warn("Failed to parse node key or get assignments: {}", nodeKey, e);
         }
       }
     } catch (KeeperException.NoNodeException e) {
       // Path doesn't exist, return empty map
+    } catch (BucketAssignStoreException e) {
+      throw e;
     } catch (Exception e) {
       LOG.error("Failed to get all bucket assignments", e);
-      throw e;
+      throw new BucketAssignStoreException("Failed to get all bucket assignments", e);
     }
     return allAssignments;
   }
 
   @Override
-  public long getLastUpdateTime(AmsServerInfo nodeInfo) throws Exception {
+  public long getLastUpdateTime(AmsServerInfo nodeInfo) throws BucketAssignStoreException {
     String nodeKey = getNodeKey(nodeInfo);
     String timePath = assignmentsBasePath + "/" + nodeKey + LAST_UPDATE_TIME_SUFFIX;
     try {
@@ -170,14 +185,16 @@ public class ZkBucketAssignStore implements BucketAssignStore {
       return Long.parseLong(new String(data, StandardCharsets.UTF_8));
     } catch (KeeperException.NoNodeException e) {
       return 0;
+    } catch (BucketAssignStoreException e) {
+      throw e;
     } catch (Exception e) {
       LOG.error("Failed to get last update time for node {}", nodeKey, e);
-      throw e;
+      throw new BucketAssignStoreException("Failed to get last update time for node " + nodeKey, e);
     }
   }
 
   @Override
-  public void updateLastUpdateTime(AmsServerInfo nodeInfo) throws Exception {
+  public void updateLastUpdateTime(AmsServerInfo nodeInfo) throws BucketAssignStoreException {
     String nodeKey = getNodeKey(nodeInfo);
     String timePath = assignmentsBasePath + "/" + nodeKey + LAST_UPDATE_TIME_SUFFIX;
     long currentTime = System.currentTimeMillis();
@@ -192,9 +209,12 @@ public class ZkBucketAssignStore implements BucketAssignStore {
             .withMode(CreateMode.PERSISTENT)
             .forPath(timePath, timeStr.getBytes(StandardCharsets.UTF_8));
       }
+    } catch (BucketAssignStoreException e) {
+      throw e;
     } catch (Exception e) {
       LOG.error("Failed to update last update time for node {}", nodeKey, e);
-      throw e;
+      throw new BucketAssignStoreException(
+          "Failed to update last update time for node " + nodeKey, e);
     }
   }
 
@@ -213,11 +233,13 @@ public class ZkBucketAssignStore implements BucketAssignStore {
     return nodeInfo;
   }
 
-  private void createPathIfNeeded(String path) throws Exception {
+  private void createPathIfNeeded(String path) throws BucketAssignStoreException {
     try {
       zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(path);
     } catch (KeeperException.NodeExistsException e) {
       // ignore
+    } catch (Exception e) {
+      throw new BucketAssignStoreException("Failed to create path: " + path, e);
     }
   }
 }

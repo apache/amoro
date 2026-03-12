@@ -48,7 +48,6 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | auto-create-tags.interval | 1 min | Interval for creating tags. |
 | auto-create-tags.thread-count | 3 | The number of threads used for creating tags. |
 | blocker.timeout | 1 min | Session timeout. Default unit is milliseconds if not specified. |
-| bucket-assign.interval | 1 min | Interval for bucket assignment service to detect node changes and redistribute bucket IDs. |
 | catalog-meta-cache.expiration-interval | 1 min | TTL for catalog metadata. |
 | clean-dangling-delete-files.enabled | true | Enable dangling delete files cleaning. |
 | clean-dangling-delete-files.interval | 1 d | Interval for cleaning dangling delete files. |
@@ -71,12 +70,14 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | expire-snapshots.enabled | true | Enable snapshots expiring. |
 | expire-snapshots.interval | 1 h | Interval for expiring snapshots. |
 | expire-snapshots.thread-count | 10 | The number of threads used for snapshots expiring. |
+| ha.bucket-assign.interval | 1 min | Interval for bucket assignment service to detect node changes and redistribute bucket IDs. |
 | ha.bucket-id.total-count | 100 | Total count of bucket IDs for assignment. Bucket IDs range from 1 to this value. |
 | ha.cluster-name | default | Amoro management service cluster name. |
 | ha.connection-timeout | 5 min | The Zookeeper connection timeout in milliseconds. |
 | ha.enabled | false | Whether to enable high availability mode. |
 | ha.heartbeat-interval | 10 s | HA heartbeat interval. |
 | ha.lease-ttl | 30 s | TTL of HA lease. |
+| ha.node-offline.timeout | 5 min | Timeout duration to determine if a node is offline. After this duration, the node's bucket IDs will be reassigned. |
 | ha.session-timeout | 30 s | The Zookeeper session timeout in milliseconds. |
 | ha.type | zk | High availability implementation type: zk or database. |
 | ha.zookeeper-address |  | The Zookeeper address used for high availability. |
@@ -92,7 +93,6 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | http-server.proxy-client-ip-header | X-Real-IP | The HTTP header to record the real client IP address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use. |
 | http-server.rest-auth-type | token | The authentication used by REST APIs, token (default), basic or jwt. |
 | http-server.session-timeout | 7 d | Timeout for http session. |
-| node-offline.timeout | 5 min | Timeout duration to determine if a node is offline. After this duration, the node's bucket IDs will be reassigned. |
 | optimizer.heart-beat-timeout | 1 min | Timeout duration for Optimizer heartbeat. |
 | optimizer.max-planning-parallelism | 1 | Max planning parallelism in one optimizer group. |
 | optimizer.polling-timeout | 3 s | Optimizer polling task timeout. |

@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.exception.BucketAssignStoreException;
 import org.apache.amoro.properties.AmsHAProperties;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.ha.ZkHighAvailabilityContainer;
@@ -79,7 +80,7 @@ public class TestAmsAssignService {
     serviceConfig.setString(AmoroManagementConf.HA_CLUSTER_NAME, "test-cluster");
     serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
     serviceConfig.setInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT, 100);
-    serviceConfig.set(AmoroManagementConf.NODE_OFFLINE_TIMEOUT, java.time.Duration.ofMinutes(5));
+    serviceConfig.set(AmoroManagementConf.HA_NODE_OFFLINE_TIMEOUT, java.time.Duration.ofMinutes(5));
 
     haContainer = createContainerWithMockZk();
 
@@ -429,7 +430,7 @@ public class TestAmsAssignService {
     config.setString(AmoroManagementConf.HA_CLUSTER_NAME, "test-cluster");
     config.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
     config.setInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT, 100);
-    config.set(AmoroManagementConf.NODE_OFFLINE_TIMEOUT, java.time.Duration.ofMinutes(5));
+    config.set(AmoroManagementConf.HA_NODE_OFFLINE_TIMEOUT, java.time.Duration.ofMinutes(5));
     return config;
   }
 
@@ -832,7 +833,8 @@ public class TestAmsAssignService {
     }
 
     @Override
-    public void saveAssignments(AmsServerInfo nodeInfo, List<String> bucketIds) throws Exception {
+    public void saveAssignments(AmsServerInfo nodeInfo, List<String> bucketIds)
+        throws BucketAssignStoreException {
       String nodeKey = getNodeKey(nodeInfo);
       assignments.put(nodeKey, new ArrayList<>(bucketIds));
       // Store full node info for proper matching
@@ -841,13 +843,13 @@ public class TestAmsAssignService {
     }
 
     @Override
-    public List<String> getAssignments(AmsServerInfo nodeInfo) throws Exception {
+    public List<String> getAssignments(AmsServerInfo nodeInfo) throws BucketAssignStoreException {
       String nodeKey = getNodeKey(nodeInfo);
       return new ArrayList<>(assignments.getOrDefault(nodeKey, new ArrayList<>()));
     }
 
     @Override
-    public void removeAssignments(AmsServerInfo nodeInfo) throws Exception {
+    public void removeAssignments(AmsServerInfo nodeInfo) throws BucketAssignStoreException {
       String nodeKey = getNodeKey(nodeInfo);
       assignments.remove(nodeKey);
       lastUpdateTimes.remove(nodeKey);
@@ -855,7 +857,7 @@ public class TestAmsAssignService {
     }
 
     @Override
-    public Map<AmsServerInfo, List<String>> getAllAssignments() throws Exception {
+    public Map<AmsServerInfo, List<String>> getAllAssignments() throws BucketAssignStoreException {
       Map<AmsServerInfo, List<String>> result = new HashMap<>();
       for (Map.Entry<String, List<String>> entry : assignments.entrySet()) {
         String nodeKey = entry.getKey();
@@ -867,13 +869,13 @@ public class TestAmsAssignService {
     }
 
     @Override
-    public long getLastUpdateTime(AmsServerInfo nodeInfo) throws Exception {
+    public long getLastUpdateTime(AmsServerInfo nodeInfo) throws BucketAssignStoreException {
       String nodeKey = getNodeKey(nodeInfo);
       return lastUpdateTimes.getOrDefault(nodeKey, 0L);
     }
 
     @Override
-    public void updateLastUpdateTime(AmsServerInfo nodeInfo) throws Exception {
+    public void updateLastUpdateTime(AmsServerInfo nodeInfo) throws BucketAssignStoreException {
       String nodeKey = getNodeKey(nodeInfo);
       lastUpdateTimes.put(nodeKey, System.currentTimeMillis());
     }

@@ -20,12 +20,14 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.exception.BucketAssignStoreException;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -71,9 +73,9 @@ public class AmsAssignService {
     this.bucketIdTotalCount =
         serviceConfig.getInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT);
     this.nodeOfflineTimeoutMs =
-        serviceConfig.get(AmoroManagementConf.NODE_OFFLINE_TIMEOUT).toMillis();
+        serviceConfig.get(AmoroManagementConf.HA_NODE_OFFLINE_TIMEOUT).toMillis();
     this.assignIntervalSeconds =
-        serviceConfig.get(AmoroManagementConf.ASSIGN_INTERVAL).getSeconds();
+        serviceConfig.get(AmoroManagementConf.HA_ASSIGN_INTERVAL).getSeconds();
     this.assignStore = BucketAssignStoreFactory.create(haContainer, serviceConfig);
   }
 
@@ -127,177 +129,29 @@ public class AmsAssignService {
       }
 
       Map<AmsServerInfo, List<String>> currentAssignments = assignStore.getAllAssignments();
+      Map<String, AmsServerInfo> aliveNodeMap = buildAliveNodeMap(aliveNodes);
+      NormalizedAssignments normalized =
+          normalizeCurrentAssignments(currentAssignments, aliveNodeMap);
+      NodeChangeResult change =
+          detectNodeChanges(aliveNodes, currentAssignments, aliveNodeMap, normalized.assignedNodes);
 
-      // Create a mapping from stored nodes (may have null restBindPort) to alive nodes (complete
-      // info)
-      // Use host:thriftBindPort as the key for matching
-      Map<String, AmsServerInfo> aliveNodeMap = new java.util.HashMap<>();
-      for (AmsServerInfo node : aliveNodes) {
-        String key = getNodeKey(node);
-        aliveNodeMap.put(key, node);
+      if (!change.needReassign()) {
+        refreshLastUpdateTime(aliveNodes);
+        return;
       }
 
-      // Normalize current assignments: map stored nodes to their corresponding alive nodes
-      Map<AmsServerInfo, List<String>> normalizedAssignments = new java.util.HashMap<>();
-      Set<AmsServerInfo> currentAssignedNodes = new HashSet<>();
-      for (Map.Entry<AmsServerInfo, List<String>> entry : currentAssignments.entrySet()) {
-        AmsServerInfo storedNode = entry.getKey();
-        String nodeKey = getNodeKey(storedNode);
-        AmsServerInfo aliveNode = aliveNodeMap.get(nodeKey);
-        if (aliveNode != null) {
-          // Node is alive, use the complete node info from aliveNodes
-          normalizedAssignments.put(aliveNode, entry.getValue());
-          currentAssignedNodes.add(aliveNode);
-        } else {
-          // Node is not in alive list, keep the stored node info for offline detection
-          normalizedAssignments.put(storedNode, entry.getValue());
-          currentAssignedNodes.add(storedNode);
-        }
-      }
+      LOG.info(
+          "Detected node changes - New nodes: {}, Offline nodes: {}, Performing incremental reassignment...",
+          change.newNodes.size(),
+          change.offlineNodes.size());
 
-      Set<AmsServerInfo> aliveNodeSet = new HashSet<>(aliveNodes);
-
-      // Detect new nodes and offline nodes
-      Set<AmsServerInfo> newNodes = new HashSet<>(aliveNodeSet);
-      newNodes.removeAll(currentAssignedNodes);
-
-      Set<AmsServerInfo> offlineNodes = new HashSet<>();
-      for (AmsServerInfo storedNode : currentAssignments.keySet()) {
-        String nodeKey = getNodeKey(storedNode);
-        if (!aliveNodeMap.containsKey(nodeKey)) {
-          offlineNodes.add(storedNode);
-        }
-      }
-
-      // Check for nodes that haven't updated for a long time
-      long currentTime = System.currentTimeMillis();
-      Set<String> aliveNodeKeys = new HashSet<>();
-      for (AmsServerInfo node : aliveNodes) {
-        aliveNodeKeys.add(getNodeKey(node));
-      }
-      for (AmsServerInfo node : currentAssignedNodes) {
-        String nodeKey = getNodeKey(node);
-        if (aliveNodeKeys.contains(nodeKey)) {
-          long lastUpdateTime = assignStore.getLastUpdateTime(node);
-          if (lastUpdateTime > 0 && (currentTime - lastUpdateTime) > nodeOfflineTimeoutMs) {
-            // Find the stored node for this alive node to add to offlineNodes
-            for (AmsServerInfo storedNode : currentAssignments.keySet()) {
-              if (getNodeKey(storedNode).equals(nodeKey)) {
-                offlineNodes.add(storedNode);
-                break;
-              }
-            }
-            LOG.warn(
-                "Node {} is considered offline due to timeout. Last update: {}",
-                node,
-                lastUpdateTime);
-          }
-        }
-      }
-
-      boolean needReassign = !newNodes.isEmpty() || !offlineNodes.isEmpty();
-
-      if (needReassign) {
-        LOG.info(
-            "Detected node changes - New nodes: {}, Offline nodes: {}, Performing incremental reassignment...",
-            newNodes.size(),
-            offlineNodes.size());
-
-        // Step 1: Handle offline nodes - collect their buckets for redistribution
-        List<String> bucketsToRedistribute = new ArrayList<>();
-        for (AmsServerInfo offlineNode : offlineNodes) {
-          try {
-            List<String> offlineBuckets = currentAssignments.get(offlineNode);
-            if (offlineBuckets != null && !offlineBuckets.isEmpty()) {
-              bucketsToRedistribute.addAll(offlineBuckets);
-              LOG.info(
-                  "Collected {} buckets from offline node {} for redistribution",
-                  offlineBuckets.size(),
-                  offlineNode);
-            }
-            assignStore.removeAssignments(offlineNode);
-          } catch (Exception e) {
-            LOG.warn("Failed to remove assignments for offline node {}", offlineNode, e);
-          }
-        }
-
-        // Step 2: Calculate target assignment for balanced distribution
-        List<String> allBuckets = generateBucketIds();
-        int totalBuckets = allBuckets.size();
-        int totalAliveNodes = aliveNodes.size();
-        int targetBucketsPerNode = totalBuckets / totalAliveNodes;
-        int remainder = totalBuckets % totalAliveNodes;
-
-        // Step 3: Incremental reassignment
-        // Keep existing assignments for nodes that are still alive
-        Map<AmsServerInfo, List<String>> newAssignments = new java.util.HashMap<>();
-        Set<String> offlineNodeKeys = new HashSet<>();
-        for (AmsServerInfo offlineNode : offlineNodes) {
-          offlineNodeKeys.add(getNodeKey(offlineNode));
-        }
-        for (AmsServerInfo node : aliveNodes) {
-          String nodeKey = getNodeKey(node);
-          if (!offlineNodeKeys.contains(nodeKey)) {
-            // Node is alive and not offline, check if it has existing assignments
-            List<String> existingBuckets = normalizedAssignments.get(node);
-            if (existingBuckets != null && !existingBuckets.isEmpty()) {
-              // Keep existing buckets for alive nodes (not offline)
-              newAssignments.put(node, new ArrayList<>(existingBuckets));
-            } else {
-              // New node
-              newAssignments.put(node, new ArrayList<>());
-            }
-          } else {
-            // Node was offline, start with empty assignment
-            newAssignments.put(node, new ArrayList<>());
-          }
-        }
-
-        // Step 4: Redistribute buckets from offline nodes to alive nodes
-        if (!bucketsToRedistribute.isEmpty()) {
-          redistributeBucketsIncrementally(aliveNodes, bucketsToRedistribute, newAssignments);
-        }
-
-        // Step 5: Handle new nodes - balance buckets from existing nodes
-        if (!newNodes.isEmpty()) {
-          balanceBucketsForNewNodes(
-              aliveNodes, newNodes, newAssignments, targetBucketsPerNode, remainder);
-        }
-
-        // Step 6: Handle unassigned buckets (if any)
-        Set<String> allAssignedBuckets = new HashSet<>();
-        for (List<String> buckets : newAssignments.values()) {
-          allAssignedBuckets.addAll(buckets);
-        }
-        List<String> unassignedBuckets = new ArrayList<>();
-        for (String bucket : allBuckets) {
-          if (!allAssignedBuckets.contains(bucket)) {
-            unassignedBuckets.add(bucket);
-          }
-        }
-        if (!unassignedBuckets.isEmpty()) {
-          redistributeBucketsIncrementally(aliveNodes, unassignedBuckets, newAssignments);
-        }
-
-        // Step 7: Save all new assignments
-        for (Map.Entry<AmsServerInfo, List<String>> entry : newAssignments.entrySet()) {
-          try {
-            assignStore.saveAssignments(entry.getKey(), entry.getValue());
-            LOG.info(
-                "Assigned {} buckets to node {}: {}",
-                entry.getValue().size(),
-                entry.getKey(),
-                entry.getValue());
-          } catch (Exception e) {
-            LOG.error("Failed to save assignments for node {}", entry.getKey(), e);
-          }
-        }
-      } else {
-        // Update last update time for alive nodes
-        for (AmsServerInfo node : aliveNodes) {
-          assignStore.updateLastUpdateTime(node);
-        }
-      }
+      List<String> bucketsToRedistribute =
+          handleOfflineNodes(change.offlineNodes, currentAssignments);
+      List<String> allBuckets = generateBucketIds();
+      Map<AmsServerInfo, List<String>> newAssignments =
+          buildNewAssignments(aliveNodes, change.offlineNodes, normalized.assignments);
+      rebalance(aliveNodes, change.newNodes, bucketsToRedistribute, allBuckets, newAssignments);
+      persistAssignments(newAssignments);
     } catch (Exception e) {
       LOG.error("Error during bucket assignment", e);
     }
@@ -449,5 +303,215 @@ public class AmsAssignService {
    */
   private String getNodeKey(AmsServerInfo nodeInfo) {
     return nodeInfo.getHost() + ":" + nodeInfo.getThriftBindPort();
+  }
+
+  private Map<String, AmsServerInfo> buildAliveNodeMap(List<AmsServerInfo> aliveNodes) {
+    Map<String, AmsServerInfo> map = new HashMap<>();
+    for (AmsServerInfo node : aliveNodes) {
+      map.put(getNodeKey(node), node);
+    }
+    return map;
+  }
+
+  private static class NormalizedAssignments {
+    final Map<AmsServerInfo, List<String>> assignments;
+    final Set<AmsServerInfo> assignedNodes;
+
+    NormalizedAssignments(
+        Map<AmsServerInfo, List<String>> assignments, Set<AmsServerInfo> assignedNodes) {
+      this.assignments = assignments;
+      this.assignedNodes = assignedNodes;
+    }
+  }
+
+  private NormalizedAssignments normalizeCurrentAssignments(
+      Map<AmsServerInfo, List<String>> currentAssignments,
+      Map<String, AmsServerInfo> aliveNodeMap) {
+    Map<AmsServerInfo, List<String>> normalized = new HashMap<>();
+    Set<AmsServerInfo> assignedNodes = new HashSet<>();
+    for (Map.Entry<AmsServerInfo, List<String>> entry : currentAssignments.entrySet()) {
+      AmsServerInfo storedNode = entry.getKey();
+      String nodeKey = getNodeKey(storedNode);
+      AmsServerInfo aliveNode = aliveNodeMap.get(nodeKey);
+      if (aliveNode != null) {
+        normalized.put(aliveNode, entry.getValue());
+        assignedNodes.add(aliveNode);
+      } else {
+        normalized.put(storedNode, entry.getValue());
+        assignedNodes.add(storedNode);
+      }
+    }
+    return new NormalizedAssignments(normalized, assignedNodes);
+  }
+
+  private static class NodeChangeResult {
+    final Set<AmsServerInfo> newNodes;
+    final Set<AmsServerInfo> offlineNodes;
+
+    NodeChangeResult(Set<AmsServerInfo> newNodes, Set<AmsServerInfo> offlineNodes) {
+      this.newNodes = newNodes;
+      this.offlineNodes = offlineNodes;
+    }
+
+    boolean needReassign() {
+      return !newNodes.isEmpty() || !offlineNodes.isEmpty();
+    }
+  }
+
+  private NodeChangeResult detectNodeChanges(
+      List<AmsServerInfo> aliveNodes,
+      Map<AmsServerInfo, List<String>> currentAssignments,
+      Map<String, AmsServerInfo> aliveNodeMap,
+      Set<AmsServerInfo> currentAssignedNodes) {
+    Set<AmsServerInfo> aliveNodeSet = new HashSet<>(aliveNodes);
+    Set<AmsServerInfo> newNodes = new HashSet<>(aliveNodeSet);
+    newNodes.removeAll(currentAssignedNodes);
+
+    Set<AmsServerInfo> offlineNodes = new HashSet<>();
+    for (AmsServerInfo storedNode : currentAssignments.keySet()) {
+      if (!aliveNodeMap.containsKey(getNodeKey(storedNode))) {
+        offlineNodes.add(storedNode);
+      }
+    }
+
+    long currentTime = System.currentTimeMillis();
+    Set<String> aliveNodeKeys = new HashSet<>();
+    for (AmsServerInfo node : aliveNodes) {
+      aliveNodeKeys.add(getNodeKey(node));
+    }
+    for (AmsServerInfo node : currentAssignedNodes) {
+      String nodeKey = getNodeKey(node);
+      if (aliveNodeKeys.contains(nodeKey)) {
+        try {
+          long lastUpdateTime = assignStore.getLastUpdateTime(node);
+          if (lastUpdateTime > 0 && (currentTime - lastUpdateTime) > nodeOfflineTimeoutMs) {
+            for (AmsServerInfo storedNode : currentAssignments.keySet()) {
+              if (getNodeKey(storedNode).equals(nodeKey)) {
+                offlineNodes.add(storedNode);
+                break;
+              }
+            }
+            LOG.warn(
+                "Node {} is considered offline due to timeout. Last update: {}",
+                node,
+                lastUpdateTime);
+          }
+        } catch (BucketAssignStoreException e) {
+          LOG.warn("Failed to get last update time for node {}, treating as offline", node, e);
+          for (AmsServerInfo storedNode : currentAssignments.keySet()) {
+            if (getNodeKey(storedNode).equals(nodeKey)) {
+              offlineNodes.add(storedNode);
+              break;
+            }
+          }
+        }
+      }
+    }
+    return new NodeChangeResult(newNodes, offlineNodes);
+  }
+
+  private List<String> handleOfflineNodes(
+      Set<AmsServerInfo> offlineNodes, Map<AmsServerInfo, List<String>> currentAssignments) {
+    List<String> bucketsToRedistribute = new ArrayList<>();
+    for (AmsServerInfo offlineNode : offlineNodes) {
+      try {
+        List<String> offlineBuckets = currentAssignments.get(offlineNode);
+        if (offlineBuckets != null && !offlineBuckets.isEmpty()) {
+          bucketsToRedistribute.addAll(offlineBuckets);
+          LOG.info(
+              "Collected {} buckets from offline node {} for redistribution",
+              offlineBuckets.size(),
+              offlineNode);
+        }
+        assignStore.removeAssignments(offlineNode);
+      } catch (BucketAssignStoreException e) {
+        LOG.warn("Failed to remove assignments for offline node {}", offlineNode, e);
+      }
+    }
+    return bucketsToRedistribute;
+  }
+
+  private Map<AmsServerInfo, List<String>> buildNewAssignments(
+      List<AmsServerInfo> aliveNodes,
+      Set<AmsServerInfo> offlineNodes,
+      Map<AmsServerInfo, List<String>> normalizedAssignments) {
+    Map<AmsServerInfo, List<String>> newAssignments = new HashMap<>();
+    Set<String> offlineNodeKeys = new HashSet<>();
+    for (AmsServerInfo offlineNode : offlineNodes) {
+      offlineNodeKeys.add(getNodeKey(offlineNode));
+    }
+    for (AmsServerInfo node : aliveNodes) {
+      String nodeKey = getNodeKey(node);
+      if (!offlineNodeKeys.contains(nodeKey)) {
+        List<String> existing = normalizedAssignments.get(node);
+        if (existing != null && !existing.isEmpty()) {
+          newAssignments.put(node, new ArrayList<>(existing));
+        } else {
+          newAssignments.put(node, new ArrayList<>());
+        }
+      } else {
+        newAssignments.put(node, new ArrayList<>());
+      }
+    }
+    return newAssignments;
+  }
+
+  private void rebalance(
+      List<AmsServerInfo> aliveNodes,
+      Set<AmsServerInfo> newNodes,
+      List<String> bucketsToRedistribute,
+      List<String> allBuckets,
+      Map<AmsServerInfo, List<String>> newAssignments) {
+    if (!bucketsToRedistribute.isEmpty()) {
+      redistributeBucketsIncrementally(aliveNodes, bucketsToRedistribute, newAssignments);
+    }
+
+    int totalBuckets = allBuckets.size();
+    int totalAliveNodes = aliveNodes.size();
+    int targetBucketsPerNode = totalBuckets / totalAliveNodes;
+    int remainder = totalBuckets % totalAliveNodes;
+    if (!newNodes.isEmpty()) {
+      balanceBucketsForNewNodes(
+          aliveNodes, newNodes, newAssignments, targetBucketsPerNode, remainder);
+    }
+
+    Set<String> allAssignedBuckets = new HashSet<>();
+    for (List<String> buckets : newAssignments.values()) {
+      allAssignedBuckets.addAll(buckets);
+    }
+    List<String> unassignedBuckets = new ArrayList<>();
+    for (String bucket : allBuckets) {
+      if (!allAssignedBuckets.contains(bucket)) {
+        unassignedBuckets.add(bucket);
+      }
+    }
+    if (!unassignedBuckets.isEmpty()) {
+      redistributeBucketsIncrementally(aliveNodes, unassignedBuckets, newAssignments);
+    }
+  }
+
+  private void persistAssignments(Map<AmsServerInfo, List<String>> newAssignments) {
+    for (Map.Entry<AmsServerInfo, List<String>> entry : newAssignments.entrySet()) {
+      try {
+        assignStore.saveAssignments(entry.getKey(), entry.getValue());
+        LOG.info(
+            "Assigned {} buckets to node {}: {}",
+            entry.getValue().size(),
+            entry.getKey(),
+            entry.getValue());
+      } catch (BucketAssignStoreException e) {
+        LOG.error("Failed to save assignments for node {}", entry.getKey(), e);
+      }
+    }
+  }
+
+  private void refreshLastUpdateTime(List<AmsServerInfo> aliveNodes) {
+    for (AmsServerInfo node : aliveNodes) {
+      try {
+        assignStore.updateLastUpdateTime(node);
+      } catch (BucketAssignStoreException e) {
+        LOG.warn("Failed to update last update time for node {}", node, e);
+      }
+    }
   }
 }

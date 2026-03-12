@@ -20,6 +20,7 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
+import org.apache.amoro.server.ha.ZkHighAvailabilityContainer;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,9 +51,8 @@ public final class BucketAssignStoreFactory {
 
     switch (haType) {
       case AmoroManagementConf.HA_TYPE_ZK:
-        if (haContainer instanceof org.apache.amoro.server.ha.ZkHighAvailabilityContainer) {
-          org.apache.amoro.server.ha.ZkHighAvailabilityContainer zkHaContainer =
-              (org.apache.amoro.server.ha.ZkHighAvailabilityContainer) haContainer;
+        if (haContainer instanceof ZkHighAvailabilityContainer) {
+          ZkHighAvailabilityContainer zkHaContainer = (ZkHighAvailabilityContainer) haContainer;
           CuratorFramework zkClient = zkHaContainer.getZkClient();
           if (zkClient != null) {
             LOG.info("Creating ZkBucketAssignStore for cluster: {}", clusterName);
