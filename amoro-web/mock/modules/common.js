@@ -25,7 +25,8 @@ export default [
       msg: 'success',
       "result": {
         "userName": "admin",
-        "loginTime": "1703839452053"
+        "loginTime": "1703839452053",
+        "role": "ADMIN"
       }
     }),
   },
@@ -35,7 +36,11 @@ export default [
     response: () => ({
       code: 200,
       msg: 'success',
-      result: 'success'
+      result: {
+        userName: 'admin',
+        loginTime: '1703839452053',
+        role: 'ADMIN'
+      }
     }),
   },
   {

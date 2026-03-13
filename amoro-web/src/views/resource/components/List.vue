@@ -24,6 +24,7 @@ import type { IIOptimizeGroupItem, IOptimizeResourceTableItem } from '@/types/co
 import { getOptimizerResourceList, getResourceGroupsListAPI, groupDeleteAPI, groupDeleteCheckAPI, releaseResource } from '@/services/optimize.service'
 import { usePagination } from '@/hooks/usePagination'
 import { dateFormat, mbToSize } from '@/utils'
+import { canWrite } from '@/utils/permission'
 
 const props = defineProps<{ curGroupName?: string, type: string }>()
 
@@ -47,6 +48,7 @@ const STATUS_CONFIG = shallowReactive({
 
 const loading = ref<boolean>(false)
 const releaseLoading = ref<boolean>(false)
+const writable = canWrite()
 const tableColumns = shallowReactive([
   { dataIndex: 'name', title: t('name'), ellipsis: true },
   { dataIndex: 'container', title: t('container'), width: '23%', ellipsis: true },
@@ -218,7 +220,7 @@ onMounted(() => {
           <span>{{ record.optimizeStatus }}</span>
         </template>
         <template v-if="column.dataIndex === 'operation'">
-          <span
+          <span v-if="writable"
             class="primary-link" :class="{ disabled: record.container === 'external' }"
             @click="releaseModal(record)"
           >
@@ -226,12 +228,14 @@ onMounted(() => {
           </span>
         </template>
         <template v-if="column.dataIndex === 'operationGroup'">
+          <template v-if="writable">
           <span class="primary-link g-mr-12" @click="editGroup(record)">
             {{ t('edit') }}
           </span>
           <span class="primary-link" @click="removeGroup(record)">
             {{ t('remove') }}
           </span>
+          </template>
         </template>
       </template>
     </a-table>

@@ -21,11 +21,13 @@ package org.apache.amoro.server;
 import org.apache.amoro.config.ConfigOption;
 import org.apache.amoro.config.ConfigOptions;
 import org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider;
+import org.apache.amoro.server.authorization.Role;
 import org.apache.amoro.utils.MemorySize;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class AmoroManagementConf {
 
@@ -52,6 +54,71 @@ public class AmoroManagementConf {
           .stringType()
           .defaultValue("admin")
           .withDescription("The administrator password");
+
+  public static final ConfigOption<Boolean> AUTHORIZATION_ENABLED =
+      ConfigOptions.key("http-server.authorization.enabled")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("Whether to enable dashboard RBAC authorization.");
+
+  public static final ConfigOption<Role> AUTHORIZATION_DEFAULT_ROLE =
+      ConfigOptions.key("http-server.authorization.default-role")
+          .enumType(Role.class)
+          .defaultValue(Role.READ_ONLY)
+          .withDescription(
+              "Default role for authenticated users without an explicit role mapping.");
+
+  public static final ConfigOption<List<String>> AUTHORIZATION_ADMIN_USERS =
+      ConfigOptions.key("http-server.authorization.admin-users")
+          .stringType()
+          .asList()
+          .defaultValues()
+          .withDescription("Additional usernames that should always be treated as admin users.");
+
+  public static final ConfigOption<List<Map<String, String>>> AUTHORIZATION_USERS =
+      ConfigOptions.key("http-server.authorization.users")
+          .mapType()
+          .asList()
+          .noDefaultValue()
+          .withDescription("Local dashboard users with username/password/role entries.");
+
+  public static final ConfigOption<Boolean> AUTHORIZATION_LDAP_ROLE_MAPPING_ENABLED =
+      ConfigOptions.key("http-server.authorization.ldap-role-mapping.enabled")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("Whether to resolve dashboard roles from LDAP group membership.");
+
+  public static final ConfigOption<String> AUTHORIZATION_LDAP_ROLE_MAPPING_ADMIN_GROUP_DN =
+      ConfigOptions.key("http-server.authorization.ldap-role-mapping.admin-group-dn")
+          .stringType()
+          .noDefaultValue()
+          .withDescription(
+              "Full DN of the LDAP admin group, e.g. CN=amoro-admins,OU=Groups,DC=example,DC=com.");
+
+  public static final ConfigOption<String> AUTHORIZATION_LDAP_ROLE_MAPPING_GROUP_MEMBER_ATTRIBUTE =
+      ConfigOptions.key("http-server.authorization.ldap-role-mapping.group-member-attribute")
+          .stringType()
+          .defaultValue("member")
+          .withDescription("LDAP group attribute that stores member references.");
+
+  public static final ConfigOption<String> AUTHORIZATION_LDAP_ROLE_MAPPING_USER_DN_PATTERN =
+      ConfigOptions.key("http-server.authorization.ldap-role-mapping.user-dn-pattern")
+          .stringType()
+          .noDefaultValue()
+          .withDescription(
+              "LDAP user DN pattern used to match group members. Use {0} as the username placeholder.");
+
+  public static final ConfigOption<String> AUTHORIZATION_LDAP_ROLE_MAPPING_BIND_DN =
+      ConfigOptions.key("http-server.authorization.ldap-role-mapping.bind-dn")
+          .stringType()
+          .defaultValue("")
+          .withDescription("Optional LDAP bind DN used when querying role-mapping groups.");
+
+  public static final ConfigOption<String> AUTHORIZATION_LDAP_ROLE_MAPPING_BIND_PASSWORD =
+      ConfigOptions.key("http-server.authorization.ldap-role-mapping.bind-password")
+          .stringType()
+          .defaultValue("")
+          .withDescription("Optional LDAP bind password used when querying role-mapping groups.");
 
   /** Enable master & slave mode, which supports horizontal scaling of AMS. */
   public static final ConfigOption<Boolean> USE_MASTER_SLAVE_MODE =

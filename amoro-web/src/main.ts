@@ -33,6 +33,7 @@ import './assets/icons'
 import loginService from './services/login.service'
 import { getQueryString } from './utils'
 import { resetLoginTip } from './utils/request'
+import { canWrite } from './utils/permission'
 import SvgIcon from '@/components/svg-icon.vue'
 
 import 'virtual:svg-icons-register'
@@ -67,6 +68,7 @@ RegisterComponents(app);
     if (res) {
       store.updateUserInfo({
         userName: res.userName,
+        role: res.role || 'ADMIN',
       })
     }
   }
@@ -85,6 +87,12 @@ RegisterComponents(app);
       if (!store.userInfo.userName && to.path !== '/login') {
         next({
           path: '/login',
+        })
+        return
+      }
+      if (!canWrite() && (to.path === '/settings' || to.path === '/hive-tables/upgrade')) {
+        next({
+          path: '/overview',
         })
         return
       }

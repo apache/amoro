@@ -22,6 +22,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import useStore from '@/store/index'
 import { getQueryString } from '@/utils'
+import { canWrite } from '@/utils/permission'
 
 interface MenuItem {
   key: string
@@ -44,6 +45,7 @@ export default defineComponent({
     const hasToken = computed(() => {
       return !!(getQueryString('token') || '')
     })
+    const writable = computed(() => canWrite())
     const menuList = computed(() => {
       const menu: MenuItem[] = [
         {
@@ -84,7 +86,8 @@ export default defineComponent({
           icon: 'settings',
         },
       ]
-      return hasToken.value ? menu : allMenu
+      const source = hasToken.value ? menu : allMenu
+      return source.filter(item => writable.value || item.key !== 'settings')
     })
 
     const setCurMenu = () => {
@@ -164,6 +167,7 @@ export default defineComponent({
     return {
       ...toRefs(state),
       hasToken,
+      writable,
       menuList,
       toggleCollapsed,
       navClick,
