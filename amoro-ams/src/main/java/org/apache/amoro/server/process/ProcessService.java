@@ -25,15 +25,15 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.process.ActionCoordinator;
+import org.apache.amoro.process.ExecuteEngine;
 import org.apache.amoro.process.ProcessEvent;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
+import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.manager.AbstractPluginManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
-import org.apache.amoro.server.process.executor.EngineType;
-import org.apache.amoro.server.process.executor.ExecuteEngine;
 import org.apache.amoro.server.process.executor.TableProcessExecutor;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
@@ -61,7 +61,7 @@ public class ProcessService extends PersistentBase {
 
   private final Map<String, ActionCoordinatorScheduler> actionCoordinators =
       new ConcurrentHashMap<>();
-  private final Map<EngineType, ExecuteEngine> executeEngines = new ConcurrentHashMap<>();
+  private final Map<String, ExecuteEngine> executeEngines = new ConcurrentHashMap<>();
 
   private final ExecuteEngineManager executeEngineManager;
   private final List<ActionCoordinator> actionCoordinatorList;
@@ -69,7 +69,7 @@ public class ProcessService extends PersistentBase {
   private final ThreadPoolExecutor processExecutionPool =
       new ThreadPoolExecutor(10, 100, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
 
-  private final Map<ServerTableIdentifier, Map<Long, TableProcess>> activeTableProcess =
+  private final Map<ServerTableIdentifier, Map<Long, TableProcessHolder>> activeTableProcess =
       new ConcurrentHashMap<>();
 
   public ProcessService(TableService tableService) {
@@ -108,40 +108,9 @@ public class ProcessService extends PersistentBase {
           process.getAction());
       return;
     }
-    persistTableProcess(process);
-    trackTableProcess(tableRuntime.getTableIdentifier(), process);
-    executeOrTraceProcess(process);
-  }
-
-  /**
-   * Recover a table process for a given table runtime.
-   *
-   * @param tableRuntime table runtime
-   * @param process table process to recover
-   */
-  public void recover(TableRuntime tableRuntime, TableProcess process) {
-    // TODO: init some status
-    trackTableProcess(tableRuntime.getTableIdentifier(), process);
-    executeOrTraceProcess(process);
-  }
-
-  /**
-   * Retry a failed table process.
-   *
-   * @param process process to retry
-   */
-  public void retry(TableProcess process) {
-    executeOrTraceProcess(process);
-  }
-
-  /**
-   * Cancel a table process and release related resources.
-   *
-   * @param process process to cancel
-   */
-  public void cancel(TableProcess process) {
-    // TODO: init some status
-    cancelProcess(process);
+    TableProcessStore store = persistTableProcess(process);
+    trackTableProcess(tableRuntime.getTableIdentifier(), store, process);
+    executeOrTraceProcess(store, process);
   }
 
   /** Dispose the service, shutdown engines and clear active processes. */
@@ -164,7 +133,7 @@ public class ProcessService extends PersistentBase {
         .installedPlugins()
         .forEach(
             executeEngine -> {
-              executeEngines.put(executeEngine.engineType(), executeEngine);
+              executeEngines.put(executeEngine.name(), executeEngine);
             });
     recoverProcesses(tableRuntimes);
     actionCoordinators.values().forEach(s -> s.initialize(tableRuntimes));
@@ -188,14 +157,16 @@ public class ProcessService extends PersistentBase {
           ActionCoordinatorScheduler scheduler =
               actionCoordinators.get(processMeta.getProcessType());
           if (tableRuntime != null && scheduler != null) {
-            scheduler.recover(
-                tableRuntime,
+            DefaultTableProcessStore store =
                 new DefaultTableProcessStore(
                     processMeta.getProcessId(),
                     tableRuntime,
                     processMeta,
                     scheduler.getAction(),
-                    scheduler.PROCESS_MAX_RETRY_NUMBER));
+                    processMeta.getRetryNumber());
+            TableProcess process = scheduler.recover(tableRuntime, store);
+            trackTableProcess(tableRuntime.getTableIdentifier(), store, process);
+            executeOrTraceProcess(store, process);
           }
         });
   }
@@ -205,41 +176,45 @@ public class ProcessService extends PersistentBase {
    *
    * @param process table process
    */
-  private void executeOrTraceProcess(TableProcess process) {
-
-    if (!isExecutable(process)) {
+  private void executeOrTraceProcess(TableProcessStore store, TableProcess process) {
+    if (!isExecutable(store)) {
       LOG.info(
           "Table process {} with identifier {} may have been in canceling or canceled, cancel execute process.",
-          process.getId(),
-          process.getExternalProcessIdentifier());
+          store.getProcessId(),
+          store.getExternalProcessIdentifier());
       return;
     }
 
-    ExecuteEngine executeEngine =
-        executeEngines.get(EngineType.of(process.store().getExecutionEngine()));
+    ExecuteEngine executeEngine = executeEngines.get(store.getExecutionEngine());
+    if (executeEngine == null) {
+      LOG.error(
+          "Can't found execution engine:{} for process:{}, table:{}",
+          store.getExecutionEngine(),
+          store.getAction(),
+          process.getTableIdentifier());
+      return;
+    }
 
-    TableProcessExecutor executor = new TableProcessExecutor(process, executeEngine);
+    TableProcessExecutor executor = new TableProcessExecutor(process, store, executeEngine);
     executor.onProcessFinished(
         () -> {
           ActionCoordinatorScheduler scheduler =
-              actionCoordinators.get(process.store().getAction().getName());
+              actionCoordinators.get(store.getAction().getName());
           if (scheduler != null
-              && process.getStatus() == ProcessStatus.FAILED
-              && process.store().getRetryNumber() < scheduler.PROCESS_MAX_RETRY_NUMBER
+              && store.getStatus() == ProcessStatus.FAILED
+              && store.getRetryNumber() < ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER
               && process.getTableRuntime() != null) {
-            process
-                .store()
-                .tryTransitState(
-                    ProcessStatus.PENDING,
-                    ProcessEvent.RETRY_REQUESTED,
-                    process.getExternalProcessIdentifier(),
-                    "Regular Retry.",
-                    process.getProcessParameters(),
-                    process.getSummary());
-            executeOrTraceProcess(process);
+            store.tryTransitState(
+                ProcessStatus.PENDING,
+                ProcessEvent.RETRY_REQUESTED,
+                store.getExternalProcessIdentifier(),
+                "Regular Retry.",
+                process.getProcessParameters(),
+                process.getSummary());
+            executeOrTraceProcess(store, process);
           } else {
             untrackTableProcessInstance(
-                process.getTableRuntime().getTableIdentifier(), process.getId());
+                process.getTableRuntime().getTableIdentifier(), store.getProcessId());
           }
         });
 
@@ -249,7 +224,7 @@ public class ProcessService extends PersistentBase {
         "Submit table process {} to engine {}, process id:{}",
         process,
         executeEngine.engineType(),
-        process.getId());
+        store.getProcessId());
   }
 
   /**
@@ -257,29 +232,28 @@ public class ProcessService extends PersistentBase {
    *
    * @param process table process
    */
-  private void cancelProcess(TableProcess process) {
+  private void cancelProcess(TableProcessStore store, TableProcess process) {
 
-    process
-        .store()
-        .tryTransitState(
-            ProcessStatus.CANCELED,
-            ProcessEvent.CANCEL_REQUESTED,
-            process.getExternalProcessIdentifier(),
-            "Gracefully Canceled.",
-            process.getProcessParameters(),
-            process.getSummary());
-    untrackTableProcessInstance(process.getTableRuntime().getTableIdentifier(), process.getId());
+    store.tryTransitState(
+        ProcessStatus.CANCELED,
+        ProcessEvent.CANCEL_REQUESTED,
+        store.getExternalProcessIdentifier(),
+        "Gracefully Canceled.",
+        process.getProcessParameters(),
+        process.getSummary());
+    untrackTableProcessInstance(
+        process.getTableRuntime().getTableIdentifier(), store.getProcessId());
 
-    ExecuteEngine executeEngine =
-        executeEngines.get(EngineType.of(process.store().getExecutionEngine()));
+    ExecuteEngine executeEngine = executeEngines.get(store.getExecutionEngine());
 
-    executeEngine.tryCancelTableProcess(process, process.getExternalProcessIdentifier());
-
-    LOG.info(
-        "Cancel table process {} in engine {}, process id:{}",
-        process,
-        executeEngine.engineType(),
-        process.getId());
+    if (executeEngine != null) {
+      executeEngine.tryCancelTableProcess(process, store.getExternalProcessIdentifier());
+      LOG.info(
+          "Cancel table process {} in engine {}, process id:{}",
+          process,
+          executeEngine.name(),
+          store.getProcessId());
+    }
   }
 
   /**
@@ -288,7 +262,7 @@ public class ProcessService extends PersistentBase {
    * @param process table process
    * @return true if executable
    */
-  private boolean isExecutable(TableProcess process) {
+  private boolean isExecutable(TableProcessStore process) {
     if (process.getStatus() == ProcessStatus.CANCELING
         || process.getStatus() == ProcessStatus.CANCELED) {
       return false;
@@ -305,19 +279,24 @@ public class ProcessService extends PersistentBase {
    * @return true if exists
    */
   private boolean hasAliveTableProcess(TableRuntime tableRuntime, Action action) {
-    List<TableProcess> processes =
+    List<TableProcessHolder> processes =
         getTableProcessInstances(tableRuntime.getTableIdentifier()).values().stream()
             .filter(
                 tableProcess ->
-                    tableProcess.getAction().getName().equalsIgnoreCase(action.getName()))
+                    tableProcess
+                        .getStore()
+                        .getAction()
+                        .getName()
+                        .equalsIgnoreCase(action.getName()))
             .collect(Collectors.toList());
+
     return processes.stream()
         .anyMatch(
             process -> {
               return (process != null
-                  && (process.getStatus() == ProcessStatus.RUNNING
-                      || process.getStatus() == ProcessStatus.SUBMITTED
-                      || process.getStatus() == ProcessStatus.PENDING));
+                  && (process.getStore().getStatus() == ProcessStatus.RUNNING
+                      || process.getStore().getStatus() == ProcessStatus.SUBMITTED
+                      || process.getStore().getStatus() == ProcessStatus.PENDING));
             });
   }
 
@@ -327,8 +306,8 @@ public class ProcessService extends PersistentBase {
    * @param process table process
    * @return metadata snapshot
    */
-  public TableProcessMeta persistTableProcess(TableProcess process) {
-    TableProcessMeta processMeta = TableProcessMeta.fromTableProcessStore(process.store());
+  protected DefaultTableProcessStore persistTableProcess(TableProcess process) {
+    TableProcessMeta processMeta = TableProcessMeta.createProcessMeta(process);
     doAs(
         TableProcessMapper.class,
         mapper ->
@@ -344,7 +323,12 @@ public class ProcessService extends PersistentBase {
                 processMeta.getCreateTime(),
                 processMeta.getProcessParameters(),
                 processMeta.getSummary()));
-    return processMeta;
+    return new DefaultTableProcessStore(
+        processMeta.getProcessId(),
+        process.getTableRuntime(),
+        processMeta,
+        process.getAction(),
+        processMeta.getRetryNumber());
   }
 
   /**
@@ -363,7 +347,7 @@ public class ProcessService extends PersistentBase {
    * @return engines map
    */
   @VisibleForTesting
-  public Map<EngineType, ExecuteEngine> getExecuteEngines() {
+  public Map<String, ExecuteEngine> getExecuteEngines() {
     return executeEngines;
   }
 
@@ -373,22 +357,8 @@ public class ProcessService extends PersistentBase {
    * @return active process map
    */
   @VisibleForTesting
-  public Map<ServerTableIdentifier, Map<Long, TableProcess>> getActiveTableProcess() {
+  public Map<ServerTableIdentifier, Map<Long, TableProcessHolder>> getActiveTableProcess() {
     return activeTableProcess;
-  }
-
-  /**
-   * Get a table process instance by table identifier and process id.
-   *
-   * @param serverTableIdentifier table identifier
-   * @param processId process id
-   * @return table process instance or null
-   */
-  @VisibleForTesting
-  public TableProcess getTableProcessInstance(
-      ServerTableIdentifier serverTableIdentifier, long processId) {
-    Map<Long, TableProcess> inner = activeTableProcess.get(serverTableIdentifier);
-    return inner != null ? inner.get(processId) : null;
   }
 
   /**
@@ -398,9 +368,9 @@ public class ProcessService extends PersistentBase {
    * @return unmodifiable map of processes
    */
   @VisibleForTesting
-  public Map<Long, TableProcess> getTableProcessInstances(
+  public Map<Long, TableProcessHolder> getTableProcessInstances(
       ServerTableIdentifier serverTableIdentifier) {
-    Map<Long, TableProcess> inner = activeTableProcess.get(serverTableIdentifier);
+    Map<Long, TableProcessHolder> inner = activeTableProcess.get(serverTableIdentifier);
     if (inner == null || inner.isEmpty()) {
       return Collections.emptyMap();
     }
@@ -414,10 +384,12 @@ public class ProcessService extends PersistentBase {
    * @param tableProcess process instance
    */
   private void trackTableProcess(
-      ServerTableIdentifier serverTableIdentifier, TableProcess tableProcess) {
+      ServerTableIdentifier serverTableIdentifier,
+      TableProcessStore store,
+      TableProcess tableProcess) {
     activeTableProcess
         .computeIfAbsent(serverTableIdentifier, key -> new ConcurrentHashMap<>())
-        .put(tableProcess.getId(), tableProcess);
+        .put(store.getProcessId(), new TableProcessHolder(tableProcess, store));
   }
 
   /**
@@ -430,15 +402,15 @@ public class ProcessService extends PersistentBase {
   @VisibleForTesting
   public TableProcess untrackTableProcessInstance(
       ServerTableIdentifier serverTableIdentifier, long processId) {
-    Map<Long, TableProcess> inner = activeTableProcess.get(serverTableIdentifier);
+    Map<Long, TableProcessHolder> inner = activeTableProcess.get(serverTableIdentifier);
     if (inner == null) {
       return null;
     }
-    TableProcess removed = inner.remove(processId);
+    TableProcessHolder removed = inner.remove(processId);
     if (inner.isEmpty()) {
       activeTableProcess.remove(serverTableIdentifier, inner);
     }
-    return removed;
+    return removed != null ? removed.getProcess() : null;
   }
 
   @VisibleForTesting
@@ -455,7 +427,7 @@ public class ProcessService extends PersistentBase {
 
   @VisibleForTesting
   public void installExecuteEngine(ExecuteEngine executeEngine) {
-    this.executeEngines.put(executeEngine.engineType(), executeEngine);
+    this.executeEngines.put(executeEngine.name(), executeEngine);
   }
 
   @VisibleForTesting
@@ -519,12 +491,12 @@ public class ProcessService extends PersistentBase {
     @Override
     protected void handleTableRemoved(TableRuntime tableRuntime) {
       actionCoordinators.values().forEach(s -> s.handleTableRemoved(tableRuntime));
-      List<TableProcess> processes =
+      List<TableProcessHolder> processes =
           getTableProcessInstances(tableRuntime.getTableIdentifier()).values().stream()
               .collect(Collectors.toList());
-      for (TableProcess process : processes) {
-        if (process != null) {
-          cancel(process);
+      for (TableProcessHolder holder : processes) {
+        if (holder != null) {
+          cancelProcess(holder.getStore(), holder.getProcess());
         }
       }
     }
@@ -543,6 +515,25 @@ public class ProcessService extends PersistentBase {
     @Override
     protected void doDispose() {
       // TODO: dispose
+    }
+  }
+
+  @VisibleForTesting
+  public static class TableProcessHolder {
+    private final TableProcess process;
+    private final TableProcessStore store;
+
+    public TableProcessHolder(TableProcess process, TableProcessStore store) {
+      this.process = process;
+      this.store = store;
+    }
+
+    public TableProcess getProcess() {
+      return process;
+    }
+
+    public TableProcessStore getStore() {
+      return store;
     }
   }
 

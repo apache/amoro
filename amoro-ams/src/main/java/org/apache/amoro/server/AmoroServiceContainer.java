@@ -236,6 +236,7 @@ public class AmoroServiceContainer {
   }
 
   public void startOptimizingService() throws Exception {
+
     // Load process factories and build action coordinators from default table runtime factory.
     TableProcessFactoryManager tableProcessFactoryManager = new TableProcessFactoryManager();
     tableProcessFactoryManager.initialize();
@@ -246,6 +247,8 @@ public class AmoroServiceContainer {
 
     List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
     ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
+    processFactories.forEach(
+        c -> c.availableExecuteEngines(executeEngineManager.installedPlugins()));
 
     tableService = new DefaultTableService(serviceConfig, catalogManager, defaultRuntimeFactory);
     processService = new ProcessService(tableService, actionCoordinators, executeEngineManager);

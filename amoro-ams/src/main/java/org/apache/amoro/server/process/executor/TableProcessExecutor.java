@@ -18,9 +18,11 @@
 
 package org.apache.amoro.server.process.executor;
 
+import org.apache.amoro.process.ExecuteEngine;
 import org.apache.amoro.process.ProcessEvent;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
+import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
 import org.slf4j.Logger;
@@ -36,6 +38,7 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
   private static final long DEFAULT_POLL_INTERVAL_MS = 5000L;
   public ExecuteEngine executeEngine;
   protected TableProcess tableProcess;
+  private final TableProcessStore store;
   private Runnable finishedCallback;
 
   /**
@@ -44,9 +47,11 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
    * @param tableProcess table process
    * @param executeEngine execute engine
    */
-  public TableProcessExecutor(TableProcess tableProcess, ExecuteEngine executeEngine) {
+  public TableProcessExecutor(
+      TableProcess tableProcess, TableProcessStore store, ExecuteEngine executeEngine) {
     this.tableProcess = tableProcess;
     this.executeEngine = executeEngine;
+    this.store = store;
   }
 
   /** Submit or recover the process to engine, poll status and update store. */
@@ -56,46 +61,44 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
     ProcessStatus status;
     String message = "";
 
-    if (isTableProcessCanceling(tableProcess.getStatus())) {
+    if (isTableProcessCanceling(store.getStatus())) {
       LOG.info(
           "Table process {} with identifier {} may have been in canceling, exit submit process.",
-          tableProcess.getId(),
+          store.getProcessId(),
           externalProcessIdentifier);
       return;
     }
 
     try {
-      if (tableProcess.getStatus() == ProcessStatus.UNKNOWN
-          || tableProcess.getStatus() == ProcessStatus.PENDING
-          || Strings.isNullOrEmpty(tableProcess.getExternalProcessIdentifier())) {
+      if (store.getStatus() == ProcessStatus.UNKNOWN
+          || store.getStatus() == ProcessStatus.PENDING
+          || Strings.isNullOrEmpty(store.getExternalProcessIdentifier())) {
         externalProcessIdentifier = executeEngine.submitTableProcess(tableProcess);
         LOG.info(
             "Submit table process {} to engine {} success, external process identifier is {}",
-            tableProcess.getId(),
+            store.getProcessId(),
             executeEngine.engineType(),
             externalProcessIdentifier);
       } else {
-        externalProcessIdentifier = tableProcess.getExternalProcessIdentifier();
+        externalProcessIdentifier = store.getExternalProcessIdentifier();
       }
 
       validateIdentifier(externalProcessIdentifier);
 
       status = executeEngine.getStatus(externalProcessIdentifier);
-      tableProcess
-          .store()
-          .tryTransitState(
-              status,
-              ProcessEvent.SUBMIT_REQUESTED,
-              externalProcessIdentifier,
-              "Complete Submitted.",
-              tableProcess.getProcessParameters(),
-              tableProcess.getSummary());
+      store.tryTransitState(
+          status,
+          ProcessEvent.SUBMIT_REQUESTED,
+          externalProcessIdentifier,
+          "Complete Submitted.",
+          tableProcess.getProcessParameters(),
+          tableProcess.getSummary());
 
       while (isTableProcessExecuting(status)) {
-        if (isTableProcessCanceling(tableProcess.getStatus())) {
+        if (isTableProcessCanceling(store.getStatus())) {
           LOG.info(
               "Table process {} with identifier {} may have been in canceling, exit submit process.",
-              tableProcess.getId(),
+              store.getProcessId(),
               externalProcessIdentifier);
           return;
         }
@@ -110,7 +113,7 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
       if (t instanceof InterruptedException) {
         LOG.info(
             "Table process {} with identifier {} may have been interrupted by process service disposing, exit submit process.",
-            tableProcess.getId(),
+            store.getProcessId(),
             externalProcessIdentifier);
         return;
       } else {
@@ -121,57 +124,47 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
 
     LOG.info("The process {} is finished with status {}", tableProcess, status);
     if (status == ProcessStatus.KILLED) {
-      tableProcess
-          .store()
-          .tryTransitState(
-              status,
-              ProcessEvent.KILL_REQUESTED,
-              tableProcess.getExternalProcessIdentifier(),
-              "Gracefully Killed.",
-              tableProcess.getProcessParameters(),
-              tableProcess.getSummary());
+      store.tryTransitState(
+          status,
+          ProcessEvent.KILL_REQUESTED,
+          store.getExternalProcessIdentifier(),
+          "Gracefully Killed.",
+          tableProcess.getProcessParameters(),
+          tableProcess.getSummary());
     } else if (status == ProcessStatus.CANCELED) {
-      tableProcess
-          .store()
-          .tryTransitState(
-              status,
-              ProcessEvent.CANCEL_REQUESTED,
-              tableProcess.getExternalProcessIdentifier(),
-              "Gracefully Cancelled.",
-              tableProcess.getProcessParameters(),
-              tableProcess.getSummary());
+      store.tryTransitState(
+          status,
+          ProcessEvent.CANCEL_REQUESTED,
+          store.getExternalProcessIdentifier(),
+          "Gracefully Cancelled.",
+          tableProcess.getProcessParameters(),
+          tableProcess.getSummary());
     } else if (status == ProcessStatus.CLOSED) {
-      tableProcess
-          .store()
-          .tryTransitState(
-              status,
-              ProcessEvent.KILL_REQUESTED,
-              tableProcess.getExternalProcessIdentifier(),
-              "Gracefully Closed.",
-              tableProcess.getProcessParameters(),
-              tableProcess.getSummary());
+      store.tryTransitState(
+          status,
+          ProcessEvent.KILL_REQUESTED,
+          store.getExternalProcessIdentifier(),
+          "Gracefully Closed.",
+          tableProcess.getProcessParameters(),
+          tableProcess.getSummary());
     } else if (status == ProcessStatus.FAILED) {
-      tableProcess
-          .store()
-          .tryTransitState(
-              status,
-              ProcessEvent.COMPLETE_FAILED,
-              tableProcess.getExternalProcessIdentifier(),
-              message,
-              tableProcess.getProcessParameters(),
-              tableProcess.getSummary());
+      store.tryTransitState(
+          status,
+          ProcessEvent.COMPLETE_FAILED,
+          store.getExternalProcessIdentifier(),
+          message,
+          tableProcess.getProcessParameters(),
+          tableProcess.getSummary());
     } else if (status == ProcessStatus.SUCCESS) {
-      tableProcess
-          .store()
-          .tryTransitState(
-              status,
-              ProcessEvent.COMPLETE_SUCCESS,
-              tableProcess.getExternalProcessIdentifier(),
-              "Complete Success",
-              tableProcess.getProcessParameters(),
-              tableProcess.getSummary());
+      store.tryTransitState(
+          status,
+          ProcessEvent.COMPLETE_SUCCESS,
+          store.getExternalProcessIdentifier(),
+          "Complete Success",
+          tableProcess.getProcessParameters(),
+          tableProcess.getSummary());
     } else {
-      LOG.warn("Un expected terminal status: {} for process: {}.", status, tableProcess.getId());
+      LOG.warn("Un expected terminal status: {} for process: {}.", status, store.getProcessId());
     }
 
     if (finishedCallback != null) {

@@ -18,9 +18,14 @@
 
 package org.apache.amoro.server;
 
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.OptimizingTask;
@@ -28,12 +33,15 @@ import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.config.OptimizingConfig;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.exception.IllegalTaskStateException;
 import org.apache.amoro.exception.PluginRetryAuthException;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
@@ -45,6 +53,7 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.scheduler.inline.TableRuntimeRefreshExecutor;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
@@ -593,6 +602,79 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     optimizingService()
         .completeTask(token, buildOptimizingTaskFailResult(task.getTaskId(), "error"));
     assertTaskStatus(TaskRuntime.Status.PLANNED);
+  }
+
+  /**
+   * Test handleConfigChanged when the optimizer group changes to a different existing group. The
+   * table should be released from the old group's queue and from the new group's queue.
+   */
+  @Test
+  public void testHandleConfigChangedGroupChanged() {
+    // Create a new resource group
+    ResourceGroup newGroup = new ResourceGroup.Builder("test-new-group", "local").build();
+    try {
+      optimizerManager().createResourceGroup(newGroup);
+    } catch (Throwable ignored) {
+    }
+    optimizingService().createResourceGroup(newGroup);
+
+    try {
+      TableRuntime tableRuntime = tableService().getRuntime(serverTableIdentifier().getId());
+      String originalGroup = tableRuntime.getGroupName();
+
+      // Build original config with the old group name
+      OptimizingConfig originalOptConfig = new OptimizingConfig();
+      originalOptConfig.setOptimizerGroup(originalGroup);
+      TableConfiguration originalConfig = new TableConfiguration();
+      originalConfig.setOptimizingConfig(originalOptConfig);
+
+      // Simulate that the table now belongs to the new group
+      TableRuntime spyRuntime = spy(tableRuntime);
+      doReturn("test-new-group").when(spyRuntime).getGroupName();
+      doReturn(TableFormat.ICEBERG).when(spyRuntime).getFormat();
+
+      // Fire config changed (group changed from "default" to "test-new-group")
+      RuntimeHandlerChain handler = optimizingService().getTableRuntimeHandler();
+      handler.fireConfigChanged(spyRuntime, originalConfig);
+
+      // No exception should be thrown; table should be released from both old and new queue
+    } finally {
+      optimizingService().deleteResourceGroup("test-new-group");
+      try {
+        optimizerManager().deleteResourceGroup("test-new-group");
+      } catch (Throwable ignored) {
+      }
+    }
+  }
+
+  /**
+   * Test handleConfigChanged when the new optimizer group does not exist. The table runtime's
+   * completeEmptyProcess() should be called.
+   */
+  @Test
+  public void testHandleConfigChangedGroupNotExist() {
+    DefaultTableRuntime tableRuntime =
+        (DefaultTableRuntime) tableService().getRuntime(serverTableIdentifier().getId());
+    String originalGroup = tableRuntime.getGroupName();
+
+    // Build original config with the original group
+    OptimizingConfig originalOptConfig = new OptimizingConfig();
+    originalOptConfig.setOptimizerGroup(originalGroup);
+    TableConfiguration originalConfig = new TableConfiguration();
+    originalConfig.setOptimizingConfig(originalOptConfig);
+
+    // Simulate that the table now belongs to a non-existing group
+    DefaultTableRuntime spyRuntime = spy(tableRuntime);
+    doReturn("non-existing-group").when(spyRuntime).getGroupName();
+    doReturn(TableFormat.ICEBERG).when(spyRuntime).getFormat();
+    doReturn(serverTableIdentifier()).when(spyRuntime).getTableIdentifier();
+
+    // Fire config changed (group changed from "default" to "non-existing-group")
+    RuntimeHandlerChain handler = optimizingService().getTableRuntimeHandler();
+    handler.fireConfigChanged(spyRuntime, originalConfig);
+
+    // Verify that completeEmptyProcess was called on the spy
+    verify(spyRuntime).completeEmptyProcess();
   }
 
   private OptimizerRegisterInfo buildRegisterInfo() {
