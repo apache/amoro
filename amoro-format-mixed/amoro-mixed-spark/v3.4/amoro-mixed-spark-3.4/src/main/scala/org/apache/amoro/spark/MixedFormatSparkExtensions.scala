@@ -43,17 +43,11 @@ class MixedFormatSparkExtensions extends (SparkSessionExtensions => Unit) {
 
     extensions.injectPostHocResolutionRule(spark => RewriteMixedFormatCommand(spark))
 
-    // mixed-format row-level operation rewrite rules
-    // These must be resolution rules (not optimizer rules) so they run BEFORE Iceberg 1.10.x's
-    // RewriteUpdateTableForRowLineage and RewriteMergeIntoTableForRowLineage rules. Those Iceberg
-    // rules do pattern matching on the table and throw scala.MatchError for non-SparkTable types
-    // (i.e., MixedSparkTable).
-    extensions.injectResolutionRule { spark => RewriteUpdateMixedFormatTable(spark) }
-    extensions.injectResolutionRule { spark => RewriteDeleteFromMixedFormatTable(spark) }
-
     // mixed-format optimizer rules
     extensions.injectPostHocResolutionRule { spark => QueryWithConstraintCheck(spark) }
     extensions.injectOptimizerRule { spark => RewriteAppendMixedFormatTable(spark) }
+    extensions.injectOptimizerRule { spark => RewriteDeleteFromMixedFormatTable(spark) }
+    extensions.injectOptimizerRule { spark => RewriteUpdateMixedFormatTable(spark) }
 
     // planner extensions
     extensions.injectPlannerStrategy { spark => MixedFormatExtendedDataSourceV2Strategy(spark) }

@@ -31,7 +31,6 @@
     <url>https://amoro.apache.org</url>
 
     <properties>
-        <iceberg.version>1.6.1</iceberg.version>
         <flink.version>1.17.2</flink.version>
     </properties>
 

@@ -104,7 +104,7 @@ public class SparkParquetReaders {
         types.add(fieldType);
       }
 
-      return new InternalRowReader(newFields);
+      return new InternalRowReader(types, newFields);
     }
   }
 
@@ -169,7 +169,7 @@ public class SparkParquetReaders {
         }
       }
 
-      return new InternalRowReader(reorderedFields);
+      return new InternalRowReader(types, reorderedFields);
     }
 
     @Override
@@ -526,8 +526,8 @@ public class SparkParquetReaders {
       extends ParquetValueReaders.StructReader<InternalRow, GenericInternalRow> {
     private final int numFields;
 
-    InternalRowReader(List<ParquetValueReader<?>> readers) {
-      super(readers);
+    InternalRowReader(List<Type> types, List<ParquetValueReader<?>> readers) {
+      super(types, readers);
       this.numFields = readers.size();
     }
 

@@ -29,6 +29,12 @@
     <name>Amoro Project Iceberg Format</name>
     <url>https://amoro.apache.org</url>
 
+    <properties>
+        <iceberg.version>1.10.1</iceberg.version>
+        <parquet-avro.version>1.16.0</parquet-avro.version>
+        <parquet-jackson.version>1.16.0</parquet-jackson.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
