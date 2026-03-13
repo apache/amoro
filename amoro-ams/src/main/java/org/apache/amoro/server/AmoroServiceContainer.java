@@ -245,8 +245,7 @@ public class AmoroServiceContainer {
     ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
     executeEngineManager.initialize();
     List<ExecuteEngine> executeEngines = executeEngineManager.installedPlugins();
-    processFactories.forEach(
-        c -> c.availableExecuteEngines(executeEngines));
+    processFactories.forEach(c -> c.availableExecuteEngines(executeEngines));
 
     DefaultTableRuntimeFactory defaultRuntimeFactory = new DefaultTableRuntimeFactory();
     defaultRuntimeFactory.initialize(processFactories);
