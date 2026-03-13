@@ -29,7 +29,7 @@ import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
-import org.apache.paimon.shade.guava30.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
