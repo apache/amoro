@@ -66,34 +66,55 @@ public class TestConfigurableIntervalExecutors {
   }
 
   @Test
-  public void testSnapshotsExpiringDefaultInterval() {
+  public void testExpireSnapshotsSchedulerInterval() {
     Duration interval = Duration.ofHours(1);
-    SnapshotsExpiringExecutor executor = new SnapshotsExpiringExecutor(null, 1, interval);
+    TestableActionCoordinatorScheduler scheduler = newExpireSnapshotsScheduler(interval);
 
     TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
-    Assert.assertEquals(
-        Duration.ofHours(1).toMillis(), executor.getNextExecutingTime(tableRuntime));
+    Assert.assertEquals(interval.toMillis(), scheduler.getNextExecutingTimePublic(tableRuntime));
   }
 
   @Test
-  public void testSnapshotsExpiringCustomInterval() {
-    Duration interval = Duration.ofMinutes(30);
-    SnapshotsExpiringExecutor executor = new SnapshotsExpiringExecutor(null, 1, interval);
-
-    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
-    Assert.assertEquals(
-        Duration.ofMinutes(30).toMillis(), executor.getNextExecutingTime(tableRuntime));
-  }
-
-  @Test
-  public void testSnapshotsExpiringShouldExecuteAfterInterval() {
+  public void testExpireSnapshotsSchedulerShouldExecuteAfterInterval() {
     Duration interval = Duration.ofHours(2);
-    SnapshotsExpiringExecutor executor = new SnapshotsExpiringExecutor(null, 1, interval);
+    TestableActionCoordinatorScheduler scheduler = newExpireSnapshotsScheduler(interval);
 
     long now = System.currentTimeMillis();
     // 3 hours ago - should execute
-    Assert.assertTrue(executor.shouldExecute(now - Duration.ofHours(3).toMillis()));
+    Assert.assertTrue(scheduler.shouldExecutePublic(now - Duration.ofHours(3).toMillis()));
     // 1 hour ago - should not execute
-    Assert.assertFalse(executor.shouldExecute(now - Duration.ofHours(1).toMillis()));
+    Assert.assertFalse(scheduler.shouldExecutePublic(now - Duration.ofHours(1).toMillis()));
+  }
+
+  private TestableActionCoordinatorScheduler newExpireSnapshotsScheduler(Duration interval) {
+    org.apache.amoro.process.ActionCoordinator coordinator =
+        Mockito.mock(org.apache.amoro.process.ActionCoordinator.class);
+
+    Mockito.when(coordinator.action()).thenReturn(org.apache.amoro.IcebergActions.EXPIRE_SNAPSHOTS);
+    Mockito.when(coordinator.parallelism()).thenReturn(1);
+    Mockito.when(coordinator.getExecutorDelay()).thenReturn(interval.toMillis());
+    Mockito.when(coordinator.getNextExecutingTime(Mockito.any())).thenReturn(interval.toMillis());
+    Mockito.when(coordinator.formatSupported(Mockito.any())).thenReturn(true);
+    Mockito.when(coordinator.enabled(Mockito.any())).thenReturn(true);
+    Mockito.when(coordinator.trigger(Mockito.any())).thenReturn(java.util.Optional.empty());
+
+    return new TestableActionCoordinatorScheduler(coordinator);
+  }
+
+  private static class TestableActionCoordinatorScheduler
+      extends org.apache.amoro.server.process.ActionCoordinatorScheduler {
+
+    private TestableActionCoordinatorScheduler(
+        org.apache.amoro.process.ActionCoordinator coordinator) {
+      super(coordinator, null, null);
+    }
+
+    long getNextExecutingTimePublic(TableRuntime tableRuntime) {
+      return getNextExecutingTime(tableRuntime);
+    }
+
+    boolean shouldExecutePublic(long lastCleanupEndTime) {
+      return shouldExecute(lastCleanupEndTime);
+    }
   }
 }
