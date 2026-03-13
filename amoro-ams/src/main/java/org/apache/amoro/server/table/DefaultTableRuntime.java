@@ -86,7 +86,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
       Lists.newArrayList(
           OPTIMIZING_STATE_KEY, PENDING_INPUT_KEY, PROCESS_ID_KEY, CLEANUP_STATE_KEY);
   private final TableOptimizingMetrics optimizingMetrics;
-  private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
+  private final TableMaintainerMetrics maintainerMetrics;
   private final TableSummaryMetrics tableSummaryMetrics;
   private volatile long lastPlanTime;
   private volatile long latestRefreshInterval = AmoroServiceConstants.INVALID_TIME;
@@ -100,8 +100,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
     super(store);
     this.optimizingMetrics =
         new TableOptimizingMetrics(store.getTableIdentifier(), store.getGroupName());
-    this.orphanFilesCleaningMetrics =
-        new TableOrphanFilesCleaningMetrics(store.getTableIdentifier());
+    this.maintainerMetrics = new TableMaintainerMetrics(store.getTableIdentifier());
     this.tableSummaryMetrics = new TableSummaryMetrics(store.getTableIdentifier());
     this.loader = loader;
   }
@@ -120,12 +119,13 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
   public void registerMetric(MetricRegistry metricRegistry) {
     // TODO: extract method to interface.
     this.optimizingMetrics.register(metricRegistry);
-    this.orphanFilesCleaningMetrics.register(metricRegistry);
+    this.maintainerMetrics.register(metricRegistry);
     this.tableSummaryMetrics.register(metricRegistry);
   }
 
-  public TableOrphanFilesCleaningMetrics getOrphanFilesCleaningMetrics() {
-    return orphanFilesCleaningMetrics;
+  @Override
+  public TableMaintainerMetrics getMaintainerMetrics() {
+    return maintainerMetrics;
   }
 
   public long getCurrentSnapshotId() {
@@ -458,7 +458,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
   @Override
   public void unregisterMetric() {
     tableSummaryMetrics.unregister();
-    orphanFilesCleaningMetrics.unregister();
+    maintainerMetrics.unregister();
     optimizingMetrics.unregister();
   }
 
