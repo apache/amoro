@@ -126,6 +126,7 @@ public class AmoroServiceContainer {
   private Javalin httpServer;
   private AmsServiceMetrics amsServiceMetrics;
   private HAState haState = HAState.INITIALIZING;
+  private AmsAssignService amsAssignService;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
@@ -244,6 +245,20 @@ public class AmoroServiceContainer {
 
     DefaultTableRuntimeFactory defaultRuntimeFactory = new DefaultTableRuntimeFactory();
     defaultRuntimeFactory.initialize(processFactories);
+    // In master-slave mode, create AmsAssignService for bucket assignment
+    if (IS_MASTER_SLAVE_MODE && haContainer != null) {
+      try {
+        // Create and start AmsAssignService for bucket assignment
+        // The factory will handle different HA types (ZK, database, etc.)
+        amsAssignService = new AmsAssignService(haContainer, serviceConfig);
+        amsAssignService.start();
+        LOG.info("AmsAssignService started for master-slave mode");
+      } catch (UnsupportedOperationException e) {
+        LOG.info("Skip AmsAssignService: {}", e.getMessage());
+      } catch (Exception e) {
+        LOG.error("Failed to start AmsAssignService", e);
+      }
+    }
 
     List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
     ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
@@ -292,6 +307,11 @@ public class AmoroServiceContainer {
     if (optimizingServiceServer != null) {
       LOG.info("Stopping optimizing server[serving:{}] ...", optimizingServiceServer.isServing());
       optimizingServiceServer.stop();
+    }
+    if (amsAssignService != null) {
+      LOG.info("Stopping AmsAssignService...");
+      amsAssignService.stop();
+      amsAssignService = null;
     }
     if (tableService != null) {
       LOG.info("Stopping table service...");
