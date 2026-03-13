@@ -29,6 +29,9 @@ public class OptimizingConfig {
   // self-optimizing.enabled
   private boolean enabled;
 
+  // table-summary.enabled
+  private boolean tableSummaryEnabled;
+
   private boolean allowPartialCommit;
 
   // self-optimizing.quota
@@ -111,6 +114,15 @@ public class OptimizingConfig {
 
   public OptimizingConfig setEnabled(boolean enabled) {
     this.enabled = enabled;
+    return this;
+  }
+
+  public boolean isTableSummaryEnabled() {
+    return tableSummaryEnabled;
+  }
+
+  public OptimizingConfig setTableSummaryEnabled(boolean tableSummaryEnabled) {
+    this.tableSummaryEnabled = tableSummaryEnabled;
     return this;
   }
 
@@ -364,6 +376,7 @@ public class OptimizingConfig {
     }
     OptimizingConfig that = (OptimizingConfig) o;
     return enabled == that.enabled
+        && tableSummaryEnabled == that.tableSummaryEnabled
         && allowPartialCommit == that.allowPartialCommit
         && Double.compare(that.targetQuota, targetQuota) == 0
         && maxExecuteRetryCount == that.maxExecuteRetryCount
@@ -396,6 +409,7 @@ public class OptimizingConfig {
   public int hashCode() {
     return Objects.hashCode(
         enabled,
+        tableSummaryEnabled,
         allowPartialCommit,
         targetQuota,
         optimizerGroup,
@@ -427,6 +441,7 @@ public class OptimizingConfig {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("enabled", enabled)
+        .add("tableSummaryEnabled", tableSummaryEnabled)
         .add("commitOnPartialSuccess", allowPartialCommit)
         .add("targetQuota", targetQuota)
         .add("optimizerGroup", optimizerGroup)
