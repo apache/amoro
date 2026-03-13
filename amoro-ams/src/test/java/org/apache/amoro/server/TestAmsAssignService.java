@@ -129,7 +129,7 @@ public class TestAmsAssignService {
       Thread.sleep(100);
 
       // Trigger assignment manually
-      assignService.doAssignForTest();
+      assignService.doAssign();
 
       // Check assignments
       Map<AmsServerInfo, List<String>> assignments = mockAssignStore.getAllAssignments();
@@ -168,7 +168,7 @@ public class TestAmsAssignService {
       Thread.sleep(100);
 
       // Initial assignment
-      assignService.doAssignForTest();
+      assignService.doAssign();
       Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
       Assert.assertEquals("Should have 2 nodes", 2, initialAssignments.size());
 
@@ -186,7 +186,7 @@ public class TestAmsAssignService {
       Thread.sleep(100);
 
       // Trigger reassignment
-      assignService.doAssignForTest();
+      assignService.doAssign();
 
       // Check that node2's buckets are redistributed
       Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
@@ -214,7 +214,7 @@ public class TestAmsAssignService {
     Thread.sleep(100);
 
     // Initial assignment - all buckets to node1
-    assignService.doAssignForTest();
+    assignService.doAssign();
     Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
     // ZK stores optimizing port (1261), not table port (1260); match by host only (single node).
     List<String> node1InitialBuckets = findBucketsByHost(initialAssignments, node1.getHost());
@@ -230,7 +230,7 @@ public class TestAmsAssignService {
       Thread.sleep(100);
 
       // Trigger reassignment
-      assignService.doAssignForTest();
+      assignService.doAssign();
 
       // Check assignments
       Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
@@ -276,7 +276,7 @@ public class TestAmsAssignService {
       Thread.sleep(200);
 
       // Initial assignment
-      assignService.doAssignForTest();
+      assignService.doAssign();
 
       // Verify balance
       Map<AmsServerInfo, List<String>> assignments = mockAssignStore.getAllAssignments();
@@ -312,7 +312,7 @@ public class TestAmsAssignService {
       Thread.sleep(100);
 
       // Initial assignment
-      assignService.doAssignForTest();
+      assignService.doAssign();
       Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
 
       // Record initial assignments
@@ -334,7 +334,7 @@ public class TestAmsAssignService {
       Thread.sleep(100);
 
       // Trigger reassignment
-      assignService.doAssignForTest();
+      assignService.doAssign();
 
       // Check new assignments
       Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
@@ -406,7 +406,7 @@ public class TestAmsAssignService {
       AmsAssignService nonLeaderService = createAssignServiceWithMockStore(nonLeaderContainer);
 
       // Should not throw exception even if not leader
-      nonLeaderService.doAssignForTest();
+      nonLeaderService.doAssign();
 
       // Should not have assignments if not leader
       Map<AmsServerInfo, List<String>> assignments = mockAssignStore.getAllAssignments();

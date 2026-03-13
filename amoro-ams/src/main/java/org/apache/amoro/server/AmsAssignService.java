@@ -22,6 +22,7 @@ import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.BucketAssignStoreException;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,10 +62,6 @@ public class AmsAssignService {
 
   boolean isRunning() {
     return running;
-  }
-
-  void doAssignForTest() {
-    doAssign();
   }
 
   public AmsAssignService(HighAvailabilityContainer haContainer, Configurations serviceConfig) {
@@ -115,7 +112,8 @@ public class AmsAssignService {
     LOG.info("Bucket assignment service stopped");
   }
 
-  private void doAssign() {
+  @VisibleForTesting
+  public void doAssign() {
     try {
       if (!haContainer.hasLeadership()) {
         LOG.debug("Current node is not leader, skip bucket assignment");

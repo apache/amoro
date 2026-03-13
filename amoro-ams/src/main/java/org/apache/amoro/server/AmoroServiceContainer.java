@@ -256,8 +256,6 @@ public class AmoroServiceContainer {
       }
     }
 
-    tableService = new DefaultTableService(serviceConfig, catalogManager, defaultRuntimeFactory);
-
     List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
     ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
 
