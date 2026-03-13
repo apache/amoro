@@ -28,7 +28,6 @@ import org.apache.amoro.process.LocalProcess;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
 import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.cleanup.CleanupOperation;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,10 +57,9 @@ public class SnapshotsExpiringProcess extends TableProcess implements LocalProce
     } catch (Throwable t) {
       LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);
     } finally {
-      if (tableRuntime instanceof DefaultTableRuntime) {
-        ((DefaultTableRuntime) tableRuntime)
-            .updateLastCleanTime(CleanupOperation.SNAPSHOTS_EXPIRING, System.currentTimeMillis());
-      }
+      tableRuntime.updateState(
+          DefaultTableRuntime.CLEANUP_STATE_KEY,
+          cleanUp -> cleanUp.setLastSnapshotsExpiringTime(System.currentTimeMillis()));
     }
   }
 

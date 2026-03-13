@@ -32,6 +32,7 @@ import org.apache.amoro.process.ProcessTriggerStrategy;
 import org.apache.amoro.process.RecoverProcessFailedException;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.commons.lang3.tuple.Pair;
@@ -115,7 +116,14 @@ public class IcebergProcessFactory implements ProcessFactory {
   }
 
   private Optional<TableProcess> triggerExpireSnapshot(TableRuntime tableRuntime) {
-    if (localEngine == null) {
+    if (localEngine == null || !tableRuntime.getTableConfiguration().isExpireSnapshotEnabled()) {
+      return Optional.empty();
+    }
+
+    long lastExecuteTime =
+        tableRuntime.getState(DefaultTableRuntime.CLEANUP_STATE_KEY).getLastSnapshotsExpiringTime();
+    ProcessTriggerStrategy strategy = actions.get(IcebergActions.EXPIRE_SNAPSHOTS);
+    if (System.currentTimeMillis() - lastExecuteTime < strategy.getTriggerInterval().toMillis()) {
       return Optional.empty();
     }
 

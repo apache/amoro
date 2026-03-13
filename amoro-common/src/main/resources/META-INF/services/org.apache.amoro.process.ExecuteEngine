@@ -16,4 +16,4 @@
 # limitations under the License.
 #
 
-org.apache.amoro.server.process.iceberg.IcebergProcessFactory
+org.apache.amoro.process.LocalExecutionEngine
