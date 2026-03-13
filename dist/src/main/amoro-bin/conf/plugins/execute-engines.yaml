@@ -20,5 +20,5 @@ execute-engines:
     enabled: true
     priority: 100
     properties:
-      default.thread-count: "10"
-      snapshots-expiring.thread-count: "10"
+      pool.default.thread-count: 10
+      pool.snapshots-expiring.thread-count: 10

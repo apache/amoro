@@ -22,91 +22,81 @@ import org.apache.amoro.Action;
 import org.apache.amoro.IcebergActions;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
-import org.apache.amoro.config.ConfigHelpers;
+import org.apache.amoro.config.ConfigOption;
+import org.apache.amoro.config.ConfigOptions;
+import org.apache.amoro.config.Configurations;
+import org.apache.amoro.process.ExecuteEngine;
+import org.apache.amoro.process.LocalExecutionEngine;
 import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.process.ProcessTriggerStrategy;
 import org.apache.amoro.process.RecoverProcessFailedException;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
-import org.apache.amoro.server.process.DefaultTableProcessStore;
-import org.apache.amoro.server.process.TableProcessMeta;
-import org.apache.amoro.server.process.executor.LocalExecutionEngine;
-import org.apache.amoro.server.utils.SnowflakeIdGenerator;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Default process factory for Iceberg-related maintenance actions in AMS. */
 public class IcebergProcessFactory implements ProcessFactory {
 
   public static final String PLUGIN_NAME = "iceberg";
+  public static final ConfigOption<Boolean> SNAPSHOT_EXPIRE_ENABLED =
+      ConfigOptions.key("expire-snapshots.enabled").booleanType().defaultValue(true);
 
-  private final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator();
+  public static final ConfigOption<Duration> SNAPSHOT_EXPIRE_INTERVAL =
+      ConfigOptions.key("expire-snapshot.interval")
+          .durationType()
+          .defaultValue(Duration.ofHours(1));
 
-  private boolean expireSnapshotsEnabled = true;
-  private int expireSnapshotsThreadCount = 10;
-  private Duration expireSnapshotsInterval = Duration.ofHours(1);
+  private ExecuteEngine localEngine;
+  private final Map<Action, ProcessTriggerStrategy> actions = Maps.newHashMap();
+  private final List<TableFormat> formats =
+      Lists.newArrayList(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE);
+
+  @Override
+  public void availableExecuteEngines(Collection<ExecuteEngine> allAvailableEngines) {
+    for (ExecuteEngine engine : allAvailableEngines) {
+      if (engine instanceof LocalExecutionEngine) {
+        this.localEngine = engine;
+      }
+    }
+  }
 
   @Override
   public Map<TableFormat, Set<Action>> supportedActions() {
-    Set<Action> actions = new HashSet<>();
-    actions.add(IcebergActions.EXPIRE_SNAPSHOTS);
-
-    Map<TableFormat, Set<Action>> supported = new HashMap<>();
-    supported.put(TableFormat.ICEBERG, actions);
-    supported.put(TableFormat.MIXED_ICEBERG, actions);
-    supported.put(TableFormat.MIXED_HIVE, actions);
-    return supported;
+    return formats.stream()
+        .map(f -> Pair.of(f, actions.keySet()))
+        .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
   }
 
   @Override
   public ProcessTriggerStrategy triggerStrategy(TableFormat format, Action action) {
-    if (IcebergActions.EXPIRE_SNAPSHOTS.equals(action)) {
-      return new ProcessTriggerStrategy(
-          expireSnapshotsInterval, false, Math.max(expireSnapshotsThreadCount, 1));
-    }
-
-    return ProcessTriggerStrategy.METADATA_TRIGGER;
+    return actions.getOrDefault(action, ProcessTriggerStrategy.METADATA_TRIGGER);
   }
 
   @Override
   public Optional<TableProcess> trigger(TableRuntime tableRuntime, Action action) {
-    if (IcebergActions.EXPIRE_SNAPSHOTS.equals(action)
-        && (!expireSnapshotsEnabled
-            || !tableRuntime.getTableConfiguration().isExpireSnapshotEnabled())) {
+    if (!actions.containsKey(action)) {
       return Optional.empty();
     }
 
-    long processId = idGenerator.generateId();
-    TableProcessMeta meta =
-        TableProcessMeta.of(
-            processId,
-            tableRuntime.getTableIdentifier().getId(),
-            action.getName(),
-            LocalExecutionEngine.ENGINE_NAME,
-            Collections.emptyMap());
-
-    TableProcessStore store = new DefaultTableProcessStore(tableRuntime, meta, action);
-
     if (IcebergActions.EXPIRE_SNAPSHOTS.equals(action)) {
-      return Optional.of(new SnapshotsExpiringProcess(tableRuntime, store));
+      return triggerExpireSnapshot(tableRuntime);
     }
-
     return Optional.empty();
   }
 
   @Override
   public TableProcess recover(TableRuntime tableRuntime, TableProcessStore store)
       throws RecoverProcessFailedException {
-    if (IcebergActions.EXPIRE_SNAPSHOTS.equals(store.getAction())) {
-      return new SnapshotsExpiringProcess(tableRuntime, store);
-    }
-
     throw new RecoverProcessFailedException(
         "Unsupported action for IcebergProcessFactory: " + store.getAction());
   }
@@ -116,42 +106,20 @@ public class IcebergProcessFactory implements ProcessFactory {
     if (properties == null || properties.isEmpty()) {
       return;
     }
-
-    expireSnapshotsEnabled =
-        parseBoolean(properties.get("expire-snapshots.enabled"), expireSnapshotsEnabled);
-    expireSnapshotsThreadCount =
-        parseInt(properties.get("expire-snapshots.thread-count"), expireSnapshotsThreadCount);
-    expireSnapshotsInterval =
-        parseDuration(properties.get("expire-snapshots.interval"), expireSnapshotsInterval);
-  }
-
-  private boolean parseBoolean(String value, boolean defaultValue) {
-    if (value == null) {
-      return defaultValue;
-    }
-    return Boolean.parseBoolean(value.trim());
-  }
-
-  private int parseInt(String value, int defaultValue) {
-    if (value == null) {
-      return defaultValue;
-    }
-    try {
-      return Integer.parseInt(value.trim());
-    } catch (NumberFormatException e) {
-      return defaultValue;
+    Configurations configs = Configurations.fromMap(properties);
+    if (configs.getBoolean(SNAPSHOT_EXPIRE_ENABLED)) {
+      Duration interval = configs.getDuration(SNAPSHOT_EXPIRE_INTERVAL);
+      this.actions.put(
+          IcebergActions.EXPIRE_SNAPSHOTS, ProcessTriggerStrategy.triggerAtFixRate(interval));
     }
   }
 
-  private Duration parseDuration(String value, Duration defaultValue) {
-    if (value == null) {
-      return defaultValue;
+  private Optional<TableProcess> triggerExpireSnapshot(TableRuntime tableRuntime) {
+    if (localEngine == null) {
+      return Optional.empty();
     }
-    try {
-      return ConfigHelpers.TimeUtils.parseDuration(value);
-    } catch (Exception e) {
-      return defaultValue;
-    }
+
+    return Optional.of(new SnapshotsExpiringProcess(tableRuntime, localEngine));
   }
 
   @Override

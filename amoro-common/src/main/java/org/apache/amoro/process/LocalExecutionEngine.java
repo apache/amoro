@@ -16,31 +16,44 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.process.executor;
+package org.apache.amoro.process;
 
-import org.apache.amoro.process.LocalProcess;
-import org.apache.amoro.process.ProcessStatus;
-import org.apache.amoro.process.TableProcess;
+import org.apache.amoro.config.ConfigOption;
+import org.apache.amoro.config.ConfigOptions;
+import org.apache.amoro.config.Configurations;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
- * Local execution engine that runs {@link LocalProcess} instances in AMS thread pools.
+ * Local execution engine that runs {@link org.apache.amoro.process.LocalProcess} instances in AMS
+ * thread pools.
  *
- * <p>The engine maintains multiple thread pools keyed by {@link LocalProcess#tag()}.
+ * <p>The engine maintains multiple thread pools keyed by {@link
+ * org.apache.amoro.process.LocalProcess#tag()}.
  */
 public class LocalExecutionEngine implements ExecuteEngine {
+  private static final Logger LOG = LoggerFactory.getLogger(LocalExecutionEngine.class);
 
   public static final String ENGINE_NAME = "local";
   public static final String DEFAULT_POOL = "default";
-  public static final String SNAPSHOTS_EXPIRING_POOL = "snapshots-expiring";
+  public static final String POOL_CONFIG_PREFIX = "pool.";
+  public static final String POOL_SIZE_SUFFIX = ".thread-count";
+  public static final ConfigOption<Integer> DEFAULT_POOL_SIZE =
+      ConfigOptions.key(POOL_CONFIG_PREFIX + DEFAULT_POOL + POOL_SIZE_SUFFIX)
+          .intType()
+          .defaultValue(10);
 
   private final Map<String, ThreadPoolExecutor> pools = new ConcurrentHashMap<>();
   private final Map<String, Future<?>> activeInstances = new ConcurrentHashMap<>();
@@ -95,7 +108,7 @@ public class LocalExecutionEngine implements ExecuteEngine {
     LocalProcess localProcess = (LocalProcess) tableProcess;
     String identifier = UUID.randomUUID().toString();
 
-    ThreadPoolExecutor executor = getOrCreatePool(localProcess.tag());
+    ThreadPoolExecutor executor = getPool(localProcess.tag());
     Future<?> future =
         executor.submit(
             () -> {
@@ -136,16 +149,28 @@ public class LocalExecutionEngine implements ExecuteEngine {
 
   @Override
   public void open(Map<String, String> properties) {
-    String defaultSizeValue = properties == null ? null : properties.get("default.thread-count");
-    int defaultSize = parseInt(defaultSizeValue, 10);
+    Configurations configs = Configurations.fromMap(properties);
+    int defaultSize = configs.getInteger(DEFAULT_POOL_SIZE);
     pools.put(DEFAULT_POOL, newFixedPool(DEFAULT_POOL, defaultSize));
 
-    String snapshotsExpiringSizeValue =
-        properties == null ? null : properties.get("snapshots-expiring.thread-count");
-    int snapshotsExpiringSize = parseInt(snapshotsExpiringSizeValue, defaultSize);
-    pools.put(
-        SNAPSHOTS_EXPIRING_POOL,
-        newFixedPool(SNAPSHOTS_EXPIRING_POOL, Math.max(snapshotsExpiringSize, 1)));
+    Set<String> customPools =
+        properties.keySet().stream()
+            .filter(key -> key.startsWith(POOL_CONFIG_PREFIX))
+            .map(key -> key.substring(POOL_CONFIG_PREFIX.length()))
+            .map(key -> key.substring(0, key.indexOf(".") + 1))
+            .collect(Collectors.toSet());
+
+    customPools.forEach(
+        name -> {
+          ConfigOption<Integer> poolSizeOpt =
+              ConfigOptions.key(POOL_CONFIG_PREFIX + name + POOL_SIZE_SUFFIX)
+                  .intType()
+                  .defaultValue(-1);
+          int size = configs.getInteger(poolSizeOpt);
+          Preconditions.checkArgument(size > 0, "Pool thread-count is not configured for %s", name);
+          pools.put(name, newFixedPool(name, size));
+          LOG.info("Initialize local execute pool:{} with size:{}", name, size);
+        });
   }
 
   @Override
@@ -161,12 +186,11 @@ public class LocalExecutionEngine implements ExecuteEngine {
     return ENGINE_NAME;
   }
 
-  private ThreadPoolExecutor getOrCreatePool(String tag) {
-    if (tag == null || tag.isEmpty()) {
-      tag = DEFAULT_POOL;
+  private ThreadPoolExecutor getPool(String tag) {
+    if (pools.containsKey(tag)) {
+      return pools.get(tag);
     }
-
-    return pools.computeIfAbsent(tag, t -> newFixedPool(t, 10));
+    return pools.get(DEFAULT_POOL);
   }
 
   private ThreadPoolExecutor newFixedPool(String tag, int size) {
@@ -177,16 +201,5 @@ public class LocalExecutionEngine implements ExecuteEngine {
         TimeUnit.SECONDS,
         new LinkedBlockingQueue<>(),
         new ThreadFactoryBuilder().setDaemon(false).setNameFormat("local-" + tag + "-%d").build());
-  }
-
-  private int parseInt(String value, int defaultValue) {
-    if (value == null) {
-      return defaultValue;
-    }
-    try {
-      return Integer.parseInt(value);
-    } catch (NumberFormatException e) {
-      return defaultValue;
-    }
   }
 }

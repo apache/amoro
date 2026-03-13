@@ -22,4 +22,3 @@ process-factories:
     properties:
       expire-snapshots.enabled: "true"
       expire-snapshots.interval: "1h"
-      expire-snapshots.thread-count: "10"

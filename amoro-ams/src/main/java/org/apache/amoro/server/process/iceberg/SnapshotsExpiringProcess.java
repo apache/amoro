@@ -18,31 +18,35 @@
 
 package org.apache.amoro.server.process.iceberg;
 
+import org.apache.amoro.Action;
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.IcebergActions;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.maintainer.TableMaintainer;
+import org.apache.amoro.process.ExecuteEngine;
 import org.apache.amoro.process.LocalProcess;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
-import org.apache.amoro.server.process.executor.LocalExecutionEngine;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
+import org.apache.paimon.shade.guava30.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /** Local table process for expiring Iceberg snapshots. */
 public class SnapshotsExpiringProcess extends TableProcess implements LocalProcess {
 
   private static final Logger LOG = LoggerFactory.getLogger(SnapshotsExpiringProcess.class);
 
-  public SnapshotsExpiringProcess(TableRuntime tableRuntime, TableProcessStore store) {
-    super(tableRuntime, store);
+  public SnapshotsExpiringProcess(TableRuntime tableRuntime, ExecuteEngine engine) {
+    super(tableRuntime, engine);
   }
 
   @Override
   public String tag() {
-    return LocalExecutionEngine.SNAPSHOTS_EXPIRING_POOL;
+    return getAction().getName().toLowerCase();
   }
 
   @Override
@@ -62,5 +66,17 @@ public class SnapshotsExpiringProcess extends TableProcess implements LocalProce
   }
 
   @Override
-  protected void closeInternal() {}
+  public Action getAction() {
+    return IcebergActions.EXPIRE_SNAPSHOTS;
+  }
+
+  @Override
+  public Map<String, String> getProcessParameters() {
+    return Maps.newHashMap();
+  }
+
+  @Override
+  public Map<String, String> getSummary() {
+    return Maps.newHashMap();
+  }
 }
