@@ -18,7 +18,6 @@
 
 package org.apache.amoro.server.process;
 
-import org.apache.amoro.IcebergActions;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.ActionCoordinator;
@@ -26,7 +25,6 @@ import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.TableService;
-import org.apache.amoro.server.table.cleanup.CleanupOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,22 +112,6 @@ public class ActionCoordinatorScheduler extends PeriodicTableScheduler {
    */
   protected TableProcess recover(TableRuntime tableRuntime, TableProcessStore processStore) {
     return coordinator.recoverTableProcess(tableRuntime, processStore);
-  }
-
-  @Override
-  protected CleanupOperation getCleanupOperation() {
-    if (IcebergActions.EXPIRE_SNAPSHOTS.equals(coordinator.action())) {
-      return CleanupOperation.SNAPSHOTS_EXPIRING;
-    }
-    return CleanupOperation.NONE;
-  }
-
-  @Override
-  protected boolean shouldExecute(Long lastCleanupEndTime) {
-    if (getCleanupOperation() == CleanupOperation.SNAPSHOTS_EXPIRING) {
-      return System.currentTimeMillis() - lastCleanupEndTime >= intervalMillis;
-    }
-    return super.shouldExecute(lastCleanupEndTime);
   }
 
   @Override
