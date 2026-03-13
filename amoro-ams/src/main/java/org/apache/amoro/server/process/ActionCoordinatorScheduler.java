@@ -41,14 +41,12 @@ public class ActionCoordinatorScheduler extends PeriodicTableScheduler {
 
   private final ActionCoordinator coordinator;
   private final ProcessService processService;
-  private final long intervalMillis;
 
   public ActionCoordinatorScheduler(
       ActionCoordinator coordinator, TableService tableService, ProcessService processService) {
     super(coordinator.action(), tableService, coordinator.parallelism());
     this.coordinator = coordinator;
     this.processService = processService;
-    this.intervalMillis = coordinator.getExecutorDelay();
   }
 
   /**
