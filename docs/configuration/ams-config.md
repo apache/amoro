@@ -70,11 +70,14 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | expire-snapshots.enabled | true | Enable snapshots expiring. |
 | expire-snapshots.interval | 1 h | Interval for expiring snapshots. |
 | expire-snapshots.thread-count | 10 | The number of threads used for snapshots expiring. |
+| ha.bucket-assign.interval | 1 min | Interval for bucket assignment service to detect node changes and redistribute bucket IDs. |
+| ha.bucket-id.total-count | 100 | Total count of bucket IDs for assignment. Bucket IDs range from 1 to this value. |
 | ha.cluster-name | default | Amoro management service cluster name. |
 | ha.connection-timeout | 5 min | The Zookeeper connection timeout in milliseconds. |
 | ha.enabled | false | Whether to enable high availability mode. |
 | ha.heartbeat-interval | 10 s | HA heartbeat interval. |
 | ha.lease-ttl | 30 s | TTL of HA lease. |
+| ha.node-offline.timeout | 5 min | Timeout duration to determine if a node is offline. After this duration, the node's bucket IDs will be reassigned. |
 | ha.session-timeout | 30 s | The Zookeeper session timeout in milliseconds. |
 | ha.type | zk | High availability implementation type: zk or database. |
 | ha.zookeeper-address |  | The Zookeeper address used for high availability. |
