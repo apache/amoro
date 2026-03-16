@@ -25,6 +25,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.process.ProcessFactory;
+import org.apache.amoro.server.table.paimon.PaimonTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.StateKey;
 import org.apache.amoro.table.TableRuntimeFactory;
@@ -101,6 +102,12 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
   public Optional<TableRuntimeCreator> accept(
       ServerTableIdentifier tableIdentifier, Map<String, String> tableProperties) {
     TableFormat format = tableIdentifier.getFormat();
+
+    // Paimon format uses its own runtime implementation
+    if (format == TableFormat.PAIMON) {
+      return Optional.of(new PaimonTableRuntimeCreatorImpl());
+    }
+
     boolean defaultSupported =
         format.in(TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE, TableFormat.ICEBERG);
     boolean hasProcessFactories = factoriesByFormat.containsKey(format);
@@ -159,6 +166,20 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
     @Override
     public TableRuntime create(TableRuntimeStore store) {
       return new DefaultTableRuntime(store, () -> loader.apply(store.getTableIdentifier()));
+    }
+  }
+
+  /** Creator for Paimon format tables, producing {@link PaimonTableRuntime} instances. */
+  private class PaimonTableRuntimeCreatorImpl implements TableRuntimeFactory.TableRuntimeCreator {
+
+    @Override
+    public List<StateKey<?>> requiredStateKeys() {
+      return PaimonTableRuntime.REQUIRED_STATES;
+    }
+
+    @Override
+    public TableRuntime create(TableRuntimeStore store) {
+      return new PaimonTableRuntime(store, () -> loader.apply(store.getTableIdentifier()));
     }
   }
 }

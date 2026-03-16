@@ -745,6 +745,43 @@ public class DefaultTableService extends PersistentBase implements TableService 
                     "The queue of table explorer is full, please increase the queue size or thread count.");
               }
             });
+    // Handle tables that exist in table_identifier but don't have TableRuntime in memory.
+    // This ensures tables that were synced before TableRuntime support was added (e.g., Paimon
+    // tables synced before PaimonTableRuntimeFactory was registered) get their runtime created.
+    Set<ServerTableIdentifier> tablesWithoutRuntime =
+        serverTableIdentifiers.values().stream()
+            .filter(id -> !tableRuntimeMap.containsKey(id.getId()))
+            .filter(id -> tableIdentifiers.contains(new TableIdentity(id)))
+            .collect(Collectors.toSet());
+
+    if (!tablesWithoutRuntime.isEmpty()) {
+      LOG.info(
+          "Found {} tables in catalog {} without TableRuntime, creating runtimes for them.",
+          tablesWithoutRuntime.size(),
+          externalCatalog.name());
+      tablesWithoutRuntime.forEach(
+          tableIdentifier -> {
+            try {
+              taskFutures.add(
+                  CompletableFuture.runAsync(
+                      () -> {
+                        try {
+                          triggerTableAdded(externalCatalog, tableIdentifier);
+                        } catch (Exception e) {
+                          LOG.error(
+                              "TableExplorer sync table runtime {} error",
+                              tableIdentifier.toString(),
+                              e);
+                        }
+                      },
+                      tableExplorerExecutors));
+            } catch (RejectedExecutionException e) {
+              LOG.error(
+                  "The queue of table explorer is full, please increase the queue size or thread count.");
+            }
+          });
+    }
+
     taskFutures.forEach(CompletableFuture::join);
 
     // In master-slave mode, historical tables already registered in Amoro DB may have a null

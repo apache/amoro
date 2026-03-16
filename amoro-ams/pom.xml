@@ -401,7 +401,6 @@
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-format-paimon</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
