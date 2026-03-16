@@ -54,12 +54,11 @@ public class SnapshotsExpiringProcess extends TableProcess implements LocalProce
       AmoroTable<?> amoroTable = tableRuntime.loadTable();
       TableMaintainer tableMaintainer = TableMaintainers.create(amoroTable, tableRuntime);
       tableMaintainer.expireSnapshots();
-    } catch (Throwable t) {
-      LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);
-    } finally {
       tableRuntime.updateState(
           DefaultTableRuntime.CLEANUP_STATE_KEY,
           cleanUp -> cleanUp.setLastSnapshotsExpiringTime(System.currentTimeMillis()));
+    } catch (Throwable t) {
+      LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);
     }
   }
 
