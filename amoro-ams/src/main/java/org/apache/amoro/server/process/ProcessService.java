@@ -128,7 +128,6 @@ public class ProcessService extends PersistentBase {
           actionCoordinator.action().getName(),
           new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this));
     }
-    executeEngineManager.initialize();
     executeEngineManager
         .installedPlugins()
         .forEach(
