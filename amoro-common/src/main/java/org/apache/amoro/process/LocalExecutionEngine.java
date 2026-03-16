@@ -126,7 +126,7 @@ public class LocalExecutionEngine implements ExecuteEngine {
         properties.keySet().stream()
             .filter(key -> key.startsWith(POOL_CONFIG_PREFIX))
             .map(key -> key.substring(POOL_CONFIG_PREFIX.length()))
-            .map(key -> key.substring(0, key.indexOf(".") + 1))
+            .map(key -> key.substring(0, key.indexOf(".")))
             .map(String::toLowerCase)
             .filter(name -> !DEFAULT_POOL.equalsIgnoreCase(name))
             .collect(Collectors.toSet());
