@@ -796,6 +796,16 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
           <td>The number of threads used for snapshots expiring.</td>
       </tr>
       <tr>
+          <td>ha.bucket-assign.interval</td>
+          <td>1 min</td>
+          <td>Interval for bucket assignment service to detect node changes and redistribute bucket IDs.</td>
+      </tr>
+      <tr>
+          <td>ha.bucket-id.total-count</td>
+          <td>100</td>
+          <td>Total count of bucket IDs for assignment. Bucket IDs range from 1 to this value.</td>
+      </tr>
+      <tr>
           <td>ha.cluster-name</td>
           <td>default</td>
           <td>Amoro management service cluster name.</td>
@@ -819,6 +829,11 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
           <td>ha.lease-ttl</td>
           <td>30 s</td>
           <td>TTL of HA lease.</td>
+      </tr>
+      <tr>
+          <td>ha.node-offline.timeout</td>
+          <td>5 min</td>
+          <td>Timeout duration to determine if a node is offline. After this duration, the node&rsquo;s bucket IDs will be reassigned.</td>
       </tr>
       <tr>
           <td>ha.session-timeout</td>
