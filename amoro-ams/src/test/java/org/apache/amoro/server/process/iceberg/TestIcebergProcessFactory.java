@@ -47,7 +47,7 @@ public class TestIcebergProcessFactory {
 
     Map<String, String> properties = new HashMap<>();
     properties.put("expire-snapshots.enabled", "true");
-    properties.put("expire-snapshot.interval", "1h");
+    properties.put("expire-snapshots.interval", "1h");
 
     factory.open(properties);
 
@@ -69,7 +69,7 @@ public class TestIcebergProcessFactory {
 
     Map<String, String> properties = new HashMap<>();
     properties.put("expire-snapshots.enabled", "true");
-    properties.put("expire-snapshot.interval", "1h");
+    properties.put("expire-snapshots.interval", "1h");
     factory.open(properties);
 
     LocalExecutionEngine localEngine = mock(LocalExecutionEngine.class);
@@ -98,7 +98,7 @@ public class TestIcebergProcessFactory {
 
     Map<String, String> properties = new HashMap<>();
     properties.put("expire-snapshots.enabled", "true");
-    properties.put("expire-snapshot.interval", "1h");
+    properties.put("expire-snapshots.interval", "1h");
     factory.open(properties);
 
     factory.availableExecuteEngines(Arrays.asList(mock(LocalExecutionEngine.class)));
@@ -124,7 +124,7 @@ public class TestIcebergProcessFactory {
 
     Map<String, String> properties = new HashMap<>();
     properties.put("expire-snapshots.enabled", "true");
-    properties.put("expire-snapshot.interval", "1h");
+    properties.put("expire-snapshots.interval", "1h");
     factory.open(properties);
 
     factory.availableExecuteEngines(Arrays.asList(mock(LocalExecutionEngine.class)));
