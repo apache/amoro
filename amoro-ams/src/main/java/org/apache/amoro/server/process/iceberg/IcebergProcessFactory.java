@@ -53,7 +53,7 @@ public class IcebergProcessFactory implements ProcessFactory {
       ConfigOptions.key("expire-snapshots.enabled").booleanType().defaultValue(true);
 
   public static final ConfigOption<Duration> SNAPSHOT_EXPIRE_INTERVAL =
-      ConfigOptions.key("expire-snapshot.interval")
+      ConfigOptions.key("expire-snapshots.interval")
           .durationType()
           .defaultValue(Duration.ofHours(1));
 
