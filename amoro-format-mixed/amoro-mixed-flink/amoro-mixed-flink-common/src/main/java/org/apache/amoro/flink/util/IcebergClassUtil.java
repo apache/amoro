@@ -20,31 +20,29 @@ package org.apache.amoro.flink.util;
 
 import org.apache.amoro.flink.interceptor.ProxyFactory;
 import org.apache.amoro.io.AuthenticatedFileIO;
-import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.java.functions.KeySelector;
+import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.AbstractUdfStreamOperator;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
-import org.apache.flink.streaming.api.operators.OneInputStreamOperatorFactory;
-import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.encryption.EncryptionManager;
+import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.TableLoader;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.flink.source.FlinkInputFormat;
 import org.apache.iceberg.flink.source.ScanContext;
-import org.apache.iceberg.flink.source.StreamingReaderOperator;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.util.ThreadPools;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
@@ -52,8 +50,6 @@ import java.util.Map;
 
 /** An util generates Apache Iceberg writer and committer operator w */
 public class IcebergClassUtil {
-  private static final String ICEBERG_SCAN_CONTEXT_CLASS =
-      "org.apache.iceberg.flink.source.ScanContext";
   private static final String ICEBERG_PARTITION_SELECTOR_CLASS =
       "org.apache.iceberg.flink.sink.PartitionKeySelector";
   private static final String ICEBERG_FILE_COMMITTER_CLASS =
@@ -66,7 +62,6 @@ public class IcebergClassUtil {
     try {
       Class<?> clazz = forName(ICEBERG_PARTITION_SELECTOR_CLASS);
       Constructor<?> c = clazz.getConstructor(PartitionSpec.class, Schema.class, RowType.class);
-      c.setAccessible(true);
       return (KeySelector<RowData, Object>) c.newInstance(spec, schema, flinkSchema);
     } catch (NoSuchMethodException
         | IllegalAccessException
@@ -129,51 +124,22 @@ public class IcebergClassUtil {
             new Object[] {fullTableName, taskWriterFactory});
   }
 
-  public static StreamingReaderOperator newStreamingReaderOperator(
-      FlinkInputFormat format, ProcessingTimeService timeService, MailboxExecutor mailboxExecutor) {
-    try {
-      Constructor<StreamingReaderOperator> c =
-          StreamingReaderOperator.class.getDeclaredConstructor(
-              FlinkInputFormat.class, ProcessingTimeService.class, MailboxExecutor.class);
-      c.setAccessible(true);
-      return c.newInstance(format, timeService, mailboxExecutor);
-    } catch (IllegalAccessException
-        | NoSuchMethodException
-        | InvocationTargetException
-        | InstantiationException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static FlinkInputFormat getInputFormat(OneInputStreamOperatorFactory operatorFactory) {
-    try {
-      Class<?>[] classes = StreamingReaderOperator.class.getDeclaredClasses();
-      Class<?> clazz = null;
-      for (Class<?> c : classes) {
-        if ("OperatorFactory".equals(c.getSimpleName())) {
-          clazz = c;
-          break;
-        }
-      }
-      Field field = clazz.getDeclaredField("format");
-      field.setAccessible(true);
-      return (FlinkInputFormat) (field.get(operatorFactory));
-    } catch (IllegalAccessException | NoSuchFieldException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
   public static ProxyFactory<FlinkInputFormat> getInputFormatProxyFactory(
-      OneInputStreamOperatorFactory operatorFactory,
+      TableLoader tableLoader,
+      Table table,
       AuthenticatedFileIO authenticatedFileIO,
-      Schema tableSchema) {
-    FlinkInputFormat inputFormat = getInputFormat(operatorFactory);
-    TableLoader tableLoader =
-        ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "tableLoader");
-    FileIO io = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "io");
-    EncryptionManager encryption =
-        ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "encryption");
-    Object context = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "context");
+      Schema tableSchema,
+      Schema projectedSchema,
+      ReadableConfig flinkConf,
+      Map<String, String> properties,
+      List<Expression> filters,
+      long limit,
+      Long startSnapshotId) {
+    FileIO io = table.io();
+    EncryptionManager encryption = table.encryption();
+    ScanContext context =
+        buildScanContext(
+            table, projectedSchema, flinkConf, properties, filters, limit, startSnapshotId);
 
     return ProxyUtil.getProxyFactory(
         FlinkInputFormat.class,
@@ -182,6 +148,29 @@ public class IcebergClassUtil {
           TableLoader.class, Schema.class, FileIO.class, EncryptionManager.class, ScanContext.class
         },
         new Object[] {tableLoader, tableSchema, io, encryption, context});
+  }
+
+  private static ScanContext buildScanContext(
+      Table table,
+      Schema projectedSchema,
+      ReadableConfig flinkConf,
+      Map<String, String> properties,
+      List<Expression> filters,
+      long limit,
+      Long startSnapshotId) {
+    ScanContext.Builder contextBuilder =
+        ScanContext.builder().resolveConfig(table, properties, flinkConf);
+    if (projectedSchema != null) {
+      contextBuilder.project(projectedSchema);
+    }
+    if (filters != null) {
+      contextBuilder.filters(filters);
+    }
+    contextBuilder.limit(limit);
+    if (startSnapshotId != null) {
+      contextBuilder.startSnapshotId(startSnapshotId);
+    }
+    return contextBuilder.build();
   }
 
   private static Class<?> forName(String className) {
@@ -193,22 +182,10 @@ public class IcebergClassUtil {
   }
 
   public static SourceFunction getSourceFunction(AbstractUdfStreamOperator source) {
-    try {
-      Field field = AbstractUdfStreamOperator.class.getDeclaredField("userFunction");
-      field.setAccessible(true);
-      return (SourceFunction) (field.get(source));
-    } catch (IllegalAccessException | NoSuchFieldException e) {
-      throw new RuntimeException(e);
-    }
+    return (SourceFunction) source.getUserFunction();
   }
 
   public static void clean(StreamExecutionEnvironment env) {
-    try {
-      Field field = StreamExecutionEnvironment.class.getDeclaredField("transformations");
-      field.setAccessible(true);
-      ((List) (field.get(env))).clear();
-    } catch (IllegalAccessException | NoSuchFieldException e) {
-      throw new RuntimeException(e);
-    }
+    env.getTransformations().clear();
   }
 }

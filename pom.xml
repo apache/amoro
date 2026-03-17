@@ -122,7 +122,7 @@
         <commons-pool2.version>2.12.0</commons-pool2.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-net.version>3.12.0</commons-net.version>
-        <cglib.version>2.2.2</cglib.version>
+        <cglib.version>3.3.0</cglib.version>
         <curator.version>5.7.0</curator.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.21.4</testcontainers.version>
@@ -190,7 +190,7 @@
             --add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED
             --add-exports=java.security.jgss/sun.security.krb5=ALL-UNNAMED</jvm.module.exports>
 
-        <amoro.surefire.baseArgLine>-XX:+UseG1GC -Xms256m -XX:+IgnoreUnrecognizedVMOptions ${jvm.module.opens}</amoro.surefire.baseArgLine>
+        <amoro.surefire.baseArgLine>-XX:+UseG1GC -Xms256m -XX:+IgnoreUnrecognizedVMOptions ${jvm.module.opens} ${jvm.module.exports}</amoro.surefire.baseArgLine>
     </properties>
 
     <dependencyManagement>
@@ -1900,7 +1900,6 @@
             <properties>
                 <java.source.version>17</java.source.version>
                 <java.target.version>17</java.target.version>
-                <surefire.excludedGroups.jdk>org.apache.amoro.testutils.FailsOnJava17</surefire.excludedGroups.jdk>
             </properties>
             <build>
                 <pluginManagement>

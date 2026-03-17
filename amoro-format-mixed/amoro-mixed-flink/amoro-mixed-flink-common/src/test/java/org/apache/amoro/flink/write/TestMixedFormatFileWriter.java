@@ -99,9 +99,12 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
           boolean submitEmptySnapshots,
           Long restoredCheckpointId)
           throws Exception {
-    tableLoader.open();
-    MixedTable mixedTable = tableLoader.loadMixedFormatTable();
-    mixedTable.properties().put(SUBMIT_EMPTY_SNAPSHOTS.key(), String.valueOf(submitEmptySnapshots));
+    HashMap<String, String> extraProperties = new HashMap<>();
+    extraProperties.put(SUBMIT_EMPTY_SNAPSHOTS.key(), String.valueOf(submitEmptySnapshots));
+    MixedFormatTableLoader writerTableLoader =
+        tableLoader.copyWithFlinkTableProperties(extraProperties);
+    writerTableLoader.open();
+    MixedTable mixedTable = writerTableLoader.loadMixedFormatTable();
 
     MixedFormatFileWriter streamWriter =
         FlinkSink.createFileWriter(
@@ -109,7 +112,7 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
             null,
             false,
             (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
-            tableLoader);
+            writerTableLoader);
     TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
         new TestOneInputStreamOperatorIntern<>(
             streamWriter, 1, 1, 0, restoredCheckpointId, new TestGlobalAggregateManager());
