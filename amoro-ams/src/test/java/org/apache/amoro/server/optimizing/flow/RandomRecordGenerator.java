@@ -33,6 +33,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,6 +46,12 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class RandomRecordGenerator {
+
+  private static final LocalDate BASE_DATE = LocalDate.of(2026, 1, 1);
+  private static final LocalDateTime BASE_LOCAL_DATE_TIME =
+      LocalDateTime.of(2026, 1, 1, 12, 0, 0, 123_456_000);
+  private static final OffsetDateTime BASE_OFFSET_DATE_TIME =
+      OffsetDateTime.of(BASE_LOCAL_DATE_TIME, ZoneOffset.UTC);
 
   private final Random random;
 
@@ -120,7 +128,6 @@ public class RandomRecordGenerator {
 
   public Record randomRecord(int primaryValue) {
     Record record = GenericRecord.create(schema);
-    Random random = new Random();
     List<Types.NestedField> columns = schema.columns();
     Map<Integer, Object> partitionValue = null;
     if (partitionValues != null) {
@@ -148,7 +155,6 @@ public class RandomRecordGenerator {
 
   public Record randomRecord() {
     Record record = GenericRecord.create(schema);
-    Random random = new Random();
     List<Types.NestedField> columns = schema.columns();
     Map<Integer, Object> partitionValue = null;
     if (partitionValues != null) {
@@ -170,7 +176,7 @@ public class RandomRecordGenerator {
       case INTEGER:
         return random.nextInt();
       case STRING:
-        return UUID.randomUUID().toString();
+        return new UUID(random.nextLong(), random.nextLong()).toString();
       case LONG:
         return random.nextLong();
       case FLOAT:
@@ -180,13 +186,19 @@ public class RandomRecordGenerator {
       case BOOLEAN:
         return random.nextBoolean();
       case DATE:
-        return LocalDate.now().minusDays(random.nextInt(10000));
+        return BASE_DATE.minusDays(random.nextInt(10000));
       case TIMESTAMP:
         Types.TimestampType timestampType = (Types.TimestampType) type;
         if (timestampType.shouldAdjustToUTC()) {
-          return OffsetDateTime.now().minusDays(random.nextInt(10000));
+          return BASE_OFFSET_DATE_TIME
+              .minusDays(random.nextInt(10000))
+              .plusNanos(random.nextInt(1_000_000) * 1_000L)
+              .truncatedTo(ChronoUnit.MICROS);
         } else {
-          return LocalDateTime.now().minusDays(random.nextInt(10000));
+          return BASE_LOCAL_DATE_TIME
+              .minusDays(random.nextInt(10000))
+              .plusNanos(random.nextInt(1_000_000) * 1_000L)
+              .truncatedTo(ChronoUnit.MICROS);
         }
       case DECIMAL:
         Types.DecimalType decimalType = (Types.DecimalType) type;
