@@ -34,6 +34,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.shade.utils.ConfigShadeUtils;
 import org.apache.amoro.exception.AmoroRuntimeException;
 import org.apache.amoro.process.ActionCoordinator;
+import org.apache.amoro.process.ExecuteEngine;
 import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
@@ -242,6 +243,10 @@ public class AmoroServiceContainer {
     TableProcessFactoryManager tableProcessFactoryManager = new TableProcessFactoryManager();
     tableProcessFactoryManager.initialize();
     List<ProcessFactory> processFactories = tableProcessFactoryManager.installedPlugins();
+    ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
+    executeEngineManager.initialize();
+    List<ExecuteEngine> executeEngines = executeEngineManager.installedPlugins();
+    processFactories.forEach(c -> c.availableExecuteEngines(executeEngines));
 
     DefaultTableRuntimeFactory defaultRuntimeFactory = new DefaultTableRuntimeFactory();
     defaultRuntimeFactory.initialize(processFactories);
@@ -261,9 +266,6 @@ public class AmoroServiceContainer {
     }
 
     List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
-    ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
-    processFactories.forEach(
-        c -> c.availableExecuteEngines(executeEngineManager.installedPlugins()));
 
     tableService = new DefaultTableService(serviceConfig, catalogManager, defaultRuntimeFactory);
     processService = new ProcessService(tableService, actionCoordinators, executeEngineManager);
@@ -275,7 +277,6 @@ public class AmoroServiceContainer {
     addHandlerChain(optimizingService.getTableRuntimeHandler());
     addHandlerChain(processService.getTableHandlerChain());
     addHandlerChain(InlineTableExecutors.getInstance().getDataExpiringExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getSnapshotsExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getDanglingDeleteFilesCleaningExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getOptimizingCommitExecutor());

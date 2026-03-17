@@ -16,4 +16,4 @@
 # limitations under the License.
 #
 
-org.apache.amoro.server.table.DefaultTableRuntimeFactory
+org.apache.amoro.process.LocalExecutionEngine
