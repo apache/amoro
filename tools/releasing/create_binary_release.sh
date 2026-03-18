@@ -21,6 +21,8 @@
 ## Variables with defaults (if not overwritten by environment)
 ##
 SKIP_GPG=${SKIP_GPG:-false}
+GPG_PASSPHRASE=${GPG_PASSPHRASE:-}
+HADOOP_PROFILE=${HADOOP_PROFILE:-}
 
 PROJECT_HOME=$(cd "$(dirname "$0")"/../.. || exit; pwd)
 MVN="${PROJECT_HOME}/mvnw"
@@ -53,6 +55,21 @@ cd ..
 AMORO_DIR=`pwd`
 RELEASE_DIR=${AMORO_DIR}/tools/releasing/release
 mkdir -p ${RELEASE_DIR}
+
+sign_artifact() {
+  local artifact_path=$1
+
+  if [ "$SKIP_GPG" != "false" ] ; then
+    return
+  fi
+
+  if [ -n "$GPG_PASSPHRASE" ] ; then
+    gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+      --armor --detach-sig "$artifact_path"
+  else
+    gpg --armor --detach-sig "$artifact_path"
+  fi
+}
 
 # Check if source tarball exists and extract it
 SOURCE_TARBALL="${RELEASE_DIR}/apache-amoro-${RELEASE_VERSION}-src.tar.gz"
@@ -95,17 +112,18 @@ make_binary_release() {
   cp dist/target/apache-amoro-${RELEASE_VERSION}-bin.tar.gz ${RELEASE_DIR}/${TARGET_FILE}
   cd ${RELEASE_DIR}
 
-  # Sign sha the tgz
-  if [ "$SKIP_GPG" == "false" ] ; then
-    gpg --armor --detach-sig ${TARGET_FILE}
-  fi
+  sign_artifact "${TARGET_FILE}"
   $SHASUM ${TARGET_FILE} > "${TARGET_FILE}.sha512"
 
   cd ${AMORO_DIR}
 }
 
-make_binary_release "hadoop3"
-make_binary_release "hadoop2"
+if [ -n "$HADOOP_PROFILE" ] ; then
+  make_binary_release "${HADOOP_PROFILE}"
+else
+  make_binary_release "hadoop3"
+  make_binary_release "hadoop2"
+fi
 
 # Cleanup extracted directory
 cd ${CURR_DIR}
