@@ -665,7 +665,7 @@ public class MixedCatalog extends AbstractCatalog {
 
   /**
    * copy from
-   * https://github.com/apache/iceberg/blob/1.6.x/flink/v1.17/flink/src/main/java/org/apache/iceberg/flink/FlinkCatalog.java#L425-L448
+   * https://github.com/apache/iceberg/blob/1.6.x/flink/v1.18/flink/src/main/java/org/apache/iceberg/flink/FlinkCatalog.java#L425-L448
    *
    * @param ct1 CatalogTable before
    * @param ct2 CatalogTable after
