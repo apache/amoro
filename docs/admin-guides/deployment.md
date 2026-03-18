@@ -57,9 +57,9 @@ $ cd ${base_dir}/amoro-format-mixed/amoro-mixed-flink/v1.17/amoro-mixed-flink-ru
 $ ls
 amoro-format-mixed-flink-runtime-1.17-x.y.z.jar # Flink 1.17 runtime package
 
-$ cd ${base_dir}/amoro-format-mixed/amoro-format-mixed-spark/v3.2/amoro-format-mixed-spark-runtime-3.2/target
+$ cd ${base_dir}/amoro-format-mixed/amoro-mixed-spark/v3.3/amoro-mixed-spark-runtime-3.3/target
 $ ls
-amoro-format-mixed-spark-runtime-3.2-x.y.z.jar # Spark v3.2 runtime package)
+amoro-format-mixed-spark-runtime-3.3-x.y.z.jar # Spark v3.3 runtime package
 ```
 
 More build guide can be found in the project's [README](https://github.com/apache/amoro?tab=readme-ov-file#building).
