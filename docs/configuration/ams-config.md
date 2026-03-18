@@ -111,6 +111,8 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | optimizer.task-execute-timeout | 2147483647 s | Timeout duration for task execution, default to Integer.MAX_VALUE seconds(about 24,855 days). |
 | overview-cache.max-size | 3360 | Max size of overview cache. |
 | overview-cache.refresh-interval | 3 min | Interval for refreshing overview cache. |
+| process.history-data-keep-days | 7 | Deprecated: use 'process.history-data-keep-time' instead. The number of days that process history data is retained. |
+| process.history-data-keep-time | 7 d | Duration that process history data is retained. Expired terminal process records will be deleted automatically. |
 | refresh-external-catalogs.interval | 3 min | Interval to refresh the external catalog. |
 | refresh-external-catalogs.queue-size | 1000000 | The queue size of the executors of the external catalog explorer. |
 | refresh-external-catalogs.thread-count | 10 | The number of threads used for discovering tables in external catalogs. |
@@ -122,8 +124,10 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | self-optimizing.commit-thread-count | 10 | The number of threads that self-optimizing uses to submit results. |
 | self-optimizing.plan-manifest-io-thread-count | 10 | Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent planning operations. |
 | self-optimizing.refresh-group-interval | 30 s | Optimizer group refresh interval. |
-| self-optimizing.runtime-data-expire-interval-hours | 1 | The number of hours that self-optimizing runtime data expire interval. |
-| self-optimizing.runtime-data-keep-days | 30 | The number of days that self-optimizing runtime data keeps the runtime. |
+| self-optimizing.runtime-data-expire-interval | 1 h | Interval between self-optimizing runtime data expiration runs. |
+| self-optimizing.runtime-data-expire-interval-hours | 1 | Deprecated: use 'self-optimizing.runtime-data-expire-interval' instead. The number of hours that self-optimizing runtime data expire interval. |
+| self-optimizing.runtime-data-keep-days | 30 | Deprecated: use 'self-optimizing.runtime-data-keep-time' instead. The number of days that self-optimizing runtime data keeps the runtime. |
+| self-optimizing.runtime-data-keep-time | 30 d | Duration that self-optimizing runtime data is retained. |
 | server-bind-host | 0.0.0.0 | The host bound to the server. |
 | server-expose-host |  | The exposed host of the server. |
 | sync-hive-tables.enabled | false | Enable synchronizing Hive tables. |
