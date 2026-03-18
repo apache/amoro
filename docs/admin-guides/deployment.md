@@ -53,9 +53,9 @@ $ cd dist/target/
 $ ls
 amoro-x.y.z-bin.zip # AMS release package
 
-$ cd ${base_dir}/amoro-format-mixed/amoro-format-mixed-flink/v1.15/amoro-format-mixed-flink-runtime-1.15/target
-$ ls 
-amoro-format-mixed-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
+$ cd ${base_dir}/amoro-format-mixed/amoro-mixed-flink/v1.17/amoro-mixed-flink-runtime-1.17/target
+$ ls
+amoro-format-mixed-flink-runtime-1.17-x.y.z.jar # Flink 1.17 runtime package
 
 $ cd ${base_dir}/amoro-format-mixed/amoro-format-mixed-spark/v3.2/amoro-format-mixed-spark-runtime-3.2/target
 $ ls
