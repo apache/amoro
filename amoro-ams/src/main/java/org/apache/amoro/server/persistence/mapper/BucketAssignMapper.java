@@ -35,7 +35,7 @@ public interface BucketAssignMapper {
 
   @Insert(
       "INSERT INTO bucket_assignments (cluster_name, node_key, server_info_json, assignments_json, last_update_time) "
-          + "VALUES (#{clusterName}, #{nodeKey}, #{serverInfoJson}, #{assignmentsJson}, #{lastUpdateTime})")
+          + "VALUES (#{meta.clusterName}, #{meta.nodeKey}, #{meta.serverInfoJson}, #{meta.assignmentsJson}, #{meta.lastUpdateTime})")
   int insert(@Param("meta") BucketAssignmentMeta meta);
 
   @Update(

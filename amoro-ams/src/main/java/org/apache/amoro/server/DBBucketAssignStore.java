@@ -24,7 +24,6 @@ import org.apache.amoro.server.persistence.BucketAssignmentMeta;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.BucketAssignMapper;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.amoro.utils.JacksonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +41,6 @@ import java.util.Map;
 public class DBBucketAssignStore extends PersistentBase implements BucketAssignStore {
 
   private static final Logger LOG = LoggerFactory.getLogger(DBBucketAssignStore.class);
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private static final TypeReference<List<String>> LIST_STRING_TYPE =
       new TypeReference<List<String>>() {};
 
@@ -61,17 +59,22 @@ public class DBBucketAssignStore extends PersistentBase implements BucketAssignS
         JacksonUtil.toJSONString(bucketIds != null ? bucketIds : new ArrayList<>());
     long now = System.currentTimeMillis();
     try {
-      Long updated =
-          updateAs(
-              BucketAssignMapper.class,
-              mapper -> mapper.update(clusterName, nodeKey, serverInfoJson, assignmentsJson, now));
-      if (updated != null && updated == 0) {
+      // Use atomic operation: try insert first, if failed then update
+      try {
         doAs(
             BucketAssignMapper.class,
             mapper ->
                 mapper.insert(
                     new BucketAssignmentMeta(
                         clusterName, nodeKey, serverInfoJson, assignmentsJson, now)));
+      } catch (Exception insertException) {
+        // If insert failed (record already exists), then perform update
+        doAsExisted(
+            BucketAssignMapper.class,
+            mapper -> mapper.update(clusterName, nodeKey, serverInfoJson, assignmentsJson, now),
+            () ->
+                new BucketAssignStoreException(
+                    "Failed to save bucket assignments for node " + nodeKey, insertException));
       }
       LOG.debug("Saved bucket assignments for node {}: {}", nodeKey, bucketIds);
     } catch (Exception e) {
@@ -92,7 +95,7 @@ public class DBBucketAssignStore extends PersistentBase implements BucketAssignS
           || meta.getAssignmentsJson().isEmpty()) {
         return new ArrayList<>();
       }
-      return OBJECT_MAPPER.readValue(meta.getAssignmentsJson(), LIST_STRING_TYPE);
+      return JacksonUtil.parseObject(meta.getAssignmentsJson(), LIST_STRING_TYPE);
     } catch (Exception e) {
       LOG.error("Failed to get bucket assignments for node {}", nodeKey, e);
       throw new BucketAssignStoreException(
@@ -124,7 +127,7 @@ public class DBBucketAssignStore extends PersistentBase implements BucketAssignS
           continue;
         }
         List<String> bucketIds =
-            OBJECT_MAPPER.readValue(meta.getAssignmentsJson(), LIST_STRING_TYPE);
+            JacksonUtil.parseObject(meta.getAssignmentsJson(), LIST_STRING_TYPE);
         if (bucketIds == null || bucketIds.isEmpty()) {
           continue;
         }
