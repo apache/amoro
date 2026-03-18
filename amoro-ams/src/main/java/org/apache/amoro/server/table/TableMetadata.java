@@ -36,6 +36,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -95,6 +96,42 @@ public class TableMetadata implements Serializable {
     this.properties = properties;
   }
 
+  /**
+   * Build a {@link TableMetadata} from external table metadata.
+   *
+   * <p>This is used for external catalog synchronization, so metastore auth fields remain empty.
+   */
+  public static TableMetadata fromExternalTable(
+      ServerTableIdentifier identifier,
+      String tableLocation,
+      String baseLocation,
+      String changeLocation,
+      String primaryKey,
+      Map<String, String> properties,
+      String schema,
+      String bucketMode,
+      Integer numBuckets,
+      String snapshotId,
+      String tableComment) {
+    TableMetadata metadata = new TableMetadata();
+    metadata.tableIdentifier = identifier;
+    metadata.tableLocation = tableLocation;
+    metadata.baseLocation = baseLocation;
+    metadata.changeLocation = changeLocation;
+    metadata.primaryKey =
+        StringUtils.isNotBlank(primaryKey)
+            ? primaryKey
+            : PrimaryKeySpec.noPrimaryKey().description();
+    metadata.properties = Maps.newHashMap(properties);
+    metadata.schema = schema;
+    metadata.bucketMode = bucketMode;
+    metadata.numBuckets = numBuckets;
+    metadata.snapshotId = snapshotId;
+    metadata.tableComment = tableComment;
+    metadata.metaVersion = 0L;
+    return metadata;
+  }
+
   public TableMeta buildTableMeta() {
     TableMeta meta = new TableMeta();
     meta.setTableIdentifier(tableIdentifier.getIdentifier().buildTableIdentifier());
@@ -150,7 +187,21 @@ public class TableMetadata implements Serializable {
 
   private Map<String, String> properties;
 
+  private String schema;
+
+  private String bucketMode;
+
+  private Integer numBuckets;
+
+  private Timestamp createTime;
+
+  private Timestamp updateTime;
+
   private long metaVersion;
+
+  private String snapshotId;
+
+  private String tableComment;
 
   private volatile TableMetaStore metaStore;
 
@@ -297,5 +348,61 @@ public class TableMetadata implements Serializable {
 
   public void setMetaVersion(long metaVersion) {
     this.metaVersion = metaVersion;
+  }
+
+  public String getSchema() {
+    return schema;
+  }
+
+  public void setSchema(String schema) {
+    this.schema = schema;
+  }
+
+  public String getBucketMode() {
+    return bucketMode;
+  }
+
+  public void setBucketMode(String bucketMode) {
+    this.bucketMode = bucketMode;
+  }
+
+  public Integer getNumBuckets() {
+    return numBuckets;
+  }
+
+  public void setNumBuckets(Integer numBuckets) {
+    this.numBuckets = numBuckets;
+  }
+
+  public Timestamp getCreateTime() {
+    return createTime;
+  }
+
+  public void setCreateTime(Timestamp createTime) {
+    this.createTime = createTime;
+  }
+
+  public Timestamp getUpdateTime() {
+    return updateTime;
+  }
+
+  public void setUpdateTime(Timestamp updateTime) {
+    this.updateTime = updateTime;
+  }
+
+  public String getSnapshotId() {
+    return snapshotId;
+  }
+
+  public void setSnapshotId(String snapshotId) {
+    this.snapshotId = snapshotId;
+  }
+
+  public String getTableComment() {
+    return tableComment;
+  }
+
+  public void setTableComment(String tableComment) {
+    this.tableComment = tableComment;
   }
 }

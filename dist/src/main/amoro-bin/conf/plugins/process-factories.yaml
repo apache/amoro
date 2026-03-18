@@ -16,8 +16,15 @@
 #
 
 process-factories:
-  - name: iceberg
+  - name: paimon
     enabled: true
+    priority: 100
+    properties:
+      sync-table-meta.enabled: true
+      sync-table-meta.interval: 1 h
+      sync-table-meta.trigger-parallelism: 1
+  - name: iceberg
+    enabled: false
     priority: 100
     properties:
       expire-snapshots.enabled: "true"

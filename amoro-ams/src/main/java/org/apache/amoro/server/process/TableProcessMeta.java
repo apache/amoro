@@ -202,7 +202,7 @@ public class TableProcessMeta {
     tableProcessMeta.setExecutionEngine(process.getExecutionEngine());
     tableProcessMeta.setRetryNumber(0);
     tableProcessMeta.setCreateTime(System.currentTimeMillis());
-    tableProcessMeta.setFinishTime(-1);
+    tableProcessMeta.setFinishTime(0);
     tableProcessMeta.setFailMessage("");
     tableProcessMeta.setProcessParameters(process.getProcessParameters());
     tableProcessMeta.setSummary(process.getSummary());

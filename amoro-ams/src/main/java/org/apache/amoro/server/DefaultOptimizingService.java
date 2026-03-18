@@ -20,6 +20,7 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.OptimizingService;
@@ -325,10 +326,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
       return false;
     }
     long tableId = processMeta.getTableId();
-    DefaultTableRuntime tableRuntime = (DefaultTableRuntime) tableService.getRuntime(tableId);
-    if (tableRuntime == null) {
+    TableRuntime runtime = tableService.getRuntime(tableId);
+    if (!(runtime instanceof DefaultTableRuntime)
+        || !supportsOptimizingFormat(runtime.getFormat())) {
       return false;
     }
+    DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
     OptimizingProcess process = tableRuntime.getOptimizingProcess();
     if (process == null || process.getProcessId() != processId) {
       return false;
@@ -443,6 +446,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+      if (!supportsOptimizingFormat(tableRuntime.getFormat())) {
+        return;
+      }
       DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
       if (!defaultTableRuntime.getOptimizingStatus().isProcessing()) {
         getOptionalQueueByGroup(defaultTableRuntime.getGroupName())
@@ -452,6 +458,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void handleConfigChanged(TableRuntime runtime, TableConfiguration originalConfig) {
+      if (!supportsOptimizingFormat(runtime.getFormat())) {
+        return;
+      }
       DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       String originalGroup = originalConfig.getOptimizingConfig().getOptimizerGroup();
       Optional<OptimizingQueue> newQueue = getOptionalQueueByGroup(tableRuntime.getGroupName());
@@ -474,6 +483,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void handleTableAdded(AmoroTable<?> table, TableRuntime runtime) {
+      if (!supportsOptimizingFormat(runtime.getFormat())) {
+        return;
+      }
       DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       getOptionalQueueByGroup(tableRuntime.getGroupName())
           .ifPresent(q -> q.refreshTable(tableRuntime));
@@ -481,6 +493,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void handleTableRemoved(TableRuntime runtime) {
+      if (!supportsOptimizingFormat(runtime.getFormat())) {
+        return;
+      }
       DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       getOptionalQueueByGroup(tableRuntime.getGroupName())
           .ifPresent(queue -> queue.releaseTable(tableRuntime));
@@ -956,5 +971,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
           resourceGroup.getName(),
           requiredCores);
     }
+  }
+
+  private boolean supportsOptimizingFormat(TableFormat format) {
+    return format.in(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE);
   }
 }

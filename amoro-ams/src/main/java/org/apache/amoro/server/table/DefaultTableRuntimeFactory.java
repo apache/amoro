@@ -109,7 +109,11 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
     }
 
     boolean defaultSupported =
-        format.in(TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE, TableFormat.ICEBERG);
+        format.in(
+            TableFormat.MIXED_ICEBERG,
+            TableFormat.MIXED_HIVE,
+            TableFormat.ICEBERG,
+            TableFormat.PAIMON);
     boolean hasProcessFactories = factoriesByFormat.containsKey(format);
 
     if (!defaultSupported && !hasProcessFactories) {

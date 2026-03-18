@@ -70,7 +70,9 @@ public interface TableMetaMapper {
           + "table_identifier.db_name as db_name, table_identifier.table_name as table_name, table_identifier.format, "
           + "primary_key, "
           + "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, "
-          + "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version "
+          + "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, "
+          + "table_schema, bucket_mode, num_buckets, create_time, update_time, meta_version, "
+          + "snapshot_id, table_comment "
           + "FROM table_metadata INNER JOIN table_identifier ON table_metadata.table_id=table_identifier.table_id "
           + "WHERE "
           + "table_identifier.catalog_name=#{catalogName} AND table_identifier.db_name=#{database}")
@@ -99,7 +101,14 @@ public interface TableMetaMapper {
         property = "properties",
         column = "properties",
         typeHandler = Map2StringConverter.class),
-    @Result(property = "metaVersion", column = "meta_version")
+    @Result(property = "schema", column = "table_schema"),
+    @Result(property = "bucketMode", column = "bucket_mode"),
+    @Result(property = "numBuckets", column = "num_buckets"),
+    @Result(property = "createTime", column = "create_time"),
+    @Result(property = "updateTime", column = "update_time"),
+    @Result(property = "metaVersion", column = "meta_version"),
+    @Result(property = "snapshotId", column = "snapshot_id"),
+    @Result(property = "tableComment", column = "table_comment")
   })
   List<TableMetadata> selectTableMetasByDb(
       @Param("catalogName") String catalogName, @Param("database") String database);
@@ -107,7 +116,8 @@ public interface TableMetaMapper {
   @Insert(
       "INSERT INTO table_metadata(table_id, table_name, db_name, catalog_name, primary_key,"
           + " table_location, base_location, change_location, meta_store_site, hdfs_site, core_site,"
-          + " auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version)"
+          + " auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties,"
+          + " table_schema, bucket_mode, num_buckets, meta_version, snapshot_id, table_comment)"
           + " VALUES("
           + " #{tableMeta.tableIdentifier.id},"
           + " #{tableMeta.tableIdentifier.tableName},"
@@ -126,12 +136,45 @@ public interface TableMetaMapper {
           + " #{tableMeta.krbConf, jdbcType=VARCHAR},"
           + " #{tableMeta.krbPrincipal, jdbcType=VARCHAR},"
           + " #{tableMeta.properties, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter},"
-          + " #{tableMeta.metaVersion}"
+          + " #{tableMeta.schema, jdbcType=LONGVARCHAR},"
+          + " #{tableMeta.bucketMode, jdbcType=VARCHAR},"
+          + " #{tableMeta.numBuckets, jdbcType=INTEGER},"
+          + " #{tableMeta.metaVersion},"
+          + " #{tableMeta.snapshotId, jdbcType=VARCHAR},"
+          + " #{tableMeta.tableComment, jdbcType=VARCHAR}"
           + " )")
   void insertTableMeta(@Param("tableMeta") TableMetadata tableMeta);
 
   @Delete("DELETE FROM table_metadata WHERE table_id = #{tableId}")
   void deleteTableMetaById(@Param("tableId") long tableId);
+
+  @Select("SELECT COUNT(1) FROM table_metadata WHERE table_id = #{tableId}")
+  Integer countTableMetaById(@Param("tableId") long tableId);
+
+  @Update(
+      "UPDATE table_metadata SET "
+          + "primary_key = #{tableMeta.primaryKey, jdbcType=VARCHAR}, "
+          + "table_location = #{tableMeta.tableLocation, jdbcType=VARCHAR}, "
+          + "base_location = #{tableMeta.baseLocation, jdbcType=VARCHAR}, "
+          + "change_location = #{tableMeta.changeLocation, jdbcType=VARCHAR}, "
+          + "meta_store_site = #{tableMeta.metaStoreSite, jdbcType=VARCHAR}, "
+          + "hdfs_site = #{tableMeta.hdfsSite, jdbcType=VARCHAR}, "
+          + "core_site = #{tableMeta.coreSite, jdbcType=VARCHAR}, "
+          + "auth_method = #{tableMeta.authMethod, jdbcType=VARCHAR}, "
+          + "hadoop_username = #{tableMeta.hadoopUsername, jdbcType=VARCHAR}, "
+          + "krb_keytab = #{tableMeta.krbKeytab, jdbcType=VARCHAR}, "
+          + "krb_conf = #{tableMeta.krbConf, jdbcType=VARCHAR}, "
+          + "krb_principal = #{tableMeta.krbPrincipal, jdbcType=VARCHAR}, "
+          + "properties = #{tableMeta.properties, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}, "
+          + "table_schema = #{tableMeta.schema, jdbcType=LONGVARCHAR}, "
+          + "bucket_mode = #{tableMeta.bucketMode, jdbcType=VARCHAR}, "
+          + "num_buckets = #{tableMeta.numBuckets, jdbcType=INTEGER}, "
+          + "snapshot_id = #{tableMeta.snapshotId, jdbcType=VARCHAR}, "
+          + "table_comment = #{tableMeta.tableComment, jdbcType=VARCHAR}, "
+          + "update_time = CURRENT_TIMESTAMP, "
+          + "meta_version = meta_version + 1 "
+          + "WHERE table_id = #{tableId}")
+  int updateTableMeta(@Param("tableId") long tableId, @Param("tableMeta") TableMetadata tableMeta);
 
   @Update(
       "UPDATE table_metadata SET properties ="
@@ -144,7 +187,9 @@ public interface TableMetaMapper {
   @Select(
       "SELECT i.table_id, i.table_name, i.db_name, i.catalog_name, i.format, primary_key, "
           + "table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, "
-          + "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version FROM "
+          + "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, "
+          + "table_schema, bucket_mode, num_buckets, create_time, update_time, meta_version, "
+          + "snapshot_id, table_comment FROM "
           + "table_metadata m INNER JOIN table_identifier i ON m.table_id = i.table_id "
           + "WHERE m.table_id = #{tableId}")
   @Results({
@@ -172,7 +217,14 @@ public interface TableMetaMapper {
         property = "properties",
         column = "properties",
         typeHandler = Map2StringConverter.class),
-    @Result(property = "metaVersion", column = "meta_version")
+    @Result(property = "schema", column = "table_schema"),
+    @Result(property = "bucketMode", column = "bucket_mode"),
+    @Result(property = "numBuckets", column = "num_buckets"),
+    @Result(property = "createTime", column = "create_time"),
+    @Result(property = "updateTime", column = "update_time"),
+    @Result(property = "metaVersion", column = "meta_version"),
+    @Result(property = "snapshotId", column = "snapshot_id"),
+    @Result(property = "tableComment", column = "table_comment")
   })
   TableMetadata selectTableMetaById(@Param("tableId") long tableId);
 
@@ -181,7 +233,9 @@ public interface TableMetaMapper {
           + " table_identifier.db_name as db_name, table_identifier.table_name as table_name, table_identifier.format, "
           + " primary_key,"
           + " table_location, base_location, change_location, meta_store_site, hdfs_site, core_site, auth_method,"
-          + " hadoop_username, krb_keytab, krb_conf, krb_principal, properties, meta_version "
+          + " hadoop_username, krb_keytab, krb_conf, krb_principal, properties,"
+          + " table_schema, bucket_mode, num_buckets, create_time, update_time, meta_version,"
+          + " snapshot_id, table_comment "
           + " FROM table_metadata INNER JOIN table_identifier ON table_metadata.table_id = table_identifier.table_id"
           + " WHERE table_identifier.catalog_name = #{catalogName} and table_identifier.db_name = #{databaseName}"
           + " AND table_identifier.table_name = #{tableName}")
@@ -210,7 +264,14 @@ public interface TableMetaMapper {
         property = "properties",
         column = "properties",
         typeHandler = Map2StringConverter.class),
-    @Result(property = "metaVersion", column = "meta_version")
+    @Result(property = "schema", column = "table_schema"),
+    @Result(property = "bucketMode", column = "bucket_mode"),
+    @Result(property = "numBuckets", column = "num_buckets"),
+    @Result(property = "createTime", column = "create_time"),
+    @Result(property = "updateTime", column = "update_time"),
+    @Result(property = "metaVersion", column = "meta_version"),
+    @Result(property = "snapshotId", column = "snapshot_id"),
+    @Result(property = "tableComment", column = "table_comment")
   })
   TableMetadata selectTableMetaByName(
       @Param("catalogName") String catalogName,

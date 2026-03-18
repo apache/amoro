@@ -116,7 +116,14 @@ CREATE TABLE `table_metadata`
     `krb_keytab`      text COMMENT 'kerberos keytab when auth method is KERBEROS',
     `krb_conf`        text COMMENT 'kerberos conf when auth method is KERBEROS',
     `krb_principal`   text COMMENT 'kerberos principal when auth method is KERBEROS',
+    `table_schema`    mediumtext COMMENT 'Table schema json',
+    `bucket_mode`     varchar(64) DEFAULT NULL COMMENT 'Paimon bucket mode',
+    `num_buckets`     int(11) DEFAULT NULL COMMENT 'Paimon bucket count',
+    `create_time`     timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`     timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `current_schema_id`   int(11) NOT NULL DEFAULT 0 COMMENT 'current schema id',
+    `snapshot_id`     varchar(64) DEFAULT NULL COMMENT 'Latest snapshot id',
+    `table_comment`   varchar(512) DEFAULT NULL COMMENT 'Table comment',
     `meta_version`    bigint(20) NOT NULL DEFAULT 0,
     PRIMARY KEY (`table_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table metadata';

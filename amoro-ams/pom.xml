@@ -452,12 +452,14 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
+            <version>1.20.4</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <version>1.20.4</version>
             <scope>test</scope>
         </dependency>
 
@@ -471,12 +473,14 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>k3s</artifactId>
+            <version>1.20.4</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mysql</artifactId>
+            <version>1.20.4</version>
             <scope>test</scope>
         </dependency>
 
@@ -507,7 +511,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${guava-hive.version}</version>
+            <version>${guava.version}</version>
         </dependency>
 
         <dependency>

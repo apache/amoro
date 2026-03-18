@@ -94,7 +94,14 @@ CREATE TABLE table_metadata (
     krb_keytab       CLOB(64m),
     krb_conf         CLOB(64m),
     krb_principal    CLOB(64m),
+    table_schema     CLOB(64m),
+    bucket_mode      VARCHAR(64),
+    num_buckets      INT,
+    create_time      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    update_time      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     current_schema_id INT NOT NULL DEFAULT 0,
+    snapshot_id      VARCHAR(64),
+    table_comment    VARCHAR(512),
     meta_version     BIGINT NOT NULL DEFAULT 0,
     CONSTRAINT table_metadata_pk PRIMARY KEY (table_id)
 );

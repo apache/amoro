@@ -122,6 +122,14 @@ public class AmsEnvironment {
         getTableRuntimeFactoriesConfig(),
         Charset.defaultCharset());
     FileUtils.writeStringToFile(
+        new File(rootPath + "/conf/plugins/execute-engines.yaml"),
+        getExecuteEnginesConfig(),
+        Charset.defaultCharset());
+    FileUtils.writeStringToFile(
+        new File(rootPath + "/conf/plugins/process-factories.yaml"),
+        getProcessFactoriesConfig(),
+        Charset.defaultCharset());
+    FileUtils.writeStringToFile(
         new File(rootPath + "/conf/plugins/rest-extensions.yaml"),
         getRestExtensionsConfig(),
         Charset.defaultCharset());
@@ -433,5 +441,26 @@ public class AmsEnvironment {
 
   private String getRestExtensionsConfig() {
     return "rest-extensions:\n" + "  - name: iceberg-rest-catalog\n" + "    enabled: true\n";
+  }
+
+  private String getExecuteEnginesConfig() {
+    return "execute-engines:\n"
+        + "  - name: local\n"
+        + "    enabled: true\n"
+        + "    priority: 100\n"
+        + "    properties:\n"
+        + "      default.thread-count: 4\n"
+        + "      table-meta-sync.thread-count: 1\n";
+  }
+
+  private String getProcessFactoriesConfig() {
+    return "process-factories:\n"
+        + "  - name: paimon\n"
+        + "    enabled: true\n"
+        + "    priority: 100\n"
+        + "    properties:\n"
+        + "      sync-table-meta.enabled: true\n"
+        + "      sync-table-meta.interval: 1 h\n"
+        + "      sync-table-meta.trigger-parallelism: 1\n";
   }
 }

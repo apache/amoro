@@ -144,7 +144,14 @@ CREATE TABLE table_metadata
     krb_keytab TEXT,
     krb_conf TEXT,
     krb_principal TEXT,
+    table_schema TEXT,
+    bucket_mode VARCHAR(64),
+    num_buckets INT,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     current_schema_id INT NOT NULL DEFAULT 0,
+    snapshot_id VARCHAR(64),
+    table_comment VARCHAR(512),
     meta_version BIGINT NOT NULL DEFAULT 0,
     PRIMARY KEY (table_id)
 );
@@ -167,7 +174,14 @@ COMMENT ON COLUMN table_metadata.hadoop_username IS 'Hadoop username when auth m
 COMMENT ON COLUMN table_metadata.krb_keytab IS 'Kerberos keytab when auth method is KERBEROS';
 COMMENT ON COLUMN table_metadata.krb_conf IS 'Kerberos conf when auth method is KERBEROS';
 COMMENT ON COLUMN table_metadata.krb_principal IS 'Kerberos principal when auth method is KERBEROS';
+COMMENT ON COLUMN table_metadata.table_schema IS 'Table schema json';
+COMMENT ON COLUMN table_metadata.bucket_mode IS 'Paimon bucket mode';
+COMMENT ON COLUMN table_metadata.num_buckets IS 'Paimon bucket count';
+COMMENT ON COLUMN table_metadata.create_time IS 'Create time';
+COMMENT ON COLUMN table_metadata.update_time IS 'Update time';
 COMMENT ON COLUMN table_metadata.current_schema_id IS 'Current schema ID';
+COMMENT ON COLUMN table_metadata.snapshot_id IS 'Latest snapshot id';
+COMMENT ON COLUMN table_metadata.table_comment IS 'Table comment';
 
 
 create table if not exists table_runtime (
