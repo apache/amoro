@@ -21,12 +21,16 @@ package org.apache.amoro.server.process.executor;
 import org.apache.amoro.process.ExecuteEngine;
 import org.apache.amoro.process.ProcessEvent;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.process.ProcessStatusInfo;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
  * Runnable executor that submits and tracks a {@link TableProcess} on a given {@link
@@ -58,8 +62,10 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
   @Override
   public void run() {
     String externalProcessIdentifier = null;
+    boolean submittedInCurrentRun = false;
     ProcessStatus status;
     String message = "";
+    ProcessStatusInfo statusInfo = ProcessStatusInfo.of(ProcessStatus.UNKNOWN);
 
     if (isTableProcessCanceling(store.getStatus())) {
       LOG.info(
@@ -74,6 +80,7 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
           || store.getStatus() == ProcessStatus.PENDING
           || Strings.isNullOrEmpty(store.getExternalProcessIdentifier())) {
         externalProcessIdentifier = executeEngine.submitTableProcess(tableProcess);
+        submittedInCurrentRun = true;
         LOG.info(
             "Submit table process {} to engine {} success, external process identifier is {}",
             store.getProcessId(),
@@ -85,14 +92,17 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
 
       validateIdentifier(externalProcessIdentifier);
 
-      status = executeEngine.getStatus(externalProcessIdentifier);
-      store.tryTransitState(
-          status,
-          ProcessEvent.SUBMIT_REQUESTED,
-          externalProcessIdentifier,
-          "Complete Submitted.",
-          tableProcess.getProcessParameters(),
-          tableProcess.getSummary());
+      if (submittedInCurrentRun && !persistSubmittedState(externalProcessIdentifier)) {
+        LOG.error(
+            "Failed to persist external process identifier {} for process {} after submit, stop polling.",
+            externalProcessIdentifier,
+            store.getProcessId());
+        runFinishedCallback();
+        return;
+      }
+
+      statusInfo = executeEngine.getStatusInfo(externalProcessIdentifier);
+      status = statusInfo.getStatus();
 
       while (isTableProcessExecuting(status)) {
         if (isTableProcessCanceling(store.getStatus())) {
@@ -107,8 +117,10 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
         } catch (InterruptedException e) {
           throw e;
         }
-        status = executeEngine.getStatus(externalProcessIdentifier);
+        statusInfo = executeEngine.getStatusInfo(externalProcessIdentifier);
+        status = statusInfo.getStatus();
       }
+      message = statusInfo.getMessage();
     } catch (Throwable t) {
       if (t instanceof InterruptedException) {
         LOG.info(
@@ -118,7 +130,7 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
         return;
       } else {
         status = ProcessStatus.FAILED;
-        message = t.getMessage();
+        message = buildFailureMessage(t);
       }
     }
 
@@ -152,7 +164,7 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
           status,
           ProcessEvent.COMPLETE_FAILED,
           store.getExternalProcessIdentifier(),
-          message,
+          Strings.isNullOrEmpty(message) ? "Unknown failure." : message,
           tableProcess.getProcessParameters(),
           tableProcess.getSummary());
     } else if (status == ProcessStatus.SUCCESS) {
@@ -167,9 +179,13 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
       LOG.warn("Un expected terminal status: {} for process: {}.", status, store.getProcessId());
     }
 
-    if (finishedCallback != null) {
-      finishedCallback.run();
+    try {
+      tableProcess.afterComplete(status);
+    } catch (Exception e) {
+      LOG.error("afterComplete hook failed for process {}", store.getProcessId(), e);
     }
+
+    runFinishedCallback();
   }
 
   /**
@@ -216,6 +232,33 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
    * @return true if running/submitted
    */
   private boolean isTableProcessExecuting(ProcessStatus status) {
-    return (status == ProcessStatus.RUNNING || status == ProcessStatus.SUBMITTED);
+    return (status == ProcessStatus.PENDING
+        || status == ProcessStatus.RUNNING
+        || status == ProcessStatus.SUBMITTED);
+  }
+
+  static String buildFailureMessage(Throwable throwable) {
+    if (throwable == null) {
+      return "";
+    }
+    StringWriter sw = new StringWriter();
+    throwable.printStackTrace(new PrintWriter(sw));
+    return sw.toString();
+  }
+
+  private boolean persistSubmittedState(String externalProcessIdentifier) {
+    return store.tryTransitState(
+        ProcessStatus.SUBMITTED,
+        ProcessEvent.SUBMIT_REQUESTED,
+        externalProcessIdentifier,
+        "Complete Submitted.",
+        tableProcess.getProcessParameters(),
+        tableProcess.getSummary());
+  }
+
+  private void runFinishedCallback() {
+    if (finishedCallback != null) {
+      finishedCallback.run();
+    }
   }
 }

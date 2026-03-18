@@ -17,3 +17,4 @@
 #
 
 org.apache.amoro.process.LocalExecutionEngine
+org.apache.amoro.process.HttpRemoteSparkStandAloneSubmit

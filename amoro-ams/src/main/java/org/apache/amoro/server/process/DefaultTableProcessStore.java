@@ -378,7 +378,7 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
           updateTableProcessStatus(newStatus, reason);
           break;
         case RETRY_REQUESTED:
-          updateTableProcessRetryTimes(getRetryNumber() + 1);
+          updateTableProcessRetryTimes(getRetryNumber() + 1, summary);
           break;
         default:
           return false;
@@ -439,11 +439,12 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
    *
    * @param retryTimes new retry times
    */
-  private void updateTableProcessRetryTimes(int retryTimes) {
+  private void updateTableProcessRetryTimes(int retryTimes, Map<String, String> summary) {
     begin()
         .updateTableProcessStatus(ProcessStatus.PENDING)
         .updateRetryNumber(retryTimes)
         .updateExternalProcessIdentifier("")
+        .updateSummary(summary)
         .commit();
   }
 
@@ -656,6 +657,8 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
         meta.setRetryNumber(oldMeta.getRetryNumber());
         meta.setCreateTime(oldMeta.getCreateTime());
         meta.setFinishTime(oldMeta.getFinishTime());
+        meta.setProcessParameters(oldMeta.getProcessParameters());
+        meta.setSummary(oldMeta.getSummary());
       }
     }
   }

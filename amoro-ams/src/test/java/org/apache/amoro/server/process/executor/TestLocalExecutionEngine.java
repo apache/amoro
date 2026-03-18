@@ -26,8 +26,10 @@ import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.process.EngineType;
 import org.apache.amoro.process.ExecuteEngine;
+import org.apache.amoro.process.LocalExecutionEngine;
 import org.apache.amoro.process.LocalProcess;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.process.ProcessStatusInfo;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.table.StateKey;
@@ -95,11 +97,35 @@ public class TestLocalExecutionEngine {
       ProcessStatus status =
           engine.tryCancelTableProcess(
               new TestingLocalProcess(() -> {}, "table-meta-sync"), processId);
-      Assert.assertEquals(ProcessStatus.CANCELING, status);
+      Assert.assertEquals(ProcessStatus.CANCELED, status);
 
       release.countDown();
       waitForTerminalStatus(engine, processId);
       Assert.assertEquals(ProcessStatus.CANCELED, engine.getStatus(processId));
+    } finally {
+      engine.close();
+    }
+  }
+
+  @Test
+  public void testLocalProcessFailureMessageAvailableInStatusInfo() throws Exception {
+    LocalExecutionEngine engine = new LocalExecutionEngine();
+    engine.open(Collections.singletonMap("pool.default.thread-count", "1"));
+    try {
+      String processId =
+          engine.submitTableProcess(
+              new TestingLocalProcess(
+                  () -> {
+                    throw new IllegalStateException("local engine failed");
+                  },
+                  LocalExecutionEngine.DEFAULT_POOL));
+
+      waitForTerminalStatus(engine, processId);
+
+      ProcessStatusInfo statusInfo = engine.getStatusInfo(processId);
+      Assert.assertEquals(ProcessStatus.FAILED, statusInfo.getStatus());
+      Assert.assertTrue(statusInfo.getMessage().contains("local engine failed"));
+      Assert.assertTrue(statusInfo.getMessage().contains("IllegalStateException"));
     } finally {
       engine.close();
     }

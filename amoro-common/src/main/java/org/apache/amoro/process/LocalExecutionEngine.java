@@ -55,6 +55,7 @@ public class LocalExecutionEngine implements ExecuteEngine {
   public static final String DEFAULT_POOL = "default";
   public static final String POOL_CONFIG_PREFIX = "pool.";
   public static final String POOL_SIZE_SUFFIX = ".thread-count";
+  public static final String TABLE_META_SYNC_POOL = "table-meta-sync";
   public static final ConfigOption<Integer> DEFAULT_POOL_SIZE =
       ConfigOptions.key(POOL_CONFIG_PREFIX + DEFAULT_POOL + POOL_SIZE_SUFFIX)
           .intType()
@@ -74,16 +75,21 @@ public class LocalExecutionEngine implements ExecuteEngine {
 
   @Override
   public ProcessStatus getStatus(String processIdentifier) {
+    return getStatusInfo(processIdentifier).getStatus();
+  }
+
+  @Override
+  public ProcessStatusInfo getStatusInfo(String processIdentifier) {
     if (processIdentifier == null || processIdentifier.isEmpty()) {
-      return ProcessStatus.UNKNOWN;
+      return ProcessStatusInfo.of(ProcessStatus.UNKNOWN);
     }
     expire();
 
     ProcessHolder process = processes.get(processIdentifier);
     if (process == null) {
-      return ProcessStatus.UNKNOWN;
+      return ProcessStatusInfo.of(ProcessStatus.UNKNOWN);
     }
-    return process.getStatus();
+    return ProcessStatusInfo.of(process.getStatus(), process.failedInfo());
   }
 
   @Override
@@ -225,6 +231,10 @@ public class LocalExecutionEngine implements ExecuteEngine {
 
     public long finishTime() {
       return this.finishTime.get();
+    }
+
+    public String failedInfo() {
+      return failedInfo.get();
     }
   }
 }

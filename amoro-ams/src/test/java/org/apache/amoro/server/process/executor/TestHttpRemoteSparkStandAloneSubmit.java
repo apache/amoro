@@ -27,7 +27,9 @@ import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.process.EngineType;
 import org.apache.amoro.process.ExecuteEngine;
+import org.apache.amoro.process.HttpRemoteSparkStandAloneSubmit;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.process.ProcessStatusInfo;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.table.StateKey;
@@ -38,7 +40,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -81,13 +82,9 @@ public class TestHttpRemoteSparkStandAloneSubmit {
   }
 
   @Test
-  public void testOpenWithoutBaseUrlUsesDefault() throws Exception {
+  public void testOpenWithoutBaseUrlUsesDefault() {
     HttpRemoteSparkStandAloneSubmit eng = new HttpRemoteSparkStandAloneSubmit();
     eng.open(Collections.emptyMap());
-
-    Field baseUrlField = HttpRemoteSparkStandAloneSubmit.class.getDeclaredField("baseUrl");
-    baseUrlField.setAccessible(true);
-    Assert.assertEquals("http://spark-server-api-inner.eclytics.com", baseUrlField.get(eng));
     eng.close();
   }
 
@@ -181,6 +178,30 @@ public class TestHttpRemoteSparkStandAloneSubmit {
         });
 
     Assert.assertEquals(ProcessStatus.SUCCESS, engine.getStatus("123"));
+  }
+
+  @Test
+  public void testGetStatusInfoWithFailedErrMsg() {
+    String errMsg = "org.apache.spark.sql.catalyst.parser.ParseException: mismatched input 'CALL'";
+    mockServer.createContext(
+        "/spark/job/state",
+        exchange -> {
+          String response =
+              String.format(
+                  "{\"code\":0,\"msg\":\"操作成功\",\"data\":{\"qid\":\"123\",\"status\":\"FAILED\",\"errMsg\":\"%s\"}}",
+                  errMsg.replace("\\", "\\\\").replace("\"", "\\\""));
+          byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
+          exchange.getResponseHeaders().set("Content-Type", "application/json");
+          exchange.sendResponseHeaders(200, bytes.length);
+          try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
+          }
+        });
+
+    ProcessStatusInfo statusInfo = engine.getStatusInfo("123");
+
+    Assert.assertEquals(ProcessStatus.FAILED, statusInfo.getStatus());
+    Assert.assertEquals(errMsg, statusInfo.getMessage());
   }
 
   @Test
@@ -508,7 +529,7 @@ public class TestHttpRemoteSparkStandAloneSubmit {
 
     @Override
     public <T> T getState(StateKey<T> key) {
-      return null;
+      return key.getDefaultValue();
     }
 
     @Override

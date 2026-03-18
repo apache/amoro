@@ -16,14 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.process.executor;
+package org.apache.amoro.process;
 
-import org.apache.amoro.process.EngineType;
-import org.apache.amoro.process.ExecuteEngine;
-import org.apache.amoro.process.ProcessStatus;
-import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
@@ -35,7 +32,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -56,6 +56,9 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
 
   public static final String ENGINE_NAME = "sl-spark-http";
 
+  /** Summary key for tracking historical qids across retries. */
+  public static final String SUMMARY_KEY_QIDS = "qids";
+
   private static final String PROP_BASE_URL = "base-url";
   private static final String PROP_CONNECT_TIMEOUT = "connect-timeout-ms";
   private static final String PROP_READ_TIMEOUT = "read-timeout-ms";
@@ -66,7 +69,7 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
   private static final int DEFAULT_CONNECT_TIMEOUT_MS = 5000;
   private static final int DEFAULT_READ_TIMEOUT_MS = 30000;
   private static final int DEFAULT_SPARK_VERSION = 321;
-  private static final String DEFAULT_BASE_URL = "http://spark-server-api-inner.eclytics.com";
+  private static final String DEFAULT_BASE_URL = "http://spark-server-api-pre.eclytics.com";
   private static final String DEFAULT_SOURCE_TAG = "schedule";
   private static final String DEFAULT_CUR_USER = "amoro";
 
@@ -86,6 +89,8 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
   private static final String PARAM_SCHEDULE_ID = "scheduleId";
   private static final String PARAM_CONF = "conf";
   private static final String PARAM_CLIENT_IP = "clientIp";
+
+  private static final String HQL_EXTENSION = "set spark.syntax.extension=true;";
 
   private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -168,8 +173,13 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
 
   @Override
   public ProcessStatus getStatus(String processIdentifier) {
+    return getStatusInfo(processIdentifier).getStatus();
+  }
+
+  @Override
+  public ProcessStatusInfo getStatusInfo(String processIdentifier) {
     if (processIdentifier == null || processIdentifier.isEmpty()) {
-      return ProcessStatus.UNKNOWN;
+      return ProcessStatusInfo.of(ProcessStatus.UNKNOWN);
     }
 
     try {
@@ -183,20 +193,23 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
             processIdentifier,
             code,
             response.has("msg") ? response.get("msg").asText() : "unknown");
-        return ProcessStatus.UNKNOWN;
+        return ProcessStatusInfo.of(
+            ProcessStatus.UNKNOWN,
+            response.has("msg") ? response.get("msg").asText() : "unknown error");
       }
 
       JsonNode data = response.get("data");
       if (data == null || data.isNull() || !data.has("status")) {
         LOG.warn("State response missing 'data.status' for qid={}", processIdentifier);
-        return ProcessStatus.UNKNOWN;
+        return ProcessStatusInfo.of(ProcessStatus.UNKNOWN, "Missing data.status");
       }
 
       String remoteStatus = data.get("status").asText();
-      return mapRemoteState(remoteStatus);
+      String errMsg = data.hasNonNull("errMsg") ? data.get("errMsg").asText() : "";
+      return ProcessStatusInfo.of(mapRemoteState(remoteStatus), errMsg);
     } catch (Exception e) {
       LOG.warn("Error querying spark job state for qid={}", processIdentifier, e);
-      return ProcessStatus.UNKNOWN;
+      return ProcessStatusInfo.of(ProcessStatus.UNKNOWN, e.getMessage());
     }
   }
 
@@ -226,6 +239,32 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
     }
   }
 
+  @Override
+  public Map<String, String> buildRetrySummary(
+      String currentIdentifier, Map<String, String> currentSummary) {
+    Map<String, String> result =
+        currentSummary != null ? new HashMap<>(currentSummary) : new HashMap<>();
+
+    if (currentIdentifier == null || currentIdentifier.isEmpty()) {
+      return result;
+    }
+
+    try {
+      List<String> qids;
+      String existingQids = result.get(SUMMARY_KEY_QIDS);
+      if (existingQids != null && !existingQids.isEmpty()) {
+        qids = objectMapper.readValue(existingQids, new TypeReference<List<String>>() {});
+      } else {
+        qids = new ArrayList<>();
+      }
+      qids.add(currentIdentifier);
+      result.put(SUMMARY_KEY_QIDS, objectMapper.writeValueAsString(qids));
+    } catch (Exception e) {
+      LOG.warn("Failed to archive qid {} into summary", currentIdentifier, e);
+    }
+    return result;
+  }
+
   /**
    * Map remote Spark job status to Amoro ProcessStatus.
    *
@@ -233,7 +272,7 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
    * FAILED, SUCCEEDED
    */
   @VisibleForTesting
-  ProcessStatus mapRemoteState(String remoteState) {
+  public ProcessStatus mapRemoteState(String remoteState) {
     if (remoteState == null || remoteState.isEmpty()) {
       return ProcessStatus.UNKNOWN;
     }
@@ -259,7 +298,7 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
   }
 
   @VisibleForTesting
-  String buildSubmitRequestJson(TableProcess tableProcess) {
+  public String buildSubmitRequestJson(TableProcess tableProcess) {
     Map<String, String> params = tableProcess.getProcessParameters();
 
     String hql = params.get(PARAM_HQL);
@@ -268,7 +307,7 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
 
     ObjectNode requestNode = objectMapper.createObjectNode();
     requestNode.put(PARAM_JOB_TYPE, "sql");
-    requestNode.put(PARAM_HQL, hql);
+    requestNode.put(PARAM_HQL, HQL_EXTENSION + hql);
     requestNode.put(PARAM_CUR_USER, params.getOrDefault(PARAM_CUR_USER, curUser));
     requestNode.put(PARAM_SOURCE_TAG, params.getOrDefault(PARAM_SOURCE_TAG, sourceTag));
     requestNode.put(

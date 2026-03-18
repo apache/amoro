@@ -16,12 +16,34 @@
  * limitations under the License.
  */
 
-package org.apache.amoro;
+package org.apache.amoro.process;
 
-public class PaimonActions {
+import java.util.Objects;
 
-  public static final Action SYNC_TABLE_META = Action.register("sync-table-meta");
-  public static final Action EXPIRE_SNAPSHOTS = Action.register("expire-snapshot");
+/** Lightweight status payload returned by execution engines. */
+public class ProcessStatusInfo {
 
-  private PaimonActions() {}
+  private final ProcessStatus status;
+  private final String message;
+
+  private ProcessStatusInfo(ProcessStatus status, String message) {
+    this.status = Objects.requireNonNull(status, "status");
+    this.message = message == null ? "" : message;
+  }
+
+  public static ProcessStatusInfo of(ProcessStatus status) {
+    return new ProcessStatusInfo(status, "");
+  }
+
+  public static ProcessStatusInfo of(ProcessStatus status, String message) {
+    return new ProcessStatusInfo(status, message);
+  }
+
+  public ProcessStatus getStatus() {
+    return status;
+  }
+
+  public String getMessage() {
+    return message;
+  }
 }

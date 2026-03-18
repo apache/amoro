@@ -20,9 +20,9 @@ package org.apache.amoro.server.process.paimon;
 
 import org.apache.amoro.PaimonActions;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.process.LocalExecutionEngine;
 import org.apache.amoro.process.ProcessTriggerStrategy;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.server.process.executor.LocalExecutionEngine;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public class TestPaimonProcessFactory {
 
@@ -65,5 +66,48 @@ public class TestPaimonProcessFactory {
     Optional<TableProcess> process = factory.trigger(runtime, PaimonActions.SYNC_TABLE_META);
     Assert.assertTrue(process.isPresent());
     Assert.assertEquals(LocalExecutionEngine.ENGINE_NAME, process.get().getExecutionEngine());
+  }
+
+  @Test
+  public void testOpenWithEmptyPropertiesUseDefaults() {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(Collections.emptyMap());
+
+    Set<org.apache.amoro.Action> actions =
+        factory.supportedActions().getOrDefault(TableFormat.PAIMON, Collections.emptySet());
+    Assert.assertTrue(actions.contains(PaimonActions.SYNC_TABLE_META));
+    Assert.assertTrue(actions.contains(PaimonActions.EXPIRE_SNAPSHOTS));
+
+    ProcessTriggerStrategy syncStrategy =
+        factory.triggerStrategy(TableFormat.PAIMON, PaimonActions.SYNC_TABLE_META);
+    Assert.assertEquals(1, syncStrategy.getTriggerParallelism());
+    Assert.assertEquals(60 * 60 * 1000L, syncStrategy.getTriggerInterval().toMillis());
+  }
+
+  @Test
+  public void testOpenShouldResetPreviousActions() {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(Collections.emptyMap());
+
+    Map<String, String> disabled = new HashMap<>();
+    disabled.put("sync-table-meta.enabled", "false");
+    disabled.put("expire-snapshots.enabled", "false");
+    factory.open(disabled);
+
+    Set<org.apache.amoro.Action> actions =
+        factory.supportedActions().getOrDefault(TableFormat.PAIMON, Collections.emptySet());
+    Assert.assertFalse(actions.contains(PaimonActions.SYNC_TABLE_META));
+    Assert.assertFalse(actions.contains(PaimonActions.EXPIRE_SNAPSHOTS));
+  }
+
+  @Test
+  public void testCloseShouldClearActions() {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(Collections.emptyMap());
+    factory.close();
+
+    Set<org.apache.amoro.Action> actions =
+        factory.supportedActions().getOrDefault(TableFormat.PAIMON, Collections.emptySet());
+    Assert.assertTrue(actions.isEmpty());
   }
 }

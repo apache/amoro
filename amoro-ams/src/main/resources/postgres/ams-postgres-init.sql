@@ -237,7 +237,7 @@ CREATE TABLE table_process (
     retry_number                    int NOT NULL,
     create_time                     timestamptz NOT NULL DEFAULT now(),
     finish_time                     timestamptz,
-    fail_message                    text CHECK (length(fail_message) <= 4096),
+    fail_message                    text,
     process_parameters              text,
     summary                         text,
     CONSTRAINT table_process_unique UNIQUE (process_id)

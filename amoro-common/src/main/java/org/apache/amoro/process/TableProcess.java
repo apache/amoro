@@ -65,4 +65,12 @@ public abstract class TableProcess implements AmoroProcess {
   public String getProcessStage() {
     return "default";
   }
+
+  /**
+   * Hook invoked by the executor after the process reaches a terminal status. Subclasses can
+   * override to perform post-completion actions such as updating table runtime state.
+   *
+   * @param status the terminal status of the process
+   */
+  public void afterComplete(ProcessStatus status) {}
 }

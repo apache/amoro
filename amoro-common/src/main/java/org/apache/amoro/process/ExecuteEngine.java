@@ -20,6 +20,9 @@ package org.apache.amoro.process;
 
 import org.apache.amoro.ActivePlugin;
 
+import java.util.Collections;
+import java.util.Map;
+
 public interface ExecuteEngine extends ActivePlugin {
 
   /**
@@ -36,6 +39,19 @@ public interface ExecuteEngine extends ActivePlugin {
    * @return current status in engine
    */
   ProcessStatus getStatus(String processIdentifier);
+
+  /**
+   * Get the status detail from engine by external process identifier.
+   *
+   * <p>Default implementation keeps backward compatibility for engines that only expose {@link
+   * ProcessStatus}.
+   *
+   * @param processIdentifier external process identifier
+   * @return current status detail in engine
+   */
+  default ProcessStatusInfo getStatusInfo(String processIdentifier) {
+    return ProcessStatusInfo.of(getStatus(processIdentifier));
+  }
 
   /**
    * Submit a table process to engine.
@@ -57,4 +73,17 @@ public interface ExecuteEngine extends ActivePlugin {
    * @return status after cancel attempt
    */
   ProcessStatus tryCancelTableProcess(TableProcess tableProcess, String processIdentifier);
+
+  /**
+   * Build an updated summary for retry. Engines can override this to archive engine-specific
+   * identifiers (e.g. qids) before the current identifier is cleared on retry.
+   *
+   * @param currentIdentifier current external process identifier about to be cleared
+   * @param currentSummary current summary map
+   * @return updated summary map for the retry attempt
+   */
+  default Map<String, String> buildRetrySummary(
+      String currentIdentifier, Map<String, String> currentSummary) {
+    return currentSummary != null ? currentSummary : Collections.emptyMap();
+  }
 }

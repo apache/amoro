@@ -45,7 +45,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -57,6 +59,7 @@ import java.util.stream.Collectors;
  */
 public class ProcessService extends PersistentBase {
   private static final Logger LOG = LoggerFactory.getLogger(ProcessService.class);
+  private static final long RETRY_DELAY_SECONDS = 30L;
   private final TableService tableService;
 
   private final Map<String, ActionCoordinatorScheduler> actionCoordinators =
@@ -68,6 +71,8 @@ public class ProcessService extends PersistentBase {
   private final ProcessRuntimeHandler tableRuntimeHandler = new ProcessRuntimeHandler();
   private final ThreadPoolExecutor processExecutionPool =
       new ThreadPoolExecutor(10, 100, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+  private final ScheduledExecutorService retrySchedulingPool =
+      Executors.newSingleThreadScheduledExecutor();
 
   private final Map<ServerTableIdentifier, Map<Long, TableProcessHolder>> activeTableProcess =
       new ConcurrentHashMap<>();
@@ -116,6 +121,7 @@ public class ProcessService extends PersistentBase {
   /** Dispose the service, shutdown engines and clear active processes. */
   public void dispose() {
     executeEngineManager.close();
+    retrySchedulingPool.shutdownNow();
     processExecutionPool.shutdown();
     activeTableProcess.clear();
   }
@@ -162,7 +168,7 @@ public class ProcessService extends PersistentBase {
                     tableRuntime,
                     processMeta,
                     scheduler.getAction(),
-                    processMeta.getRetryNumber());
+                    ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER);
             TableProcess process = scheduler.recover(tableRuntime, store);
             trackTableProcess(tableRuntime.getTableIdentifier(), store, process);
             executeOrTraceProcess(store, process);
@@ -203,14 +209,37 @@ public class ProcessService extends PersistentBase {
               && store.getStatus() == ProcessStatus.FAILED
               && store.getRetryNumber() < ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER
               && process.getTableRuntime() != null) {
-            store.tryTransitState(
-                ProcessStatus.PENDING,
-                ProcessEvent.RETRY_REQUESTED,
-                store.getExternalProcessIdentifier(),
-                "Regular Retry.",
-                process.getProcessParameters(),
-                process.getSummary());
-            executeOrTraceProcess(store, process);
+
+            // Delegate summary update to engine (e.g. archive qid history)
+            String currentQid = store.getExternalProcessIdentifier();
+            Map<String, String> retrySummary =
+                executeEngine.buildRetrySummary(currentQid, store.getSummary());
+
+            boolean transitioned =
+                store.tryTransitState(
+                    ProcessStatus.PENDING,
+                    ProcessEvent.RETRY_REQUESTED,
+                    currentQid,
+                    "Regular Retry.",
+                    process.getProcessParameters(),
+                    retrySummary);
+
+            if (transitioned) {
+              LOG.info(
+                  "Process {} retry scheduled after 30s, retryNumber: {}",
+                  store.getProcessId(),
+                  store.getRetryNumber());
+              scheduleRetry(store, process);
+            } else {
+              LOG.warn(
+                  "Failed to transit process {} to PENDING for retry, giving up. "
+                      + "Current status: {}, retryNumber: {}",
+                  store.getProcessId(),
+                  store.getStatus(),
+                  store.getRetryNumber());
+              untrackTableProcessInstance(
+                  process.getTableRuntime().getTableIdentifier(), store.getProcessId());
+            }
           } else {
             untrackTableProcessInstance(
                 process.getTableRuntime().getTableIdentifier(), store.getProcessId());
@@ -224,6 +253,18 @@ public class ProcessService extends PersistentBase {
         process,
         executeEngine.engineType(),
         store.getProcessId());
+  }
+
+  private void scheduleRetry(TableProcessStore store, TableProcess process) {
+    try {
+      retrySchedulingPool.schedule(
+          () -> executeOrTraceProcess(store, process), RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
+    } catch (Throwable t) {
+      LOG.warn(
+          "Failed to schedule retry for process {}, giving up retry.", store.getProcessId(), t);
+      untrackTableProcessInstance(
+          process.getTableRuntime().getTableIdentifier(), store.getProcessId());
+    }
   }
 
   /**
@@ -327,7 +368,7 @@ public class ProcessService extends PersistentBase {
         process.getTableRuntime(),
         processMeta,
         process.getAction(),
-        processMeta.getRetryNumber());
+        ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER);
   }
 
   /**

@@ -960,11 +960,13 @@ public class DefaultTableService extends PersistentBase implements TableService 
       return true;
     }
 
-    doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
-
     // Only skip local runtime creation when master-slave mode is fully wired (bucketAssignStore
     // is non-null). When bucketAssignStore is null (e.g. 3-arg test constructor), fall through
     // and create the runtime in memory as in non-master-slave mode.
+    if (isMasterSlaveMode && haContainer != null && bucketAssignStore != null) {
+      doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
+      return true;
+    }
 
     Optional<TableRuntime> tableRuntimeOpt =
         createTableRuntime(serverTableIdentifier, meta, Collections.emptyList());
