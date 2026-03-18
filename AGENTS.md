@@ -1,3 +1,22 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
 # AGENTS.md — Apache Amoro (Incubating)
 
 ## Project Overview
@@ -75,4 +94,3 @@ Key Maven profiles: `-Phadoop2` (Hadoop 2.x), `-Pspark-3.3`/`-Pspark-3.5`, `-Psu
 2. Update Derby path in `conf/config.yaml` to use absolute path under `conf/derby`
 3. Run `AmoroServiceContainer.main()` — dashboard at http://localhost:1630 (admin/admin)
 4. Optimizer: Run `StandaloneOptimizer.main()` with args `-a thrift://127.0.0.1:1261 -p 1 -g local`
-
