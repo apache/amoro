@@ -265,3 +265,12 @@ CREATE TABLE ha_lease (
 
 CREATE INDEX idx_ha_lease_expire ON ha_lease (lease_expire_ts);
 CREATE INDEX idx_ha_lease_node   ON ha_lease (node_id);
+
+CREATE TABLE bucket_assignments (
+  cluster_name       VARCHAR(64)    NOT NULL,
+  node_key           VARCHAR(256)  NOT NULL,
+  server_info_json   VARCHAR(32672),
+  assignments_json   VARCHAR(32672),
+  last_update_time   BIGINT        NOT NULL DEFAULT 0,
+  PRIMARY KEY (cluster_name, node_key)
+);

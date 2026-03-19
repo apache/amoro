@@ -63,9 +63,8 @@ public final class BucketAssignStoreFactory {
             "Cannot create ZkBucketAssignStore: ZK client not available or invalid container type");
 
       case AmoroManagementConf.HA_TYPE_DATABASE:
-        LOG.info("Creating DataBaseBucketAssignStore for cluster: {}", clusterName);
-        // TODO: Implement DataBaseBucketAssignStore when ready
-        throw new UnsupportedOperationException("DataBaseBucketAssignStore is not yet implemented");
+        LOG.info("Creating DBBucketAssignStore for cluster: {}", clusterName);
+        return new DBBucketAssignStore(clusterName);
 
       default:
         throw new IllegalArgumentException(
