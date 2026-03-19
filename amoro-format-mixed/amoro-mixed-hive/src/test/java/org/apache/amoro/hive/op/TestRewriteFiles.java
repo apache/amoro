@@ -225,7 +225,6 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
 
   @Test
   public void testRewritePartFiles() {
-    // TODO should add cases for tables without partition spec
     Assume.assumeTrue(isPartitionedTable());
     getMixedTable()
         .updateProperties()
@@ -256,9 +255,47 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     Assert.assertThrows(CannotAlterHiveLocationException.class, rewriteFiles::commit);
   }
 
+    @Test
+    public void testRewritePartFilesNonPartitioned() {
+        Assume.assumeFalse(isPartitionedTable());
+        getMixedTable()
+                .updateProperties()
+                .set(TableProperties.WRITE_TARGET_FILE_SIZE_BYTES, "1")
+                .commit();
+        List<Record> insertRecords = Lists.newArrayList();
+        insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
+        insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-01T12:00:00"));
+        initDataFiles =
+                HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+        UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
+        OverwriteFiles overwriteFiles = baseStore.newOverwrite();
+        initDataFiles.forEach(overwriteFiles::addFile);
+        overwriteFiles.commit();
+
+        initDataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
+        Assert.assertEquals(2, initDataFiles.size());
+        DataFile deleteFile = initDataFiles.get(0);
+
+        // ================== test rewrite part files
+        insertRecords.clear();
+        insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-01T12:00:00"));
+        insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-01T12:00:00"));
+        List<DataFile> dataFiles =
+                HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+        RewriteFiles rewriteFiles = baseStore.newRewrite();
+        rewriteFiles.rewriteFiles(Sets.newHashSet(deleteFile), Sets.newHashSet(dataFiles));
+
+        rewriteFiles.commit();
+
+        List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
+        Assert.assertEquals(dataFiles.size(), afterFiles.size());
+
+        int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
+        Assert.assertEquals(initDataFiles.size() + dataFiles.size() - 1, totalLiveFiles);
+    }
+
   @Test
   public void testRewriteWithFilesUnderDifferentDir() {
-    // TODO should add cases for tables without partition spec
     Assume.assumeTrue(isPartitionedTable());
     initDataFiles();
     List<Record> insertRecords = Lists.newArrayList();
@@ -281,8 +318,36 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
   }
 
   @Test
+  public void testRewriteWithFilesUnderDifferentDirNonPartitioned() {
+      Assume.assumeFalse(isPartitionedTable());
+      initDataFiles();
+      List<Record> insertRecords = Lists.newArrayList();
+      insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
+      insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
+      Set<DataFile> addFiles = Sets.newHashSet();
+      List<DataFile> dataFiles =
+              HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+      addFiles.addAll(dataFiles);
+      // write data files under another dir
+      dataFiles =
+              HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+      addFiles.addAll(dataFiles);
+
+      UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
+      RewriteFiles rewriteFiles = baseStore.newRewrite();
+      rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), addFiles);
+
+      rewriteFiles.commit();
+
+      List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
+      Assert.assertEquals(addFiles.size(), afterFiles.size());
+
+      int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
+      Assert.assertEquals(addFiles.size(), totalLiveFiles);
+  }
+
+  @Test
   public void testRewriteByAddFilesInDifferentDir() {
-    // TODO should add cases for tables without partition spec
     Assume.assumeTrue(isPartitionedTable());
     initDataFiles();
     List<Record> insertRecords = Lists.newArrayList();
@@ -299,10 +364,33 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
 
     Assert.assertThrows(CannotAlterHiveLocationException.class, rewriteFiles::commit);
   }
+    @Test
+    public void testRewriteByAddFilesInDifferentDirNonPartitioned() {
+        Assume.assumeFalse(isPartitionedTable());
+        initDataFiles();
+        List<Record> insertRecords = Lists.newArrayList();
+        insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
+        insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
+        List<DataFile> dataFiles =
+                HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+        Set<DataFile> addFiles = Sets.newHashSet(dataFiles);
+        addFiles.addAll(initDataFiles);
+
+        UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
+        RewriteFiles rewriteFiles = baseStore.newRewrite();
+        rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), addFiles);
+
+        rewriteFiles.commit();
+
+        List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
+        Assert.assertEquals(addFiles.size(), afterFiles.size());
+
+        int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
+        Assert.assertEquals(addFiles.size(), totalLiveFiles);
+    }
 
   @Test
   public void testRewriteWithSameLocation() {
-    // TODO should add cases for tables without partition spec
     Assume.assumeTrue(isPartitionedTable());
     initDataFiles();
     UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
@@ -310,5 +398,22 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), Sets.newHashSet(initDataFiles));
 
     Assert.assertThrows(CannotAlterHiveLocationException.class, rewriteFiles::commit);
+  }
+
+  @Test
+  public void testRewriteWithSameLocationNonPartitioned() {
+      Assume.assumeFalse(isPartitionedTable());
+      initDataFiles();
+      UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
+      RewriteFiles rewriteFiles = baseStore.newRewrite();
+      rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), Sets.newHashSet(initDataFiles));
+
+      rewriteFiles.commit();
+
+      List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
+      Assert.assertEquals(initDataFiles.size(), afterFiles.size());
+
+      int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
+      Assert.assertEquals(initDataFiles.size(), totalLiveFiles);
   }
 }
