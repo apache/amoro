@@ -29,11 +29,11 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.BucketAssignStore;
-import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.ExternalCatalog;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.BucketIdCount;
@@ -56,9 +56,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,7 +93,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private final CompletableFuture<Boolean> initialized = new CompletableFuture<>();
   private final Configurations serverConfiguration;
   private final CatalogManager catalogManager;
-    private final TableRuntimeFactory tableRuntimeFactory;
+  private final TableRuntimeFactory tableRuntimeFactory;
   private final HighAvailabilityContainer haContainer;
   private final BucketAssignStore bucketAssignStore;
   private final boolean isMasterSlaveMode;
@@ -124,8 +127,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
     this.externalCatalogRefreshingInterval =
         configuration.get(AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL).toMillis();
     this.serverConfiguration = configuration;
-      this.tableRuntimeFactory = tableRuntimeFactory;
-      this.tableRuntimeFactory.withTableLoader(this::loadTable);
+    this.tableRuntimeFactory = tableRuntimeFactory;
+    this.tableRuntimeFactory.withTableLoader(this::loadTable);
     this.haContainer = haContainer;
     this.bucketAssignStore = bucketAssignStore;
     this.isMasterSlaveMode = configuration.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
@@ -196,7 +199,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
           tableRuntimeMetaList =
               getAs(
                   TableRuntimeMapper.class,
-                  mapper -> mapper.selectRuntimesByBucketIds(assignedBucketIds));
+                  mapper -> mapper.selectRuntimesByBucketIds(assignedBucketIds, false));
           LOG.info(
               "Master-slave mode: Loaded {} tables for assigned bucketIds: {}",
               tableRuntimeMetaList.size(),
@@ -385,7 +388,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
       List<TableRuntimeMeta> tableRuntimeMetaList =
           getAs(
               TableRuntimeMapper.class,
-              mapper -> mapper.selectRuntimesByBucketIds(assignedBucketIds));
+              mapper -> mapper.selectRuntimesByBucketIds(assignedBucketIds, false));
 
       Map<Long, ServerTableIdentifier> identifierMap =
           getAs(TableMetaMapper.class, TableMetaMapper::selectAllTableIdentifiers).stream()
@@ -821,18 +824,52 @@ public class DefaultTableService extends PersistentBase implements TableService 
     meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
     meta.setTableSummary(new TableSummary());
 
-    // In master-slave mode, assign bucketId to the table if it's not assigned yet
-    // Only leader node should assign bucketIds
+    // In master-slave mode, assign bucketId to the table if it's not assigned yet.
+    // Only leader node should assign bucketIds; follower may still persist the table with null
+    // bucketId (e.g. onTableCreated on follower), and leader will assign later via exploration.
     String assignedBucketId = null;
     if (isMasterSlaveMode) {
-      assignedBucketId = assignBucketIdForTable();
-      if (assignedBucketId != null) {
-        meta.setBucketId(assignedBucketId);
-        LOG.info("Assigned bucketId {} to table {}", assignedBucketId, serverTableIdentifier);
-      } else {
-        LOG.warn(
-            "Failed to assign bucketId to table {}, will be assigned later", serverTableIdentifier);
+      if (haContainer != null && haContainer.hasLeadership()) {
+        TableRuntimeMeta existingMeta =
+            getAs(
+                TableRuntimeMapper.class,
+                mapper -> mapper.selectRuntime(serverTableIdentifier.getId()));
+        if (existingMeta != null) {
+          // Runtime already exists (e.g. inserted by follower with null bucketId)
+          if (existingMeta.getBucketId() != null) {
+            return true; // already assigned
+          }
+          assignedBucketId = assignBucketIdForTable();
+          if (assignedBucketId != null) {
+            existingMeta.setBucketId(assignedBucketId);
+            doAs(TableRuntimeMapper.class, mapper -> mapper.updateRuntime(existingMeta));
+            synchronized (bucketIdAssignmentLock) {
+              int pendingCount = pendingBucketIdCounts.getOrDefault(assignedBucketId, 0);
+              if (pendingCount > 0) {
+                pendingBucketIdCounts.put(assignedBucketId, pendingCount - 1);
+                if (pendingBucketIdCounts.get(assignedBucketId) == 0) {
+                  pendingBucketIdCounts.remove(assignedBucketId);
+                }
+              }
+            }
+            LOG.info(
+                "Assigned bucketId {} to existing table {} (was null)",
+                assignedBucketId,
+                serverTableIdentifier);
+          }
+          return true; // handled existing row (assigned or failed to assign)
+        }
+        assignedBucketId = assignBucketIdForTable();
+        if (assignedBucketId != null) {
+          meta.setBucketId(assignedBucketId);
+          LOG.info("Assigned bucketId {} to table {}", assignedBucketId, serverTableIdentifier);
+        } else {
+          LOG.warn(
+              "Failed to assign bucketId to table {}, will be assigned later",
+              serverTableIdentifier);
+        }
       }
+      // else: follower does not assign; meta.bucketId remains null until leader assigns
     }
 
     try {

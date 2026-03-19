@@ -113,10 +113,18 @@ public interface TableRuntimeMapper {
           + "<foreach item='item' collection='bucketIds' open='(' separator=',' close=')'>"
           + "#{item}"
           + "</foreach>"
-          + " OR bucket_id IS NULL"
+          + "<if test='includeNullBucketId'> OR bucket_id IS NULL </if>"
           + "</script>")
+  /**
+   * Select runtimes by bucket ids.
+   *
+   * @param includeNullBucketId false = only rows with bucket_id in list (master-slave); true = also
+   *     include bucket_id IS NULL (e.g. for non-master-slave compatibility)
+   */
   @ResultMap("tableRuntimeMeta")
-  List<TableRuntimeMeta> selectRuntimesByBucketIds(@Param("bucketIds") List<String> bucketIds);
+  List<TableRuntimeMeta> selectRuntimesByBucketIds(
+      @Param("bucketIds") List<String> bucketIds,
+      @Param("includeNullBucketId") boolean includeNullBucketId);
 
   @Select(
       "<script>"

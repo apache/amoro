@@ -175,6 +175,11 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
     return isLeader.get();
   }
 
+  @Override
+  public AmsServerInfo getTableServiceServerInfo() {
+    return tableServiceServerInfo;
+  }
+
   /** Closes the heartbeat executor safely. */
   @Override
   public void close() {
