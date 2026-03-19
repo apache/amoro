@@ -28,6 +28,7 @@ import { executeSql, getExampleSqlCode, getJobDebugResult, getLastDebugInfo, get
 import { getCatalogList } from '@/services/table.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { usePageScroll } from '@/hooks/usePageScroll'
+import { canWrite } from '@/utils/permission'
 
 interface ISessionInfo {
   sessionId: string
@@ -53,6 +54,7 @@ export default defineComponent({
     const sqlLogRef = ref<any>(null)
     const { pageScrollRef } = usePageScroll()
     const readOnly = ref<boolean>(false)
+    const writable = ref<boolean>(canWrite())
     const sqlSource = ref<string>('')
     const showDebug = ref<boolean>(false)
     const runStatus = ref<string>('')
@@ -130,6 +132,10 @@ export default defineComponent({
     }
 
     async function handleDebug() {
+      if (!writable.value) {
+        message.error('ReadOnly user cannot execute SQL')
+        return
+      }
       try {
         if (!curCatalog.value) {
           message.error(placeholder.selectClPh)
@@ -334,6 +340,7 @@ export default defineComponent({
       handleFull,
       resultFull,
       showDebug,
+      writable,
       sqlSource,
       readOnly,
       generateCode,
@@ -364,13 +371,13 @@ export default defineComponent({
                 </div>
                 <a-tooltip v-if="runStatus === 'Running'" :title="$t('pause')" placement="bottom">
                   <svg-icon
-                    class-name="icon-svg" icon-class="sqlpause" class="g-mr-12" :disabled="readOnly"
+                    class-name="icon-svg" icon-class="sqlpause" class="g-mr-12" :disabled="readOnly || !writable"
                     @click="handleIconClick('pause')"
                   />
                 </a-tooltip>
                 <a-tooltip v-else :title="$t('run')" placement="bottom">
                   <svg-icon
-                    class-name="icon-svg" icon-class="sqldebug" class="g-mr-12" :disabled="readOnly"
+                    class-name="icon-svg" icon-class="sqldebug" class="g-mr-12" :disabled="readOnly || !writable"
                     @click="handleIconClick('debug')"
                   />
                 </a-tooltip>
@@ -411,7 +418,7 @@ export default defineComponent({
             </div>
             <a-button
               v-for="code in shortcuts" :key="code" type="link"
-              :disabled="runStatus === 'Running' || runStatus === 'Canceling'" class="code" @click="generateCode(code)"
+              :disabled="runStatus === 'Running' || runStatus === 'Canceling' || !writable" class="code" @click="generateCode(code)"
             >
               {{
                 code

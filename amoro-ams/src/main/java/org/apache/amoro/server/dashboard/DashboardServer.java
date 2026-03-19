@@ -39,6 +39,7 @@ import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.AmoroServiceContainer;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.authentication.HttpAuthenticationFactory;
+import org.apache.amoro.server.authorization.RoleResolver;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.controller.ApiTokenController;
 import org.apache.amoro.server.dashboard.controller.CatalogController;
@@ -68,6 +69,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class DashboardServer {
@@ -78,6 +80,13 @@ public class DashboardServer {
   private static final String AUTH_TYPE_JWT = "jwt";
   private static final String X_REQUEST_SOURCE_HEADER = "X-Request-Source";
   private static final String X_REQUEST_SOURCE_WEB = "Web";
+  private static final String LOGIN_REQUIRED_MESSAGE = "Please login first";
+  private static final String NO_PERMISSION_MESSAGE = "No permission";
+  // Javalin 4.x Context#method returns an upper-case HTTP method string.
+  private static final Set<String> WRITE_METHODS = Set.of("POST", "PUT", "DELETE");
+  // URL white list is checked first; this set is only for authenticated write APIs that stay
+  // reachable for every logged-in role.
+  private static final Set<String> WRITE_WHITELIST = Set.of("/api/ams/v1/logout");
   private final CatalogController catalogController;
   private final HealthCheckController healthCheckController;
   private final LoginController loginController;
@@ -94,6 +103,7 @@ public class DashboardServer {
   private final PasswdAuthenticationProvider basicAuthProvider;
   private final TokenAuthenticationProvider jwtAuthProvider;
   private final String proxyClientIpHeader;
+  private final RoleResolver roleResolver;
 
   public DashboardServer(
       Configurations serviceConfig,
@@ -105,7 +115,8 @@ public class DashboardServer {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController(ams);
-    this.loginController = new LoginController(serviceConfig);
+    this.roleResolver = new RoleResolver(serviceConfig);
+    this.loginController = new LoginController(serviceConfig, roleResolver);
     this.optimizerGroupController = new OptimizerGroupController(tableManager, optimizerManager);
     this.optimizerController = new OptimizerController(optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
@@ -408,8 +419,19 @@ public class DashboardServer {
     boolean isWebRequest = X_REQUEST_SOURCE_WEB.equalsIgnoreCase(requestSource);
 
     if (isWebRequest) {
-      if (null == ctx.sessionAttribute("user")) {
-        throw new ForbiddenException("User session attribute is missed for url: " + uriPath);
+      LoginController.SessionInfo user = ctx.sessionAttribute("user");
+      if (user == null) {
+        throw new ForbiddenException(LOGIN_REQUIRED_MESSAGE);
+      }
+      if (shouldCheckWritePermission(ctx)
+          && !isWriteWhitelisted(uriPath)
+          && !user.getRole().canWrite()) {
+        LOG.warn(
+            "Reject write request for read-only user {}, URI: {}, method: {}",
+            user.getUserName(),
+            uriPath,
+            ctx.method());
+        throw new ForbiddenException(NO_PERMISSION_MESSAGE);
       }
       return;
     }
@@ -439,7 +461,7 @@ public class DashboardServer {
       if (!ctx.req.getRequestURI().startsWith("/api/ams")) {
         ctx.html(getIndexFileContent());
       } else {
-        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Please login first", ""));
+        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, e.getMessage(), ""));
       }
     } else if (e instanceof SignatureCheckException) {
       ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature check failed", ""));
@@ -487,5 +509,13 @@ public class DashboardServer {
       }
     }
     return false;
+  }
+
+  private boolean shouldCheckWritePermission(Context ctx) {
+    return roleResolver.isAuthorizationEnabled() && WRITE_METHODS.contains(ctx.method());
+  }
+
+  private static boolean isWriteWhitelisted(String uriPath) {
+    return WRITE_WHITELIST.contains(uriPath);
   }
 }

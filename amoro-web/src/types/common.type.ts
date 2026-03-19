@@ -27,6 +27,7 @@ export interface IHttpResponse {
 }
 export interface UserInfo {
   userName: string
+  role?: 'ADMIN' | 'READ_ONLY'
   token?: string
 }
 

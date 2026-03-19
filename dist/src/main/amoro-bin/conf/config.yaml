@@ -40,6 +40,27 @@ ams:
     # login-auth-provider: org.apache.amoro.server.authentication.LdapPasswdAuthenticationProvider
     # login-auth-ldap-url: "ldap://ldap.example.com:389"
     # login-auth-ldap-user-pattern: "uid={0},ou=people,dc=example,dc=com"
+    #
+    # ── Authorization (RBAC) ──
+    # admin-users whitelist example:
+    # authorization:
+    #   enabled: true
+    #   default-role: READ_ONLY
+    #   admin-users:
+    #     - alice
+    #     - bob
+    #
+    # LDAP Group role-mapping example:
+    # authorization:
+    #   enabled: true
+    #   default-role: READ_ONLY
+    #   ldap-role-mapping:
+    #     enabled: true
+    #     admin-group-dn: "cn=amoro-admins,ou=groups,dc=example,dc=com"
+    #     group-member-attribute: "member"
+    #     user-dn-pattern: "uid={0},ou=people,dc=example,dc=com"
+    #     bind-dn: "cn=service-account,dc=example,dc=com"
+    #     bind-password: "service-password"
 
   refresh-external-catalogs:
     interval: 3min # 180000
@@ -111,7 +132,7 @@ ams:
   # Support for encrypted sensitive configuration items
   shade:
     identifier: default # Built-in support for default/base64. Defaults to "default", indicating no encryption
-    sensitive-keywords: admin-password;database.password
+    sensitive-keywords: admin-password;database.password;http-server.authorization.ldap-role-mapping.bind-password
 
   overview-cache:
     refresh-interval: 3min          # 3 min

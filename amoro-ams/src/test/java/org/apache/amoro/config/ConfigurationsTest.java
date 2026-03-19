@@ -32,6 +32,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -59,6 +61,50 @@ public class ConfigurationsTest {
   public static String UPDATE_CMD =
       "UPDATE=1 ./mvnw test -pl amoro-ams -am -Dtest=ConfigurationsTest";
 
+  private static final List<String> RBAC_EXAMPLE =
+      Arrays.asList(
+          "## RBAC Example",
+          "",
+          "Enable RBAC only when you need role separation for dashboard users."
+              + " When `http-server.authorization.enabled`",
+          "is `false`, all authenticated dashboard users keep admin behavior for compatibility.",
+          "",
+          "```yaml",
+          "ams:",
+          "  http-server:",
+          "    authorization:",
+          "      enabled: true",
+          "      default-role: READ_ONLY",
+          "      admin-users:",
+          "        - alice",
+          "        - bob",
+          "      users:",
+          "        - username: admin",
+          "          password: admin",
+          "          role: ADMIN",
+          "        - username: viewer",
+          "          password: viewer123",
+          "          role: READ_ONLY",
+          "```",
+          "",
+          "```yaml",
+          "ams:",
+          "  http-server:",
+          "    login-auth-provider: org.apache.amoro.server.authentication.LdapPasswdAuthenticationProvider",
+          "    login-auth-ldap-url: \"ldap://ldap.example.com:389\"",
+          "    login-auth-ldap-user-pattern: \"uid={0},ou=people,dc=example,dc=com\"",
+          "    authorization:",
+          "      enabled: true",
+          "      default-role: READ_ONLY",
+          "      ldap-role-mapping:",
+          "        enabled: true",
+          "        admin-group-dn: \"cn=amoro-admins,ou=groups,dc=example,dc=com\"",
+          "        group-member-attribute: \"member\"",
+          "        user-dn-pattern: \"uid={0},ou=people,dc=example,dc=com\"",
+          "        bind-dn: \"cn=service-account,dc=example,dc=com\"",
+          "        bind-password: \"service-password\"",
+          "```");
+
   @Test
   public void testAmoroManagementConfDocumentation() throws Exception {
     List<AmoroConfInfo> confInfoList = new ArrayList<>();
@@ -66,7 +112,8 @@ public class ConfigurationsTest {
         new AmoroConfInfo(
             AmoroManagementConf.class,
             "Amoro Management Service Configuration",
-            "The configuration options for Amoro Management Service (AMS)."));
+            "The configuration options for Amoro Management Service (AMS).",
+            RBAC_EXAMPLE));
     confInfoList.add(
         new AmoroConfInfo(
             ConfigShadeUtils.class,
@@ -147,6 +194,12 @@ public class ConfigurationsTest {
 
       // Add some space between different configuration sections
       output.add("");
+
+      // Add appendix content if present
+      if (confInfo.appendix != null && !confInfo.appendix.isEmpty()) {
+        output.addAll(confInfo.appendix);
+      }
+
       output.add("");
     }
 
@@ -299,11 +352,21 @@ public class ConfigurationsTest {
     Class<?> confClass;
     String title;
     String description;
+    List<String> appendix;
 
     public AmoroConfInfo(Class<?> confClass, String title, String description) {
       this.confClass = confClass;
       this.title = title;
       this.description = description;
+      this.appendix = Collections.emptyList();
+    }
+
+    public AmoroConfInfo(
+        Class<?> confClass, String title, String description, List<String> appendix) {
+      this.confClass = confClass;
+      this.title = title;
+      this.description = description;
+      this.appendix = appendix;
     }
   }
 }

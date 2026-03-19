@@ -56,8 +56,15 @@ public class HttpAuthenticationFactory {
           .impl(className)
           .<T>buildChecked()
           .newInstance(conf);
+    } catch (NoSuchMethodException e) {
+      throw new IllegalStateException(
+          className
+              + " must implement "
+              + expected.getName()
+              + " and provide a public constructor (Configurations) or no-arg constructor",
+          e);
     } catch (Exception e) {
-      throw new IllegalStateException(className + " must extend of " + expected.getName());
+      throw new IllegalStateException("Failed to create " + className + ": " + e.getMessage(), e);
     }
   }
 
