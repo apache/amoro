@@ -656,14 +656,14 @@ for more information.</p>
 <li><code>Flink Lookup Join</code> performs real-time read of Amoro table data for association calculation through Apache Flink Temporal Join grammar.</li>
 </ul>
 <p>The Amoro project can be self-compiled to obtain the runtime jar.</p>
-<p><code>./mvnw clean package -pl ':amoro-mixed-flink-runtime-1.15' -am -DskipTests</code></p>
-<p>The Flink Runtime Jar is located in the <code>amoro-format-mixed/amoro-format-mixed-flink/v1.15/amoro-format-mixed-flink-runtime-1.15/target</code> directory.</p>
+<p><code>./mvnw clean package -pl ':amoro-mixed-flink-runtime-1.17' -am -DskipTests</code></p>
+<p>The Flink Runtime Jar is located in the <code>amoro-format-mixed/amoro-mixed-flink/v1.17/amoro-mixed-flink-runtime-1.17/target</code> directory.</p>
 <h2 id="environment-preparation">Environment preparation</h2>
-<p>Download Flink and related dependencies, and download Flink 1.15/1.16/1.17 as needed. Taking Flink 1.15 as an example:</p>
+<p>Download Flink and related dependencies, and download Flink 1.17/1.18 as needed. Taking Flink 1.17 as an example:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Replace version value with the latest Amoro version if needed</span>
 </span></span><span style="display:flex;"><span>AMORO_VERSION<span style="color:#f92672">=</span>0.8.0-incubating
-</span></span><span style="display:flex;"><span>FLINK_VERSION<span style="color:#f92672">=</span>1.15.3
-</span></span><span style="display:flex;"><span>FLINK_MAJOR_VERSION<span style="color:#f92672">=</span>1.15
+</span></span><span style="display:flex;"><span>FLINK_VERSION<span style="color:#f92672">=</span>1.17.2
+</span></span><span style="display:flex;"><span>FLINK_MAJOR_VERSION<span style="color:#f92672">=</span>1.17
 </span></span><span style="display:flex;"><span>FLINK_HADOOP_SHADE_VERSION<span style="color:#f92672">=</span>2.7.5
 </span></span><span style="display:flex;"><span>APACHE_FLINK_URL<span style="color:#f92672">=</span>archive.apache.org/dist/flink
 </span></span><span style="display:flex;"><span>MAVEN_URL<span style="color:#f92672">=</span>https://repo1.maven.org/maven2
@@ -685,7 +685,7 @@ for more information.</p>
 </span></span><span style="display:flex;"><span>mv flink-shaded-hadoop-2-uber-<span style="color:#e6db74">${</span>FLINK_HADOOP_SHADE_VERSION<span style="color:#e6db74">}</span>-10.0.jar lib
 </span></span><span style="display:flex;"><span>mv amoro-mixed-format-flink-runtime-<span style="color:#e6db74">${</span>FLINK_MAJOR_VERSION<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>AMORO_VERSION<span style="color:#e6db74">}</span>.jar lib
 </span></span></code></pre></div><p>Modify Flink related configuration files:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>cd flink-1.15.3
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>cd flink-1.17.2
 </span></span><span style="display:flex;"><span>vim conf/flink-conf.yaml
 </span></span></code></pre></div><p>Modify the following settings:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Increase the number of slots to run two streaming tasks simultaneously</span>
@@ -709,7 +709,7 @@ for more information.</p>
 <p>You need to enable Flink checkpoint and modify the <a href="https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/config.html#execution-checkpointing-interval">Flink checkpoint configuration</a> in Flink conf. The data will only be committed during checkpoint.</p>
 <p><strong>2. When using Flink SQL-Client to read Amoro tables with write.upsert feature enabled, there are still duplicate primary key data</strong></p>
 <p>The query results obtained through Flink SQL-Client cannot provide MOR semantics based on primary keys. If you need to obtain merged results through Flink engine queries, you can write the content of Amoro tables to a MySQL table through JDBC connector for viewing.</p>
-<p><strong>3. When writing to Amoro tables with write.upsert feature enabled through SQL-Client under Flink 1.15, there are still duplicate primary key data</strong></p>
+<p><strong>3. When writing to Amoro tables with write.upsert feature enabled through SQL-Client under Flink 1.17, there are still duplicate primary key data</strong></p>
 <p>You need to execute the command <code>set table.exec.sink.upsert-materialize = none</code> in SQL-Client to turn off the upsert materialize operator generated upsert view. This operator will affect the AmoroWriter&rsquo;s generation of delete data when the write.upsert feature is enabled, causing duplicate primary key data to not be merged.</p>
 </div>
                 
