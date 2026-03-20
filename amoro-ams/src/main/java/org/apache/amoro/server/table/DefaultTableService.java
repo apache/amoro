@@ -342,8 +342,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
   }
 
   /**
-   * Update assigned bucket IDs from ZK. This should be called periodically to refresh the bucket
-   * assignments.
+   * Update assigned bucket IDs from AssignStore. This should be called periodically to refresh the
+   * bucket assignments.
    */
   private void updateAssignedBucketIds() {
     if (haContainer == null || bucketAssignStore == null) {
@@ -504,7 +504,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
         // Initialize bucketId count map with all possible bucketIds
         Map<String, Integer> bucketTableCount = new ConcurrentHashMap<>();
         int bucketIdTotalCount =
-            serverConfiguration.getInteger(AmoroManagementConf.BUCKET_ID_TOTAL_COUNT);
+            serverConfiguration.getInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT);
         for (int i = 1; i <= bucketIdTotalCount; i++) {
           bucketTableCount.put(String.valueOf(i), 0);
         }
