@@ -665,7 +665,7 @@ public class MixedCatalog extends AbstractCatalog {
 
   /**
    * copy from
-   * https://github.com/apache/iceberg/blob/main/flink/v1.16/flink/src/main/java/org/apache/iceberg/flink/FlinkCatalog.java#L425C23-L425C54
+   * https://github.com/apache/iceberg/blob/1.6.x/flink/v1.17/flink/src/main/java/org/apache/iceberg/flink/FlinkCatalog.java#L425-L448
    *
    * @param ct1 CatalogTable before
    * @param ct2 CatalogTable after
@@ -687,9 +687,15 @@ public class MixedCatalog extends AbstractCatalog {
     if (!(Objects.equal(ts1.getTableColumns(), ts2.getTableColumns())
         && Objects.equal(ts1.getWatermarkSpecs(), ts2.getWatermarkSpecs())
         && equalsPrimary)) {
-      throw new UnsupportedOperationException("Altering schema is not supported yet.");
+      throw new UnsupportedOperationException(
+          "Altering schema is not supported in the old alterTable API. "
+              + "To alter schema, use the other alterTable API and provide a list of TableChange's.");
     }
 
+    validateTablePartition(ct1, ct2);
+  }
+
+  private static void validateTablePartition(CatalogTable ct1, CatalogTable ct2) {
     if (!ct1.getPartitionKeys().equals(ct2.getPartitionKeys())) {
       throw new UnsupportedOperationException("Altering partition keys is not supported yet.");
     }

@@ -39,7 +39,9 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Service for assigning bucket IDs to AMS nodes in master-slave mode. Periodically detects node
- * changes and redistributes bucket IDs evenly.
+ * changes and redistributes bucket IDs evenly. Works with any {@link BucketAssignStore}
+ * implementation (e.g. ZK or database); the store is chosen by {@link BucketAssignStoreFactory}
+ * based on {@code ha.type}.
  */
 public class AmsAssignService {
 
@@ -151,6 +153,8 @@ public class AmsAssignService {
       rebalance(aliveNodes, change.newNodes, bucketsToRedistribute, allBuckets, newAssignments);
       persistAssignments(newAssignments);
     } catch (Exception e) {
+      // Catch broadly to keep the scheduler running; store (ZK/DB) errors are logged and retried
+      // next interval
       LOG.error("Error during bucket assignment", e);
     }
   }
@@ -297,7 +301,7 @@ public class AmsAssignService {
 
   /**
    * Get node key for matching nodes. Uses host:thriftBindPort format, consistent with
-   * ZkBucketAssignStore.getNodeKey().
+   * BucketAssignStore implementations (ZkBucketAssignStore and DBBucketAssignStore).
    */
   private String getNodeKey(AmsServerInfo nodeInfo) {
     return nodeInfo.getHost() + ":" + nodeInfo.getThriftBindPort();
@@ -408,12 +412,18 @@ public class AmsAssignService {
     return new NodeChangeResult(newNodes, offlineNodes);
   }
 
+  /**
+   * Removes offline nodes from the store and collects their buckets for redistribution. Only adds
+   * buckets to the result after a successful remove, so that store failures do not lead to the same
+   * bucket being assigned to both the offline node and an alive node.
+   */
   private List<String> handleOfflineNodes(
       Set<AmsServerInfo> offlineNodes, Map<AmsServerInfo, List<String>> currentAssignments) {
     List<String> bucketsToRedistribute = new ArrayList<>();
     for (AmsServerInfo offlineNode : offlineNodes) {
+      List<String> offlineBuckets = currentAssignments.get(offlineNode);
       try {
-        List<String> offlineBuckets = currentAssignments.get(offlineNode);
+        assignStore.removeAssignments(offlineNode);
         if (offlineBuckets != null && !offlineBuckets.isEmpty()) {
           bucketsToRedistribute.addAll(offlineBuckets);
           LOG.info(
@@ -421,9 +431,11 @@ public class AmsAssignService {
               offlineBuckets.size(),
               offlineNode);
         }
-        assignStore.removeAssignments(offlineNode);
       } catch (BucketAssignStoreException e) {
-        LOG.warn("Failed to remove assignments for offline node {}", offlineNode, e);
+        LOG.warn(
+            "Failed to remove assignments for offline node {}, skip redistributing its buckets",
+            offlineNode,
+            e);
       }
     }
     return bucketsToRedistribute;
@@ -488,6 +500,10 @@ public class AmsAssignService {
     }
   }
 
+  /**
+   * Persists the new assignment map to the store. On per-node failure we log and continue so that
+   * other nodes are still updated; the next run will retry.
+   */
   private void persistAssignments(Map<AmsServerInfo, List<String>> newAssignments) {
     for (Map.Entry<AmsServerInfo, List<String>> entry : newAssignments.entrySet()) {
       try {
@@ -503,6 +519,10 @@ public class AmsAssignService {
     }
   }
 
+  /**
+   * Refreshes last update time for all alive nodes when no reassignment is needed. Per-node
+   * failures are logged and skipped; the next run will retry.
+   */
   private void refreshLastUpdateTime(List<AmsServerInfo> aliveNodes) {
     for (AmsServerInfo node : aliveNodes) {
       try {
