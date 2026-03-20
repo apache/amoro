@@ -319,46 +319,47 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     overwriteFiles.deleteFile(deleteFile);
     Assert.assertThrows(CannotAlterHiveLocationException.class, overwriteFiles::commit);
   }
+
   @Test
   public void testOverwritePartFilesNonPartitioned() throws TException {
-      Assume.assumeFalse(isPartitionedTable());
-      getMixedTable()
-              .updateProperties()
-              .set(TableProperties.WRITE_TARGET_FILE_SIZE_BYTES, "1")
-              .commit();
-      List<Record> insertRecords = Lists.newArrayList();
-      insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
-      insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-01T12:00:00"));
-      List<DataFile> firstDataFiles =
-              HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
-      Assert.assertEquals(2, firstDataFiles.size());
-      DataFile deleteFile = firstDataFiles.get(0);
-      UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
-      OverwriteFiles overwriteFiles = baseStore.newOverwrite();
-      firstDataFiles.forEach(overwriteFiles::addFile);
-      overwriteFiles.commit();
-      firstDataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
-      UpdateHiveFilesTestHelpers.validateHiveTableValues(
-              TEST_HMS.getHiveClient(), getMixedTable(), firstDataFiles);
+    Assume.assumeFalse(isPartitionedTable());
+    getMixedTable()
+        .updateProperties()
+        .set(TableProperties.WRITE_TARGET_FILE_SIZE_BYTES, "1")
+        .commit();
+    List<Record> insertRecords = Lists.newArrayList();
+    insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-01T12:00:00"));
+    List<DataFile> firstDataFiles =
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    Assert.assertEquals(2, firstDataFiles.size());
+    DataFile deleteFile = firstDataFiles.get(0);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
+    OverwriteFiles overwriteFiles = baseStore.newOverwrite();
+    firstDataFiles.forEach(overwriteFiles::addFile);
+    overwriteFiles.commit();
+    firstDataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(
+        TEST_HMS.getHiveClient(), getMixedTable(), firstDataFiles);
 
-      // ================== test overwrite part files
-      insertRecords.clear();
-      insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-01T12:00:00"));
-      insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-01T12:00:00"));
-      List<DataFile> secondDataFiles =
-              HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
-      overwriteFiles = baseStore.newOverwrite();
-      secondDataFiles.forEach(overwriteFiles::addFile);
-      overwriteFiles.deleteFile(deleteFile);
+    // ================== test overwrite part files
+    insertRecords.clear();
+    insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-01T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-01T12:00:00"));
+    List<DataFile> secondDataFiles =
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    overwriteFiles = baseStore.newOverwrite();
+    secondDataFiles.forEach(overwriteFiles::addFile);
+    overwriteFiles.deleteFile(deleteFile);
 
-      overwriteFiles.commit();
+    overwriteFiles.commit();
 
-      List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
-      Assert.assertEquals(secondDataFiles.size(), afterFiles.size());
+    List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
+    Assert.assertEquals(secondDataFiles.size(), afterFiles.size());
 
-      int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
-      Assert.assertEquals(firstDataFiles.size() + secondDataFiles.size() - 1, totalLiveFiles);
-    }
+    int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
+    Assert.assertEquals(firstDataFiles.size() + secondDataFiles.size() - 1, totalLiveFiles);
+  }
 
   @Test
   public void testOverwriteWithFilesUnderDifferentDir() {
@@ -383,27 +384,27 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
 
   @Test
   public void testOverwriteWithFilesUnderDifferentDirNonPartitioned() {
-      Assume.assumeFalse(isPartitionedTable());
-      UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
-      OverwriteFiles overwriteFiles = baseStore.newOverwrite();
+    Assume.assumeFalse(isPartitionedTable());
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
+    OverwriteFiles overwriteFiles = baseStore.newOverwrite();
 
-      List<Record> insertRecords = Lists.newArrayList();
-      insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
-      insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
-      List<DataFile> firstDataFiles =
-              HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
-      firstDataFiles.forEach(overwriteFiles::addFile);
+    List<Record> insertRecords = Lists.newArrayList();
+    insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
+    List<DataFile> firstDataFiles =
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    firstDataFiles.forEach(overwriteFiles::addFile);
 
-      // write data files under another dir
-      List<DataFile> secondDataFiles =
-              HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
-      secondDataFiles.forEach(overwriteFiles::addFile);
+    // write data files under another dir
+    List<DataFile> secondDataFiles =
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    secondDataFiles.forEach(overwriteFiles::addFile);
 
-      overwriteFiles.commit();
+    overwriteFiles.commit();
 
-      int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
-      Assert.assertEquals(firstDataFiles.size() + secondDataFiles.size(), totalLiveFiles);
-    }
+    int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
+    Assert.assertEquals(firstDataFiles.size() + secondDataFiles.size(), totalLiveFiles);
+  }
 
   @Test
   public void testOverwriteByAddFilesInDifferentDir() throws TException {
@@ -432,39 +433,40 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
 
     Assert.assertThrows(CannotAlterHiveLocationException.class, overwriteFiles::commit);
   }
+
   @Test
   public void testOverwriteByAddFilesInDifferentDirNonPartitioned() throws TException {
-      Assume.assumeFalse(isPartitionedTable());
-      List<Record> insertRecords = Lists.newArrayList();
-      insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
-      insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
-      List<DataFile> firstDataFiles =
-              HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
-      UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
-      OverwriteFiles overwriteFiles = baseStore.newOverwrite();
-      firstDataFiles.forEach(overwriteFiles::addFile);
-      overwriteFiles.commit();
-      firstDataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
-      UpdateHiveFilesTestHelpers.validateHiveTableValues(
-              TEST_HMS.getHiveClient(), getMixedTable(), firstDataFiles);
+    Assume.assumeFalse(isPartitionedTable());
+    List<Record> insertRecords = Lists.newArrayList();
+    insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
+    List<DataFile> firstDataFiles =
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
+    OverwriteFiles overwriteFiles = baseStore.newOverwrite();
+    firstDataFiles.forEach(overwriteFiles::addFile);
+    overwriteFiles.commit();
+    firstDataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(
+        TEST_HMS.getHiveClient(), getMixedTable(), firstDataFiles);
 
-      // ================== test add files only
-      insertRecords.clear();
-      insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
-      insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
-      List<DataFile> secondDataFiles =
-              HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
-      overwriteFiles = baseStore.newOverwrite();
-      secondDataFiles.forEach(overwriteFiles::addFile);
+    // ================== test add files only
+    insertRecords.clear();
+    insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
+    List<DataFile> secondDataFiles =
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    overwriteFiles = baseStore.newOverwrite();
+    secondDataFiles.forEach(overwriteFiles::addFile);
 
-      overwriteFiles.commit();
+    overwriteFiles.commit();
 
-      List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
-      Assert.assertEquals(secondDataFiles.size(), afterFiles.size());
+    List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
+    Assert.assertEquals(secondDataFiles.size(), afterFiles.size());
 
-      int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
-      Assert.assertEquals(firstDataFiles.size() + secondDataFiles.size(), totalLiveFiles);
-    }
+    int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
+    Assert.assertEquals(firstDataFiles.size() + secondDataFiles.size(), totalLiveFiles);
+  }
 
   @Test
   public void testOverwriteWithSameLocation() throws TException {
@@ -488,32 +490,33 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
 
     Assert.assertThrows(CannotAlterHiveLocationException.class, overwriteFiles::commit);
   }
+
   @Test
   public void testOverwriteWithSameLocationNonPartitioned() throws TException {
-      Assume.assumeFalse(isPartitionedTable());
-      List<Record> insertRecords = Lists.newArrayList();
-      insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
-      insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
-      List<DataFile> dataFiles =
-              HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
-      UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
-      OverwriteFiles overwriteFiles = baseStore.newOverwrite();
-      dataFiles.forEach(overwriteFiles::addFile);
-      overwriteFiles.commit();
-      dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
-      UpdateHiveFilesTestHelpers.validateHiveTableValues(
-              TEST_HMS.getHiveClient(), getMixedTable(), dataFiles);
+    Assume.assumeFalse(isPartitionedTable());
+    List<Record> insertRecords = Lists.newArrayList();
+    insertRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
+    insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
+    List<DataFile> dataFiles =
+        HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+    UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
+    OverwriteFiles overwriteFiles = baseStore.newOverwrite();
+    dataFiles.forEach(overwriteFiles::addFile);
+    overwriteFiles.commit();
+    dataFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(
+        TEST_HMS.getHiveClient(), getMixedTable(), dataFiles);
 
-      overwriteFiles = baseStore.newOverwrite();
-      dataFiles.forEach(overwriteFiles::deleteFile);
-      dataFiles.forEach(overwriteFiles::addFile);
+    overwriteFiles = baseStore.newOverwrite();
+    dataFiles.forEach(overwriteFiles::deleteFile);
+    dataFiles.forEach(overwriteFiles::addFile);
 
-      overwriteFiles.commit();
+    overwriteFiles.commit();
 
-      List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
-      Assert.assertEquals(dataFiles.size(), afterFiles.size());
+    List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
+    Assert.assertEquals(dataFiles.size(), afterFiles.size());
 
-      int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
-      Assert.assertEquals(dataFiles.size(), totalLiveFiles);
-    }
+    int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
+    Assert.assertEquals(dataFiles.size(), totalLiveFiles);
+  }
 }
