@@ -19,7 +19,6 @@
 package org.apache.amoro.flink.table;
 
 import org.apache.amoro.flink.interceptor.ProxyFactory;
-import org.apache.amoro.flink.util.IcebergClassUtil;
 import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperatorFactory;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperatorFactory;
@@ -29,7 +28,6 @@ import org.apache.flink.streaming.api.operators.YieldingOperatorFactory;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.flink.source.FlinkInputFormat;
 import org.apache.iceberg.flink.source.FlinkInputSplit;
-import org.apache.iceberg.flink.source.StreamingReaderOperator;
 
 public class UnkeyedInputFormatOperatorFactory extends AbstractStreamOperatorFactory<RowData>
     implements YieldingOperatorFactory<RowData>,
@@ -52,8 +50,8 @@ public class UnkeyedInputFormatOperatorFactory extends AbstractStreamOperatorFac
   @Override
   public <O extends StreamOperator<RowData>> O createStreamOperator(
       StreamOperatorParameters<RowData> parameters) {
-    StreamingReaderOperator operator =
-        IcebergClassUtil.newStreamingReaderOperator(
+    UnkeyedStreamingReaderOperator operator =
+        new UnkeyedStreamingReaderOperator(
             factory.getInstance(), processingTimeService, mailboxExecutor);
     operator.setup(
         parameters.getContainingTask(), parameters.getStreamConfig(), parameters.getOutput());
@@ -62,6 +60,6 @@ public class UnkeyedInputFormatOperatorFactory extends AbstractStreamOperatorFac
 
   @Override
   public Class<? extends StreamOperator> getStreamOperatorClass(ClassLoader classLoader) {
-    return StreamingReaderOperator.class;
+    return UnkeyedStreamingReaderOperator.class;
   }
 }

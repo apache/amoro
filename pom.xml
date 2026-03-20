@@ -122,7 +122,7 @@
         <commons-pool2.version>2.12.0</commons-pool2.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-net.version>3.12.0</commons-net.version>
-        <cglib.version>2.2.2</cglib.version>
+        <cglib.version>3.3.0</cglib.version>
         <curator.version>5.7.0</curator.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.21.4</testcontainers.version>
@@ -170,6 +170,26 @@
         <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
         <lucene-dependency-scope>compile</lucene-dependency-scope>
         <aliyun-sdk-dependency-scope>provided</aliyun-sdk-dependency-scope>
+
+        <jvm.module.opens>--add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+            --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+            --add-opens=java.base/java.io=ALL-UNNAMED
+            --add-opens=java.base/java.net=ALL-UNNAMED
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/java.util=ALL-UNNAMED
+            --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+            --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.cs=ALL-UNNAMED
+            --add-opens=java.base/sun.security.action=ALL-UNNAMED
+            --add-opens=java.base/sun.util.calendar=ALL-UNNAMED</jvm.module.opens>
+
+        <jvm.module.exports>--add-exports=java.base/sun.net.util=ALL-UNNAMED
+            --add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED
+            --add-exports=java.security.jgss/sun.security.krb5=ALL-UNNAMED</jvm.module.exports>
+
+        <amoro.surefire.baseArgLine>-XX:+UseG1GC -Xms256m -XX:+IgnoreUnrecognizedVMOptions ${jvm.module.opens} ${jvm.module.exports}</amoro.surefire.baseArgLine>
     </properties>
 
     <dependencyManagement>
@@ -1490,6 +1510,8 @@
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+                        <argLine>${amoro.surefire.baseArgLine}</argLine>
+                        <excludedGroups>${surefire.excludedGroups.jdk}</excludedGroups>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1863,11 +1885,51 @@
         <profile>
             <id>java11</id>
             <activation>
-                <jdk>[11,)</jdk>
+                <jdk>[11,17)</jdk>
             </activation>
             <properties>
                 <java.target.version>11</java.target.version>
             </properties>
+        </profile>
+        <profile>
+            <id>java17</id>
+            <activation>
+                <jdk>17</jdk>
+            </activation>
+            <properties>
+                <java.source.version>17</java.source.version>
+                <java.target.version>17</java.target.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-javadoc-plugin</artifactId>
+                            <configuration>
+                                <additionalJOptions>
+                                    <additionalJOption>--add-exports=java.base/sun.net.util=ALL-UNNAMED</additionalJOption>
+                                    <additionalJOption>--add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED</additionalJOption>
+                                    <additionalJOption>--add-exports=java.security.jgss/sun.security.krb5=ALL-UNNAMED</additionalJOption>
+                                </additionalJOptions>
+                            </configuration>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-compiler-plugin</artifactId>
+                            <configuration>
+                                <source>17</source>
+                                <target>17</target>
+                                <compilerArgs combine.children="append">
+                                    <arg>--add-exports=java.base/sun.net.util=ALL-UNNAMED</arg>
+                                    <arg>--add-exports=java.rmi/sun.rmi.registry=ALL-UNNAMED</arg>
+                                    <arg>--add-exports=java.security.jgss/sun.security.krb5=ALL-UNNAMED</arg>
+                                </compilerArgs>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
         <profile>
             <id>spark-3.3</id>
