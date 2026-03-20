@@ -210,7 +210,7 @@ onMounted(() => {
       >
         <template #extra>
           <div class="snapshots-charts-header" @click="toggleCharts">
-            <span class="snapshots-charts-title">Charts</span>
+            <span class="snapshots-charts-title">{{ $t('charts') }}</span>
             <span class="snapshots-charts-icon">
               <CaretRightOutlined v-if="!showCharts" />
               <CaretDownOutlined v-else />
@@ -260,7 +260,7 @@ onMounted(() => {
     <template v-else>
       <a-breadcrumb separator=">">
         <a-breadcrumb-item class="text-active" @click="toggleBreadcrumb">
-          All
+          {{ $t('all') }}
         </a-breadcrumb-item>
         <a-breadcrumb-item>{{ `${$t('snapshotId')} ${snapshotId}` }}</a-breadcrumb-item>
       </a-breadcrumb>

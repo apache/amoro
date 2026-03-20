@@ -75,6 +75,19 @@ public class JacksonUtil {
     }
   }
 
+  /**
+   * Deserialize a json string to the type specified by the given TypeReference (e.g. list or map
+   * with generics). Uses the same ObjectMapper as toJSONString and parseObject(Class) for
+   * consistent config.
+   */
+  public static <T> T parseObject(String jsonString, TypeReference<T> typeReference) {
+    try {
+      return OBJECT_MAPPER.readValue(jsonString, typeReference);
+    } catch (IOException e) {
+      throw new IllegalStateException(DESERIALIZE_ERROR, e);
+    }
+  }
+
   /** Convert an java object(usually java bean) to JsonNode. */
   public static <T> JsonNode fromObjects(T object) {
     return OBJECT_MAPPER.valueToTree(object);

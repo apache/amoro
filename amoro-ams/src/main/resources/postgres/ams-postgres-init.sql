@@ -456,6 +456,17 @@ CREATE TABLE IF NOT EXISTS ha_lease (
 CREATE INDEX IF NOT EXISTS idx_ha_lease_expire ON ha_lease (lease_expire_ts);
 CREATE INDEX IF NOT EXISTS idx_ha_lease_node   ON ha_lease (node_id);
 
+CREATE TABLE IF NOT EXISTS bucket_assignments (
+  cluster_name       VARCHAR(64)  NOT NULL,
+  node_key           VARCHAR(256) NOT NULL,
+  server_info_json   TEXT         NULL,
+  assignments_json   TEXT         NULL,
+  last_update_time   BIGINT       NOT NULL DEFAULT 0,
+  PRIMARY KEY (cluster_name, node_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bucket_assignments_cluster ON bucket_assignments (cluster_name);
+
 COMMENT ON COLUMN service_name IS 'Service name (AMS/TABLE_SERVICE/OPTIMIZING_SERVICE)';
 COMMENT ON COLUMN node_id IS 'Unique node identifier (host:port:uuid)';
 COMMENT ON COLUMN node_ip IS 'Node IP address';
