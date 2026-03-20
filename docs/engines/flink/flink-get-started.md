@@ -54,17 +54,17 @@ Flink Connector includes:
 
 The Amoro project can be self-compiled to obtain the runtime jar.
 
-`./mvnw clean package -pl ':amoro-mixed-flink-runtime-1.15' -am -DskipTests`
+`./mvnw clean package -pl ':amoro-mixed-flink-runtime-1.17' -am -DskipTests`
 
-The Flink Runtime Jar is located in the `amoro-format-mixed/amoro-format-mixed-flink/v1.15/amoro-format-mixed-flink-runtime-1.15/target` directory.
+The Flink Runtime Jar is located in the `amoro-format-mixed/amoro-mixed-flink/v1.17/amoro-mixed-flink-runtime-1.17/target` directory.
 
 ## Environment preparation
-Download Flink and related dependencies, and download Flink 1.15/1.16/1.17 as needed. Taking Flink 1.15 as an example:
+Download Flink and related dependencies, and download Flink 1.17/1.18 as needed. Taking Flink 1.17 as an example:
 ```shell
 # Replace version value with the latest Amoro version if needed
 AMORO_VERSION=0.8.0-incubating
-FLINK_VERSION=1.15.3
-FLINK_MAJOR_VERSION=1.15
+FLINK_VERSION=1.17.2
+FLINK_MAJOR_VERSION=1.17
 FLINK_HADOOP_SHADE_VERSION=2.7.5
 APACHE_FLINK_URL=archive.apache.org/dist/flink
 MAVEN_URL=https://repo1.maven.org/maven2
@@ -90,7 +90,7 @@ mv amoro-mixed-format-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar 
 Modify Flink related configuration files:
 
 ```shell
-cd flink-1.15.3
+cd flink-1.17.2
 vim conf/flink-conf.yaml
 ```
 Modify the following settings:
@@ -128,6 +128,6 @@ You need to enable Flink checkpoint and modify the [Flink checkpoint configurati
 
 The query results obtained through Flink SQL-Client cannot provide MOR semantics based on primary keys. If you need to obtain merged results through Flink engine queries, you can write the content of Amoro tables to a MySQL table through JDBC connector for viewing.
 
-**3. When writing to Amoro tables with write.upsert feature enabled through SQL-Client under Flink 1.15, there are still duplicate primary key data**
+**3. When writing to Amoro tables with write.upsert feature enabled through SQL-Client under Flink 1.17, there are still duplicate primary key data**
 
 You need to execute the command `set table.exec.sink.upsert-materialize = none` in SQL-Client to turn off the upsert materialize operator generated upsert view. This operator will affect the AmoroWriter's generation of delete data when the write.upsert feature is enabled, causing duplicate primary key data to not be merged.

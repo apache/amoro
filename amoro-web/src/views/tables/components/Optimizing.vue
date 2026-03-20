@@ -240,11 +240,11 @@ onMounted(() => {
     <template v-if="!hasBreadcrumb">
       <a-space class="filter-form">
         <a-select
-          v-model:value="actionType" allow-clear placeholder="Type" :options="actionTypeList"
+          v-model:value="actionType" allow-clear :placeholder="t('type')" :options="actionTypeList"
           style="min-width: 150px;" @change="refresh"
         />
         <a-select
-          v-model:value="statusType" allow-clear placeholder="Status" :options="statusTypeList"
+          v-model:value="statusType" allow-clear :placeholder="t('status')" :options="statusTypeList"
           style="min-width: 150px;" @change="refresh"
         />
       </a-space>
@@ -258,7 +258,7 @@ onMounted(() => {
               {{ column.title }}
             </div>
             <div class="">
-              success / total
+              {{ t('successSlashTotal') }}
             </div>
           </template>
           <template v-if="column.dataIndex === 'inputFiles'">
@@ -266,7 +266,7 @@ onMounted(() => {
               {{ column.title }}
             </div>
             <div class="">
-              size / count
+              {{ t('sizeSlashCount') }}
             </div>
           </template>
           <template v-if="column.dataIndex === 'outputFiles'">
@@ -274,7 +274,7 @@ onMounted(() => {
               {{ column.title }}
             </div>
             <div class="">
-              size / count
+              {{ t('sizeSlashCount') }}
             </div>
           </template>
         </template>
@@ -322,7 +322,7 @@ onMounted(() => {
         <a-col :span="18">
           <a-breadcrumb separator=">">
             <a-breadcrumb-item class="text-active" @click="toggleBreadcrumb">
-              All
+              {{ t('all') }}
             </a-breadcrumb-item>
             <a-breadcrumb-item>{{ `${$t('processId')} ${processId}` }}</a-breadcrumb-item>
           </a-breadcrumb>
@@ -346,7 +346,7 @@ onMounted(() => {
               {{ column.title }}
             </div>
             <div class="">
-              size / count
+              {{ t('sizeSlashCount') }}
             </div>
           </template>
           <template v-if="column.dataIndex === 'outputFilesDesc'">
@@ -354,7 +354,7 @@ onMounted(() => {
               {{ column.title }}
             </div>
             <div class="">
-              size / count
+              {{ t('sizeSlashCount') }}
             </div>
           </template>
         </template>
