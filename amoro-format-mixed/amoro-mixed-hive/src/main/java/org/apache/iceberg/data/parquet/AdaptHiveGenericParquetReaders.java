@@ -50,14 +50,14 @@ public class AdaptHiveGenericParquetReaders extends AdaptHiveBaseParquetReaders<
   @Override
   protected ParquetValueReader<Record> createStructReader(
       List<Type> types, List<ParquetValueReader<?>> fieldReaders, StructType structType) {
-    return new RecordReader(types, fieldReaders, structType);
+    return new RecordReader(fieldReaders, structType);
   }
 
   private static class RecordReader extends StructReader<Record, Record> {
     private final StructType structType;
 
-    RecordReader(List<Type> types, List<ParquetValueReader<?>> readers, StructType struct) {
-      super(types, readers);
+    RecordReader(List<ParquetValueReader<?>> readers, StructType struct) {
+      super(readers);
       this.structType = struct;
     }
 

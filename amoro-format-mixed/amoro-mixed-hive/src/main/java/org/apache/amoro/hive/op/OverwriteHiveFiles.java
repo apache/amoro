@@ -26,6 +26,8 @@ import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.util.DataFileSet;
+import org.apache.iceberg.util.DeleteFileSet;
 
 import java.util.List;
 
@@ -79,6 +81,27 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
       // only handle file in hive location
       this.deleteFiles.add(file);
     }
+    return this;
+  }
+
+  // Note: Do not add @Override here. This method implements the default method
+  // OverwriteFiles.deleteFiles(DataFileSet, DeleteFileSet) introduced in Iceberg 1.10.x.
+  // The @Override annotation would fail compilation against Iceberg 1.8.x (hadoop2/spark-3.3
+  // profiles) where this interface method does not exist. At runtime on 1.10.x+, this method
+  // is still resolved correctly via dynamic dispatch.
+  @SuppressWarnings("unused")
+  public OverwriteFiles deleteFiles(
+      DataFileSet dataFilesToDelete, DeleteFileSet deleteFilesToDelete) {
+    try {
+      delegate
+          .getClass()
+          .getMethod("deleteFiles", DataFileSet.class, DeleteFileSet.class)
+          .invoke(delegate, dataFilesToDelete, deleteFilesToDelete);
+    } catch (ReflectiveOperationException e) {
+      throw new UnsupportedOperationException(
+          "Deleting data and delete files is not supported by the underlying implementation", e);
+    }
+    dataFilesToDelete.stream().filter(this::isHiveDataFile).forEach(this.deleteFiles::add);
     return this;
   }
 
