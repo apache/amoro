@@ -23,6 +23,8 @@ menu:
  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  - See the License for the specific language governing permissions and
  - limitations under the License.
+ -
+ - Modified by Datazip Inc. in 2026 
  -->
 # Deployment
 
@@ -30,7 +32,7 @@ You can choose to download the stable release package from [download page](../..
 
 ## System requirements
 
-- Java 11 is required.
+- Java 17 is required.
 - Optional: A RDBMS (PostgreSQL 14.x or higher, MySQL 5.5 or higher)
 - Optional: ZooKeeper 3.4.x or higher
 

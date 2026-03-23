@@ -14,7 +14,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 # limitations under the License.
-
+#
+# Modified by Datazip Inc. in 2026
 
 # Usage:
 #   Run the docker command below under project dir.
@@ -23,7 +24,7 @@
 #        --tag apache/amoro:tagname
 #        .
 
-FROM eclipse-temurin:11-jdk-jammy AS builder
+FROM eclipse-temurin:17-jdk-jammy AS builder
 
 # Add the entire project to the build container, unzip it,
 # and remove flink-optimizer to reduce the container size.
@@ -40,7 +41,7 @@ RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.
     && rm -rf /workspace/amoro
 
 
-FROM eclipse-temurin:11-jdk-jammy
+FROM eclipse-temurin:17-jdk-jammy
 
 ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 

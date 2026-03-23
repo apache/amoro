@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.formats.iceberg.maintainer;
@@ -686,6 +688,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return CloseableIterable.transform(
         CloseableIterable.withNoopClose(Iterables.concat(dataFiles, deleteFiles)),
         contentFile -> {
+          ContentFile<?> file = (ContentFile<?>) contentFile.copyWithoutStats();
           Literal<Long> literal =
               getExpireTimestampLiteral(
                   contentFile,
@@ -694,7 +697,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
                       expirationConfig.getDateTimePattern(), Locale.getDefault()),
                   expirationConfig.getNumberDateFormat(),
                   expireValue);
-          return new FileEntry(contentFile.copyWithoutStats(), literal);
+          return new FileEntry(file, literal);
         });
   }
 

@@ -14,22 +14,27 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server.manager;
 
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class LocalOptimizerContainer extends AbstractOptimizerContainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(LocalOptimizerContainer.class);
+  private static final String ENV_OPTIMIZER_JAVA_OPTS = "OPTIMIZER_JAVA_OPTS";
 
   public static final String JOB_MEMORY_PROPERTY = "memory";
 
@@ -37,11 +42,23 @@ public class LocalOptimizerContainer extends AbstractOptimizerContainer {
   protected Map<String, String> doScaleOut(Resource resource) {
     String startUpArgs = this.buildOptimizerStartupArgsString(resource);
     try {
-      String exportCmd =
+      String exportLogDirCmd =
           String.format(
               " export OPTIMIZER_LOG_DIR_NAME=\"optimizer-%s-%s\" ",
               resource.getGroupName(), resource.getResourceId());
-      String startUpCommand = exportCmd + " && " + startUpArgs;
+
+      List<String> exportCommands = new ArrayList<>(exportSystemProperties());
+      String optimizerJavaOpts = System.getenv(ENV_OPTIMIZER_JAVA_OPTS);
+      if (StringUtils.isNotEmpty(optimizerJavaOpts)) {
+        exportCommands.add(
+            String.format("export %s='%s'", ENV_OPTIMIZER_JAVA_OPTS, optimizerJavaOpts));
+      }
+
+      String exportCmd = String.join(" && ", exportCommands);
+      String startUpCommand =
+          StringUtils.isEmpty(exportCmd)
+              ? exportLogDirCmd + " && " + startUpArgs
+              : exportCmd + " && " + exportLogDirCmd + " && " + startUpArgs;
       String[] cmd = {"/bin/sh", "-c", startUpCommand};
       LOG.info("Starting local optimizer using command : {}", startUpCommand);
       ExecUtil.exec(cmd, new ArrayList<>());

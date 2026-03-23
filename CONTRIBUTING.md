@@ -14,6 +14,8 @@
  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  - See the License for the specific language governing permissions and 
  - limitations under the License.
+ -
+ - Modified by Datazip Inc. in 2026
 -->
 
 # Contributing
@@ -92,7 +94,7 @@ for reference.
 The following guide describes how to import the Amoro project into IntelliJ IDEA and deploy it.
 
 ### Requirements
-+ Java Version: Java 11 is required.
++ Java Version: Java 17 is required.
 
 #### Required plugins
 1. Go to `Settings` → `Plugins` in IntelliJ IDEA.

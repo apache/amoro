@@ -14,18 +14,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.spark.test.utils;
 
-import scala.collection.JavaConverters;
 import scala.collection.Seq;
+import scala.jdk.CollectionConverters;
 
 import java.util.List;
 
 public class ScalaTestUtil {
 
   public static <T> Seq<T> seq(List<T> values) {
-    return JavaConverters.asScalaBuffer(values).toSeq();
+    return CollectionConverters.ListHasAsScala(values).asScala();
   }
 }

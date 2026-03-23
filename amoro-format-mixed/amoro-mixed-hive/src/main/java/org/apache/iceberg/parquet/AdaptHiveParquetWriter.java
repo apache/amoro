@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.iceberg.parquet;
@@ -24,16 +26,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.Metrics;
 import org.apache.iceberg.MetricsConfig;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.common.DynConstructors;
-import org.apache.iceberg.common.DynMethods;
 import org.apache.iceberg.exceptions.RuntimeIOException;
 import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.OutputFile;
-import org.apache.parquet.bytes.ByteBufferAllocator;
 import org.apache.parquet.column.ColumnWriteStore;
 import org.apache.parquet.column.ParquetProperties;
-import org.apache.parquet.column.page.PageWriteStore;
 import org.apache.parquet.hadoop.CodecFactory;
+import org.apache.parquet.hadoop.ColumnChunkPageWriteStore;
 import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.schema.MessageType;
@@ -46,22 +45,6 @@ import java.util.function.Function;
 
 class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
 
-  private static final DynConstructors.Ctor<PageWriteStore> pageStoreCtorParquet =
-      DynConstructors.builder(PageWriteStore.class)
-          .hiddenImpl(
-              "org.apache.parquet.hadoop.ColumnChunkPageWriteStore",
-              CodecFactory.BytesCompressor.class,
-              MessageType.class,
-              ByteBufferAllocator.class,
-              int.class)
-          .build();
-
-  private static final DynMethods.UnboundMethod flushToWriter =
-      DynMethods.builder("flushToFileWriter")
-          .hiddenImpl(
-              "org.apache.parquet.hadoop.ColumnChunkPageWriteStore", ParquetFileWriter.class)
-          .build();
-
   private final long targetRowGroupSize;
   private final Map<String, String> metadata;
   private final ParquetProperties props;
@@ -72,7 +55,7 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
   private final MetricsConfig metricsConfig;
   private final int columnIndexTruncateLength;
 
-  private DynMethods.BoundMethod flushPageStoreToWriter;
+  private ColumnChunkPageWriteStore pageStore;
   private ColumnWriteStore writeStore;
   private long nextRowGroupSize = 0;
   private long recordCount = 0;
@@ -192,7 +175,7 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
       if (recordCount > 0) {
         writer.startBlock(recordCount);
         writeStore.flush();
-        flushPageStoreToWriter.invoke(writer);
+        pageStore.flushToFileWriter(writer);
         writer.endBlock();
         if (!finished) {
           startRowGroup();
@@ -214,11 +197,10 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
     this.nextCheckRecordCount = Math.min(Math.max(recordCount / 2, 100), 10000);
     this.recordCount = 0;
 
-    PageWriteStore pageStore =
-        pageStoreCtorParquet.newInstance(
+    this.pageStore =
+        new ColumnChunkPageWriteStore(
             compressor, parquetSchema, props.getAllocator(), this.columnIndexTruncateLength);
 
-    this.flushPageStoreToWriter = flushToWriter.bind(pageStore);
     this.writeStore = props.newColumnWriteStore(parquetSchema, pageStore);
 
     model.setColumnStore(writeStore);

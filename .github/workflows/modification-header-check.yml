@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-# Modified by Datazip Pvt. Ltd. in 2026
+# Modified by Datazip Inc. in 2026
 # Original work Copyright The Apache Software Foundation (ASF)
 
 name: Modification-Header-Check
@@ -42,15 +42,19 @@ jobs:
 
           BASE_BRANCH=${{ github.base_ref }}
           CHANGED_FILES=$(git diff --name-only origin/$BASE_BRANCH...HEAD)
-          DATAZIP_MODIFICATION_YEAR_REGEX="Modified by Datazip Pvt\. Ltd\. in [0-9]{4}"
-          ASF_ORIGINAL_WORK_NOTICE_REGEX="Original work Copyright The Apache Software Foundation \\(ASF\\)"
+          DATAZIP_MODIFICATION_YEAR_REGEX="Modified by Datazip Inc\. in [0-9]{4}"
           NOT_MODIFIED_FILES=""
+          LICENSE_REGEX="Licensed to the Apache Software Foundation|Apache License|SPDX-License-Identifier"
           for file in $CHANGED_FILES; do
             if [[ ! -f "$file" ]]; then
               continue
             fi
 
-            if ! head -40 "$file" | grep -q -E "$DATAZIP_MODIFICATION_YEAR_REGEX" || ! head -40 "$file" | grep -q -E "$ASF_ORIGINAL_WORK_NOTICE_REGEX"; then
+            if ! head -40 "$file" | grep -q -E "$LICENSE_REGEX"; then
+              continue
+            fi
+
+            if ! head -40 "$file" | grep -q -E "$DATAZIP_MODIFICATION_YEAR_REGEX"; then
               NOT_MODIFIED_FILES+="$file"$'\n'
             fi
           done

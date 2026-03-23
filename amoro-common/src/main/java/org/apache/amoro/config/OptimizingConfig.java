@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.config;
@@ -69,6 +71,9 @@ public class OptimizingConfig {
 
   // self-optimizing.major.trigger.duplicate-ratio
   private double majorDuplicateRatio;
+
+  // self-optimizing.major.trigger.interval
+  private int majorTriggerInterval;
 
   // self-optimizing.full.trigger.interval
   private int fullTriggerInterval;
@@ -242,6 +247,15 @@ public class OptimizingConfig {
     return this;
   }
 
+  public int getMajorTriggerInterval() {
+    return majorTriggerInterval;
+  }
+
+  public OptimizingConfig setMajorTriggerInterval(int majorTriggerInterval) {
+    this.majorTriggerInterval = majorTriggerInterval;
+    return this;
+  }
+
   public int getFullTriggerInterval() {
     return fullTriggerInterval;
   }
@@ -341,6 +355,7 @@ public class OptimizingConfig {
         && minorLeastFileCount == that.minorLeastFileCount
         && minorLeastInterval == that.minorLeastInterval
         && Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0
+        && majorTriggerInterval == that.majorTriggerInterval
         && fullTriggerInterval == that.fullTriggerInterval
         && fullRewriteAllFiles == that.fullRewriteAllFiles
         && Objects.equal(filter, that.filter)
@@ -371,6 +386,7 @@ public class OptimizingConfig {
         minorLeastFileCount,
         minorLeastInterval,
         majorDuplicateRatio,
+        majorTriggerInterval,
         fullTriggerInterval,
         fullRewriteAllFiles,
         filter,
@@ -399,6 +415,7 @@ public class OptimizingConfig {
         .add("minorLeastFileCount", minorLeastFileCount)
         .add("minorLeastInterval", minorLeastInterval)
         .add("majorDuplicateRatio", majorDuplicateRatio)
+        .add("majorTriggerInterval", majorTriggerInterval)
         .add("fullTriggerInterval", fullTriggerInterval)
         .add("fullRewriteAllFiles", fullRewriteAllFiles)
         .add("filter", filter)

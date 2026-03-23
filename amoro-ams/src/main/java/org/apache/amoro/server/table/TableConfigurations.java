@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server.table;
@@ -297,6 +299,11 @@ public class TableConfigurations {
                 properties,
                 TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO,
                 TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT))
+        .setMajorTriggerInterval(
+            CompatiblePropertyUtil.propertyAsInt(
+                properties,
+                TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL,
+                TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL_DEFAULT))
         .setFullTriggerInterval(
             CompatiblePropertyUtil.propertyAsInt(
                 properties,

@@ -15,6 +15,8 @@
   ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
+  ~ 
+  ~ Modified by Datazip Inc. in 2026
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -352,6 +354,27 @@
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-format-mixed-spark-${spark.major.version}_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-spark-${spark.major.version}_${scala.binary.version}</artifactId>
+            <version>${iceberg.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-spark-extensions-${spark.major.version}_${scala.binary.version}</artifactId>
+            <version>${iceberg.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- TODO: check these dependency addition and verify the requirements-->
+        <dependency>
+            <groupId>org.apache.paimon</groupId>
+            <artifactId>paimon-spark-${spark.major.version}</artifactId>
+            <version>${paimon.version}</version>
             <scope>runtime</scope>
         </dependency>
 
