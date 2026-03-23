@@ -61,4 +61,9 @@ public class NoopHighAvailabilityContainer implements HighAvailabilityContainer 
   public boolean hasLeadership() {
     return false;
   }
+
+  @Override
+  public AmsServerInfo getTableServiceServerInfo() {
+    return null;
+  }
 }

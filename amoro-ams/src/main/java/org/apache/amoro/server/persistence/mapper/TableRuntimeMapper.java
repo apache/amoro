@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.persistence.mapper;
 
+import org.apache.amoro.server.persistence.BucketIdCount;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.TableRuntimeState;
 import org.apache.ibatis.annotations.Delete;
@@ -104,6 +105,29 @@ public interface TableRuntimeMapper {
 
   @Select(
       "<script>"
+          + "SELECT "
+          + SELECT_COLS
+          + "FROM "
+          + TABLE_NAME
+          + " WHERE bucket_id IN "
+          + "<foreach item='item' collection='bucketIds' open='(' separator=',' close=')'>"
+          + "#{item}"
+          + "</foreach>"
+          + "<if test='includeNullBucketId'> OR bucket_id IS NULL </if>"
+          + "</script>")
+  /**
+   * Select runtimes by bucket ids.
+   *
+   * @param includeNullBucketId false = only rows with bucket_id in list (master-slave); true = also
+   *     include bucket_id IS NULL (e.g. for non-master-slave compatibility)
+   */
+  @ResultMap("tableRuntimeMeta")
+  List<TableRuntimeMeta> selectRuntimesByBucketIds(
+      @Param("bucketIds") List<String> bucketIds,
+      @Param("includeNullBucketId") boolean includeNullBucketId);
+
+  @Select(
+      "<script>"
           + "<bind name=\"isMySQL\" value=\"_databaseId == 'mysql'\" />"
           + "<bind name=\"isPostgreSQL\" value=\"_databaseId == 'postgres'\" />"
           + "<bind name=\"isDerby\" value=\"_databaseId == 'derby'\" />"
@@ -180,4 +204,19 @@ public interface TableRuntimeMapper {
 
   @Delete("DELETE FROM " + STATE_TABLE_NAME + " WHERE table_id = #{tableId}")
   void removeAllTableStates(@Param("tableId") long tableId);
+
+  /**
+   * Count tables per bucketId. Returns a map where key is bucketId and value is the count of tables
+   * for that bucketId. Only counts non-null and non-empty bucketIds.
+   */
+  @Select(
+      "SELECT bucket_id, COUNT(*) as table_count FROM "
+          + TABLE_NAME
+          + " WHERE bucket_id IS NOT NULL AND bucket_id != '' "
+          + "GROUP BY bucket_id")
+  @Results({
+    @Result(column = "bucket_id", property = "bucketId"),
+    @Result(column = "table_count", property = "count")
+  })
+  List<BucketIdCount> countTablesByBucketId();
 }

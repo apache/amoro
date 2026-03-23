@@ -68,4 +68,11 @@ public interface HighAvailabilityContainer {
    * @return true if the current AMS node is the primary node, false otherwise
    */
   boolean hasLeadership();
+
+  /**
+   * Get current AMS node information.
+   *
+   * @return {@link AmsServerInfo}
+   */
+  AmsServerInfo getTableServiceServerInfo();
 }

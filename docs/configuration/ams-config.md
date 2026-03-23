@@ -48,6 +48,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | auto-create-tags.interval | 1 min | Interval for creating tags. |
 | auto-create-tags.thread-count | 3 | The number of threads used for creating tags. |
 | blocker.timeout | 1 min | Session timeout. Default unit is milliseconds if not specified. |
+| bucket-table-sync.interval | 1 min | Interval for syncing tables assigned to bucket IDs in master-slave mode. Each node periodically loads tables from database based on its assigned bucket IDs. |
 | catalog-meta-cache.expiration-interval | 1 min | TTL for catalog metadata. |
 | clean-dangling-delete-files.enabled | true | Enable dangling delete files cleaning. |
 | clean-dangling-delete-files.interval | 1 d | Interval for cleaning dangling delete files. |
