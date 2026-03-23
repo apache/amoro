@@ -821,8 +821,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
     meta.setStatusCode(OptimizingStatus.IDLE.getCode());
     meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
     meta.setTableSummary(new TableSummary());
-    meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
-    meta.setTableSummary(new TableSummary());
 
     // In master-slave mode, assign bucketId to the table if it's not assigned yet.
     // Only leader node should assign bucketIds; follower may still persist the table with null

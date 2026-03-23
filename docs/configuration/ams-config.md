@@ -48,7 +48,6 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | auto-create-tags.interval | 1 min | Interval for creating tags. |
 | auto-create-tags.thread-count | 3 | The number of threads used for creating tags. |
 | blocker.timeout | 1 min | Session timeout. Default unit is milliseconds if not specified. |
-| bucket-assign.interval | 1 min | Interval for bucket assignment service to detect node changes and redistribute bucket IDs. |
 | bucket-table-sync.interval | 1 min | Interval for syncing tables assigned to bucket IDs in master-slave mode. Each node periodically loads tables from database based on its assigned bucket IDs. |
 | catalog-meta-cache.expiration-interval | 1 min | TTL for catalog metadata. |
 | clean-dangling-delete-files.enabled | true | Enable dangling delete files cleaning. |
@@ -95,7 +94,6 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | http-server.proxy-client-ip-header | X-Real-IP | The HTTP header to record the real client IP address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use. |
 | http-server.rest-auth-type | token | The authentication used by REST APIs, token (default), basic or jwt. |
 | http-server.session-timeout | 7 d | Timeout for http session. |
-| node-offline.timeout | 5 min | Timeout duration to determine if a node is offline. After this duration, the node's bucket IDs will be reassigned. |
 | optimizer-group.max-keeping-attempts | 3 | The maximum number of consecutive attempts to keep the optimizer group at its current parallelism. |
 | optimizer-group.min-parallelism-check-interval | 5 min | The interval for checking and ensuring the optimizer group meets its minimum parallelism requirement. When the current parallelism falls below the configured min-parallelism, the system will attempt to scale out optimizers at this interval. The actual scale-out timing is calculated as: consecutive keeping attempts * this interval. |
 | optimizer.heart-beat-timeout | 1 min | Timeout duration for Optimizer heartbeat. |

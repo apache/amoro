@@ -62,20 +62,6 @@ public class AmoroManagementConf {
               "This setting controls whether to enable the AMS horizontal scaling feature, "
                   + "which is currently under development and testing.");
 
-  public static final ConfigOption<Duration> NODE_OFFLINE_TIMEOUT =
-      ConfigOptions.key("node-offline.timeout")
-          .durationType()
-          .defaultValue(Duration.ofMinutes(5))
-          .withDescription(
-              "Timeout duration to determine if a node is offline. After this duration, the node's bucket IDs will be reassigned.");
-
-  public static final ConfigOption<Duration> ASSIGN_INTERVAL =
-      ConfigOptions.key("bucket-assign.interval")
-          .durationType()
-          .defaultValue(Duration.ofSeconds(60))
-          .withDescription(
-              "Interval for bucket assignment service to detect node changes and redistribute bucket IDs.");
-
   public static final ConfigOption<Duration> BUCKET_TABLE_SYNC_INTERVAL =
       ConfigOptions.key("bucket-table-sync.interval")
           .durationType()
