@@ -54,7 +54,16 @@ public abstract class AbstractTableMetrics {
 
   public void register(MetricRegistry registry) {
     if (globalRegistry == null) {
-      registerMetrics(registry);
+      try {
+        registerMetrics(registry);
+      } catch (Throwable t) {
+        // Roll back any metrics that were partially registered to prevent orphaned metrics
+        // in the global MetricRegistry. Without this, unregister() would be a no-op because
+        // globalRegistry is still null, leaving metrics permanently leaked.
+        registeredMetricKeys.forEach(registry::unregister);
+        registeredMetricKeys.clear();
+        throw t;
+      }
       globalRegistry = registry;
     }
   }
