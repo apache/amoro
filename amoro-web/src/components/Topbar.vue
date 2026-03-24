@@ -41,7 +41,7 @@ const { t, locale } = useI18n()
 const router = useRouter()
 const store = useStore()
 function roleText() {
-  return store.userInfo.role === 'READ_ONLY' ? 'ReadOnly' : 'Admin'
+  return store.userInfo.roles?.includes('SERVICE_ADMIN') ? 'ServiceAdmin' : 'Viewer'
 }
 
 async function getVersion() {
@@ -68,6 +68,7 @@ async function handleLogout() {
       finally {
         store.updateUserInfo({
           userName: '',
+          roles: [],
         })
         goLoginPage()
       }

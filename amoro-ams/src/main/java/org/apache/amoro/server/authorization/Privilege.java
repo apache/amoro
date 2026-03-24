@@ -18,7 +18,14 @@
 
 package org.apache.amoro.server.authorization;
 
-public enum Role {
-  SERVICE_ADMIN,
-  VIEWER
+public enum Privilege {
+  VIEW_SYSTEM,
+  VIEW_CATALOG,
+  VIEW_TABLE,
+  VIEW_OPTIMIZER,
+  MANAGE_CATALOG,
+  MANAGE_TABLE,
+  MANAGE_OPTIMIZER,
+  EXECUTE_SQL,
+  MANAGE_PLATFORM
 }

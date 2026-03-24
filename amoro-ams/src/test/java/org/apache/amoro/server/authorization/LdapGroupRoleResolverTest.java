@@ -28,62 +28,72 @@ import org.junit.jupiter.api.Test;
 
 import javax.naming.NamingException;
 
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class LdapGroupRoleResolverTest {
 
   @Test
-  public void testResolveAdminFromUserDnMember() {
+  public void testResolveRoleFromUserDnMember() {
     LdapGroupRoleResolver resolver =
         new LdapGroupRoleResolver(
             baseConfig(),
             (groupDn, memberAttribute) ->
                 Collections.singleton("uid=alice,ou=people,dc=example,dc=com"));
 
-    assertEquals(Role.ADMIN, resolver.resolve("alice"));
+    assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
   }
 
   @Test
-  public void testResolveAdminFromUsernameMember() {
+  public void testResolveRoleFromUsernameMember() {
     LdapGroupRoleResolver resolver =
-        new LdapGroupRoleResolver(
-            baseConfig(), (groupDn, memberAttribute) -> Collections.singleton("alice"));
+        new LdapGroupRoleResolver(baseConfig(), (groupDn, memberAttribute) -> Set.of("alice"));
 
-    assertEquals(Role.ADMIN, resolver.resolve("alice"));
+    assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
   }
 
   @Test
-  public void testResolveAdminFromCnDnMember() {
-    // Cisco AD stores members as full CNs: "CN=xuba,OU=Employees,OU=Cisco Users,DC=cisco,DC=com"
-    LdapGroupRoleResolver resolver =
-        new LdapGroupRoleResolver(
-            baseConfig(),
-            (groupDn, memberAttribute) ->
-                Collections.singleton("CN=alice,OU=Employees,OU=Cisco Users,DC=cisco,DC=com"));
-
-    assertEquals(Role.ADMIN, resolver.resolve("alice"));
-  }
-
-  @Test
-  public void testResolveAdminFromMemberUidStyleValue() {
-    LdapGroupRoleResolver resolver =
-        new LdapGroupRoleResolver(
-            baseConfig(), (groupDn, memberAttribute) -> Collections.singleton("uid=alice"));
-
-    assertEquals(Role.ADMIN, resolver.resolve("alice"));
-  }
-
-  @Test
-  public void testResolveAdminIsCaseInsensitiveForDnMembers() {
+  public void testResolveRoleFromCnDnMember() {
     LdapGroupRoleResolver resolver =
         new LdapGroupRoleResolver(
             baseConfig(),
             (groupDn, memberAttribute) ->
-                Collections.singleton("UID=Alice,OU=People,DC=Example,DC=Com"));
+                Set.of("CN=alice,OU=Employees,OU=Cisco Users,DC=cisco,DC=com"));
 
-    assertEquals(Role.ADMIN, resolver.resolve("alice"));
+    assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
+  }
+
+  @Test
+  public void testResolveRoleFromMemberUidStyleValue() {
+    LdapGroupRoleResolver resolver =
+        new LdapGroupRoleResolver(baseConfig(), (groupDn, memberAttribute) -> Set.of("uid=alice"));
+
+    assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
+  }
+
+  @Test
+  public void testResolveRoleIsCaseInsensitiveForDnMembers() {
+    LdapGroupRoleResolver resolver =
+        new LdapGroupRoleResolver(
+            baseConfig(),
+            (groupDn, memberAttribute) -> Set.of("UID=Alice,OU=People,DC=Example,DC=Com"));
+
+    assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
+  }
+
+  @Test
+  public void testResolveViewerGroupRole() {
+    LdapGroupRoleResolver resolver =
+        new LdapGroupRoleResolver(
+            baseConfig(),
+            (groupDn, memberAttribute) ->
+                "cn=amoro-viewers,ou=groups,dc=example,dc=com".equals(groupDn)
+                    ? Set.of("bob")
+                    : Collections.emptySet());
+
+    assertEquals(Collections.singleton(Role.VIEWER), resolver.resolve("bob"));
   }
 
   @Test
@@ -103,52 +113,29 @@ public class LdapGroupRoleResolverTest {
   public void testRequireLdapGroupConfigWhenEnabled() {
     Configurations conf = new Configurations();
     conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, true);
-    conf.set(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE, Role.READ_ONLY);
     conf.set(AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_ENABLED, true);
     conf.set(AmoroManagementConf.HTTP_SERVER_LOGIN_AUTH_LDAP_URL, "ldap://ldap.example.com:389");
 
     assertThrows(IllegalArgumentException.class, () -> new LdapGroupRoleResolver(conf));
   }
 
-  @Test
-  public void testRoleResolverFallsBackToLdapGroupMembership() {
-    Configurations conf = baseConfig();
-    RoleResolver resolver =
-        new RoleResolver(
-            conf,
-            new LdapGroupRoleResolver(
-                conf,
-                (groupDn, memberAttribute) -> {
-                  Set<String> members = new HashSet<>();
-                  members.add("uid=alice,ou=people,dc=example,dc=com");
-                  return members;
-                }));
-
-    assertEquals(Role.ADMIN, resolver.resolve("alice"));
-    assertEquals(Role.READ_ONLY, resolver.resolve("charlie"));
-  }
-
-  @Test
-  public void testResolveNonAdminUserFallsBackToDefaultRole() {
-    LdapGroupRoleResolver resolver =
-        new LdapGroupRoleResolver(
-            baseConfig(), (groupDn, memberAttribute) -> Collections.singleton("bob"));
-
-    assertEquals(Role.READ_ONLY, resolver.resolve("alice"));
-  }
-
   private static Configurations baseConfig() {
     Configurations conf = new Configurations();
     conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, true);
-    conf.set(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE, Role.READ_ONLY);
     conf.set(AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_ENABLED, true);
     conf.set(AmoroManagementConf.HTTP_SERVER_LOGIN_AUTH_LDAP_URL, "ldap://ldap.example.com:389");
     conf.set(
-        AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_ADMIN_GROUP_DN,
-        "cn=amoro-admins,ou=groups,dc=example,dc=com");
-    conf.set(
         AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_USER_DN_PATTERN,
         "uid={0},ou=people,dc=example,dc=com");
+    conf.set(
+        AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_GROUPS,
+        Arrays.asList(
+            group("cn=amoro-service-admins,ou=groups,dc=example,dc=com", "SERVICE_ADMIN"),
+            group("cn=amoro-viewers,ou=groups,dc=example,dc=com", "VIEWER")));
     return conf;
+  }
+
+  private static Map<String, String> group(String groupDn, String role) {
+    return Map.of("group-dn", groupDn, "role", role);
   }
 }

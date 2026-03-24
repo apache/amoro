@@ -117,9 +117,11 @@ export default defineComponent({
           return
         }
         const result = res.result || {}
+        const roles = result.roles || (result.role ? [result.role] : [])
         store.updateUserInfo({
           userName: result.userName || formState.username,
-          role: result.role || 'ADMIN',
+          role: roles[0],
+          roles,
         })
         setTimeout(() => {
           window.location.href = '/'

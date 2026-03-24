@@ -72,6 +72,7 @@ conf/
 # dashboard static resources
 amoro-web/src/main/resources/static/
 amoro-web/node/
+amoro-ams/src/main/resources/authorization/
 
 # Hugo generated directories
 public

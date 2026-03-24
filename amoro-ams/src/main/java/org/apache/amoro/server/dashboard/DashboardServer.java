@@ -39,6 +39,9 @@ import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.AmoroServiceContainer;
 import org.apache.amoro.server.RestCatalogService;
 import org.apache.amoro.server.authentication.HttpAuthenticationFactory;
+import org.apache.amoro.server.authorization.AuthorizationRequest;
+import org.apache.amoro.server.authorization.CasbinAuthorizationManager;
+import org.apache.amoro.server.authorization.DashboardPrivilegeMapper;
 import org.apache.amoro.server.authorization.RoleResolver;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.controller.ApiTokenController;
@@ -69,7 +72,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Consumer;
 
 public class DashboardServer {
@@ -82,11 +84,6 @@ public class DashboardServer {
   private static final String X_REQUEST_SOURCE_WEB = "Web";
   private static final String LOGIN_REQUIRED_MESSAGE = "Please login first";
   private static final String NO_PERMISSION_MESSAGE = "No permission";
-  // Javalin 4.x Context#method returns an upper-case HTTP method string.
-  private static final Set<String> WRITE_METHODS = Set.of("POST", "PUT", "DELETE");
-  // URL white list is checked first; this set is only for authenticated write APIs that stay
-  // reachable for every logged-in role.
-  private static final Set<String> WRITE_WHITELIST = Set.of("/api/ams/v1/logout");
   private final CatalogController catalogController;
   private final HealthCheckController healthCheckController;
   private final LoginController loginController;
@@ -103,7 +100,8 @@ public class DashboardServer {
   private final PasswdAuthenticationProvider basicAuthProvider;
   private final TokenAuthenticationProvider jwtAuthProvider;
   private final String proxyClientIpHeader;
-  private final RoleResolver roleResolver;
+  private final CasbinAuthorizationManager authorizationManager;
+  private final DashboardPrivilegeMapper privilegeMapper;
 
   public DashboardServer(
       Configurations serviceConfig,
@@ -115,7 +113,7 @@ public class DashboardServer {
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController(ams);
-    this.roleResolver = new RoleResolver(serviceConfig);
+    RoleResolver roleResolver = new RoleResolver(serviceConfig);
     this.loginController = new LoginController(serviceConfig, roleResolver);
     this.optimizerGroupController = new OptimizerGroupController(tableManager, optimizerManager);
     this.optimizerController = new OptimizerController(optimizerManager);
@@ -131,6 +129,8 @@ public class DashboardServer {
     this.overviewController = new OverviewController(manager);
     APITokenManager apiTokenManager = new APITokenManager();
     this.apiTokenController = new ApiTokenController(apiTokenManager);
+    this.authorizationManager = new CasbinAuthorizationManager(serviceConfig);
+    this.privilegeMapper = new DashboardPrivilegeMapper();
 
     String authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
     this.basicAuthProvider =
@@ -423,15 +423,26 @@ public class DashboardServer {
       if (user == null) {
         throw new ForbiddenException(LOGIN_REQUIRED_MESSAGE);
       }
-      if (shouldCheckWritePermission(ctx)
-          && !isWriteWhitelisted(uriPath)
-          && !user.getRole().canWrite()) {
-        LOG.warn(
-            "Reject write request for read-only user {}, URI: {}, method: {}",
-            user.getUserName(),
-            uriPath,
-            ctx.method());
-        throw new ForbiddenException(NO_PERMISSION_MESSAGE);
+      if (authorizationManager.isAuthorizationEnabled()) {
+        AuthorizationRequest request =
+            privilegeMapper
+                .resolve(ctx)
+                .orElseThrow(
+                    () ->
+                        new ForbiddenException(
+                            "No authorization mapping for request: "
+                                + ctx.method()
+                                + " "
+                                + uriPath));
+        if (!authorizationManager.authorize(user.getRoles(), request)) {
+          LOG.warn(
+              "Reject unauthorized request for user {}, URI: {}, method: {}, roles: {}",
+              user.getUserName(),
+              uriPath,
+              ctx.method(),
+              user.getRoles());
+          throw new ForbiddenException(NO_PERMISSION_MESSAGE);
+        }
       }
       return;
     }
@@ -509,13 +520,5 @@ public class DashboardServer {
       }
     }
     return false;
-  }
-
-  private boolean shouldCheckWritePermission(Context ctx) {
-    return roleResolver.isAuthorizationEnabled() && WRITE_METHODS.contains(ctx.method());
-  }
-
-  private static boolean isWriteWhitelisted(String uriPath) {
-    return WRITE_WHITELIST.contains(uriPath);
   }
 }

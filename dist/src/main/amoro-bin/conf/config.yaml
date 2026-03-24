@@ -42,25 +42,28 @@ ams:
     # login-auth-ldap-user-pattern: "uid={0},ou=people,dc=example,dc=com"
     #
     # ── Authorization (RBAC) ──
-    # admin-users whitelist example:
+    # Default viewer fallback example:
     # authorization:
     #   enabled: true
-    #   default-role: READ_ONLY
-    #   admin-users:
-    #     - alice
-    #     - bob
+    #   # VIEWER can browse catalogs/tables/optimizers only.
+    #   # It does not include Overview or Terminal access.
+    #   default-role: VIEWER
     #
     # LDAP Group role-mapping example:
     # authorization:
     #   enabled: true
-    #   default-role: READ_ONLY
+    #   default-role: VIEWER
     #   ldap-role-mapping:
     #     enabled: true
-    #     admin-group-dn: "cn=amoro-admins,ou=groups,dc=example,dc=com"
     #     group-member-attribute: "member"
     #     user-dn-pattern: "uid={0},ou=people,dc=example,dc=com"
     #     bind-dn: "cn=service-account,dc=example,dc=com"
     #     bind-password: "service-password"
+    #     groups:
+    #       - group-dn: "cn=amoro-service-admins,ou=groups,dc=example,dc=com"
+    #         role: SERVICE_ADMIN
+    #       - group-dn: "cn=amoro-viewers,ou=groups,dc=example,dc=com"
+    #         role: VIEWER
 
   refresh-external-catalogs:
     interval: 3min # 180000

@@ -22,7 +22,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import useStore from '@/store/index'
 import { getQueryString } from '@/utils'
-import { canWrite } from '@/utils/permission'
+import { canViewSystem, canWrite } from '@/utils/permission'
 
 interface MenuItem {
   key: string
@@ -45,6 +45,7 @@ export default defineComponent({
     const hasToken = computed(() => {
       return !!(getQueryString('token') || '')
     })
+    const canAccessSystem = computed(() => canViewSystem())
     const writable = computed(() => canWrite())
     const menuList = computed(() => {
       const menu: MenuItem[] = [
@@ -87,7 +88,15 @@ export default defineComponent({
         },
       ]
       const source = hasToken.value ? menu : allMenu
-      return source.filter(item => writable.value || item.key !== 'settings')
+      return source.filter((item) => {
+        if (!writable.value && item.key === 'settings') {
+          return false
+        }
+        if (!canAccessSystem.value && (item.key === 'overview' || item.key === 'terminal')) {
+          return false
+        }
+        return true
+      })
     })
 
     const setCurMenu = () => {
@@ -160,13 +169,14 @@ export default defineComponent({
 
     const viewOverview = () => {
       router.push({
-        path: '/overview',
+        path: canAccessSystem.value ? '/overview' : '/tables',
       })
     }
 
     return {
       ...toRefs(state),
       hasToken,
+      canAccessSystem,
       writable,
       menuList,
       toggleCollapsed,

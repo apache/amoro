@@ -18,7 +18,32 @@
 
 package org.apache.amoro.server.authorization;
 
-public enum Role {
-  SERVICE_ADMIN,
-  VIEWER
+public class AuthorizationRequest {
+  public static final String GLOBAL_RESOURCE_ID = "GLOBAL";
+
+  private final ResourceType resourceType;
+  private final String resourceId;
+  private final Privilege privilege;
+
+  private AuthorizationRequest(ResourceType resourceType, String resourceId, Privilege privilege) {
+    this.resourceType = resourceType;
+    this.resourceId = resourceId;
+    this.privilege = privilege;
+  }
+
+  public static AuthorizationRequest of(ResourceType resourceType, Privilege privilege) {
+    return new AuthorizationRequest(resourceType, GLOBAL_RESOURCE_ID, privilege);
+  }
+
+  public ResourceType getResourceType() {
+    return resourceType;
+  }
+
+  public String getResourceId() {
+    return resourceId;
+  }
+
+  public Privilege getPrivilege() {
+    return privilege;
+  }
 }

@@ -26,7 +26,8 @@ export default [
       "result": {
         "userName": "admin",
         "loginTime": "1703839452053",
-        "role": "ADMIN"
+        "role": "SERVICE_ADMIN",
+        "roles": ["SERVICE_ADMIN"]
       }
     }),
   },
@@ -39,7 +40,8 @@ export default [
       result: {
         userName: 'admin',
         loginTime: '1703839452053',
-        role: 'ADMIN'
+        role: 'SERVICE_ADMIN',
+        roles: ['SERVICE_ADMIN']
       }
     }),
   },

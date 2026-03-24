@@ -64,36 +64,15 @@ public class AmoroManagementConf {
   public static final ConfigOption<Role> AUTHORIZATION_DEFAULT_ROLE =
       ConfigOptions.key("http-server.authorization.default-role")
           .enumType(Role.class)
-          .defaultValue(Role.READ_ONLY)
-          .withDescription(
-              "Default role for authenticated users without an explicit role mapping.");
-
-  public static final ConfigOption<List<String>> AUTHORIZATION_ADMIN_USERS =
-      ConfigOptions.key("http-server.authorization.admin-users")
-          .stringType()
-          .asList()
-          .defaultValues()
-          .withDescription("Additional usernames that should always be treated as admin users.");
-
-  public static final ConfigOption<List<Map<String, String>>> AUTHORIZATION_USERS =
-      ConfigOptions.key("http-server.authorization.users")
-          .mapType()
-          .asList()
           .noDefaultValue()
-          .withDescription("Local dashboard users with username/password/role entries.");
+          .withDescription(
+              "Optional default dashboard role for authenticated users without an LDAP role mapping.");
 
   public static final ConfigOption<Boolean> AUTHORIZATION_LDAP_ROLE_MAPPING_ENABLED =
       ConfigOptions.key("http-server.authorization.ldap-role-mapping.enabled")
           .booleanType()
           .defaultValue(false)
           .withDescription("Whether to resolve dashboard roles from LDAP group membership.");
-
-  public static final ConfigOption<String> AUTHORIZATION_LDAP_ROLE_MAPPING_ADMIN_GROUP_DN =
-      ConfigOptions.key("http-server.authorization.ldap-role-mapping.admin-group-dn")
-          .stringType()
-          .noDefaultValue()
-          .withDescription(
-              "Full DN of the LDAP admin group, e.g. CN=amoro-admins,OU=Groups,DC=example,DC=com.");
 
   public static final ConfigOption<String> AUTHORIZATION_LDAP_ROLE_MAPPING_GROUP_MEMBER_ATTRIBUTE =
       ConfigOptions.key("http-server.authorization.ldap-role-mapping.group-member-attribute")
@@ -107,6 +86,15 @@ public class AmoroManagementConf {
           .noDefaultValue()
           .withDescription(
               "LDAP user DN pattern used to match group members. Use {0} as the username placeholder.");
+
+  public static final ConfigOption<List<Map<String, String>>>
+      AUTHORIZATION_LDAP_ROLE_MAPPING_GROUPS =
+          ConfigOptions.key("http-server.authorization.ldap-role-mapping.groups")
+              .mapType()
+              .asList()
+              .noDefaultValue()
+              .withDescription(
+                  "LDAP group-to-role mapping entries containing group-dn and role fields.");
 
   public static final ConfigOption<String> AUTHORIZATION_LDAP_ROLE_MAPPING_BIND_DN =
       ConfigOptions.key("http-server.authorization.ldap-role-mapping.bind-dn")

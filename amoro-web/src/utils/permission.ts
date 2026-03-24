@@ -18,17 +18,25 @@
 
 import useStore from '@/store'
 
-export type UserRole = 'ADMIN' | 'READ_ONLY'
+export type UserRole = 'SERVICE_ADMIN' | 'VIEWER'
 
-export function getRole(): UserRole {
+export function getRoles(): UserRole[] {
   const store = useStore()
-  return (store.userInfo.role || 'ADMIN') as UserRole
+  const roles = store.userInfo.roles || []
+  if (roles.length) {
+    return roles as UserRole[]
+  }
+  return store.userInfo.role ? [store.userInfo.role as UserRole] : []
 }
 
-export function isAdmin(): boolean {
-  return getRole() === 'ADMIN'
+export function isServiceAdmin(): boolean {
+  return getRoles().includes('SERVICE_ADMIN')
+}
+
+export function canViewSystem(): boolean {
+  return isServiceAdmin()
 }
 
 export function canWrite(): boolean {
-  return isAdmin()
+  return isServiceAdmin()
 }

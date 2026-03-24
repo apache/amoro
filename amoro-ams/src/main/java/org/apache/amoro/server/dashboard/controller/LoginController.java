@@ -33,7 +33,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.security.Principal;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 /** The controller that handles login requests. */
 public class LoginController {
@@ -77,9 +80,9 @@ public class LoginController {
 
     // Step 2: Resolve user role (LDAP group lookup)
     String authenticatedUser = principal.getName();
-    Role role;
+    Set<Role> roles;
     try {
-      role = roleResolver.resolve(authenticatedUser);
+      roles = roleResolver.resolve(authenticatedUser);
     } catch (Exception e) {
       LOG.error(
           "Role resolution failed for user {}. "
@@ -91,7 +94,7 @@ public class LoginController {
     }
 
     SessionInfo sessionInfo =
-        new SessionInfo(authenticatedUser, System.currentTimeMillis() + "", role);
+        new SessionInfo(authenticatedUser, System.currentTimeMillis() + "", roles);
     ctx.sessionAttribute("user", sessionInfo);
     ctx.json(OkResponse.of(sessionInfo));
   }
@@ -106,12 +109,12 @@ public class LoginController {
   public static class SessionInfo implements Serializable {
     String userName;
     String loginTime;
-    Role role;
+    Set<Role> roles;
 
-    public SessionInfo(String username, String loginTime, Role role) {
+    public SessionInfo(String username, String loginTime, Set<Role> roles) {
       this.userName = username;
       this.loginTime = loginTime;
-      this.role = role;
+      this.roles = Collections.unmodifiableSet(new LinkedHashSet<>(roles));
     }
 
     public String getUserName() {
@@ -122,8 +125,15 @@ public class LoginController {
       return loginTime;
     }
 
+    public Set<Role> getRoles() {
+      return roles;
+    }
+
     public Role getRole() {
-      return role;
+      if (roles.contains(Role.SERVICE_ADMIN)) {
+        return Role.SERVICE_ADMIN;
+      }
+      return roles.stream().findFirst().orElse(null);
     }
   }
 }

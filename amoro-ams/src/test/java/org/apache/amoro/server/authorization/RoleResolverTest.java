@@ -19,7 +19,7 @@
 package org.apache.amoro.server.authorization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
@@ -27,162 +27,85 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class RoleResolverTest {
 
   @Test
-  public void testDisabledAuthorizationDefaultsToAdmin() {
+  public void testDisabledAuthorizationDefaultsToServiceAdmin() {
     Configurations conf = new Configurations();
+
     RoleResolver resolver = new RoleResolver(conf);
-    assertEquals(Role.ADMIN, resolver.resolve("viewer"));
+
+    assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("viewer"));
   }
 
   @Test
-  public void testResolveConfiguredUserAndFallbackRoles() {
+  public void testResolveBootstrapAdminAndDefaultViewerRole() {
     Configurations conf = new Configurations();
     conf.set(AmoroManagementConf.ADMIN_USERNAME, "admin");
     conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, true);
-    conf.set(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE, Role.READ_ONLY);
-    conf.set(AmoroManagementConf.AUTHORIZATION_ADMIN_USERS, Arrays.asList("ldap_admin", " "));
-    conf.set(
-        AmoroManagementConf.AUTHORIZATION_USERS,
-        Arrays.asList(
-            localUser("operator", "secret", "ADMIN"), localUser("viewer", "v", "READ_ONLY")));
+    conf.set(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE, Role.VIEWER);
 
     RoleResolver resolver = new RoleResolver(conf);
 
-    assertEquals(Role.ADMIN, resolver.resolve("operator"));
-    assertEquals(Role.READ_ONLY, resolver.resolve("viewer"));
-    assertEquals(Role.ADMIN, resolver.resolve("ldap_admin"));
-    assertEquals(Role.ADMIN, resolver.resolve("admin"));
-    assertEquals(Role.READ_ONLY, resolver.resolve("ldap_viewer"));
-    assertEquals(Role.READ_ONLY, resolver.resolve(" "));
+    assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("admin"));
+    assertEquals(Collections.singleton(Role.VIEWER), resolver.resolve("alice"));
   }
 
   @Test
-  public void testResolveLdapUserFromAdminWhitelist() {
-    Configurations conf = new Configurations();
-    conf.set(AmoroManagementConf.ADMIN_USERNAME, "local_admin");
-    conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, true);
-    conf.set(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE, Role.READ_ONLY);
-    conf.set(AmoroManagementConf.AUTHORIZATION_ADMIN_USERS, Arrays.asList("alice", "bob"));
-
-    RoleResolver resolver = new RoleResolver(conf);
-
-    assertEquals(Role.ADMIN, resolver.resolve("alice"));
-    assertEquals(Role.READ_ONLY, resolver.resolve("charlie"));
-  }
-
-  @Test
-  public void testLocalUserRoleTakesPriorityOverLdapGroupRoleMapping() {
-    Configurations conf = new Configurations();
-    conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, true);
-    conf.set(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE, Role.READ_ONLY);
-    conf.set(AmoroManagementConf.HTTP_SERVER_LOGIN_AUTH_LDAP_URL, "ldap://ldap.example.com:389");
-    conf.set(AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_ENABLED, true);
-    conf.set(
-        AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_ADMIN_GROUP_DN,
-        "cn=amoro-admins,ou=groups,dc=example,dc=com");
-    conf.set(
-        AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_USER_DN_PATTERN,
-        "uid={0},ou=people,dc=example,dc=com");
-    conf.set(
-        AmoroManagementConf.AUTHORIZATION_USERS,
-        Arrays.asList(localUser("alice", "viewer123", "READ_ONLY")));
-
+  public void testResolveLdapGroupRoles() {
+    Configurations conf = baseConfig();
     RoleResolver resolver =
         new RoleResolver(
             conf,
             new LdapGroupRoleResolver(
                 conf,
                 (groupDn, memberAttribute) ->
-                    Collections.singleton("uid=alice,ou=people,dc=example,dc=com")));
+                    "cn=amoro-service-admins,ou=groups,dc=example,dc=com".equals(groupDn)
+                        ? Collections.singleton("uid=alice,ou=people,dc=example,dc=com")
+                        : Collections.emptySet()));
 
-    assertEquals(Role.READ_ONLY, resolver.resolve("alice"));
+    assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
+    assertEquals(Collections.singleton(Role.VIEWER), resolver.resolve("bob"));
   }
 
   @Test
-  public void testDisabledAuthorizationIgnoresEnabledLdapRoleMapping() {
+  public void testDefaultRoleOnlyAppliesWhenNoExplicitRoleMatched() {
+    Configurations conf = baseConfig();
+    conf.set(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE, Role.VIEWER);
+    RoleResolver resolver =
+        new RoleResolver(
+            conf,
+            new LdapGroupRoleResolver(
+                conf,
+                (groupDn, memberAttribute) ->
+                    Collections.singleton("uid=admin,ou=people,dc=example,dc=com")));
+
+    Set<Role> adminRoles = resolver.resolve("admin");
+    assertEquals(1, adminRoles.size());
+    assertTrue(adminRoles.contains(Role.SERVICE_ADMIN));
+  }
+
+  private static Configurations baseConfig() {
     Configurations conf = new Configurations();
-    conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, false);
-    conf.set(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE, Role.READ_ONLY);
+    conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, true);
+    conf.set(AmoroManagementConf.HTTP_SERVER_LOGIN_AUTH_LDAP_URL, "ldap://ldap.example.com:389");
     conf.set(AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_ENABLED, true);
-
-    RoleResolver resolver = new RoleResolver(conf);
-
-    assertEquals(Role.ADMIN, resolver.resolve("alice"));
-  }
-
-  @Test
-  public void testInvalidConfiguredRoleFailsWithHelpfulMessage() {
-    Configurations conf = new Configurations();
-    conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, true);
     conf.set(
-        AmoroManagementConf.AUTHORIZATION_USERS,
-        Arrays.asList(localUser("viewer", "viewer123", "writer")));
-
-    IllegalArgumentException exception =
-        assertThrows(IllegalArgumentException.class, () -> new RoleResolver(conf));
-
-    assertEquals(
-        "Invalid role 'writer' configured for authorization user 'viewer'", exception.getMessage());
-  }
-
-  @Test
-  public void testDuplicateConfiguredUsersKeepLastDefinition() {
-    Configurations conf = new Configurations();
-    conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, true);
+        AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_USER_DN_PATTERN,
+        "uid={0},ou=people,dc=example,dc=com");
     conf.set(
-        AmoroManagementConf.AUTHORIZATION_USERS,
+        AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_GROUPS,
         Arrays.asList(
-            localUser("viewer", "viewer123", "READ_ONLY"),
-            localUser("viewer", "viewer123", "ADMIN")));
-
-    RoleResolver resolver = new RoleResolver(conf);
-
-    assertEquals(Role.ADMIN, resolver.resolve("viewer"));
+            group("cn=amoro-service-admins,ou=groups,dc=example,dc=com", "SERVICE_ADMIN"),
+            group("cn=amoro-viewers,ou=groups,dc=example,dc=com", "VIEWER")));
+    conf.set(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE, Role.VIEWER);
+    return conf;
   }
 
-  @Test
-  public void testEnabledAuthorizationWithoutExplicitUsersFallsBackToDefaultRole() {
-    Configurations conf = new Configurations();
-    conf.set(AmoroManagementConf.ADMIN_USERNAME, "admin");
-    conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, true);
-    conf.set(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE, Role.READ_ONLY);
-
-    RoleResolver resolver = new RoleResolver(conf);
-
-    assertEquals(Role.READ_ONLY, resolver.resolve("viewer"));
-  }
-
-  @Test
-  public void testInvalidUserEntriesAreIgnored() {
-    Configurations conf = new Configurations();
-    conf.set(AmoroManagementConf.AUTHORIZATION_ENABLED, true);
-    conf.set(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE, Role.READ_ONLY);
-    conf.set(
-        AmoroManagementConf.AUTHORIZATION_USERS,
-        Arrays.asList(invalidUserWithMissingUsername("viewer123", "ADMIN")));
-
-    RoleResolver resolver = new RoleResolver(conf);
-
-    assertEquals(Role.READ_ONLY, resolver.resolve("viewer"));
-  }
-
-  private static Map<String, String> localUser(String username, String password, String role) {
-    Map<String, String> user = new HashMap<>();
-    user.put("username", username);
-    user.put("password", password);
-    user.put("role", role);
-    return user;
-  }
-
-  private static Map<String, String> invalidUserWithMissingUsername(String password, String role) {
-    Map<String, String> user = new HashMap<>();
-    user.put("password", password);
-    user.put("role", role);
-    return user;
+  private static Map<String, String> group(String groupDn, String role) {
+    return Map.of("group-dn", groupDn, "role", role);
   }
 }
