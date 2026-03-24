@@ -83,7 +83,7 @@ public class RoleResolverTest {
                 (groupDn, memberAttribute) ->
                     Collections.singleton("uid=admin,ou=people,dc=example,dc=com")));
 
-    Set<Role> adminRoles = resolver.resolve("admin");
+    Set<String> adminRoles = resolver.resolve("admin");
     assertEquals(1, adminRoles.size());
     assertTrue(adminRoles.contains(Role.SERVICE_ADMIN));
   }

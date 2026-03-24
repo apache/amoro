@@ -24,7 +24,7 @@ import type { IIOptimizeGroupItem, IOptimizeResourceTableItem } from '@/types/co
 import { getOptimizerResourceList, getResourceGroupsListAPI, groupDeleteAPI, groupDeleteCheckAPI, releaseResource } from '@/services/optimize.service'
 import { usePagination } from '@/hooks/usePagination'
 import { dateFormat, mbToSize } from '@/utils'
-import { canWrite } from '@/utils/permission'
+import { canManageOptimizer } from '@/utils/permission'
 
 const props = defineProps<{ curGroupName?: string, type: string }>()
 
@@ -48,7 +48,7 @@ const STATUS_CONFIG = shallowReactive({
 
 const loading = ref<boolean>(false)
 const releaseLoading = ref<boolean>(false)
-const writable = canWrite()
+const writable = canManageOptimizer()
 const tableColumns = shallowReactive([
   { dataIndex: 'name', title: t('name'), ellipsis: true },
   { dataIndex: 'container', title: t('container'), width: '23%', ellipsis: true },

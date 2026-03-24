@@ -51,7 +51,7 @@ class LdapGroupRoleResolver {
   private final boolean enabled;
   private final String memberAttribute;
   private final MessageFormat userDnFormatter;
-  private final Map<String, Role> groupRoleMappings;
+  private final Map<String, String> groupRoleMappings;
   private final GroupMemberLoader groupMemberLoader;
 
   static LdapGroupRoleResolver disabled() {
@@ -98,14 +98,14 @@ class LdapGroupRoleResolver {
     this.groupRoleMappings = loadGroupRoleMappings(conf);
   }
 
-  Set<Role> resolve(String username) {
+  Set<String> resolve(String username) {
     if (!enabled) {
       return Collections.emptySet();
     }
 
     String userDn = userDnFormatter.format(new String[] {username});
-    Set<Role> resolvedRoles = new HashSet<>();
-    for (Map.Entry<String, Role> entry : groupRoleMappings.entrySet()) {
+    Set<String> resolvedRoles = new HashSet<>();
+    for (Map.Entry<String, String> entry : groupRoleMappings.entrySet()) {
       String groupDn = entry.getKey();
       try {
         Set<String> members = groupMemberLoader.loadMembers(groupDn, memberAttribute);
@@ -121,7 +121,7 @@ class LdapGroupRoleResolver {
     return resolvedRoles;
   }
 
-  private static Map<String, Role> loadGroupRoleMappings(Configurations conf) {
+  private static Map<String, String> loadGroupRoleMappings(Configurations conf) {
     List<Map<String, String>> groups =
         conf.getOptional(AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_GROUPS)
             .orElse(Collections.emptyList());
@@ -131,7 +131,7 @@ class LdapGroupRoleResolver {
             Collectors.toMap(
                 group -> String.valueOf(group.get("group-dn")).trim(),
                 group ->
-                    parseRole(
+                    parseRoleName(
                         String.valueOf(group.get("group-dn")), String.valueOf(group.get("role"))),
                 (existing, replacement) -> replacement,
                 LinkedHashMap::new));
@@ -146,15 +146,13 @@ class LdapGroupRoleResolver {
     return true;
   }
 
-  private static Role parseRole(String groupDn, String roleValue) {
-    try {
-      return Role.valueOf(roleValue.trim().toUpperCase());
-    } catch (IllegalArgumentException e) {
+  private static String parseRoleName(String groupDn, String roleValue) {
+    String normalizedRole = roleValue == null ? "" : roleValue.trim();
+    if (normalizedRole.isEmpty()) {
       throw new IllegalArgumentException(
-          String.format(
-              "Invalid role '%s' configured for LDAP group mapping '%s'", roleValue, groupDn),
-          e);
+          String.format("Invalid empty role configured for LDAP group mapping '%s'", groupDn));
     }
+    return normalizedRole;
   }
 
   private static boolean matchesMember(String username, String userDn, String member) {

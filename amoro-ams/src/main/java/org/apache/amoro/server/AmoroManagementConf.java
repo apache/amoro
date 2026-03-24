@@ -61,10 +61,10 @@ public class AmoroManagementConf {
           .defaultValue(false)
           .withDescription("Whether to enable dashboard RBAC authorization.");
 
-  public static final ConfigOption<Role> AUTHORIZATION_DEFAULT_ROLE =
+  public static final ConfigOption<String> AUTHORIZATION_DEFAULT_ROLE =
       ConfigOptions.key("http-server.authorization.default-role")
-          .enumType(Role.class)
-          .noDefaultValue()
+          .stringType()
+          .defaultValue(Role.VIEWER)
           .withDescription(
               "Optional default dashboard role for authenticated users without an LDAP role mapping.");
 

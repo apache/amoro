@@ -35,6 +35,11 @@ public class AuthorizationRequest {
     return new AuthorizationRequest(resourceType, GLOBAL_RESOURCE_ID, privilege);
   }
 
+  public static AuthorizationRequest of(
+      ResourceType resourceType, String resourceId, Privilege privilege) {
+    return new AuthorizationRequest(resourceType, resourceId, privilege);
+  }
+
   public ResourceType getResourceType() {
     return resourceType;
   }

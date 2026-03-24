@@ -35,7 +35,7 @@ import type { IIOptimizeGroupItem, ILableAndValue } from '@/types/common.type'
 import GroupModal from '@/views/resource/components/GroupModal.vue'
 import CreateOptimizerModal from '@/views/resource/components/CreateOptimizerModal.vue'
 import { usePageScroll } from '@/hooks/usePageScroll'
-import { canWrite } from '@/utils/permission'
+import { canManageOptimizer } from '@/utils/permission'
 
 export default defineComponent({
   name: 'Resource',
@@ -50,7 +50,7 @@ export default defineComponent({
     const router = useRouter()
     const route = useRoute()
     const { pageScrollRef } = usePageScroll()
-    const writable = canWrite()
+    const writable = canManageOptimizer()
     const tabConfig: ILableAndValue[] = shallowReactive([
       { label: t('optimizerGroups'), value: 'optimizerGroups' },
       { label: t('optimizers'), value: 'optimizers' },

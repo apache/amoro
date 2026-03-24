@@ -25,14 +25,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Optional;
 import java.util.Set;
 
 public class RoleResolver {
   private static final Logger LOG = LoggerFactory.getLogger(RoleResolver.class);
 
   private final boolean authorizationEnabled;
-  private final Optional<Role> defaultRole;
+  private final String defaultRole;
   private final String adminUsername;
   private final LdapGroupRoleResolver ldapGroupRoleResolver;
 
@@ -42,7 +41,12 @@ public class RoleResolver {
 
   RoleResolver(Configurations serviceConfig, LdapGroupRoleResolver ldapGroupRoleResolver) {
     this.authorizationEnabled = serviceConfig.get(AmoroManagementConf.AUTHORIZATION_ENABLED);
-    this.defaultRole = serviceConfig.getOptional(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE);
+    this.defaultRole =
+        serviceConfig
+            .getOptional(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE)
+            .map(String::trim)
+            .filter(role -> !role.isEmpty())
+            .orElse(Role.VIEWER);
     this.adminUsername = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
     this.ldapGroupRoleResolver = ldapGroupRoleResolver;
   }
@@ -64,19 +68,20 @@ public class RoleResolver {
     return authorizationEnabled;
   }
 
-  public Set<Role> resolve(String username) {
+  public Set<String> resolve(String username) {
     if (!authorizationEnabled) {
       return Collections.singleton(Role.SERVICE_ADMIN);
     }
 
-    LinkedHashSet<Role> roles = new LinkedHashSet<>();
+    Set<String> roles = new LinkedHashSet<>();
     if (adminUsername.equals(username)) {
       roles.add(Role.SERVICE_ADMIN);
     }
     roles.addAll(ldapGroupRoleResolver.resolve(username));
     if (roles.isEmpty()) {
-      defaultRole.ifPresent(roles::add);
+      roles.add(defaultRole);
     }
+
     return Collections.unmodifiableSet(roles);
   }
 }

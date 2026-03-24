@@ -18,25 +18,89 @@
 
 import useStore from '@/store'
 
-export type UserRole = 'SERVICE_ADMIN' | 'VIEWER'
+export type UserPrivilege =
+  | 'VIEW_SYSTEM'
+  | 'VIEW_CATALOG'
+  | 'VIEW_TABLE'
+  | 'VIEW_OPTIMIZER'
+  | 'MANAGE_CATALOG'
+  | 'MANAGE_TABLE'
+  | 'MANAGE_OPTIMIZER'
+  | 'EXECUTE_SQL'
+  | 'MANAGE_PLATFORM'
 
-export function getRoles(): UserRole[] {
+export function getRoles(): string[] {
   const store = useStore()
   const roles = store.userInfo.roles || []
   if (roles.length) {
-    return roles as UserRole[]
+    return roles
   }
-  return store.userInfo.role ? [store.userInfo.role as UserRole] : []
+  return store.userInfo.role ? [store.userInfo.role] : []
 }
 
-export function isServiceAdmin(): boolean {
-  return getRoles().includes('SERVICE_ADMIN')
+export function getPrivileges(): UserPrivilege[] {
+  const store = useStore()
+  return (store.userInfo.privileges || []) as UserPrivilege[]
+}
+
+export function hasPrivilege(privilege: UserPrivilege): boolean {
+  return getPrivileges().includes(privilege)
 }
 
 export function canViewSystem(): boolean {
-  return isServiceAdmin()
+  return hasPrivilege('VIEW_SYSTEM')
 }
 
-export function canWrite(): boolean {
-  return isServiceAdmin()
+export function canViewCatalog(): boolean {
+  return hasPrivilege('VIEW_CATALOG')
+}
+
+export function canManageCatalog(): boolean {
+  return hasPrivilege('MANAGE_CATALOG')
+}
+
+export function canViewTable(): boolean {
+  return hasPrivilege('VIEW_TABLE')
+}
+
+export function canManageTable(): boolean {
+  return hasPrivilege('MANAGE_TABLE')
+}
+
+export function canViewOptimizer(): boolean {
+  return hasPrivilege('VIEW_OPTIMIZER')
+}
+
+export function canManageOptimizer(): boolean {
+  return hasPrivilege('MANAGE_OPTIMIZER')
+}
+
+export function canExecuteSql(): boolean {
+  return hasPrivilege('EXECUTE_SQL')
+}
+
+export function canManagePlatform(): boolean {
+  return hasPrivilege('MANAGE_PLATFORM')
+}
+
+export function getDefaultRoute(): string {
+  if (canViewTable()) {
+    return '/tables'
+  }
+  if (canViewCatalog()) {
+    return '/catalogs'
+  }
+  if (canViewOptimizer()) {
+    return '/optimizing'
+  }
+  if (canViewSystem()) {
+    return '/overview'
+  }
+  if (canExecuteSql()) {
+    return '/terminal'
+  }
+  if (canManagePlatform()) {
+    return '/settings'
+  }
+  return '/login'
 }

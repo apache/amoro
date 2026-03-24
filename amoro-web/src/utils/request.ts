@@ -165,6 +165,7 @@ const request: any = function (options: CustomAxiosRequestConfig) {
           store.updateUserInfo({
             userName: '',
             roles: [],
+            privileges: [],
           })
           const currentPath = router.currentRoute.value.path
           if (requestConfig.handleError && currentPath !== '/login' && !loginTipShown) {

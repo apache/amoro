@@ -24,6 +24,7 @@ function state(): GlobalState {
     userInfo: {
       userName: '',
       roles: [],
+      privileges: [],
     // token: ''
     } as UserInfo,
     isShowTablesMenu: false,

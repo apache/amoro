@@ -42,17 +42,13 @@ ams:
     # login-auth-ldap-user-pattern: "uid={0},ou=people,dc=example,dc=com"
     #
     # ── Authorization (RBAC) ──
-    # Default viewer fallback example:
+    # Authorization enablement example:
     # authorization:
     #   enabled: true
-    #   # VIEWER can browse catalogs/tables/optimizers only.
-    #   # It does not include Overview or Terminal access.
-    #   default-role: VIEWER
     #
     # LDAP Group role-mapping example:
     # authorization:
     #   enabled: true
-    #   default-role: VIEWER
     #   ldap-role-mapping:
     #     enabled: true
     #     group-member-attribute: "member"
@@ -64,6 +60,16 @@ ams:
     #         role: SERVICE_ADMIN
     #       - group-dn: "cn=amoro-viewers,ou=groups,dc=example,dc=com"
     #         role: VIEWER
+    #       - group-dn: "cn=amoro-catalog-admins,ou=groups,dc=example,dc=com"
+    #         role: CATALOG_ADMIN
+    #
+    # Custom roles are string-based. To use a custom role such as CATALOG_ADMIN,
+    # define its privileges in the built-in Casbin policy resource and map an
+    # LDAP group to that role name here.
+    #
+    # Optional fallback:
+    #   set default-role: VIEWER only when you intentionally want authenticated
+    #   users without a matched role mapping to receive read-only access.
 
   refresh-external-catalogs:
     interval: 3min # 180000

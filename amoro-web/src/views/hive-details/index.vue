@@ -25,7 +25,7 @@ import errorMsg from './components/ErrorMsg.vue'
 import type { DetailColumnItem } from '@/types/common.type'
 import { upgradeStatusMap } from '@/types/common.type'
 import { getHiveTableDetail, getUpgradeStatus } from '@/services/table.service'
-import { canWrite } from '@/utils/permission'
+import { canManageTable } from '@/utils/permission'
 
 export default defineComponent({
   name: 'Tables',
@@ -43,7 +43,7 @@ export default defineComponent({
     const isSecondaryNav = computed(() => {
       return !!(route.path.includes('upgrade'))
     })
-    const writable = computed(() => canWrite())
+    const writable = computed(() => canManageTable())
 
     const state = reactive({
       loading: false,

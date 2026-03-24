@@ -33,7 +33,16 @@ import './assets/icons'
 import loginService from './services/login.service'
 import { getQueryString } from './utils'
 import { resetLoginTip } from './utils/request'
-import { canViewSystem, canWrite } from './utils/permission'
+import {
+  canExecuteSql,
+  canManagePlatform,
+  canManageTable,
+  canViewCatalog,
+  canViewOptimizer,
+  canViewSystem,
+  canViewTable,
+  getDefaultRoute,
+} from './utils/permission'
 import SvgIcon from '@/components/svg-icon.vue'
 
 import 'virtual:svg-icons-register'
@@ -67,10 +76,12 @@ RegisterComponents(app);
     const res = await loginService.getCurUserInfo(token)
     if (res) {
       const roles = res.roles || (res.role ? [res.role] : [])
+      const privileges = res.privileges || []
       store.updateUserInfo({
         userName: res.userName,
         role: roles[0],
         roles,
+        privileges,
       })
     }
   }
@@ -93,17 +104,53 @@ RegisterComponents(app);
         return
       }
       if (
-        !canWrite()
-        && (to.path === '/settings' || to.path === '/hive-tables/upgrade')
+        to.path === '/settings'
+        && !canManagePlatform()
       ) {
         next({
-          path: '/tables',
+          path: getDefaultRoute(),
         })
         return
       }
-      if (!canViewSystem() && (to.path === '/overview' || to.path === '/terminal')) {
+      if (to.path === '/hive-tables/upgrade' && !canManageTable()) {
         next({
-          path: '/tables',
+          path: getDefaultRoute(),
+        })
+        return
+      }
+      if (to.path === '/overview' && !canViewSystem()) {
+        next({
+          path: getDefaultRoute(),
+        })
+        return
+      }
+      if (to.path === '/terminal' && !canExecuteSql()) {
+        next({
+          path: getDefaultRoute(),
+        })
+        return
+      }
+      if (to.path === '/catalogs' && !canViewCatalog()) {
+        next({
+          path: getDefaultRoute(),
+        })
+        return
+      }
+      if (to.path === '/optimizing' && !canViewOptimizer()) {
+        next({
+          path: getDefaultRoute(),
+        })
+        return
+      }
+      if ((to.path === '/tables' || to.path.startsWith('/tables/')) && !canViewTable()) {
+        next({
+          path: getDefaultRoute(),
+        })
+        return
+      }
+      if (to.path.startsWith('/hive-tables') && !canViewTable()) {
+        next({
+          path: getDefaultRoute(),
         })
         return
       }

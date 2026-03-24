@@ -28,7 +28,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,17 +42,20 @@ public class CasbinAuthorizationManager {
 
   private final boolean authorizationEnabled;
   private final Enforcer enforcer;
+  private final Map<String, Set<String>> rolePrivileges;
 
   public CasbinAuthorizationManager(Configurations serviceConfig) {
     this.authorizationEnabled = serviceConfig.get(AmoroManagementConf.AUTHORIZATION_ENABLED);
     this.enforcer = authorizationEnabled ? createEnforcer() : null;
+    this.rolePrivileges =
+        authorizationEnabled ? loadRolePrivileges(POLICY_RESOURCE) : Collections.emptyMap();
   }
 
   public boolean isAuthorizationEnabled() {
     return authorizationEnabled;
   }
 
-  public boolean authorize(Set<Role> roles, AuthorizationRequest request) {
+  public boolean authorize(Set<String> roles, AuthorizationRequest request) {
     if (!authorizationEnabled) {
       return true;
     }
@@ -58,10 +64,10 @@ public class CasbinAuthorizationManager {
       return false;
     }
 
-    for (Role role : roles) {
+    for (String role : roles) {
       if (Boolean.TRUE.equals(
           enforcer.enforce(
-              role.name(),
+              role,
               request.getResourceType().name(),
               request.getResourceId(),
               request.getPrivilege().name()))) {
@@ -69,6 +75,24 @@ public class CasbinAuthorizationManager {
       }
     }
     return false;
+  }
+
+  public Set<String> resolvePrivileges(Set<String> roles) {
+    if (!authorizationEnabled) {
+      return java.util.Arrays.stream(Privilege.values())
+          .map(Enum::name)
+          .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    if (roles == null || roles.isEmpty()) {
+      return Collections.emptySet();
+    }
+
+    LinkedHashSet<String> privileges = new LinkedHashSet<>();
+    for (String role : roles) {
+      privileges.addAll(rolePrivileges.getOrDefault(role, Collections.emptySet()));
+    }
+    return Collections.unmodifiableSet(privileges);
   }
 
   private static Enforcer createEnforcer() {
@@ -95,6 +119,17 @@ public class CasbinAuthorizationManager {
                     .map(String::trim)
                     .collect(Collectors.toList()))
         .collect(Collectors.toList());
+  }
+
+  private static Map<String, Set<String>> loadRolePrivileges(String resource) {
+    return readPolicies(resource).stream()
+        .filter(policy -> policy.size() >= 5 && "p".equals(policy.get(0)))
+        .filter(policy -> policy.size() < 6 || !"deny".equalsIgnoreCase(policy.get(5)))
+        .collect(
+            Collectors.groupingBy(
+                policy -> policy.get(1),
+                Collectors.mapping(
+                    policy -> policy.get(4), Collectors.toCollection(LinkedHashSet::new))));
   }
 
   private static String readResource(String resource) {

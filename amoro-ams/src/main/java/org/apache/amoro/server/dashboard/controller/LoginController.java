@@ -24,6 +24,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.authentication.DefaultPasswordCredential;
 import org.apache.amoro.server.authentication.HttpAuthenticationFactory;
+import org.apache.amoro.server.authorization.CasbinAuthorizationManager;
 import org.apache.amoro.server.authorization.Role;
 import org.apache.amoro.server.authorization.RoleResolver;
 import org.apache.amoro.server.dashboard.response.OkResponse;
@@ -44,12 +45,17 @@ public class LoginController {
 
   private final PasswdAuthenticationProvider loginAuthProvider;
   private final RoleResolver roleResolver;
+  private final CasbinAuthorizationManager authorizationManager;
 
-  public LoginController(Configurations serviceConfig, RoleResolver roleResolver) {
+  public LoginController(
+      Configurations serviceConfig,
+      RoleResolver roleResolver,
+      CasbinAuthorizationManager authorizationManager) {
     this.loginAuthProvider =
         HttpAuthenticationFactory.getPasswordAuthenticationProvider(
             serviceConfig.get(AmoroManagementConf.HTTP_SERVER_LOGIN_AUTH_PROVIDER), serviceConfig);
     this.roleResolver = roleResolver;
+    this.authorizationManager = authorizationManager;
   }
 
   /** Get current user. */
@@ -80,7 +86,7 @@ public class LoginController {
 
     // Step 2: Resolve user role (LDAP group lookup)
     String authenticatedUser = principal.getName();
-    Set<Role> roles;
+    Set<String> roles;
     try {
       roles = roleResolver.resolve(authenticatedUser);
     } catch (Exception e) {
@@ -93,8 +99,9 @@ public class LoginController {
       throw new RuntimeException("Login failed due to a server error during role resolution");
     }
 
+    Set<String> privileges = authorizationManager.resolvePrivileges(roles);
     SessionInfo sessionInfo =
-        new SessionInfo(authenticatedUser, System.currentTimeMillis() + "", roles);
+        new SessionInfo(authenticatedUser, System.currentTimeMillis() + "", roles, privileges);
     ctx.sessionAttribute("user", sessionInfo);
     ctx.json(OkResponse.of(sessionInfo));
   }
@@ -109,12 +116,15 @@ public class LoginController {
   public static class SessionInfo implements Serializable {
     String userName;
     String loginTime;
-    Set<Role> roles;
+    Set<String> roles;
+    Set<String> privileges;
 
-    public SessionInfo(String username, String loginTime, Set<Role> roles) {
+    public SessionInfo(
+        String username, String loginTime, Set<String> roles, Set<String> privileges) {
       this.userName = username;
       this.loginTime = loginTime;
       this.roles = Collections.unmodifiableSet(new LinkedHashSet<>(roles));
+      this.privileges = Collections.unmodifiableSet(new LinkedHashSet<>(privileges));
     }
 
     public String getUserName() {
@@ -125,14 +135,19 @@ public class LoginController {
       return loginTime;
     }
 
-    public Set<Role> getRoles() {
+    public Set<String> getRoles() {
       return roles;
     }
 
-    public Role getRole() {
+    public Set<String> getPrivileges() {
+      return privileges;
+    }
+
+    public String getRole() {
       if (roles.contains(Role.SERVICE_ADMIN)) {
         return Role.SERVICE_ADMIN;
       }
+
       return roles.stream().findFirst().orElse(null);
     }
   }

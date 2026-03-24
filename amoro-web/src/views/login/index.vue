@@ -118,10 +118,12 @@ export default defineComponent({
         }
         const result = res.result || {}
         const roles = result.roles || (result.role ? [result.role] : [])
+        const privileges = result.privileges || []
         store.updateUserInfo({
           userName: result.userName || formState.username,
           role: roles[0],
           roles,
+          privileges,
         })
         setTimeout(() => {
           window.location.href = '/'

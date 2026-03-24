@@ -18,7 +18,10 @@
 
 package org.apache.amoro.server.authorization;
 
-public enum Role {
-  SERVICE_ADMIN,
-  VIEWER
+/** Build-in Roles */
+public final class Role {
+  public static final String SERVICE_ADMIN = "SERVICE_ADMIN";
+  public static final String VIEWER = "VIEWER";
+
+  private Role() {}
 }

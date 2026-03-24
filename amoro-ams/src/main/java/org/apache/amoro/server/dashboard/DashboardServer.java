@@ -114,7 +114,8 @@ public class DashboardServer {
     this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController(ams);
     RoleResolver roleResolver = new RoleResolver(serviceConfig);
-    this.loginController = new LoginController(serviceConfig, roleResolver);
+    this.authorizationManager = new CasbinAuthorizationManager(serviceConfig);
+    this.loginController = new LoginController(serviceConfig, roleResolver, authorizationManager);
     this.optimizerGroupController = new OptimizerGroupController(tableManager, optimizerManager);
     this.optimizerController = new OptimizerController(optimizerManager);
     this.platformFileInfoController = new PlatformFileInfoController(platformFileManager);
@@ -129,7 +130,6 @@ public class DashboardServer {
     this.overviewController = new OverviewController(manager);
     APITokenManager apiTokenManager = new APITokenManager();
     this.apiTokenController = new ApiTokenController(apiTokenManager);
-    this.authorizationManager = new CasbinAuthorizationManager(serviceConfig);
     this.privilegeMapper = new DashboardPrivilegeMapper();
 
     String authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);

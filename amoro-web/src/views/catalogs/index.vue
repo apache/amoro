@@ -26,7 +26,7 @@ import Detail from './Detail.vue'
 import { getCatalogList } from '@/services/table.service'
 import type { ICatalogItem } from '@/types/common.type'
 import { usePageScroll } from '@/hooks/usePageScroll'
-import { canWrite } from '@/utils/permission'
+import { canManageCatalog } from '@/utils/permission'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -40,7 +40,7 @@ const curCatalog = reactive<ICatalogItem>({
 const isEdit = ref<boolean>(false)
 const NEW_CATALOG = 'new catalog'
 const loading = ref<boolean>(false)
-const writable = ref<boolean>(canWrite())
+const writable = ref<boolean>(canManageCatalog())
 const simpleImage = AEmpty.PRESENTED_IMAGE_SIMPLE
 
 async function getCatalogs() {

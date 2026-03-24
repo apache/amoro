@@ -34,7 +34,7 @@ import type { ICatalogItem, IIOptimizeGroupItem, ILableAndValue, IMap } from '@/
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { getResourceGroupsListAPI } from '@/services/optimize.service'
 import { downloadWithHeader } from '@/utils/request'
-import { canWrite } from '@/utils/permission'
+import { canManageCatalog } from '@/utils/permission'
 
 interface IStorageConfigItem {
   label: string
@@ -108,7 +108,7 @@ const isHiveMetastore = computed(() => {
   return formState.catalog.type === 'hive'
 })
 const loading = ref<boolean>(false)
-const writable = computed(() => canWrite())
+const writable = computed(() => canManageCatalog())
 const formRef = ref()
 const propertiesRef = ref()
 const tablePropertiesRef = ref()

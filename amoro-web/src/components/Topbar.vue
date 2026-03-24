@@ -41,7 +41,7 @@ const { t, locale } = useI18n()
 const router = useRouter()
 const store = useStore()
 function roleText() {
-  return store.userInfo.roles?.includes('SERVICE_ADMIN') ? 'ServiceAdmin' : 'Viewer'
+  return (store.userInfo.roles || []).join(', ') || '-'
 }
 
 async function getVersion() {
@@ -69,6 +69,7 @@ async function handleLogout() {
         store.updateUserInfo({
           userName: '',
           roles: [],
+          privileges: [],
         })
         goLoginPage()
       }

@@ -28,7 +28,7 @@ import { executeSql, getExampleSqlCode, getJobDebugResult, getLastDebugInfo, get
 import { getCatalogList } from '@/services/table.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { usePageScroll } from '@/hooks/usePageScroll'
-import { canWrite } from '@/utils/permission'
+import { canExecuteSql } from '@/utils/permission'
 
 interface ISessionInfo {
   sessionId: string
@@ -54,7 +54,7 @@ export default defineComponent({
     const sqlLogRef = ref<any>(null)
     const { pageScrollRef } = usePageScroll()
     const readOnly = ref<boolean>(false)
-    const writable = ref<boolean>(canWrite())
+    const writable = ref<boolean>(canExecuteSql())
     const sqlSource = ref<string>('')
     const showDebug = ref<boolean>(false)
     const runStatus = ref<string>('')

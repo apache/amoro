@@ -25,7 +25,7 @@ import { usePagination } from '@/hooks/usePagination'
 import type { BreadcrumbOptimizingItem, IColumns, ILableAndValue } from '@/types/common.type'
 import { cancelOptimizingProcess, getOptimizingProcesses, getTableOptimizingTypes, getTasksByOptimizingProcessId } from '@/services/table.service'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
-import { canWrite } from '@/utils/permission'
+import { canManageTable } from '@/utils/permission'
 
 const hasBreadcrumb = ref<boolean>(false)
 
@@ -78,7 +78,7 @@ const breadcrumbDataSource = reactive<BreadcrumbOptimizingItem[]>([])
 
 const loading = ref<boolean>(false)
 const cancelDisabled = ref(true)
-const writable = ref<boolean>(canWrite())
+const writable = ref<boolean>(canManageTable())
 const pagination = reactive(usePagination())
 const breadcrumbPagination = reactive(usePagination())
 const route = useRoute()
