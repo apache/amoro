@@ -195,19 +195,6 @@ public class MixedFormatSourceReader<T>
         return;
       }
 
-      try {
-        java.lang.reflect.Method method =
-            splitOutput.getClass().getDeclaredMethod("emitPeriodicWatermark");
-        method.setAccessible(true);
-        method.invoke(splitOutput);
-        return;
-      } catch (ReflectiveOperationException e) {
-        LOGGER.debug(
-            "Failed to invoke emitPeriodicWatermark on split output {}, fallback to reader output",
-            splitOutput.getClass(),
-            e);
-      }
-
       watermarkOutput.emitPeriodicWatermark();
     }
   }
