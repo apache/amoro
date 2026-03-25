@@ -41,7 +41,9 @@ public class LdapGroupRoleResolverTest {
         new LdapGroupRoleResolver(
             baseConfig(),
             (groupDn, memberAttribute) ->
-                Collections.singleton("uid=alice,ou=people,dc=example,dc=com"));
+                "cn=amoro-service-admins,ou=groups,dc=example,dc=com".equals(groupDn)
+                    ? Collections.singleton("uid=alice,ou=people,dc=example,dc=com")
+                    : Collections.emptySet());
 
     assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
   }
@@ -49,7 +51,12 @@ public class LdapGroupRoleResolverTest {
   @Test
   public void testResolveRoleFromUsernameMember() {
     LdapGroupRoleResolver resolver =
-        new LdapGroupRoleResolver(baseConfig(), (groupDn, memberAttribute) -> Set.of("alice"));
+        new LdapGroupRoleResolver(
+            baseConfig(),
+            (groupDn, memberAttribute) ->
+                "cn=amoro-service-admins,ou=groups,dc=example,dc=com".equals(groupDn)
+                    ? Set.of("alice")
+                    : Collections.emptySet());
 
     assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
   }
@@ -60,7 +67,9 @@ public class LdapGroupRoleResolverTest {
         new LdapGroupRoleResolver(
             baseConfig(),
             (groupDn, memberAttribute) ->
-                Set.of("CN=alice,OU=Employees,OU=Cisco Users,DC=cisco,DC=com"));
+                "cn=amoro-service-admins,ou=groups,dc=example,dc=com".equals(groupDn)
+                    ? Set.of("CN=alice,OU=Employees,OU=Cisco Users,DC=cisco,DC=com")
+                    : Collections.emptySet());
 
     assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
   }
@@ -68,7 +77,12 @@ public class LdapGroupRoleResolverTest {
   @Test
   public void testResolveRoleFromMemberUidStyleValue() {
     LdapGroupRoleResolver resolver =
-        new LdapGroupRoleResolver(baseConfig(), (groupDn, memberAttribute) -> Set.of("uid=alice"));
+        new LdapGroupRoleResolver(
+            baseConfig(),
+            (groupDn, memberAttribute) ->
+                "cn=amoro-service-admins,ou=groups,dc=example,dc=com".equals(groupDn)
+                    ? Set.of("uid=alice")
+                    : Collections.emptySet());
 
     assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
   }
@@ -78,7 +92,10 @@ public class LdapGroupRoleResolverTest {
     LdapGroupRoleResolver resolver =
         new LdapGroupRoleResolver(
             baseConfig(),
-            (groupDn, memberAttribute) -> Set.of("UID=Alice,OU=People,DC=Example,DC=Com"));
+            (groupDn, memberAttribute) ->
+                "cn=amoro-service-admins,ou=groups,dc=example,dc=com".equals(groupDn)
+                    ? Set.of("UID=Alice,OU=People,DC=Example,DC=Com")
+                    : Collections.emptySet());
 
     assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
   }

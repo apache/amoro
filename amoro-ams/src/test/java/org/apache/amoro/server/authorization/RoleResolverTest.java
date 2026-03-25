@@ -81,7 +81,9 @@ public class RoleResolverTest {
             new LdapGroupRoleResolver(
                 conf,
                 (groupDn, memberAttribute) ->
-                    Collections.singleton("uid=admin,ou=people,dc=example,dc=com")));
+                    "cn=amoro-service-admins,ou=groups,dc=example,dc=com".equals(groupDn)
+                        ? Collections.singleton("uid=admin,ou=people,dc=example,dc=com")
+                        : Collections.emptySet()));
 
     Set<String> adminRoles = resolver.resolve("admin");
     assertEquals(1, adminRoles.size());

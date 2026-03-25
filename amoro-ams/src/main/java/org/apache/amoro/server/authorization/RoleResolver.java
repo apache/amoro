@@ -46,7 +46,7 @@ public class RoleResolver {
             .getOptional(AmoroManagementConf.AUTHORIZATION_DEFAULT_ROLE)
             .map(String::trim)
             .filter(role -> !role.isEmpty())
-            .orElse(Role.VIEWER);
+            .orElse(null);
     this.adminUsername = serviceConfig.get(AmoroManagementConf.ADMIN_USERNAME);
     this.ldapGroupRoleResolver = ldapGroupRoleResolver;
   }
@@ -78,7 +78,7 @@ public class RoleResolver {
       roles.add(Role.SERVICE_ADMIN);
     }
     roles.addAll(ldapGroupRoleResolver.resolve(username));
-    if (roles.isEmpty()) {
+    if (roles.isEmpty() && defaultRole != null) {
       roles.add(defaultRole);
     }
 

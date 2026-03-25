@@ -21,7 +21,6 @@ package org.apache.amoro.server;
 import org.apache.amoro.config.ConfigOption;
 import org.apache.amoro.config.ConfigOptions;
 import org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider;
-import org.apache.amoro.server.authorization.Role;
 import org.apache.amoro.utils.MemorySize;
 
 import java.time.Duration;
@@ -64,7 +63,7 @@ public class AmoroManagementConf {
   public static final ConfigOption<String> AUTHORIZATION_DEFAULT_ROLE =
       ConfigOptions.key("http-server.authorization.default-role")
           .stringType()
-          .defaultValue(Role.VIEWER)
+          .noDefaultValue()
           .withDescription(
               "Optional default dashboard role for authenticated users without an LDAP role mapping.");
 

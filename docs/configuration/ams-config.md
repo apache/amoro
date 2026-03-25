@@ -86,13 +86,13 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | ha.zookeeper-auth-type | NONE | The Zookeeper authentication type, NONE or KERBEROS. |
 | http-server.auth-basic-provider | org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider | User-defined password authentication implementation of org.apache.amoro.authentication.PasswdAuthenticationProvider |
 | http-server.auth-jwt-provider | &lt;undefined&gt; | User-defined JWT (JSON Web Token) authentication implementation of org.apache.amoro.authentication.TokenAuthenticationProvider |
-| http-server.authorization.default-role | &lt;undefined&gt; | Optional default dashboard role for authenticated users without an LDAP role mapping. |
+| http-server.authorization.default-role | VIEWER | Optional default dashboard role for authenticated users without an LDAP role mapping. |
 | http-server.authorization.enabled | false | Whether to enable dashboard RBAC authorization. |
 | http-server.authorization.ldap-role-mapping.bind-dn |  | Optional LDAP bind DN used when querying role-mapping groups. |
 | http-server.authorization.ldap-role-mapping.bind-password |  | Optional LDAP bind password used when querying role-mapping groups. |
 | http-server.authorization.ldap-role-mapping.enabled | false | Whether to resolve dashboard roles from LDAP group membership. |
-| http-server.authorization.ldap-role-mapping.groups | &lt;undefined&gt; | LDAP group-to-role mapping entries containing group-dn and role fields. |
 | http-server.authorization.ldap-role-mapping.group-member-attribute | member | LDAP group attribute that stores member references. |
+| http-server.authorization.ldap-role-mapping.groups | &lt;undefined&gt; | LDAP group-to-role mapping entries containing group-dn and role fields. |
 | http-server.authorization.ldap-role-mapping.user-dn-pattern | &lt;undefined&gt; | LDAP user DN pattern used to match group members. Use {0} as the username placeholder. |
 | http-server.bind-port | 19090 | Port that the Http server is bound to. |
 | http-server.login-auth-ldap-url | &lt;undefined&gt; | LDAP connection URL(s), value could be a SPACE separated list of URLs to multiple LDAP servers for resiliency. URLs are tried in the order specified until the connection is successful |
@@ -144,33 +144,14 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 
 ## RBAC Example
 
-Enable RBAC only when you need role separation for dashboard users.
-
-The current RBAC model uses:
-
-- string-based roles
-- LDAP group-to-role mapping as the primary role source
-- built-in Casbin policy to translate roles into privileges
-- privilege-driven frontend authorization
-
-Amoro provides two built-in roles by default:
-
-| Role | Description | Default Privileges |
-| --- | --- | --- |
-| `SERVICE_ADMIN` | Platform administrator | All privileges |
-| `VIEWER` | Read-only resource viewer | `VIEW_CATALOG`, `VIEW_TABLE`, `VIEW_OPTIMIZER` |
-
-`VIEWER` does not include `VIEW_SYSTEM`, so it cannot access `Overview` or `Terminal`.
-After login succeeds, `/login/current` returns both `roles` and effective `privileges`.
-
-If you need additional roles, define them by Casbin policy and map LDAP groups to those
-role names. The role name itself does not need to be added to Java enum code.
+Enable dashboard RBAC only when you need privilege-based access control.
 
 ```yaml
 ams:
   http-server:
     authorization:
       enabled: true
+      default-role: VIEWER
 ```
 
 ```yaml
@@ -181,6 +162,7 @@ ams:
     login-auth-ldap-user-pattern: "uid={0},ou=people,dc=example,dc=com"
     authorization:
       enabled: true
+      default-role: VIEWER
       ldap-role-mapping:
         enabled: true
         group-member-attribute: "member"
@@ -192,41 +174,7 @@ ams:
             role: SERVICE_ADMIN
           - group-dn: "cn=amoro-viewers,ou=groups,dc=example,dc=com"
             role: VIEWER
-          - group-dn: "cn=amoro-catalog-admins,ou=groups,dc=example,dc=com"
-            role: CATALOG_ADMIN
 ```
-
-Example `/login/current` response:
-
-```json
-{
-  "userName": "alice",
-  "roles": ["CATALOG_ADMIN"],
-  "privileges": [
-    "VIEW_CATALOG",
-    "MANAGE_CATALOG",
-    "VIEW_TABLE",
-    "MANAGE_TABLE"
-  ]
-}
-```
-
-Example custom role policy:
-
-```csv
-p, CATALOG_ADMIN, CATALOG, GLOBAL, VIEW_CATALOG, allow
-p, CATALOG_ADMIN, CATALOG, GLOBAL, MANAGE_CATALOG, allow
-p, CATALOG_ADMIN, TABLE, GLOBAL, VIEW_TABLE, allow
-p, CATALOG_ADMIN, TABLE, GLOBAL, MANAGE_TABLE, allow
-```
-
-Notes:
-
-- Recommended production setup is explicit role assignment only.
-- `default-role` is optional. If it is not set, users who do not match any role mapping get no business role.
-- Use `default-role: VIEWER` only if you intentionally want authenticated users to receive a read-only fallback role.
-- Casbin model and default policy are built into the service and loaded from classpath.
-- Dashboard request-to-privilege mapping is also built into the service and loaded from a resource configuration file.
 
 ## Shade Utils Configuration
 
@@ -242,4 +190,6 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | Key  | Default | Description |
 | ---  | ------- | ----------- |
 | shade.identifier | default | The identifier of the encryption method for decryption. Defaults to "default", indicating no encryption |
-| shade.sensitive-keywords | admin-password;database.password;http-server.authorization.ldap-role-mapping.bind-password | A semicolon-separated list of keywords for the configuration items to be decrypted. |
+| shade.sensitive-keywords | admin-password;database.password | A semicolon-separated list of keywords for the configuration items to be decrypted. |
+
+
