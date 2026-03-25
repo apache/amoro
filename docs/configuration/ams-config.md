@@ -72,6 +72,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | expire-snapshots.thread-count | 10 | The number of threads used for snapshots expiring. |
 | ha.bucket-assign.interval | 1 min | Interval for bucket assignment service to detect node changes and redistribute bucket IDs. |
 | ha.bucket-id.total-count | 100 | Total count of bucket IDs for assignment. Bucket IDs range from 1 to this value. |
+| ha.bucket-table-sync.interval | 1 min | Interval for syncing tables assigned to bucket IDs in master-slave mode. Each node periodically loads tables from database based on its assigned bucket IDs. |
 | ha.cluster-name | default | Amoro management service cluster name. |
 | ha.connection-timeout | 5 min | The Zookeeper connection timeout in milliseconds. |
 | ha.enabled | false | Whether to enable high availability mode. |

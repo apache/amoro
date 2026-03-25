@@ -307,6 +307,13 @@ public class AmoroManagementConf {
           .withDescription(
               "Interval for bucket assignment service to detect node changes and redistribute bucket IDs.");
 
+  public static final ConfigOption<Duration> HA_BUCKET_TABLE_SYNC_INTERVAL =
+      ConfigOptions.key("ha.bucket-table-sync.interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(60))
+          .withDescription(
+              "Interval for syncing tables assigned to bucket IDs in master-slave mode. Each node periodically loads tables from database based on its assigned bucket IDs.");
+
   public static final ConfigOption<Integer> TABLE_SERVICE_THRIFT_BIND_PORT =
       ConfigOptions.key("thrift-server.table-service.bind-port")
           .intType()
