@@ -536,8 +536,11 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   @VisibleForTesting
   void exploreTableRuntimes() {
-    // In master-slave mode, only leader node should explore table runtimes
-    if (isMasterSlaveMode && haContainer != null && !haContainer.hasLeadership()) {
+    // In master-slave mode (fully wired), only leader node should explore table runtimes
+    if (isMasterSlaveMode
+        && haContainer != null
+        && bucketAssignStore != null
+        && !haContainer.hasLeadership()) {
       LOG.debug("Not the leader node in master-slave mode, skip exploring table runtimes");
       return;
     }
@@ -794,12 +797,12 @@ public class DefaultTableService extends PersistentBase implements TableService 
     meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
     meta.setTableSummary(new TableSummary());
 
-    // In master-slave mode, assign bucketId to the table if it's not assigned yet.
+    // In master-slave mode (fully wired), assign bucketId to the table if it's not assigned yet.
     // Only leader node should assign bucketIds; follower may still persist the table with null
     // bucketId (e.g. onTableCreated on follower), and leader will assign later via exploration.
     String assignedBucketId = null;
-    if (isMasterSlaveMode) {
-      if (haContainer != null && haContainer.hasLeadership()) {
+    if (isMasterSlaveMode && haContainer != null && bucketAssignStore != null) {
+      if (haContainer.hasLeadership()) {
         TableRuntimeMeta existingMeta =
             getAs(
                 TableRuntimeMapper.class,
@@ -847,7 +850,10 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
     doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
 
-    if (isMasterSlaveMode) {
+    // Only skip local runtime creation when master-slave mode is fully wired (bucketAssignStore
+    // is non-null). When bucketAssignStore is null (e.g. 3-arg test constructor), fall through
+    // and create the runtime in memory as in non-master-slave mode.
+    if (isMasterSlaveMode && haContainer != null && bucketAssignStore != null) {
       return true;
     }
 

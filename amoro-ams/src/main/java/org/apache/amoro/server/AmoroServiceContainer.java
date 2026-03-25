@@ -253,13 +253,7 @@ public class AmoroServiceContainer {
 
     BucketAssignStore bucketAssignStore = null;
     if (IS_MASTER_SLAVE_MODE && haContainer != null) {
-      try {
-        bucketAssignStore = BucketAssignStoreFactory.create(haContainer, serviceConfig);
-      } catch (Exception e) {
-        LOG.error(
-            "Failed to create BucketAssignStore; master-slave bucket assignment and per-node table loading are disabled",
-            e);
-      }
+      bucketAssignStore = BucketAssignStoreFactory.create(haContainer, serviceConfig);
     }
 
     // In master-slave mode, create AmsAssignService for bucket assignment (shares BucketAssignStore
