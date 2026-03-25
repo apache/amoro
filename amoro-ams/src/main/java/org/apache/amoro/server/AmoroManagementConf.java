@@ -62,13 +62,6 @@ public class AmoroManagementConf {
               "This setting controls whether to enable the AMS horizontal scaling feature, "
                   + "which is currently under development and testing.");
 
-  public static final ConfigOption<Duration> BUCKET_TABLE_SYNC_INTERVAL =
-      ConfigOptions.key("bucket-table-sync.interval")
-          .durationType()
-          .defaultValue(Duration.ofSeconds(60))
-          .withDescription(
-              "Interval for syncing tables assigned to bucket IDs in master-slave mode. Each node periodically loads tables from database based on its assigned bucket IDs.");
-
   public static final ConfigOption<Duration> CATALOG_META_CACHE_EXPIRATION_INTERVAL =
       ConfigOptions.key("catalog-meta-cache.expiration-interval")
           .durationType()
@@ -313,6 +306,13 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofSeconds(60))
           .withDescription(
               "Interval for bucket assignment service to detect node changes and redistribute bucket IDs.");
+
+  public static final ConfigOption<Duration> HA_BUCKET_TABLE_SYNC_INTERVAL =
+      ConfigOptions.key("ha.bucket-table-sync.interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(60))
+          .withDescription(
+              "Interval for syncing tables assigned to bucket IDs in master-slave mode. Each node periodically loads tables from database based on its assigned bucket IDs.");
 
   public static final ConfigOption<Integer> TABLE_SERVICE_THRIFT_BIND_PORT =
       ConfigOptions.key("thrift-server.table-service.bind-port")

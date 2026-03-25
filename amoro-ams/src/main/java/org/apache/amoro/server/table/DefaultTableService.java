@@ -54,9 +54,11 @@ import org.apache.amoro.utils.TablePropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -104,11 +106,6 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private ScheduledExecutorService bucketTableSyncScheduler;
   private volatile List<String> assignedBucketIds = new ArrayList<>();
   private final long bucketTableSyncInterval;
-  // Lock for bucketId assignment to prevent concurrent assignment conflicts
-  private final Object bucketIdAssignmentLock = new Object();
-  // Local cache of bucketId assignments to track pending assignments before they're saved to DB
-  // This ensures concurrent table creation gets different bucketIds even before DB is updated
-  private final Map<String, Integer> pendingBucketIdCounts = new ConcurrentHashMap<>();
 
   public DefaultTableService(
       Configurations configuration,
@@ -133,7 +130,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
     this.bucketAssignStore = bucketAssignStore;
     this.isMasterSlaveMode = configuration.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
     this.bucketTableSyncInterval =
-        configuration.get(AmoroManagementConf.BUCKET_TABLE_SYNC_INTERVAL).toMillis();
+        configuration.get(AmoroManagementConf.HA_BUCKET_TABLE_SYNC_INTERVAL).toMillis();
   }
 
   @Override
@@ -492,74 +489,49 @@ public class DefaultTableService extends PersistentBase implements TableService 
    * @return The assigned bucketId, or null if assignment fails
    */
   private String assignBucketIdForTable() {
-    // Synchronize to prevent concurrent assignments from selecting the same bucketId
-    synchronized (bucketIdAssignmentLock) {
-      try {
-        // Get bucketId distribution statistics from database (optimized query)
-        List<BucketIdCount> bucketIdCounts =
-            getAs(
-                TableRuntimeMapper.class,
-                (TableRuntimeMapper mapper) -> mapper.countTablesByBucketId());
+    try {
+      List<BucketIdCount> bucketIdCounts =
+          getAs(
+              TableRuntimeMapper.class,
+              (TableRuntimeMapper mapper) -> mapper.countTablesByBucketId());
 
-        // Initialize bucketId count map with all possible bucketIds
-        Map<String, Integer> bucketTableCount = new ConcurrentHashMap<>();
-        int bucketIdTotalCount =
-            serverConfiguration.getInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT);
-        for (int i = 1; i <= bucketIdTotalCount; i++) {
-          bucketTableCount.put(String.valueOf(i), 0);
-        }
-
-        // Fill in counts from database query results
-        for (BucketIdCount bucketIdCount : bucketIdCounts) {
-          String bucketId = bucketIdCount.getBucketId();
-          if (bucketId != null && !bucketId.trim().isEmpty()) {
-            bucketTableCount.put(bucketId, bucketIdCount.getCount());
-          }
-        }
-
-        // Add pending assignments (assigned but not yet saved to DB) to the count
-        // This ensures concurrent table creation gets different bucketIds
-        // Note: Pending counts are decremented when tables are successfully saved to DB
-        for (Map.Entry<String, Integer> pendingEntry : pendingBucketIdCounts.entrySet()) {
-          String bucketId = pendingEntry.getKey();
-          int pendingCount = pendingEntry.getValue();
-          bucketTableCount.put(bucketId, bucketTableCount.getOrDefault(bucketId, 0) + pendingCount);
-        }
-
-        // Use min-heap to find bucketId with minimum table count
-        // Create new entries instead of using Map.Entry directly to avoid reference issues
-        PriorityQueue<Map.Entry<String, Integer>> minHeap =
-            new PriorityQueue<>(
-                Comparator.<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue)
-                    .thenComparing(Map.Entry::getKey)); // Use bucketId as tie-breaker
-
-        // Create independent entries for the heap to avoid reference issues
-        for (Map.Entry<String, Integer> entry : bucketTableCount.entrySet()) {
-          minHeap.offer(new java.util.AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
-        }
-
-        if (!minHeap.isEmpty()) {
-          Map.Entry<String, Integer> selected = minHeap.poll();
-          String assignedBucketId = selected.getKey();
-          int tableCount = selected.getValue();
-
-          // Update pending count immediately to prevent next concurrent call from selecting same
-          // bucketId
-          pendingBucketIdCounts.put(
-              assignedBucketId, pendingBucketIdCounts.getOrDefault(assignedBucketId, 0) + 1);
-
-          LOG.debug(
-              "Assigned bucketId {} to new table (min table count: {}, pending: {})",
-              assignedBucketId,
-              tableCount,
-              pendingBucketIdCounts.get(assignedBucketId));
-          return assignedBucketId;
-        }
-      } catch (Exception e) {
-        LOG.error("Failed to assign bucketId for table", e);
+      Map<String, Integer> bucketTableCount = new HashMap<>();
+      int bucketIdTotalCount =
+          serverConfiguration.getInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT);
+      for (int i = 1; i <= bucketIdTotalCount; i++) {
+        bucketTableCount.put(String.valueOf(i), 0);
       }
-      return null;
+
+      for (BucketIdCount bucketIdCount : bucketIdCounts) {
+        String bucketId = bucketIdCount.getBucketId();
+        if (bucketId != null && !bucketId.trim().isEmpty()) {
+          bucketTableCount.put(bucketId, bucketIdCount.getCount());
+        }
+      }
+
+      PriorityQueue<Map.Entry<String, Integer>> minHeap =
+          new PriorityQueue<>(
+              Comparator.<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue)
+                  .thenComparing(Map.Entry::getKey));
+
+      for (Map.Entry<String, Integer> entry : bucketTableCount.entrySet()) {
+        minHeap.offer(new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
+      }
+
+      if (!minHeap.isEmpty()) {
+        Map.Entry<String, Integer> selected = minHeap.poll();
+        String assignedBucketId = selected.getKey();
+        int tableCount = selected.getValue();
+        LOG.debug(
+            "Assigned bucketId {} to new table (min table count: {})",
+            assignedBucketId,
+            tableCount);
+        return assignedBucketId;
+      }
+    } catch (Exception e) {
+      LOG.error("Failed to assign bucketId for table", e);
     }
+    return null;
   }
 
   @VisibleForTesting
@@ -839,21 +811,24 @@ public class DefaultTableService extends PersistentBase implements TableService 
           }
           assignedBucketId = assignBucketIdForTable();
           if (assignedBucketId != null) {
-            existingMeta.setBucketId(assignedBucketId);
-            doAs(TableRuntimeMapper.class, mapper -> mapper.updateRuntime(existingMeta));
-            synchronized (bucketIdAssignmentLock) {
-              int pendingCount = pendingBucketIdCounts.getOrDefault(assignedBucketId, 0);
-              if (pendingCount > 0) {
-                pendingBucketIdCounts.put(assignedBucketId, pendingCount - 1);
-                if (pendingBucketIdCounts.get(assignedBucketId) == 0) {
-                  pendingBucketIdCounts.remove(assignedBucketId);
-                }
-              }
+            String finalAssignedBucketId = assignedBucketId;
+            long updated =
+                updateAs(
+                    TableRuntimeMapper.class,
+                    mapper ->
+                        mapper.updateBucketIdIfNull(
+                            serverTableIdentifier.getId(), finalAssignedBucketId));
+            if (updated == 1) {
+              LOG.info(
+                  "Assigned bucketId {} to existing table {} (was null)",
+                  assignedBucketId,
+                  serverTableIdentifier);
+            } else {
+              LOG.debug(
+                  "Skipped backfill bucketId {} for table {} (row missing or bucket_id already set)",
+                  assignedBucketId,
+                  serverTableIdentifier);
             }
-            LOG.info(
-                "Assigned bucketId {} to existing table {} (was null)",
-                assignedBucketId,
-                serverTableIdentifier);
           }
           return true; // handled existing row (assigned or failed to assign)
         }
@@ -870,25 +845,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
       // else: follower does not assign; meta.bucketId remains null until leader assigns
     }
 
-    try {
-      doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
-      // After successful save, decrease pending count since the assignment is now persisted in DB
-      if (assignedBucketId != null) {
-        synchronized (bucketIdAssignmentLock) {
-          int pendingCount = pendingBucketIdCounts.getOrDefault(assignedBucketId, 0);
-          if (pendingCount > 0) {
-            pendingBucketIdCounts.put(assignedBucketId, pendingCount - 1);
-            if (pendingBucketIdCounts.get(assignedBucketId) == 0) {
-              pendingBucketIdCounts.remove(assignedBucketId);
-            }
-          }
-        }
-      }
-    } catch (Exception e) {
-      // If save fails, keep the pending count so the bucketId assignment is still tracked
-      // This ensures the count remains accurate even if the save operation fails
-      throw e;
-    }
+    doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
 
     if (isMasterSlaveMode) {
       return true;

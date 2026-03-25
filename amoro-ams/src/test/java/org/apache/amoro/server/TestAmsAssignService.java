@@ -553,15 +553,7 @@ public class TestAmsAssignService {
   /** Create AmsAssignService with mock BucketAssignStore. */
   private AmsAssignService createAssignServiceWithMockStore(HighAvailabilityContainer container)
       throws Exception {
-    AmsAssignService service = new AmsAssignService(container, serviceConfig);
-
-    // Use reflection to inject mock assign store
-    java.lang.reflect.Field assignStoreField =
-        AmsAssignService.class.getDeclaredField("assignStore");
-    assignStoreField.setAccessible(true);
-    assignStoreField.set(service, mockAssignStore);
-
-    return service;
+    return new AmsAssignService(container, serviceConfig, mockAssignStore);
   }
 
   /** Create a mock CuratorFramework that uses MockZkState for storage. */

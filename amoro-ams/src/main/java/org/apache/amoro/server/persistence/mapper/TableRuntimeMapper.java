@@ -60,6 +60,17 @@ public interface TableRuntimeMapper {
           + " WHERE table_id = #{tableId}")
   int updateRuntime(TableRuntimeMeta meta);
 
+  /**
+   * Sets bucket_id only when it is still null. Avoids overwriting status/config/summary with stale
+   * snapshots from a prior read.
+   */
+  @Update(
+      "UPDATE "
+          + TABLE_NAME
+          + " SET bucket_id = #{bucketId, jdbcType=VARCHAR} "
+          + "WHERE table_id = #{tableId} AND bucket_id IS NULL")
+  int updateBucketIdIfNull(@Param("tableId") Long tableId, @Param("bucketId") String bucketId);
+
   /* ---------- delete ---------- */
   @Delete("DELETE FROM " + TABLE_NAME + " WHERE table_id = #{tableId}")
   int deleteRuntime(@Param("tableId") Long tableId);

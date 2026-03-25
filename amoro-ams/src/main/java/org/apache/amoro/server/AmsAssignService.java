@@ -67,6 +67,18 @@ public class AmsAssignService {
   }
 
   public AmsAssignService(HighAvailabilityContainer haContainer, Configurations serviceConfig) {
+    this(haContainer, serviceConfig, null);
+  }
+
+  /**
+   * @param assignStore if non-null, used as the bucket assignment store; otherwise one is created
+   *     via {@link BucketAssignStoreFactory} (same instance can be shared with {@code
+   *     DefaultTableService}).
+   */
+  public AmsAssignService(
+      HighAvailabilityContainer haContainer,
+      Configurations serviceConfig,
+      BucketAssignStore assignStore) {
     this.haContainer = haContainer;
     this.serviceConfig = serviceConfig;
     this.bucketIdTotalCount =
@@ -75,7 +87,10 @@ public class AmsAssignService {
         serviceConfig.get(AmoroManagementConf.HA_NODE_OFFLINE_TIMEOUT).toMillis();
     this.assignIntervalSeconds =
         serviceConfig.get(AmoroManagementConf.HA_ASSIGN_INTERVAL).getSeconds();
-    this.assignStore = BucketAssignStoreFactory.create(haContainer, serviceConfig);
+    this.assignStore =
+        assignStore != null
+            ? assignStore
+            : BucketAssignStoreFactory.create(haContainer, serviceConfig);
   }
 
   /**
