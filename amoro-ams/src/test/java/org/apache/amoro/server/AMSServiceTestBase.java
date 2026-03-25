@@ -58,9 +58,12 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
       TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
       TABLE_SERVICE.addHandlerChain(PROCESS_SERVICE.getTableHandlerChain());
       TABLE_SERVICE.initialize();
+      ResourceGroup group = defaultResourceGroup();
       try {
-        ResourceGroup group = defaultResourceGroup();
         OPTIMIZER_MANAGER.createResourceGroup(group);
+      } catch (Throwable ignored) {
+      }
+      try {
         OPTIMIZING_SERVICE.createResourceGroup(group);
       } catch (Throwable ignored) {
       }
