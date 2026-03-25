@@ -81,7 +81,7 @@ public class LdapPasswdAuthenticationProvider implements PasswdAuthenticationPro
   }
 
   /**
-   * Strip email domain suffix if present so that "xuba@cisco.com" becomes "xuba". The LDAP
+   * Strip email domain suffix if present so that "amoro@apache.org" becomes "amoro". The LDAP
    * user-pattern template expects a plain username, not an email address.
    */
   private static String normalizeUsername(String username) {
