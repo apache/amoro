@@ -26,8 +26,8 @@ import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
 
 public class DefaultPasswdAuthenticationProvider implements PasswdAuthenticationProvider {
-  private final String basicAuthUser;
-  private final String basicAuthPassword;
+  private String basicAuthUser;
+  private String basicAuthPassword;
 
   public DefaultPasswdAuthenticationProvider(Configurations conf) {
     this.basicAuthUser = conf.get(AmoroManagementConf.ADMIN_USERNAME);
