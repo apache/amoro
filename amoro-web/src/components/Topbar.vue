@@ -40,6 +40,9 @@ const verInfo = reactive<IVersion>({
 const { t, locale } = useI18n()
 const router = useRouter()
 const store = useStore()
+function roleText() {
+  return (store.userInfo.roles || []).join(', ') || '-'
+}
 
 async function getVersion() {
   const res = await getVersionInfo()
@@ -65,6 +68,8 @@ async function handleLogout() {
       finally {
         store.updateUserInfo({
           userName: '',
+          roles: [],
+          privileges: [],
         })
         goLoginPage()
       }
@@ -97,7 +102,7 @@ onMounted(() => {
       <span class="g-mr-8">{{ `${$t('commitTime')}:  ${verInfo.commitTime}` }}</span>
     </div>
     <a-dropdown>
-      <span>{{ store.userInfo.userName }} <DownOutlined /></span>
+      <span><span class="role-badge">{{ roleText() }}</span>{{ store.userInfo.userName }} <DownOutlined /></span>
       <template #overlay>
         <a-menu>
           <a-menu-item key="userGuide" @click="goDocs">
@@ -140,5 +145,13 @@ onMounted(() => {
   }
   .logout-button:hover {
     border-color: unset;
+  }
+  .role-badge {
+    display: inline-block;
+    margin-right: 8px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: #f0f5ff;
+    color: #1d39c4;
   }
 </style>

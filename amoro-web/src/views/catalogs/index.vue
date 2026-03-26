@@ -26,6 +26,7 @@ import Detail from './Detail.vue'
 import { getCatalogList } from '@/services/table.service'
 import type { ICatalogItem } from '@/types/common.type'
 import { usePageScroll } from '@/hooks/usePageScroll'
+import { canManageCatalog } from '@/utils/permission'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -39,6 +40,7 @@ const curCatalog = reactive<ICatalogItem>({
 const isEdit = ref<boolean>(false)
 const NEW_CATALOG = 'new catalog'
 const loading = ref<boolean>(false)
+const writable = ref<boolean>(canManageCatalog())
 const simpleImage = AEmpty.PRESENTED_IMAGE_SIMPLE
 
 async function getCatalogs() {
@@ -136,7 +138,7 @@ function addCatalog() {
     addNewCatalog()
   }
 }
-async function addNewCatalog() {
+  async function addNewCatalog() {
   const item: ICatalogItem = {
     catalogName: NEW_CATALOG,
     catalogType: '',
@@ -183,7 +185,7 @@ onBeforeRouteLeave((_to, _form, next) => {
             {{ item.catalogName }}
           </li>
         </ul>
-        <a-button :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn" @click="addCatalog">
+        <a-button v-if="writable" :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn" @click="addCatalog">
           +
         </a-button>
       </div>

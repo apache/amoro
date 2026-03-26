@@ -159,18 +159,24 @@ const request: any = function (options: CustomAxiosRequestConfig) {
       }
       // not login
       if (code === 403) {
-        const store = useStore()
-        store.updateUserInfo({
-          userName: '',
-        })
-        const currentPath = router.currentRoute.value.path
-        if (requestConfig.handleError && currentPath !== '/login' && !loginTipShown) {
-          message.error(msg || 'need login')
-          loginTipShown = true
+        const needLogin = (msg || '').toLowerCase().includes('login')
+        if (needLogin) {
+          const store = useStore()
+          store.updateUserInfo({
+            userName: '',
+            roles: [],
+            privileges: [],
+          })
+          const currentPath = router.currentRoute.value.path
+          if (requestConfig.handleError && currentPath !== '/login' && !loginTipShown) {
+            message.error(msg || 'need login')
+            loginTipShown = true
+          }
+          return router.push({
+            path: '/login',
+          })
         }
-        return router.push({
-          path: '/login',
-        })
+        return Promise.reject(new Error(msg || 'No permission'))
       }
       return Promise.reject(new Error(msg || 'error'))
     })
