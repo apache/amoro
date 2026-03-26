@@ -881,6 +881,46 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
           <td>User-defined JWT (JSON Web Token) authentication implementation of org.apache.amoro.authentication.TokenAuthenticationProvider</td>
       </tr>
       <tr>
+          <td>http-server.authorization.default-role</td>
+          <td>&lt;undefined&gt;</td>
+          <td>Optional default dashboard role for authenticated users without an LDAP role mapping.</td>
+      </tr>
+      <tr>
+          <td>http-server.authorization.enabled</td>
+          <td>false</td>
+          <td>Whether to enable dashboard RBAC authorization.</td>
+      </tr>
+      <tr>
+          <td>http-server.authorization.ldap-role-mapping.bind-dn</td>
+          <td></td>
+          <td>Optional LDAP bind DN used when querying role-mapping groups.</td>
+      </tr>
+      <tr>
+          <td>http-server.authorization.ldap-role-mapping.bind-password</td>
+          <td></td>
+          <td>Optional LDAP bind password used when querying role-mapping groups.</td>
+      </tr>
+      <tr>
+          <td>http-server.authorization.ldap-role-mapping.enabled</td>
+          <td>false</td>
+          <td>Whether to resolve dashboard roles from LDAP group membership.</td>
+      </tr>
+      <tr>
+          <td>http-server.authorization.ldap-role-mapping.group-member-attribute</td>
+          <td>member</td>
+          <td>LDAP group attribute that stores member references.</td>
+      </tr>
+      <tr>
+          <td>http-server.authorization.ldap-role-mapping.groups</td>
+          <td>&lt;undefined&gt;</td>
+          <td>LDAP group-to-role mapping entries containing group-dn and role fields.</td>
+      </tr>
+      <tr>
+          <td>http-server.authorization.ldap-role-mapping.user-dn-pattern</td>
+          <td>&lt;undefined&gt;</td>
+          <td>LDAP user DN pattern used to match group members. Use {0} as the username placeholder.</td>
+      </tr>
+      <tr>
           <td>http-server.bind-port</td>
           <td>19090</td>
           <td>Port that the Http server is bound to.</td>
@@ -1117,6 +1157,89 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
       </tr>
   </tbody>
 </table>
+<h2 id="rbac-example">RBAC Example</h2>
+<p>Enable RBAC only when you need role separation for dashboard users.</p>
+<p>The current RBAC model uses:</p>
+<ul>
+<li>string-based roles</li>
+<li>LDAP group-to-role mapping as the primary role source</li>
+<li>built-in Casbin policy to translate roles into privileges</li>
+<li>privilege-driven frontend authorization</li>
+</ul>
+<p>Amoro provides two built-in roles by default:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Role</th>
+          <th>Description</th>
+          <th>Default Privileges</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>SERVICE_ADMIN</code></td>
+          <td>Platform administrator</td>
+          <td>All privileges</td>
+      </tr>
+      <tr>
+          <td><code>VIEWER</code></td>
+          <td>Read-only resource viewer</td>
+          <td><code>VIEW_CATALOG</code>, <code>VIEW_TABLE</code>, <code>VIEW_OPTIMIZER</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><code>VIEWER</code> does not include <code>VIEW_SYSTEM</code>, so it cannot access <code>Overview</code> or <code>Terminal</code>.
+After login succeeds, <code>/login/current</code> returns both <code>roles</code> and effective <code>privileges</code>.</p>
+<p>If you need additional roles, define them by Casbin policy and map LDAP groups to those
+role names. The role name itself does not need to be added to Java enum code.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">http-server</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">authorization</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">http-server</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">login-auth-provider</span>: <span style="color:#ae81ff">org.apache.amoro.server.authentication.LdapPasswdAuthenticationProvider</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">login-auth-ldap-url</span>: <span style="color:#e6db74">&#34;ldap://ldap.example.com:389&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">login-auth-ldap-user-pattern</span>: <span style="color:#e6db74">&#34;uid={0},ou=people,dc=example,dc=com&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">authorization</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">ldap-role-mapping</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">group-member-attribute</span>: <span style="color:#e6db74">&#34;member&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">user-dn-pattern</span>: <span style="color:#e6db74">&#34;uid={0},ou=people,dc=example,dc=com&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">bind-dn</span>: <span style="color:#e6db74">&#34;cn=service-account,dc=example,dc=com&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">bind-password</span>: <span style="color:#e6db74">&#34;service-password&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">groups</span>:
+</span></span><span style="display:flex;"><span>          - <span style="color:#f92672">group-dn</span>: <span style="color:#e6db74">&#34;cn=amoro-service-admins,ou=groups,dc=example,dc=com&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">role</span>: <span style="color:#ae81ff">SERVICE_ADMIN</span>
+</span></span><span style="display:flex;"><span>          - <span style="color:#f92672">group-dn</span>: <span style="color:#e6db74">&#34;cn=amoro-viewers,ou=groups,dc=example,dc=com&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">role</span>: <span style="color:#ae81ff">VIEWER</span>
+</span></span><span style="display:flex;"><span>          - <span style="color:#f92672">group-dn</span>: <span style="color:#e6db74">&#34;cn=amoro-catalog-admins,ou=groups,dc=example,dc=com&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">role</span>: <span style="color:#ae81ff">CATALOG_ADMIN</span>
+</span></span></code></pre></div><p>Example <code>/login/current</code> response:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;userName&#34;</span>: <span style="color:#e6db74">&#34;alice&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;roles&#34;</span>: [<span style="color:#e6db74">&#34;CATALOG_ADMIN&#34;</span>],
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;privileges&#34;</span>: [
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;VIEW_CATALOG&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;MANAGE_CATALOG&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;VIEW_TABLE&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;MANAGE_TABLE&#34;</span>
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Example custom role policy:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-csv" data-lang="csv"><span style="display:flex;"><span><span style="color:#e6db74">p</span>,<span style="color:#e6db74"> CATALOG_ADMIN</span>,<span style="color:#e6db74"> CATALOG</span>,<span style="color:#e6db74"> GLOBAL</span>,<span style="color:#e6db74"> VIEW_CATALOG</span>,<span style="color:#e6db74"> allow</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">p</span>,<span style="color:#e6db74"> CATALOG_ADMIN</span>,<span style="color:#e6db74"> CATALOG</span>,<span style="color:#e6db74"> GLOBAL</span>,<span style="color:#e6db74"> MANAGE_CATALOG</span>,<span style="color:#e6db74"> allow</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">p</span>,<span style="color:#e6db74"> CATALOG_ADMIN</span>,<span style="color:#e6db74"> TABLE</span>,<span style="color:#e6db74"> GLOBAL</span>,<span style="color:#e6db74"> VIEW_TABLE</span>,<span style="color:#e6db74"> allow</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">p</span>,<span style="color:#e6db74"> CATALOG_ADMIN</span>,<span style="color:#e6db74"> TABLE</span>,<span style="color:#e6db74"> GLOBAL</span>,<span style="color:#e6db74"> MANAGE_TABLE</span>,<span style="color:#e6db74"> allow</span>
+</span></span></code></pre></div><p>Notes:</p>
+<ul>
+<li>Recommended production setup is explicit role assignment only.</li>
+<li><code>default-role</code> is optional. If it is not set, users who do not match any role mapping get no business role.</li>
+<li>Use <code>default-role: VIEWER</code> only if you intentionally want authenticated users without a matched role mapping to receive read-only access.</li>
+<li>Casbin model and default policy are built into the service and loaded from classpath.</li>
+<li>Dashboard request-to-privilege mapping is also built into the service and loaded from a resource configuration file.</li>
+</ul>
 <h2 id="shade-utils-configuration">Shade Utils Configuration</h2>
 <p>The configuration options for Amoro Configuration Shade Utils.</p>
 <style>
@@ -1169,6 +1292,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
         <nav id="TableOfContents">
   <ul>
     <li><a href="#amoro-management-service-configuration">Amoro Management Service Configuration</a></li>
+    <li><a href="#rbac-example">RBAC Example</a></li>
     <li><a href="#shade-utils-configuration">Shade Utils Configuration</a></li>
   </ul>
 </nav>
