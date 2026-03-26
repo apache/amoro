@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,6 +39,7 @@ public class NodeFileScanTask implements KeyedTableScanTask {
   private List<MixedFileScanTask> baseTasks = new ArrayList<>();
   private List<MixedFileScanTask> insertTasks = new ArrayList<>();
   private List<MixedFileScanTask> deleteFiles = new ArrayList<>();
+  private List<MixedFileScanTask> cachedDataTasks = null;
   private long cost = 0;
   private final long openFileCost = Long.valueOf(TableProperties.SPLIT_OPEN_FILE_COST_DEFAULT);
   private DataTreeNode treeNode;
@@ -100,11 +102,17 @@ public class NodeFileScanTask implements KeyedTableScanTask {
 
   @Override
   public List<MixedFileScanTask> dataTasks() {
-    return Stream.concat(baseTasks.stream(), insertTasks.stream()).collect(Collectors.toList());
+    if (cachedDataTasks == null) {
+      cachedDataTasks =
+          Collections.unmodifiableList(
+              Stream.concat(baseTasks.stream(), insertTasks.stream())
+                  .collect(Collectors.toList()));
+    }
+    return cachedDataTasks;
   }
 
   public void addFile(MixedFileScanTask task) {
-
+    cachedDataTasks = null;
     DataFileType fileType = task.fileType();
     if (fileType == null) {
       LOG.warn("file type is null");
