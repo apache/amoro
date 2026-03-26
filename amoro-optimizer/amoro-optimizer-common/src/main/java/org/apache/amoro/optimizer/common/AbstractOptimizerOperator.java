@@ -29,6 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -42,24 +44,66 @@ public class AbstractOptimizerOperator implements Serializable {
   private final AtomicReference<String> token = new AtomicReference<>();
   private volatile boolean stopped = false;
   private transient volatile AmsNodeManager amsNodeManager;
+  private transient volatile ThriftAmsNodeManager thriftAmsNodeManager;
 
   public AbstractOptimizerOperator(OptimizerConfig config) {
     Preconditions.checkNotNull(config);
     this.config = config;
-    // Initialize AmsNodeManager if in master-slave mode
-    if (config.isMasterSlaveMode() && config.getAmsUrl().startsWith("zookeeper://")) {
-      try {
-        this.amsNodeManager = new AmsNodeManager(config.getAmsUrl());
-        LOG.info("Initialized AmsNodeManager for master-slave mode");
-      } catch (Exception e) {
-        LOG.warn("Failed to initialize AmsNodeManager, will use single AMS URL", e);
+    if (config.isMasterSlaveMode()) {
+      String amsUrl = config.getAmsUrl();
+      if (amsUrl.startsWith("zookeeper://")) {
+        // ZK mode: discover nodes from ZooKeeper ephemeral nodes
+        try {
+          this.amsNodeManager = new AmsNodeManager(amsUrl);
+          LOG.info("Initialized ZK AmsNodeManager for master-slave mode");
+        } catch (Exception e) {
+          LOG.warn("Failed to initialize AmsNodeManager, will use single AMS URL", e);
+        }
+      } else {
+        // DB mode (or direct thrift://): discover nodes via getOptimizingNodeUrls() Thrift RPC
+        try {
+          this.thriftAmsNodeManager = new ThriftAmsNodeManager(amsUrl);
+          LOG.info("Initialized ThriftAmsNodeManager for master-slave mode (DB HA)");
+        } catch (Exception e) {
+          LOG.warn("Failed to initialize ThriftAmsNodeManager, will use single AMS URL", e);
+        }
       }
     }
   }
 
-  /** Get the AmsNodeManager instance if available. */
+  /** Get the AmsNodeManager instance if available (ZK mode). */
   protected AmsNodeManager getAmsNodeManager() {
     return amsNodeManager;
+  }
+
+  /** Get the ThriftAmsNodeManager instance if available (DB mode). */
+  protected ThriftAmsNodeManager getThriftAmsNodeManager() {
+    return thriftAmsNodeManager;
+  }
+
+  /**
+   * Returns true if any node manager (ZK or Thrift) is active. Used by OptimizerExecutor to decide
+   * whether to use master-slave polling logic.
+   */
+  protected boolean hasAmsNodeManager() {
+    return amsNodeManager != null || thriftAmsNodeManager != null;
+  }
+
+  /**
+   * Get all AMS URLs from the active node manager. Falls back to the single configured URL when no
+   * node manager is available or the node list is empty.
+   */
+  protected List<String> getAmsNodeUrls() {
+    if (amsNodeManager != null) {
+      List<String> urls = amsNodeManager.getAllAmsUrls();
+      if (!urls.isEmpty()) {
+        return urls;
+      }
+    }
+    if (thriftAmsNodeManager != null) {
+      return thriftAmsNodeManager.getAllAmsUrls();
+    }
+    return Collections.singletonList(getConfig().getAmsUrl());
   }
 
   protected <T> T callAms(AmsCallOperation<T> operation) throws TException {
@@ -140,7 +184,7 @@ public class AbstractOptimizerOperator implements Serializable {
             // In master-slave mode, the slave node may not have completed optimizer
             // auto-registration
             // yet, so we should retry within a time window before resetting the token
-            boolean isMasterSlaveMode = config.isMasterSlaveMode() && amsNodeManager != null;
+            boolean isMasterSlaveMode = config.isMasterSlaveMode() && hasAmsNodeManager();
             long currentTime = System.currentTimeMillis();
 
             if (isMasterSlaveMode) {

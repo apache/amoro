@@ -171,6 +171,35 @@ public class ZkBucketAssignStore implements BucketAssignStore {
   }
 
   @Override
+  public List<AmsServerInfo> getAliveNodes() throws BucketAssignStoreException {
+    List<AmsServerInfo> nodes = new ArrayList<>();
+    try {
+      if (zkClient.checkExists().forPath(assignmentsBasePath) == null) {
+        return nodes;
+      }
+      List<String> nodeKeys = zkClient.getChildren().forPath(assignmentsBasePath);
+      for (String nodeKey : nodeKeys) {
+        try {
+          AmsServerInfo nodeInfo = parseNodeKey(nodeKey);
+          if (nodeInfo.getThriftBindPort() != null && nodeInfo.getThriftBindPort() > 0) {
+            nodes.add(nodeInfo);
+          }
+        } catch (Exception e) {
+          LOG.warn("Failed to parse node key: {}", nodeKey, e);
+        }
+      }
+    } catch (KeeperException.NoNodeException e) {
+      // path doesn't exist
+    } catch (BucketAssignStoreException e) {
+      throw e;
+    } catch (Exception e) {
+      LOG.error("Failed to get alive nodes", e);
+      throw new BucketAssignStoreException("Failed to get alive nodes", e);
+    }
+    return nodes;
+  }
+
+  @Override
   public long getLastUpdateTime(AmsServerInfo nodeInfo) throws BucketAssignStoreException {
     String nodeKey = getNodeKey(nodeInfo);
     String timePath = assignmentsBasePath + "/" + nodeKey + LAST_UPDATE_TIME_SUFFIX;

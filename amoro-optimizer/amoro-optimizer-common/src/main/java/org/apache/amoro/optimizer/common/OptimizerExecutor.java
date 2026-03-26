@@ -53,8 +53,8 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
   }
 
   public void start() {
-    // Check if in master-slave mode
-    boolean isMasterSlaveMode = getConfig().isMasterSlaveMode() && getAmsNodeManager() != null;
+    // Check if in master-slave mode (node manager initialised for either ZK or DB HA)
+    boolean isMasterSlaveMode = getConfig().isMasterSlaveMode() && hasAmsNodeManager();
 
     if (isMasterSlaveMode) {
       // Master-slave mode: get node list and process tasks from each node
@@ -194,14 +194,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
    * In single node mode, returns a list with the configured AMS URL.
    */
   private List<String> getAmsNodeList() {
-    if (getAmsNodeManager() != null) {
-      List<String> nodes = getAmsNodeManager().getAllAmsUrls();
-      if (!nodes.isEmpty()) {
-        return nodes;
-      }
-    }
-    // Fallback to single node mode
-    return Collections.singletonList(getConfig().getAmsUrl());
+    return getAmsNodeUrls();
   }
 
   public int getThreadId() {

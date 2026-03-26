@@ -44,36 +44,6 @@ public interface HighAvailabilityContainer {
    */
   void waitFollowerShip() throws Exception;
 
-  /**
-   * In master-slave mode, AMS startup requires registration and participation in the master node
-   * election, which is a non-blocking process.
-   *
-   * @throws Exception if waiting fails or the underlying implementation throws an error
-   */
-  void registAndElect() throws Exception;
-
-  /**
-   * Returns whether the current node is the leader.
-   *
-   * @return true/false
-   */
-  boolean hasLeadership();
-
-  /**
-   * Returns the current AMS node information{@link AmsServerInfo}.
-   *
-   * @return AmsServerInfo
-   */
-  AmsServerInfo getOptimizingServiceServerInfo();
-
-  /**
-   * Get list of alive nodes. Only the leader node should call this method.
-   *
-   * @return List of alive node information
-   * @throws Exception if retrieval fails
-   */
-  List<AmsServerInfo> getAliveNodes() throws Exception;
-
   /** Closes the container and releases resources. */
   void close();
 
@@ -100,9 +70,18 @@ public interface HighAvailabilityContainer {
   boolean hasLeadership();
 
   /**
-   * Get current AMS node information.
+   * Get current AMS node's table service server info (host + table-service Thrift port).
    *
    * @return {@link AmsServerInfo}
    */
   AmsServerInfo getTableServiceServerInfo();
+
+  /**
+   * Get current AMS node's optimizing service server info (host + optimizing Thrift port). This
+   * must be consistent with the {@link AmsServerInfo} written into {@link
+   * org.apache.amoro.server.BucketAssignStore} so that bucket lookups can match the stored nodeKey.
+   *
+   * @return {@link AmsServerInfo}
+   */
+  AmsServerInfo getOptimizingServiceServerInfo();
 }

@@ -272,5 +272,6 @@ CREATE TABLE bucket_assignments (
   server_info_json   VARCHAR(32672),
   assignments_json   VARCHAR(32672),
   last_update_time   BIGINT        NOT NULL DEFAULT 0,
+  node_heartbeat_ts  BIGINT        NOT NULL DEFAULT 0,
   PRIMARY KEY (cluster_name, node_key)
 );

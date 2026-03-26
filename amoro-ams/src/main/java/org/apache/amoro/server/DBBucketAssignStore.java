@@ -180,6 +180,25 @@ public class DBBucketAssignStore extends PersistentBase implements BucketAssignS
     }
   }
 
+  @Override
+  public List<AmsServerInfo> getAliveNodes() throws BucketAssignStoreException {
+    try {
+      List<BucketAssignmentMeta> rows =
+          getAs(BucketAssignMapper.class, mapper -> mapper.selectAllByCluster(clusterName));
+      List<AmsServerInfo> nodes = new ArrayList<>();
+      for (BucketAssignmentMeta meta : rows) {
+        AmsServerInfo nodeInfo = parseNodeInfo(meta);
+        if (nodeInfo.getThriftBindPort() != null && nodeInfo.getThriftBindPort() > 0) {
+          nodes.add(nodeInfo);
+        }
+      }
+      return nodes;
+    } catch (Exception e) {
+      LOG.error("Failed to get alive nodes", e);
+      throw new BucketAssignStoreException("Failed to get alive nodes", e);
+    }
+  }
+
   private static String getNodeKey(AmsServerInfo nodeInfo) {
     return nodeInfo.getHost() + ":" + nodeInfo.getThriftBindPort();
   }
