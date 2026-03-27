@@ -41,7 +41,7 @@
                         <p style="margin: 12px 0 0; font-size: inherit; line-height: inherit; color: #5b4108;">
                             For stable documentation, see
                             {{ if $stableVersionURL }}
-                            <a href="{{ $stableVersionURL }}" style="color: #5b4108; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px;"><strong>{{ $stableVersionName }}</strong></a>
+                            <a href="{{ $.Site.BaseURL }}{{ $stableVersionURL }}" style="color: #5b4108; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px;"><strong>{{ $stableVersionName }}</strong></a>
                             {{ else }}
                             <strong>{{ $stableVersionName }}</strong>
                             {{ end }}
