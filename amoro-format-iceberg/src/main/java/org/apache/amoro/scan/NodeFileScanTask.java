@@ -105,8 +105,7 @@ public class NodeFileScanTask implements KeyedTableScanTask {
     if (cachedDataTasks == null) {
       cachedDataTasks =
           Collections.unmodifiableList(
-              Stream.concat(baseTasks.stream(), insertTasks.stream())
-                  .collect(Collectors.toList()));
+              Stream.concat(baseTasks.stream(), insertTasks.stream()).collect(Collectors.toList()));
     }
     return cachedDataTasks;
   }
