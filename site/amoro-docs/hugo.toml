@@ -36,7 +36,7 @@ home = [ "HTML", "RSS", "SearchIndex" ]
     { name = "Benchmark Report", parent = "Benchmark", pre = "relative", url = "../../benchmark-report/", weight = 301 },
     { name = "Benchmark Guide", parent = "Benchmark", pre = "relative", url = "../../benchmark-guide/", weight = 302 },
     { name = "Download", pre = "relative", url = "../../download/", weight = 400 },
-    { name = "blogs", pre = "relative", url = "../../blogs/", weight = 500 },
+    { name = "Blogs", pre = "relative", url = "../../blogs/", weight = 500 },
     { name = "Community", weight = 600 },
     { name = "Join Community", parent = "Community", pre = "relative", url = "../../join-community/", weight = 601 },
     { name = "How to contribute", parent = "Community", pre = "relative", url = "../../how-to-contribute/", weight = 602 },
