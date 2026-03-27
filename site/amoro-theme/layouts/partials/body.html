@@ -36,16 +36,11 @@
             <div id="content" class="markdown-body">
                 <div class="{{ if not .Params.disableToc }}margin-for-toc{{ else }}margin-without-toc{{ end }}">
                     {{ if $isLatestDocs }}
-                    <div class="latest-docs-note" style="margin: 8px 0 20px; padding: 18px 22px; border-left: 8px solid #f2a900; border-radius: 0 14px 14px 0; background: #fff6df; color: #5b4108; box-shadow: 0 2px 10px rgba(62, 42, 0, 0.08);">
-                        <p style="margin: 0; font-size: inherit; line-height: inherit; color: #5b4108;">This documentation reflects the <code>latest</code> development version and may change before the next official release.</p>
-                        <p style="margin: 12px 0 0; font-size: inherit; line-height: inherit; color: #5b4108;">
-                            For stable documentation, see
-                            {{ if $stableVersionURL }}
-                            <a href="{{ $.Site.BaseURL }}{{ $stableVersionURL }}" style="color: #5b4108; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px;"><strong>{{ $stableVersionName }}</strong></a>
-                            {{ else }}
-                            <strong>{{ $stableVersionName }}</strong>
-                            {{ end }}
-                            .
+                    <div class="latest-docs-note">
+                        <p>This documentation reflects the <code>latest</code> development version and may change before the next official release.</p>
+                        <p>
+                            For the latest stable documentation, see
+                            <a href="{{ $.Site.BaseURL }}{{ $stableVersionURL }}"><strong>{{ $stableVersionName }}</strong></a>.
                         </p>
                     </div>
                     {{ end }}
