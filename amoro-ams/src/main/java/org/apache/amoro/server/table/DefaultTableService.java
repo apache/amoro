@@ -779,6 +779,32 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   private boolean triggerTableAdded(
       ServerCatalog catalog, ServerTableIdentifier serverTableIdentifier) {
+    // Clean up any pre-existing runtime to prevent metric registration conflicts.
+    // This can happen when a table is deleted from DB (e.g., by dispose after filter change)
+    // but its runtime and metrics remain in memory. We search by table name rather than by ID
+    // because re-syncing a table creates a new DB row with a different ID.
+    tableRuntimeMap
+        .values()
+        .removeIf(
+            existing -> {
+              ServerTableIdentifier existingId = existing.getTableIdentifier();
+              if (existingId.getCatalog().equals(serverTableIdentifier.getCatalog())
+                  && existingId.getDatabase().equals(serverTableIdentifier.getDatabase())
+                  && existingId.getTableName().equals(serverTableIdentifier.getTableName())) {
+                LOG.warn(
+                    "Found existing table runtime for {}, disposing before re-adding.",
+                    serverTableIdentifier);
+                try {
+                  existing.dispose();
+                } catch (Exception e) {
+                  LOG.warn(
+                      "Error disposing existing table runtime for {}", serverTableIdentifier, e);
+                }
+                return true;
+              }
+              return false;
+            });
+
     AmoroTable<?> table =
         catalog.loadTable(
             serverTableIdentifier.getDatabase(), serverTableIdentifier.getTableName());
@@ -898,7 +924,14 @@ public class DefaultTableService extends PersistentBase implements TableService 
         externalCatalog.getServerTableIdentifier(
             tableIdentity.getDatabase(), tableIdentity.getTableName());
     if (tableIdentifier != null) {
-      tableRuntimeMap.remove(tableIdentifier.getId());
+      TableRuntime runtime = tableRuntimeMap.remove(tableIdentifier.getId());
+      if (runtime != null) {
+        try {
+          runtime.dispose();
+        } catch (Exception e) {
+          LOG.warn("Error disposing runtime during revert for {}", tableIdentifier, e);
+        }
+      }
     }
   }
 
