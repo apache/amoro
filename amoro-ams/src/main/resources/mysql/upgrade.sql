@@ -161,3 +161,15 @@ ALTER TABLE `table_process`
 ADD COLUMN `external_process_identifier` varchar(256) DEFAULT NULL COMMENT 'Table optimizing external process identifier',
 ADD COLUMN `retry_number` int(11) NOT NULL DEFAULT 0 COMMENT 'Retry times',
 ADD COLUMN `process_parameters` mediumtext COMMENT 'Table process parameters';
+
+-- ADD table bucket_assignments for storing assigned info
+CREATE TABLE IF NOT EXISTS bucket_assignments (
+                                                  cluster_name       VARCHAR(64)   NOT NULL COMMENT 'AMS cluster name',
+    node_key           VARCHAR(256) NOT NULL COMMENT 'Node key (host:thriftBindPort)',
+    server_info_json   TEXT         NULL COMMENT 'JSON encoded AmsServerInfo',
+    assignments_json   TEXT         NULL COMMENT 'JSON array of bucket IDs',
+    last_update_time   BIGINT       NOT NULL DEFAULT 0 COMMENT 'Last update timestamp (ms since epoch)',
+    PRIMARY KEY (cluster_name, node_key)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bucket ID assignments per AMS node for master-slave mode';
+
+
