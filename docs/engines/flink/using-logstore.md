@@ -44,6 +44,7 @@ Users can enable LogStore by configuring the following parameters when creating 
 |------------|----------|
 | Flink 1.17 | &#x2714; |
 | Flink 1.18 | &#x2714; |
+| Flink 1.19 | &#x2714; |
 
 Kafka as LogStore Version Description:
 
@@ -51,6 +52,7 @@ Kafka as LogStore Version Description:
 |---------------|  ----------------- |
 | 1.17.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            |
 | 1.18.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            |
+| 1.19.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            |
 
 
 
