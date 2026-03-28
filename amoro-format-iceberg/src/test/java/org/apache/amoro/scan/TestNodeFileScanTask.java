@@ -33,12 +33,10 @@ import java.util.List;
 /** Unit tests for lazy caching behavior of {@link NodeFileScanTask#dataTasks()}. */
 public class TestNodeFileScanTask {
 
-  /**
-   * File name pattern: {nodeId}-{type}-{transactionId}-{partitionId}-{taskId}-{operationId}-{count}
-   * BASE_FILE: nodeId-B-transactionId-...
-   * INSERT_FILE: nodeId-I-transactionId-...
-   * EQ_DELETE_FILE: nodeId-ED-transactionId-...
-   */
+  // File name pattern: {nodeId}-{type}-{transactionId}-{partitionId}-{taskId}-{operationId}-{count}
+  // BASE_FILE: nodeId-B-transactionId-...
+  // INSERT_FILE: nodeId-I-transactionId-...
+  // EQ_DELETE_FILE: nodeId-ED-transactionId-...
   private static MixedFileScanTask createBaseTask(String path) {
     DataFile dataFile =
         DataFiles.builder(PartitionSpec.unpartitioned())
@@ -147,8 +145,7 @@ public class TestNodeFileScanTask {
     nodeTask.addFile(deleteTask);
 
     List<MixedFileScanTask> tasks = nodeTask.dataTasks();
-    Assert.assertEquals(
-        "dataTasks() should not include EQ_DELETE_FILE tasks", 1, tasks.size());
+    Assert.assertEquals("dataTasks() should not include EQ_DELETE_FILE tasks", 1, tasks.size());
     Assert.assertTrue("dataTasks() should include only the base task", tasks.contains(baseTask));
   }
 }
