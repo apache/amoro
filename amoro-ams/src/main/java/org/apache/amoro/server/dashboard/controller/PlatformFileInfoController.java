@@ -27,6 +27,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 
+import javax.xml.XMLConstants;
+import javax.xml.stream.XMLInputFactory;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,7 +55,15 @@ public class PlatformFileInfoController {
     // validate xml config
     if (name.toLowerCase().endsWith(".xml")) {
       try {
-        Configuration configuration = new Configuration();
+        // Explicitly disable external entity processing to prevent XXE attacks,
+        // regardless of the underlying XML parser implementation on the classpath.
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        xif.setProperty(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        xif.createXMLStreamReader(new ByteArrayInputStream(bytes)).close();
+
+        Configuration configuration = new Configuration(false);
         configuration.addResource(new ByteArrayInputStream(bytes));
         configuration.setDeprecatedProperties();
       } catch (Exception e) {
