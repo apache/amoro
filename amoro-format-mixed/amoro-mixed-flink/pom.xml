@@ -40,6 +40,8 @@
         <module>v1.17/amoro-mixed-flink-runtime-1.17</module>
         <module>v1.18/amoro-mixed-flink-1.18</module>
         <module>v1.18/amoro-mixed-flink-runtime-1.18</module>
+        <module>v1.19/amoro-mixed-flink-1.19</module>
+        <module>v1.19/amoro-mixed-flink-runtime-1.19</module>
     </modules>
 
     <properties>
