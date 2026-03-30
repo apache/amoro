@@ -52,7 +52,7 @@ public class AbstractOptimizerOperator implements Serializable {
     if (config.isMasterSlaveMode()) {
       String amsUrl = config.getAmsUrl();
       if (amsUrl.startsWith("zookeeper://")) {
-        // ZK mode: discover nodes from ZooKeeper ephemeral nodes
+        // ZK HA mode: discover nodes from ZooKeeper ephemeral nodes
         try {
           this.amsNodeManager = new AmsNodeManager(amsUrl);
           LOG.info("Initialized ZK AmsNodeManager for master-slave mode");
@@ -60,7 +60,7 @@ public class AbstractOptimizerOperator implements Serializable {
           LOG.warn("Failed to initialize AmsNodeManager, will use single AMS URL", e);
         }
       } else {
-        // DB mode (or direct thrift://): discover nodes via getOptimizingNodeUrls() Thrift RPC
+        // DB HA mode: discover nodes via getOptimizingNodeUrls() Thrift RPC
         try {
           this.thriftAmsNodeManager = new ThriftAmsNodeManager(amsUrl);
           LOG.info("Initialized ThriftAmsNodeManager for master-slave mode (DB HA)");
@@ -168,15 +168,13 @@ public class AbstractOptimizerOperator implements Serializable {
   protected <T> T callAuthenticatedAms(String amsUrl, AmsAuthenticatedCallOperation<T> operation)
       throws TException {
     // Maximum retry time window for auth errors in master-slave mode (30 seconds)
-    long maxAuthRetryTimeWindow = TimeUnit.SECONDS.toMillis(90);
+    long maxAuthRetryTimeWindow = TimeUnit.SECONDS.toMillis(30);
     Long firstAuthErrorTime = null;
 
     while (isStarted()) {
       if (tokenIsReady()) {
         String token = getToken();
         try {
-          // Reset retry time on successful call
-          firstAuthErrorTime = null;
           return operation.call(OptimizingClientPools.getClient(amsUrl), token);
         } catch (Throwable t) {
           if (t instanceof AmoroException

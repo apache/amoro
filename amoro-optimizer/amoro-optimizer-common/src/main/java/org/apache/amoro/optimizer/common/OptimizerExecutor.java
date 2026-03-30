@@ -53,39 +53,23 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
   }
 
   public void start() {
-    // Check if in master-slave mode (node manager initialised for either ZK or DB HA)
-    boolean isMasterSlaveMode = getConfig().isMasterSlaveMode() && hasAmsNodeManager();
-
-    if (isMasterSlaveMode) {
-      // Master-slave mode: get node list and process tasks from each node
-      startMasterSlaveMode();
-    } else {
-      // Active-standby mode: use original logic
-      startSingleNodeMode();
-    }
-  }
-
-  /** Start in master-slave mode: get node list and process tasks from each AMS node. */
-  private void startMasterSlaveMode() {
-    // Dynamic polling interval control
-    long basePollInterval = TimeUnit.SECONDS.toMillis(1); // Base interval: 1 second
-    long maxPollInterval = TimeUnit.SECONDS.toMillis(30); // Max interval: 10 seconds
-    int consecutiveEmptyPolls = 0; // Track consecutive empty polls
-    final int emptyPollThreshold = 5; // Start increasing interval after 5 empty polls
+    // getAmsNodeUrls() returns all nodes in master-slave mode, or the single configured URL in
+    // active-standby mode, so both modes are handled uniformly via the same loop.
+    long basePollInterval = TimeUnit.SECONDS.toMillis(1);
+    long maxPollInterval = TimeUnit.SECONDS.toMillis(30);
+    int consecutiveEmptyPolls = 0;
+    final int emptyPollThreshold = 5;
     final Random random = new Random();
 
     while (isStarted()) {
-      // Get current AMS node list at the beginning of each iteration
-      List<String> amsUrls = getAmsNodeList();
+      List<String> amsUrls = getAmsNodeUrls();
 
-      // Shuffle amsUrls to prevent all optimizers from hitting the same AMS node simultaneously
+      // Shuffle to prevent all optimizers from hitting the same AMS node simultaneously
       if (amsUrls.size() > 1) {
         Collections.shuffle(amsUrls, random);
       }
 
-      boolean hasTask = false; // Track if any task was polled in this iteration
-
-      // Process tasks from each AMS node
+      boolean hasTask = false;
       for (String amsUrl : amsUrls) {
         if (!isStarted()) {
           break;
@@ -97,7 +81,7 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
           OptimizingTask task = pollTask(amsUrl);
           if (task != null && ackTask(amsUrl, task)) {
             ackTask = task;
-            hasTask = true; // Mark that we got a task
+            hasTask = true;
             result = executeTask(task);
           }
         } catch (Throwable t) {
@@ -122,91 +106,35 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
         }
       }
 
-      // Dynamic polling interval: adjust based on whether tasks were found
       if (hasTask) {
-        // Reset counter and use base interval when tasks are found
         consecutiveEmptyPolls = 0;
       } else {
-        // Increase consecutive empty polls counter
         consecutiveEmptyPolls++;
       }
 
-      // Calculate wait time based on consecutive empty polls
       long waitTime;
       if (amsUrls.isEmpty()) {
-        // No nodes available, use base interval
         waitTime = basePollInterval;
       } else if (consecutiveEmptyPolls >= emptyPollThreshold) {
-        // Gradually increase interval when no tasks found
-        // Exponential backoff: min(maxInterval, baseInterval * 2^(consecutiveEmptyPolls -
-        // threshold))
         int backoffFactor = consecutiveEmptyPolls - emptyPollThreshold + 1;
-        waitTime = Math.min(maxPollInterval, basePollInterval * (1L << Math.min(backoffFactor, 3)));
+        waitTime = Math.min(maxPollInterval, basePollInterval * (1L << backoffFactor));
         LOG.debug(
             "Optimizer executor[{}] no tasks found for {} consecutive polls, using increased interval: {}ms",
             threadId,
             consecutiveEmptyPolls,
             waitTime);
       } else {
-        // Use base interval when tasks are found or empty polls are below threshold
         waitTime = basePollInterval;
       }
 
-      // Wait before next iteration
       waitAShortTime(waitTime);
     }
-  }
-
-  /** Start in single node mode: use original logic without node list iteration. */
-  private void startSingleNodeMode() {
-    while (isStarted()) {
-      OptimizingTask ackTask = null;
-      OptimizingTaskResult result = null;
-      try {
-        OptimizingTask task = pollTask();
-        if (task != null && ackTask(task)) {
-          ackTask = task;
-          result = executeTask(task);
-        }
-      } catch (Throwable t) {
-        if (ackTask != null) {
-          LOG.error(
-              "Optimizer executor[{}] handling task[{}] failed and got an unknown error",
-              threadId,
-              ackTask.getTaskId(),
-              t);
-          String errorMessage = ExceptionUtil.getErrorMessage(t, ERROR_MESSAGE_MAX_LENGTH);
-          result = new OptimizingTaskResult(ackTask.getTaskId(), threadId);
-          result.setErrorMessage(errorMessage);
-        } else {
-          LOG.error("Optimizer executor[{}] got an unexpected error", threadId, t);
-        }
-      } finally {
-        if (result != null) {
-          completeTask(result);
-        }
-      }
-    }
-  }
-
-  /**
-   * Get the list of AMS nodes to interact with. In master-slave mode, returns all available nodes.
-   * In single node mode, returns a list with the configured AMS URL.
-   */
-  private List<String> getAmsNodeList() {
-    return getAmsNodeUrls();
   }
 
   public int getThreadId() {
     return threadId;
   }
 
-  /**
-   * Poll task from the specified AMS node (used in master-slave mode).
-   *
-   * @param amsUrl The AMS node URL to poll task from
-   * @return The polled task, or null if no task available
-   */
   private OptimizingTask pollTask(String amsUrl) {
     OptimizingTask task = null;
     try {
@@ -225,36 +153,6 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     return task;
   }
 
-  /**
-   * Poll task (used in single node mode).
-   *
-   * @return The polled task, or null if no task available
-   */
-  private OptimizingTask pollTask() {
-    OptimizingTask task = null;
-    while (isStarted()) {
-      try {
-        task = callAuthenticatedAms((client, token) -> client.pollTask(token, threadId));
-      } catch (TException exception) {
-        LOG.error("Optimizer executor[{}] polled task failed", threadId, exception);
-      }
-      if (task != null) {
-        LOG.info("Optimizer executor[{}] polled task[{}] from ams", threadId, task.getTaskId());
-        break;
-      } else {
-        waitAShortTime();
-      }
-    }
-    return task;
-  }
-
-  /**
-   * Acknowledge task to the specified AMS node (used in master-slave mode).
-   *
-   * @param amsUrl The AMS node URL to acknowledge task to
-   * @param task The task to acknowledge
-   * @return true if acknowledged successfully, false otherwise
-   */
   private boolean ackTask(String amsUrl, OptimizingTask task) {
     try {
       callAuthenticatedAms(
@@ -280,41 +178,10 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     }
   }
 
-  /**
-   * Acknowledge task (used in single node mode).
-   *
-   * @param task The task to acknowledge
-   * @return true if acknowledged successfully, false otherwise
-   */
-  private boolean ackTask(OptimizingTask task) {
-    try {
-      callAuthenticatedAms(
-          (client, token) -> {
-            client.ackTask(token, threadId, task.getTaskId());
-            return null;
-          });
-      LOG.info("Optimizer executor[{}] acknowledged task[{}] to ams", threadId, task.getTaskId());
-      return true;
-    } catch (TException exception) {
-      LOG.error(
-          "Optimizer executor[{}] acknowledged task[{}] failed",
-          threadId,
-          task.getTaskId(),
-          exception);
-      return false;
-    }
-  }
-
   protected OptimizingTaskResult executeTask(OptimizingTask task) {
     return executeTask(getConfig(), getThreadId(), task, LOG);
   }
 
-  /**
-   * Complete task to the specified AMS node (used in master-slave mode).
-   *
-   * @param amsUrl The AMS node URL to complete task to
-   * @param optimizingTaskResult The task result to complete
-   */
   protected void completeTask(String amsUrl, OptimizingTaskResult optimizingTaskResult) {
     try {
       callAuthenticatedAms(
@@ -336,33 +203,6 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
           optimizingTaskResult.getTaskId(),
           optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL",
           amsUrl,
-          exception);
-    }
-  }
-
-  /**
-   * Complete task (used in single node mode).
-   *
-   * @param optimizingTaskResult The task result to complete
-   */
-  protected void completeTask(OptimizingTaskResult optimizingTaskResult) {
-    try {
-      callAuthenticatedAms(
-          (client, token) -> {
-            client.completeTask(token, optimizingTaskResult);
-            return null;
-          });
-      LOG.info(
-          "Optimizer executor[{}] completed task[{}](status: {}) to ams",
-          threadId,
-          optimizingTaskResult.getTaskId(),
-          optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL");
-    } catch (Exception exception) {
-      LOG.error(
-          "Optimizer executor[{}] completed task[{}](status: {}) failed",
-          threadId,
-          optimizingTaskResult.getTaskId(),
-          optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL",
           exception);
     }
   }

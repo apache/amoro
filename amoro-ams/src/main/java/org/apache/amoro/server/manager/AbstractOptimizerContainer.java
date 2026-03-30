@@ -140,7 +140,7 @@ public abstract class AbstractOptimizerContainer implements InternalResourceCont
     if (containerProperties != null
         && "true"
             .equalsIgnoreCase(
-                containerProperties.get(OptimizerProperties.OPTIMIZER_MASTER_SLAVE_MODE))) {
+                containerProperties.get(OptimizerProperties.OPTIMIZER_MASTER_SLAVE_MODE_ENABLED))) {
       stringBuilder.append(" -msm");
     }
     return stringBuilder.toString();

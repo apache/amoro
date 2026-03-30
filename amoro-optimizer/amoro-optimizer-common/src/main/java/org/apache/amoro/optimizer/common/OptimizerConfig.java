@@ -105,7 +105,7 @@ public class OptimizerConfig implements Serializable {
 
   @Option(
       name = "-msm",
-      aliases = "--" + OptimizerProperties.OPTIMIZER_MASTER_SLAVE_MODE,
+      aliases = "--" + OptimizerProperties.OPTIMIZER_MASTER_SLAVE_MODE_ENABLED,
       usage = "Enable master-slave mode")
   private boolean masterSlaveMode = false;
 
