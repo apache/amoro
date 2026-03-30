@@ -65,6 +65,8 @@ import java.util.Map;
 
 @RunWith(Parameterized.class)
 public class IcebergRewriteExecutorTest extends TableTestBase {
+  private static final int POSITION_DELETE_FILE_PATH_ID = 2147483546;
+  private static final int POSITION_DELETE_POS_ID = 2147483545;
 
   private final FileFormat fileFormat;
 
@@ -72,8 +74,11 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
 
   private RewriteFilesInput dataScanTask;
 
+  // When GenericParquetReaders.buildReader() is called with a schema containing _file / _pos,
+  // the TypeWithSchemaVisitor in Iceberg does strict schema matching against the Parquet file
+  // schema
   private final Schema posSchema =
-      new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
+      new Schema(MetadataColumns.DELETE_FILE_PATH, MetadataColumns.DELETE_FILE_POS);
 
   public IcebergRewriteExecutorTest(boolean hasPartition, FileFormat fileFormat) {
     super(
@@ -109,6 +114,9 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
 
   @Before
   public void initDataAndReader() throws IOException {
+    Assert.assertEquals(POSITION_DELETE_FILE_PATH_ID, MetadataColumns.DELETE_FILE_PATH.fieldId());
+    Assert.assertEquals(POSITION_DELETE_POS_ID, MetadataColumns.DELETE_FILE_POS.fieldId());
+
     StructLike partitionData = getPartitionData();
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(getMixedTable().asUnkeyedTable(), 0, 1)

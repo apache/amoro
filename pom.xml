@@ -397,7 +397,6 @@
                 <artifactId>parquet-avro</artifactId>
                 <version>${parquet-avro.version}</version>
             </dependency>
-
             <!-- TODO: Remove this parquet-jackson when upgrade JDK to 17 or higher -->
             <dependency>
                 <groupId>org.apache.parquet</groupId>
