@@ -349,7 +349,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
       return;
     }
     try {
-      AmsServerInfo currentServerInfo = haContainer.getTableServiceServerInfo();
+      // Must use optimizingServiceServerInfo because AmsAssignService stores bucket assignments
+      // keyed by host:optimizingPort (from haContainer.getAliveNodes()), not host:tableServicePort.
+      AmsServerInfo currentServerInfo = haContainer.getOptimizingServiceServerInfo();
       if (currentServerInfo == null) {
         LOG.warn("Cannot get current server info, skip updating assigned bucketIds");
         return;

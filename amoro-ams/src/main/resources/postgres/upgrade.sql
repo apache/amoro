@@ -224,12 +224,13 @@ ADD COLUMN process_parameters text;
 
 -- ADD table bucket_assignments for storing assigned info
 CREATE TABLE IF NOT EXISTS bucket_assignments (
-                                                  cluster_name       VARCHAR(64)  NOT NULL,
+    cluster_name       VARCHAR(64)  NOT NULL,
     node_key           VARCHAR(256) NOT NULL,
     server_info_json   TEXT         NULL,
     assignments_json   TEXT         NULL,
     last_update_time   BIGINT       NOT NULL DEFAULT 0,
+    node_heartbeat_ts  BIGINT       NOT NULL DEFAULT 0,
     PRIMARY KEY (cluster_name, node_key)
-    );
+);
 
 CREATE INDEX IF NOT EXISTS idx_bucket_assignments_cluster ON bucket_assignments (cluster_name);
