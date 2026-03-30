@@ -43,7 +43,6 @@ import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
 import org.apache.amoro.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.amoro.flink.util.IcebergClassUtil;
 import org.apache.amoro.flink.util.MixedFormatUtils;
-import org.apache.amoro.flink.util.ProxyUtil;
 import org.apache.amoro.table.DistributionHashMode;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
@@ -435,10 +434,7 @@ public class FlinkSink {
       return null;
     }
     tableLoader.switchLoadInternalTableForKeyedTable(MixedFormatUtils.isToBase(overwrite));
-    return (OneInputStreamOperator)
-        ProxyUtil.getProxy(
-            IcebergClassUtil.newIcebergFilesCommitter(
-                tableLoader, overwrite, branch, spec, mixedTable.io()),
-            mixedTable.io());
+    return IcebergClassUtil.newIcebergFilesCommitter(
+        tableLoader, overwrite, branch, spec, mixedTable.io());
   }
 }
