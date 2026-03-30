@@ -397,15 +397,18 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     if (positionMap == null) {
       positionMap = new HashMap<>();
       List<CloseableIterable<Record>> deletes = Lists.transform(posDeletes, this::openPosDeletes);
-      CloseableIterator<Record> iterator = CloseableIterable.concat(deletes).iterator();
-      while (iterator.hasNext()) {
-        Record deleteRecord = iterator.next();
-        String path = FILENAME_ACCESSOR.get(deleteRecord).toString();
-        if (positionPathSets != null && !positionPathSets.contains(path)) {
-          continue;
+      try (CloseableIterator<Record> iterator = CloseableIterable.concat(deletes).iterator()) {
+        while (iterator.hasNext()) {
+          Record deleteRecord = iterator.next();
+          String path = FILENAME_ACCESSOR.get(deleteRecord).toString();
+          if (positionPathSets != null && !positionPathSets.contains(path)) {
+            continue;
+          }
+          Roaring64Bitmap posBitMap = positionMap.computeIfAbsent(path, k -> new Roaring64Bitmap());
+          posBitMap.add((Long) POSITION_ACCESSOR.get(deleteRecord));
         }
-        Roaring64Bitmap posBitMap = positionMap.computeIfAbsent(path, k -> new Roaring64Bitmap());
-        posBitMap.add((Long) POSITION_ACCESSOR.get(deleteRecord));
+      } catch (IOException e) {
+        throw new RuntimeException("Failed to close position delete iterator", e);
       }
     }
 
