@@ -49,7 +49,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 @RunWith(Parameterized.class)
 public class TestOptimizerGroupKeeper extends AMSTableTestBase {
@@ -81,7 +80,7 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
   @Before
   public void prepare() throws Exception {
     optimizerRegistrar = registerInfo -> optimizingService().authenticate(registerInfo);
-    setupMockContainer(() -> currentGroupName);
+    setupMockContainer();
   }
 
   @After
@@ -125,10 +124,9 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
   }
 
   /** Setup mock container and inject it into Containers using reflection. */
-  private void setupMockContainer(Supplier<String> targetGroupNameSupplier) throws Exception {
+  private void setupMockContainer() throws Exception {
     MockOptimizerContainer mockContainer =
-        new MockOptimizerContainer(
-            resourceAvailable, scaleOutCallCount, optimizerRegistrar, targetGroupNameSupplier);
+        new MockOptimizerContainer(resourceAvailable, scaleOutCallCount, optimizerRegistrar);
 
     // Use reflection to set isInitialized to true
     DynFields.UnboundField<Boolean> initializedField =
@@ -341,17 +339,14 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     private final AtomicBoolean resourceAvailable;
     private final AtomicInteger scaleOutCallCount;
     private final Function<OptimizerRegisterInfo, String> optimizerRegistrar;
-    private final Supplier<String> targetGroupNameSupplier;
 
     public MockOptimizerContainer(
         AtomicBoolean resourceAvailable,
         AtomicInteger scaleOutCallCount,
-        Function<OptimizerRegisterInfo, String> optimizerRegistrar,
-        Supplier<String> targetGroupNameSupplier) {
+        Function<OptimizerRegisterInfo, String> optimizerRegistrar) {
       this.resourceAvailable = resourceAvailable;
       this.scaleOutCallCount = scaleOutCallCount;
       this.optimizerRegistrar = optimizerRegistrar;
-      this.targetGroupNameSupplier = targetGroupNameSupplier;
     }
 
     @Override
@@ -359,12 +354,6 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
 
     @Override
     protected Map<String, String> doScaleOut(Resource resource) {
-      String targetGroup = targetGroupNameSupplier != null ? targetGroupNameSupplier.get() : null;
-      if (targetGroup != null && !targetGroup.equals(resource.getGroupName())) {
-        // Stale task from a previously leaked group; silently ignore to prevent cross-test
-        // contamination of scaleOutCallCount via the shared static Containers registry.
-        return Maps.newHashMap();
-      }
       scaleOutCallCount.incrementAndGet();
       if (!resourceAvailable.get()) {
         throw new RuntimeException("No resources available");
