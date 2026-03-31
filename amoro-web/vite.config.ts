@@ -37,7 +37,7 @@ const css = {
         'border-color-split': '#e8e8f0',
         'header-color': 'rgba(0, 0, 0, 0.85)',
         'text-color': '#79809a',
-        'text-color-secondary': '#c0c0ca',
+        'text-color-secondary': '#595959',
         'font-size-base': '14px',
         'dark-gray-color': '#2b354a',
         'dark-bg-color': '#202a40',
