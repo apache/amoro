@@ -62,7 +62,7 @@ The Flink Runtime Jar is located in the `amoro-format-mixed/amoro-mixed-flink/v1
 Download Flink and related dependencies, and download Flink 1.18/1.19 as needed. Taking Flink 1.18 as an example:
 ```shell
 # Replace version value with the latest Amoro version if needed
-AMORO_VERSION=0.8.0-incubating
+AMORO_VERSION=0.9.0-incubating
 FLINK_VERSION=1.18.1
 FLINK_MAJOR_VERSION=1.18
 FLINK_HADOOP_SHADE_VERSION=2.7.5
