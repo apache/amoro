@@ -75,7 +75,7 @@ export default defineConfig({
       logger: false,
       include: 'mock',
       infixName: false,
-      enableProd: true,
+      enableProd: false,
     }),
     createSvgIconsPlugin({
       iconDirs: [path.resolve(process.cwd(), 'src/assets/icons/svg')],
