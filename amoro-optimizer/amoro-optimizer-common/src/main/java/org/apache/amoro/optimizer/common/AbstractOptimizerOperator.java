@@ -40,6 +40,13 @@ public class AbstractOptimizerOperator implements Serializable {
   // Call ams every 5 seconds by default
   private static long callAmsInterval = TimeUnit.SECONDS.toMillis(5);
 
+  /**
+   * In master-slave mode, the maximum number of consecutive shouldRetryLater errors allowed per
+   * node before failing fast and letting the caller try the next node. Prevents the multi-node
+   * polling loop in OptimizerExecutor from getting stuck indefinitely on a single unreachable node.
+   */
+  static final int MAX_RETRIES_PER_NODE_IN_MASTER_SLAVE = 5;
+
   private final OptimizerConfig config;
   private final AtomicReference<String> token = new AtomicReference<>();
   private volatile boolean stopped = false;
@@ -171,6 +178,10 @@ public class AbstractOptimizerOperator implements Serializable {
     long maxAuthRetryTimeWindow = TimeUnit.SECONDS.toMillis(30);
     Long firstAuthErrorTime = null;
 
+    // Per-node retry budget: in master-slave mode, limit consecutive shouldRetryLater retries so
+    // that a permanently unreachable node does not block the multi-node polling loop indefinitely.
+    int consecutiveRetries = 0;
+
     while (isStarted()) {
       if (tokenIsReady()) {
         String token = getToken();
@@ -228,6 +239,20 @@ public class AbstractOptimizerOperator implements Serializable {
             return null;
           } else if (shouldRetryLater(t)) {
             LOG.error("Call ams {} got an error and will try again later", amsUrl, t);
+            if (hasAmsNodeManager()) {
+              consecutiveRetries++;
+              if (consecutiveRetries > MAX_RETRIES_PER_NODE_IN_MASTER_SLAVE) {
+                LOG.warn(
+                    "Per-node retry budget ({}) exhausted for AMS {}, failing fast to try next node",
+                    MAX_RETRIES_PER_NODE_IN_MASTER_SLAVE,
+                    amsUrl);
+                if (t instanceof TException) {
+                  throw (TException) t;
+                }
+                throw new TException(
+                    "Per-node retry budget exhausted for " + amsUrl + ": " + t.getMessage(), t);
+              }
+            }
             waitAShortTime();
           } else {
             throw t;
