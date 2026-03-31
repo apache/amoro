@@ -362,6 +362,7 @@ i {
     }
     .margin-for-toc {
         margin-right: 0;
+        padding-right: 20px;
     }
     section {
         margin-left: 20px;
@@ -398,6 +399,59 @@ i {
 .error {
     color: #D8000C;
     background-color: #FFD2D2;
+}
+
+.latest-docs-note {
+    margin: 8px 0 20px;
+    padding: 18px 22px;
+    border-left: 8px solid #f2a900;
+    border-radius: 14px;
+    background: #fff6df;
+    color: #5b4108;
+    box-shadow: 0 2px 10px rgba(62, 42, 0, 0.08);
+}
+
+.latest-docs-note p {
+    margin: 0;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.latest-docs-note p + p {
+    margin-top: 12px;
+}
+
+.latest-docs-note strong {
+    font-weight: 700;
+}
+
+.latest-docs-note a {
+    color: #5b4108;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+}
+
+.latest-docs-note a:hover {
+    color: #3f2d05;
+}
+
+@media screen and (max-width: 768px) {
+    .latest-docs-note {
+        margin: 8px 0 18px;
+        padding: 16px 18px;
+        border-left-width: 6px;
+        border-radius: 12px;
+    }
+
+    .latest-docs-note p {
+        font-size: inherit;
+        line-height: inherit;
+    }
+
+    .latest-docs-note p + p {
+        margin-top: 10px;
+    }
 }
 
 .fa-table {
