@@ -1,0 +1,2 @@
+org.apache.amoro.server.process.executor.LocalExecutionEngine
+org.apache.amoro.server.process.executor.HttpRemoteSparkStandAloneSubmit
