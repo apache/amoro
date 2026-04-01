@@ -22,6 +22,15 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import useStore from '@/store/index'
 import { getQueryString } from '@/utils'
+import {
+  canExecuteSql,
+  canManagePlatform,
+  canViewCatalog,
+  canViewOptimizer,
+  canViewSystem,
+  canViewTable,
+  getDefaultRoute,
+} from '@/utils/permission'
 
 interface MenuItem {
   key: string
@@ -44,6 +53,12 @@ export default defineComponent({
     const hasToken = computed(() => {
       return !!(getQueryString('token') || '')
     })
+    const canAccessSystem = computed(() => canViewSystem())
+    const canAccessCatalog = computed(() => canViewCatalog())
+    const canAccessTable = computed(() => canViewTable())
+    const canAccessOptimizer = computed(() => canViewOptimizer())
+    const canAccessTerminal = computed(() => canExecuteSql())
+    const canAccessSettings = computed(() => canManagePlatform())
     const menuList = computed(() => {
       const menu: MenuItem[] = [
         {
@@ -84,7 +99,28 @@ export default defineComponent({
           icon: 'settings',
         },
       ]
-      return hasToken.value ? menu : allMenu
+      const source = hasToken.value ? menu : allMenu
+      return source.filter((item) => {
+        if (!canAccessSettings.value && item.key === 'settings') {
+          return false
+        }
+        if (!canAccessSystem.value && item.key === 'overview') {
+          return false
+        }
+        if (!canAccessTerminal.value && item.key === 'terminal') {
+          return false
+        }
+        if (!canAccessCatalog.value && item.key === 'catalogs') {
+          return false
+        }
+        if (!canAccessOptimizer.value && item.key === 'optimizing') {
+          return false
+        }
+        if (!canAccessTable.value && item.key === 'tables') {
+          return false
+        }
+        return true
+      })
     })
 
     const setCurMenu = () => {
@@ -157,13 +193,19 @@ export default defineComponent({
 
     const viewOverview = () => {
       router.push({
-        path: '/overview',
+        path: canAccessSystem.value ? '/overview' : getDefaultRoute(),
       })
     }
 
     return {
       ...toRefs(state),
       hasToken,
+      canAccessSystem,
+      canAccessCatalog,
+      canAccessTable,
+      canAccessOptimizer,
+      canAccessTerminal,
+      canAccessSettings,
       menuList,
       toggleCollapsed,
       navClick,
