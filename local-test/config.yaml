@@ -171,6 +171,11 @@ containers:
       spark-conf.spark.driver.memory: "1g"
       spark-conf.spark.executor.memory: "1g"
       spark-conf.spark.executor.cores: "1"
+      # Configs to prevent spark context from getting failed on executor failures
+      # Number of retries by spark = spark-conf.spark.task.maxFailures - 1
+      spark-conf.spark.executor.maxNumFailures: "100"
+      spark-conf.spark.executor.failuresValidityInterval: "60s"
+      spark-conf.spark.task.maxFailures: "4"
       # AWS/MinIO credentials for S3FileIO (Spark optimizer pods need these)
       spark-conf.spark.kubernetes.driver.secretKeyRef.AWS_ACCESS_KEY_ID: "fusion-s3-credentials:access-key-id"
       spark-conf.spark.kubernetes.driver.secretKeyRef.AWS_SECRET_ACCESS_KEY: "fusion-s3-credentials:secret-access-key"
