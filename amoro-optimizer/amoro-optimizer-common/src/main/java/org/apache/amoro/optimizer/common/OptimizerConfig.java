@@ -244,6 +244,7 @@ public class OptimizerConfig implements Serializable {
         .add("cacheMaxTotalSize", cacheMaxTotalSize)
         .add("cacheMaxEntrySize", cacheMaxEntrySize)
         .add("cacheTimeout", cacheTimeout)
+        .add("masterSlaveMode", masterSlaveMode)
         .toString();
   }
 }

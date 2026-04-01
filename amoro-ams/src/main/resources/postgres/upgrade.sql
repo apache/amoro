@@ -235,4 +235,4 @@ CREATE TABLE IF NOT EXISTS bucket_assignments (
 CREATE INDEX IF NOT EXISTS idx_bucket_assignments_cluster ON bucket_assignments (cluster_name);
 
 -- ADD node_heartbeat_ts to table bucket_assignments
-ALTER TABLE table_process ADD COLUMN node_heartbeat_ts BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE bucket_assignments ADD COLUMN node_heartbeat_ts BIGINT NOT NULL DEFAULT 0;
