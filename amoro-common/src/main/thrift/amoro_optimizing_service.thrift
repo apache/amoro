@@ -67,4 +67,7 @@ service OptimizingService {
             throws (1: amoro_commons.AmoroException e1)
 
     bool cancelProcess(1:i64 processId)
+
+    list<string> getOptimizingNodeUrls()
+            throws (1: amoro_commons.AmoroException e1)
 }

@@ -872,6 +872,15 @@ public class TestAmsAssignService {
       lastUpdateTimes.put(nodeKey, System.currentTimeMillis());
     }
 
+    @Override
+    public List<AmsServerInfo> getAliveNodes() throws BucketAssignStoreException {
+      List<AmsServerInfo> nodes = new ArrayList<>();
+      for (String nodeKey : assignments.keySet()) {
+        nodes.add(nodeInfoMap.getOrDefault(nodeKey, parseNodeKey(nodeKey)));
+      }
+      return nodes;
+    }
+
     private AmsServerInfo parseNodeKey(String nodeKey) {
       String[] parts = nodeKey.split(":");
       if (parts.length != 2) {
