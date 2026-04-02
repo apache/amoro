@@ -35,6 +35,7 @@ import type { IIOptimizeGroupItem, ILableAndValue } from '@/types/common.type'
 import GroupModal from '@/views/resource/components/GroupModal.vue'
 import CreateOptimizerModal from '@/views/resource/components/CreateOptimizerModal.vue'
 import { usePageScroll } from '@/hooks/usePageScroll'
+import { canManageOptimizer } from '@/utils/permission'
 
 export default defineComponent({
   name: 'Resource',
@@ -49,6 +50,7 @@ export default defineComponent({
     const router = useRouter()
     const route = useRoute()
     const { pageScrollRef } = usePageScroll()
+    const writable = canManageOptimizer()
     const tabConfig: ILableAndValue[] = shallowReactive([
       { label: t('optimizerGroups'), value: 'optimizerGroups' },
       { label: t('optimizers'), value: 'optimizers' },
@@ -131,6 +133,7 @@ export default defineComponent({
       createOptimizer,
       t,
       pageScrollRef,
+      writable,
     }
   },
 })
@@ -158,7 +161,7 @@ export default defineComponent({
               :tab="t('optimizers')"
               :class="[activeTab === 'optimizers' ? 'active' : '']"
             >
-              <a-button type="primary" class="g-mb-16" @click="createOptimizer(null)">
+              <a-button v-if="writable" type="primary" class="g-mb-16" @click="createOptimizer(null)">
                 {{ t("createOptimizer") }}
               </a-button>
               <List type="optimizers" />
@@ -168,7 +171,7 @@ export default defineComponent({
               :tab="t('optimizerGroups')"
               :class="[activeTab === 'optimizerGroups' ? 'active' : '']"
             >
-              <a-button type="primary" class="g-mb-16" @click="editGroup(null)">
+              <a-button v-if="writable" type="primary" class="g-mb-16" @click="editGroup(null)">
                 {{ t("addGroup") }}
               </a-button>
               <List

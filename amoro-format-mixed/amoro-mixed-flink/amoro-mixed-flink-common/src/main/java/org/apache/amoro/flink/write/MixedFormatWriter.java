@@ -32,6 +32,7 @@ import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.api.operators.Output;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.runtime.streamrecord.LatencyMarker;
+import org.apache.flink.streaming.runtime.streamrecord.RecordAttributes;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.streaming.runtime.tasks.StreamTask;
 import org.apache.flink.streaming.runtime.watermarkstatus.WatermarkStatus;
@@ -211,6 +212,9 @@ public class MixedFormatWriter<OUT> extends AbstractStreamOperator<OUT>
 
         @Override
         public void emitLatencyMarker(LatencyMarker latencyMarker) {}
+
+        @Override
+        public void emitRecordAttributes(RecordAttributes recordAttributes) {}
 
         @Override
         public void close() {}

@@ -469,6 +469,11 @@ public class MockAmoroManagementServer implements Runnable {
       return false;
     }
 
+    @Override
+    public java.util.List<String> getOptimizingNodeUrls() throws TException {
+      return java.util.Collections.emptyList();
+    }
+
     public Map<String, OptimizerRegisterInfo> getRegisteredOptimizers() {
       return registeredOptimizers;
     }

@@ -66,6 +66,15 @@ public interface BucketAssignStore {
   Map<AmsServerInfo, List<String>> getAllAssignments() throws BucketAssignStoreException;
 
   /**
+   * Get all alive AMS nodes that have bucket assignments. Used by optimizers in master-slave mode
+   * to discover all AMS optimizing endpoints.
+   *
+   * @return List of AmsServerInfo for all nodes with bucket assignments, empty list if none
+   * @throws BucketAssignStoreException If retrieval operation fails
+   */
+  List<AmsServerInfo> getAliveNodes() throws BucketAssignStoreException;
+
+  /**
    * Get the last update time for a node's assignments.
    *
    * @param nodeInfo The node information

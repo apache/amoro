@@ -26,6 +26,7 @@ import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
+import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.exception.ForbiddenException;
@@ -66,6 +67,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -116,12 +118,22 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final TableService tableService;
   private final RuntimeHandlerChain tableHandlerChain;
   private final ExecutorService planExecutor;
+  private final BucketAssignStore bucketAssignStore;
 
   public DefaultOptimizingService(
       Configurations serviceConfig,
       CatalogManager catalogManager,
       OptimizerManager optimizerManager,
       TableService tableService) {
+    this(serviceConfig, catalogManager, optimizerManager, tableService, null);
+  }
+
+  public DefaultOptimizingService(
+      Configurations serviceConfig,
+      CatalogManager catalogManager,
+      OptimizerManager optimizerManager,
+      TableService tableService,
+      BucketAssignStore bucketAssignStore) {
     this.optimizerTouchTimeout =
         serviceConfig.getDurationInMillis(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT);
     this.taskAckTimeout =
@@ -144,6 +156,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     this.tableService = tableService;
     this.catalogManager = catalogManager;
     this.optimizerManager = optimizerManager;
+    this.bucketAssignStore = bucketAssignStore;
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
     this.planExecutor =
         Executors.newCachedThreadPool(
@@ -320,6 +333,28 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
     process.close(true);
     return true;
+  }
+
+  @Override
+  public List<String> getOptimizingNodeUrls() {
+    if (bucketAssignStore == null) {
+      return Collections.emptyList();
+    }
+    try {
+      List<AmsServerInfo> nodes = bucketAssignStore.getAliveNodes();
+      List<String> urls = new ArrayList<>(nodes.size());
+      for (AmsServerInfo node : nodes) {
+        if (node.getHost() != null
+            && node.getThriftBindPort() != null
+            && node.getThriftBindPort() > 0) {
+          urls.add(String.format("thrift://%s:%d", node.getHost(), node.getThriftBindPort()));
+        }
+      }
+      return urls;
+    } catch (Exception e) {
+      LOG.warn("Failed to get optimizing node URLs from bucket assign store", e);
+      return Collections.emptyList();
+    }
   }
 
   /**

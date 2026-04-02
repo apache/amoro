@@ -37,7 +37,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'Home',
-    redirect: 'overview', // overview
+    redirect: 'tables',
     component: Home,
     children: [
       {
