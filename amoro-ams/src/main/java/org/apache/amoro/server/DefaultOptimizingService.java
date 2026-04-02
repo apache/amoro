@@ -39,6 +39,7 @@ import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.resource.ResourceType;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.manager.AbstractOptimizerContainer;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
@@ -56,8 +57,6 @@ import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
-import org.apache.amoro.server.BucketAssignStore;
-import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -125,15 +124,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final BucketAssignStore bucketAssignStore;
   private final HighAvailabilityContainer haContainer;
   private final boolean isMasterSlaveMode;
-
-  public DefaultOptimizingService(
-      Configurations serviceConfig,
-      CatalogManager catalogManager,
-      OptimizerManager optimizerManager,
-      TableService tableService,
-      BucketAssignStore bucketAssignStore) {
-    this(serviceConfig, catalogManager, optimizerManager, tableService, bucketAssignStore, null);
-  }
 
   public DefaultOptimizingService(
       Configurations serviceConfig,
@@ -579,14 +569,23 @@ public class DefaultOptimizingService extends StatedPersistentBase
       // Use 1/4 of optimizerTouchTimeout as sync interval (default ~30 seconds), used for
       // master-slave follower sync.
       long syncInterval = Math.max(5000, optimizerTouchTimeout / 4);
+      // In non-master-slave mode, this node is always the leader.
+      boolean wasLeader = !isMasterSlaveMode;
       while (!stopped) {
         try {
-          if (isMasterSlaveMode && (haContainer == null || !haContainer.hasLeadership())) {
-            // Not leader: let subclass handle follower state (e.g. sync optimizer list from DB)
-            onFollowerTick(syncInterval);
-          } else {
+          boolean isLeader = !isMasterSlaveMode || haContainer.hasLeadership();
+          if (!wasLeader && isLeader) {
+            // Follower → Leader transition: subclass takes over monitoring of inherited optimizers.
+            onBecomeLeader();
+          }
+          wasLeader = isLeader;
+
+          if (isLeader) {
             T keepingTask = suspendingQueue.take();
             this.processTask(keepingTask);
+          } else {
+            // Not leader: let subclass handle follower state (e.g. sync optimizer list from DB)
+            onFollowerTick(syncInterval);
           }
         } catch (InterruptedException ignored) {
         } catch (Throwable t) {
@@ -600,6 +599,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
     protected void onFollowerTick(long syncInterval) throws InterruptedException {
       Thread.sleep(syncInterval);
     }
+
+    protected void onBecomeLeader() {}
   }
 
   private class OptimizerKeeper extends AbstractKeeper<OptimizerKeepingTask> {
@@ -637,6 +638,17 @@ public class DefaultOptimizingService extends StatedPersistentBase
     protected void onFollowerTick(long syncInterval) throws InterruptedException {
       loadOptimizersFromDatabase();
       Thread.sleep(syncInterval);
+    }
+
+    @Override
+    protected void onBecomeLeader() {
+      LOG.info(
+          "Became leader, starting heartbeat monitoring for {} inherited optimizers",
+          authOptimizers.size());
+      // All optimizers in authOptimizers were loaded from DB by the follower sync loop.
+      // Their touchTime reflects the latest DB-persisted heartbeat, which is the correct
+      // baseline for the new leader's expiry detection.
+      authOptimizers.values().forEach(this::keepInTouch);
     }
 
     /**

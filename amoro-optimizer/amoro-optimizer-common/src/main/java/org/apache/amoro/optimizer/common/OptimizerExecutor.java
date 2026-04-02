@@ -131,21 +131,6 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     }
   }
 
-  /**
-   * Get the list of AMS nodes to interact with. In master-slave mode, returns all available nodes.
-   * In single node mode, returns a list with the configured AMS URL.
-   */
-  private List<String> getAmsNodeList() {
-    if (getAmsNodeManager() != null) {
-      List<String> nodes = getAmsNodeManager().getAllAmsUrls();
-      if (!nodes.isEmpty()) {
-        return nodes;
-      }
-    }
-    // Fallback to single node mode
-    return Collections.singletonList(getConfig().getAmsUrl());
-  }
-
   public int getThreadId() {
     return threadId;
   }

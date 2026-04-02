@@ -22,7 +22,6 @@ import org.apache.amoro.client.AmsServerInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
@@ -42,24 +41,6 @@ public class NoopHighAvailabilityContainer implements HighAvailabilityContainer 
   public void waitFollowerShip() throws InterruptedException {
     followerLatch.await();
     LOG.warn("Noop HA: waiting followership should not return");
-  }
-
-  @Override
-  public void registAndElect() throws Exception {}
-
-  @Override
-  public boolean hasLeadership() {
-    return false;
-  }
-
-  @Override
-  public AmsServerInfo getOptimizingServiceServerInfo() {
-    return null;
-  }
-
-  @Override
-  public List<AmsServerInfo> getAliveNodes() throws Exception {
-    return new ArrayList<>();
   }
 
   @Override

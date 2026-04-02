@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TestAmsAssignService {
 
   private Configurations serviceConfig;
-  private ZkHighAvailabilityContainer haContainer;
+  private HighAvailabilityContainer haContainer;
   private AmsAssignService assignService;
   private AmsServerInfo node1;
   private AmsServerInfo node2;
@@ -190,13 +190,7 @@ public class TestAmsAssignService {
 
       // Check that node2's buckets are redistributed
       Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
-      Assert.assertFalse(
-          "Should have at least 1 node after offline, but got: " + newAssignments.size(),
-          newAssignments.isEmpty());
-      Assert.assertEquals(
-          "Should have 1 node after offline, but got: " + newAssignments.size(),
-          1,
-          newAssignments.size());
+      Assert.assertEquals("Should have 1 node after offline", 1, newAssignments.size());
 
       // The only remaining node (node1) should have all buckets. ZK stores
       // optimizingServiceServerInfo (thrift port 1261), not table port (1260), so we
@@ -459,11 +453,11 @@ public class TestAmsAssignService {
     return createContainerWithMockZk(serviceConfig);
   }
 
-  /** Create ZkHighAvailabilityContainer with mocked ZK components using reflection. */
-  private ZkHighAvailabilityContainer createContainerWithMockZk(Configurations config)
+  /** Create HighAvailabilityContainer with mocked ZK components using reflection. */
+  private HighAvailabilityContainer createContainerWithMockZk(Configurations config)
       throws Exception {
     // Create container without ZK connection to avoid any connection attempts
-    ZkHighAvailabilityContainer container = createContainerWithoutZk(config);
+    HighAvailabilityContainer container = createContainerWithoutZk(config);
 
     // Inject mock ZK client and leader latch
     java.lang.reflect.Field zkClientField =
@@ -479,8 +473,8 @@ public class TestAmsAssignService {
     return container;
   }
 
-  /** Create a ZkHighAvailabilityContainer without initializing ZK connection. */
-  private ZkHighAvailabilityContainer createContainerWithoutZk(Configurations config)
+  /** Create a HighAvailabilityContainer without initializing ZK connection. */
+  private HighAvailabilityContainer createContainerWithoutZk(Configurations config)
       throws Exception {
     java.lang.reflect.Constructor<ZkHighAvailabilityContainer> constructor =
         ZkHighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
@@ -489,7 +483,7 @@ public class TestAmsAssignService {
     Configurations tempConfig = new Configurations(config);
     tempConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
 
-    ZkHighAvailabilityContainer container = constructor.newInstance(tempConfig);
+    HighAvailabilityContainer container = constructor.newInstance(tempConfig);
 
     // Now set all required fields using reflection
     java.lang.reflect.Field isMasterSlaveModeField =
@@ -557,7 +551,7 @@ public class TestAmsAssignService {
   }
 
   /** Create AmsAssignService with mock BucketAssignStore. */
-  private AmsAssignService createAssignServiceWithMockStore(ZkHighAvailabilityContainer container)
+  private AmsAssignService createAssignServiceWithMockStore(HighAvailabilityContainer container)
       throws Exception {
     return new AmsAssignService(container, serviceConfig, mockAssignStore);
   }
