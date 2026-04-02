@@ -309,7 +309,7 @@ public class AmoroServiceContainer {
     processService = new ProcessService(tableService, actionCoordinators, executeEngineManager);
     optimizingService =
         new DefaultOptimizingService(
-            serviceConfig, catalogManager, optimizerManager, tableService, bucketAssignStore);
+            serviceConfig, catalogManager, optimizerManager, tableService, bucketAssignStore, haContainer);
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
