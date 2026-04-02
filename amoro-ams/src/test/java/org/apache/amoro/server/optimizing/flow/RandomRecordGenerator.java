@@ -192,13 +192,11 @@ public class RandomRecordGenerator {
         if (timestampType.shouldAdjustToUTC()) {
           return BASE_OFFSET_DATE_TIME
               .minusDays(random.nextInt(10000))
-              .plusNanos(random.nextInt(1_000_000) * 1_000L)
-              .truncatedTo(ChronoUnit.MICROS);
+              .plusNanos(random.nextInt(1_000_000) * 1_000L);
         } else {
           return BASE_LOCAL_DATE_TIME
               .minusDays(random.nextInt(10000))
-              .plusNanos(random.nextInt(1_000_000) * 1_000L)
-              .truncatedTo(ChronoUnit.MICROS);
+              .plusNanos(random.nextInt(1_000_000) * 1_000L);
         }
       case DECIMAL:
         Types.DecimalType decimalType = (Types.DecimalType) type;
