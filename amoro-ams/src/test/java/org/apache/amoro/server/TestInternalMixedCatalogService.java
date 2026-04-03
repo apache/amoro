@@ -257,8 +257,18 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
 
     @AfterEach
     public void after() {
-      catalog.dropTable(tableIdentifier, true);
-      catalog.dropDatabase(database);
+      try {
+        if (catalog.tableExists(tableIdentifier)) {
+          catalog.dropTable(tableIdentifier, true);
+        }
+      } catch (Exception e) {
+        LOG.warn("Failed to drop table during cleanup", e);
+      }
+      try {
+        catalog.dropDatabase(database);
+      } catch (Exception e) {
+        LOG.warn("Failed to drop database during cleanup", e);
+      }
     }
 
     @ParameterizedTest(name = "TableCommitTest[withPrimaryKey={0}]")
@@ -320,7 +330,18 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
 
     @AfterEach
     public void cleanDatabase() {
-      catalog.dropDatabase(database);
+      try {
+        if (catalog.tableExists(tableIdentifier)) {
+          catalog.dropTable(tableIdentifier, true);
+        }
+      } catch (Exception e) {
+        LOG.warn("Failed to drop table during cleanup", e);
+      }
+      try {
+        catalog.dropDatabase(database);
+      } catch (Exception e) {
+        LOG.warn("Failed to drop database during cleanup", e);
+      }
     }
 
     @ParameterizedTest(name = "Test-NewCatalog-Load-HistoricalTable[withPrimaryKey={0}]")
