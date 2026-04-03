@@ -52,7 +52,7 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
           new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactory);
       OPTIMIZING_SERVICE =
           new DefaultOptimizingService(
-              configurations, CATALOG_MANAGER, OPTIMIZER_MANAGER, TABLE_SERVICE);
+              configurations, CATALOG_MANAGER, OPTIMIZER_MANAGER, TABLE_SERVICE, null, null);
       PROCESS_SERVICE = new ProcessService(TABLE_SERVICE);
 
       TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());
