@@ -691,7 +691,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
           LOG.debug("Removed optimizer {} (not in database)", token);
         }
 
-        LOG.info(
+        LOG.debug(
             "Synced optimizers from database: total={}, added={}, removed={}, current={}",
             dbOptimizersByToken.size(),
             tokensToAdd.size(),
