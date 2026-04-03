@@ -197,7 +197,11 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       } catch (Exception e) {
         LOG.warn("Failed to drop table during cleanup", e);
       }
-      catalog.dropDatabase(database);
+      try {
+        catalog.dropDatabase(database);
+      } catch (Exception e) {
+        LOG.warn("Failed to drop database during cleanup", e);
+      }
     }
 
     @ParameterizedTest(name = "CatalogTableOperationTest[withPrimaryKey={0}]")
