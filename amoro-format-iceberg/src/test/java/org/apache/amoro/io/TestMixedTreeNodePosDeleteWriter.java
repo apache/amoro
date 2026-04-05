@@ -75,7 +75,8 @@ public class TestMixedTreeNodePosDeleteWriter extends TableTestBase {
             table.encryption(),
             1L,
             table.location(),
-            table.spec());
+            table.spec(),
+            table.properties());
 
     writer.setTreeNode(DataTreeNode.ofId(4));
     writer.delete("a", 0);
