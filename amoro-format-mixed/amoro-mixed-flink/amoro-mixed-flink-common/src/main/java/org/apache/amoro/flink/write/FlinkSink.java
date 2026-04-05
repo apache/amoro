@@ -65,8 +65,8 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.flink.sink.FlinkWriteResult;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
-import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
@@ -153,7 +153,7 @@ public class FlinkSink {
         DataStream<RowData> input,
         MixedFormatLogWriter logWriter,
         MixedFormatFileWriter fileWriter,
-        OneInputStreamOperator<WriteResult, Void> committer,
+        OneInputStreamOperator<FlinkWriteResult, Void> committer,
         int writeOperatorParallelism,
         MetricsGenerator metricsGenerator,
         String emitMode) {
@@ -161,7 +161,7 @@ public class FlinkSink {
           input
               .transform(
                   MixedFormatWriter.class.getName(),
-                  TypeExtractor.createTypeInfo(WriteResult.class),
+                  TypeExtractor.createTypeInfo(FlinkWriteResult.class),
                   new MixedFormatWriter<>(logWriter, fileWriter, metricsGenerator))
               .name(String.format("MixedFormatWriter %s(%s)", table.name(), emitMode))
               .setParallelism(writeOperatorParallelism);
@@ -414,7 +414,7 @@ public class FlinkSink {
     return new MixedFormatRowDataTaskWriterFactory(mixedTable, flinkSchema, overwrite);
   }
 
-  public static OneInputStreamOperator<WriteResult, Void> createFileCommitter(
+  public static OneInputStreamOperator<FlinkWriteResult, Void> createFileCommitter(
       MixedTable mixedTable,
       MixedFormatTableLoader tableLoader,
       boolean overwrite,
@@ -424,7 +424,7 @@ public class FlinkSink {
         mixedTable, tableLoader, overwrite, branch, spec, MIXED_FORMAT_EMIT_FILE);
   }
 
-  public static OneInputStreamOperator<WriteResult, Void> createFileCommitter(
+  public static OneInputStreamOperator<FlinkWriteResult, Void> createFileCommitter(
       MixedTable mixedTable,
       MixedFormatTableLoader tableLoader,
       boolean overwrite,
