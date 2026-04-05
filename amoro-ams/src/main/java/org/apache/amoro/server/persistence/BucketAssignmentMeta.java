@@ -28,6 +28,8 @@ public class BucketAssignmentMeta {
   private String serverInfoJson;
   private String assignmentsJson;
   private Long lastUpdateTime;
+  /** Per-node heartbeat timestamp. Updated only by the owning node, never by the leader. */
+  private Long nodeHeartbeatTs;
 
   public BucketAssignmentMeta() {}
 
@@ -42,6 +44,22 @@ public class BucketAssignmentMeta {
     this.serverInfoJson = serverInfoJson;
     this.assignmentsJson = assignmentsJson;
     this.lastUpdateTime = lastUpdateTime;
+    this.nodeHeartbeatTs = lastUpdateTime;
+  }
+
+  public BucketAssignmentMeta(
+      String clusterName,
+      String nodeKey,
+      String serverInfoJson,
+      String assignmentsJson,
+      Long lastUpdateTime,
+      Long nodeHeartbeatTs) {
+    this.clusterName = clusterName;
+    this.nodeKey = nodeKey;
+    this.serverInfoJson = serverInfoJson;
+    this.assignmentsJson = assignmentsJson;
+    this.lastUpdateTime = lastUpdateTime;
+    this.nodeHeartbeatTs = nodeHeartbeatTs;
   }
 
   public String getClusterName() {
@@ -82,5 +100,13 @@ public class BucketAssignmentMeta {
 
   public void setLastUpdateTime(Long lastUpdateTime) {
     this.lastUpdateTime = lastUpdateTime;
+  }
+
+  public Long getNodeHeartbeatTs() {
+    return nodeHeartbeatTs;
+  }
+
+  public void setNodeHeartbeatTs(Long nodeHeartbeatTs) {
+    this.nodeHeartbeatTs = nodeHeartbeatTs;
   }
 }

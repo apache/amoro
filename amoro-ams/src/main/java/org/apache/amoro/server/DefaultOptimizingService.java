@@ -26,6 +26,7 @@ import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
+import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.exception.ForbiddenException;
@@ -38,6 +39,7 @@ import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.resource.ResourceType;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.manager.AbstractOptimizerContainer;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
@@ -66,6 +68,9 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -116,12 +121,17 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final TableService tableService;
   private final RuntimeHandlerChain tableHandlerChain;
   private final ExecutorService planExecutor;
+  private final BucketAssignStore bucketAssignStore;
+  private final HighAvailabilityContainer haContainer;
+  private final boolean isMasterSlaveMode;
 
   public DefaultOptimizingService(
       Configurations serviceConfig,
       CatalogManager catalogManager,
       OptimizerManager optimizerManager,
-      TableService tableService) {
+      TableService tableService,
+      BucketAssignStore bucketAssignStore,
+      HighAvailabilityContainer haContainer) {
     this.optimizerTouchTimeout =
         serviceConfig.getDurationInMillis(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT);
     this.taskAckTimeout =
@@ -144,6 +154,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
     this.tableService = tableService;
     this.catalogManager = catalogManager;
     this.optimizerManager = optimizerManager;
+    this.bucketAssignStore = bucketAssignStore;
+    this.haContainer = haContainer;
+    this.isMasterSlaveMode =
+        haContainer != null && serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
     this.planExecutor =
         Executors.newCachedThreadPool(
@@ -320,6 +334,28 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
     process.close(true);
     return true;
+  }
+
+  @Override
+  public List<String> getOptimizingNodeUrls() {
+    if (bucketAssignStore == null) {
+      return Collections.emptyList();
+    }
+    try {
+      List<AmsServerInfo> nodes = bucketAssignStore.getAliveNodes();
+      List<String> urls = new ArrayList<>(nodes.size());
+      for (AmsServerInfo node : nodes) {
+        if (node.getHost() != null
+            && node.getThriftBindPort() != null
+            && node.getThriftBindPort() > 0) {
+          urls.add(String.format("thrift://%s:%d", node.getHost(), node.getThriftBindPort()));
+        }
+      }
+      return urls;
+    } catch (Exception e) {
+      LOG.warn("Failed to get optimizing node URLs from bucket assign store", e);
+      return Collections.emptyList();
+    }
   }
 
   /**
@@ -530,10 +566,27 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void run() {
+      // Use 1/4 of optimizerTouchTimeout as sync interval (default ~30 seconds), used for
+      // master-slave follower sync.
+      long syncInterval = Math.max(5000, optimizerTouchTimeout / 4);
+      // In non-master-slave mode, this node is always the leader.
+      boolean wasLeader = !isMasterSlaveMode;
       while (!stopped) {
         try {
-          T keepingTask = suspendingQueue.take();
-          this.processTask(keepingTask);
+          boolean isLeader = !isMasterSlaveMode || haContainer.hasLeadership();
+          if (!wasLeader && isLeader) {
+            // Follower → Leader transition: subclass takes over monitoring of inherited optimizers.
+            onBecomeLeader();
+          }
+          wasLeader = isLeader;
+
+          if (isLeader) {
+            T keepingTask = suspendingQueue.take();
+            this.processTask(keepingTask);
+          } else {
+            // Not leader: let subclass handle follower state (e.g. sync optimizer list from DB)
+            onFollowerTick(syncInterval);
+          }
         } catch (InterruptedException ignored) {
         } catch (Throwable t) {
           LOG.error("{} has encountered a problem.", this.getClass().getSimpleName(), t);
@@ -542,6 +595,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     protected abstract void processTask(T task) throws Exception;
+
+    protected void onFollowerTick(long syncInterval) throws InterruptedException {
+      Thread.sleep(syncInterval);
+    }
+
+    protected void onBecomeLeader() {}
   }
 
   private class OptimizerKeeper extends AbstractKeeper<OptimizerKeepingTask> {
@@ -572,6 +631,96 @@ public class DefaultOptimizingService extends StatedPersistentBase
       if (!isExpired) {
         LOG.debug("Optimizer {} is being touched, keep it", keepingTask.getOptimizer());
         keepInTouch(keepingTask.getOptimizer());
+      }
+    }
+
+    @Override
+    protected void onFollowerTick(long syncInterval) throws InterruptedException {
+      loadOptimizersFromDatabase();
+      Thread.sleep(syncInterval);
+    }
+
+    @Override
+    protected void onBecomeLeader() {
+      LOG.info(
+          "Became leader, starting heartbeat monitoring for {} inherited optimizers",
+          authOptimizers.size());
+      // All optimizers in authOptimizers were loaded from DB by the follower sync loop.
+      // Their touchTime reflects the latest DB-persisted heartbeat, which is the correct
+      // baseline for the new leader's expiry detection.
+      authOptimizers.values().forEach(this::keepInTouch);
+    }
+
+    /**
+     * Load optimizer information from database. This is used in master-slave mode for follower
+     * nodes to sync optimizer state from database. This method performs incremental updates by
+     * comparing database state with local authOptimizers, only adding new optimizers and removing
+     * missing ones.
+     */
+    private void loadOptimizersFromDatabase() {
+      try {
+        List<OptimizerInstance> dbOptimizers =
+            getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
+
+        Map<String, OptimizerInstance> dbOptimizersByToken = new HashMap<>();
+        for (OptimizerInstance optimizer : dbOptimizers) {
+          String token = optimizer.getToken();
+          if (token != null) {
+            dbOptimizersByToken.put(token, optimizer);
+          }
+        }
+
+        Set<String> localTokens = new HashSet<>(authOptimizers.keySet());
+        Set<String> dbTokens = new HashSet<>(dbOptimizersByToken.keySet());
+        Set<String> tokensToAdd = new HashSet<>(dbTokens);
+        tokensToAdd.removeAll(localTokens);
+
+        Set<String> tokensToRemove = new HashSet<>(localTokens);
+        tokensToRemove.removeAll(dbTokens);
+
+        for (String token : tokensToAdd) {
+          OptimizerInstance optimizer = dbOptimizersByToken.get(token);
+          if (optimizer != null) {
+            registerOptimizerWithoutPersist(optimizer);
+            LOG.debug("Added optimizer {} from database", token);
+          }
+        }
+
+        for (String token : tokensToRemove) {
+          removeOptimizerFromLocal(token);
+          LOG.debug("Removed optimizer {} (not in database)", token);
+        }
+
+        LOG.debug(
+            "Synced optimizers from database: total={}, added={}, removed={}, current={}",
+            dbOptimizersByToken.size(),
+            tokensToAdd.size(),
+            tokensToRemove.size(),
+            authOptimizers.size());
+      } catch (Exception e) {
+        LOG.error("Failed to load optimizers from database", e);
+      }
+    }
+
+    private void registerOptimizerWithoutPersist(OptimizerInstance optimizer) {
+      OptimizingQueue optimizingQueue = optimizingQueueByGroup.get(optimizer.getGroupName());
+      if (optimizingQueue == null) {
+        LOG.warn(
+            "Cannot register optimizer {}: optimizing queue for group {} not found",
+            optimizer.getToken(),
+            optimizer.getGroupName());
+        return;
+      }
+      optimizingQueue.addOptimizer(optimizer);
+      authOptimizers.put(optimizer.getToken(), optimizer);
+      optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue);
+    }
+
+    private void removeOptimizerFromLocal(String token) {
+      OptimizingQueue optimizingQueue = optimizingQueueByToken.remove(token);
+      OptimizerInstance optimizer = authOptimizers.remove(token);
+      if (optimizingQueue != null && optimizer != null) {
+        optimizingQueue.removeOptimizer(optimizer);
       }
     }
 

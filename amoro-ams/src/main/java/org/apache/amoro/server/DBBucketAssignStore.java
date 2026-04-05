@@ -45,9 +45,11 @@ public class DBBucketAssignStore extends PersistentBase implements BucketAssignS
       new TypeReference<List<String>>() {};
 
   private final String clusterName;
+  private final long nodeHeartbeatTtlMs;
 
-  public DBBucketAssignStore(String clusterName) {
+  public DBBucketAssignStore(String clusterName, long nodeHeartbeatTtlMs) {
     this.clusterName = clusterName;
+    this.nodeHeartbeatTtlMs = nodeHeartbeatTtlMs;
   }
 
   @Override
@@ -177,6 +179,32 @@ public class DBBucketAssignStore extends PersistentBase implements BucketAssignS
       LOG.error("Failed to update last update time for node {}", nodeKey, e);
       throw new BucketAssignStoreException(
           "Failed to update last update time for node " + nodeKey, e);
+    }
+  }
+
+  @Override
+  public List<AmsServerInfo> getAliveNodes() throws BucketAssignStoreException {
+    try {
+      long cutoff = System.currentTimeMillis() - nodeHeartbeatTtlMs;
+      List<BucketAssignmentMeta> rows =
+          getAs(BucketAssignMapper.class, mapper -> mapper.selectAllByCluster(clusterName));
+      List<AmsServerInfo> nodes = new ArrayList<>();
+      for (BucketAssignmentMeta meta : rows) {
+        Long heartbeatTs = meta.getNodeHeartbeatTs();
+        if (heartbeatTs == null || heartbeatTs < cutoff) {
+          LOG.debug(
+              "Skipping stale node key={}, node_heartbeat_ts={}", meta.getNodeKey(), heartbeatTs);
+          continue;
+        }
+        AmsServerInfo nodeInfo = parseNodeInfo(meta);
+        if (nodeInfo.getThriftBindPort() != null && nodeInfo.getThriftBindPort() > 0) {
+          nodes.add(nodeInfo);
+        }
+      }
+      return nodes;
+    } catch (Exception e) {
+      LOG.error("Failed to get alive nodes", e);
+      throw new BucketAssignStoreException("Failed to get alive nodes", e);
     }
   }
 

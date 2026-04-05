@@ -34,7 +34,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public class OptimizerExecutor extends AbstractOptimizerOperator {
 
@@ -49,33 +53,81 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
   }
 
   public void start() {
+    // getAmsNodeUrls() returns all nodes in master-slave mode, or the single configured URL in
+    // active-standby mode, so both modes are handled uniformly via the same loop.
+    long basePollInterval = TimeUnit.SECONDS.toMillis(1);
+    long maxPollInterval = TimeUnit.SECONDS.toMillis(30);
+    int consecutiveEmptyPolls = 0;
+    final int emptyPollThreshold = 5;
+    final Random random = new Random();
+
     while (isStarted()) {
-      OptimizingTask ackTask = null;
-      OptimizingTaskResult result = null;
-      try {
-        OptimizingTask task = pollTask();
-        if (task != null && ackTask(task)) {
-          ackTask = task;
-          result = executeTask(task);
+      List<String> amsUrls = getAmsNodeUrls();
+
+      // Shuffle to prevent all optimizers from hitting the same AMS node simultaneously
+      if (amsUrls.size() > 1) {
+        Collections.shuffle(amsUrls, random);
+      }
+
+      boolean hasTask = false;
+      for (String amsUrl : amsUrls) {
+        if (!isStarted()) {
+          break;
         }
-      } catch (Throwable t) {
-        if (ackTask != null) {
-          LOG.error(
-              "Optimizer executor[{}] handling task[{}] failed and got an unknown error",
-              threadId,
-              ackTask.getTaskId(),
-              t);
-          String errorMessage = ExceptionUtil.getErrorMessage(t, ERROR_MESSAGE_MAX_LENGTH);
-          result = new OptimizingTaskResult(ackTask.getTaskId(), threadId);
-          result.setErrorMessage(errorMessage);
-        } else {
-          LOG.error("Optimizer executor[{}] got an unexpected error", threadId, t);
-        }
-      } finally {
-        if (result != null) {
-          completeTask(result);
+
+        OptimizingTask ackTask = null;
+        OptimizingTaskResult result = null;
+        try {
+          OptimizingTask task = pollTask(amsUrl);
+          if (task != null && ackTask(amsUrl, task)) {
+            ackTask = task;
+            hasTask = true;
+            result = executeTask(task);
+          }
+        } catch (Throwable t) {
+          if (ackTask != null) {
+            LOG.error(
+                "Optimizer executor[{}] handling task[{}] from AMS {} failed and got an unknown error",
+                threadId,
+                ackTask.getTaskId(),
+                amsUrl,
+                t);
+            String errorMessage = ExceptionUtil.getErrorMessage(t, ERROR_MESSAGE_MAX_LENGTH);
+            result = new OptimizingTaskResult(ackTask.getTaskId(), threadId);
+            result.setErrorMessage(errorMessage);
+          } else {
+            LOG.error(
+                "Optimizer executor[{}] got an unexpected error from AMS {}", threadId, amsUrl, t);
+          }
+        } finally {
+          if (result != null) {
+            completeTask(amsUrl, result);
+          }
         }
       }
+
+      if (hasTask) {
+        consecutiveEmptyPolls = 0;
+      } else {
+        consecutiveEmptyPolls++;
+      }
+
+      long waitTime;
+      if (amsUrls.isEmpty()) {
+        waitTime = basePollInterval;
+      } else if (consecutiveEmptyPolls >= emptyPollThreshold) {
+        int backoffFactor = consecutiveEmptyPolls - emptyPollThreshold + 1;
+        waitTime = Math.min(maxPollInterval, basePollInterval * (1L << backoffFactor));
+        LOG.debug(
+            "Optimizer executor[{}] no tasks found for {} consecutive polls, using increased interval: {}ms",
+            threadId,
+            consecutiveEmptyPolls,
+            waitTime);
+      } else {
+        waitTime = basePollInterval;
+      }
+
+      waitAShortTime(waitTime);
     }
   }
 
@@ -83,38 +135,44 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     return threadId;
   }
 
-  private OptimizingTask pollTask() {
+  private OptimizingTask pollTask(String amsUrl) {
     OptimizingTask task = null;
-    while (isStarted()) {
-      try {
-        task = callAuthenticatedAms((client, token) -> client.pollTask(token, threadId));
-      } catch (TException exception) {
-        LOG.error("Optimizer executor[{}] polled task failed", threadId, exception);
-      }
+    try {
+      task = callAuthenticatedAms(amsUrl, (client, token) -> client.pollTask(token, threadId));
       if (task != null) {
-        LOG.info("Optimizer executor[{}] polled task[{}] from ams", threadId, task.getTaskId());
-        break;
-      } else {
-        waitAShortTime();
+        LOG.info(
+            "Optimizer executor[{}] polled task[{}] from AMS {}",
+            threadId,
+            task.getTaskId(),
+            amsUrl);
       }
+    } catch (TException exception) {
+      LOG.error(
+          "Optimizer executor[{}] polled task from AMS {} failed", threadId, amsUrl, exception);
     }
     return task;
   }
 
-  private boolean ackTask(OptimizingTask task) {
+  private boolean ackTask(String amsUrl, OptimizingTask task) {
     try {
       callAuthenticatedAms(
+          amsUrl,
           (client, token) -> {
             client.ackTask(token, threadId, task.getTaskId());
             return null;
           });
-      LOG.info("Optimizer executor[{}] acknowledged task[{}] to ams", threadId, task.getTaskId());
+      LOG.info(
+          "Optimizer executor[{}] acknowledged task[{}] to AMS {}",
+          threadId,
+          task.getTaskId(),
+          amsUrl);
       return true;
     } catch (TException exception) {
       LOG.error(
-          "Optimizer executor[{}] acknowledged task[{}] failed",
+          "Optimizer executor[{}] acknowledged task[{}] to AMS {} failed",
           threadId,
           task.getTaskId(),
+          amsUrl,
           exception);
       return false;
     }
@@ -124,24 +182,27 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     return executeTask(getConfig(), getThreadId(), task, LOG);
   }
 
-  protected void completeTask(OptimizingTaskResult optimizingTaskResult) {
+  protected void completeTask(String amsUrl, OptimizingTaskResult optimizingTaskResult) {
     try {
       callAuthenticatedAms(
+          amsUrl,
           (client, token) -> {
             client.completeTask(token, optimizingTaskResult);
             return null;
           });
       LOG.info(
-          "Optimizer executor[{}] completed task[{}](status: {}) to ams",
-          threadId,
-          optimizingTaskResult.getTaskId(),
-          optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL");
-    } catch (Exception exception) {
-      LOG.error(
-          "Optimizer executor[{}] completed task[{}](status: {}) failed",
+          "Optimizer executor[{}] completed task[{}](status: {}) to AMS {}",
           threadId,
           optimizingTaskResult.getTaskId(),
           optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL",
+          amsUrl);
+    } catch (Exception exception) {
+      LOG.error(
+          "Optimizer executor[{}] completed task[{}](status: {}) to AMS {} failed",
+          threadId,
+          optimizingTaskResult.getTaskId(),
+          optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL",
+          amsUrl,
           exception);
     }
   }

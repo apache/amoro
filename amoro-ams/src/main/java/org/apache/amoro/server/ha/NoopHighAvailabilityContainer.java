@@ -66,4 +66,9 @@ public class NoopHighAvailabilityContainer implements HighAvailabilityContainer 
   public AmsServerInfo getTableServiceServerInfo() {
     return null;
   }
+
+  @Override
+  public AmsServerInfo getOptimizingServiceServerInfo() {
+    return null;
+  }
 }

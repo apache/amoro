@@ -32,6 +32,8 @@ import javax.security.auth.login.LoginException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -205,6 +207,95 @@ public class AmsThriftUrl {
       default:
         throw new RuntimeException(String.format("invalid service name %s", serviceName));
     }
+  }
+
+  public static List<AmsServerInfo> parseMasterSlaveAmsNodes(String url) {
+    if (url == null) {
+      throw new IllegalArgumentException("thrift url is null");
+    }
+    return parserZookeeperUrlListForMasterSlaveMode(url);
+  }
+
+  private static List<AmsServerInfo> parserZookeeperUrlListForMasterSlaveMode(String url) {
+    if (!url.startsWith(ZOOKEEPER_FLAG)) {
+      throw new IllegalArgumentException(
+          "parseMasterSlaveAmsNodes only supports ZooKeeper URL format: zookeeper://host:port/cluster");
+    }
+    String thriftUrl = url;
+    if (url.contains("?")) {
+      thriftUrl = url.substring(0, url.indexOf("?"));
+    }
+    Matcher m = PATTERN.matcher(thriftUrl);
+    if (!m.matches()) {
+      throw new RuntimeException(String.format("invalid ams url %s", url));
+    }
+    String zkServerAddress;
+    String cluster;
+    if (m.group(1).contains("/")) {
+      zkServerAddress = m.group(1).substring(0, m.group(1).indexOf("/"));
+      cluster = m.group(1).substring(m.group(1).indexOf("/") + 1);
+    } else {
+      zkServerAddress = m.group(1);
+      cluster = m.group(2);
+    }
+    List<AmsServerInfo> serverInfoList = new ArrayList<>();
+    int retryCount = 0;
+    while (retryCount < MAX_RETRIES) {
+      try {
+        ZookeeperService zkService = ZookeeperService.getInstance(zkServerAddress);
+        String nodesPath = AmsHAProperties.getNodesPath(cluster);
+        List<String> nodePaths = zkService.getChildren(nodesPath);
+        for (String nodePath : nodePaths) {
+          try {
+            String fullPath = nodesPath + "/" + nodePath;
+            String nodeInfoJson = zkService.getData(fullPath);
+            if (nodeInfoJson != null && !nodeInfoJson.isEmpty()) {
+              AmsServerInfo nodeInfo = JacksonUtil.parseObject(nodeInfoJson, AmsServerInfo.class);
+              serverInfoList.add(nodeInfo);
+            }
+          } catch (Exception e) {
+            logger.warn("Failed to get node info for path: {}", nodePath, e);
+          }
+        }
+        if (!serverInfoList.isEmpty()) {
+          logger.info("Found {} AMS nodes from ZooKeeper", serverInfoList.size());
+          return serverInfoList;
+        } else {
+          logger.warn("No AMS nodes found in ZooKeeper path: {}", nodesPath);
+          return serverInfoList;
+        }
+      } catch (KeeperException.AuthFailedException authFailedException) {
+        // If kerberos authentication is not enabled on the zk,
+        // an error occurs when the thread carrying kerberos authentication information accesses
+        // the zk.
+        // Therefore, clear the authentication information and try again
+        retryCount++;
+        logger.error(
+            String.format("Caught exception, retrying... (retry count: %s)", retryCount),
+            authFailedException);
+        try {
+          Subject subject = Subject.getSubject(java.security.AccessController.getContext());
+          if (subject != null) {
+            LoginContext loginContext = new LoginContext("", subject);
+            loginContext.logout();
+          }
+        } catch (LoginException e) {
+          logger.error("Failed to logout", e);
+        }
+      } catch (KeeperException.NoNodeException e) {
+        logger.debug("Nodes path does not exist: {}", AmsHAProperties.getNodesPath(cluster));
+        return serverInfoList;
+      } catch (Exception e) {
+        retryCount++;
+        logger.error(
+            String.format("Caught exception, retrying... (retry count: %s)", retryCount), e);
+        if (retryCount >= MAX_RETRIES) {
+          throw new RuntimeException(
+              String.format("Failed to get AMS nodes from ZooKeeper for url %s", url), e);
+        }
+      }
+    }
+    return serverInfoList;
   }
 
   public String schema() {
