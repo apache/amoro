@@ -85,6 +85,8 @@ public class TestRequestForwarder {
             100, // retryBackoffMs (reduced for faster tests)
             3, // circuitBreakerThreshold (reduced for faster tests)
             5000, // circuitBreakerTimeoutMs (reduced for faster tests)
+            100, // maxConnections
+            20, // maxConnectionsPerRoute
             true); // isMasterSlaveMode
 
     // Use reflection to replace httpClient with mock (for testing purposes)
@@ -150,7 +152,7 @@ public class TestRequestForwarder {
     // Create a new RequestForwarder with isMasterSlaveMode = false
     RequestForwarder nonMasterSlaveForwarder =
         new RequestForwarder(
-            mockHaContainer, 5000, 2, 100, 3, 5000, false); // isMasterSlaveMode = false
+            mockHaContainer, 5000, 2, 100, 3, 5000, 100, 20, false); // isMasterSlaveMode = false
 
     assertFalse(
         "Should not forward when master-slave mode is disabled",

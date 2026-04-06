@@ -62,6 +62,8 @@ public class RequestForwarder {
   private static final int DEFAULT_RETRY_BACKOFF_MS = 1000;
   private static final int DEFAULT_CIRCUIT_BREAKER_THRESHOLD = 5;
   private static final long DEFAULT_CIRCUIT_BREAKER_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(1);
+  private static final int DEFAULT_MAX_CONNECTIONS = 100;
+  private static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 20;
 
   private final HighAvailabilityContainer haContainer;
   private final CloseableHttpClient httpClient;
@@ -84,6 +86,8 @@ public class RequestForwarder {
         DEFAULT_RETRY_BACKOFF_MS,
         DEFAULT_CIRCUIT_BREAKER_THRESHOLD,
         DEFAULT_CIRCUIT_BREAKER_TIMEOUT_MS,
+        DEFAULT_MAX_CONNECTIONS,
+        DEFAULT_MAX_CONNECTIONS_PER_ROUTE,
         isMasterSlaveMode);
   }
 
@@ -94,6 +98,8 @@ public class RequestForwarder {
       int retryBackoffMs,
       int circuitBreakerThreshold,
       long circuitBreakerTimeoutMs,
+      int maxConnections,
+      int maxConnectionsPerRoute,
       boolean isMasterSlaveMode) {
     this.haContainer = haContainer;
     this.maxRetries = maxRetries;
@@ -111,8 +117,8 @@ public class RequestForwarder {
     this.httpClient =
         HttpClients.custom()
             .setDefaultRequestConfig(requestConfig)
-            .setMaxConnTotal(100)
-            .setMaxConnPerRoute(20)
+            .setMaxConnTotal(maxConnections)
+            .setMaxConnPerRoute(maxConnectionsPerRoute)
             .build();
   }
 

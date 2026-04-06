@@ -130,6 +130,7 @@ public class AmoroServiceContainer {
   private AmsServiceMetrics amsServiceMetrics;
   private HAState haState = HAState.INITIALIZING;
   private AmsAssignService amsAssignService;
+  private RequestForwarder requestForwarder;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
@@ -362,6 +363,11 @@ public class AmoroServiceContainer {
     if (amsServiceMetrics != null) {
       amsServiceMetrics.unregister();
     }
+    if (requestForwarder != null) {
+      LOG.info("Closing request forwarder...");
+      requestForwarder.close();
+      requestForwarder = null;
+    }
 
     EventsManager.dispose();
     MetricManager.dispose();
@@ -396,7 +402,7 @@ public class AmoroServiceContainer {
 
   private void initHttpService() {
     // Create request forwarder for master-slave mode
-    RequestForwarder requestForwarder = null;
+    requestForwarder = null;
     if (haContainer != null && IS_MASTER_SLAVE_MODE) {
       // Get configuration values for request forwarder
       int timeoutMs =
@@ -427,6 +433,8 @@ public class AmoroServiceContainer {
               retryBackoffMs,
               circuitBreakerThreshold,
               circuitBreakerTimeoutMs,
+              maxConnections,
+              maxConnectionsPerRoute,
               IS_MASTER_SLAVE_MODE);
 
       LOG.info(

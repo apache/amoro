@@ -441,9 +441,10 @@ public class DashboardServer {
           errorMessage += " (Circuit breaker is open due to repeated failures)";
         }
 
+        ctx.status(HttpCode.SERVICE_UNAVAILABLE);
         ctx.json(
             new ErrorResponse(
-                HttpCode.INTERNAL_SERVER_ERROR,
+                HttpCode.SERVICE_UNAVAILABLE,
                 errorMessage,
                 "Please try again later or contact administrator if the issue persists"));
         // Return immediately to prevent further processing

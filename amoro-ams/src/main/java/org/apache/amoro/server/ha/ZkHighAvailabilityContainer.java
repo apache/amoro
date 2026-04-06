@@ -212,6 +212,25 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
         tableServiceServerInfo.toString(),
         optimizingServiceServerInfo.toString());
     followerLatch = new CountDownLatch(1);
+    // Publish leader endpoint info so followers can discover it for request forwarding.
+    // In master-slave mode waitLeaderShip() is never called, so this is the only place
+    // where tableServiceMasterPath gets populated.
+    try {
+      zkClient
+          .setData()
+          .forPath(
+              tableServiceMasterPath,
+              JacksonUtil.toJSONString(tableServiceServerInfo).getBytes(StandardCharsets.UTF_8));
+      zkClient
+          .setData()
+          .forPath(
+              optimizingServiceMasterPath,
+              JacksonUtil.toJSONString(optimizingServiceServerInfo)
+                  .getBytes(StandardCharsets.UTF_8));
+      LOG.info("Published leader endpoint info to ZooKeeper");
+    } catch (Exception e) {
+      LOG.error("Failed to publish leader endpoint info to ZooKeeper", e);
+    }
   }
 
   @Override
