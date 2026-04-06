@@ -20,6 +20,7 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.catalog.CatalogManager;
+import org.apache.amoro.server.dashboard.RequestForwarder;
 import org.apache.amoro.server.manager.AbstractPluginManager;
 import org.apache.amoro.server.table.TableManager;
 
@@ -35,7 +36,10 @@ public class RestExtensionManager extends AbstractPluginManager<RestExtensionFac
   }
 
   public List<RestExtension> loadExtensions(
-      Configurations serviceConfig, CatalogManager catalogManager, TableManager tableManager) {
+      Configurations serviceConfig,
+      CatalogManager catalogManager,
+      TableManager tableManager,
+      RequestForwarder requestForwarder) {
     List<RestExtensionFactory> factories = installedPlugins();
     return factories.stream()
         .map(
@@ -44,6 +48,7 @@ public class RestExtensionManager extends AbstractPluginManager<RestExtensionFac
                     .withServiceConfig(serviceConfig)
                     .withCatalogManager(catalogManager)
                     .withTableManager(tableManager)
+                    .withRequestForwarder(requestForwarder)
                     .build())
         .collect(Collectors.toList());
   }

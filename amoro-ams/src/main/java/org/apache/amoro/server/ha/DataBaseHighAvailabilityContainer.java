@@ -395,6 +395,29 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
   }
 
   @Override
+  public AmsServerInfo getLeaderNodeInfo() {
+    try {
+      HaLeaseMeta lease =
+          getAs(HaLeaseMapper.class, mapper -> mapper.selectLease(clusterName, AMS_SERVICE));
+      if (lease == null
+          || lease.getServerInfoJson() == null
+          || lease.getServerInfoJson().isEmpty()) {
+        LOG.debug("Leader node info not available in ha_lease for cluster={}", clusterName);
+        return null;
+      }
+      Long expireTs = lease.getLeaseExpireTs();
+      if (expireTs != null && expireTs < System.currentTimeMillis()) {
+        LOG.debug("Leader lease is expired for cluster={}", clusterName);
+        return null;
+      }
+      return JacksonUtil.parseObject(lease.getServerInfoJson(), AmsServerInfo.class);
+    } catch (Exception e) {
+      LOG.warn("Failed to get leader node info from ha_lease", e);
+      return null;
+    }
+  }
+
+  @Override
   public List<AmsServerInfo> getAliveNodes() {
     List<AmsServerInfo> aliveNodes = new ArrayList<>();
     if (!isLeader.get()) {

@@ -116,34 +116,6 @@ public class AmoroManagementConf {
               "This setting controls whether to enable the AMS horizontal scaling feature, "
                   + "which is currently under development and testing.");
 
-  public static final ConfigOption<Integer> BUCKET_ID_TOTAL_COUNT =
-      ConfigOptions.key("bucket-id.total-count")
-          .intType()
-          .defaultValue(100)
-          .withDescription(
-              "Total count of bucket IDs for assignment. Bucket IDs range from 1 to this value.");
-
-  public static final ConfigOption<Duration> NODE_OFFLINE_TIMEOUT =
-      ConfigOptions.key("node-offline.timeout")
-          .durationType()
-          .defaultValue(Duration.ofMinutes(5))
-          .withDescription(
-              "Timeout duration to determine if a node is offline. After this duration, the node's bucket IDs will be reassigned.");
-
-  public static final ConfigOption<Duration> ASSIGN_INTERVAL =
-      ConfigOptions.key("bucket-assign.interval")
-          .durationType()
-          .defaultValue(Duration.ofSeconds(60))
-          .withDescription(
-              "Interval for bucket assignment service to detect node changes and redistribute bucket IDs.");
-
-  public static final ConfigOption<Duration> BUCKET_TABLE_SYNC_INTERVAL =
-      ConfigOptions.key("bucket-table-sync.interval")
-          .durationType()
-          .defaultValue(Duration.ofSeconds(60))
-          .withDescription(
-              "Interval for syncing tables assigned to bucket IDs in master-slave mode. Each node periodically loads tables from database based on its assigned bucket IDs.");
-
   public static final ConfigOption<Duration> CATALOG_META_CACHE_EXPIRATION_INTERVAL =
       ConfigOptions.key("catalog-meta-cache.expiration-interval")
           .durationType()
@@ -395,6 +367,50 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofSeconds(60))
           .withDescription(
               "Interval for syncing tables assigned to bucket IDs in master-slave mode. Each node periodically loads tables from database based on its assigned bucket IDs.");
+
+  public static final ConfigOption<Duration> HA_REQUEST_FORWARDER_TIMEOUT =
+      ConfigOptions.key("ha.request-forwarder.timeout")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(30))
+          .withDescription("Timeout duration for request forwarding to leader node.");
+
+  public static final ConfigOption<Integer> HA_REQUEST_FORWARDER_MAX_RETRIES =
+      ConfigOptions.key("ha.request-forwarder.max-retries")
+          .intType()
+          .defaultValue(3)
+          .withDescription("Maximum number of retry attempts for request forwarding.");
+
+  public static final ConfigOption<Duration> HA_REQUEST_FORWARDER_RETRY_BACKOFF =
+      ConfigOptions.key("ha.request-forwarder.retry-backoff")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(1))
+          .withDescription("Backoff duration between retry attempts for request forwarding.");
+
+  public static final ConfigOption<Integer> HA_REQUEST_FORWARDER_CIRCUIT_BREAKER_THRESHOLD =
+      ConfigOptions.key("ha.request-forwarder.circuit-breaker.threshold")
+          .intType()
+          .defaultValue(5)
+          .withDescription("Number of consecutive failures before opening the circuit breaker.");
+
+  public static final ConfigOption<Duration> HA_REQUEST_FORWARDER_CIRCUIT_BREAKER_TIMEOUT =
+      ConfigOptions.key("ha.request-forwarder.circuit-breaker.timeout")
+          .durationType()
+          .defaultValue(Duration.ofMinutes(1))
+          .withDescription(
+              "Timeout duration for circuit breaker to remain open before attempting to close.");
+
+  public static final ConfigOption<Integer> HA_REQUEST_FORWARDER_MAX_CONNECTIONS =
+      ConfigOptions.key("ha.request-forwarder.max-connections")
+          .intType()
+          .defaultValue(100)
+          .withDescription("Maximum number of connections for request forwarding HTTP client.");
+
+  public static final ConfigOption<Integer> HA_REQUEST_FORWARDER_MAX_CONNECTIONS_PER_ROUTE =
+      ConfigOptions.key("ha.request-forwarder.max-connections-per-route")
+          .intType()
+          .defaultValue(20)
+          .withDescription(
+              "Maximum number of connections per route for request forwarding HTTP client.");
 
   public static final ConfigOption<Integer> TABLE_SERVICE_THRIFT_BIND_PORT =
       ConfigOptions.key("thrift-server.table-service.bind-port")
@@ -737,48 +753,4 @@ public class AmoroManagementConf {
   public static final String METRIC_REPORTERS = "metric-reports";
 
   public static final String EVENT_LISTENERS = "event-listeners";
-
-  public static final ConfigOption<Duration> REQUEST_FORWARDER_TIMEOUT =
-      ConfigOptions.key("request-forwarder.timeout")
-          .durationType()
-          .defaultValue(Duration.ofSeconds(30))
-          .withDescription("Timeout duration for request forwarding to leader node.");
-
-  public static final ConfigOption<Integer> REQUEST_FORWARDER_MAX_RETRIES =
-      ConfigOptions.key("request-forwarder.max-retries")
-          .intType()
-          .defaultValue(3)
-          .withDescription("Maximum number of retry attempts for request forwarding.");
-
-  public static final ConfigOption<Duration> REQUEST_FORWARDER_RETRY_BACKOFF =
-      ConfigOptions.key("request-forwarder.retry-backoff")
-          .durationType()
-          .defaultValue(Duration.ofSeconds(1))
-          .withDescription("Backoff duration between retry attempts for request forwarding.");
-
-  public static final ConfigOption<Integer> REQUEST_FORWARDER_CIRCUIT_BREAKER_THRESHOLD =
-      ConfigOptions.key("request-forwarder.circuit-breaker.threshold")
-          .intType()
-          .defaultValue(5)
-          .withDescription("Number of consecutive failures before opening the circuit breaker.");
-
-  public static final ConfigOption<Duration> REQUEST_FORWARDER_CIRCUIT_BREAKER_TIMEOUT =
-      ConfigOptions.key("request-forwarder.circuit-breaker.timeout")
-          .durationType()
-          .defaultValue(Duration.ofMinutes(1))
-          .withDescription(
-              "Timeout duration for circuit breaker to remain open before attempting to close.");
-
-  public static final ConfigOption<Integer> REQUEST_FORWARDER_MAX_CONNECTIONS =
-      ConfigOptions.key("request-forwarder.max-connections")
-          .intType()
-          .defaultValue(100)
-          .withDescription("Maximum number of connections for request forwarding HTTP client.");
-
-  public static final ConfigOption<Integer> REQUEST_FORWARDER_MAX_CONNECTIONS_PER_ROUTE =
-      ConfigOptions.key("request-forwarder.max-connections-per-route")
-          .intType()
-          .defaultValue(20)
-          .withDescription(
-              "Maximum number of connections per route for request forwarding HTTP client.");
 }

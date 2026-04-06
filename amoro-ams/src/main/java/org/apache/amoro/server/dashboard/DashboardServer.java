@@ -97,6 +97,7 @@ public class DashboardServer {
   private final OverviewController overviewController;
   private final ApiTokenController apiTokenController;
 
+  private final RequestForwarder requestForwarder;
   private final PasswdAuthenticationProvider basicAuthProvider;
   private final TokenAuthenticationProvider jwtAuthProvider;
   private final String proxyClientIpHeader;
@@ -109,7 +110,9 @@ public class DashboardServer {
       TableManager tableManager,
       OptimizerManager optimizerManager,
       TerminalManager terminalManager,
-      AmoroServiceContainer ams) {
+      AmoroServiceContainer ams,
+      RequestForwarder requestForwarder) {
+    this.requestForwarder = requestForwarder;
     PlatformFileManager platformFileManager = new PlatformFileManager();
     this.catalogController = new CatalogController(catalogManager, platformFileManager);
     this.healthCheckController = new HealthCheckController(ams);

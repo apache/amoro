@@ -21,6 +21,7 @@ package org.apache.amoro.server;
 import org.apache.amoro.ActivePlugin;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.catalog.CatalogManager;
+import org.apache.amoro.server.dashboard.RequestForwarder;
 import org.apache.amoro.server.table.TableManager;
 
 public interface RestExtensionFactory extends ActivePlugin {
@@ -29,6 +30,10 @@ public interface RestExtensionFactory extends ActivePlugin {
   RestExtensionFactory withCatalogManager(CatalogManager catalogManager);
 
   RestExtensionFactory withTableManager(TableManager tableManager);
+
+  default RestExtensionFactory withRequestForwarder(RequestForwarder requestForwarder) {
+    return this;
+  }
 
   RestExtension build();
 }

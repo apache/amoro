@@ -41,6 +41,7 @@ import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.server.dashboard.JavalinJsonMapper;
 import org.apache.amoro.server.dashboard.RequestForwardedException;
+import org.apache.amoro.server.dashboard.RequestForwarder;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.dashboard.utils.CommonUtil;
@@ -82,7 +83,6 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TNonblockingSer
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportFactory;
 import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramedTransport;
-import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
 import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.JacksonUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -274,36 +274,6 @@ public class AmoroServiceContainer {
 
     List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
 
-    // In master-slave mode, create BucketAssignStore and AmsAssignService
-    BucketAssignStore bucketAssignStore = null;
-    if (IS_MASTER_SLAVE_MODE && haContainer != null) {
-      String clusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);
-      // Choose BucketAssignStore implementation based on HA container type
-      CuratorFramework zkClient = null;
-      if (haContainer instanceof org.apache.amoro.server.ha.ZkHighAvailabilityContainer) {
-        org.apache.amoro.server.ha.ZkHighAvailabilityContainer zkHaContainer =
-            (org.apache.amoro.server.ha.ZkHighAvailabilityContainer) haContainer;
-        zkClient = zkHaContainer.getZkClient();
-        bucketAssignStore = new ZkBucketAssignStore(zkClient, clusterName);
-        LOG.info("Using ZkBucketAssignStore for master-slave mode");
-      } else if (haContainer
-          instanceof org.apache.amoro.server.ha.DataBaseHighAvailabilityContainer) {
-        bucketAssignStore = new DatabaseBucketAssignStore(clusterName);
-        LOG.info("Using DatabaseBucketAssignStore for master-slave mode");
-      } else {
-        LOG.warn(
-            "Unsupported HA container type for master-slave mode: {}",
-            haContainer.getClass().getName());
-      }
-
-      // Create and start AmsAssignService for bucket assignment
-      if (bucketAssignStore != null) {
-        amsAssignService = new AmsAssignService(haContainer, serviceConfig, zkClient);
-        amsAssignService.start();
-        LOG.info("AmsAssignService started for master-slave mode");
-      }
-    }
-
     tableService =
         new DefaultTableService(
             serviceConfig, catalogManager, defaultRuntimeFactory, haContainer, bucketAssignStore);
@@ -426,24 +396,28 @@ public class AmoroServiceContainer {
 
   private void initHttpService() {
     // Create request forwarder for master-slave mode
-    org.apache.amoro.server.dashboard.RequestForwarder requestForwarder = null;
+    RequestForwarder requestForwarder = null;
     if (haContainer != null && IS_MASTER_SLAVE_MODE) {
       // Get configuration values for request forwarder
       int timeoutMs =
-          (int) serviceConfig.get(AmoroManagementConf.REQUEST_FORWARDER_TIMEOUT).toMillis();
-      int maxRetries = serviceConfig.getInteger(AmoroManagementConf.REQUEST_FORWARDER_MAX_RETRIES);
+          (int) serviceConfig.get(AmoroManagementConf.HA_REQUEST_FORWARDER_TIMEOUT).toMillis();
+      int maxRetries =
+          serviceConfig.getInteger(AmoroManagementConf.HA_REQUEST_FORWARDER_MAX_RETRIES);
       int retryBackoffMs =
-          (int) serviceConfig.get(AmoroManagementConf.REQUEST_FORWARDER_RETRY_BACKOFF).toMillis();
+          (int)
+              serviceConfig.get(AmoroManagementConf.HA_REQUEST_FORWARDER_RETRY_BACKOFF).toMillis();
       int circuitBreakerThreshold =
-          serviceConfig.getInteger(AmoroManagementConf.REQUEST_FORWARDER_CIRCUIT_BREAKER_THRESHOLD);
+          serviceConfig.getInteger(
+              AmoroManagementConf.HA_REQUEST_FORWARDER_CIRCUIT_BREAKER_THRESHOLD);
       long circuitBreakerTimeoutMs =
           serviceConfig
-              .get(AmoroManagementConf.REQUEST_FORWARDER_CIRCUIT_BREAKER_TIMEOUT)
+              .get(AmoroManagementConf.HA_REQUEST_FORWARDER_CIRCUIT_BREAKER_TIMEOUT)
               .toMillis();
       int maxConnections =
-          serviceConfig.getInteger(AmoroManagementConf.REQUEST_FORWARDER_MAX_CONNECTIONS);
+          serviceConfig.getInteger(AmoroManagementConf.HA_REQUEST_FORWARDER_MAX_CONNECTIONS);
       int maxConnectionsPerRoute =
-          serviceConfig.getInteger(AmoroManagementConf.REQUEST_FORWARDER_MAX_CONNECTIONS_PER_ROUTE);
+          serviceConfig.getInteger(
+              AmoroManagementConf.HA_REQUEST_FORWARDER_MAX_CONNECTIONS_PER_ROUTE);
 
       requestForwarder =
           new org.apache.amoro.server.dashboard.RequestForwarder(
@@ -470,11 +444,18 @@ public class AmoroServiceContainer {
 
     DashboardServer dashboardServer =
         new DashboardServer(
-            serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager, this);
+            serviceConfig,
+            catalogManager,
+            tableManager,
+            optimizerManager,
+            terminalManager,
+            this,
+            requestForwarder);
     RestExtensionManager restExtensionManager = new RestExtensionManager();
     restExtensionManager.initialize();
     List<RestExtension> restExtensions =
-        restExtensionManager.loadExtensions(serviceConfig, catalogManager, tableManager);
+        restExtensionManager.loadExtensions(
+            serviceConfig, catalogManager, tableManager, requestForwarder);
     Function<Context, Optional<RestExtension>> handleExceptionByExtension =
         ctx -> restExtensions.stream().filter(ext -> ext.needHandleException(ctx)).findFirst();
 
@@ -816,10 +797,9 @@ public class AmoroServiceContainer {
               OptimizerProperties.AMS_OPTIMIZER_URI,
               AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
           // Add master-slave mode flag to container properties
-          // Read from serviceConfig directly since IS_MASTER_SLAVE_MODE is set after
-          // initContainerConfig()
           if (serviceConfig.getBoolean(USE_MASTER_SLAVE_MODE)) {
-            containerProperties.put(OptimizerProperties.OPTIMIZER_MASTER_SLAVE_MODE, "true");
+            containerProperties.put(
+                OptimizerProperties.OPTIMIZER_MASTER_SLAVE_MODE_ENABLED, "true");
           }
           // put addition system properties
           container.setProperties(containerProperties);

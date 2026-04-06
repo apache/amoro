@@ -290,8 +290,8 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
    *
    * @return The current node's server info, null if HA is not enabled
    */
-  public AmsServerInfo getOptimizingServiceServerInfo() {
-    return optimizingServiceServerInfo;
+  public AmsServerInfo getTableServiceServerInfo() {
+    return tableServiceServerInfo;
   }
 
   /**

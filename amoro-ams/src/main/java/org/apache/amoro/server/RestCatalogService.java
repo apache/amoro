@@ -43,6 +43,7 @@ import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
+import org.apache.amoro.server.dashboard.RequestForwarder;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.table.TableManager;
@@ -80,6 +81,7 @@ import org.apache.iceberg.rest.responses.LoadTableResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -111,12 +113,12 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   private final CatalogManager catalogManager;
   private final InternalTableManager tableManager;
-  private final org.apache.amoro.server.dashboard.RequestForwarder requestForwarder;
+  private final RequestForwarder requestForwarder;
 
   public RestCatalogService(
       CatalogManager catalogManager,
       InternalTableManager tableManager,
-      org.apache.amoro.server.dashboard.RequestForwarder requestForwarder) {
+      RequestForwarder requestForwarder) {
     this.catalogManager = catalogManager;
     this.tableManager = tableManager;
     this.requestForwarder = requestForwarder;
@@ -423,6 +425,35 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
     ctx.contentType(ContentType.APPLICATION_JSON).result(jsonMapper.toJsonString(rsp));
   }
 
+  /**
+   * Check if the current request should be forwarded to the leader node in master-slave mode. If
+   * forwarding succeeds, a {@link RequestForwardedException} is thrown to stop local processing. If
+   * forwarding fails, an error response is set and {@code true} is returned.
+   *
+   * @return {@code true} if the request has been handled (forwarded or error response set), {@code
+   *     false} if the request should be processed locally.
+   */
+  private boolean checkAndForward(Context ctx) {
+    if (requestForwarder == null || !requestForwarder.shouldForward(ctx)) {
+      return false;
+    }
+    try {
+      requestForwarder.forwardRequest(ctx);
+      return false;
+    } catch (IOException e) {
+      LOG.error("Failed to forward request to leader node: {}", ctx.path(), e);
+      ErrorResponse response =
+          ErrorResponse.builder()
+              .responseCode(HttpCode.SERVICE_UNAVAILABLE.getStatus())
+              .withType("ServiceUnavailable")
+              .withMessage("Failed to forward request to leader node: " + e.getMessage())
+              .build();
+      ctx.status(HttpCode.SERVICE_UNAVAILABLE);
+      jsonResponse(ctx, response);
+      return true;
+    }
+  }
+
   private void handleCatalog(
       Context ctx, Function<InternalCatalog, ? extends RESTResponse> handler) {
     String catalog = ctx.pathParam("catalog");
@@ -545,6 +576,7 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
     private CatalogManager catalogManager;
     private TableManager tableManager;
     private Configurations serviceConfig;
+    private RequestForwarder requestForwarder;
 
     @Override
     public RestExtensionFactory withServiceConfig(Configurations serviceConfig) {
@@ -565,8 +597,14 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
     }
 
     @Override
+    public RestExtensionFactory withRequestForwarder(RequestForwarder requestForwarder) {
+      this.requestForwarder = requestForwarder;
+      return this;
+    }
+
+    @Override
     public RestExtension build() {
-      return new RestCatalogService(catalogManager, tableManager);
+      return new RestCatalogService(catalogManager, tableManager, requestForwarder);
     }
 
     @Override
