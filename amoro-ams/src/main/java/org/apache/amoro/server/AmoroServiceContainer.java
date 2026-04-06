@@ -40,7 +40,7 @@ import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
 import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.server.dashboard.JavalinJsonMapper;
-import org.apache.amoro.server.dashboard.RequestForwardedException;
+import org.apache.amoro.exception.RequestForwardedException;
 import org.apache.amoro.server.dashboard.RequestForwarder;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;

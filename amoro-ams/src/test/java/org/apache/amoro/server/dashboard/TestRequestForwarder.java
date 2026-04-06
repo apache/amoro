@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
 import org.apache.amoro.client.AmsServerInfo;
+import org.apache.amoro.exception.RequestForwardedException;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;

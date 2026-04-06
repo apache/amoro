@@ -34,6 +34,7 @@ import org.apache.amoro.authentication.PasswdAuthenticationProvider;
 import org.apache.amoro.authentication.TokenAuthenticationProvider;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.ForbiddenException;
+import org.apache.amoro.exception.RequestForwardedException;
 import org.apache.amoro.exception.SignatureCheckException;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.AmoroServiceContainer;

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.dashboard;
+package org.apache.amoro.exception;
 
 import java.util.Map;
 
