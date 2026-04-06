@@ -66,17 +66,17 @@ public class OptimizingConfig {
   // self-optimizing.minor.trigger.file-count
   private int minorLeastFileCount;
 
-  // self-optimizing.minor.trigger.interval
-  private int minorLeastInterval;
-
   // self-optimizing.major.trigger.duplicate-ratio
   private double majorDuplicateRatio;
 
-  // self-optimizing.major.trigger.interval
-  private int majorTriggerInterval;
+  // self-optimizing.minor.trigger.cron (null = disabled)
+  private String minorTriggerCron;
 
-  // self-optimizing.full.trigger.interval
-  private int fullTriggerInterval;
+  // self-optimizing.major.trigger.cron (null = disabled)
+  private String majorTriggerCron;
+
+  // self-optimizing.full.trigger.cron  (null = disabled)
+  private String fullTriggerCron;
 
   // self-optimizing.full.rewrite-all-files
   private boolean fullRewriteAllFiles;
@@ -229,15 +229,6 @@ public class OptimizingConfig {
     return this;
   }
 
-  public int getMinorLeastInterval() {
-    return minorLeastInterval;
-  }
-
-  public OptimizingConfig setMinorLeastInterval(int minorLeastInterval) {
-    this.minorLeastInterval = minorLeastInterval;
-    return this;
-  }
-
   public double getMajorDuplicateRatio() {
     return majorDuplicateRatio;
   }
@@ -247,21 +238,30 @@ public class OptimizingConfig {
     return this;
   }
 
-  public int getMajorTriggerInterval() {
-    return majorTriggerInterval;
+  public String getMinorTriggerCron() {
+    return minorTriggerCron;
   }
 
-  public OptimizingConfig setMajorTriggerInterval(int majorTriggerInterval) {
-    this.majorTriggerInterval = majorTriggerInterval;
+  public OptimizingConfig setMinorTriggerCron(String minorTriggerCron) {
+    this.minorTriggerCron = minorTriggerCron;
     return this;
   }
 
-  public int getFullTriggerInterval() {
-    return fullTriggerInterval;
+  public String getMajorTriggerCron() {
+    return majorTriggerCron;
   }
 
-  public OptimizingConfig setFullTriggerInterval(int fullTriggerInterval) {
-    this.fullTriggerInterval = fullTriggerInterval;
+  public OptimizingConfig setMajorTriggerCron(String majorTriggerCron) {
+    this.majorTriggerCron = majorTriggerCron;
+    return this;
+  }
+
+  public String getFullTriggerCron() {
+    return fullTriggerCron;
+  }
+
+  public OptimizingConfig setFullTriggerCron(String fullTriggerCron) {
+    this.fullTriggerCron = fullTriggerCron;
     return this;
   }
 
@@ -353,10 +353,7 @@ public class OptimizingConfig {
         && fragmentRatio == that.fragmentRatio
         && Double.compare(minTargetSizeRatio, that.minTargetSizeRatio) == 0
         && minorLeastFileCount == that.minorLeastFileCount
-        && minorLeastInterval == that.minorLeastInterval
         && Double.compare(that.majorDuplicateRatio, majorDuplicateRatio) == 0
-        && majorTriggerInterval == that.majorTriggerInterval
-        && fullTriggerInterval == that.fullTriggerInterval
         && fullRewriteAllFiles == that.fullRewriteAllFiles
         && Objects.equal(filter, that.filter)
         && baseHashBucket == that.baseHashBucket
@@ -365,7 +362,10 @@ public class OptimizingConfig {
         && Objects.equal(optimizerGroup, that.optimizerGroup)
         && Objects.equal(minPlanInterval, that.minPlanInterval)
         && Objects.equal(evaluationMseTolerance, that.evaluationMseTolerance)
-        && Objects.equal(evaluationFallbackInterval, that.evaluationFallbackInterval);
+        && Objects.equal(evaluationFallbackInterval, that.evaluationFallbackInterval)
+        && Objects.equal(minorTriggerCron, that.minorTriggerCron)
+        && Objects.equal(majorTriggerCron, that.majorTriggerCron)
+        && Objects.equal(fullTriggerCron, that.fullTriggerCron);
   }
 
   @Override
@@ -384,10 +384,7 @@ public class OptimizingConfig {
         fragmentRatio,
         minTargetSizeRatio,
         minorLeastFileCount,
-        minorLeastInterval,
         majorDuplicateRatio,
-        majorTriggerInterval,
-        fullTriggerInterval,
         fullRewriteAllFiles,
         filter,
         baseHashBucket,
@@ -395,7 +392,10 @@ public class OptimizingConfig {
         hiveRefreshInterval,
         minPlanInterval,
         evaluationMseTolerance,
-        evaluationFallbackInterval);
+        evaluationFallbackInterval,
+        minorTriggerCron,
+        majorTriggerCron,
+        fullTriggerCron);
   }
 
   @Override
@@ -413,10 +413,7 @@ public class OptimizingConfig {
         .add("openFileCost", openFileCost)
         .add("fragmentRatio", fragmentRatio)
         .add("minorLeastFileCount", minorLeastFileCount)
-        .add("minorLeastInterval", minorLeastInterval)
         .add("majorDuplicateRatio", majorDuplicateRatio)
-        .add("majorTriggerInterval", majorTriggerInterval)
-        .add("fullTriggerInterval", fullTriggerInterval)
         .add("fullRewriteAllFiles", fullRewriteAllFiles)
         .add("filter", filter)
         .add("baseHashBucket", baseHashBucket)
@@ -424,6 +421,9 @@ public class OptimizingConfig {
         .add("hiveRefreshInterval", hiveRefreshInterval)
         .add("evaluationMseTolerance", evaluationMseTolerance)
         .add("evaluationFallbackInterval", evaluationFallbackInterval)
+        .add("minorTriggerCron", minorTriggerCron)
+        .add("majorTriggerCron", majorTriggerCron)
+        .add("fullTriggerCron", fullTriggerCron)
         .toString();
   }
 }

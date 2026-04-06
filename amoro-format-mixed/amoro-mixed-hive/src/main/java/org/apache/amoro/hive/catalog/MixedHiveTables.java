@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.hive.catalog;
@@ -188,11 +190,6 @@ public class MixedHiveTables {
     fillTableProperties(tableMeta);
     String hiveLocation =
         tableMeta.getProperties().get(HiveTableProperties.BASE_HIVE_LOCATION_ROOT);
-    // Default 1 day
-    if (!tableMeta.properties.containsKey(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL)) {
-      tableMeta.putToProperties(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000");
-    }
-
     AuthenticatedHadoopFileIO fileIO =
         AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,

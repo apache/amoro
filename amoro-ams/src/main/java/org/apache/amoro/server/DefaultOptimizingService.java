@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server;
@@ -369,7 +371,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
     @Override
     public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
       DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
-      if (!defaultTableRuntime.getOptimizingStatus().isProcessing()) {
+      OptimizingStatus newStatus = defaultTableRuntime.getOptimizingStatus();
+      // Only re-queue when the table becomes available for the next planning cycle (IDLE after
+      // completing/skipping work) or has new pending data (PENDING). Skip the IDLE→PLANNING
+      // transition to avoid a redundant "Bind queue" log and unnecessary scheduler churn while
+      // planning is already in flight.
+      if (newStatus == OptimizingStatus.IDLE || newStatus == OptimizingStatus.PENDING) {
         getOptionalQueueByGroup(defaultTableRuntime.getGroupName())
             .ifPresent(q -> q.refreshTable(defaultTableRuntime));
       }

@@ -289,26 +289,11 @@ public class TableConfigurations {
                 properties,
                 TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT,
                 TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT))
-        .setMinorLeastInterval(
-            CompatiblePropertyUtil.propertyAsInt(
-                properties,
-                TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL,
-                TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT))
         .setMajorDuplicateRatio(
             CompatiblePropertyUtil.propertyAsDouble(
                 properties,
                 TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO,
                 TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT))
-        .setMajorTriggerInterval(
-            CompatiblePropertyUtil.propertyAsInt(
-                properties,
-                TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL,
-                TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL_DEFAULT))
-        .setFullTriggerInterval(
-            CompatiblePropertyUtil.propertyAsInt(
-                properties,
-                TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL,
-                TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT))
         .setFullRewriteAllFiles(
             CompatiblePropertyUtil.propertyAsBoolean(
                 properties,
@@ -348,7 +333,16 @@ public class TableConfigurations {
             PropertyUtil.propertyAsLong(
                 properties,
                 TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE,
-                TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE_DEFAULT));
+                TableProperties.SELF_OPTIMIZING_EVALUATION_FILE_SIZE_MSE_TOLERANCE_DEFAULT))
+        .setMinorTriggerCron(
+            CompatiblePropertyUtil.propertyAsString(
+                properties, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_CRON, null))
+        .setMajorTriggerCron(
+            CompatiblePropertyUtil.propertyAsString(
+                properties, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_CRON, null))
+        .setFullTriggerCron(
+            CompatiblePropertyUtil.propertyAsString(
+                properties, TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_CRON, null));
   }
 
   /**

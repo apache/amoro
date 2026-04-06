@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server.optimizing;
@@ -177,7 +179,7 @@ public class TestOptimizingIntegration {
             .newTableBuilder(tableIdentifier, SCHEMA)
             .withPrimaryKeySpec(primaryKeySpec)
             .withPartitionSpec(partitionSpec)
-            .withProperty(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "1000");
+            .withProperty(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_CRON, "0 * * * *");
 
     return tableBuilder.create();
   }
@@ -190,7 +192,7 @@ public class TestOptimizingIntegration {
             .newTableBuilder(tableIdentifier, SCHEMA)
             .withPrimaryKeySpec(primaryKeySpec)
             .withPartitionSpec(partitionSpec)
-            .withProperty(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "1000");
+            .withProperty(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_CRON, "0 * * * *");
 
     tableBuilder.create();
   }

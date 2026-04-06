@@ -112,21 +112,31 @@ public class TableProperties {
       "self-optimizing.minor.trigger.file-count";
   public static final int SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT = 12;
 
-  public static final String SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL =
-      "self-optimizing.minor.trigger.interval";
-  public static final int SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT = 3600000; // 1 h
-
   public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO =
       "self-optimizing.major.trigger.duplicate-ratio";
   public static final double SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT = 0.1;
 
-  public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL =
-      "self-optimizing.major.trigger.interval";
-  public static final int SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
+  /**
+   * Cron expression (5-field Unix format: minute hour dom month dow) that controls when minor
+   * compaction is triggered. Example: {@code "0 * * * *"} triggers every hour on the hour. Default:
+   * {@code null} (disabled).
+   */
+  public static final String SELF_OPTIMIZING_MINOR_TRIGGER_CRON =
+      "self-optimizing.minor.trigger.cron";
 
-  public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL =
-      "self-optimizing.full.trigger.interval";
-  public static final int SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
+  /**
+   * Cron expression (5-field Unix format) that controls when major compaction is triggered.
+   * Example: {@code "0 0 * * *"} triggers daily at midnight. Default: {@code null} (disabled).
+   */
+  public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_CRON =
+      "self-optimizing.major.trigger.cron";
+
+  /**
+   * Cron expression (5-field Unix format) that controls when full compaction is triggered. Example:
+   * {@code "0 0 * * 0"} triggers every Sunday at midnight. Default: {@code null} (disabled).
+   */
+  public static final String SELF_OPTIMIZING_FULL_TRIGGER_CRON =
+      "self-optimizing.full.trigger.cron";
 
   public static final String SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES =
       "self-optimizing.full.rewrite-all-files";

@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server.optimizing;
@@ -95,7 +97,7 @@ public class TestMixedHiveOptimizing extends AbstractOptimizingTest {
     KeyedTable table = mixedTable.asKeyedTable();
     // Step1: write 1 data file into base node(0,0)
     updateProperties(table, TableProperties.BASE_FILE_INDEX_HASH_BUCKET, 1 + "");
-    updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, 1000 + "");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_CRON, "0 0 * * *");
     updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES, false + "");
     writeBase(table, rangeFromTo(1, 100, "aaa", quickDateWithZone(3)));
     // wait Full Optimize result

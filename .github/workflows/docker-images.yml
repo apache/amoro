@@ -17,7 +17,7 @@
 # Modified by Datazip Inc. in 2026
 
 
-# Build and publish Docker images. Triggered by push (dev-v3) or workflow_call with tag (e.g. release).
+# Build and publish Docker images. Triggered by push (dev-v5) or workflow_call with tag (e.g. release).
 
 name: Publish Docker Image
 
@@ -66,7 +66,7 @@ jobs:
       - name: Set Docker tags
         id: meta
         run: |
-          VERSION_TAG="${{ github.event_name == 'workflow_call' && inputs.tag || 'dev-v3' }}"
+          VERSION_TAG="${{ github.event_name == 'workflow_call' && inputs.tag || 'dev-v5' }}"
           if [ "${{ github.ref }}" = "refs/heads/master" ]; then
             case "${VERSION_TAG}" in v*) ;; *) echo "::error::On master branch, version tag must start with 'v' (e.g. v1.0.0). Got: ${VERSION_TAG}"; exit 1 ;; esac
             echo "tags=olakego/fusion:latest,olakego/fusion:${VERSION_TAG}" >> $GITHUB_OUTPUT
@@ -122,7 +122,7 @@ jobs:
       - name: Set Docker tags
         id: meta
         run: |
-          VERSION_TAG="${{ github.event_name == 'workflow_call' && inputs.tag || 'dev-v3' }}"
+          VERSION_TAG="${{ github.event_name == 'workflow_call' && inputs.tag || 'dev-v5' }}"
           if [ "${{ github.ref }}" = "refs/heads/master" ]; then
             case "${VERSION_TAG}" in v*) ;; *) echo "::error::On master branch, version tag must start with 'v' (e.g. v1.0.0). Got: ${VERSION_TAG}"; exit 1 ;; esac
             echo "tags=olakego/fusion-spark:latest,olakego/fusion-spark:${VERSION_TAG}" >> $GITHUB_OUTPUT

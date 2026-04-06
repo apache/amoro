@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server.table;
@@ -41,6 +43,7 @@ import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
@@ -74,6 +77,8 @@ public class DefaultTableRuntime extends AbstractTableRuntime
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultTableRuntime.class);
 
+  private static final SnowflakeIdGenerator ID_GENERATOR = new SnowflakeIdGenerator();
+
   private static final StateKey<TableRuntimeOptimizingState> OPTIMIZING_STATE_KEY =
       StateKey.stateKey("optimizing_state")
           .jsonType(TableRuntimeOptimizingState.class)
@@ -102,6 +107,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   private final TableSummaryMetrics tableSummaryMetrics;
   private volatile long lastPlanTime;
   private volatile OptimizingProcess optimizingProcess;
+  private volatile OptimizingType pendingCronType;
   private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
   public DefaultTableRuntime(TableRuntimeStore store) {
@@ -199,6 +205,22 @@ public class DefaultTableRuntime extends AbstractTableRuntime
 
   public long getLastMinorOptimizingTime() {
     return store().getState(OPTIMIZING_STATE_KEY).getLastMinorOptimizingTime();
+  }
+
+  /**
+   * Returns the type of the last successfully completed optimization, or {@code null} if none has
+   * ever run. Used by the cron-tick scheduler to determine which types are still "necessary".
+   */
+  public OptimizingType getLastOptimizingType() {
+    String raw = store().getState(OPTIMIZING_STATE_KEY).getLastOptimizingType();
+    if (raw == null || raw.isEmpty()) {
+      return null;
+    }
+    try {
+      return OptimizingType.valueOf(raw);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
   }
 
   public long getLastOptimizedChangeSnapshotId() {
@@ -406,7 +428,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   }
 
   public void completeProcess(boolean success) {
-    OptimizingStatus originalStatus = getOptimizingStatus();
     OptimizingType processType = optimizingProcess.getOptimizingType();
 
     store()
@@ -414,8 +435,16 @@ public class DefaultTableRuntime extends AbstractTableRuntime
         .updateState(
             OPTIMIZING_STATE_KEY,
             state -> {
-              state.setLastOptimizedSnapshotId(optimizingProcess.getTargetSnapshotId());
-              state.setLastOptimizedChangeSnapshotId(optimizingProcess.getTargetChangeSnapshotId());
+              if (success) {
+                // Only advance the snapshot checkpoints on success. Leaving them at their previous
+                // values on failure ensures the next cron tick sees a snapshot change and
+                // re-schedules the optimization instead of treating the table as already optimized.
+                state.setLastOptimizedSnapshotId(optimizingProcess.getTargetSnapshotId());
+                state.setLastOptimizedChangeSnapshotId(
+                    optimizingProcess.getTargetChangeSnapshotId());
+                state.setLastOptimizingType(processType.name());
+              }
+
               if (processType == OptimizingType.MINOR) {
                 state.setLastMinorOptimizingTime(optimizingProcess.getPlanTime());
               } else if (processType == OptimizingType.MAJOR) {
@@ -430,6 +459,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
 
     optimizingMetrics.processComplete(processType, success, optimizingProcess.getPlanTime());
     optimizingProcess = null;
+    this.pendingCronType = null;
   }
 
   public void completeEmptyProcess() {
@@ -437,6 +467,13 @@ public class DefaultTableRuntime extends AbstractTableRuntime
     boolean needUpdate =
         originalStatus == OptimizingStatus.PLANNING || originalStatus == OptimizingStatus.PENDING;
     if (needUpdate) {
+      OptimizingType cronType = this.pendingCronType;
+      if (cronType != null) {
+        recordSkippedOptimization(
+            cronType,
+            String.format(
+                "cron fired for %s but planner evaluated and found no data to process", cronType));
+      }
       store()
           .begin()
           .updateStatusCode(code -> OptimizingStatus.IDLE.getCode())
@@ -445,10 +482,14 @@ public class DefaultTableRuntime extends AbstractTableRuntime
               state -> {
                 state.setLastOptimizedSnapshotId(state.getCurrentSnapshotId());
                 state.setLastOptimizedChangeSnapshotId(state.getCurrentChangeSnapshotId());
+                if (cronType != null) {
+                  state.setLastOptimizingType(cronType.name());
+                }
                 return state;
               })
           .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
           .commit();
+      this.pendingCronType = null;
     }
   }
 
@@ -465,6 +506,82 @@ public class DefaultTableRuntime extends AbstractTableRuntime
               })
           .commit();
     }
+  }
+
+  /**
+   * Transitions this table from IDLE to PENDING without performing a file scan. Used by the
+   * cron-tick scheduler after determining that an optimization type is eligible and necessary. The
+   * actual file analysis is deferred to the planner inside {@code OptimizingQueue.planInternal}.
+   *
+   * @param cronType the optimization type whose cron triggered this transition — stored so that
+   *     {@link #completeEmptyProcess()} can update the correct per-type timestamp when the planner
+   *     determines no work is needed.
+   */
+  public void markAsPending(OptimizingType cronType) {
+    this.pendingCronType = cronType;
+    store()
+        .begin()
+        .updateStatusCode(
+            code -> {
+              if (code == OptimizingStatus.IDLE.getCode()) {
+                LOG.info(
+                    "{} status changed from idle to pending (cron-triggered, type={})",
+                    getTableIdentifier(),
+                    cronType);
+                return OptimizingStatus.PENDING.getCode();
+              }
+              return code;
+            })
+        .commit();
+  }
+
+  /**
+   * Writes a {@link ProcessStatus#SKIPPED} record to the {@code table_process} table so that the UI
+   * can show why a cron-triggered optimization did not run. Both the insert and the subsequent
+   * update (which sets {@code finish_time} and {@code fail_message}) run in a single transaction so
+   * a partial write can never occur.
+   *
+   * @param type the optimization type whose cron fired
+   * @param reason human-readable skip reason
+   */
+  public void recordSkippedOptimization(OptimizingType type, String reason) {
+    long now = System.currentTimeMillis();
+    long processId = ID_GENERATOR.generateId();
+    Map<String, String> summary = new java.util.HashMap<>();
+    summary.put("skipReason", reason);
+    summary.put("optimizingType", type.name());
+    doAs(
+        TableProcessMapper.class,
+        mapper -> {
+          mapper.insertProcess(
+              getTableIdentifier().getId(),
+              processId,
+              "",
+              ProcessStatus.SKIPPED,
+              type.name().toUpperCase(),
+              ProcessStatus.SKIPPED.name().toLowerCase(),
+              "AMORO",
+              0,
+              now,
+              new java.util.HashMap<>(),
+              summary);
+          mapper.updateProcess(
+              getTableIdentifier().getId(),
+              processId,
+              "",
+              ProcessStatus.SKIPPED,
+              ProcessStatus.SKIPPED.name().toLowerCase(),
+              0,
+              now,
+              reason,
+              new java.util.HashMap<>(),
+              summary);
+        });
+    LOG.info(
+        "[cron-skip] table={} type={} skip record persisted, reason: {}",
+        getTableIdentifier(),
+        type,
+        reason);
   }
 
   public void beginCommitting() {
@@ -538,6 +655,11 @@ public class DefaultTableRuntime extends AbstractTableRuntime
   }
 
   private boolean refreshSnapshots(AmoroTable<?> amoroTable, TableRuntimeOptimizingState state) {
+    OptimizingConfig optimizingConfig = this.getOptimizingConfig();
+    if (!optimizingConfig.isEnabled()) {
+      return true;
+    }
+
     MixedTable table = (MixedTable) amoroTable.originalTable();
     tableSummaryMetrics.refreshSnapshots(table);
     long lastSnapshotId = state.getCurrentSnapshotId();

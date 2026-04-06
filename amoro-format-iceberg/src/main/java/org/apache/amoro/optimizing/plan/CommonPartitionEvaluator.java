@@ -28,6 +28,7 @@ import org.apache.amoro.optimizing.evaluation.MetadataBasedEvaluationEvent;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.utils.CronUtils;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -115,12 +116,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     this.lastMinorOptimizingTime = lastMinorOptimizingTime;
     this.lastMajorOptimizingTime = lastMajorOptimizingTime;
     this.lastFullOptimizingTime = lastFullOptimizingTime;
-    this.reachMajorInterval =
-        config.getMajorTriggerInterval() >= 0
-            && planTime - lastMajorOptimizingTime > config.getMajorTriggerInterval();
-    this.reachFullInterval =
-        config.getFullTriggerInterval() >= 0
-            && planTime - lastFullOptimizingTime > config.getFullTriggerInterval();
+    this.reachMajorInterval = CronUtils.hasFiredInLastMinute(config.getMajorTriggerCron());
+    this.reachFullInterval = CronUtils.hasFiredInLastMinute(config.getFullTriggerCron());
   }
 
   @Override
@@ -344,11 +341,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
           return false;
         }
       }
-      if (isFullOptimizing()) {
-        necessary = isFullNecessary();
-      } else {
-        necessary = isMajorNecessary() || isMinorNecessary();
-      }
+      // Priority cascade: full > major > minor.
+      // Each type independently evaluates its own cron + data conditions.
+      // If full cron fired but data conditions are not met, we still fall through to
+      // major and minor rather than skipping them entirely.
+      necessary = isFullNecessary() || isMajorNecessary() || isMinorNecessary();
       LOG.debug("{} necessary = {}, {}", name(), necessary, this);
     }
     return necessary;
@@ -418,8 +415,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   protected boolean reachMinorInterval() {
-    return config.getMinorLeastInterval() >= 0
-        && planTime - lastMinorOptimizingTime > config.getMinorLeastInterval();
+    return CronUtils.hasFiredInLastMinute(config.getMinorTriggerCron());
   }
 
   protected boolean reachFullInterval() {
