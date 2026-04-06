@@ -63,6 +63,7 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
    * @param action action type
    */
   public DefaultTableProcessStore(TableRuntime tableRuntime, TableProcessMeta meta, Action action) {
+    this.processId = meta.getProcessId();
     this.meta = meta;
     this.tableRuntime = tableRuntime;
     this.action = action;

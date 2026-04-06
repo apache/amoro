@@ -180,7 +180,7 @@ onMounted(async () => {
   <div class="list-wrap">
     <a-space class="filter-form">
       <a-select
-        v-model:value="optimizerGroup" allow-clear placeholder="Optimizer group" :options="optimizerGroupList"
+        v-model:value="optimizerGroup" allow-clear :placeholder="t('optimizerGroup')" :options="optimizerGroupList"
         style="min-width: 150px;"
       />
 
@@ -195,7 +195,7 @@ onMounted(async () => {
       />
 
       <a-select
-        v-model:value="actions" allow-clear placeholder="Action" :options="actionOptions" mode="multiple"
+        v-model:value="actions" allow-clear :placeholder="t('action')" :options="actionOptions" mode="multiple"
         style="min-width: 150px;"
       />
 

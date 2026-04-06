@@ -26,6 +26,7 @@ import org.apache.amoro.utils.MemorySize;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class AmoroManagementConf {
 
@@ -52,6 +53,59 @@ public class AmoroManagementConf {
           .stringType()
           .defaultValue("admin")
           .withDescription("The administrator password");
+
+  public static final ConfigOption<Boolean> AUTHORIZATION_ENABLED =
+      ConfigOptions.key("http-server.authorization.enabled")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("Whether to enable dashboard RBAC authorization.");
+
+  public static final ConfigOption<String> AUTHORIZATION_DEFAULT_ROLE =
+      ConfigOptions.key("http-server.authorization.default-role")
+          .stringType()
+          .noDefaultValue()
+          .withDescription(
+              "Optional default dashboard role for authenticated users without an LDAP role mapping.");
+
+  public static final ConfigOption<Boolean> AUTHORIZATION_LDAP_ROLE_MAPPING_ENABLED =
+      ConfigOptions.key("http-server.authorization.ldap-role-mapping.enabled")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("Whether to resolve dashboard roles from LDAP group membership.");
+
+  public static final ConfigOption<String> AUTHORIZATION_LDAP_ROLE_MAPPING_GROUP_MEMBER_ATTRIBUTE =
+      ConfigOptions.key("http-server.authorization.ldap-role-mapping.group-member-attribute")
+          .stringType()
+          .defaultValue("member")
+          .withDescription("LDAP group attribute that stores member references.");
+
+  public static final ConfigOption<String> AUTHORIZATION_LDAP_ROLE_MAPPING_USER_DN_PATTERN =
+      ConfigOptions.key("http-server.authorization.ldap-role-mapping.user-dn-pattern")
+          .stringType()
+          .noDefaultValue()
+          .withDescription(
+              "LDAP user DN pattern used to match group members. Use {0} as the username placeholder.");
+
+  public static final ConfigOption<List<Map<String, String>>>
+      AUTHORIZATION_LDAP_ROLE_MAPPING_GROUPS =
+          ConfigOptions.key("http-server.authorization.ldap-role-mapping.groups")
+              .mapType()
+              .asList()
+              .noDefaultValue()
+              .withDescription(
+                  "LDAP group-to-role mapping entries containing group-dn and role fields.");
+
+  public static final ConfigOption<String> AUTHORIZATION_LDAP_ROLE_MAPPING_BIND_DN =
+      ConfigOptions.key("http-server.authorization.ldap-role-mapping.bind-dn")
+          .stringType()
+          .defaultValue("")
+          .withDescription("Optional LDAP bind DN used when querying role-mapping groups.");
+
+  public static final ConfigOption<String> AUTHORIZATION_LDAP_ROLE_MAPPING_BIND_PASSWORD =
+      ConfigOptions.key("http-server.authorization.ldap-role-mapping.bind-password")
+          .stringType()
+          .defaultValue("")
+          .withDescription("Optional LDAP bind password used when querying role-mapping groups.");
 
   /** Enable master & slave mode, which supports horizontal scaling of AMS. */
   public static final ConfigOption<Boolean> USE_MASTER_SLAVE_MODE =
@@ -286,6 +340,34 @@ public class AmoroManagementConf {
           .defaultValue(java.time.Duration.ofSeconds(30))
           .withDescription("TTL of HA lease.");
 
+  public static final ConfigOption<Integer> HA_BUCKET_ID_TOTAL_COUNT =
+      ConfigOptions.key("ha.bucket-id.total-count")
+          .intType()
+          .defaultValue(100)
+          .withDescription(
+              "Total count of bucket IDs for assignment. Bucket IDs range from 1 to this value.");
+
+  public static final ConfigOption<Duration> HA_NODE_OFFLINE_TIMEOUT =
+      ConfigOptions.key("ha.node-offline.timeout")
+          .durationType()
+          .defaultValue(Duration.ofMinutes(5))
+          .withDescription(
+              "Timeout duration to determine if a node is offline. After this duration, the node's bucket IDs will be reassigned.");
+
+  public static final ConfigOption<Duration> HA_ASSIGN_INTERVAL =
+      ConfigOptions.key("ha.bucket-assign.interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(60))
+          .withDescription(
+              "Interval for bucket assignment service to detect node changes and redistribute bucket IDs.");
+
+  public static final ConfigOption<Duration> HA_BUCKET_TABLE_SYNC_INTERVAL =
+      ConfigOptions.key("ha.bucket-table-sync.interval")
+          .durationType()
+          .defaultValue(Duration.ofSeconds(60))
+          .withDescription(
+              "Interval for syncing tables assigned to bucket IDs in master-slave mode. Each node periodically loads tables from database based on its assigned bucket IDs.");
+
   public static final ConfigOption<Integer> TABLE_SERVICE_THRIFT_BIND_PORT =
       ConfigOptions.key("thrift-server.table-service.bind-port")
           .intType()
@@ -513,6 +595,23 @@ public class AmoroManagementConf {
           .durationType()
           .defaultValue(Duration.ofSeconds(3))
           .withDescription("Optimizer polling task timeout.");
+
+  public static final ConfigOption<Duration> OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL =
+      ConfigOptions.key("optimizer-group.min-parallelism-check-interval")
+          .durationType()
+          .defaultValue(Duration.ofMinutes(5))
+          .withDescription(
+              "The interval for checking and ensuring the optimizer group meets its minimum parallelism requirement. "
+                  + "When the current parallelism falls below the configured min-parallelism, "
+                  + "the system will attempt to scale out optimizers at this interval. "
+                  + "The actual scale-out timing is calculated as: consecutive keeping attempts * this interval.");
+
+  public static final ConfigOption<Integer> OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS =
+      ConfigOptions.key("optimizer-group.max-keeping-attempts")
+          .intType()
+          .defaultValue(3)
+          .withDescription(
+              "The maximum number of consecutive attempts to keep the optimizer group at its current parallelism.");
 
   public static final ConfigOption<Duration> OPTIMIZING_REFRESH_GROUP_INTERVAL =
       ConfigOptions.key("self-optimizing.refresh-group-interval")

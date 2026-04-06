@@ -93,6 +93,10 @@ export function formatMS2Time(ms: number): string {
   }
 
   // Trim any trailing spaces and return the formatted result
+  // Handle sub-second durations (0 < ms < 1000)
+  if (!result && ms > 0) {
+    return '<1s'
+  }
   return result.trim()
 }
 /**

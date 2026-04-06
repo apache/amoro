@@ -125,6 +125,7 @@
         <cglib.version>2.2.2</cglib.version>
         <curator.version>5.7.0</curator.version>
         <mockito.version>4.11.0</mockito.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <parquet-jackson.version>1.13.1</parquet-jackson.version>
         <parquet-avro.version>1.15.2</parquet-avro.version>
         <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
@@ -163,6 +164,7 @@
         <hudi.version>0.14.1</hudi.version>
         <pagehelper.version>6.1.0</pagehelper.version>
         <jsqlparser.version>4.7</jsqlparser.version>
+        <jcasbin.version>1.99.0</jcasbin.version>
         <fasterxml.jackson.version>2.14.2</fasterxml.jackson.version>
         <apache-directory-server.version>2.0.0-M15</apache-directory-server.version>
         <apache-directory-api-all.version>1.0.0-M20</apache-directory-api-all.version>
@@ -1280,6 +1282,14 @@
                 <artifactId>mockito-junit-jupiter</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

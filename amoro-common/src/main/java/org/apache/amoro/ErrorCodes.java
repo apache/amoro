@@ -36,4 +36,6 @@ public final class ErrorCodes {
   public static final int PLUGIN_RETRY_AUTH_ERROR_CODE = 2006;
 
   public static final int BLOCKER_CONFLICT_ERROR_CODE = 3001;
+
+  public static final int BUCKET_ASSIGN_STORE_ERROR_CODE = 4000;
 }

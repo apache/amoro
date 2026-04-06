@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 /** Default table runtime implementation. */
 public class DefaultTableRuntime extends AbstractTableRuntime {
@@ -73,7 +74,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
           .jsonType(AbstractOptimizingEvaluator.PendingInput.class)
           .defaultValue(new AbstractOptimizingEvaluator.PendingInput());
 
-  private static final StateKey<TableRuntimeCleanupState> CLEANUP_STATE_KEY =
+  public static final StateKey<TableRuntimeCleanupState> CLEANUP_STATE_KEY =
       StateKey.stateKey("cleanup_state")
           .jsonType(TableRuntimeCleanupState.class)
           .defaultValue(new TableRuntimeCleanupState());
@@ -93,13 +94,16 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
   private volatile OptimizingProcess optimizingProcess;
   private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
-  public DefaultTableRuntime(TableRuntimeStore store) {
+  private final Supplier<AmoroTable<?>> loader;
+
+  public DefaultTableRuntime(TableRuntimeStore store, Supplier<AmoroTable<?>> loader) {
     super(store);
     this.optimizingMetrics =
         new TableOptimizingMetrics(store.getTableIdentifier(), store.getGroupName());
     this.orphanFilesCleaningMetrics =
         new TableOrphanFilesCleaningMetrics(store.getTableIdentifier());
     this.tableSummaryMetrics = new TableSummaryMetrics(store.getTableIdentifier());
+    this.loader = loader;
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -385,8 +389,11 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
         .updateState(
             OPTIMIZING_STATE_KEY,
             state -> {
-              state.setLastOptimizedSnapshotId(optimizingProcess.getTargetSnapshotId());
-              state.setLastOptimizedChangeSnapshotId(optimizingProcess.getTargetChangeSnapshotId());
+              if (success) {
+                state.setLastOptimizedSnapshotId(optimizingProcess.getTargetSnapshotId());
+                state.setLastOptimizedChangeSnapshotId(
+                    optimizingProcess.getTargetChangeSnapshotId());
+              }
               if (processType == OptimizingType.MINOR) {
                 state.setLastMinorOptimizingTime(optimizingProcess.getPlanTime());
               } else if (processType == OptimizingType.MAJOR) {
@@ -464,6 +471,11 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
               Optional.ofNullable(optimizingProcess).ifPresent(process -> process.close(false));
             });
     super.dispose();
+  }
+
+  @Override
+  public AmoroTable<?> loadTable() {
+    return loader.get();
   }
 
   /**

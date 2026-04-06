@@ -21,6 +21,7 @@ package org.apache.amoro.server;
 import static org.apache.amoro.server.AmoroManagementConf.USE_MASTER_SLAVE_MODE;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
 import org.apache.amoro.Constants;
@@ -33,6 +34,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.shade.utils.ConfigShadeUtils;
 import org.apache.amoro.exception.AmoroRuntimeException;
 import org.apache.amoro.process.ActionCoordinator;
+import org.apache.amoro.process.ExecuteEngine;
 import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.DefaultCatalogManager;
@@ -97,9 +99,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Function;
 
 public class AmoroServiceContainer {
 
@@ -123,6 +127,7 @@ public class AmoroServiceContainer {
   private Javalin httpServer;
   private AmsServiceMetrics amsServiceMetrics;
   private HAState haState = HAState.INITIALIZING;
+  private AmsAssignService amsAssignService;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
@@ -233,28 +238,58 @@ public class AmoroServiceContainer {
   }
 
   public void startOptimizingService() throws Exception {
+
     // Load process factories and build action coordinators from default table runtime factory.
     TableProcessFactoryManager tableProcessFactoryManager = new TableProcessFactoryManager();
     tableProcessFactoryManager.initialize();
     List<ProcessFactory> processFactories = tableProcessFactoryManager.installedPlugins();
+    ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
+    executeEngineManager.initialize();
+    List<ExecuteEngine> executeEngines = executeEngineManager.installedPlugins();
+    processFactories.forEach(c -> c.availableExecuteEngines(executeEngines));
 
     DefaultTableRuntimeFactory defaultRuntimeFactory = new DefaultTableRuntimeFactory();
     defaultRuntimeFactory.initialize(processFactories);
 
-    List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
-    ExecuteEngineManager executeEngineManager = new ExecuteEngineManager();
+    BucketAssignStore bucketAssignStore = null;
+    if (IS_MASTER_SLAVE_MODE && haContainer != null) {
+      bucketAssignStore = BucketAssignStoreFactory.create(haContainer, serviceConfig);
+    }
 
-    tableService = new DefaultTableService(serviceConfig, catalogManager, defaultRuntimeFactory);
+    // In master-slave mode, create AmsAssignService for bucket assignment (shares BucketAssignStore
+    // with DefaultTableService).
+    if (IS_MASTER_SLAVE_MODE && haContainer != null && bucketAssignStore != null) {
+      try {
+        amsAssignService = new AmsAssignService(haContainer, serviceConfig, bucketAssignStore);
+        amsAssignService.start();
+        LOG.info("AmsAssignService started for master-slave mode");
+      } catch (UnsupportedOperationException e) {
+        LOG.info("Skip AmsAssignService: {}", e.getMessage());
+      } catch (Exception e) {
+        LOG.error("Failed to start AmsAssignService", e);
+      }
+    }
+
+    List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
+
+    tableService =
+        new DefaultTableService(
+            serviceConfig, catalogManager, defaultRuntimeFactory, haContainer, bucketAssignStore);
     processService = new ProcessService(tableService, actionCoordinators, executeEngineManager);
     optimizingService =
-        new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
+        new DefaultOptimizingService(
+            serviceConfig,
+            catalogManager,
+            optimizerManager,
+            tableService,
+            bucketAssignStore,
+            haContainer);
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
     addHandlerChain(optimizingService.getTableRuntimeHandler());
     addHandlerChain(processService.getTableHandlerChain());
     addHandlerChain(InlineTableExecutors.getInstance().getDataExpiringExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getSnapshotsExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getDanglingDeleteFilesCleaningExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getOptimizingCommitExecutor());
@@ -286,6 +321,11 @@ public class AmoroServiceContainer {
     if (optimizingServiceServer != null) {
       LOG.info("Stopping optimizing server[serving:{}] ...", optimizingServiceServer.isServing());
       optimizingServiceServer.stop();
+    }
+    if (amsAssignService != null) {
+      LOG.info("Stopping AmsAssignService...");
+      amsAssignService.stop();
+      amsAssignService = null;
     }
     if (tableService != null) {
       LOG.info("Stopping table service...");
@@ -356,7 +396,12 @@ public class AmoroServiceContainer {
     DashboardServer dashboardServer =
         new DashboardServer(
             serviceConfig, catalogManager, tableManager, optimizerManager, terminalManager, this);
-    RestCatalogService restCatalogService = new RestCatalogService(catalogManager, tableManager);
+    RestExtensionManager restExtensionManager = new RestExtensionManager();
+    restExtensionManager.initialize();
+    List<RestExtension> restExtensions =
+        restExtensionManager.loadExtensions(serviceConfig, catalogManager, tableManager);
+    Function<Context, Optional<RestExtension>> handleExceptionByExtension =
+        ctx -> restExtensions.stream().filter(ext -> ext.needHandleException(ctx)).findFirst();
 
     httpServer =
         Javalin.create(
@@ -374,7 +419,9 @@ public class AmoroServiceContainer {
     httpServer.routes(
         () -> {
           dashboardServer.endpoints().addEndpoints();
-          restCatalogService.endpoints().addEndpoints();
+          for (RestExtension restExtension : restExtensions) {
+            restExtension.endpoints().addEndpoints();
+          }
         });
 
     httpServer.before(
@@ -389,8 +436,9 @@ public class AmoroServiceContainer {
     httpServer.exception(
         Exception.class,
         (e, ctx) -> {
-          if (restCatalogService.needHandleException(ctx)) {
-            restCatalogService.handleException(e, ctx);
+          Optional<RestExtension> extension = handleExceptionByExtension.apply(ctx);
+          if (extension.isPresent()) {
+            extension.get().handleException(e, ctx);
           } else {
             dashboardServer.handleException(e, ctx);
           }
@@ -399,7 +447,8 @@ public class AmoroServiceContainer {
     httpServer.error(
         HttpCode.NOT_FOUND.getStatus(),
         ctx -> {
-          if (!restCatalogService.needHandleException(ctx)) {
+          Optional<RestExtension> extension = handleExceptionByExtension.apply(ctx);
+          if (!extension.isPresent()) {
             ctx.json(new ErrorResponse(HttpCode.NOT_FOUND, "page not found!", ""));
           }
         });
@@ -407,7 +456,8 @@ public class AmoroServiceContainer {
     httpServer.error(
         HttpCode.INTERNAL_SERVER_ERROR.getStatus(),
         ctx -> {
-          if (!restCatalogService.needHandleException(ctx)) {
+          Optional<RestExtension> extension = handleExceptionByExtension.apply(ctx);
+          if (!extension.isPresent()) {
             ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", ""));
           }
         });

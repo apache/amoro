@@ -18,6 +18,7 @@
 
 package org.apache.amoro.process;
 
+import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,48 +28,16 @@ public abstract class TableProcess implements AmoroProcess {
 
   public static final Logger LOG = LoggerFactory.getLogger(TableProcess.class);
 
-  protected final TableRuntime tableRuntime;
-  protected final TableProcessStore tableProcessStore;
-  protected final int maxRetryTime;
   private final SimpleFuture submitFuture = new SimpleFuture();
   private final SimpleFuture completeFuture = new SimpleFuture();
 
-  protected TableProcess(TableRuntime tableRuntime) {
-    this(tableRuntime, null, 1);
-  }
+  protected final TableRuntime tableRuntime;
+  private final ExecuteEngine executeEngine;
 
-  protected TableProcess(TableRuntime tableRuntime, TableProcessStore tableProcessStore) {
-    this(tableRuntime, tableProcessStore, 1);
-  }
-
-  protected TableProcess(
-      TableRuntime tableRuntime, TableProcessStore tableProcessStore, int maxRetryTime) {
+  protected TableProcess(TableRuntime tableRuntime, ExecuteEngine engine) {
     this.tableRuntime = tableRuntime;
-    this.tableProcessStore = tableProcessStore;
-    this.maxRetryTime = maxRetryTime;
+    this.executeEngine = engine;
   }
-
-  public TableRuntime getTableRuntime() {
-    return tableRuntime;
-  }
-
-  public String getExternalProcessIdentifier() {
-    // TODO: Add a new field to process meta to store external process identifier.(e.g. flink job id
-    // or yarn app id)
-    return tableProcessStore.getExternalProcessIdentifier();
-  }
-
-  @Override
-  public TableProcessStore store() {
-    return tableProcessStore;
-  }
-
-  @Override
-  public ProcessStatus getStatus() {
-    return tableProcessStore.getStatus();
-  }
-
-  protected abstract void closeInternal();
 
   @Override
   public SimpleFuture getSubmitFuture() {
@@ -78,5 +47,22 @@ public abstract class TableProcess implements AmoroProcess {
   @Override
   public SimpleFuture getCompleteFuture() {
     return completeFuture;
+  }
+
+  public ServerTableIdentifier getTableIdentifier() {
+    return tableRuntime.getTableIdentifier();
+  }
+
+  @Override
+  public String getExecutionEngine() {
+    return executeEngine.name();
+  }
+
+  public TableRuntime getTableRuntime() {
+    return tableRuntime;
+  }
+
+  public String getProcessStage() {
+    return "default";
   }
 }

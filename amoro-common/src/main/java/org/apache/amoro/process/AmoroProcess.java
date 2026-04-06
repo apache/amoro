@@ -47,11 +47,14 @@ public interface AmoroProcess {
   SimpleFuture getCompleteFuture();
 
   /**
-   * Get {@link TableProcessStore} of the process
+   * Get the {@link Action} of the process
    *
-   * @return the state of the process
+   * @return the action of the process
    */
-  TableProcessStore store();
+  Action getAction();
+
+  /** Get execution engine name. */
+  String getExecutionEngine();
 
   /**
    * Get the string encoded process params of the process, this could be a simple description or a
@@ -59,44 +62,12 @@ public interface AmoroProcess {
    *
    * @return the params of the process
    */
-  default Map<String, String> getProcessParameters() {
-    return store().getProcessParameters();
-  }
+  Map<String, String> getProcessParameters();
 
   /**
-   * Get the string encoded summary of the process, this could be a simple description or a POJO
-   * encoded by JSON
+   * Get the string encoded summary of the process, called when process is successed.
    *
    * @return the summary of the process
    */
-  default Map<String, String> getSummary() {
-    return store().getSummary();
-  }
-
-  /**
-   * Get {@link ProcessStatus} of the process
-   *
-   * @return the status of the process
-   */
-  default ProcessStatus getStatus() {
-    return store().getStatus();
-  }
-
-  /**
-   * Get the id of the process
-   *
-   * @return the id of the process
-   */
-  default long getId() {
-    return store().getProcessId();
-  }
-
-  /**
-   * Get the {@link Action} of the process
-   *
-   * @return the action of the process
-   */
-  default Action getAction() {
-    return store().getAction();
-  }
+  Map<String, String> getSummary();
 }

@@ -15,11 +15,10 @@
 # limitations under the License.
 #
 
-# This file is config file for plugin metric reporter
-# configurations of metric reporters
-
-table-runtime-factories:
-  - name: default            # configs for table runtime factory
+execute-engines:
+  - name: local
     enabled: true
     priority: 100
-
+    properties:
+      pool.default.thread-count: 10
+      pool.snapshots-expiring.thread-count: 10

@@ -116,9 +116,11 @@ public class TestMixedCatalog extends CatalogTestBase {
   @After
   public void after() {
     sql("DROP TABLE IF EXISTS " + catalogName + "." + DB + "." + TABLE);
+    // Switch away from the catalog before dropping the database.
+    // Flink 1.19+ rejects dropping the currently active database.
+    sql("USE CATALOG default_catalog");
     sql("DROP DATABASE IF EXISTS " + catalogName + "." + DB);
     Assert.assertTrue(CollectionUtil.isNullOrEmpty(getMixedFormatCatalog().listDatabases()));
-    sql("USE CATALOG default_catalog");
     sql("DROP CATALOG " + catalogName);
   }
 

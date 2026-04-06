@@ -52,7 +52,8 @@ public class TableRuntimeCleanupState {
     return lastSnapshotsExpiringTime;
   }
 
-  public void setLastSnapshotsExpiringTime(long lastSnapshotsExpiringTime) {
+  public TableRuntimeCleanupState setLastSnapshotsExpiringTime(long lastSnapshotsExpiringTime) {
     this.lastSnapshotsExpiringTime = lastSnapshotsExpiringTime;
+    return this;
   }
 }

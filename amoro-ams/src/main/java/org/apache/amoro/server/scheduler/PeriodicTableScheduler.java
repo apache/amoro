@@ -130,6 +130,8 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
         // so you need to perform the update operation separately for each table.
         persistUpdatingCleanupTime(tableRuntime);
       }
+    } catch (Exception e) {
+      logger.error("exception when schedule for table: {}", tableRuntime.getTableIdentifier(), e);
     } finally {
       scheduledTables.remove(tableRuntime.getTableIdentifier());
       scheduleIfNecessary(tableRuntime, getNextExecutingTime(tableRuntime));

@@ -19,12 +19,15 @@
 package org.apache.amoro.server.process;
 
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class TableProcessMeta {
+  private static final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator();
   private long processId;
   private long tableId;
   private volatile String externalProcessIdentifier;
@@ -185,6 +188,24 @@ public class TableProcessMeta {
     tableProcessMeta.setFailMessage(tableProcessStore.getFailMessage());
     tableProcessMeta.setProcessParameters(tableProcessStore.getProcessParameters());
     tableProcessMeta.setSummary(tableProcessStore.getSummary());
+    return tableProcessMeta;
+  }
+
+  public static TableProcessMeta createProcessMeta(TableProcess process) {
+    TableProcessMeta tableProcessMeta = new TableProcessMeta();
+    tableProcessMeta.setProcessId(idGenerator.generateId());
+    tableProcessMeta.setTableId(process.getTableIdentifier().getId());
+    tableProcessMeta.setExternalProcessIdentifier("");
+    tableProcessMeta.setStatus(ProcessStatus.PENDING);
+    tableProcessMeta.setProcessType(process.getAction().getName());
+    tableProcessMeta.setProcessStage(process.getProcessStage());
+    tableProcessMeta.setExecutionEngine(process.getExecutionEngine());
+    tableProcessMeta.setRetryNumber(0);
+    tableProcessMeta.setCreateTime(System.currentTimeMillis());
+    tableProcessMeta.setFinishTime(-1);
+    tableProcessMeta.setFailMessage("");
+    tableProcessMeta.setProcessParameters(process.getProcessParameters());
+    tableProcessMeta.setSummary(process.getSummary());
     return tableProcessMeta;
   }
 

@@ -70,11 +70,15 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | expire-snapshots.enabled | true | Enable snapshots expiring. |
 | expire-snapshots.interval | 1 h | Interval for expiring snapshots. |
 | expire-snapshots.thread-count | 10 | The number of threads used for snapshots expiring. |
+| ha.bucket-assign.interval | 1 min | Interval for bucket assignment service to detect node changes and redistribute bucket IDs. |
+| ha.bucket-id.total-count | 100 | Total count of bucket IDs for assignment. Bucket IDs range from 1 to this value. |
+| ha.bucket-table-sync.interval | 1 min | Interval for syncing tables assigned to bucket IDs in master-slave mode. Each node periodically loads tables from database based on its assigned bucket IDs. |
 | ha.cluster-name | default | Amoro management service cluster name. |
 | ha.connection-timeout | 5 min | The Zookeeper connection timeout in milliseconds. |
 | ha.enabled | false | Whether to enable high availability mode. |
 | ha.heartbeat-interval | 10 s | HA heartbeat interval. |
 | ha.lease-ttl | 30 s | TTL of HA lease. |
+| ha.node-offline.timeout | 5 min | Timeout duration to determine if a node is offline. After this duration, the node's bucket IDs will be reassigned. |
 | ha.session-timeout | 30 s | The Zookeeper session timeout in milliseconds. |
 | ha.type | zk | High availability implementation type: zk or database. |
 | ha.zookeeper-address |  | The Zookeeper address used for high availability. |
@@ -83,6 +87,14 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | ha.zookeeper-auth-type | NONE | The Zookeeper authentication type, NONE or KERBEROS. |
 | http-server.auth-basic-provider | org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider | User-defined password authentication implementation of org.apache.amoro.authentication.PasswdAuthenticationProvider |
 | http-server.auth-jwt-provider | &lt;undefined&gt; | User-defined JWT (JSON Web Token) authentication implementation of org.apache.amoro.authentication.TokenAuthenticationProvider |
+| http-server.authorization.default-role | &lt;undefined&gt; | Optional default dashboard role for authenticated users without an LDAP role mapping. |
+| http-server.authorization.enabled | false | Whether to enable dashboard RBAC authorization. |
+| http-server.authorization.ldap-role-mapping.bind-dn |  | Optional LDAP bind DN used when querying role-mapping groups. |
+| http-server.authorization.ldap-role-mapping.bind-password |  | Optional LDAP bind password used when querying role-mapping groups. |
+| http-server.authorization.ldap-role-mapping.enabled | false | Whether to resolve dashboard roles from LDAP group membership. |
+| http-server.authorization.ldap-role-mapping.group-member-attribute | member | LDAP group attribute that stores member references. |
+| http-server.authorization.ldap-role-mapping.groups | &lt;undefined&gt; | LDAP group-to-role mapping entries containing group-dn and role fields. |
+| http-server.authorization.ldap-role-mapping.user-dn-pattern | &lt;undefined&gt; | LDAP user DN pattern used to match group members. Use {0} as the username placeholder. |
 | http-server.bind-port | 19090 | Port that the Http server is bound to. |
 | http-server.login-auth-ldap-url | &lt;undefined&gt; | LDAP connection URL(s), value could be a SPACE separated list of URLs to multiple LDAP servers for resiliency. URLs are tried in the order specified until the connection is successful |
 | http-server.login-auth-ldap-user-pattern | &lt;undefined&gt; | LDAP user pattern for authentication. The pattern defines how to construct the user's distinguished name (DN) in the LDAP directory. Use {0} as a placeholder for the username. For example, 'cn={0},ou=people,dc=example,dc=com' will search for users in the specified organizational unit. |
@@ -90,6 +102,8 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | http-server.proxy-client-ip-header | X-Real-IP | The HTTP header to record the real client IP address. If your server is behind a load balancer or other proxy, the server will see this load balancer or proxy IP address as the client IP address, to get around this common issue, most load balancers or proxies offer the ability to record the real remote IP address in an HTTP header that will be added to the request for other devices to use. |
 | http-server.rest-auth-type | token | The authentication used by REST APIs, token (default), basic or jwt. |
 | http-server.session-timeout | 7 d | Timeout for http session. |
+| optimizer-group.max-keeping-attempts | 3 | The maximum number of consecutive attempts to keep the optimizer group at its current parallelism. |
+| optimizer-group.min-parallelism-check-interval | 5 min | The interval for checking and ensuring the optimizer group meets its minimum parallelism requirement. When the current parallelism falls below the configured min-parallelism, the system will attempt to scale out optimizers at this interval. The actual scale-out timing is calculated as: consecutive keeping attempts * this interval. |
 | optimizer.heart-beat-timeout | 1 min | Timeout duration for Optimizer heartbeat. |
 | optimizer.max-planning-parallelism | 1 | Max planning parallelism in one optimizer group. |
 | optimizer.polling-timeout | 3 s | Optimizer polling task timeout. |
@@ -129,6 +143,91 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | thrift-server.table-service.worker-thread-count | 20 | The number of worker threads for the Thrift server. |
 | use-master-slave-mode | false | This setting controls whether to enable the AMS horizontal scaling feature, which is currently under development and testing. |
 
+## RBAC Example
+
+Enable RBAC only when you need role separation for dashboard users.
+
+The current RBAC model uses:
+
+- string-based roles
+- LDAP group-to-role mapping as the primary role source
+- built-in Casbin policy to translate roles into privileges
+- privilege-driven frontend authorization
+
+Amoro provides two built-in roles by default:
+
+| Role | Description | Default Privileges |
+| --- | --- | --- |
+| `SERVICE_ADMIN` | Platform administrator | All privileges |
+| `VIEWER` | Read-only resource viewer | `VIEW_CATALOG`, `VIEW_TABLE`, `VIEW_OPTIMIZER` |
+
+`VIEWER` does not include `VIEW_SYSTEM`, so it cannot access `Overview` or `Terminal`.
+After login succeeds, `/login/current` returns both `roles` and effective `privileges`.
+
+If you need additional roles, define them by Casbin policy and map LDAP groups to those
+role names. The role name itself does not need to be added to Java enum code.
+
+```yaml
+ams:
+  http-server:
+    authorization:
+      enabled: true
+```
+
+```yaml
+ams:
+  http-server:
+    login-auth-provider: org.apache.amoro.server.authentication.LdapPasswdAuthenticationProvider
+    login-auth-ldap-url: "ldap://ldap.example.com:389"
+    login-auth-ldap-user-pattern: "uid={0},ou=people,dc=example,dc=com"
+    authorization:
+      enabled: true
+      ldap-role-mapping:
+        enabled: true
+        group-member-attribute: "member"
+        user-dn-pattern: "uid={0},ou=people,dc=example,dc=com"
+        bind-dn: "cn=service-account,dc=example,dc=com"
+        bind-password: "service-password"
+        groups:
+          - group-dn: "cn=amoro-service-admins,ou=groups,dc=example,dc=com"
+            role: SERVICE_ADMIN
+          - group-dn: "cn=amoro-viewers,ou=groups,dc=example,dc=com"
+            role: VIEWER
+          - group-dn: "cn=amoro-catalog-admins,ou=groups,dc=example,dc=com"
+            role: CATALOG_ADMIN
+```
+
+Example `/login/current` response:
+
+```json
+{
+  "userName": "alice",
+  "roles": ["CATALOG_ADMIN"],
+  "privileges": [
+    "VIEW_CATALOG",
+    "MANAGE_CATALOG",
+    "VIEW_TABLE",
+    "MANAGE_TABLE"
+  ]
+}
+```
+
+Example custom role policy:
+
+```csv
+p, CATALOG_ADMIN, CATALOG, GLOBAL, VIEW_CATALOG, allow
+p, CATALOG_ADMIN, CATALOG, GLOBAL, MANAGE_CATALOG, allow
+p, CATALOG_ADMIN, TABLE, GLOBAL, VIEW_TABLE, allow
+p, CATALOG_ADMIN, TABLE, GLOBAL, MANAGE_TABLE, allow
+```
+
+Notes:
+
+- Recommended production setup is explicit role assignment only.
+- `default-role` is optional. If it is not set, users who do not match any role mapping get no business role.
+- Use `default-role: VIEWER` only if you intentionally want authenticated users without a matched role mapping to receive read-only access.
+- Casbin model and default policy are built into the service and loaded from classpath.
+- Dashboard request-to-privilege mapping is also built into the service and loaded from a resource configuration file.
 
 ## Shade Utils Configuration
 

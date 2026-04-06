@@ -16,11 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.process.executor;
+package org.apache.amoro.process;
 
 import org.apache.amoro.ActivePlugin;
-import org.apache.amoro.process.ProcessStatus;
-import org.apache.amoro.process.TableProcess;
 
 public interface ExecuteEngine extends ActivePlugin {
 

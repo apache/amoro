@@ -25,12 +25,14 @@ import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.shaded.com.google.common.collect.Maps;
+import org.apache.amoro.table.StateKey;
 import org.apache.amoro.table.TableRuntimeStore;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class AbstractTableRuntime extends PersistentBase
@@ -60,6 +62,16 @@ public abstract class AbstractTableRuntime extends PersistentBase
   @Override
   public Map<String, String> getTableConfig() {
     return store().getTableConfig();
+  }
+
+  @Override
+  public <T> T getState(StateKey<T> key) {
+    return store().getState(key);
+  }
+
+  @Override
+  public <T> void updateState(StateKey<T> key, Function<T, T> updater) {
+    store().begin().updateState(key, updater).commit();
   }
 
   @Override

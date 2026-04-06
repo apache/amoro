@@ -64,36 +64,4 @@ public class TestConfigurableIntervalExecutors {
     // 5 hours ago - should not execute
     Assert.assertFalse(executor.shouldExecute(now - Duration.ofHours(5).toMillis()));
   }
-
-  @Test
-  public void testSnapshotsExpiringDefaultInterval() {
-    Duration interval = Duration.ofHours(1);
-    SnapshotsExpiringExecutor executor = new SnapshotsExpiringExecutor(null, 1, interval);
-
-    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
-    Assert.assertEquals(
-        Duration.ofHours(1).toMillis(), executor.getNextExecutingTime(tableRuntime));
-  }
-
-  @Test
-  public void testSnapshotsExpiringCustomInterval() {
-    Duration interval = Duration.ofMinutes(30);
-    SnapshotsExpiringExecutor executor = new SnapshotsExpiringExecutor(null, 1, interval);
-
-    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
-    Assert.assertEquals(
-        Duration.ofMinutes(30).toMillis(), executor.getNextExecutingTime(tableRuntime));
-  }
-
-  @Test
-  public void testSnapshotsExpiringShouldExecuteAfterInterval() {
-    Duration interval = Duration.ofHours(2);
-    SnapshotsExpiringExecutor executor = new SnapshotsExpiringExecutor(null, 1, interval);
-
-    long now = System.currentTimeMillis();
-    // 3 hours ago - should execute
-    Assert.assertTrue(executor.shouldExecute(now - Duration.ofHours(3).toMillis()));
-    // 1 hour ago - should not execute
-    Assert.assertFalse(executor.shouldExecute(now - Duration.ofHours(1).toMillis()));
-  }
 }
