@@ -22,6 +22,15 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import useStore from '@/store/index'
 import { getQueryString } from '@/utils'
+import {
+  canExecuteSql,
+  canManagePlatform,
+  canViewCatalog,
+  canViewOptimizer,
+  canViewSystem,
+  canViewTable,
+  getDefaultRoute,
+} from '@/utils/permission'
 
 interface MenuItem {
   key: string
@@ -44,6 +53,12 @@ export default defineComponent({
     const hasToken = computed(() => {
       return !!(getQueryString('token') || '')
     })
+    const canAccessSystem = computed(() => canViewSystem())
+    const canAccessCatalog = computed(() => canViewCatalog())
+    const canAccessTable = computed(() => canViewTable())
+    const canAccessOptimizer = computed(() => canViewOptimizer())
+    const canAccessTerminal = computed(() => canExecuteSql())
+    const canAccessSettings = computed(() => canManagePlatform())
     const menuList = computed(() => {
       const menu: MenuItem[] = [
         {
@@ -84,7 +99,28 @@ export default defineComponent({
           icon: 'settings',
         },
       ]
-      return hasToken.value ? menu : allMenu
+      const source = hasToken.value ? menu : allMenu
+      return source.filter((item) => {
+        if (!canAccessSettings.value && item.key === 'settings') {
+          return false
+        }
+        if (!canAccessSystem.value && item.key === 'overview') {
+          return false
+        }
+        if (!canAccessTerminal.value && item.key === 'terminal') {
+          return false
+        }
+        if (!canAccessCatalog.value && item.key === 'catalogs') {
+          return false
+        }
+        if (!canAccessOptimizer.value && item.key === 'optimizing') {
+          return false
+        }
+        if (!canAccessTable.value && item.key === 'tables') {
+          return false
+        }
+        return true
+      })
     })
 
     const setCurMenu = () => {
@@ -106,7 +142,47 @@ export default defineComponent({
     }
 
     const navClick = (item: MenuItem) => {
-      const targetPath = item.key === 'tables' ? '/tables' : `/${item.key}`
+      if (item.key === 'tables') {
+        let catalog: string | undefined
+        let db: string | undefined
+        let tableName: string | undefined
+
+        try {
+          const stored = localStorage.getItem('easylake-menu-catalog-db-table')
+          if (stored) {
+            const parsed = JSON.parse(stored) as { catalog?: string; database?: string; tableName?: string }
+            catalog = parsed.catalog
+            db = parsed.database
+            tableName = parsed.tableName
+          }
+        }
+        catch (e) {
+          // ignore localStorage read/parse errors
+        }
+
+        if (catalog && db && tableName) {
+          router.replace({
+            path: '/tables',
+            query: {
+              catalog,
+              db,
+              table: tableName,
+            },
+          })
+        }
+        else {
+          router.replace({
+            path: '/tables',
+          })
+        }
+
+        nextTick(() => {
+          setCurMenu()
+        })
+        return
+      }
+
+      const targetPath = `/${item.key}`
       router.replace({
         path: targetPath,
       })
@@ -117,13 +193,19 @@ export default defineComponent({
 
     const viewOverview = () => {
       router.push({
-        path: '/overview',
+        path: canAccessSystem.value ? '/overview' : getDefaultRoute(),
       })
     }
 
     return {
       ...toRefs(state),
       hasToken,
+      canAccessSystem,
+      canAccessCatalog,
+      canAccessTable,
+      canAccessOptimizer,
+      canAccessTerminal,
+      canAccessSettings,
       menuList,
       toggleCollapsed,
       navClick,

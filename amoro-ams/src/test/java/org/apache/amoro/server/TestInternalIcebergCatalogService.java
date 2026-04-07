@@ -76,7 +76,11 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
       meta.putToCatalogProperties("cache-enabled", "false");
       meta.putToCatalogProperties("cache.expiration-interval-ms", "10000");
       catalogManager.updateCatalog(meta);
-      String warehouseInAMS = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
+      // Force a cache reload after invalidation to prevent the background catalog-scan task from
+      // overwriting the cache with a stale DB snapshot it read before the update completed.
+      CatalogMeta updatedMeta = catalogManager.getCatalogMeta(catalogName());
+      String warehouseInAMS =
+          updatedMeta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
 
       Map<String, String> clientSideConfiguration = Maps.newHashMap();
       clientSideConfiguration.put("cache-enabled", "true");

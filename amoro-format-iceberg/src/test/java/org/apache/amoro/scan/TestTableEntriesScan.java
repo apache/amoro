@@ -25,10 +25,13 @@ import org.apache.amoro.io.writer.GenericTaskWriters;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.utils.ManifestEntryFields;
 import org.apache.iceberg.AppendFiles;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.Record;
@@ -184,6 +187,53 @@ public class TestTableEntriesScan extends TableDataTestBase {
       }
     }
     Assert.assertEquals(1, cnt);
+  }
+
+  @Test
+  public void testScanEntriesWithPartitionSpecEvolution() throws IOException {
+    // base table has data files under spec 0: day(op_time)
+    Table baseTable = getMixedTable().asKeyedTable().baseTable();
+    PartitionSpec originalSpec = baseTable.spec();
+
+    // evolve partition spec: add identity(id)
+    baseTable.updateSpec().addField("id").commit();
+    PartitionSpec newSpec = baseTable.spec();
+    Assert.assertNotEquals(originalSpec.specId(), newSpec.specId());
+
+    // append a data file under the new spec
+    DataFile newSpecFile =
+        DataFiles.builder(newSpec)
+            .withPath("/tmp/test-partition-evolution/data-new-spec.parquet")
+            .withFileSizeInBytes(100)
+            .withRecordCount(1)
+            .withPartitionPath("op_time_day=2022-01-01/id=1")
+            .build();
+    baseTable.newAppend().appendFile(newSpecFile).commit();
+
+    // scan all entries - without the fix this would fail due to partition struct mismatch
+    TableEntriesScan entriesScan =
+        TableEntriesScan.builder(baseTable)
+            .includeFileContent(
+                FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
+            .build();
+
+    int count = 0;
+    try (CloseableIterable<IcebergFileEntry> entries = entriesScan.entries()) {
+      for (IcebergFileEntry entry : entries) {
+        count++;
+        ContentFile<?> file = entry.getFile();
+        Assert.assertNotNull(file.partition());
+
+        // verify partition values are not null for partitioned files
+        PartitionSpec fileSpec = baseTable.specs().get(file.specId());
+        if (fileSpec.isPartitioned()) {
+          // op_time_day should be present for all specs
+          Assert.assertNotNull(file.partition().get(0, Object.class));
+        }
+      }
+    }
+    // original: 4 data + 1 pos-delete + 1 new data = 6
+    Assert.assertEquals(6, count);
   }
 
   private List<DataFile> writeIntoBase() throws IOException {

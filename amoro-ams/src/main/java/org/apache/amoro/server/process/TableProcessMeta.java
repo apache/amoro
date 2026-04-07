@@ -19,13 +19,15 @@
 package org.apache.amoro.server.process;
 
 import org.apache.amoro.process.ProcessStatus;
-import org.apache.amoro.process.TableProcessState;
+import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class TableProcessMeta {
+  private static final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator();
   private long processId;
   private long tableId;
   private volatile String externalProcessIdentifier;
@@ -189,22 +191,21 @@ public class TableProcessMeta {
     return tableProcessMeta;
   }
 
-  @Deprecated
-  public static TableProcessMeta fromTableProcessState(TableProcessState tableProcessState) {
+  public static TableProcessMeta createProcessMeta(TableProcess process) {
     TableProcessMeta tableProcessMeta = new TableProcessMeta();
-    tableProcessMeta.setProcessId(tableProcessState.getId());
-    tableProcessMeta.setTableId(tableProcessState.getTableIdentifier().getId());
-    tableProcessMeta.setExternalProcessIdentifier(tableProcessState.getExternalProcessIdentifier());
-    tableProcessMeta.setStatus(tableProcessState.getStatus());
-    tableProcessMeta.setProcessType(tableProcessState.getAction().getName());
-    tableProcessMeta.setProcessStage(tableProcessState.getStage().getDesc());
-    tableProcessMeta.setExecutionEngine(tableProcessState.getExecutionEngine());
-    tableProcessMeta.setRetryNumber(tableProcessState.getRetryNumber());
-    tableProcessMeta.setCreateTime(tableProcessState.getStartTime());
-    tableProcessMeta.setFinishTime(tableProcessState.getEndTime());
-    tableProcessMeta.setFailMessage(tableProcessState.getFailedReason());
-    tableProcessMeta.setProcessParameters(tableProcessState.getProcessParameters());
-    tableProcessMeta.setSummary(tableProcessState.getSummary());
+    tableProcessMeta.setProcessId(idGenerator.generateId());
+    tableProcessMeta.setTableId(process.getTableIdentifier().getId());
+    tableProcessMeta.setExternalProcessIdentifier("");
+    tableProcessMeta.setStatus(ProcessStatus.PENDING);
+    tableProcessMeta.setProcessType(process.getAction().getName());
+    tableProcessMeta.setProcessStage(process.getProcessStage());
+    tableProcessMeta.setExecutionEngine(process.getExecutionEngine());
+    tableProcessMeta.setRetryNumber(0);
+    tableProcessMeta.setCreateTime(System.currentTimeMillis());
+    tableProcessMeta.setFinishTime(-1);
+    tableProcessMeta.setFailMessage("");
+    tableProcessMeta.setProcessParameters(process.getProcessParameters());
+    tableProcessMeta.setSummary(process.getSummary());
     return tableProcessMeta;
   }
 

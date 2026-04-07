@@ -32,9 +32,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 
 /**
  * End-to-end test cases for configuration documentation.
@@ -58,6 +61,94 @@ public class ConfigurationsTest {
   public static String UPDATE_CMD =
       "UPDATE=1 ./mvnw test -pl amoro-ams -am -Dtest=ConfigurationsTest";
 
+  private static final List<String> RBAC_EXAMPLE =
+      Arrays.asList(
+          "## RBAC Example",
+          "",
+          "Enable RBAC only when you need role separation for dashboard users.",
+          "",
+          "The current RBAC model uses:",
+          "",
+          "- string-based roles",
+          "- LDAP group-to-role mapping as the primary role source",
+          "- built-in Casbin policy to translate roles into privileges",
+          "- privilege-driven frontend authorization",
+          "",
+          "Amoro provides two built-in roles by default:",
+          "",
+          "| Role | Description | Default Privileges |",
+          "| --- | --- | --- |",
+          "| `SERVICE_ADMIN` | Platform administrator | All privileges |",
+          "| `VIEWER` | Read-only resource viewer | `VIEW_CATALOG`, `VIEW_TABLE`, `VIEW_OPTIMIZER` |",
+          "",
+          "`VIEWER` does not include `VIEW_SYSTEM`, so it cannot access `Overview` or `Terminal`.",
+          "After login succeeds, `/login/current` returns both `roles` and effective `privileges`.",
+          "",
+          "If you need additional roles, define them by Casbin policy and map LDAP groups to those",
+          "role names. The role name itself does not need to be added to Java enum code.",
+          "",
+          "```yaml",
+          "ams:",
+          "  http-server:",
+          "    authorization:",
+          "      enabled: true",
+          "```",
+          "",
+          "```yaml",
+          "ams:",
+          "  http-server:",
+          "    login-auth-provider: org.apache.amoro.server.authentication.LdapPasswdAuthenticationProvider",
+          "    login-auth-ldap-url: \"ldap://ldap.example.com:389\"",
+          "    login-auth-ldap-user-pattern: \"uid={0},ou=people,dc=example,dc=com\"",
+          "    authorization:",
+          "      enabled: true",
+          "      ldap-role-mapping:",
+          "        enabled: true",
+          "        group-member-attribute: \"member\"",
+          "        user-dn-pattern: \"uid={0},ou=people,dc=example,dc=com\"",
+          "        bind-dn: \"cn=service-account,dc=example,dc=com\"",
+          "        bind-password: \"service-password\"",
+          "        groups:",
+          "          - group-dn: \"cn=amoro-service-admins,ou=groups,dc=example,dc=com\"",
+          "            role: SERVICE_ADMIN",
+          "          - group-dn: \"cn=amoro-viewers,ou=groups,dc=example,dc=com\"",
+          "            role: VIEWER",
+          "          - group-dn: \"cn=amoro-catalog-admins,ou=groups,dc=example,dc=com\"",
+          "            role: CATALOG_ADMIN",
+          "```",
+          "",
+          "Example `/login/current` response:",
+          "",
+          "```json",
+          "{",
+          "  \"userName\": \"alice\",",
+          "  \"roles\": [\"CATALOG_ADMIN\"],",
+          "  \"privileges\": [",
+          "    \"VIEW_CATALOG\",",
+          "    \"MANAGE_CATALOG\",",
+          "    \"VIEW_TABLE\",",
+          "    \"MANAGE_TABLE\"",
+          "  ]",
+          "}",
+          "```",
+          "",
+          "Example custom role policy:",
+          "",
+          "```csv",
+          "p, CATALOG_ADMIN, CATALOG, GLOBAL, VIEW_CATALOG, allow",
+          "p, CATALOG_ADMIN, CATALOG, GLOBAL, MANAGE_CATALOG, allow",
+          "p, CATALOG_ADMIN, TABLE, GLOBAL, VIEW_TABLE, allow",
+          "p, CATALOG_ADMIN, TABLE, GLOBAL, MANAGE_TABLE, allow",
+          "```",
+          "",
+          "Notes:",
+          "",
+          "- Recommended production setup is explicit role assignment only.",
+          "- `default-role` is optional. If it is not set, users who do not match any role mapping get no business role.",
+          "- Use `default-role: VIEWER` only if you intentionally want authenticated users without a matched role mapping to receive read-only access.",
+          "- Casbin model and default policy are built into the service and loaded from classpath.",
+          "- Dashboard request-to-privilege mapping is also built into the service and loaded from a resource configuration file.");
+
   @Test
   public void testAmoroManagementConfDocumentation() throws Exception {
     List<AmoroConfInfo> confInfoList = new ArrayList<>();
@@ -65,13 +156,43 @@ public class ConfigurationsTest {
         new AmoroConfInfo(
             AmoroManagementConf.class,
             "Amoro Management Service Configuration",
-            "The configuration options for Amoro Management Service (AMS)."));
+            "The configuration options for Amoro Management Service (AMS).",
+            RBAC_EXAMPLE));
     confInfoList.add(
         new AmoroConfInfo(
             ConfigShadeUtils.class,
             "Shade Utils Configuration",
             "The configuration options for Amoro Configuration Shade Utils."));
     generateConfigurationMarkdown("ams-config.md", "AMS Configuration", 100, confInfoList);
+  }
+
+  @Test
+  public void testGetDurationInMillis() throws Exception {
+    Properties properties = new Properties();
+    properties.put(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT.key(), "1h");
+    Configurations configuration = ConfigHelpers.createConfiguration(properties);
+    long durationInMillis =
+        configuration.getDurationInMillis(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT);
+    Assertions.assertEquals(3600000, durationInMillis);
+
+    // default value test
+    properties = new Properties();
+    configuration = ConfigHelpers.createConfiguration(properties);
+    durationInMillis =
+        configuration.getDurationInMillis(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT);
+    Assertions.assertEquals(Integer.MAX_VALUE * 1000L, durationInMillis);
+
+    properties.put(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT.key(), Long.MAX_VALUE + "m");
+    final Configurations conf1 = ConfigHelpers.createConfiguration(properties);
+    Assertions.assertThrows(
+        ConfigurationException.class,
+        () -> conf1.getDurationInMillis(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT));
+
+    properties.put(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT.key(), "-1m");
+    final Configurations conf2 = ConfigHelpers.createConfiguration(properties);
+    Assertions.assertThrows(
+        ConfigurationException.class,
+        () -> conf2.getDurationInMillis(AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT));
   }
 
   /**
@@ -117,6 +238,12 @@ public class ConfigurationsTest {
 
       // Add some space between different configuration sections
       output.add("");
+
+      // Add appendix content if present
+      if (confInfo.appendix != null && !confInfo.appendix.isEmpty()) {
+        output.addAll(confInfo.appendix);
+      }
+
       output.add("");
     }
 
@@ -269,11 +396,21 @@ public class ConfigurationsTest {
     Class<?> confClass;
     String title;
     String description;
+    List<String> appendix;
 
     public AmoroConfInfo(Class<?> confClass, String title, String description) {
       this.confClass = confClass;
       this.title = title;
       this.description = description;
+      this.appendix = Collections.emptyList();
+    }
+
+    public AmoroConfInfo(
+        Class<?> confClass, String title, String description, List<String> appendix) {
+      this.confClass = confClass;
+      this.title = title;
+      this.description = description;
+      this.appendix = appendix;
     }
   }
 }

@@ -22,8 +22,11 @@ import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.table.StateKey;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 /**
  * TableRuntime is the key interface for the AMS framework to interact with the table. Typically, it
@@ -59,11 +62,44 @@ public interface TableRuntime {
   ServerTableIdentifier getTableIdentifier();
 
   /**
+   * Load the current table instance for this runtime.
+   *
+   * <p>This method is mainly intended for in-AMS processes.
+   */
+  AmoroTable<?> loadTable();
+
+  /**
+   * Get the table configuration. @Deprecated use {@link #getTableConfig()} instead.
+   *
+   * @return the table configuration
+   */
+  @Deprecated
+  TableConfiguration getTableConfiguration();
+
+  /**
    * Get the table configuration.
    *
    * @return the table configuration
    */
-  TableConfiguration getTableConfiguration();
+  Map<String, String> getTableConfig();
+
+  /**
+   * Get the value of table-runtime state
+   *
+   * @param key the state key
+   * @return value of the state
+   * @param <T> state value type
+   */
+  <T> T getState(StateKey<T> key);
+
+  /**
+   * Update the state
+   *
+   * @param key key of state
+   * @param updater value updater of state
+   * @param <T> value type of state.
+   */
+  <T> void updateState(StateKey<T> key, Function<T, T> updater);
 
   /**
    * Register the metric of the table runtime.

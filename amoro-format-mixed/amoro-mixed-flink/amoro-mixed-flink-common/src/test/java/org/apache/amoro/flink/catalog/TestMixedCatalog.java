@@ -33,6 +33,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestBase;
+import org.apache.amoro.flink.MiniClusterResource;
 import org.apache.amoro.flink.catalog.factories.CatalogFactoryOptions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -51,7 +52,6 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.flink.util.CollectionUtil;
-import org.apache.iceberg.flink.MiniClusterResource;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -116,9 +116,11 @@ public class TestMixedCatalog extends CatalogTestBase {
   @After
   public void after() {
     sql("DROP TABLE IF EXISTS " + catalogName + "." + DB + "." + TABLE);
+    // Switch away from the catalog before dropping the database.
+    // Flink 1.19+ rejects dropping the currently active database.
+    sql("USE CATALOG default_catalog");
     sql("DROP DATABASE IF EXISTS " + catalogName + "." + DB);
     Assert.assertTrue(CollectionUtil.isNullOrEmpty(getMixedFormatCatalog().listDatabases()));
-    sql("USE CATALOG default_catalog");
     sql("DROP CATALOG " + catalogName);
   }
 

@@ -27,6 +27,9 @@ export interface IHttpResponse {
 }
 export interface UserInfo {
   userName: string
+  role?: string
+  roles?: string[]
+  privileges?: string[]
   token?: string
 }
 

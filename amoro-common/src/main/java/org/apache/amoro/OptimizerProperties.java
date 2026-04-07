@@ -32,6 +32,7 @@ public class OptimizerProperties {
   public static final String OPTIMIZER_EXECUTION_PARALLEL = "execution-parallel";
   public static final String OPTIMIZER_MEMORY_SIZE = "memory-size";
   public static final String OPTIMIZER_GROUP_NAME = "group-name";
+  public static final String OPTIMIZER_GROUP_MIN_PARALLELISM = "min-parallelism";
   public static final String OPTIMIZER_HEART_BEAT_INTERVAL = "heart-beat-interval";
   public static final String OPTIMIZER_EXTEND_DISK_STORAGE = "extend-disk-storage";
   public static final boolean OPTIMIZER_EXTEND_DISK_STORAGE_DEFAULT = false;
@@ -47,4 +48,5 @@ public class OptimizerProperties {
   public static final String OPTIMIZER_CACHE_MAX_TOTAL_SIZE_DEFAULT = "128mb";
   public static final String OPTIMIZER_CACHE_TIMEOUT = "cache-timeout";
   public static final String OPTIMIZER_CACHE_TIMEOUT_DEFAULT = "10min";
+  public static final String OPTIMIZER_MASTER_SLAVE_MODE_ENABLED = "master-slave-mode-enabled";
 }

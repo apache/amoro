@@ -131,6 +131,7 @@ properties:
 {{- define "amoro.optimizer.container.kubernetes" -}}
 container-impl: org.apache.amoro.server.manager.KubernetesOptimizerContainer
 properties:
+  ams-optimizing-uri: {{include "amoro.svc.optimizing.uri" . | quote}}
   {{- with .Values.optimizer.kubernetes.properties -}}
     {{- toYaml . | nindent 2 }}
   {{- end -}}

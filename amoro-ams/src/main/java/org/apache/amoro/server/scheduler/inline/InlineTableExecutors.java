@@ -22,16 +22,17 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.table.TableService;
 
+import java.time.Duration;
+
 public class InlineTableExecutors {
 
   private static final InlineTableExecutors instance = new InlineTableExecutors();
-  private SnapshotsExpiringExecutor snapshotsExpiringExecutor;
   private TableRuntimeRefreshExecutor tableRefreshingExecutor;
   private OrphanFilesCleaningExecutor orphanFilesCleaningExecutor;
   private DanglingDeleteFilesCleaningExecutor danglingDeleteFilesCleaningExecutor;
   private BlockerExpiringExecutor blockerExpiringExecutor;
   private OptimizingCommitExecutor optimizingCommitExecutor;
-  private OptimizingExpiringExecutor optimizingExpiringExecutor;
+  private ProcessDataExpiringExecutor processDataExpiringExecutor;
   private HiveCommitSyncExecutor hiveCommitSyncExecutor;
   private TagsAutoCreatingExecutor tagsAutoCreatingExecutor;
   private DataExpiringExecutor dataExpiringExecutor;
@@ -41,11 +42,6 @@ public class InlineTableExecutors {
   }
 
   public void setup(TableService tableService, Configurations conf) {
-    if (conf.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
-      this.snapshotsExpiringExecutor =
-          new SnapshotsExpiringExecutor(
-              tableService, conf.getInteger(AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT));
-    }
     if (conf.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
       this.orphanFilesCleaningExecutor =
           new OrphanFilesCleaningExecutor(
@@ -57,16 +53,29 @@ public class InlineTableExecutors {
       this.danglingDeleteFilesCleaningExecutor =
           new DanglingDeleteFilesCleaningExecutor(
               tableService,
-              conf.getInteger(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT));
+              conf.getInteger(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT),
+              conf.get(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_INTERVAL));
     }
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
             tableService, conf.getInteger(AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
-    this.optimizingExpiringExecutor =
-        new OptimizingExpiringExecutor(
-            tableService,
-            conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_DAYS),
-            conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL_HOURS));
+    Duration optimizingKeepTime =
+        conf.contains(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_TIME)
+            ? conf.get(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_TIME)
+            : Duration.ofDays(
+                conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_DAYS));
+    Duration expireInterval =
+        conf.contains(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL)
+            ? conf.get(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL)
+            : Duration.ofHours(
+                conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL_HOURS));
+    Duration processKeepTime =
+        conf.contains(AmoroManagementConf.PROCESS_HISTORY_DATA_KEEP_TIME)
+            ? conf.get(AmoroManagementConf.PROCESS_HISTORY_DATA_KEEP_TIME)
+            : Duration.ofDays(conf.getInteger(AmoroManagementConf.PROCESS_HISTORY_DATA_KEEP_DAYS));
+    this.processDataExpiringExecutor =
+        new ProcessDataExpiringExecutor(
+            tableService, optimizingKeepTime, expireInterval, processKeepTime);
     this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableService);
     if (conf.getBoolean(AmoroManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
       this.hiveCommitSyncExecutor =
@@ -95,10 +104,6 @@ public class InlineTableExecutors {
     }
   }
 
-  public SnapshotsExpiringExecutor getSnapshotsExpiringExecutor() {
-    return snapshotsExpiringExecutor;
-  }
-
   public TableRuntimeRefreshExecutor getTableRefreshingExecutor() {
     return tableRefreshingExecutor;
   }
@@ -119,8 +124,8 @@ public class InlineTableExecutors {
     return optimizingCommitExecutor;
   }
 
-  public OptimizingExpiringExecutor getOptimizingExpiringExecutor() {
-    return optimizingExpiringExecutor;
+  public ProcessDataExpiringExecutor getProcessDataExpiringExecutor() {
+    return processDataExpiringExecutor;
   }
 
   public HiveCommitSyncExecutor getHiveCommitSyncExecutor() {

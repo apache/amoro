@@ -281,3 +281,13 @@ CREATE TABLE IF NOT EXISTS ha_lease (
   KEY `idx_ha_lease_expire` (lease_expire_ts) COMMENT 'Index for querying expired leases',
   KEY `idx_ha_lease_node` (node_id) COMMENT 'Index for querying leases by node ID'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='HA lease table for leader election and heartbeat renewal';
+
+CREATE TABLE IF NOT EXISTS bucket_assignments (
+  cluster_name       VARCHAR(64)   NOT NULL COMMENT 'AMS cluster name',
+  node_key           VARCHAR(256) NOT NULL COMMENT 'Node key (host:thriftBindPort)',
+  server_info_json   TEXT         NULL COMMENT 'JSON encoded AmsServerInfo',
+  assignments_json   TEXT         NULL COMMENT 'JSON array of bucket IDs',
+  last_update_time   BIGINT       NOT NULL DEFAULT 0 COMMENT 'Last update timestamp (ms since epoch)',
+  node_heartbeat_ts  BIGINT       NOT NULL DEFAULT 0 COMMENT 'Per-node heartbeat timestamp updated only by the owning node (ms since epoch)',
+  PRIMARY KEY (cluster_name, node_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bucket ID assignments per AMS node for master-slave mode';

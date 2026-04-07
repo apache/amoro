@@ -46,10 +46,15 @@ ams:
     interval: 1min
     max-pending-partition-count: 100 # default 100
 
+  process:
+    history-data-keep-time: 7d
+
   self-optimizing:
     commit-thread-count: 10
     runtime-data-keep-days: 30
     runtime-data-expire-interval-hours: 1
+    runtime-data-keep-time: 30d
+    runtime-data-expire-interval: 1h
     refresh-group-interval: 30s
     break-quota-limit-enabled: true
 
