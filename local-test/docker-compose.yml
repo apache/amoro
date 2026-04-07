@@ -1,0 +1,392 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Modified by Datazip Inc. in 2026
+
+services:
+  fusion:
+    image: olakego/fusion:latest
+    container_name: olake-fusion
+    profiles:
+      - prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kind-setup:
+        condition: service_completed_successfully
+      spark-copy:
+        condition: service_completed_successfully
+    networks:
+      iceberg-net:
+        ipv4_address: 10.210.30.10
+    ports:
+      - "1630:1630"    # Web UI + REST API
+      - "1260:1260"    # Thrift table service
+      - "1261:1261"    # Thrift optimizing service
+    environment:
+      JVM_XMS: "1024"
+      JVM_XMX: "2048"
+      KUBECONFIG: /root/.kube/config
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      LOG_DIR: /mnt/amoro-logs/compaction
+    volumes:
+      - ./config.yaml:/usr/local/amoro/conf/config.yaml:ro
+      - kind-kubeconfig:/root/.kube:ro
+      - spark-home:/opt/spark:ro
+      - ${AMORO_LOG_DIR:-/opt/amoro-logs}:/mnt/amoro-logs
+    command: ["/entrypoint.sh", "ams"]
+    tty: true
+    stdin_open: true
+
+  fusion-init:
+    image: curlimages/curl
+    container_name: fusion-init
+    profiles:
+      - prod
+    depends_on:
+      fusion:
+        condition: service_started
+      kind-load-image:
+        condition: service_completed_successfully
+    networks:
+      iceberg-net:
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for Fusion to be ready..."
+        until curl -sf http://fusion:1630/ >/dev/null 2>&1; do sleep 2; done
+        sleep 10
+
+        echo "Logging in..."
+        curl -sf -c /tmp/cookies.txt \
+          -X POST http://fusion:1630/api/ams/v1/login \
+          -H "Content-Type: application/json" \
+          -H "X-Request-Source: Web" \
+          -d '{"user":"admin","password":"password"}'
+        echo ""
+
+        # ---- Optimizer Group (Spark on Kubernetes) ----
+        echo "Checking optimizer group..."
+        GROUPS=$$(curl -s -b /tmp/cookies.txt \
+          -H "X-Request-Source: Web" \
+          http://fusion:1630/api/ams/v1/optimize/resourceGroups)
+
+        if echo "$$GROUPS" | grep -q '"name":"spark-container"'; then
+          echo "  Optimizer group 'spark-container' already exists — skipping."
+        else
+          echo "  Creating optimizer group 'spark-container' (Spark on K8s)..."
+          curl -s -b /tmp/cookies.txt \
+            -X POST http://fusion:1630/api/ams/v1/optimize/resourceGroups \
+            -H "Content-Type: application/json" \
+            -H "X-Request-Source: Web" \
+            -d '{"name":"spark-container","container":"sparkContainer","properties":{}}'
+          echo ""
+          sleep 5
+        fi
+
+        # ---- Optimizer (always ensure at least 1 is running) ----
+        echo "Checking optimizers..."
+        OPTIMIZERS=$$(curl -s -b /tmp/cookies.txt \
+          -H "X-Request-Source: Web" \
+          "http://fusion:1630/api/ams/v1/optimize/optimizerGroups/spark-container/optimizers?page=1&pageSize=10")
+
+        if echo "$$OPTIMIZERS" | grep -q '"jobStatus":"RUNNING"'; then
+          echo "  Spark optimizer already running — skipping."
+        else
+          echo "  Scaling out Spark optimizer (parallelism=1)..."
+          curl -s -b /tmp/cookies.txt \
+            -X POST http://fusion:1630/api/ams/v1/optimize/optimizerGroups/spark-container/optimizers \
+            -H "Content-Type: application/json" \
+            -H "X-Request-Source: Web" \
+            -d '{"parallelism":1}'
+          echo ""
+          sleep 5
+        fi
+
+        # ---- Catalog ----
+        echo "Checking catalog..."
+        CATALOGS=$$(curl -s -b /tmp/cookies.txt \
+          -H "X-Request-Source: Web" \
+          http://fusion:1630/api/ams/v1/catalogs)
+
+        if echo "$$CATALOGS" | grep -q '"catalogName":"olake_iceberg"'; then
+          echo "  Catalog 'olake_iceberg' already exists — skipping."
+        else
+          echo "  Creating catalog 'olake_iceberg' (Iceberg JdbcCatalog on Postgres + MinIO)..."
+          curl -s -b /tmp/cookies.txt \
+            -X POST http://fusion:1630/api/ams/v1/catalogs \
+            -H "Content-Type: application/json" \
+            -H "X-Request-Source: Web" \
+            -d '{
+              "name":"olake_iceberg",
+              "type":"custom",
+              "optimizerGroup":"spark-container",
+              "tableFormatList":["ICEBERG"],
+              "storageConfig":{
+                "storage.type":"S3",
+                "storage.s3.endpoint":"http://10.210.30.5:9000",
+                "storage.s3.region":"us-east-1"
+              },
+              "authConfig":{
+                "auth.type":"AKSK",
+                "auth.aksk.access-key":"admin",
+                "auth.aksk.secret-key":"password"
+              },
+              "properties":{
+                "catalog-impl":"org.apache.iceberg.jdbc.JdbcCatalog",
+                "uri":"jdbc:postgresql://postgres:5432/iceberg",
+                "jdbc.user":"iceberg",
+                "jdbc.password":"password",
+                "jdbc.driver":"org.postgresql.Driver",
+                "jdbc.schema-version":"V1",
+                "warehouse":"s3://warehouse/olake_iceberg/",
+                "s3.path-style-access":"true",
+                "io-impl":"org.apache.iceberg.aws.s3.S3FileIO",
+                "endpoint":"http://10.210.30.5:9000",
+                "access-key-id":"admin",
+                "secret-access-key":"password"
+              },
+              "tableProperties":{}
+            }'
+          echo ""
+        fi
+
+        echo ""
+        echo "============================================"
+        echo "  Fusion is ready!"
+        echo "  Web UI : http://localhost:1630"
+        echo "  Login  : admin / password"
+        echo "  Catalog: olake_iceberg"
+        echo "============================================"
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    profiles:
+      - prod
+      - dev
+    networks:
+      iceberg-net:
+        ipv4_address: 10.210.30.20
+    ports:
+    - "5432:5432"
+    environment:
+      POSTGRES_USER: iceberg
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: iceberg
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "iceberg", "-d", "iceberg"]
+      interval: 3s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - ./data/postgres_data:/var/lib/postgresql/data
+    command: postgres -c max_connections=300
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-03T14-56-28Z
+    container_name: minio
+    profiles:
+      - prod
+      - dev
+    networks:
+      iceberg-net:
+        ipv4_address: 10.210.30.5
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+      MINIO_DOMAIN: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./data/minio_data:/data
+    command: ["server", "/data", "--console-address", ":9001"]
+
+  mc:
+    image: minio/mc:RELEASE.2025-04-03T17-07-56Z
+    container_name: mc
+    profiles:
+      - prod
+      - dev
+    depends_on:
+      - minio
+    networks:
+      iceberg-net:
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until /usr/bin/mc config host add minio http://minio:9000 admin password; do sleep 1; done
+        /usr/bin/mc mb minio/warehouse --ignore-existing
+        /usr/bin/mc anonymous set public minio/warehouse
+        echo "MinIO bucket 'warehouse' is ready."
+
+  kind-setup:
+    image: docker:27-cli
+    container_name: fusion-kind-setup
+    profiles:
+      - prod
+    networks:
+      iceberg-net:
+    environment:
+      AMORO_LOG_DIR: ${AMORO_LOG_DIR:-/opt/amoro-logs}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - kind-kubeconfig:/output
+      - ./kind-config.yaml:/kind-config.yaml:ro
+      - ./spark-rbac.yaml:/spark-rbac.yaml:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+
+        LOG_DIR="$${AMORO_LOG_DIR:-/opt/amoro-logs}"
+        echo "==> Log directory: $$LOG_DIR"
+
+        echo "==> Generating kind cluster config..."
+        sed "s|AMORO_LOG_PLACEHOLDER|$$LOG_DIR|g" /kind-config.yaml > /tmp/kind-config-gen.yaml
+
+        echo "==> Installing kind..."
+        apk add --no-cache curl >/dev/null 2>&1
+        curl -sLo /usr/local/bin/kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
+        chmod +x /usr/local/bin/kind
+
+        echo "==> Creating Kind cluster (fusion-spark-cluster)..."
+        if kind get clusters 2>/dev/null | grep -q '^fusion-cluster$$'; then
+          echo "   Cluster already exists, skipping creation."
+        else
+          kind create cluster --config /tmp/kind-config-gen.yaml --wait 120s
+        fi
+
+        echo "==> Connecting Kind nodes to iceberg-net..."
+        docker network connect iceberg-net fusion-cluster-control-plane 2>/dev/null || true
+        for w in $$(docker ps --filter "name=fusion-cluster-worker" --format "{{.Names}}"); do
+          docker network connect iceberg-net "$$w" 2>/dev/null || true
+        done
+
+        echo "==> Applying Spark RBAC (namespace + service account)..."
+        cat /spark-rbac.yaml | docker exec -i fusion-cluster-control-plane \
+          kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f -
+
+        echo "==> Generating kubeconfig for Fusion..."
+        kind get kubeconfig --name fusion-cluster \
+          | sed 's|server: .*|server: https://fusion-cluster-control-plane:6443|' \
+          > /output/config
+        chmod 644 /output/config
+
+        echo "==> Kind setup complete!"
+
+
+  kind-load-image:
+    image: docker:27-cli
+    container_name: fusion-kind-load-image
+    profiles:
+      - prod
+    depends_on:
+      kind-setup:
+        condition: service_completed_successfully
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    tmpfs:
+      - /tmp:size=3G
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        IMAGE="olakego/fusion-spark:latest"
+        IMAGE_REF="docker.io/olakego/fusion-spark:latest"
+
+        if ! docker image inspect $$IMAGE >/dev/null 2>&1; then
+          echo "==> Image $$IMAGE not found locally — skipping."
+          exit 0
+        fi
+
+        # ---- Collect worker nodes ----
+        NODES=$$(docker ps --filter "name=fusion-cluster-worker" --format "{{.Names}}")
+        if [ -z "$$NODES" ]; then
+          echo "==> No worker nodes found — skipping."
+          exit 0
+        fi
+
+        # ---- Always import to refresh mutable tags like ":latest" ----
+        # This prevents stale runtime images (e.g. old Java version) from being reused.
+        echo "==> Saving $$IMAGE to tarball (tmpfs)..."
+        docker save $$IMAGE -o /tmp/spark-optimizer.tar
+        echo "   Saved ($$(du -h /tmp/spark-optimizer.tar | cut -f1))."
+
+        # ---- Parallel import into all workers ----
+        echo "==> Importing into Kind worker nodes (parallel, force refresh)..."
+        PIDS=""
+        for NODE in $$NODES; do
+          echo "   Starting import into $$NODE..."
+          (cat /tmp/spark-optimizer.tar | docker exec -i $$NODE ctr --namespace=k8s.io images import - && \
+            echo "   $$NODE: done.") &
+          PIDS="$$PIDS $$!"
+        done
+
+        FAIL=0
+        for PID in $$PIDS; do
+          if ! wait $$PID; then
+            FAIL=1
+          fi
+        done
+
+        rm -f /tmp/spark-optimizer.tar
+
+        if [ $$FAIL -ne 0 ]; then
+          echo "==> WARNING: Some imports failed!"
+          exit 1
+        fi
+        echo "==> Done — image available on all workers."
+
+  spark-copy:
+    image: olakego/fusion-spark:latest
+    container_name: fusion-spark-copy
+    profiles:
+      - prod
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if [ -f /spark-vol/.done ]; then
+          echo "Spark already copied — skipping."
+        else
+          echo "Copying Spark to shared volume..."
+          cp -a /opt/spark/. /spark-vol/
+          touch /spark-vol/.done
+          echo "Spark copy complete."
+        fi
+    volumes:
+      - spark-home:/spark-vol
+
+  
+networks:
+  iceberg-net:
+    driver: bridge
+    name: iceberg-net
+    ipam:
+      config:
+        - subnet: 10.210.30.0/24
+
+volumes:
+  kind-kubeconfig:
+  spark-home:

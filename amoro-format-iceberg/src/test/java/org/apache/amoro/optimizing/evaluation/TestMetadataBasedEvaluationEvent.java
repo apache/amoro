@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.optimizing.evaluation;
@@ -290,8 +292,13 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
   public void test_evaluating_pendingInput_nonEmptyTable() throws IOException {
     initData();
     // Set metadata-based trigger enabled and fallback interval not reached.
+    // Use minorLeastFileCount=2 so the two small data files from initData() satisfy minor
+    // scheduling (default is 12, so isMinorNecessary() would otherwise stay false and
+    // isNecessary() would be false even when metadata-based pending checks pass).
     OptimizingConfig config =
-        getDefaultOptimizingConfig().setEvaluationFallbackInterval(Long.MAX_VALUE);
+        getDefaultOptimizingConfig()
+            .setEvaluationFallbackInterval(Long.MAX_VALUE)
+            .setMinorLeastFileCount(2);
     MixedTable table = getMixedTable();
 
     // 1. Test file size square error sum updates during partition plans initialization using
@@ -531,10 +538,8 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
         .setMaxTaskSize(TableProperties.SELF_OPTIMIZING_MAX_TASK_SIZE_DEFAULT)
         .setTargetQuota(TableProperties.SELF_OPTIMIZING_QUOTA_DEFAULT)
         .setMinorLeastFileCount(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT)
-        .setMinorLeastInterval(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT)
         .setMajorDuplicateRatio(
             TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT)
-        .setFullTriggerInterval(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT)
         .setFullRewriteAllFiles(TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES_DEFAULT)
         .setFilter(TableProperties.SELF_OPTIMIZING_FILTER_DEFAULT)
         .setBaseHashBucket(TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT)

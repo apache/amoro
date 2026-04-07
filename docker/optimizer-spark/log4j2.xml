@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  ~ Modified by Datazip Inc. in 2026
+  -->
+
+<Configuration monitorInterval="30">
+    <Properties>
+        <Property name="LOG_DIR">${env:LOG_DIR:-/mnt/amoro-logs/compaction}</Property>
+        <Property name="CONSOLE_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS'Z'}{UTC} %-5p [%t] [%c{1}] [P:%X{processId}|T:%X{taskId}] - %m%n</Property>
+        <Property name="JSON_LOG_PATTERN">{"level":"%p","time":"%d{yyyy-MM-dd'T'HH:mm:ss.SSS'Z'}{UTC}","processId":"%X{processId}","taskId":"%X{taskId}","logger":"%c{1}","message":"%enc{%m}{JSON}","stackTrace":"%enc{%throwable{full}}{JSON}"}%n</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_ERR">
+            <PatternLayout pattern="${CONSOLE_PATTERN}"/>
+        </Console>
+
+        <!-- Routing appender: creates per-process/task log files based on MDC logFilePath -->
+        <Routing name="RoutingAppender">
+            <Routes pattern="$${ctx:logFilePath}">
+                <!-- When logFilePath MDC is NOT set, route to Console (no file created) -->
+                <Route key="$${ctx:logFilePath}" ref="Console"/>
+                <!-- When logFilePath MDC IS set, create a log file -->
+                <Route>
+                    <RollingFile name="Route-${ctx:logFilePath}"
+                                 fileName="${LOG_DIR}/${ctx:logFilePath}.log"
+                                 filePattern="${LOG_DIR}/${ctx:logFilePath}-%i.log.gz"
+                                 append="true"
+                                 createOnDemand="true"
+                                 bufferedIO="false"
+                                 immediateFlush="true">
+                        <PatternLayout pattern="${JSON_LOG_PATTERN}"/>
+                        <Policies>
+                            <SizeBasedTriggeringPolicy size="100MB"/>
+                        </Policies>
+                        <DefaultRolloverStrategy max="5"/>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+    </Appenders>
+
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+        </Root>
+
+        <!-- Catch-all for all Amoro code: routes to per-task/process log files -->
+        <Logger name="org.apache.amoro" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="RoutingAppender"/>
+        </Logger>
+
+        <Logger name="org.apache.amoro.optimizing" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="RoutingAppender"/>
+        </Logger>
+
+        <Logger name="org.apache.amoro.optimizer" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="RoutingAppender"/>
+        </Logger>
+
+        <Logger name="org.apache.hadoop" level="warn" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="org.apache.spark" level="warn" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="org.apache.parquet" level="warn" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="org.apache.iceberg.avro" level="warn" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="org.sparkproject.jetty" level="warn" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+    </Loggers>
+</Configuration>

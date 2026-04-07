@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# Modified by Datazip Inc. in 2026
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
@@ -84,8 +85,8 @@ else
     MODULE_OPTS=""
 fi
 
-# merge parameter
-JAVA_OPTS="$BASE_JVM_OPTS $GC_LOG_OPTS $MODULE_OPTS"
+# merge parameters:
+JAVA_OPTS="$BASE_JVM_OPTS $GC_LOG_OPTS $MODULE_OPTS $JVM_EXTRA_CONFIG $OPTIMIZER_JAVA_OPTS"
 
 RUN_SERVER="org.apache.amoro.optimizer.standalone.StandaloneOptimizer"
 CMDS="$JAVA_RUN $JAVA_OPTS $RUN_SERVER $ARGS"

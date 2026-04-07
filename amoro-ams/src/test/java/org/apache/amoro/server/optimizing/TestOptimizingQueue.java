@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server.optimizing;
@@ -532,7 +534,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     mixedTable
         .updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL, "10")
-        .set(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "10")
+        .set(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_CRON, "0 0 * * *")
         .commit();
     appendData(mixedTable.asUnkeyedTable(), 1);
     appendData(mixedTable.asUnkeyedTable(), 2);

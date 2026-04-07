@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.optimizing.plan;
@@ -26,6 +28,7 @@ import org.apache.amoro.optimizing.evaluation.MetadataBasedEvaluationEvent;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.utils.CronUtils;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -54,6 +57,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   protected final long planTime;
 
   private final boolean reachFullInterval;
+  private final boolean reachMajorInterval;
 
   // fragment files
   protected int fragmentFileCount = 0;
@@ -112,9 +116,8 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     this.lastMinorOptimizingTime = lastMinorOptimizingTime;
     this.lastMajorOptimizingTime = lastMajorOptimizingTime;
     this.lastFullOptimizingTime = lastFullOptimizingTime;
-    this.reachFullInterval =
-        config.getFullTriggerInterval() >= 0
-            && planTime - lastFullOptimizingTime > config.getFullTriggerInterval();
+    this.reachMajorInterval = CronUtils.hasFiredInLastMinute(config.getMajorTriggerCron());
+    this.reachFullInterval = CronUtils.hasFiredInLastMinute(config.getFullTriggerCron());
   }
 
   @Override
@@ -338,11 +341,11 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
           return false;
         }
       }
-      if (isFullOptimizing()) {
-        necessary = isFullNecessary();
-      } else {
-        necessary = isMajorNecessary() || isMinorNecessary();
-      }
+      // Priority cascade: full > major > minor.
+      // Each type independently evaluates its own cron + data conditions.
+      // If full cron fired but data conditions are not met, we still fall through to
+      // major and minor rather than skipping them entirely.
+      necessary = isFullNecessary() || isMajorNecessary() || isMinorNecessary();
       LOG.debug("{} necessary = {}, {}", name(), necessary, this);
     }
     return necessary;
@@ -401,7 +404,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   public boolean isMajorNecessary() {
-    return enoughContent() || rewriteSegmentFileCount > 0;
+    return isMajorIntervalNecessary();
   }
 
   public boolean isMinorNecessary() {
@@ -412,8 +415,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   protected boolean reachMinorInterval() {
-    return config.getMinorLeastInterval() >= 0
-        && planTime - lastMinorOptimizingTime > config.getMinorLeastInterval();
+    return CronUtils.hasFiredInLastMinute(config.getMinorTriggerCron());
   }
 
   protected boolean reachFullInterval() {
@@ -440,6 +442,16 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
 
   public boolean anyDeleteExist() {
     return equalityDeleteFileCount > 0 || posDeleteFileCount > 0;
+  }
+
+  private boolean isMajorIntervalNecessary() {
+    if (!reachMajorInterval) {
+      return false;
+    }
+
+    // Interval trigger should still require some pending input to avoid empty major process.
+    int dataFileCount = fragmentFileCount + getSegmentFileCount();
+    return dataFileCount > 1 || anyDeleteExist();
   }
 
   @Override

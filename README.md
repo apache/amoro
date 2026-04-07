@@ -14,6 +14,8 @@
  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  - See the License for the specific language governing permissions and 
  - limitations under the License.
+ -
+ - Modified by Datazip Inc. in 2026
 -->
 <p align="center">
   <img src="https://amoro.apache.org/img/amoro-logo.svg" alt="Amoro logo" height="120px"/>
@@ -116,7 +118,7 @@ Amoro contains modules as below:
 
 ## Building
 
-Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixed/amoro-mixed-trino` module).
+Amoro is built using Maven with JDK 17.
 
 * Build all modules without `amoro-mixed-trino`: `./mvnw clean package`
 * Build and skip tests: `./mvnw clean package -DskipTests`
@@ -126,7 +128,7 @@ Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixe
 * Build with hadoop 2.x(the default is 3.x) dependencies: `./mvnw clean package -DskipTests -Phadoop2`
 * Specify Flink version for Flink optimizer(the default is 1.20.0): `./mvnw clean package -DskipTests -Dflink-optimizer.flink-version=1.20.0`
   * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-optimizer-pre-1.15` parameter: `./mvnw clean package -DskipTests -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
-* Specify Spark version for Spark optimizer(the default is 3.5.7): `./mvnw clean package -DskipTests -Dspark.version=3.5.7`
+* Specify Spark version for Spark optimizer(the default is 3.5.8): `./mvnw clean package -DskipTests -Dspark.version=3.5.8`
 * Build `amoro-mixed-trino` module under JDK 17: `./mvnw clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-mixed-trino' -am`.
 * Build all modules: `./mvnw clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
 * Build a distribution package with all formats integrated: `./mvnw clean package -Psupport-all-formats`

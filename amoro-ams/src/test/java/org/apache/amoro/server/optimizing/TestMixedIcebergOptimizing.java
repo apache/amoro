@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server.optimizing;
@@ -178,7 +180,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
             newRecord(25, "ggg" + longString, quickDateWithZone(4)),
             newRecord(29, "hhh" + longString, quickDateWithZone(4))));
     updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "true");
-    updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "1000");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_CRON, "0 0 * * *");
 
     TableProcessMeta optimizeHistory = checker.waitOptimizeResult();
     checker.assertOptimizingProcess(optimizeHistory, OptimizingType.FULL, 5, 4);
@@ -186,7 +188,7 @@ public class TestMixedIcebergOptimizing extends AbstractOptimizingTest {
         readRecords(table), 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 25, 29);
 
     updateProperties(table, TableProperties.ENABLE_SELF_OPTIMIZING, "false");
-    updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_CRON, "");
     long dataFileSize = dataFiles.get(0).fileSizeInBytes();
     updateProperties(
         table,

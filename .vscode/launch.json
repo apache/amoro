@@ -1,0 +1,51 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ * Modified by Datazip Inc. in 2026
+ */
+
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "AmoroServiceContainer",
+      "request": "launch",
+      "mainClass": "org.apache.amoro.server.AmoroServiceContainer",
+      "projectName": "amoro-ams",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "vmArgs": "-Dfile.encoding=UTF-8 -Darrow.memory.allocator=unsafe -XX:+UseZGC -XX:CompileCommand=exclude,io/netty/buffer/PoolChunkList.allocate -XX:CompileCommand=exclude,io/netty/buffer/PoolArena.allocate --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/sun.nio.cs=ALL-UNNAMED --add-opens=java.base/sun.security.action=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED",
+      "env": {
+        "AMORO_HOME": "${workspaceFolder}/dist/src/main/amoro-bin",
+        "AMORO_CONF_DIR": "${workspaceFolder}/local-test",
+        "CONSOLE_LOG_LEVEL": "info",
+        "OPTIMIZER_JAVA_OPTS": "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006",
+        "AMS_SERVER__EXPOSE__HOST": "127.0.0.1",
+        "AMS_DATABASE_URL": "jdbc:postgresql://localhost:5432/iceberg"
+      }
+    },
+    {
+      "type": "java",
+      "name": "OptimizerStandalone",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5006,
+      "projectName": "amoro-optimizer-standalone"
+    }
+  ]
+}

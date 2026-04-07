@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server.optimizing;
@@ -39,6 +41,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Selects the next table to plan from the set of tables currently registered in an optimizer group.
+ *
+ * <p>A table is eligible for planning if and only if:
+ *
+ * <ul>
+ *   <li>It is not already being processed (FULL/MAJOR/MINOR_OPTIMIZING, COMMITTING) or planned.
+ *   <li>Its status is {@link OptimizingStatus#PENDING} — meaning the cron-tick scheduler in {@code
+ *       TableRuntimeRefreshExecutor} already determined that a cron expression fired and the
+ *       optimization is necessary.
+ * </ul>
+ *
+ * <p>Cron evaluation, "not necessary" skip logic, and SKIPPED record creation are all handled
+ * upstream in {@code TableRuntimeRefreshExecutor}. This class is intentionally kept simple.
+ */
 public class SchedulingPolicy {
 
   public static final Logger LOG = LoggerFactory.getLogger(SchedulingPolicy.class);
@@ -106,22 +123,46 @@ public class SchedulingPolicy {
     }
   }
 
+  /**
+   * Populates {@code originalSet} with the identifiers of tables that are not eligible for
+   * scheduling right now. A table is ineligible if it is already being processed / planned, or if
+   * it has not been marked PENDING by the cron-tick scheduler.
+   */
   private void fillSkipSet(Set<ServerTableIdentifier> originalSet) {
-    long currentTime = System.currentTimeMillis();
     tableRuntimeMap.values().stream()
-        .filter(
-            tableRuntime ->
-                !isTablePending(tableRuntime)
-                    || currentTime - tableRuntime.getLastPlanTime()
-                        < tableRuntime.getOptimizingConfig().getMinPlanInterval())
+        .filter(tableRuntime -> !isEligibleForScheduling(tableRuntime))
         .forEach(tableRuntime -> originalSet.add(tableRuntime.getTableIdentifier()));
   }
 
-  private boolean isTablePending(DefaultTableRuntime tableRuntime) {
-    return tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING
-        && (tableRuntime.getLastOptimizedSnapshotId() != tableRuntime.getCurrentSnapshotId()
-            || tableRuntime.getLastOptimizedChangeSnapshotId()
-                != tableRuntime.getCurrentChangeSnapshotId());
+  /**
+   * A table is eligible for scheduling when:
+   *
+   * <ol>
+   *   <li>It is not already running or being planned (no concurrent processing).
+   *   <li>Its status is {@link OptimizingStatus#PENDING} — set exclusively by the cron-tick
+   *       scheduler after verifying that a cron expression fired and the optimization is necessary.
+   * </ol>
+   */
+  private boolean isEligibleForScheduling(DefaultTableRuntime tableRuntime) {
+    OptimizingStatus status = tableRuntime.getOptimizingStatus();
+
+    if (status.isProcessing() || status == OptimizingStatus.PLANNING) {
+      LOG.debug(
+          "[optimization-skip] {} skipped - already {} (will schedule after completion)",
+          tableRuntime.getTableIdentifier(),
+          status.displayValue());
+      return false;
+    }
+
+    if (status != OptimizingStatus.PENDING) {
+      LOG.debug(
+          "[optimization-skip] {} skipped - status is {} (waiting for cron tick to set PENDING)",
+          tableRuntime.getTableIdentifier(),
+          status.displayValue());
+      return false;
+    }
+
+    return true;
   }
 
   public void addTable(DefaultTableRuntime tableRuntime) {

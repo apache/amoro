@@ -14,6 +14,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+Modified by Datazip Inc. in 2026
 / -->
 
 <script lang="ts" setup>
@@ -35,6 +36,7 @@ const statusMap = {
   CLOSED: { title: 'CLOSED', color: '#c9cdd4' },
   SUCCESS: { title: 'SUCCESS', color: '#0ad787' },
   FAILED: { title: 'FAILED', color: '#f5222d' },
+  SKIPPED: { title: 'SKIPPED', color: '#fa8c16' },
 }
 const STATUS_CONFIG = shallowReactive(statusMap)
 
@@ -292,7 +294,7 @@ onMounted(() => {
               />
               <span>{{ record.status }}</span>
               <a-tooltip
-                v-if="record.status === 'FAILED'" placement="topRight" class="g-ml-4"
+                v-if="record.status === 'FAILED' || record.status === 'SKIPPED'" placement="topRight" class="g-ml-4"
                 overlay-class-name="table-failed-tip"
               >
                 <template #title>

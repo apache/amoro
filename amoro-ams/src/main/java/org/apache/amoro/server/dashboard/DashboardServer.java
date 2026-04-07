@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server.dashboard;
@@ -43,6 +45,7 @@ import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.controller.ApiTokenController;
 import org.apache.amoro.server.dashboard.controller.CatalogController;
 import org.apache.amoro.server.dashboard.controller.HealthCheckController;
+import org.apache.amoro.server.dashboard.controller.LogController;
 import org.apache.amoro.server.dashboard.controller.LoginController;
 import org.apache.amoro.server.dashboard.controller.OptimizerController;
 import org.apache.amoro.server.dashboard.controller.OptimizerGroupController;
@@ -90,6 +93,7 @@ public class DashboardServer {
   private final VersionController versionController;
   private final OverviewController overviewController;
   private final ApiTokenController apiTokenController;
+  private final LogController logController;
 
   private final PasswdAuthenticationProvider basicAuthProvider;
   private final TokenAuthenticationProvider jwtAuthProvider;
@@ -120,6 +124,7 @@ public class DashboardServer {
     this.overviewController = new OverviewController(manager);
     APITokenManager apiTokenManager = new APITokenManager();
     this.apiTokenController = new ApiTokenController(apiTokenManager);
+    this.logController = new LogController();
 
     String authType = serviceConfig.get(AmoroManagementConf.HTTP_SERVER_REST_AUTH_TYPE);
     this.basicAuthProvider =
@@ -138,6 +143,7 @@ public class DashboardServer {
   }
 
   private volatile String indexHtml = null;
+
   // read index.html content
   public String getIndexFileContent() {
     if (indexHtml == null) {
@@ -395,6 +401,15 @@ public class DashboardServer {
             get("/info", apiTokenController::getApiTokens);
             post("/calculate/signature", apiTokenController::calculateSignature);
             post("/calculate/encryptString", apiTokenController::getEncryptStringFromQueryParam);
+          });
+
+      // logs api
+      path(
+          "/logs",
+          () -> {
+            get("/process/{processId}", logController::getProcessLogs);
+            get("/process/{processId}/download", logController::downloadProcessLogs);
+            get("/process/{processId}/file/{fileId}", logController::downloadLogFile);
           });
     };
   }

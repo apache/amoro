@@ -12,6 +12,8 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
+--
+-- Modified by Datazip Inc. in 2026
 
 CREATE TABLE catalog_metadata
 (
@@ -456,10 +458,11 @@ CREATE TABLE IF NOT EXISTS ha_lease (
 CREATE INDEX IF NOT EXISTS idx_ha_lease_expire ON ha_lease (lease_expire_ts);
 CREATE INDEX IF NOT EXISTS idx_ha_lease_node   ON ha_lease (node_id);
 
-COMMENT ON COLUMN service_name IS 'Service name (AMS/TABLE_SERVICE/OPTIMIZING_SERVICE)';
-COMMENT ON COLUMN node_id IS 'Unique node identifier (host:port:uuid)';
-COMMENT ON COLUMN node_ip IS 'Node IP address';
-COMMENT ON COLUMN server_info_json IS 'JSON encoded server info (AmsServerInfo)';
-COMMENT ON COLUMN lease_expire_ts IS 'Lease expiration timestamp (ms since epoch)';
-COMMENT ON COLUMN version IS 'Optimistic lock version of the lease row';
-COMMENT ON COLUMN updated_at IS 'Last update timestamp (ms since epoch)';
+COMMENT ON COLUMN ha_lease.service_name IS 'Service name (AMS/TABLE_SERVICE/OPTIMIZING_SERVICE)';
+COMMENT ON COLUMN ha_lease.node_id IS 'Unique node identifier (host:port:uuid)';
+COMMENT ON COLUMN ha_lease.node_ip IS 'Node IP address';
+COMMENT ON COLUMN ha_lease.server_info_json IS 'JSON encoded server info (AmsServerInfo)';
+COMMENT ON COLUMN ha_lease.lease_expire_ts IS 'Lease expiration timestamp (ms since epoch)';
+COMMENT ON COLUMN ha_lease.version IS 'Optimistic lock version of the lease row';
+COMMENT ON COLUMN ha_lease.updated_at IS 'Last update timestamp (ms since epoch)';
+COMMENT ON TABLE ha_lease IS 'High-availability lease store';

@@ -14,12 +14,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server.optimizing.flow;
 
 import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES;
-import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL;
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_CRON;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
@@ -91,7 +93,7 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
     int recordCountOnceWrite = 2500;
 
     // close full optimize
-    table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
+    table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_CRON, "").commit();
     // Need move file to hive scene
     table.updateProperties().set(SELF_OPTIMIZING_FULL_REWRITE_ALL_FILES, "false").commit();
 
@@ -168,9 +170,9 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
 
   private static void mustFullCycle(MixedTable table, RunnableWithException runnable)
       throws Exception {
-    table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "1").commit();
+    table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_CRON, "0 0 * * *").commit();
     runnable.run();
-    table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "-1").commit();
+    table.updateProperties().set(SELF_OPTIMIZING_FULL_TRIGGER_CRON, "").commit();
   }
 
   public interface RunnableWithException {

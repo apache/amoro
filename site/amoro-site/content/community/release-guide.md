@@ -16,7 +16,7 @@ Please refer to the following link to understand the ASF release process:
 
 ### Environmental requirements
 
-- JDK 11
+- JDK 17
 - Apache Maven 3.8+
 - GnuPG 2.1+
 - Git
