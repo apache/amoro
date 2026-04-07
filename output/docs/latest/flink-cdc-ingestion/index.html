@@ -685,7 +685,7 @@
 <h3 id="iceberg-format">Iceberg format</h3>
 <p>The following example will show how <a href="https://nightlies.apache.org/flink/flink-cdc-docs-release-3.1/docs/">MySQL CDC</a> data is written to an Iceberg table.</p>
 <p><strong>Requirements</strong></p>
-<p>Please add <a href="https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc">Flink SQL Connector MySQL CDC</a> and <a href="https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-1.18/1.6.0/iceberg-flink-1.18-1.6.0.jar">Iceberg</a> Jars to the lib directory of the Flink engine package.</p>
+<p>Please add <a href="https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc">Flink SQL Connector MySQL CDC</a> and <a href="https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-1.18/1.7.2/iceberg-flink-1.18-1.7.2.jar">Iceberg</a> Jars to the lib directory of the Flink engine package.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> products (
 </span></span><span style="display:flex;"><span>    id INT,
 </span></span><span style="display:flex;"><span>    name STRING,
@@ -753,7 +753,7 @@
 <p>The following example will show how to write CDC data from multiple MySQL tables into the corresponding Iceberg table.</p>
 <p><strong>Requirements</strong></p>
 <p>Please add <a href="https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc/3.1.1">Flink Connector MySQL CDC</a>
-and <a href="https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-flink-1.18/1.6.0">Iceberg</a> dependencies to your
+and <a href="https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-flink-1.18/1.7.2">Iceberg</a> dependencies to your
 Maven project&rsquo;s pom.xml file.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">import static</span> java.util.stream.Collectors.toMap;
 </span></span><span style="display:flex;"><span><span style="color:#f92672">import static</span> org.apache.flink.cdc.connectors.mysql.table.MySqlReadableMetadata.DATABASE_NAME;
