@@ -1045,6 +1045,16 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
           <td>Interval for refreshing overview cache.</td>
       </tr>
       <tr>
+          <td>process.history-data-keep-days</td>
+          <td>7</td>
+          <td>Deprecated: use &lsquo;process.history-data-keep-time&rsquo; instead. The number of days that process history data is retained.</td>
+      </tr>
+      <tr>
+          <td>process.history-data-keep-time</td>
+          <td>7 d</td>
+          <td>Duration that process history data is retained. Expired terminal process records will be deleted automatically.</td>
+      </tr>
+      <tr>
           <td>refresh-external-catalogs.interval</td>
           <td>3 min</td>
           <td>Interval to refresh the external catalog.</td>
@@ -1100,14 +1110,24 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
           <td>Optimizer group refresh interval.</td>
       </tr>
       <tr>
+          <td>self-optimizing.runtime-data-expire-interval</td>
+          <td>1 h</td>
+          <td>Interval between self-optimizing runtime data expiration runs.</td>
+      </tr>
+      <tr>
           <td>self-optimizing.runtime-data-expire-interval-hours</td>
           <td>1</td>
-          <td>The number of hours that self-optimizing runtime data expire interval.</td>
+          <td>Deprecated: use &lsquo;self-optimizing.runtime-data-expire-interval&rsquo; instead. The number of hours that self-optimizing runtime data expire interval.</td>
       </tr>
       <tr>
           <td>self-optimizing.runtime-data-keep-days</td>
           <td>30</td>
-          <td>The number of days that self-optimizing runtime data keeps the runtime.</td>
+          <td>Deprecated: use &lsquo;self-optimizing.runtime-data-keep-time&rsquo; instead. The number of days that self-optimizing runtime data keeps the runtime.</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.runtime-data-keep-time</td>
+          <td>30 d</td>
+          <td>Duration that self-optimizing runtime data is retained.</td>
       </tr>
       <tr>
           <td>server-bind-host</td>
