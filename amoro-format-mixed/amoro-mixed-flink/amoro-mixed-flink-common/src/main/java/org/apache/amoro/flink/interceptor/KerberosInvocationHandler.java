@@ -56,7 +56,6 @@ public class KerberosInvocationHandler<T> implements InvocationHandler, Serializ
           authenticatedFileIO.doAs(
               () -> {
                 try {
-                  method.setAccessible(true);
                   return method.invoke(obj, args);
                 } catch (Throwable e) {
                   throw new RuntimeException(e);
