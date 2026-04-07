@@ -42,10 +42,12 @@ services:
       KUBECONFIG: /root/.kube/config
       AWS_ACCESS_KEY_ID: admin
       AWS_SECRET_ACCESS_KEY: password
+      LOG_DIR: /mnt/amoro-logs/compaction
     volumes:
       - ./config.yaml:/usr/local/amoro/conf/config.yaml:ro
       - kind-kubeconfig:/root/.kube:ro
       - spark-home:/opt/spark:ro
+      - ${AMORO_LOG_DIR:-/opt/amoro-logs}:/mnt/amoro-logs
     command: ["/entrypoint.sh", "ams"]
     tty: true
     stdin_open: true
@@ -243,6 +245,8 @@ services:
       - prod
     networks:
       iceberg-net:
+    environment:
+      AMORO_LOG_DIR: ${AMORO_LOG_DIR:-/opt/amoro-logs}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - kind-kubeconfig:/output
@@ -254,6 +258,12 @@ services:
       - |
         set -e
 
+        LOG_DIR="$${AMORO_LOG_DIR:-/opt/amoro-logs}"
+        echo "==> Log directory: $$LOG_DIR"
+
+        echo "==> Generating kind cluster config..."
+        sed "s|AMORO_LOG_PLACEHOLDER|$$LOG_DIR|g" /kind-config.yaml > /tmp/kind-config-gen.yaml
+
         echo "==> Installing kind..."
         apk add --no-cache curl >/dev/null 2>&1
         curl -sLo /usr/local/bin/kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
@@ -263,7 +273,7 @@ services:
         if kind get clusters 2>/dev/null | grep -q '^fusion-cluster$$'; then
           echo "   Cluster already exists, skipping creation."
         else
-          kind create cluster --config /kind-config.yaml --wait 120s
+          kind create cluster --config /tmp/kind-config-gen.yaml --wait 120s
         fi
 
         echo "==> Connecting Kind nodes to iceberg-net..."

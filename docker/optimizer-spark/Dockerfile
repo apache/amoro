@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 # Modified by Datazip Inc. in 2026
+#
+# Modified by Datazip Inc. in 2026
 
 ARG SPARK_VERSION=3.5.8
 # Use the explicit java17 tag to guarantee Java 17 runtime.
@@ -42,5 +44,11 @@ RUN cd $SPARK_HOME/jars \
     && wget ${MAVEN_MIRROR}/software/amazon/awssdk/url-connection-client/${AWS_VERSION}/url-connection-client-${AWS_VERSION}.jar \
     && chown spark:spark *.jar \
     && mkdir -p $SPARK_HOME/usrlib
+
+# Remove Spark's default log4j2 config so our XML config takes priority
+RUN rm -f $SPARK_HOME/conf/log4j2.properties $SPARK_HOME/conf/log4j2.properties.template
+
+# Install our log4j2.xml with Routing appender for per-process/task log files
+COPY docker/optimizer-spark/log4j2.xml $SPARK_HOME/conf/log4j2.xml
 
 COPY $OPTIMIZER_JOB $SPARK_HOME/usrlib/optimizer-job.jar

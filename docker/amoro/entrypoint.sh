@@ -16,6 +16,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 # limitations under the License.
+#
+#  Modified by Datazip Inc. in 2026
 ###############################################################################
 
 args=("$@")
@@ -44,6 +46,11 @@ configure_jvm_options() {
 
 configure_jvm_options
 
+# Create compaction log directory for Log4j2 routing (mounted as shared volume).
+# LOG_DIR is set by docker-compose (default: /mnt/amoro-logs/compaction).
+_COMPACTION_LOG_DIR="${LOG_DIR:-/mnt/amoro-logs/compaction}"
+mkdir -p "${_COMPACTION_LOG_DIR}"
+chmod 777 "${_COMPACTION_LOG_DIR}"
 
 if [ $1 == "help" ]; then
   printf "Usage: $(basename $0) [ams|optimizer] [args]\n"

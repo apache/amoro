@@ -26,6 +26,9 @@ networking:
 nodes:
   - role: control-plane
     image: kindest/node:v1.28.0
+    extraMounts:
+      - hostPath: AMORO_LOG_PLACEHOLDER
+        containerPath: /mnt/amoro-logs
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
@@ -42,6 +45,9 @@ nodes:
             - "fusion-cluster-control-plane"
   - role: worker
     image: kindest/node:v1.28.0
+    extraMounts:
+      - hostPath: AMORO_LOG_PLACEHOLDER
+        containerPath: /mnt/amoro-logs
     kubeadmConfigPatches:
       - |
         kind: JoinConfiguration
@@ -50,6 +56,9 @@ nodes:
             max-pods: "110"
   - role: worker
     image: kindest/node:v1.28.0
+    extraMounts:
+      - hostPath: AMORO_LOG_PLACEHOLDER
+        containerPath: /mnt/amoro-logs
     kubeadmConfigPatches:
       - |
         kind: JoinConfiguration

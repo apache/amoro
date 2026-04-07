@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  ~ Modified by Datazip Inc. in 2026
+  -->
+
+<Configuration monitorInterval="30">
+    <Properties>
+        <Property name="LOG_DIR">${env:LOG_DIR:-/mnt/amoro-logs/compaction}</Property>
+        <Property name="CONSOLE_LEVEL">${env:CONSOLE_LOG_LEVEL:-info}</Property>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p [%t] [%c{1}] [P:%X{processId}|T:%X{taskId}|Table:%X{tableName}|Exec:%X{executorId}] - %m%n</Property>
+        <Property name="JSON_LOG_PATTERN">{"level":"%p","time":"%d{yyyy-MM-dd'T'HH:mm:ss.SSS'Z'}{UTC}","processId":"%X{processId}","taskId":"%X{taskId}","logger":"%c{1}","message":"%enc{%m}{JSON}","stackTrace":"%enc{%throwable{full}}{JSON}"}%n</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <ThresholdFilter level="${CONSOLE_LEVEL}" onMatch="ACCEPT" onMismatch="DENY"/>
+        </Console>
+
+        <Routing name="RoutingAppender">
+            <Routes pattern="$${ctx:logFilePath}">
+                <!-- When logFilePath MDC is NOT set, the pattern evaluates to the raw
+                     literal "${ctx:logFilePath}" which matches this explicit key.
+                     Route to the generic optimizer log (no per-task file). -->
+                <Route key="$${ctx:logFilePath}">
+                    <RollingFile name="DefaultOptimizer"
+                                 fileName="${LOG_DIR}/optimizer-default.log"
+                                 filePattern="${LOG_DIR}/history/optimizer-default-%d{yyyy-MM-dd}-%i.log.gz">
+                        <PatternLayout pattern="${LOG_PATTERN}"/>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="100MB"/>
+                        </Policies>
+                        <DefaultRolloverStrategy max="20"/>
+                    </RollingFile>
+                </Route>
+
+                <!-- Default route (no key): matches when logFilePath IS set.
+                     Writes per-process/task log files directly under LOG_DIR so
+                     the path matches what LogController reads:
+                     LOG_DIR/<processId>/driver.log  or  LOG_DIR/<processId>/<taskId>.log -->
+                <Route>
+                    <RollingFile name="CompactionTask-${ctx:processId}-${ctx:taskId}"
+                                 fileName="${LOG_DIR}/${ctx:logFilePath}.log"
+                                 filePattern="${LOG_DIR}/${ctx:logFilePath}-%d{yyyy-MM-dd-HH}-%i.log.gz">
+                        <PatternLayout pattern="${JSON_LOG_PATTERN}"/>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="100MB"/>
+                        </Policies>
+                        <DefaultRolloverStrategy max="10">
+                            <Delete basePath="${LOG_DIR}" maxDepth="3">
+                                <IfFileName glob="*/*.log.gz"/>
+                                <IfLastModified age="7d"/>
+                            </Delete>
+                        </DefaultRolloverStrategy>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <RollingFile name="OptimizerInfo"
+                     fileName="${LOG_DIR}/optimizer-info.log"
+                     filePattern="${LOG_DIR}/history/optimizer-info-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy fileIndex="nomax">
+                <Delete basePath="${LOG_DIR}/history" maxDepth="1">
+                    <IfFileName glob="optimizer-info-*.log.gz"/>
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <RollingFile name="OptimizerError"
+                     fileName="${LOG_DIR}/optimizer-error.log"
+                     filePattern="${LOG_DIR}/history/optimizer-error-%i.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="64MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="RoutingAppender"/>
+            <AppenderRef ref="OptimizerInfo" level="info"/>
+            <AppenderRef ref="OptimizerError" level="error"/>
+            <AppenderRef ref="Console"/>
+        </Root>
+
+        <Logger name="org.apache.amoro.optimizing" level="debug" additivity="false">
+            <AppenderRef ref="RoutingAppender"/>
+            <AppenderRef ref="OptimizerError" level="error"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="org.apache.amoro.optimizer" level="debug" additivity="false">
+            <AppenderRef ref="RoutingAppender"/>
+            <AppenderRef ref="OptimizerError" level="error"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="org.apache.hadoop.io.compress.CodecPool" level="warn" additivity="false">
+            <AppenderRef ref="OptimizerError" level="error"/>
+        </Logger>
+
+        <Logger name="org.apache.hadoop.metrics2" level="warn" additivity="false">
+            <AppenderRef ref="OptimizerError" level="error"/>
+        </Logger>
+
+        <Logger name="org.apache.parquet" level="warn" additivity="false">
+            <AppenderRef ref="OptimizerError" level="error"/>
+        </Logger>
+
+        <Logger name="org.apache.iceberg.avro" level="warn" additivity="false">
+            <AppenderRef ref="OptimizerError" level="error"/>
+        </Logger>
+    </Loggers>
+</Configuration>
