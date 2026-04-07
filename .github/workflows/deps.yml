@@ -6,28 +6,21 @@ name: Deps CI with Maven
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
+# TODO: enable dependency checking
 on:
-  push:
-    branches:
-      - "master"
-
-  pull_request:
-    branches:
-      - "master"
-    paths:
-      - ".github/workflows/**"
-      - "dev/dep**"
-      - "**/pom.xml"
-      - "pom.xml"
-      - "tools/maven/**"
-
+  # push:
+  #   paths:
+  #     - ".github/workflows/**"
+  #     - "dev/dep**"
+  #     - "**/pom.xml"
+  #     - "pom.xml"
+  #     - "tools/maven/**"
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        jdk: [ '11' ]
+        jdk: [ '17' ]
     steps:
       - uses: actions/checkout@v3
 

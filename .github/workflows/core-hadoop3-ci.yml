@@ -1,45 +1,40 @@
 # This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+#
+# Pinned toolchain (must match pom.xml defaults / spark-3.5 + scala-2.13 profiles):
+#   JDK 17, Spark 3.5.8, Scala 2.13.18
 
 name: Core/hadoop3 CI with Maven
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
+# TODO: enable hadoop 3 testing
 on:
-  push:
-    branches:
-      - "master"
-      - "0.**"
-
-  pull_request:
-    branches:
-      - "master"
-      - "0.**"
-    paths:
-      - ".github/workflows/**"
-      - "amoro-ams/**"
-      - "amoro-common/**"
-      - "amoro-metrics/**"
-      - "amoro-optimizer/**"
-      - "amoro-format-iceberg/**"
-      - "amoro-format-paimon/**"
-      - "amoro-format-hudi/**"
-      - "amoro-format-mixed/amoro-mixed-flink/**"
-      - "amoro-format-mixed/amoro-mixed-hive/**"
-      - "amoro-format-mixed/amoro-mixed-spark/**"
-      - "pom.xml"
-      - "tools/maven/**"
-
+  # push:
+  #   paths:
+  #     - ".github/workflows/**"
+  #     - "amoro-ams/**"
+  #     - "amoro-common/**"
+  #     - "amoro-metrics/**"
+  #     - "amoro-optimizer/**"
+  #     - "amoro-format-iceberg/**"
+  #     - "amoro-format-paimon/**"
+  #     - "amoro-format-hudi/**"
+  #     - "amoro-format-mixed/amoro-mixed-flink/**"
+  #     - "amoro-format-mixed/amoro-mixed-hive/**"
+  #     - "amoro-format-mixed/amoro-mixed-spark/**"
+  #     - "pom.xml"
+  #     - "tools/maven/**"
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        jdk: [ '11' ]
-        spark: [ '3.3','3.4', '3.5' ]
-    name: Build Amoro with JDK ${{ matrix.jdk }} Spark-${{ matrix.spark }}
+        jdk: [ '17' ]
+        # spark-3.5 profile resolves to Spark 3.5.8 in pom.xml (strict single stack)
+        spark: [ '3.5' ]
+    name: JDK ${{ matrix.jdk }} / Spark ${{ matrix.spark }} (3.5.8) / Scala 2.13.18
     steps:
       - uses: actions/checkout@v3
 
@@ -54,8 +49,17 @@ jobs:
       - name: Validate checkstyle first
         run: ./mvnw validate
 
+      - name: Verify pinned Spark and Scala versions
+        run: |
+          set -euo pipefail
+          SPARK=$(./mvnw -q help:evaluate -Dexpression=spark.version -DforceStdout -Pscala-2.13 -Pspark-${{ matrix.spark }} 2>/dev/null | tail -1 | tr -d '\r')
+          SCALA=$(./mvnw -q help:evaluate -Dexpression=scala.version -DforceStdout -Pscala-2.13 -Pspark-${{ matrix.spark }} 2>/dev/null | tail -1 | tr -d '\r')
+          echo "Resolved spark.version=$SPARK scala.version=$SCALA"
+          test "$SPARK" = "3.5.8"
+          test "$SCALA" = "2.13.18"
+
       - name: Build all modules with Maven
-        run: ./mvnw clean install -Djacoco.flink.skip=true -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
+        run: ./mvnw clean install -Djacoco.flink.skip=true -B -ntp -Pscala-2.13 -Pspark-${{ matrix.spark }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

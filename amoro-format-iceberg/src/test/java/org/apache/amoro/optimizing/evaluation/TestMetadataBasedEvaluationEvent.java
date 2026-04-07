@@ -292,8 +292,13 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
   public void test_evaluating_pendingInput_nonEmptyTable() throws IOException {
     initData();
     // Set metadata-based trigger enabled and fallback interval not reached.
+    // Use minorLeastFileCount=2 so the two small data files from initData() satisfy minor
+    // scheduling (default is 12, so isMinorNecessary() would otherwise stay false and
+    // isNecessary() would be false even when metadata-based pending checks pass).
     OptimizingConfig config =
-        getDefaultOptimizingConfig().setEvaluationFallbackInterval(Long.MAX_VALUE);
+        getDefaultOptimizingConfig()
+            .setEvaluationFallbackInterval(Long.MAX_VALUE)
+            .setMinorLeastFileCount(2);
     MixedTable table = getMixedTable();
 
     // 1. Test file size square error sum updates during partition plans initialization using
