@@ -41,6 +41,7 @@ import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.manager.AbstractOptimizerContainer;
+import org.apache.amoro.server.optimizing.OptimizerExecuteEngine;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
@@ -53,7 +54,9 @@ import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerManager;
+import org.apache.amoro.server.resource.OptimizerRegistryService;
 import org.apache.amoro.server.resource.OptimizerThread;
+import org.apache.amoro.server.resource.QuotaManager;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
@@ -125,6 +128,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final HighAvailabilityContainer haContainer;
   private final boolean isMasterSlaveMode;
 
+  // New refactored components
+  private final QuotaManager quotaManager;
+  private final OptimizerRegistryService registryService;
+  private OptimizerExecuteEngine optimizerExecuteEngine;
+
   public DefaultOptimizingService(
       Configurations serviceConfig,
       CatalogManager catalogManager,
@@ -165,6 +173,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
                 .setNameFormat("plan-executor-thread-%d")
                 .setDaemon(true)
                 .build());
+
+    // Initialize new refactored components
+    this.quotaManager = new QuotaManager();
+    this.registryService =
+        new OptimizerRegistryService(
+            optimizerTouchTimeout, taskAckTimeout, taskExecuteTimeout, quotaManager);
   }
 
   public RuntimeHandlerChain getTableRuntimeHandler() {
@@ -242,11 +256,20 @@ public class DefaultOptimizingService extends StatedPersistentBase
   public void ping() {}
 
   public List<TaskRuntime<?>> listTasks(String optimizerGroup) {
+    if (optimizerExecuteEngine != null) {
+      List<TaskRuntime<?>> engineTasks = optimizerExecuteEngine.collectTasks(optimizerGroup);
+      if (!engineTasks.isEmpty()) {
+        return engineTasks;
+      }
+    }
     return getQueueByGroup(optimizerGroup).collectTasks();
   }
 
   @Override
   public void touch(String authToken) {
+    // Delegate to registry service for touch tracking
+    registryService.touch(authToken);
+    // Also update DB touch time for backward compatibility
     OptimizerInstance optimizer = getAuthenticatedOptimizer(authToken).touch();
     LOG.debug("Optimizer {} touch time: {}", optimizer.getToken(), optimizer.getTouchTime());
     doAs(OptimizerMapper.class, mapper -> mapper.updateTouchTime(optimizer.getToken()));
@@ -261,6 +284,22 @@ public class DefaultOptimizingService extends StatedPersistentBase
   @Override
   public OptimizingTask pollTask(String authToken, int threadId) {
     LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
+    if (optimizerExecuteEngine != null) {
+      // New flow: delegate to OptimizerExecuteEngine
+      String groupName = registryService.getGroupNameByToken(authToken);
+      if (groupName != null) {
+        OptimizerThread optimizerThread = registryService.getOptimizerThread(authToken, threadId);
+        TaskRuntime<?> task =
+            optimizerExecuteEngine.pollTask(
+                groupName, optimizerThread, pollingTimeout, breakQuotaLimit);
+        if (task != null) {
+          LOG.info("OptimizerThread {} polled task {}", optimizerThread, task.getTaskId());
+          return task.extractProtocolTask();
+        }
+      }
+      return null;
+    }
+    // Old flow: delegate to OptimizingQueue
     OptimizerThread optimizerThread = getAuthenticatedOptimizer(authToken).getThread(threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
     TaskRuntime<?> task = queue.pollTask(optimizerThread, pollingTimeout, breakQuotaLimit);
@@ -274,6 +313,14 @@ public class DefaultOptimizingService extends StatedPersistentBase
   @Override
   public void ackTask(String authToken, int threadId, OptimizingTaskId taskId) {
     LOG.info("Ack task {} by optimizer {} (threadId {})", taskId, authToken, threadId);
+    if (optimizerExecuteEngine != null) {
+      String groupName = registryService.getGroupNameByToken(authToken);
+      if (groupName != null) {
+        OptimizerThread optimizerThread = registryService.getOptimizerThread(authToken, threadId);
+        optimizerExecuteEngine.ackTask(groupName, taskId, optimizerThread);
+        return;
+      }
+    }
     OptimizingQueue queue = getQueueByToken(authToken);
     queue.ackTask(taskId, getAuthenticatedOptimizer(authToken).getThread(threadId));
   }
@@ -286,6 +333,15 @@ public class DefaultOptimizingService extends StatedPersistentBase
         taskResult.getThreadId(),
         taskResult.getTaskId(),
         taskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL");
+    if (optimizerExecuteEngine != null) {
+      String groupName = registryService.getGroupNameByToken(authToken);
+      if (groupName != null) {
+        OptimizerThread thread =
+            registryService.getOptimizerThread(authToken, taskResult.getThreadId());
+        optimizerExecuteEngine.completeTask(groupName, thread, taskResult);
+        return;
+      }
+    }
     OptimizingQueue queue = getQueueByToken(authToken);
     OptimizerThread thread =
         getAuthenticatedOptimizer(authToken).getThread(taskResult.getThreadId());
@@ -313,6 +369,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
     OptimizingQueue queue = getQueueByGroup(registerInfo.getGroupName());
     OptimizerInstance optimizer = new OptimizerInstance(registerInfo, queue.getContainerName());
     registerOptimizer(optimizer, true);
+
+    // Also register with OptimizerRegistryService for the new flow
+    if (optimizerExecuteEngine != null) {
+      quotaManager.addOptimizer(optimizer);
+    }
+
     return optimizer.getToken();
   }
 
@@ -424,7 +486,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizingQueueByGroup.values().forEach(OptimizingQueue::dispose);
     optimizerKeeper.dispose();
     optimizerGroupKeeper.dispose();
+    registryService.stopKeeper();
     tableHandlerChain.dispose();
+    if (optimizerExecuteEngine != null) {
+      optimizerExecuteEngine.close();
+    }
     optimizingQueueByGroup.clear();
     optimizingQueueByToken.clear();
     authOptimizers.clear();
@@ -432,10 +498,23 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   @Override
   public int getTotalQuota(String resourceGroup) {
-    return authOptimizers.values().stream()
-        .filter(optimizer -> optimizer.getGroupName().equals(resourceGroup))
-        .mapToInt(OptimizerInstance::getThreadCount)
-        .sum();
+    return quotaManager.getTotalQuota(resourceGroup);
+  }
+
+  /**
+   * Set the optimizer execute engine. Called after engine is created externally or during service
+   * initialization.
+   */
+  public void setOptimizerExecuteEngine(OptimizerExecuteEngine engine) {
+    this.optimizerExecuteEngine = engine;
+  }
+
+  public OptimizerRegistryService getRegistryService() {
+    return registryService;
+  }
+
+  public QuotaManager getQuotaManager() {
+    return quotaManager;
   }
 
   private class TableRuntimeHandlerImpl extends RuntimeHandlerChain {
@@ -496,6 +575,23 @@ public class DefaultOptimizingService extends StatedPersistentBase
       optimizerKeeper.start();
       optimizerGroupKeeper.start();
       optimizingConfigWatcher.start();
+
+      // Start registry service keeper for task timeout detection
+      registryService.startKeeper(
+          DefaultOptimizingService.this::isTaskExecTimeout,
+          group -> {
+            Optional<OptimizingQueue> queue = getOptionalQueueByGroup(group);
+            return queue.map(OptimizingQueue::collectTasks).orElse(Collections.emptyList());
+          },
+          task -> {
+            // Find the queue via the task's token (which maps to an optimizer -> group -> queue)
+            String token = task.getToken();
+            if (token != null) {
+              Optional.ofNullable(optimizingQueueByToken.get(token))
+                  .ifPresent(queue -> queue.retryTask(task));
+            }
+          });
+
       LOG.info("SuspendingDetector for Optimizer has been started.");
       LOG.info("OptimizerManagementService initializing has completed");
     }

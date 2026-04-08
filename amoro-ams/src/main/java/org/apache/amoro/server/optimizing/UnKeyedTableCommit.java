@@ -33,6 +33,7 @@ import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.op.SnapshotSummary;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.TableOptimizingCommitter;
 import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.server.optimizing.TaskRuntime.Status;
@@ -74,7 +75,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class UnKeyedTableCommit {
+public class UnKeyedTableCommit implements TableOptimizingCommitter {
   private static final Logger LOG = LoggerFactory.getLogger(UnKeyedTableCommit.class);
 
   private final Long targetSnapshotId;

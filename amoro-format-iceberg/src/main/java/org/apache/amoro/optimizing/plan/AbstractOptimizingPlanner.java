@@ -21,8 +21,10 @@ package org.apache.amoro.optimizing.plan;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.iceberg.Constants;
+import org.apache.amoro.optimizing.OptimizingPlanResult;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.TableOptimizingPlanner;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
@@ -43,7 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public abstract class AbstractOptimizingPlanner extends AbstractOptimizingEvaluator {
+public abstract class AbstractOptimizingPlanner extends AbstractOptimizingEvaluator
+    implements TableOptimizingPlanner {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizingPlanner.class);
 
   private final Expression partitionFilter;
@@ -218,5 +221,19 @@ public abstract class AbstractOptimizingPlanner extends AbstractOptimizingEvalua
 
   public long getProcessId() {
     return processId;
+  }
+
+  @Override
+  public OptimizingPlanResult plan() {
+    List<RewriteStageTask> tasks = planTasks();
+    return new OptimizingPlanResult(
+        getProcessId(),
+        getOptimizingType(),
+        getPlanTime(),
+        getTargetSnapshotId(),
+        getTargetChangeSnapshotId(),
+        tasks,
+        getFromSequence(),
+        getToSequence());
   }
 }

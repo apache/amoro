@@ -16,5 +16,4 @@
 # limitations under the License.
 #
 
-org.apache.amoro.server.process.iceberg.IcebergProcessFactory
-org.apache.amoro.server.optimizing.IcebergOptimizingProcessFactory
+org.apache.amoro.server.optimizing.OptimizingActionCoordinator
