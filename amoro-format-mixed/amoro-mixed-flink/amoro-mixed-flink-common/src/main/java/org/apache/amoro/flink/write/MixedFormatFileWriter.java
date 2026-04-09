@@ -34,6 +34,7 @@ import org.apache.flink.streaming.api.operators.BoundedOneInput;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.table.data.RowData;
+import org.apache.iceberg.flink.sink.FlinkWriteResult;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
@@ -46,8 +47,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /** This is mixed-format table includes writing file data to un keyed table and keyed table. */
-public class MixedFormatFileWriter extends AbstractStreamOperator<WriteResult>
-    implements OneInputStreamOperator<RowData, WriteResult>, BoundedOneInput {
+public class MixedFormatFileWriter extends AbstractStreamOperator<FlinkWriteResult>
+    implements OneInputStreamOperator<RowData, FlinkWriteResult>, BoundedOneInput {
 
   private static final long serialVersionUID = 1L;
   private static final Logger LOG = LoggerFactory.getLogger(MixedFormatFileWriter.class);
@@ -61,6 +62,7 @@ public class MixedFormatFileWriter extends AbstractStreamOperator<WriteResult>
 
   private transient TaskWriter<RowData> writer;
   private transient int subTaskId;
+  private transient long currentCheckpointId;
   private transient int attemptId;
   /**
    * Load table in runtime, because that table's refresh method will be invoked in serialization.
@@ -140,6 +142,7 @@ public class MixedFormatFileWriter extends AbstractStreamOperator<WriteResult>
 
   @Override
   public void prepareSnapshotPreBarrier(long checkpointId) throws Exception {
+    this.currentCheckpointId = checkpointId;
     table
         .io()
         .doAs(
@@ -153,6 +156,7 @@ public class MixedFormatFileWriter extends AbstractStreamOperator<WriteResult>
 
   @Override
   public void endInput() throws Exception {
+    this.currentCheckpointId = Long.MAX_VALUE;
     table
         .io()
         .doAs(
@@ -205,7 +209,7 @@ public class MixedFormatFileWriter extends AbstractStreamOperator<WriteResult>
     if (shouldEmit(writeResult)) {
       // Only emit a non-empty WriteResult to committer operator, thus avoiding submitting too much
       // empty snapshots.
-      output.collect(new StreamRecord<>(writeResult));
+      output.collect(new StreamRecord<>(new FlinkWriteResult(currentCheckpointId, writeResult)));
     }
   }
 

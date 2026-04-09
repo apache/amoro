@@ -122,14 +122,29 @@ public class AdaptHiveParquetUtil {
             Types.NestedField field = fileSchema.findField(fieldId);
             if (field != null && stats.hasNonNullValue() && shouldStoreBounds(column, fileSchema)) {
               // Change for mixed-hive table ⬇
-              // Add metrics for int96 type
-              Literal<?> min =
+              // Add metrics for int96 type.
+              // For INT96 timestamps, Parquet's byte-wise min/max comparison does not
+              // match chronological ordering due to little-endian storage of
+              // nanoseconds-of-day. Convert both values first, then determine the
+              // actual min and max from the converted (microsecond) representations.
+              Literal<?> val1 =
                   AdaptHiveParquetConversions.fromParquetPrimitive(
                       field.type(), column.getPrimitiveType(), stats.genericGetMin());
-              updateMin(lowerBounds, fieldId, field.type(), min, metricsMode);
-              Literal<?> max =
+              Literal<?> val2 =
                   AdaptHiveParquetConversions.fromParquetPrimitive(
                       field.type(), column.getPrimitiveType(), stats.genericGetMax());
+              Literal<?> min;
+              Literal<?> max;
+              @SuppressWarnings("unchecked")
+              java.util.Comparator<Object> cmp = (java.util.Comparator<Object>) val1.comparator();
+              if (isInt96(column) && cmp.compare(val1.value(), val2.value()) > 0) {
+                min = val2;
+                max = val1;
+              } else {
+                min = val1;
+                max = val2;
+              }
+              updateMin(lowerBounds, fieldId, field.type(), min, metricsMode);
               updateMax(upperBounds, fieldId, field.type(), max, metricsMode);
               // Change for mixed-hive table ⬆
             }
@@ -242,6 +257,11 @@ public class AdaptHiveParquetUtil {
     }
 
     return currentType != null && currentType.isPrimitiveType();
+  }
+
+  private static boolean isInt96(ColumnChunkMetaData column) {
+    return column.getPrimitiveType().getPrimitiveTypeName()
+        == org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT96;
   }
 
   private static void increment(Map<Integer, Long> columns, int fieldId, long amount) {

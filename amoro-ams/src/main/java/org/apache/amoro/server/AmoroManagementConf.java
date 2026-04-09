@@ -479,19 +479,37 @@ public class AmoroManagementConf {
           .defaultValue(10)
           .withDescription("The number of threads that self-optimizing uses to submit results.");
 
+  /** @deprecated Use {@link #OPTIMIZING_RUNTIME_DATA_KEEP_TIME} instead. */
+  @Deprecated
   public static final ConfigOption<Integer> OPTIMIZING_RUNTIME_DATA_KEEP_DAYS =
       ConfigOptions.key("self-optimizing.runtime-data-keep-days")
           .intType()
           .defaultValue(30)
           .withDescription(
-              "The number of days that self-optimizing runtime data keeps the runtime.");
+              "Deprecated: use 'self-optimizing.runtime-data-keep-time' instead. "
+                  + "The number of days that self-optimizing runtime data keeps the runtime.");
 
+  /** @deprecated Use {@link #OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL} instead. */
+  @Deprecated
   public static final ConfigOption<Integer> OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL_HOURS =
       ConfigOptions.key("self-optimizing.runtime-data-expire-interval-hours")
           .intType()
           .defaultValue(1)
           .withDescription(
-              "The number of hours that self-optimizing runtime data expire interval.");
+              "Deprecated: use 'self-optimizing.runtime-data-expire-interval' instead. "
+                  + "The number of hours that self-optimizing runtime data expire interval.");
+
+  public static final ConfigOption<Duration> OPTIMIZING_RUNTIME_DATA_KEEP_TIME =
+      ConfigOptions.key("self-optimizing.runtime-data-keep-time")
+          .durationType()
+          .defaultValue(Duration.ofDays(30))
+          .withDescription("Duration that self-optimizing runtime data is retained.");
+
+  public static final ConfigOption<Duration> OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL =
+      ConfigOptions.key("self-optimizing.runtime-data-expire-interval")
+          .durationType()
+          .defaultValue(Duration.ofHours(1))
+          .withDescription("Interval between self-optimizing runtime data expiration runs.");
 
   public static final ConfigOption<Boolean> OPTIMIZING_BREAK_QUOTA_LIMIT_ENABLED =
       ConfigOptions.key("self-optimizing.break-quota-limit-enabled")
@@ -499,6 +517,24 @@ public class AmoroManagementConf {
           .defaultValue(true)
           .withDescription(
               "Allow the table to break the quota limit when the resource is sufficient.");
+
+  /** @deprecated Use {@link #PROCESS_HISTORY_DATA_KEEP_TIME} instead. */
+  @Deprecated
+  public static final ConfigOption<Integer> PROCESS_HISTORY_DATA_KEEP_DAYS =
+      ConfigOptions.key("process.history-data-keep-days")
+          .intType()
+          .defaultValue(7)
+          .withDescription(
+              "Deprecated: use 'process.history-data-keep-time' instead. "
+                  + "The number of days that process history data is retained.");
+
+  public static final ConfigOption<Duration> PROCESS_HISTORY_DATA_KEEP_TIME =
+      ConfigOptions.key("process.history-data-keep-time")
+          .durationType()
+          .defaultValue(Duration.ofDays(7))
+          .withDescription(
+              "Duration that process history data is retained. "
+                  + "Expired terminal process records will be deleted automatically.");
 
   public static final ConfigOption<Duration> OVERVIEW_CACHE_REFRESH_INTERVAL =
       ConfigOptions.key("overview-cache.refresh-interval")

@@ -875,7 +875,6 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   public void expireFiles(ExpireFiles expiredFiles, long expireTimestamp) {
-    long snapshotId = IcebergTableUtil.getSnapshotId(table, false);
     Queue<DataFile> dataFiles = expiredFiles.dataFiles;
     Queue<DeleteFile> deleteFiles = expiredFiles.deleteFiles;
     if (dataFiles.isEmpty() && deleteFiles.isEmpty()) {
@@ -890,6 +889,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     delete.commit();
     // expire delete files
     if (!deleteFiles.isEmpty()) {
+      long snapshotId = IcebergTableUtil.getSnapshotId(table, false);
       RewriteFiles rewriteFiles = table.newRewrite().validateFromSnapshot(snapshotId);
       deleteFiles.forEach(rewriteFiles::deleteFile);
       rewriteFiles.set(

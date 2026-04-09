@@ -60,7 +60,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
-import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.flink.sink.FlinkWriteResult;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -256,12 +256,12 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     }
 
     List<Object[]> expects = new LinkedList<>();
-    List<WriteResult> results;
+    List<FlinkWriteResult> results;
     testKeyedTable.refresh();
     Assert.assertFalse(
         Boolean.parseBoolean(
             testKeyedTable.properties().getOrDefault(LOG_STORE_CATCH_UP.key(), "false")));
-    try (TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
+    try (TestOneInputStreamOperatorIntern<RowData, FlinkWriteResult> harness =
         createSingleProducer(1, jobId, topic, gap)) {
       DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
       expects.add(
@@ -314,7 +314,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
 
     // check expects accuracy.
     Assert.assertEquals(3, results.size());
-    results.forEach(result -> Assert.assertEquals(1, result.dataFiles().length));
+    results.forEach(result -> Assert.assertEquals(1, result.writeResult().dataFiles().length));
     List<Object[]> expected = isGapNone ? expects : expects.subList(2, expects.size());
     checkLogstoreDataAccuracy(topic, expected);
     testKeyedTable.refresh();
@@ -350,7 +350,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
             .collect(Collectors.toList()));
   }
 
-  public TestOneInputStreamOperatorIntern<RowData, WriteResult> createSingleProducer(
+  public TestOneInputStreamOperatorIntern<RowData, FlinkWriteResult> createSingleProducer(
       int maxParallelism, byte[] jobId, String topic, Duration writeLogstoreWatermarkGap)
       throws Exception {
     return createProducer(
@@ -364,7 +364,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
         writeLogstoreWatermarkGap);
   }
 
-  private TestOneInputStreamOperatorIntern<RowData, WriteResult> createProducer(
+  private TestOneInputStreamOperatorIntern<RowData, FlinkWriteResult> createProducer(
       int maxParallelism,
       int parallelism,
       int subTaskId,
@@ -402,10 +402,10 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
             (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
             tableLoader);
 
-    MixedFormatWriter<WriteResult> mixedFormatWriter =
+    MixedFormatWriter<FlinkWriteResult> mixedFormatWriter =
         new MixedFormatWriter<>(automaticLogWriter, streamWriter, metricsGenerator);
 
-    TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
+    TestOneInputStreamOperatorIntern<RowData, FlinkWriteResult> harness =
         new TestOneInputStreamOperatorIntern<>(
             mixedFormatWriter,
             maxParallelism,
