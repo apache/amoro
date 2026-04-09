@@ -79,4 +79,22 @@ public interface FormatTableDescriptor {
 
   /** Get the consumer information of the {@link AmoroTable}. */
   List<ConsumerInfo> getTableConsumerInfos(AmoroTable<?> amoroTable);
+
+  /**
+   * Create a tag manually for the table.
+   *
+   * @param amoroTable target table
+   * @param tagName tag name
+   * @param snapshotId snapshot ID to tag
+   * @param maxRefAgeMs max retention time in milliseconds, null means keep forever
+   */
+  void createTag(AmoroTable<?> amoroTable, String tagName, long snapshotId, Long maxRefAgeMs);
+
+  /**
+   * Delete a tag from the table.
+   *
+   * @param amoroTable target table
+   * @param tagName tag name to delete
+   */
+  void deleteTag(AmoroTable<?> amoroTable, String tagName);
 }
