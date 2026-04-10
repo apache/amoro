@@ -74,12 +74,12 @@ public class InternalCatalogImpl extends InternalCatalog {
 
   @Override
   public CatalogMeta getMetadata() {
-    CatalogMeta meta = super.getMetadata();
+    CatalogMeta meta = super.getMetadata().deepCopy();
     if (!meta.getCatalogProperties().containsKey(URI)) {
       meta.putToCatalogProperties(URI, defaultRestURI());
     }
     meta.putToCatalogProperties(CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
-    return meta.deepCopy();
+    return meta;
   }
 
   @Override

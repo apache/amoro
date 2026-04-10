@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -60,20 +61,66 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
     int consecutiveEmptyPolls = 0;
     final int emptyPollThreshold = 5;
     final Random random = new Random();
+    List<String> lastLoggedAmsUrls = Collections.emptyList();
+
+    LOG.info(
+        "Optimizer executor[{}] starting, mode: {}, configured AMS URL: {}",
+        threadId,
+        getConfig().isMasterSlaveMode() ? "master-slave" : "single-node",
+        getConfig().getAmsUrl());
 
     while (isStarted()) {
       List<String> amsUrls = getAmsNodeUrls();
 
+      // Log only when the node list changes, to avoid spamming on every poll cycle.
+      if (!amsUrls.equals(lastLoggedAmsUrls)) {
+        LOG.info(
+            "Optimizer executor[{}] AMS node list changed: {} -> {}",
+            threadId,
+            lastLoggedAmsUrls.isEmpty() ? "(none)" : lastLoggedAmsUrls,
+            amsUrls.isEmpty() ? "(none)" : amsUrls);
+        lastLoggedAmsUrls = new ArrayList<>(amsUrls);
+      }
+
+      if (amsUrls.isEmpty()) {
+        // No AMS nodes discovered yet; warn periodically (first time and every 12 cycles ≈ 1 min).
+        if (consecutiveEmptyPolls == 0 || consecutiveEmptyPolls % 12 == 0) {
+          LOG.warn(
+              "Optimizer executor[{}] no AMS nodes available (mode: {}, url: {}), "
+                  + "will retry in {}ms",
+              threadId,
+              getConfig().isMasterSlaveMode() ? "master-slave" : "single-node",
+              getConfig().getAmsUrl(),
+              basePollInterval);
+        }
+        consecutiveEmptyPolls++;
+        waitAShortTime(basePollInterval);
+        continue;
+      }
+
       // Shuffle to prevent all optimizers from hitting the same AMS node simultaneously
       if (amsUrls.size() > 1) {
         Collections.shuffle(amsUrls, random);
+        LOG.debug(
+            "Optimizer executor[{}] poll round starting, shuffled {} nodes: {}",
+            threadId,
+            amsUrls.size(),
+            amsUrls);
       }
 
       boolean hasTask = false;
-      for (String amsUrl : amsUrls) {
+      for (int i = 0; i < amsUrls.size(); i++) {
+        String amsUrl = amsUrls.get(i);
         if (!isStarted()) {
           break;
         }
+
+        LOG.debug(
+            "Optimizer executor[{}] polling node [{}/{}]: {}",
+            threadId,
+            i + 1,
+            amsUrls.size(),
+            amsUrl);
 
         OptimizingTask ackTask = null;
         OptimizingTaskResult result = null;
@@ -107,22 +154,41 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       }
 
       if (hasTask) {
+        if (consecutiveEmptyPolls >= emptyPollThreshold) {
+          LOG.info(
+              "Optimizer executor[{}] found task after {} consecutive empty polls ({}), "
+                  + "resuming normal poll interval",
+              threadId,
+              consecutiveEmptyPolls,
+              amsUrls);
+        }
         consecutiveEmptyPolls = 0;
       } else {
         consecutiveEmptyPolls++;
       }
 
       long waitTime;
-      if (amsUrls.isEmpty()) {
-        waitTime = basePollInterval;
-      } else if (consecutiveEmptyPolls >= emptyPollThreshold) {
+      if (consecutiveEmptyPolls >= emptyPollThreshold) {
         int backoffFactor = consecutiveEmptyPolls - emptyPollThreshold + 1;
         waitTime = Math.min(maxPollInterval, basePollInterval * (1L << backoffFactor));
-        LOG.debug(
-            "Optimizer executor[{}] no tasks found for {} consecutive polls, using increased interval: {}ms",
-            threadId,
-            consecutiveEmptyPolls,
-            waitTime);
+        if (consecutiveEmptyPolls == emptyPollThreshold) {
+          LOG.info(
+              "Optimizer executor[{}] no tasks found for {} consecutive polls across {} node(s) {}, "
+                  + "slowing down poll interval to {}ms (max: {}ms)",
+              threadId,
+              consecutiveEmptyPolls,
+              amsUrls.size(),
+              amsUrls,
+              waitTime,
+              maxPollInterval);
+        } else {
+          LOG.debug(
+              "Optimizer executor[{}] no tasks found for {} consecutive polls, "
+                  + "using increased poll interval: {}ms",
+              threadId,
+              consecutiveEmptyPolls,
+              waitTime);
+        }
       } else {
         waitTime = basePollInterval;
       }

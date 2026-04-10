@@ -69,6 +69,13 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
 
   private boolean checkToken() {
     if (!tokenIsReady()) {
+      LOG.info(
+          "Registering optimizer to AMS {} (group: {}, mode: {}, threads: {}, memory: {}MB) ...",
+          getConfig().getAmsUrl(),
+          getConfig().getGroupName(),
+          getConfig().isMasterSlaveMode() ? "master-slave" : "single-node",
+          getConfig().getExecutionParallel(),
+          getConfig().getMemorySize());
       try {
         String token =
             callAms(
@@ -89,10 +96,18 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
         if (tokenChangeListener != null) {
           tokenChangeListener.tokenChange(token);
         }
-        LOG.info("Registered optimizer to ams with token:{}", token);
+        LOG.info(
+            "Successfully registered optimizer to AMS {} (group: {}) with token: {}",
+            getConfig().getAmsUrl(),
+            getConfig().getGroupName(),
+            token);
         return true;
       } catch (TException e) {
-        LOG.error("Register optimizer to ams failed", e);
+        LOG.error(
+            "Failed to register optimizer to AMS {} (group: {})",
+            getConfig().getAmsUrl(),
+            getConfig().getGroupName(),
+            e);
         if (e instanceof AmoroException
             && ErrorCodes.FORBIDDEN_ERROR_CODE == ((AmoroException) e).getErrorCode()) {
           System.exit(1); // Don't need to try again
@@ -104,20 +119,27 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
   }
 
   private void touch() {
+    String currentToken = getToken();
     try {
       callAms(
           client -> {
-            client.touch(getToken());
+            client.touch(currentToken);
             return null;
           });
-      LOG.debug("Optimizer[{}] touch ams", getToken());
+      LOG.debug(
+          "Optimizer touch AMS {} succeeded (token: {})", getConfig().getAmsUrl(), currentToken);
     } catch (TException e) {
       if (e instanceof AmoroException
           && ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE == ((AmoroException) e).getErrorCode()) {
+        LOG.error(
+            "Got authorization error from AMS {} during touch (token: {} is now invalid). "
+                + "Will re-register on the next heartbeat cycle.",
+            getConfig().getAmsUrl(),
+            currentToken,
+            e);
         setToken(null);
-        LOG.error("Got authorization error from ams, try to register later", e);
       } else {
-        LOG.error("Touch ams failed", e);
+        LOG.error("Touch AMS {} failed (token: {})", getConfig().getAmsUrl(), currentToken, e);
       }
     }
   }

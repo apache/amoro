@@ -78,7 +78,7 @@ public class TestAmsAssignService {
     serviceConfig.setBoolean(AmoroManagementConf.HA_ENABLE, true);
     serviceConfig.setString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS, "127.0.0.1:2181");
     serviceConfig.setString(AmoroManagementConf.HA_CLUSTER_NAME, "test-cluster");
-    serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
     serviceConfig.setInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT, 100);
     serviceConfig.set(AmoroManagementConf.HA_NODE_OFFLINE_TIMEOUT, java.time.Duration.ofMinutes(5));
 
@@ -428,7 +428,7 @@ public class TestAmsAssignService {
     config.setBoolean(AmoroManagementConf.HA_ENABLE, true);
     config.setString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS, "127.0.0.1:2181");
     config.setString(AmoroManagementConf.HA_CLUSTER_NAME, "test-cluster");
-    config.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
+    config.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
     config.setInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT, 100);
     config.set(AmoroManagementConf.HA_NODE_OFFLINE_TIMEOUT, java.time.Duration.ofMinutes(5));
     return config;
@@ -490,7 +490,7 @@ public class TestAmsAssignService {
         ZkHighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
     isMasterSlaveModeField.setAccessible(true);
     isMasterSlaveModeField.set(
-        container, config.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE));
+        container, config.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE));
 
     if (config.getBoolean(AmoroManagementConf.HA_ENABLE)) {
       String haClusterName = config.getString(AmoroManagementConf.HA_CLUSTER_NAME);
