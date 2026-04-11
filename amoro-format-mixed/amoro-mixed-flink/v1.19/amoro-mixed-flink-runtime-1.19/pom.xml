@@ -26,25 +26,26 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>amoro-format-mixed-flink-runtime-1.17</artifactId>
-    <name>Amoro Project Mixed Format Flink 1.17 Runtime</name>
+    <artifactId>amoro-format-mixed-flink-runtime-1.19</artifactId>
+    <name>Amoro Project Mixed Format Flink 1.19 Runtime</name>
     <url>https://amoro.apache.org</url>
 
     <properties>
-        <flink.version>1.17.2</flink.version>
+        <flink.version>1.19.1</flink.version>
+        <flink-kafka.version>3.3.0-1.19</flink-kafka.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
-            <artifactId>amoro-format-mixed-flink-1.17</artifactId>
+            <artifactId>amoro-format-mixed-flink-1.19</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-kafka</artifactId>
-            <version>${flink.version}</version>
+            <version>${flink-kafka.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.github.luben</groupId>
@@ -79,6 +80,14 @@
                         </goals>
                         <phase>package</phase>
                         <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/versions/**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <includes combine.children="append">

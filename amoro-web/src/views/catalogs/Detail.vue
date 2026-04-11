@@ -34,6 +34,7 @@ import type { ICatalogItem, IIOptimizeGroupItem, ILableAndValue, IMap } from '@/
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { getResourceGroupsListAPI } from '@/services/optimize.service'
 import { downloadWithHeader } from '@/utils/request'
+import { canManageCatalog } from '@/utils/permission'
 
 interface IStorageConfigItem {
   label: string
@@ -107,6 +108,7 @@ const isHiveMetastore = computed(() => {
   return formState.catalog.type === 'hive'
 })
 const loading = ref<boolean>(false)
+const writable = computed(() => canManageCatalog())
 const formRef = ref()
 const propertiesRef = ref()
 const tablePropertiesRef = ref()
@@ -644,7 +646,7 @@ onMounted(() => {
               {{ $t('storageConfigName') }}
             </p>
           </a-form-item>
-          <a-form-item label="Type" :name="['storageConfig', 'storage.type']" :rules="[{ required: isEdit }]">
+          <a-form-item :label="$t('type')" :name="['storageConfig', 'storage.type']" :rules="[{ required: isEdit }]">
             <a-select
               v-if="isEdit" v-model:value="formState.storageConfig['storage.type']"
               :placeholder="placeholder.selectPh" :options="storageTypeOptions"
@@ -652,21 +654,21 @@ onMounted(() => {
             <span v-else class="config-value">{{ formState.storageConfig['storage.type'] }}</span>
           </a-form-item>
           <a-form-item
-            v-if="formState.storageConfig['storage.type'] === 'S3'" label="Endpoint"
+            v-if="formState.storageConfig['storage.type'] === 'S3'" :label="$t('endpoint')"
             :name="['storageConfig', 'storage.s3.endpoint']" :rules="[{ required: false }]"
           >
             <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.endpoint']" />
             <span v-else class="config-value">{{ formState.storageConfig['storage.s3.endpoint'] }}</span>
           </a-form-item>
           <a-form-item
-            v-if="formState.storageConfig['storage.type'] === 'S3'" label="Region"
+            v-if="formState.storageConfig['storage.type'] === 'S3'" :label="$t('region')"
             :name="['storageConfig', 'storage.s3.region']" :rules="[{ required: false }]"
           >
             <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.region']" />
             <span v-else class="config-value">{{ formState.storageConfig['storage.s3.region'] }}</span>
           </a-form-item>
           <a-form-item
-              v-if="formState.storageConfig['storage.type'] === 'OSS'" label="Endpoint"
+              v-if="formState.storageConfig['storage.type'] === 'OSS'" :label="$t('endpoint')"
               :name="['storageConfig', 'storage.oss.endpoint']" :rules="[{ required: false }]"
           >
             <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.oss.endpoint']" />
@@ -700,7 +702,7 @@ onMounted(() => {
               {{ $t('authenticationConfig') }}
             </p>
           </a-form-item>
-          <a-form-item label="Type" :name="['authConfig', 'auth.type']" :rules="[{ required: isEdit && !isAuthDisabled }]">
+          <a-form-item :label="$t('type')" :name="['authConfig', 'auth.type']" :rules="[{ required: isEdit && !isAuthDisabled }]">
             <a-select
               v-if="isEdit" v-model:value="formState.authConfig['auth.type']"
               :placeholder="placeholder.selectPh" :options="authTypeOptions" :disabled="isAuthDisabled"
@@ -708,14 +710,14 @@ onMounted(() => {
             <span v-else class="config-value">{{ formState.authConfig['auth.type'] }}</span>
           </a-form-item>
           <a-form-item
-            v-if="formState.authConfig['auth.type'] === 'SIMPLE'" label="Hadoop Username"
+            v-if="formState.authConfig['auth.type'] === 'SIMPLE'" :label="$t('hadoopUsername')"
             :name="['authConfig', 'auth.simple.hadoop_username']" :rules="[{ required: isEdit && !isAuthDisabled }]"
           >
             <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.simple.hadoop_username']" :disabled="isAuthDisabled" />
             <span v-else class="config-value">{{ formState.authConfig['auth.simple.hadoop_username'] }}</span>
           </a-form-item>
           <a-form-item
-            v-if="formState.authConfig['auth.type'] === 'KERBEROS'" label="Kerberos Principal"
+            v-if="formState.authConfig['auth.type'] === 'KERBEROS'" :label="$t('kerberosPrincipal')"
             :name="['authConfig', 'auth.kerberos.principal']" :rules="[{ required: isEdit && !isAuthDisabled }]"
           >
             <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.kerberos.principal']" :disabled="isAuthDisabled" />
@@ -746,14 +748,14 @@ onMounted(() => {
             </a-form-item>
           </div>
           <a-form-item
-            v-if="formState.authConfig['auth.type'] === 'AK/SK'" label="Access Key"
+            v-if="formState.authConfig['auth.type'] === 'AK/SK'" :label="$t('accessKey')"
             :name="['authConfig', 'auth.ak_sk.access_key']" :rules="[{ required: isEdit && !isAuthDisabled }]"
           >
             <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.access_key']" :disabled="isAuthDisabled" />
             <span v-else class="config-value">{{ formState.authConfig['auth.ak_sk.access_key'] }}</span>
           </a-form-item>
           <a-form-item
-            v-if="formState.authConfig['auth.type'] === 'AK/SK'" label="Secret Key"
+            v-if="formState.authConfig['auth.type'] === 'AK/SK'" :label="$t('secretKey')"
             :name="['authConfig', 'auth.ak_sk.secret_key']" :rules="[{ required: isEdit && !isAuthDisabled }]"
           >
             <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.secret_key']" :disabled="isAuthDisabled" />
@@ -778,7 +780,7 @@ onMounted(() => {
         </a-form>
       </div>
     </div>
-    <div v-if="isEdit" class="footer-btn">
+    <div v-if="isEdit && writable" class="footer-btn">
       <a-button type="primary" class="save-btn g-mr-12" @click="handleSave">
         {{ $t('save') }}
       </a-button>
@@ -786,7 +788,7 @@ onMounted(() => {
         {{ $t('cancel') }}
       </a-button>
     </div>
-    <div v-if="!isEdit" class="footer-btn">
+    <div v-if="!isEdit && writable" class="footer-btn">
       <a-button type="primary" class="edit-btn g-mr-12" @click="handleEdit">
         {{ $t('edit') }}
       </a-button>

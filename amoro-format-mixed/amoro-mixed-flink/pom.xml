@@ -36,12 +36,10 @@
         <module>amoro-mixed-flink-common</module>
         <module>amoro-mixed-flink-common-format</module>
         <module>amoro-mixed-flink-common-iceberg-bridge</module>
-        <module>v1.16/amoro-mixed-flink-1.16</module>
-        <module>v1.16/amoro-mixed-flink-runtime-1.16</module>
-        <module>v1.17/amoro-mixed-flink-1.17</module>
-        <module>v1.17/amoro-mixed-flink-runtime-1.17</module>
         <module>v1.18/amoro-mixed-flink-1.18</module>
         <module>v1.18/amoro-mixed-flink-runtime-1.18</module>
+        <module>v1.19/amoro-mixed-flink-1.19</module>
+        <module>v1.19/amoro-mixed-flink-runtime-1.19</module>
     </modules>
 
     <properties>
@@ -50,6 +48,6 @@
         <flink-kafka.version>3.2.0-1.18</flink-kafka.version>
         <kafka.version>3.4.0</kafka.version>
         <gson.version>2.9.0</gson.version>
-        <jackson.vesion>2.10.2</jackson.vesion>
+        <jackson.version>2.10.2</jackson.version>
     </properties>
 </project>

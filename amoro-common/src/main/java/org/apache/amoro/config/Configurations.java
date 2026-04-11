@@ -548,6 +548,19 @@ public class Configurations implements java.io.Serializable, Cloneable {
     return result;
   }
 
+  public Duration getDuration(ConfigOption<Duration> option) {
+    try {
+      return getOptional(option).orElseGet(option::defaultValue);
+    } catch (Exception e) { // may be throw java.lang.ArithmeticException: long overflow
+      throw new ConfigurationException(
+          option.key(),
+          String.format(
+              "Exception when converting duration for config option '%s': %s",
+              option.key(), e.getMessage()),
+          e);
+    }
+  }
+
   public <T> Optional<T> getOptional(ConfigOption<T> option) {
     Optional<Object> rawValue = getRawValueFromOption(option);
     Class<?> clazz = option.getClazz();

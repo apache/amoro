@@ -61,12 +61,12 @@ public class MixedTableOperations implements TableOperations {
 
   @Override
   public String metadataFileLocation(String fileName) {
-    return ops.metadataFileLocation(fileName);
+    return authenticatedFileIO.doAs(() -> ops.metadataFileLocation(fileName));
   }
 
   @Override
   public LocationProvider locationProvider() {
-    return ops.locationProvider();
+    return authenticatedFileIO.doAs(ops::locationProvider);
   }
 
   @Override

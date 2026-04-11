@@ -29,6 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -38,24 +40,100 @@ public class AbstractOptimizerOperator implements Serializable {
   // Call ams every 5 seconds by default
   private static long callAmsInterval = TimeUnit.SECONDS.toMillis(5);
 
+  /**
+   * In master-slave mode, the maximum number of consecutive shouldRetryLater errors allowed per
+   * node before failing fast and letting the caller try the next node. Prevents the multi-node
+   * polling loop in OptimizerExecutor from getting stuck indefinitely on a single unreachable node.
+   */
+  static final int MAX_RETRIES_PER_NODE_IN_MASTER_SLAVE = 5;
+
   private final OptimizerConfig config;
   private final AtomicReference<String> token = new AtomicReference<>();
   private volatile boolean stopped = false;
+  private transient volatile AmsNodeManager amsNodeManager;
+  private transient volatile ThriftAmsNodeManager thriftAmsNodeManager;
 
   public AbstractOptimizerOperator(OptimizerConfig config) {
     Preconditions.checkNotNull(config);
     this.config = config;
+    if (config.isMasterSlaveMode()) {
+      String amsUrl = config.getAmsUrl();
+      if (amsUrl.startsWith("zookeeper://")) {
+        // ZK HA mode: discover nodes from ZooKeeper ephemeral nodes
+        try {
+          this.amsNodeManager = new AmsNodeManager(amsUrl);
+          LOG.info("Initialized ZK AmsNodeManager for master-slave mode");
+        } catch (Exception e) {
+          LOG.warn("Failed to initialize AmsNodeManager, will use single AMS URL", e);
+        }
+      } else {
+        // DB HA mode: discover nodes via getOptimizingNodeUrls() Thrift RPC
+        try {
+          this.thriftAmsNodeManager = new ThriftAmsNodeManager(amsUrl);
+          LOG.info("Initialized ThriftAmsNodeManager for master-slave mode (DB HA)");
+        } catch (Exception e) {
+          LOG.warn("Failed to initialize ThriftAmsNodeManager, will use single AMS URL", e);
+        }
+      }
+    }
+  }
+
+  /** Get the AmsNodeManager instance if available (ZK mode). */
+  protected AmsNodeManager getAmsNodeManager() {
+    return amsNodeManager;
+  }
+
+  /** Get the ThriftAmsNodeManager instance if available (DB mode). */
+  protected ThriftAmsNodeManager getThriftAmsNodeManager() {
+    return thriftAmsNodeManager;
+  }
+
+  /**
+   * Returns true if any node manager (ZK or Thrift) is active. Used by OptimizerExecutor to decide
+   * whether to use master-slave polling logic.
+   */
+  protected boolean hasAmsNodeManager() {
+    return amsNodeManager != null || thriftAmsNodeManager != null;
+  }
+
+  /**
+   * Get all AMS URLs from the active node manager. Falls back to the single configured URL when no
+   * node manager is available or the node list is empty.
+   */
+  protected List<String> getAmsNodeUrls() {
+    if (amsNodeManager != null) {
+      List<String> urls = amsNodeManager.getAllAmsUrls();
+      if (!urls.isEmpty()) {
+        return urls;
+      }
+    }
+    if (thriftAmsNodeManager != null) {
+      return thriftAmsNodeManager.getAllAmsUrls();
+    }
+    return Collections.singletonList(getConfig().getAmsUrl());
   }
 
   protected <T> T callAms(AmsCallOperation<T> operation) throws TException {
+    return callAms(getConfig().getAmsUrl(), operation);
+  }
+
+  /**
+   * Call AMS with a specific AMS URL.
+   *
+   * @param amsUrl The AMS node URL to call
+   * @param operation The operation to execute
+   * @return The result of the operation
+   * @throws TException If the operation fails
+   */
+  protected <T> T callAms(String amsUrl, AmsCallOperation<T> operation) throws TException {
     while (isStarted()) {
       try {
-        return operation.call(OptimizingClientPools.getClient(config.getAmsUrl()));
+        return operation.call(OptimizingClientPools.getClient(amsUrl));
       } catch (Throwable t) {
         if (shouldReturnNull(t)) {
           return null;
         } else if (shouldRetryLater(t)) {
-          LOG.error("Call ams got an error and will try again later", t);
+          LOG.error("Call ams {} got an error and will try again later", amsUrl, t);
           waitAShortTime();
         } else {
           throw t;
@@ -86,25 +164,95 @@ public class AbstractOptimizerOperator implements Serializable {
     return false;
   }
 
-  protected <T> T callAuthenticatedAms(AmsAuthenticatedCallOperation<T> operation)
+  /**
+   * Call authenticated AMS with a specific AMS URL.
+   *
+   * @param amsUrl The AMS node URL to call
+   * @param operation The operation to execute
+   * @return The result of the operation
+   * @throws TException If the operation fails
+   */
+  protected <T> T callAuthenticatedAms(String amsUrl, AmsAuthenticatedCallOperation<T> operation)
       throws TException {
+    // Maximum retry time window for auth errors in master-slave mode (30 seconds)
+    long maxAuthRetryTimeWindow = TimeUnit.SECONDS.toMillis(30);
+    Long firstAuthErrorTime = null;
+
+    // Per-node retry budget: in master-slave mode, limit consecutive shouldRetryLater retries so
+    // that a permanently unreachable node does not block the multi-node polling loop indefinitely.
+    int consecutiveRetries = 0;
+
     while (isStarted()) {
       if (tokenIsReady()) {
         String token = getToken();
         try {
-          return operation.call(OptimizingClientPools.getClient(config.getAmsUrl()), token);
+          return operation.call(OptimizingClientPools.getClient(amsUrl), token);
         } catch (Throwable t) {
           if (t instanceof AmoroException
               && ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE == ((AmoroException) (t)).getErrorCode()) {
-            // Reset the token when got a authorization error
-            LOG.error(
-                "Got a authorization error while calling ams, reset token and wait for a new one",
-                t);
-            resetToken(token);
+            // In master-slave mode, the slave node may not have completed optimizer
+            // auto-registration
+            // yet, so we should retry within a time window before resetting the token
+            boolean isMasterSlaveMode = config.isMasterSlaveMode() && hasAmsNodeManager();
+            long currentTime = System.currentTimeMillis();
+
+            if (isMasterSlaveMode) {
+              if (firstAuthErrorTime == null) {
+                // First auth error, record the time
+                firstAuthErrorTime = currentTime;
+              }
+
+              long elapsedTime = currentTime - firstAuthErrorTime;
+              if (elapsedTime < maxAuthRetryTimeWindow) {
+                // Still within retry time window, retry after waiting
+                LOG.warn(
+                    "Got an authorization error while calling ams {} in master-slave mode (elapsed: {}ms/{}ms). "
+                        + "This may be because the slave node hasn't completed optimizer auto-registration yet. "
+                        + "Will retry after waiting.",
+                    amsUrl,
+                    elapsedTime,
+                    maxAuthRetryTimeWindow,
+                    t);
+                waitAShortTime();
+              } else {
+                // Exceeded retry time window, reset token
+                LOG.error(
+                    "Got authorization errors from ams {} in master-slave mode for {}ms, exceeded retry time window ({}ms). "
+                        + "Reset token and wait for a new one",
+                    amsUrl,
+                    elapsedTime,
+                    maxAuthRetryTimeWindow,
+                    t);
+                resetToken(token);
+                firstAuthErrorTime = null;
+              }
+            } else {
+              // Non-master-slave mode, reset token immediately
+              LOG.error(
+                  "Got a authorization error while calling ams {}, reset token and wait for a new one",
+                  amsUrl,
+                  t);
+              resetToken(token);
+              firstAuthErrorTime = null;
+            }
           } else if (shouldReturnNull(t)) {
             return null;
           } else if (shouldRetryLater(t)) {
-            LOG.error("Call ams got an error and will try again later", t);
+            LOG.error("Call ams {} got an error and will try again later", amsUrl, t);
+            if (hasAmsNodeManager()) {
+              consecutiveRetries++;
+              if (consecutiveRetries > MAX_RETRIES_PER_NODE_IN_MASTER_SLAVE) {
+                LOG.warn(
+                    "Per-node retry budget ({}) exhausted for AMS {}, failing fast to try next node",
+                    MAX_RETRIES_PER_NODE_IN_MASTER_SLAVE,
+                    amsUrl);
+                if (t instanceof TException) {
+                  throw (TException) t;
+                }
+                throw new TException(
+                    "Per-node retry budget exhausted for " + amsUrl + ": " + t.getMessage(), t);
+              }
+            }
             waitAShortTime();
           } else {
             throw t;
@@ -116,6 +264,12 @@ public class AbstractOptimizerOperator implements Serializable {
       }
     }
     throw new IllegalStateException("Operator is stopped");
+  }
+
+  /** Legacy method for backward compatibility. Uses the configured AMS URL. */
+  protected <T> T callAuthenticatedAms(AmsAuthenticatedCallOperation<T> operation)
+      throws TException {
+    return callAuthenticatedAms(getConfig().getAmsUrl(), operation);
   }
 
   public static void setCallAmsInterval(long callAmsInterval) {

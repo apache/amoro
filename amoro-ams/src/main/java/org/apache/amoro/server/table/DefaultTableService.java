@@ -24,15 +24,19 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableIDWithFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.BucketAssignStore;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.catalog.ExternalCatalog;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
+import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.persistence.BucketIdCount;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.TableRuntimeState;
@@ -50,11 +54,16 @@ import org.apache.amoro.utils.TablePropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -87,19 +96,41 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private final Configurations serverConfiguration;
   private final CatalogManager catalogManager;
   private final TableRuntimeFactory tableRuntimeFactory;
+  private final HighAvailabilityContainer haContainer;
+  private final BucketAssignStore bucketAssignStore;
+  private final boolean isMasterSlaveMode;
   private RuntimeHandlerChain headHandler;
   private ExecutorService tableExplorerExecutors;
+
+  // Master-slave mode related fields
+  private ScheduledExecutorService bucketTableSyncScheduler;
+  private volatile List<String> assignedBucketIds = new ArrayList<>();
+  private final long bucketTableSyncInterval;
 
   public DefaultTableService(
       Configurations configuration,
       CatalogManager catalogManager,
       TableRuntimeFactory tableRuntimeFactory) {
+    this(configuration, catalogManager, tableRuntimeFactory, null, null);
+  }
+
+  public DefaultTableService(
+      Configurations configuration,
+      CatalogManager catalogManager,
+      TableRuntimeFactory tableRuntimeFactory,
+      HighAvailabilityContainer haContainer,
+      BucketAssignStore bucketAssignStore) {
     this.catalogManager = catalogManager;
     this.externalCatalogRefreshingInterval =
         configuration.get(AmoroManagementConf.REFRESH_EXTERNAL_CATALOGS_INTERVAL).toMillis();
     this.serverConfiguration = configuration;
     this.tableRuntimeFactory = tableRuntimeFactory;
     this.tableRuntimeFactory.withTableLoader(this::loadTable);
+    this.haContainer = haContainer;
+    this.bucketAssignStore = bucketAssignStore;
+    this.isMasterSlaveMode = configuration.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
+    this.bucketTableSyncInterval =
+        configuration.get(AmoroManagementConf.HA_BUCKET_TABLE_SYNC_INTERVAL).toMillis();
   }
 
   @Override
@@ -156,8 +187,33 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public void initialize() {
     checkNotStarted();
 
-    List<TableRuntimeMeta> tableRuntimeMetaList =
-        getAs(TableRuntimeMapper.class, TableRuntimeMapper::selectAllRuntimes);
+    List<TableRuntimeMeta> tableRuntimeMetaList;
+    if (isMasterSlaveMode && haContainer != null && bucketAssignStore != null) {
+      // In master-slave mode, load only tables assigned to this node
+      try {
+        updateAssignedBucketIds();
+        if (!assignedBucketIds.isEmpty()) {
+          tableRuntimeMetaList =
+              getAs(
+                  TableRuntimeMapper.class,
+                  mapper -> mapper.selectRuntimesByBucketIds(assignedBucketIds, false));
+          LOG.info(
+              "Master-slave mode: Loaded {} tables for assigned bucketIds: {}",
+              tableRuntimeMetaList.size(),
+              assignedBucketIds);
+        } else {
+          tableRuntimeMetaList = new ArrayList<>();
+          LOG.info("Master-slave mode: No bucketIds assigned to this node yet");
+        }
+      } catch (Exception e) {
+        LOG.error("Failed to load tables for assigned bucketIds in master-slave mode", e);
+        tableRuntimeMetaList = new ArrayList<>();
+      }
+    } else {
+      // Non-master-slave mode: load all tables
+      tableRuntimeMetaList = getAs(TableRuntimeMapper.class, TableRuntimeMapper::selectAllRuntimes);
+    }
+
     Map<Long, ServerTableIdentifier> identifierMap =
         getAs(TableMetaMapper.class, TableMetaMapper::selectAllTableIdentifiers).stream()
             .collect(Collectors.toMap(ServerTableIdentifier::getId, Function.identity()));
@@ -222,6 +278,26 @@ public class DefaultTableService extends PersistentBase implements TableService 
     initialized.complete(true);
     tableExplorerScheduler.scheduleAtFixedRate(
         this::exploreTableRuntimes, 0, externalCatalogRefreshingInterval, TimeUnit.MILLISECONDS);
+
+    if (isMasterSlaveMode && haContainer != null && bucketAssignStore != null) {
+      // In master-slave mode, start periodic sync for assigned bucket tables
+      // Delay the first sync to allow AmsAssignService to assign bucketIds first
+      bucketTableSyncScheduler =
+          Executors.newSingleThreadScheduledExecutor(
+              new ThreadFactoryBuilder()
+                  .setNameFormat("bucket-table-sync-scheduler-%d")
+                  .setDaemon(true)
+                  .build());
+      bucketTableSyncScheduler.scheduleAtFixedRate(
+          this::syncBucketTables,
+          bucketTableSyncInterval,
+          bucketTableSyncInterval,
+          TimeUnit.MILLISECONDS);
+      LOG.info(
+          "Master-slave mode: Started bucket table sync scheduler with interval {} ms (first sync delayed by {} ms)",
+          bucketTableSyncInterval,
+          bucketTableSyncInterval);
+    }
   }
 
   @Override
@@ -250,6 +326,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
   @Override
   public void dispose() {
     tableExplorerScheduler.shutdown();
+    if (bucketTableSyncScheduler != null) {
+      bucketTableSyncScheduler.shutdown();
+    }
     if (tableExplorerExecutors != null) {
       tableExplorerExecutors.shutdown();
     }
@@ -259,8 +338,214 @@ public class DefaultTableService extends PersistentBase implements TableService 
     tableRuntimeMap.values().forEach(TableRuntime::unregisterMetric);
   }
 
+  /**
+   * Update assigned bucket IDs from AssignStore. This should be called periodically to refresh the
+   * bucket assignments.
+   */
+  private void updateAssignedBucketIds() {
+    if (haContainer == null || bucketAssignStore == null) {
+      LOG.warn(
+          "No assigned bucket ids found. check if haContainer == null or bucketAssignStore == null");
+      return;
+    }
+    try {
+      // Must use optimizingServiceServerInfo because AmsAssignService stores bucket assignments
+      // keyed by host:optimizingPort (from haContainer.getAliveNodes()), not host:tableServicePort.
+      AmsServerInfo currentServerInfo = haContainer.getOptimizingServiceServerInfo();
+      if (currentServerInfo == null) {
+        LOG.warn("Cannot get current server info, skip updating assigned bucketIds");
+        return;
+      }
+      List<String> newBucketIds = bucketAssignStore.getAssignments(currentServerInfo);
+      if (!newBucketIds.equals(assignedBucketIds)) {
+        LOG.info("Assigned bucketIds changed from {} to {}", assignedBucketIds, newBucketIds);
+        assignedBucketIds = new ArrayList<>(newBucketIds);
+      }
+    } catch (Exception e) {
+      LOG.error("Failed to update assigned bucketIds", e);
+    }
+  }
+
+  /**
+   * Sync tables for assigned bucket IDs. This method is called periodically in master-slave mode.
+   */
+  private void syncBucketTables() {
+    if (!isMasterSlaveMode || haContainer == null || bucketAssignStore == null) {
+      return;
+    }
+    try {
+      updateAssignedBucketIds();
+      if (assignedBucketIds.isEmpty()) {
+        // In master-slave mode, if no bucketIds are assigned yet, it's normal during startup
+        // The AmsAssignService will assign bucketIds later
+        LOG.debug("No bucketIds assigned to this node yet, skip syncing tables (will retry later)");
+        return;
+      }
+
+      LOG.info("syncBucketTables assignedBucketIds:{}", assignedBucketIds);
+      // Load tables from database for assigned bucketIds
+      List<TableRuntimeMeta> tableRuntimeMetaList =
+          getAs(
+              TableRuntimeMapper.class,
+              mapper -> mapper.selectRuntimesByBucketIds(assignedBucketIds, false));
+
+      Map<Long, ServerTableIdentifier> identifierMap =
+          getAs(TableMetaMapper.class, TableMetaMapper::selectAllTableIdentifiers).stream()
+              .collect(Collectors.toMap(ServerTableIdentifier::getId, Function.identity()));
+
+      Map<Long, List<TableRuntimeState>> statesMap =
+          getAs(TableRuntimeMapper.class, TableRuntimeMapper::selectAllStates).stream()
+              .collect(
+                  Collectors.toMap(
+                      TableRuntimeState::getTableId,
+                      Lists::newArrayList,
+                      (a, b) -> {
+                        a.addAll(b);
+                        return a;
+                      }));
+
+      // Find tables that should be added (in DB but not in memory)
+      Set<Long> currentTableIds = new HashSet<>(tableRuntimeMap.keySet());
+      Set<Long> dbTableIds =
+          tableRuntimeMetaList.stream()
+              .map(TableRuntimeMeta::getTableId)
+              .collect(Collectors.toSet());
+
+      // Add new tables
+      for (TableRuntimeMeta tableRuntimeMeta : tableRuntimeMetaList) {
+        Long tableId = tableRuntimeMeta.getTableId();
+        if (!currentTableIds.contains(tableId)) {
+          ServerTableIdentifier identifier = identifierMap.get(tableId);
+          if (identifier == null) {
+            LOG.warn("No available table identifier found for table runtime meta id={}", tableId);
+            continue;
+          }
+          List<TableRuntimeState> states = statesMap.get(tableId);
+          // Use empty list if states is null to avoid NullPointerException
+          if (states == null) {
+            states = Collections.emptyList();
+          }
+          Optional<TableRuntime> tableRuntime =
+              createTableRuntime(identifier, tableRuntimeMeta, states);
+          if (tableRuntime.isPresent()) {
+            TableRuntime runtime = tableRuntime.get();
+            runtime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
+            tableRuntimeMap.put(tableId, runtime);
+            if (headHandler != null) {
+              AmoroTable<?> table = loadTable(identifier);
+              if (table != null) {
+                headHandler.fireTableAdded(table, runtime);
+              }
+            }
+            LOG.info("Added table {} for bucketId {}", tableId, tableRuntimeMeta.getBucketId());
+          }
+        }
+      }
+
+      // Remove tables that are no longer assigned to this node
+      List<Long> tablesToRemove = new ArrayList<>();
+      for (Long tableId : currentTableIds) {
+        if (!dbTableIds.contains(tableId)) {
+          // Check if this table's bucketId is still assigned to this node
+          TableRuntime tableRuntime = tableRuntimeMap.get(tableId);
+          if (tableRuntime != null) {
+            // Get bucketId from database
+            TableRuntimeMeta meta =
+                getAs(TableRuntimeMapper.class, mapper -> mapper.selectRuntime(tableId));
+            if (meta != null && meta.getBucketId() != null) {
+              if (!assignedBucketIds.contains(meta.getBucketId())) {
+                tablesToRemove.add(tableId);
+              }
+            } else if (meta == null || meta.getBucketId() == null) {
+              // Table removed from database or bucketId is null
+              tablesToRemove.add(tableId);
+            }
+          }
+        }
+      }
+
+      for (Long tableId : tablesToRemove) {
+        TableRuntime tableRuntime = tableRuntimeMap.get(tableId);
+        if (tableRuntime != null) {
+          try {
+            if (headHandler != null) {
+              headHandler.fireTableRemoved(tableRuntime);
+            }
+            tableRuntime.dispose();
+            tableRuntimeMap.remove(tableId);
+            LOG.info("Removed table {} as it's no longer assigned to this node", tableId);
+          } catch (Exception e) {
+            LOG.error("Error occurred while removing tableRuntime of table {}", tableId, e);
+          }
+        }
+      }
+    } catch (Exception e) {
+      LOG.error("Error during bucket table sync", e);
+    }
+  }
+
+  /**
+   * Assign bucketId to a table using min-heap strategy. This ensures tables are evenly distributed
+   * across bucketIds.
+   *
+   * @return The assigned bucketId, or null if assignment fails
+   */
+  private String assignBucketIdForTable() {
+    try {
+      List<BucketIdCount> bucketIdCounts =
+          getAs(
+              TableRuntimeMapper.class,
+              (TableRuntimeMapper mapper) -> mapper.countTablesByBucketId());
+
+      Map<String, Integer> bucketTableCount = new HashMap<>();
+      int bucketIdTotalCount =
+          serverConfiguration.getInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT);
+      for (int i = 1; i <= bucketIdTotalCount; i++) {
+        bucketTableCount.put(String.valueOf(i), 0);
+      }
+
+      for (BucketIdCount bucketIdCount : bucketIdCounts) {
+        String bucketId = bucketIdCount.getBucketId();
+        if (bucketId != null && !bucketId.trim().isEmpty()) {
+          bucketTableCount.put(bucketId, bucketIdCount.getCount());
+        }
+      }
+
+      PriorityQueue<Map.Entry<String, Integer>> minHeap =
+          new PriorityQueue<>(
+              Comparator.<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue)
+                  .thenComparing(Map.Entry::getKey));
+
+      for (Map.Entry<String, Integer> entry : bucketTableCount.entrySet()) {
+        minHeap.offer(new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
+      }
+
+      if (!minHeap.isEmpty()) {
+        Map.Entry<String, Integer> selected = minHeap.poll();
+        String assignedBucketId = selected.getKey();
+        int tableCount = selected.getValue();
+        LOG.debug(
+            "Assigned bucketId {} to new table (min table count: {})",
+            assignedBucketId,
+            tableCount);
+        return assignedBucketId;
+      }
+    } catch (Exception e) {
+      LOG.error("Failed to assign bucketId for table", e);
+    }
+    return null;
+  }
+
   @VisibleForTesting
   void exploreTableRuntimes() {
+    // In master-slave mode (fully wired), only leader node should explore table runtimes
+    if (isMasterSlaveMode
+        && haContainer != null
+        && bucketAssignStore != null
+        && !haContainer.hasLeadership()) {
+      LOG.debug("Not the leader node in master-slave mode, skip exploring table runtimes");
+      return;
+    }
     if (!initialized.isDone()) {
       throw new IllegalStateException("TableService is not initialized");
     }
@@ -289,12 +574,30 @@ public class DefaultTableService extends PersistentBase implements TableService 
     // timely manner during the process of dropping the catalog due to concurrency considerations.
     // It is permissible to have some erroneous states in the middle, as long as the final data is
     // consistent.
+    // In master-slave mode, only clean up tables assigned to this node
     Set<String> catalogNames =
         catalogManager.listCatalogMetas().stream()
             .map(CatalogMeta::getCatalogName)
             .collect(Collectors.toSet());
     for (TableRuntime tableRuntime : tableRuntimeMap.values()) {
       if (!catalogNames.contains(tableRuntime.getTableIdentifier().getCatalog())) {
+        // In master-slave mode, only dispose tables assigned to this node
+        if (isMasterSlaveMode && haContainer != null && bucketAssignStore != null) {
+          try {
+            TableRuntimeMeta meta =
+                getAs(
+                    TableRuntimeMapper.class,
+                    mapper -> mapper.selectRuntime(tableRuntime.getTableIdentifier().getId()));
+            if (meta != null && meta.getBucketId() != null) {
+              if (!assignedBucketIds.contains(meta.getBucketId())) {
+                // Not assigned to this node, skip
+                continue;
+              }
+            }
+          } catch (Exception e) {
+            LOG.warn("Failed to check bucketId for table {}", tableRuntime.getTableIdentifier(), e);
+          }
+        }
         disposeTable(tableRuntime.getTableIdentifier());
       }
     }
@@ -495,7 +798,66 @@ public class DefaultTableService extends PersistentBase implements TableService 
     meta.setStatusCode(OptimizingStatus.IDLE.getCode());
     meta.setGroupName(configuration.getOptimizingConfig().getOptimizerGroup());
     meta.setTableSummary(new TableSummary());
+
+    // In master-slave mode (fully wired), assign bucketId to the table if it's not assigned yet.
+    // Only leader node should assign bucketIds; follower may still persist the table with null
+    // bucketId (e.g. onTableCreated on follower), and leader will assign later via exploration.
+    String assignedBucketId = null;
+    if (isMasterSlaveMode && haContainer != null && bucketAssignStore != null) {
+      if (haContainer.hasLeadership()) {
+        TableRuntimeMeta existingMeta =
+            getAs(
+                TableRuntimeMapper.class,
+                mapper -> mapper.selectRuntime(serverTableIdentifier.getId()));
+        if (existingMeta != null) {
+          // Runtime already exists (e.g. inserted by follower with null bucketId)
+          if (existingMeta.getBucketId() != null) {
+            return true; // already assigned
+          }
+          assignedBucketId = assignBucketIdForTable();
+          if (assignedBucketId != null) {
+            String finalAssignedBucketId = assignedBucketId;
+            long updated =
+                updateAs(
+                    TableRuntimeMapper.class,
+                    mapper ->
+                        mapper.updateBucketIdIfNull(
+                            serverTableIdentifier.getId(), finalAssignedBucketId));
+            if (updated == 1) {
+              LOG.info(
+                  "Assigned bucketId {} to existing table {} (was null)",
+                  assignedBucketId,
+                  serverTableIdentifier);
+            } else {
+              LOG.debug(
+                  "Skipped backfill bucketId {} for table {} (row missing or bucket_id already set)",
+                  assignedBucketId,
+                  serverTableIdentifier);
+            }
+          }
+          return true; // handled existing row (assigned or failed to assign)
+        }
+        assignedBucketId = assignBucketIdForTable();
+        if (assignedBucketId != null) {
+          meta.setBucketId(assignedBucketId);
+          LOG.info("Assigned bucketId {} to table {}", assignedBucketId, serverTableIdentifier);
+        } else {
+          LOG.warn(
+              "Failed to assign bucketId to table {}, will be assigned later",
+              serverTableIdentifier);
+        }
+      }
+      // else: follower does not assign; meta.bucketId remains null until leader assigns
+    }
+
     doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
+
+    // Only skip local runtime creation when master-slave mode is fully wired (bucketAssignStore
+    // is non-null). When bucketAssignStore is null (e.g. 3-arg test constructor), fall through
+    // and create the runtime in memory as in non-master-slave mode.
+    if (isMasterSlaveMode && haContainer != null && bucketAssignStore != null) {
+      return true;
+    }
 
     Optional<TableRuntime> tableRuntimeOpt =
         createTableRuntime(serverTableIdentifier, meta, Collections.emptyList());

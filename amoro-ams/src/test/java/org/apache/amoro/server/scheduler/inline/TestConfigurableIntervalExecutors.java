@@ -86,6 +86,32 @@ public class TestConfigurableIntervalExecutors {
   }
 
   @Test
+  public void testProcessDataExpiringDefaultInterval() {
+    Duration optimizingKeepTime = Duration.ofDays(30);
+    Duration expireInterval = Duration.ofHours(1);
+    Duration processKeepTime = Duration.ofDays(7);
+    ProcessDataExpiringExecutor executor =
+        new ProcessDataExpiringExecutor(null, optimizingKeepTime, expireInterval, processKeepTime);
+
+    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    Assert.assertEquals(
+        Duration.ofHours(1).toMillis(), executor.getNextExecutingTime(tableRuntime));
+  }
+
+  @Test
+  public void testProcessDataExpiringCustomInterval() {
+    Duration optimizingKeepTime = Duration.ofDays(15);
+    Duration expireInterval = Duration.ofMinutes(30);
+    Duration processKeepTime = Duration.ofDays(3);
+    ProcessDataExpiringExecutor executor =
+        new ProcessDataExpiringExecutor(null, optimizingKeepTime, expireInterval, processKeepTime);
+
+    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
+    Assert.assertEquals(
+        Duration.ofMinutes(30).toMillis(), executor.getNextExecutingTime(tableRuntime));
+  }
+
+  @Test
   public void testSnapshotsExpiringShouldExecuteAfterInterval() {
     Duration interval = Duration.ofHours(2);
     SnapshotsExpiringExecutor executor = new SnapshotsExpiringExecutor(null, 1, interval);

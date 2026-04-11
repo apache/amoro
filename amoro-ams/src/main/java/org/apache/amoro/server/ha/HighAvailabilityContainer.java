@@ -68,4 +68,20 @@ public interface HighAvailabilityContainer {
    * @return true if the current AMS node is the primary node, false otherwise
    */
   boolean hasLeadership();
+
+  /**
+   * Get current AMS node's table service server info (host + table-service Thrift port).
+   *
+   * @return {@link AmsServerInfo}
+   */
+  AmsServerInfo getTableServiceServerInfo();
+
+  /**
+   * Get current AMS node's optimizing service server info (host + optimizing Thrift port). This
+   * must be consistent with the {@link AmsServerInfo} written into {@link
+   * org.apache.amoro.server.BucketAssignStore} so that bucket lookups can match the stored nodeKey.
+   *
+   * @return {@link AmsServerInfo}
+   */
+  AmsServerInfo getOptimizingServiceServerInfo();
 }

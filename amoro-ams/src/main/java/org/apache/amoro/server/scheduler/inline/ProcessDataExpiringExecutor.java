@@ -28,22 +28,30 @@ import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class OptimizingExpiringExecutor extends PeriodicTableScheduler {
-  private static final Logger LOG = LoggerFactory.getLogger(OptimizingExpiringExecutor.class);
+import java.time.Duration;
+
+public class ProcessDataExpiringExecutor extends PeriodicTableScheduler {
+  private static final Logger LOG = LoggerFactory.getLogger(ProcessDataExpiringExecutor.class);
 
   private final Persistency persistency = new Persistency();
-  private final long keepTime;
-  private final long interval;
+  private final long optimizingKeepTimeMs;
+  private final long processKeepTimeMs;
+  private final long expireIntervalMs;
 
-  public OptimizingExpiringExecutor(TableService tableService, int keepDays, int intervalHours) {
+  public ProcessDataExpiringExecutor(
+      TableService tableService,
+      Duration optimizingKeepTime,
+      Duration expireInterval,
+      Duration processKeepTime) {
     super(tableService, 1);
-    this.keepTime = keepDays * 24 * 60 * 60 * 1000L;
-    this.interval = intervalHours * 60 * 60 * 1000L;
+    this.optimizingKeepTimeMs = optimizingKeepTime.toMillis();
+    this.processKeepTimeMs = processKeepTime.toMillis();
+    this.expireIntervalMs = expireInterval.toMillis();
   }
 
   @Override
   protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return interval;
+    return expireIntervalMs;
   }
 
   @Override
@@ -68,32 +76,38 @@ public class OptimizingExpiringExecutor extends PeriodicTableScheduler {
 
   private class Persistency extends PersistentBase {
     public void doExpiring(TableRuntime tableRuntime) {
-      long expireTime = System.currentTimeMillis() - keepTime;
-      long minProcessId = SnowflakeIdGenerator.getMinSnowflakeId(expireTime);
+      long tableId = tableRuntime.getTableIdentifier().getId();
+      long now = System.currentTimeMillis();
+
+      // 1. Expire optimizing runtime data (optimizingKeepTimeMs, e.g. 30d)
+      long optimizingMinId = SnowflakeIdGenerator.getMinSnowflakeId(now - optimizingKeepTimeMs);
       doAsTransaction(
           () ->
               doAs(
                   TableProcessMapper.class,
-                  mapper ->
-                      mapper.deleteBefore(tableRuntime.getTableIdentifier().getId(), minProcessId)),
+                  mapper -> mapper.deleteBefore(tableId, optimizingMinId)),
           () ->
               doAs(
                   OptimizingProcessMapper.class,
-                  mapper ->
-                      mapper.deleteProcessStateBefore(
-                          tableRuntime.getTableIdentifier().getId(), minProcessId)),
+                  mapper -> mapper.deleteProcessStateBefore(tableId, optimizingMinId)),
           () ->
               doAs(
                   OptimizingProcessMapper.class,
-                  mapper ->
-                      mapper.deleteTaskRuntimesBefore(
-                          tableRuntime.getTableIdentifier().getId(), minProcessId)),
+                  mapper -> mapper.deleteTaskRuntimesBefore(tableId, optimizingMinId)),
           () ->
               doAs(
                   OptimizingProcessMapper.class,
-                  mapper ->
-                      mapper.deleteOptimizingQuotaBefore(
-                          tableRuntime.getTableIdentifier().getId(), minProcessId)));
+                  mapper -> mapper.deleteOptimizingQuotaBefore(tableId, optimizingMinId)));
+
+      // 2. Expire process history terminal records (processKeepTimeMs, e.g. 7d)
+      //    Only deletes terminal records in the window between processKeepTime and keepTime,
+      //    since records older than keepTime are already removed by step 1.
+      if (processKeepTimeMs < optimizingKeepTimeMs) {
+        long processMinId = SnowflakeIdGenerator.getMinSnowflakeId(now - processKeepTimeMs);
+        doAs(
+            TableProcessMapper.class,
+            mapper -> mapper.deleteExpiredProcesses(tableId, processMinId));
+      }
     }
   }
 }

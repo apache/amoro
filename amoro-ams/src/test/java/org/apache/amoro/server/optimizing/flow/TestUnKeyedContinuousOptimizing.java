@@ -48,6 +48,8 @@ import java.util.List;
 @RunWith(Parameterized.class)
 public class TestUnKeyedContinuousOptimizing extends TableTestBase {
 
+  private static final long DATA_SEED = 1L;
+
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   public TestUnKeyedContinuousOptimizing(
@@ -97,7 +99,7 @@ public class TestUnKeyedContinuousOptimizing extends TableTestBase {
     // Need move file to hive scene
 
     UnKeyedTableDataView view =
-        new UnKeyedTableDataView(table, partitionCount, writeTargetFileSize, null);
+        new UnKeyedTableDataView(table, partitionCount, writeTargetFileSize, DATA_SEED);
 
     // init checker
     DataConcurrencyChecker dataConcurrencyChecker = new DataConcurrencyChecker(view);

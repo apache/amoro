@@ -369,19 +369,22 @@ public abstract class MixedDeleteFilter<T> {
     if (positionMap == null) {
       positionMap = new HashMap<>();
       List<CloseableIterable<Record>> deletes = Lists.transform(posDeletes, this::openPosDeletes);
-      CloseableIterator<Record> iterator = CloseableIterable.concat(deletes).iterator();
-      while (iterator.hasNext()) {
-        Record deleteRecord = iterator.next();
-        String path = FILENAME_ACCESSOR.get(deleteRecord).toString();
-        if (!pathSets.contains(path)) {
-          continue;
+      try (CloseableIterator<Record> iterator = CloseableIterable.concat(deletes).iterator()) {
+        while (iterator.hasNext()) {
+          Record deleteRecord = iterator.next();
+          String path = FILENAME_ACCESSOR.get(deleteRecord).toString();
+          if (!pathSets.contains(path)) {
+            continue;
+          }
+          Set<Long> posSet = positionMap.get(path);
+          if (posSet == null) {
+            posSet = new HashSet<>();
+            positionMap.put(path, posSet);
+          }
+          posSet.add((Long) POSITION_ACCESSOR.get(deleteRecord));
         }
-        Set<Long> posSet = positionMap.get(path);
-        if (posSet == null) {
-          posSet = new HashSet<>();
-          positionMap.put(path, posSet);
-        }
-        posSet.add((Long) POSITION_ACCESSOR.get(deleteRecord));
+      } catch (IOException e) {
+        throw new RuntimeException("Failed to close position delete iterator", e);
       }
     }
 

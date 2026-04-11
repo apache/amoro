@@ -74,7 +74,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
           .jsonType(AbstractOptimizingEvaluator.PendingInput.class)
           .defaultValue(new AbstractOptimizingEvaluator.PendingInput());
 
-  private static final StateKey<TableRuntimeCleanupState> CLEANUP_STATE_KEY =
+  public static final StateKey<TableRuntimeCleanupState> CLEANUP_STATE_KEY =
       StateKey.stateKey("cleanup_state")
           .jsonType(TableRuntimeCleanupState.class)
           .defaultValue(new TableRuntimeCleanupState());

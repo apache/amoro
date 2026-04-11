@@ -26,6 +26,7 @@ public class AmsHAProperties {
   private static final String TABLE_SERVICE_MASTER_PATH = "/master";
   private static final String OPTIMIZING_SERVICE_MASTER_PATH = "/optimizing-service-master";
   private static final String NODES_PATH = "/nodes";
+  private static final String BUCKET_ASSIGNMENTS_PATH = "/bucket-assignments";
   private static final String NAMESPACE_DEFAULT = "default";
 
   private static String getBasePath(String namespace) {
@@ -49,5 +50,9 @@ public class AmsHAProperties {
 
   public static String getNodesPath(String namespace) {
     return getBasePath(namespace) + NODES_PATH;
+  }
+
+  public static String getBucketAssignmentsPath(String namespace) {
+    return getBasePath(namespace) + BUCKET_ASSIGNMENTS_PATH;
   }
 }
