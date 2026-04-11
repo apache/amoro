@@ -14,23 +14,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Modified by Olake by Datazip Inc. in 2026
+# Modified by Datazip Inc. in 2026
 
 
-# Build and publish Docker images. Triggered by push (dev-latest) or workflow_call with tag (e.g. release).
+# Build and publish Docker images (caller passes inputs.tag).
+#
+# Tag rules:
+# - master branch -> :latest  and :<tag>
+# - any other ref -> :<tag>-latest and :<tag>
 
 name: Publish Docker Image
 
 on:
-  push:
-    branches:
-      - "*"
-      - "feat/olake_compactor_releasor"
   workflow_call:
     inputs:
       tag:
         description: 'Version tag for the image (e.g. v1.0.0).'
         type: string
+        required: true
+    # Use org-level or repo-level secrets; caller must pass with secrets: inherit
+    secrets:
+      DOCKER_USERNAME:
+        description: 'Docker Hub username (org or repo secret)'
+        required: true
+      DOCKER_PASSWORD:
+        description: 'Docker Hub password or token (org or repo secret)'
         required: true
 
 
@@ -39,17 +47,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  docker-amoro:
+  docker-fusion:
     name: Push Fusion Docker Image
     runs-on: ubuntu-latest
     environment: docker publish
     if: ${{ startsWith(github.repository, 'datazip-inc/') }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 11
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'temurin'
           cache: maven
           check-latest: false
@@ -62,12 +70,11 @@ jobs:
       - name: Set Docker tags
         id: meta
         run: |
-          VERSION_TAG="${{ github.event_name == 'workflow_call' && inputs.tag || 'dev-latest' }}"
+          INPUT_TAG="${{ inputs.tag }}"
           if [ "${{ github.ref }}" = "refs/heads/master" ]; then
-            case "${VERSION_TAG}" in v*) ;; *) echo "::error::On master branch, version tag must start with 'v' (e.g. v1.0.0). Got: ${VERSION_TAG}"; exit 1 ;; esac
-            echo "tags=olakego/fusion:latest,olakego/fusion:${VERSION_TAG}" >> $GITHUB_OUTPUT
+            echo "tags=olakego/fusion:latest,olakego/fusion:${INPUT_TAG}" >> $GITHUB_OUTPUT
           else
-            echo "tags=olakego/fusion:latest-${VERSION_TAG},olakego/fusion:${VERSION_TAG}" >> $GITHUB_OUTPUT
+            echo "tags=olakego/fusion:${INPUT_TAG}-latest,olakego/fusion:${INPUT_TAG}" >> $GITHUB_OUTPUT
           fi
 
       - name: Print tags
@@ -98,14 +105,14 @@ jobs:
     if: ${{ startsWith(github.repository, 'datazip-inc/') }}
     strategy:
       matrix:
-        spark: [ "3.5.7" ]  # spark version supported
-        scala: [ "2.12.15" ] # scala version supported
+        spark: [ "3.5.8" ]  # spark version supported
+        scala: [ "2.13.18" ] # scala version supported
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 11
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'temurin'
           cache: maven
           check-latest: false
@@ -118,12 +125,11 @@ jobs:
       - name: Set Docker tags
         id: meta
         run: |
-          VERSION_TAG="${{ github.event_name == 'workflow_call' && inputs.tag || 'dev-latest' }}"
+          INPUT_TAG="${{ inputs.tag }}"
           if [ "${{ github.ref }}" = "refs/heads/master" ]; then
-            case "${VERSION_TAG}" in v*) ;; *) echo "::error::On master branch, version tag must start with 'v' (e.g. v1.0.0). Got: ${VERSION_TAG}"; exit 1 ;; esac
-            echo "tags=olakego/fusion-spark:latest,olakego/fusion-spark:${VERSION_TAG}" >> $GITHUB_OUTPUT
+            echo "tags=olakego/fusion-spark:latest,olakego/fusion-spark:${INPUT_TAG}" >> $GITHUB_OUTPUT
           else
-            echo "tags=olakego/fusion-spark:latest-${VERSION_TAG},olakego/fusion-spark:${VERSION_TAG}" >> $GITHUB_OUTPUT
+            echo "tags=olakego/fusion-spark:${INPUT_TAG}-latest,olakego/fusion-spark:${INPUT_TAG}" >> $GITHUB_OUTPUT
           fi
 
       - name: Print tags
@@ -153,7 +159,7 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${SPARK_VERSION} -DskipTests -B -ntp
+        run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${SPARK_VERSION} -Dscala.version=${{ matrix.scala }} -Dscala.binary.version=${{ steps.versions.outputs.SCALA_BINARY_VERSION }} -DskipTests -B -ntp
 
       - name: Build and Push Spark Optimizer Docker Image to olakego/fusion-spark
         uses: docker/build-push-action@v4
@@ -169,6 +175,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             SPARK_VERSION=${{ matrix.spark }}
+            SPARK_JAVA_TAG=${{ matrix.spark }}-java17
             OPTIMIZER_JOB=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${{ env.SPARK_MAJOR_VERSION}}_${{ env.SCALA_BINARY_VERSION}}-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
 
 

@@ -1,3 +1,21 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Modified by Datazip Inc. in 2026
+
 name: Draft Releaser From Master 
 
 on:
@@ -8,7 +26,7 @@ on:
 
 jobs:
   create_draft_release:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master'
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'master' && github.event.pull_request.head.ref == 'staging'
     name: Create Draft Release
     runs-on: ubuntu-latest
     permissions:
@@ -22,23 +40,24 @@ jobs:
       - name: Get latest release
         id: latest-release
         run: |
-          latest_tag=$(git tag -l | sort -V | tail -1)
+          latest_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -1)
           echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
 
       - name: Generate next version
         id: generate-next-version
         run: |
           if [ -z "$LATEST_TAG" ]; then
-            next_version="v0.0.0"
+            next_version="v0.0.1"
           else
-            # Remove 'v' prefix and split version into array
             version=${LATEST_TAG#v}
-            IFS='.' read -ra VERSION_PARTS <<< "$version" 
-            
-            # Increment the last number (patch version)
+            IFS='.' read -ra VERSION_PARTS <<< "$version"
+
+            if [ ${#VERSION_PARTS[@]} -ne 3 ]; then
+              echo "::error::LATEST_TAG '$LATEST_TAG' is not valid semver (expected vX.Y.Z)"
+              exit 1
+            fi
+
             VERSION_PARTS[2]=$((VERSION_PARTS[2] + 1))
-            
-            # Reconstruct the version with 'v' prefix
             next_version="v${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.${VERSION_PARTS[2]}"
           fi
           echo "NEXT_VERSION=$next_version" >> $GITHUB_ENV
