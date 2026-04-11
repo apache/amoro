@@ -33,6 +33,7 @@ public class CatalogMetaProperties {
   public static final String STORAGE_CONFIGS_VALUE_TYPE_HADOOP = "Hadoop";
   public static final String STORAGE_CONFIGS_VALUE_TYPE_S3 = "S3";
   public static final String STORAGE_CONFIGS_VALUE_TYPE_OSS = "OSS";
+  public static final String STORAGE_CONFIGS_VALUE_TYPE_LOCAL = "Local";
 
   public static final String AUTH_CONFIGS_KEY_TYPE = "auth.type";
   public static final String AUTH_CONFIGS_KEY_PRINCIPAL = "auth.kerberos.principal";
@@ -53,7 +54,13 @@ public class CatalogMetaProperties {
 
   public static final String KEY_TABLE_FILTER = "table-filter";
 
-  public static final String CATALOG_TYPE_HADOOP = "hadoop";
+  /**
+   * Use {@link #CATALOG_TYPE_FILESYSTEM} instead for front But we can't remove this until we could
+   * use filesystem and storage to determine the right catalog-impl
+   */
+  @Deprecated public static final String CATALOG_TYPE_HADOOP = "hadoop";
+
+  public static final String CATALOG_TYPE_FILESYSTEM = "filesystem";
   public static final String CATALOG_TYPE_HIVE = "hive";
   public static final String CATALOG_TYPE_AMS = "ams";
   public static final String CATALOG_TYPE_GLUE = "glue";

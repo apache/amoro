@@ -35,6 +35,41 @@ ams:
     session-timeout: 7d
     bind-port: 1630
     rest-auth-type: token
+    login-auth-provider: org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider
+    # To enable dashboard LDAP login, uncomment the following settings:
+    # login-auth-provider: org.apache.amoro.server.authentication.LdapPasswdAuthenticationProvider
+    # login-auth-ldap-url: "ldap://ldap.example.com:389"
+    # login-auth-ldap-user-pattern: "uid={0},ou=people,dc=example,dc=com"
+    #
+    # ── Authorization (RBAC) ──
+    # Authorization enablement example:
+    # authorization:
+    #   enabled: true
+    #
+    # LDAP Group role-mapping example:
+    # authorization:
+    #   enabled: true
+    #   ldap-role-mapping:
+    #     enabled: true
+    #     group-member-attribute: "member"
+    #     user-dn-pattern: "uid={0},ou=people,dc=example,dc=com"
+    #     bind-dn: "cn=service-account,dc=example,dc=com"
+    #     bind-password: "service-password"
+    #     groups:
+    #       - group-dn: "cn=amoro-service-admins,ou=groups,dc=example,dc=com"
+    #         role: SERVICE_ADMIN
+    #       - group-dn: "cn=amoro-viewers,ou=groups,dc=example,dc=com"
+    #         role: VIEWER
+    #       - group-dn: "cn=amoro-catalog-admins,ou=groups,dc=example,dc=com"
+    #         role: CATALOG_ADMIN
+    #
+    # Custom roles are string-based. To use a custom role such as CATALOG_ADMIN,
+    # define its privileges in the built-in Casbin policy resource and map an
+    # LDAP group to that role name here.
+    #
+    # Optional fallback:
+    #   set default-role: VIEWER only when you intentionally want authenticated
+    #   users without a matched role mapping to receive read-only access.
 
   refresh-external-catalogs:
     interval: 3min # 180000
@@ -46,10 +81,13 @@ ams:
     interval: 1min # 60000
     max-pending-partition-count: 100 # default 100
 
+  process:
+    history-data-keep-time: 7d
+
   self-optimizing:
     commit-thread-count: 10
-    runtime-data-keep-days: 30
-    runtime-data-expire-interval-hours: 1
+    runtime-data-keep-time: 30d
+    runtime-data-expire-interval: 1h
     refresh-group-interval: 30s
     break-quota-limit-enabled: true
 
@@ -106,7 +144,7 @@ ams:
   # Support for encrypted sensitive configuration items
   shade:
     identifier: default # Built-in support for default/base64. Defaults to "default", indicating no encryption
-    sensitive-keywords: admin-password;database.password
+    sensitive-keywords: admin-password;database.password;http-server.authorization.ldap-role-mapping.bind-password
 
   overview-cache:
     refresh-interval: 3min          # 3 min

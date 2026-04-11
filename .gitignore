@@ -77,6 +77,8 @@ amoro-web/node/
 public
 resources
 !javadoc/resources
+!amoro-ams/src/main/resources/
+!amoro-ams/src/main/resources/**
 
 !dist/src/main/amoro-bin/bin/
 !dist/src/main/amoro-bin/conf/

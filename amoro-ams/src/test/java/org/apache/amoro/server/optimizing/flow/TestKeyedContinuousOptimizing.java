@@ -48,6 +48,8 @@ import java.util.List;
 @RunWith(Parameterized.class)
 public class TestKeyedContinuousOptimizing extends TableTestBase {
 
+  private static final long DATA_SEED = 1L;
+
   @ClassRule public static TestHMS TEST_HMS = new TestHMS();
 
   public TestKeyedContinuousOptimizing(
@@ -102,7 +104,7 @@ public class TestKeyedContinuousOptimizing extends TableTestBase {
             partitionCount,
             primaryUpperBound,
             writeTargetFileSize,
-            null);
+            DATA_SEED);
 
     // init checker
     DataConcurrencyChecker dataConcurrencyChecker = new DataConcurrencyChecker(view);

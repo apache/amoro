@@ -73,7 +73,7 @@ function goBack() {
           {{ $t('basicInformation') }}
         </p>
         <a-form ref="formRef" :model="formState" class="label-120">
-          <a-form-item name="catalog" label="Catalog" :rules="[{ required: true, message: `${placeholder.selectClPh}` }]">
+          <a-form-item name="catalog" :label="$t('catalog')" :rules="[{ required: true, message: `${placeholder.selectClPh}` }]">
             <a-select
               v-model:value="formState.catalog"
               :options="catalogOptions"
@@ -82,7 +82,7 @@ function goBack() {
               @change="changeCatalog"
             />
           </a-form-item>
-          <a-form-item name="database" label="Database" :rules="[{ required: true, message: `${placeholder.selectDBPh}` }]">
+          <a-form-item name="database" :label="$t('database')" :rules="[{ required: true, message: `${placeholder.selectDBPh}` }]">
             <a-select
               v-model:value="formState.database"
               :options="databaseOptions"
@@ -91,7 +91,7 @@ function goBack() {
               @change="changeDatabase"
             />
           </a-form-item>
-          <a-form-item name="tableName" label="Table" :rules="[{ required: true, message: `${placeholder.inputTNPh}` }]">
+          <a-form-item name="tableName" :label="$t('table')" :rules="[{ required: true, message: `${placeholder.inputTNPh}` }]">
             <a-input v-model:value="formState.tableName" :placeholder="placeholder.inputTNPh" />
           </a-form-item>
         </a-form>

@@ -21,13 +21,17 @@ package org.apache.amoro.server.ha;
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
+import org.apache.amoro.server.persistence.BucketAssignmentMeta;
 import org.apache.amoro.server.persistence.HaLeaseMeta;
 import org.apache.amoro.server.persistence.PersistentBase;
+import org.apache.amoro.server.persistence.mapper.BucketAssignMapper;
 import org.apache.amoro.server.persistence.mapper.HaLeaseMapper;
 import org.apache.amoro.utils.JacksonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -135,7 +139,76 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
     LOG.info("Became the follower of AMS (Database lease)");
   }
 
-  /** Closes the heartbeat executor safely. */
+  @Override
+  public void registerAndElect() throws Exception {
+    boolean isMasterSlaveMode = serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
+    if (!isMasterSlaveMode) {
+      LOG.debug("Master-slave mode is not enabled, skip node registration");
+      return;
+    }
+    // Register this node in bucket_assignments so that all nodes can be discovered via
+    // getAliveNodes(). ha_lease has PK (cluster_name, service_name) and cannot store multiple
+    // nodes for the same service, so we use the per-node bucket_assignments table instead.
+    upsertNodeHeartbeat();
+    LOG.info(
+        "Registered AMS node to bucket_assignments: nodeKey={}, optimizingService={}",
+        getNodeKey(),
+        optimizingServiceServerInfo);
+  }
+
+  /** Returns nodeKey used as the bucket_assignments row identifier: host:optimizingPort. */
+  private String getNodeKey() {
+    return optimizingServiceServerInfo.getHost()
+        + ":"
+        + optimizingServiceServerInfo.getThriftBindPort();
+  }
+
+  /**
+   * Upsert this node's heartbeat row into bucket_assignments. Only updates node_heartbeat_ts (and
+   * server_info_json on first insert); never touches assignments_json so the leader's assignments
+   * are preserved.
+   */
+  private void upsertNodeHeartbeat() {
+    long now = System.currentTimeMillis();
+    String nodeKey = getNodeKey();
+    String serverInfoJson = JacksonUtil.toJSONString(optimizingServiceServerInfo);
+    try {
+      int updated =
+          updateAs(
+                  BucketAssignMapper.class,
+                  mapper -> mapper.updateNodeHeartbeat(clusterName, nodeKey, now))
+              .intValue();
+      if (updated == 0) {
+        // First registration: insert a new row with empty assignments
+        doAsIgnoreError(
+            BucketAssignMapper.class,
+            mapper ->
+                mapper.insert(
+                    new BucketAssignmentMeta(
+                        clusterName, nodeKey, serverInfoJson, null, now, now)));
+      }
+    } catch (Exception e) {
+      LOG.error("Failed to upsert node heartbeat for nodeKey={}", nodeKey, e);
+      throw new RuntimeException("Failed to register node in bucket_assignments", e);
+    }
+  }
+
+  @Override
+  public boolean hasLeadership() {
+    return isLeader.get();
+  }
+
+  @Override
+  public AmsServerInfo getTableServiceServerInfo() {
+    return tableServiceServerInfo;
+  }
+
+  @Override
+  public AmsServerInfo getOptimizingServiceServerInfo() {
+    return optimizingServiceServerInfo;
+  }
+
+  /** Closes the heartbeat executor safely and removes this node's registration row. */
   @Override
   public void close() {
     try {
@@ -145,10 +218,19 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
     } catch (Exception e) {
       LOG.error("Close Database HighAvailabilityContainer failed", e);
     }
+    // Remove this node from bucket_assignments so the leader immediately stops seeing it
+    // as alive without waiting for the heartbeat TTL to expire.
+    boolean isMasterSlaveMode = serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
+    if (isMasterSlaveMode) {
+      try {
+        String nodeKey = getNodeKey();
+        doAs(BucketAssignMapper.class, mapper -> mapper.deleteByNode(clusterName, nodeKey));
+        LOG.info("Unregistered AMS node from bucket_assignments: nodeKey={}", nodeKey);
+      } catch (Exception e) {
+        LOG.warn("Failed to unregister node from bucket_assignments on close", e);
+      }
+    }
   }
-
-  @Override
-  public void registAndElect() throws Exception {}
 
   private class HeartbeatRunnable implements Runnable {
     @Override
@@ -160,6 +242,14 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
         if (leadershipRevoked.get()) {
           // Lease already revoked; skip any subsequent leadership path
           return;
+        }
+
+        // Each node independently refreshes its own heartbeat in bucket_assignments so that
+        // getAliveNodes() can correctly detect liveness without relying on ha_lease.
+        try {
+          upsertNodeHeartbeat();
+        } catch (Exception e) {
+          LOG.warn("Failed to refresh node heartbeat in bucket_assignments", e);
         }
 
         if (!isLeader.get()) {
@@ -302,6 +392,46 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
     if (followerLatch != null) {
       followerLatch.countDown();
     }
+  }
+
+  @Override
+  public List<AmsServerInfo> getAliveNodes() {
+    List<AmsServerInfo> aliveNodes = new ArrayList<>();
+    if (!isLeader.get()) {
+      LOG.warn("Only leader node can get alive nodes list");
+      return aliveNodes;
+    }
+    // Read alive nodes from bucket_assignments keyed by node_heartbeat_ts. ha_lease has
+    // PK (cluster_name, service_name) which only allows one row per service and cannot
+    // represent multiple AMS nodes. bucket_assignments has PK (cluster_name, node_key) and
+    // stores one row per node; node_heartbeat_ts is updated exclusively by the owning node
+    // so the leader's refreshLastUpdateTime calls cannot mask a dead node's staleness.
+    try {
+      long cutoff = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttlSeconds);
+      List<BucketAssignmentMeta> rows =
+          getAs(BucketAssignMapper.class, mapper -> mapper.selectAllByCluster(clusterName));
+      for (BucketAssignmentMeta meta : rows) {
+        Long heartbeatTs = meta.getNodeHeartbeatTs();
+        if (heartbeatTs == null || heartbeatTs < cutoff) {
+          LOG.debug(
+              "Skipping stale node key={}, node_heartbeat_ts={}", meta.getNodeKey(), heartbeatTs);
+          continue;
+        }
+        if (meta.getServerInfoJson() != null && !meta.getServerInfoJson().isEmpty()) {
+          try {
+            AmsServerInfo nodeInfo =
+                JacksonUtil.parseObject(meta.getServerInfoJson(), AmsServerInfo.class);
+            aliveNodes.add(nodeInfo);
+          } catch (Exception e) {
+            LOG.warn("Failed to parse server_info_json for node {}", meta.getNodeKey(), e);
+          }
+        }
+      }
+    } catch (Exception e) {
+      LOG.error("Failed to get alive nodes from bucket_assignments", e);
+      throw new RuntimeException("Failed to get alive nodes", e);
+    }
+    return aliveNodes;
   }
 
   private AmsServerInfo buildServerInfo(String host, int thriftBindPort, int restBindPort) {

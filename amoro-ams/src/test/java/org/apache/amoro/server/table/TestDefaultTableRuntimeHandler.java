@@ -41,7 +41,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.mockito.Mockito;
 
 import java.util.List;
 
@@ -49,7 +48,7 @@ import java.util.List;
 public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
 
   private DefaultTableService tableService;
-  private final TableRuntimeFactoryManager runtimeFactoryManager;
+  private final DefaultTableRuntimeFactory runtimeFactory;
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
@@ -66,16 +65,12 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
   public TestDefaultTableRuntimeHandler(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper, false);
-    DefaultTableRuntimeFactory runtimeFactory = new DefaultTableRuntimeFactory();
-    runtimeFactoryManager = Mockito.mock(TableRuntimeFactoryManager.class);
-    Mockito.when(runtimeFactoryManager.installedPlugins())
-        .thenReturn(Lists.newArrayList(runtimeFactory));
+    this.runtimeFactory = new DefaultTableRuntimeFactory();
   }
 
   @Test
   public void testInitialize() throws Exception {
-    tableService =
-        new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactoryManager);
+    tableService = new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactory);
     TestHandler handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();
@@ -94,8 +89,7 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
     Assert.assertTrue(handler.isDisposed());
 
     // initialize with a history table
-    tableService =
-        new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactoryManager);
+    tableService = new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactory);
     handler = new TestHandler();
     tableService.addHandlerChain(handler);
     tableService.initialize();
@@ -127,6 +121,48 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
 
     dropDatabase();
     tableService.dispose();
+    tableService = null;
+  }
+
+  @Test
+  public void testRefreshUpdatesOptimizerGroup() throws Exception {
+    tableService = new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactory);
+    TestHandler handler = new TestHandler();
+    tableService.addHandlerChain(handler);
+    tableService.initialize();
+    if (!(catalogTestHelper().tableFormat().equals(TableFormat.MIXED_HIVE)
+        && TEST_HMS.getHiveClient().getDatabase(TableTestHelper.TEST_DB_NAME) != null)) {
+      createDatabase();
+    }
+    createTable();
+
+    ServerTableIdentifier tableId = tableManager().listManagedTables().get(0);
+    DefaultTableRuntime runtime = getDefaultTableRuntime(tableId.getId());
+
+    // Verify initial group name is "default"
+    String initialGroup = runtime.getGroupName();
+    Assert.assertEquals(TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT, initialGroup);
+
+    // Change optimizer group property
+    String newGroupName = "new-optimizer-group";
+    MixedTable mixedTable = (MixedTable) tableService().loadTable(tableId).originalTable();
+    mixedTable.updateProperties().set(TableProperties.SELF_OPTIMIZING_GROUP, newGroupName).commit();
+
+    // Refresh the runtime
+    runtime.refresh(tableService.loadTable(tableId));
+
+    // Verify that getGroupName() returns the new group name
+    Assert.assertEquals(newGroupName, runtime.getGroupName());
+
+    // Verify config changed handler was called
+    Assert.assertEquals(1, handler.getConfigChangedTables().size());
+
+    // Cleanup
+    dropTable();
+    dropDatabase();
+    tableService.dispose();
+    MetricManager.dispose();
+    EventsManager.dispose();
     tableService = null;
   }
 

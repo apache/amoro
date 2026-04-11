@@ -53,13 +53,13 @@ $ cd dist/target/
 $ ls
 amoro-x.y.z-bin.zip # AMS release package
 
-$ cd ${base_dir}/amoro-format-mixed/amoro-format-mixed-flink/v1.15/amoro-format-mixed-flink-runtime-1.15/target
-$ ls 
-amoro-format-mixed-flink-runtime-1.15-x.y.z.jar # Flink 1.15 runtime package
-
-$ cd ${base_dir}/amoro-format-mixed/amoro-format-mixed-spark/v3.2/amoro-format-mixed-spark-runtime-3.2/target
+$ cd ${base_dir}/amoro-format-mixed/amoro-mixed-flink/v1.18/amoro-mixed-flink-runtime-1.18/target
 $ ls
-amoro-format-mixed-spark-runtime-3.2-x.y.z.jar # Spark v3.2 runtime package)
+amoro-format-mixed-flink-runtime-1.18-x.y.z.jar # Flink 1.18 runtime package
+
+$ cd ${base_dir}/amoro-format-mixed/amoro-mixed-spark/v3.3/amoro-mixed-spark-runtime-3.3/target
+$ ls
+amoro-format-mixed-spark-runtime-3.3-x.y.z.jar # Spark v3.3 runtime package
 ```
 
 More build guide can be found in the project's [README](https://github.com/apache/amoro?tab=readme-ov-file#building).
@@ -77,6 +77,8 @@ If you want to use AMS in a production environment, it is recommended to modify 
 - The `ams.http-server.bind-port` configuration specifies the port to which the HTTP service is bound. The Dashboard and Open API are bound to this port, and the default value is 1630.
 - The `ams.http-server.rest-auth-type` configuration specifies the REST API auth type, which could be token(default), basic or jwt (JSON Web Token).
 - The `ams.http-server.auth-basic-provider` configuration specifies the REST API basic authentication provider. By default, it uses `ams.admin-username` and `ams.admin-password` for authentication. You can also specify a custom implementation by providing the fully qualified class name of a class that implements the `org.apache.amoro.authentication.PasswdAuthenticationProvider` interface.
+- The `ams.http-server.login-auth-provider` configuration specifies the Dashboard login authentication provider. By default, it uses `org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider` (admin username/password login).
+- To enable LDAP login for Dashboard, set `ams.http-server.login-auth-provider` to `org.apache.amoro.server.authentication.LdapPasswdAuthenticationProvider`, and configure `ams.http-server.login-auth-ldap-url` and `ams.http-server.login-auth-ldap-user-pattern`.
 - The `ams.http-server.auth-jwt-provider` configuration specifies the REST API JWT authentication provider. Set this to the fully qualified class name of your custom provider implementing the `org.apache.amoro.authentication.TokenAuthenticationProvider` interface. This is required when `ams.http-server.rest-auth-type` is set to `jwt`.
 - The `ams.http-server.proxy-client-ip-header` configuration specifies the HTTP header to use for extracting the real client IP address when AMS is deployed behind a reverse proxy (such as Nginx or a load balancer). Common values include `X-Forwarded-For` or `X-Real-IP`. If not set, AMS will use the remote address from the connection.
 
@@ -94,6 +96,11 @@ ams:
   http-server:
     session-timeout: 7d #Re-login after 7days
     bind-port: 1630 #The port for accessing AMS Dashboard.
+    login-auth-provider: org.apache.amoro.server.authentication.DefaultPasswdAuthenticationProvider
+    # Enable LDAP login for Dashboard:
+    # login-auth-provider: org.apache.amoro.server.authentication.LdapPasswdAuthenticationProvider
+    # login-auth-ldap-url: "ldap://ldap.example.com:389"
+    # login-auth-ldap-user-pattern: "uid={0},ou=people,dc=example,dc=com"
 ```
 
 {{< hint info >}}
@@ -337,4 +344,3 @@ Restart AMS with the following commands:
 ```shell
 bin/ams.sh restart
 ```
-

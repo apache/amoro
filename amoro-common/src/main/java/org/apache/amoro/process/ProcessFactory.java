@@ -19,30 +19,61 @@
 package org.apache.amoro.process;
 
 import org.apache.amoro.Action;
+import org.apache.amoro.ActivePlugin;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.table.StateKey;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * A factory to create a process. Normally, There will be default ProcessFactories for each action
  * and used by default scheduler. Meanwhile, user could extend external ProcessFactory to run jobs
  * on external resources like Yarn.
  */
-public interface ProcessFactory {
+public interface ProcessFactory extends ActivePlugin {
+
+  default List<StateKey<?>> requiredStates() {
+    return Lists.newArrayList();
+  }
+
+  /** Get supported actions for each table format. */
+  Map<TableFormat, Set<Action>> supportedActions();
+
+  /** How to trigger a process for the action. */
+  default ProcessTriggerStrategy triggerStrategy(TableFormat format, Action action) {
+    return ProcessTriggerStrategy.METADATA_TRIGGER;
+  }
 
   /**
-   * Create a process for the action.
+   * All execute engine registered.
+   *
+   * @param allAvailableEngines - all execute engine registered.
+   */
+  default void availableExecuteEngines(Collection<ExecuteEngine> allAvailableEngines) {}
+
+  /**
+   * Try trigger a process for the action.
    *
    * @param tableRuntime table runtime
    * @param action action type
    * @return target process which has not been submitted yet.
    */
-  AmoroProcess create(TableRuntime tableRuntime, Action action);
+  Optional<TableProcess> trigger(TableRuntime tableRuntime, Action action);
 
   /**
    * Recover a process for the action from a state.
    *
    * @param tableRuntime table runtime
-   * @param state state of the process
+   * @param store storage of the process
    * @return target process which has not been submitted yet.
+   * @throws RecoverProcessFailedException if recover failed
    */
-  AmoroProcess recover(TableRuntime tableRuntime, TableProcessState state);
+  TableProcess recover(TableRuntime tableRuntime, TableProcessStore store)
+      throws RecoverProcessFailedException;
 }

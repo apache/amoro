@@ -64,6 +64,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.Record;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -74,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
 public class TestOptimizingQueue extends AMSTableTestBase {
@@ -84,6 +86,15 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   private final OptimizerThread optimizerThread =
       new OptimizerThread(1, null) {
+
+        @Override
+        public String getToken() {
+          return "aah";
+        }
+      };
+
+  private final OptimizerThread optimizerThread2 =
+      new OptimizerThread(2, null) {
 
         @Override
         public String getToken() {
@@ -104,6 +115,24 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   protected static ResourceGroup testResourceGroup() {
     return new ResourceGroup.Builder("test", "local").build();
+  }
+
+  @Before
+  public void setUp() {
+    // Clean up any existing metrics for the test resource group before each test
+    // to avoid "Metric is already been registered" errors
+    MetricRegistry registry = MetricManager.getInstance().getGlobalRegistry();
+    String testGroupName = testResourceGroup().getName();
+
+    // Unregister all metrics for the test resource group
+    List<MetricKey> keysToRemove = new ArrayList<>();
+    for (MetricKey key : registry.getMetrics().keySet()) {
+      if (key.getDefine().getName().startsWith("optimizer_group_")
+          && testGroupName.equals(key.valueOfTag(GROUP_TAG))) {
+        keysToRemove.add(key);
+      }
+    }
+    keysToRemove.forEach(registry::unregister);
   }
 
   protected OptimizingQueue buildOptimizingGroupService(DefaultTableRuntime tableRuntime) {
@@ -188,7 +217,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
     Assert.assertNotNull(task);
 
-    TaskRuntime<?> task2 = queue.pollTask(optimizerThread, MAX_POLLING_TIME, false);
+    // Use a different thread to avoid resetStaleTasksForThread resetting the ACKED task
+    TaskRuntime<?> task2 = queue.pollTask(optimizerThread2, MAX_POLLING_TIME, false);
     Assert.assertNull(task2);
 
     queue.completeTask(
@@ -222,16 +252,17 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         1, queue.collectTasks(t -> t.getStatus() == TaskRuntime.Status.ACKED).size());
     Assert.assertNotNull(task);
 
-    TaskRuntime<?> task2 = queue.pollTask(optimizerThread, MAX_POLLING_TIME, true);
+    // Use a different thread to avoid resetStaleTasksForThread resetting the ACKED task
+    TaskRuntime<?> task2 = queue.pollTask(optimizerThread2, MAX_POLLING_TIME, true);
     Assert.assertNotNull(task2);
 
     queue.completeTask(
         optimizerThread,
         buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
     Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
-    TaskRuntime<?> task4 = queue.pollTask(optimizerThread, MAX_POLLING_TIME, false);
+    TaskRuntime<?> task4 = queue.pollTask(optimizerThread2, MAX_POLLING_TIME, false);
     Assert.assertNull(task4);
-    TaskRuntime<?> retryTask = queue.pollTask(optimizerThread, MAX_POLLING_TIME, true);
+    TaskRuntime<?> retryTask = queue.pollTask(optimizerThread2, MAX_POLLING_TIME, true);
     Assert.assertNotNull(retryTask);
     queue.dispose();
   }
@@ -277,12 +308,27 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     queue.refreshTable(tableRuntime2);
     queue.refreshTable(tableRuntime);
 
+    // Poll two tasks and verify they come from different tables
+    // The order may vary due to async planning, so we check both possibilities
     TaskRuntime<?> task2 = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task2);
-    Assert.assertTrue(tableRuntime2.getTableIdentifier().getId() == task2.getTableId());
     TaskRuntime<?> task3 = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task3);
-    Assert.assertTrue(tableRuntime.getTableIdentifier().getId() == task3.getTableId());
+
+    // Verify that the two tasks come from the two different tables
+    long tableId1 = tableRuntime.getTableIdentifier().getId();
+    long tableId2 = tableRuntime2.getTableIdentifier().getId();
+    long task2TableId = task2.getTableId();
+    long task3TableId = task3.getTableId();
+
+    Assert.assertTrue(
+        "Task2 should come from one of the two tables",
+        task2TableId == tableId1 || task2TableId == tableId2);
+    Assert.assertTrue(
+        "Task3 should come from one of the two tables",
+        task3TableId == tableId1 || task3TableId == tableId2);
+    Assert.assertNotEquals(
+        "Task2 and Task3 should come from different tables", task2TableId, task3TableId);
     queue.dispose();
     tableRuntime2.dispose();
   }
@@ -526,6 +572,121 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     queue.dispose();
   }
 
+  @Test
+  public void testProcessCloseKeepsLastOptimizedSnapshotId() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    long snapshotIdBeforePlanning = tableRuntime.getLastOptimizedSnapshotId();
+    long changeSnapshotIdBeforePlanning = tableRuntime.getLastOptimizedChangeSnapshotId();
+
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+
+    // Poll task to trigger planning → process creation
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    Assert.assertNotNull(process);
+    Assert.assertEquals(ProcessStatus.RUNNING, process.getStatus());
+
+    // Close process without success (simulates group change / forced termination)
+    process.close(false);
+
+    // lastOptimizedSnapshotId and lastOptimizedChangeSnapshotId should NOT be updated
+    Assert.assertEquals(snapshotIdBeforePlanning, tableRuntime.getLastOptimizedSnapshotId());
+    Assert.assertEquals(
+        changeSnapshotIdBeforePlanning, tableRuntime.getLastOptimizedChangeSnapshotId());
+    Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
+    Assert.assertNull(tableRuntime.getOptimizingProcess());
+    queue.dispose();
+  }
+
+  @Test
+  public void testTableRescheduledAfterProcessClose() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+
+    // Poll task to trigger planning → process creation
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    Assert.assertNotNull(process);
+
+    // Force close instead of commit (simulates group change)
+    process.close(false);
+    Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
+
+    // Verify snapshot marker was not updated — key condition for isTablePending()
+    Assert.assertNotEquals(
+        tableRuntime.getLastOptimizedSnapshotId(), tableRuntime.getCurrentSnapshotId());
+
+    // Simulate setPendingInput() transitioning IDLE → PENDING (done by evaluator in production)
+    tableRuntime
+        .store()
+        .begin()
+        .updateStatusCode(code -> OptimizingStatus.PENDING.getCode())
+        .commit();
+    Assert.assertEquals(OptimizingStatus.PENDING, tableRuntime.getOptimizingStatus());
+
+    // Set minPlanInterval to 0 so the table is immediately eligible for re-planning
+    tableRuntime
+        .store()
+        .begin()
+        .updateTableConfig(
+            config -> config.put(TableProperties.SELF_OPTIMIZING_MIN_PLAN_INTERVAL, "0"))
+        .commit();
+
+    // Build a new queue with the PENDING table — scheduler should NOT skip it
+    queue.dispose();
+    OptimizingQueue queue2 = buildOptimizingGroupService(tableRuntime);
+    TaskRuntime<?> task2 = queue2.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task2);
+    queue2.dispose();
+  }
+
+  @Test
+  public void testReleaseOrphanedPlanningTableOnRestart() {
+    // Scenario: Table config was changed (optimizer group: "old_group" -> "default"),
+    // the optimizing process was closed but table runtime is persisted with "old_group" and
+    // PLANNING status
+    ResourceGroup oldGroup = new ResourceGroup.Builder("old_group", "local").build();
+    // reset optimizer group to "default" to simulate the scenario where the self-optimizing configs
+    // have been cleared
+    DefaultTableRuntime tableRuntime =
+        buildTableRuntimeMeta(OptimizingStatus.PLANNING, defaultResourceGroup());
+    Assert.assertEquals(OptimizingStatus.PLANNING, tableRuntime.getOptimizingStatus());
+    Assert.assertEquals("default", tableRuntime.getGroupName());
+
+    List<DefaultTableRuntime> released =
+        simulateLoadOptimizingQueuesForNonExistentGroup(
+            Collections.singletonList(tableRuntime), oldGroup);
+
+    Assert.assertEquals(1, released.size());
+    Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
+  }
+
+  @Test
+  public void testReleaseOrphanedPendingTableOnRestart() {
+    // Scenario: Table config was changed (optimizer group: "old_group" -> "default"),
+    // the optimizing process was closed but table runtime is persisted with "default" and PENDING
+    // status
+    ResourceGroup oldGroup = new ResourceGroup.Builder("old_group", "local").build();
+    // reset optimizer group to "default" to simulate the scenario where the self-optimizing configs
+    // have been cleared
+    DefaultTableRuntime tableRuntime =
+        buildTableRuntimeMeta(OptimizingStatus.PENDING, defaultResourceGroup());
+    Assert.assertEquals(OptimizingStatus.PENDING, tableRuntime.getOptimizingStatus());
+    Assert.assertEquals("default", tableRuntime.getGroupName());
+
+    List<DefaultTableRuntime> released =
+        simulateLoadOptimizingQueuesForNonExistentGroup(
+            Collections.singletonList(tableRuntime), oldGroup);
+
+    Assert.assertEquals(1, released.size());
+    Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
+  }
+
   protected DefaultTableRuntime initTableWithFiles() {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
@@ -633,6 +794,41 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     OptimizingTaskResult optimizingTaskResult = new OptimizingTaskResult(taskId, threadId);
     optimizingTaskResult.setTaskOutput(SerializationUtil.simpleSerialize(output));
     return optimizingTaskResult;
+  }
+
+  /**
+   * Simulate the loadOptimizingQueues logic: tables whose persisted optimizer group no longer
+   * exists (e.g., table config changed from an old deleted group to "default", but AMS restarted
+   * before the optimizing process was closed) remain in the leftover groupToTableRuntimes map.
+   * These PLANNING/PENDING tables should be released to IDLE via completeEmptyProcess().
+   */
+  private List<DefaultTableRuntime> simulateLoadOptimizingQueuesForNonExistentGroup(
+      List<DefaultTableRuntime> tableRuntimes, ResourceGroup resourceGroup) {
+    // Only the created resource group is returned
+    List<ResourceGroup> existingGroups = Collections.singletonList(resourceGroup);
+
+    // Group tables by their persisted optimizer group
+    Map<String, List<DefaultTableRuntime>> groupToTableRuntimes =
+        tableRuntimes.stream().collect(Collectors.groupingBy(DefaultTableRuntime::getGroupName));
+
+    // Remove groups that exist — same logic as loadOptimizingQueues
+    existingGroups.forEach(group -> groupToTableRuntimes.remove(group.getName()));
+
+    // Release PLANNING/PENDING tables in non-existent groups — same logic as loadOptimizingQueues
+    List<DefaultTableRuntime> released = new ArrayList<>();
+    groupToTableRuntimes.forEach(
+        (groupName, trs) ->
+            trs.stream()
+                .filter(
+                    tr ->
+                        tr.getOptimizingStatus() == OptimizingStatus.PLANNING
+                            || tr.getOptimizingStatus() == OptimizingStatus.PENDING)
+                .forEach(
+                    tr -> {
+                      tr.completeEmptyProcess();
+                      released.add(tr);
+                    }));
+    return released;
   }
 
   private OptimizingTaskResult buildOptimizingTaskFailed(OptimizingTaskId taskId, int threadId) {

@@ -40,6 +40,7 @@ import org.apache.amoro.shade.guava32.com.google.common.cache.CacheLoader;
 import org.apache.amoro.shade.guava32.com.google.common.cache.LoadingCache;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.utils.CatalogUtil;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -230,7 +231,9 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
   }
 
   private void validateCatalogUpdate(CatalogMeta oldMeta, CatalogMeta newMeta) {
-    if (!oldMeta.getCatalogType().equals(newMeta.getCatalogType())) {
+    String oldType = CatalogUtil.normalizeMetastoreType(oldMeta.getCatalogType());
+    String newType = CatalogUtil.normalizeMetastoreType(newMeta.getCatalogType());
+    if (!oldType.equals(newType)) {
       throw new IllegalMetadataException("Cannot update catalog type");
     }
   }

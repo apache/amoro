@@ -141,15 +141,18 @@ onMounted(() => {
 
 <style lang="less">
 .table-operations {
-  padding: 12px;
+  padding: 12px 0;
+
   .ant-table-tbody > tr > td {
     white-space: pre;
   }
+
   .text-active {
     color: #1890ff;
     cursor: pointer;
   }
 }
+
 .operation-wrap .ant-modal-body {
   max-height: 360px;
   overflow-y: auto;

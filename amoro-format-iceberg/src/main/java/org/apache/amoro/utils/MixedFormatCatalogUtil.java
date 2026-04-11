@@ -80,7 +80,8 @@ public class MixedFormatCatalogUtil {
       String catalogName, String metastoreType, Map<String, String> properties) {
     Map<String, String> icebergCatalogProperties = Maps.newHashMap(properties);
     icebergCatalogProperties.put(
-        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE, metastoreType);
+        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE,
+        CatalogUtil.normalizeCatalogType(metastoreType));
     if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equals(metastoreType)) {
       icebergCatalogProperties.put(CatalogProperties.CATALOG_IMPL, GlueCatalog.class.getName());
     }

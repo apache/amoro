@@ -25,10 +25,13 @@ import { Empty as AEmpty, Modal } from 'ant-design-vue'
 import Detail from './Detail.vue'
 import { getCatalogList } from '@/services/table.service'
 import type { ICatalogItem } from '@/types/common.type'
+import { usePageScroll } from '@/hooks/usePageScroll'
+import { canManageCatalog } from '@/utils/permission'
 
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
+const { pageScrollRef } = usePageScroll()
 const catalogs = reactive<ICatalogItem[]>([])
 const curCatalog = reactive<ICatalogItem>({
   catalogName: '',
@@ -37,6 +40,7 @@ const curCatalog = reactive<ICatalogItem>({
 const isEdit = ref<boolean>(false)
 const NEW_CATALOG = 'new catalog'
 const loading = ref<boolean>(false)
+const writable = ref<boolean>(canManageCatalog())
 const simpleImage = AEmpty.PRESENTED_IMAGE_SIMPLE
 
 async function getCatalogs() {
@@ -134,7 +138,7 @@ function addCatalog() {
     addNewCatalog()
   }
 }
-async function addNewCatalog() {
+  async function addNewCatalog() {
   const item: ICatalogItem = {
     catalogName: NEW_CATALOG,
     catalogType: '',
@@ -170,31 +174,40 @@ onBeforeRouteLeave((_to, _form, next) => {
 </script>
 
 <template>
-  <div class="catalogs-wrap g-flex">
-    <div class="catalog-list-left">
-      <div class="catalog-header">
-        {{ `${$t('catalog')} ${$t('list')}` }}
+  <div class="page-scroll" ref="pageScrollRef">
+    <div class="catalogs-wrap g-flex">
+      <div class="catalog-list-left">
+        <div class="catalog-header">
+          {{ `${$t('catalog')} ${$t('list')}` }}
+        </div>
+        <ul v-if="catalogs.length && !loading" class="catalog-list">
+          <li v-for="item in catalogs" :key="item.catalogName" class="catalog-item g-text-nowrap" :class="{ active: item.catalogName === curCatalog.catalogName }" @click="handleClick(item)">
+            {{ item.catalogName }}
+          </li>
+        </ul>
+        <a-button v-if="writable" :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn" @click="addCatalog">
+          +
+        </a-button>
       </div>
-      <ul v-if="catalogs.length && !loading" class="catalog-list">
-        <li v-for="item in catalogs" :key="item.catalogName" class="catalog-item g-text-nowrap" :class="{ active: item.catalogName === curCatalog.catalogName }" @click="handleClick(item)">
-          {{ item.catalogName }}
-        </li>
-      </ul>
-      <a-button :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn" @click="addCatalog">
-        +
-      </a-button>
-    </div>
-    <div class="catalog-detail">
-      <AEmpty v-if="!catalogs.length && !loading" :image="simpleImage" class="detail-empty" />
-      <Detail v-else :is-edit="isEdit" @update-edit="updateEdit" @update-catalogs="updateCatalogs" />
+      <div class="catalog-detail">
+        <AEmpty v-if="!catalogs.length && !loading" :image="simpleImage" class="detail-empty" />
+        <Detail v-else :is-edit="isEdit" @update-edit="updateEdit" @update-catalogs="updateCatalogs" />
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="less" scoped>
-.catalogs-wrap {
+.page-scroll {
   height: 100%;
-  padding: 16px 24px;
+  overflow-y: auto;
+}
+
+
+
+ .catalogs-wrap {
+   height: 100%;
+   padding: 16px 24px;
   .catalog-list-left {
     width: 200px;
     height: 100%;

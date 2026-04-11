@@ -26,6 +26,8 @@ public class OptimizingService {
 
     public boolean cancelProcess(long processId) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 
+    public java.util.List<java.lang.String> getOptimizingNodeUrls() throws org.apache.amoro.api.AmoroException, org.apache.amoro.shade.thrift.org.apache.thrift.TException;
+
   }
 
   public interface AsyncIface {
@@ -43,6 +45,8 @@ public class OptimizingService {
     public void authenticate(OptimizerRegisterInfo registerInfo, org.apache.amoro.shade.thrift.org.apache.thrift.async.AsyncMethodCallback<java.lang.String> resultHandler) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 
     public void cancelProcess(long processId, org.apache.amoro.shade.thrift.org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException;
+
+    public void getOptimizingNodeUrls(org.apache.amoro.shade.thrift.org.apache.thrift.async.AsyncMethodCallback<java.util.List<java.lang.String>> resultHandler) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 
   }
 
@@ -240,6 +244,32 @@ public class OptimizingService {
         return result.success;
       }
       throw new org.apache.amoro.shade.thrift.org.apache.thrift.TApplicationException(org.apache.amoro.shade.thrift.org.apache.thrift.TApplicationException.MISSING_RESULT, "cancelProcess failed: unknown result");
+    }
+
+    @Override
+    public java.util.List<java.lang.String> getOptimizingNodeUrls() throws org.apache.amoro.api.AmoroException, org.apache.amoro.shade.thrift.org.apache.thrift.TException
+    {
+      send_getOptimizingNodeUrls();
+      return recv_getOptimizingNodeUrls();
+    }
+
+    public void send_getOptimizingNodeUrls() throws org.apache.amoro.shade.thrift.org.apache.thrift.TException
+    {
+      getOptimizingNodeUrls_args args = new getOptimizingNodeUrls_args();
+      sendBase("getOptimizingNodeUrls", args);
+    }
+
+    public java.util.List<java.lang.String> recv_getOptimizingNodeUrls() throws org.apache.amoro.api.AmoroException, org.apache.amoro.shade.thrift.org.apache.thrift.TException
+    {
+      getOptimizingNodeUrls_result result = new getOptimizingNodeUrls_result();
+      receiveBase(result, "getOptimizingNodeUrls");
+      if (result.isSetSuccess()) {
+        return result.success;
+      }
+      if (result.e1 != null) {
+        throw result.e1;
+      }
+      throw new org.apache.amoro.shade.thrift.org.apache.thrift.TApplicationException(org.apache.amoro.shade.thrift.org.apache.thrift.TApplicationException.MISSING_RESULT, "getOptimizingNodeUrls failed: unknown result");
     }
 
   }
@@ -519,6 +549,38 @@ public class OptimizingService {
       }
     }
 
+    @Override
+    public void getOptimizingNodeUrls(org.apache.amoro.shade.thrift.org.apache.thrift.async.AsyncMethodCallback<java.util.List<java.lang.String>> resultHandler) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {
+      checkReady();
+      getOptimizingNodeUrls_call method_call = new getOptimizingNodeUrls_call(resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class getOptimizingNodeUrls_call extends org.apache.amoro.shade.thrift.org.apache.thrift.async.TAsyncMethodCall<java.util.List<java.lang.String>> {
+      public getOptimizingNodeUrls_call(org.apache.amoro.shade.thrift.org.apache.thrift.async.AsyncMethodCallback<java.util.List<java.lang.String>> resultHandler, org.apache.amoro.shade.thrift.org.apache.thrift.async.TAsyncClient client, org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.amoro.shade.thrift.org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+      }
+
+      @Override
+      public void write_args(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol prot) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TMessage("getOptimizingNodeUrls", org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TMessageType.CALL, 0));
+        getOptimizingNodeUrls_args args = new getOptimizingNodeUrls_args();
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      @Override
+      public java.util.List<java.lang.String> getResult() throws org.apache.amoro.api.AmoroException, org.apache.amoro.shade.thrift.org.apache.thrift.TException {
+        if (getState() != org.apache.amoro.shade.thrift.org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new java.lang.IllegalStateException("Method call not finished!");
+        }
+        org.apache.amoro.shade.thrift.org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.amoro.shade.thrift.org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_getOptimizingNodeUrls();
+      }
+    }
+
   }
 
   public static class Processor<I extends Iface> extends org.apache.amoro.shade.thrift.org.apache.thrift.TBaseProcessor<I> implements org.apache.amoro.shade.thrift.org.apache.thrift.TProcessor {
@@ -539,6 +601,7 @@ public class OptimizingService {
       processMap.put("completeTask", new completeTask());
       processMap.put("authenticate", new authenticate());
       processMap.put("cancelProcess", new cancelProcess());
+      processMap.put("getOptimizingNodeUrls", new getOptimizingNodeUrls());
       return processMap;
     }
 
@@ -759,6 +822,38 @@ public class OptimizingService {
       }
     }
 
+    public static class getOptimizingNodeUrls<I extends Iface> extends org.apache.amoro.shade.thrift.org.apache.thrift.ProcessFunction<I, getOptimizingNodeUrls_args> {
+      public getOptimizingNodeUrls() {
+        super("getOptimizingNodeUrls");
+      }
+
+      @Override
+      public getOptimizingNodeUrls_args getEmptyArgsInstance() {
+        return new getOptimizingNodeUrls_args();
+      }
+
+      @Override
+      protected boolean isOneway() {
+        return false;
+      }
+
+      @Override
+      protected boolean rethrowUnhandledExceptions() {
+        return false;
+      }
+
+      @Override
+      public getOptimizingNodeUrls_result getResult(I iface, getOptimizingNodeUrls_args args) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {
+        getOptimizingNodeUrls_result result = new getOptimizingNodeUrls_result();
+        try {
+          result.success = iface.getOptimizingNodeUrls();
+        } catch (org.apache.amoro.api.AmoroException e1) {
+          result.e1 = e1;
+        }
+        return result;
+      }
+    }
+
   }
 
   public static class AsyncProcessor<I extends AsyncIface> extends org.apache.amoro.shade.thrift.org.apache.thrift.TBaseAsyncProcessor<I> {
@@ -779,6 +874,7 @@ public class OptimizingService {
       processMap.put("completeTask", new completeTask());
       processMap.put("authenticate", new authenticate());
       processMap.put("cancelProcess", new cancelProcess());
+      processMap.put("getOptimizingNodeUrls", new getOptimizingNodeUrls());
       return processMap;
     }
 
@@ -1265,6 +1361,77 @@ public class OptimizingService {
       @Override
       public void start(I iface, cancelProcess_args args, org.apache.amoro.shade.thrift.org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {
         iface.cancelProcess(args.processId,resultHandler);
+      }
+    }
+
+    public static class getOptimizingNodeUrls<I extends AsyncIface> extends org.apache.amoro.shade.thrift.org.apache.thrift.AsyncProcessFunction<I, getOptimizingNodeUrls_args, java.util.List<java.lang.String>> {
+      public getOptimizingNodeUrls() {
+        super("getOptimizingNodeUrls");
+      }
+
+      @Override
+      public getOptimizingNodeUrls_args getEmptyArgsInstance() {
+        return new getOptimizingNodeUrls_args();
+      }
+
+      @Override
+      public org.apache.amoro.shade.thrift.org.apache.thrift.async.AsyncMethodCallback<java.util.List<java.lang.String>> getResultHandler(final org.apache.amoro.shade.thrift.org.apache.thrift.server.AbstractNonblockingServer.AsyncFrameBuffer fb, final int seqid) {
+        final org.apache.amoro.shade.thrift.org.apache.thrift.AsyncProcessFunction fcall = this;
+        return new org.apache.amoro.shade.thrift.org.apache.thrift.async.AsyncMethodCallback<java.util.List<java.lang.String>>() {
+          @Override
+          public void onComplete(java.util.List<java.lang.String> o) {
+            getOptimizingNodeUrls_result result = new getOptimizingNodeUrls_result();
+            result.success = o;
+            try {
+              fcall.sendResponse(fb, result, org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TMessageType.REPLY, seqid);
+            } catch (org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException e) {
+              _LOGGER.error("TTransportException writing to internal frame buffer", e);
+              fb.close();
+            } catch (java.lang.Exception e) {
+              _LOGGER.error("Exception writing to internal frame buffer", e);
+              onError(e);
+            }
+          }
+          @Override
+          public void onError(java.lang.Exception e) {
+            byte msgType = org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TMessageType.REPLY;
+            org.apache.amoro.shade.thrift.org.apache.thrift.TSerializable msg;
+            getOptimizingNodeUrls_result result = new getOptimizingNodeUrls_result();
+            if (e instanceof org.apache.amoro.api.AmoroException) {
+              result.e1 = (org.apache.amoro.api.AmoroException) e;
+              result.setE1IsSet(true);
+              msg = result;
+            } else if (e instanceof org.apache.amoro.shade.thrift.org.apache.thrift.transport.TTransportException) {
+              _LOGGER.error("TTransportException inside handler", e);
+              fb.close();
+              return;
+            } else if (e instanceof org.apache.amoro.shade.thrift.org.apache.thrift.TApplicationException) {
+              _LOGGER.error("TApplicationException inside handler", e);
+              msgType = org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TMessageType.EXCEPTION;
+              msg = (org.apache.amoro.shade.thrift.org.apache.thrift.TApplicationException) e;
+            } else {
+              _LOGGER.error("Exception inside handler", e);
+              msgType = org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TMessageType.EXCEPTION;
+              msg = new org.apache.amoro.shade.thrift.org.apache.thrift.TApplicationException(org.apache.amoro.shade.thrift.org.apache.thrift.TApplicationException.INTERNAL_ERROR, e.getMessage());
+            }
+            try {
+              fcall.sendResponse(fb, msg, msgType, seqid);
+            } catch (java.lang.Exception ex) {
+              _LOGGER.error("Exception writing to internal frame buffer", ex);
+              fb.close();
+            }
+          }
+        };
+      }
+
+      @Override
+      protected boolean isOneway() {
+        return false;
+      }
+
+      @Override
+      public void start(I iface, getOptimizingNodeUrls_args args, org.apache.amoro.shade.thrift.org.apache.thrift.async.AsyncMethodCallback<java.util.List<java.lang.String>> resultHandler) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {
+        iface.getOptimizingNodeUrls(resultHandler);
       }
     }
 
@@ -6980,6 +7147,311 @@ public class OptimizingService {
       }
     }
 
+    private static <S extends org.apache.amoro.shade.thrift.org.apache.thrift.scheme.IScheme> S scheme(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol proto) {
+      return (org.apache.amoro.shade.thrift.org.apache.thrift.scheme.StandardScheme.class.equals(proto.getScheme()) ? STANDARD_SCHEME_FACTORY : TUPLE_SCHEME_FACTORY).getScheme();
+    }
+  }
+
+  @SuppressWarnings({"cast", "rawtypes", "serial", "unchecked", "unused"})
+  public static class getOptimizingNodeUrls_args implements org.apache.amoro.shade.thrift.org.apache.thrift.TBase<getOptimizingNodeUrls_args, getOptimizingNodeUrls_args._Fields>, java.io.Serializable, Cloneable, Comparable<getOptimizingNodeUrls_args>   {
+    private static final org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TStruct("getOptimizingNodeUrls_args");
+
+    private static final org.apache.amoro.shade.thrift.org.apache.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getOptimizingNodeUrls_argsStandardSchemeFactory();
+    private static final org.apache.amoro.shade.thrift.org.apache.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getOptimizingNodeUrls_argsTupleSchemeFactory();
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.amoro.shade.thrift.org.apache.thrift.TFieldIdEnum {
+;
+      private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
+      static {
+        for (_Fields field : java.util.EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+      @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          default: return null;
+        }
+      }
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new java.lang.IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+      @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable
+      public static _Fields findByName(java.lang.String name) { return byName.get(name); }
+      private final short _thriftId;
+      private final java.lang.String _fieldName;
+      _Fields(short thriftId, java.lang.String fieldName) { _thriftId = thriftId; _fieldName = fieldName; }
+      @Override public short getThriftFieldId() { return _thriftId; }
+      @Override public java.lang.String getFieldName() { return _fieldName; }
+    }
+    public static final java.util.Map<_Fields, org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      java.util.Map<_Fields, org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
+      org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getOptimizingNodeUrls_args.class, metaDataMap);
+    }
+    public getOptimizingNodeUrls_args() {}
+    public getOptimizingNodeUrls_args(getOptimizingNodeUrls_args other) {}
+    @Override public getOptimizingNodeUrls_args deepCopy() { return new getOptimizingNodeUrls_args(this); }
+    @Override public void clear() {}
+    @Override public void setFieldValue(_Fields field, @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable java.lang.Object value) { switch (field) {} }
+    @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable
+    @Override public java.lang.Object getFieldValue(_Fields field) { switch (field) {} throw new java.lang.IllegalStateException(); }
+    @Override public boolean isSet(_Fields field) { if (field == null) throw new java.lang.IllegalArgumentException(); switch (field) {} throw new java.lang.IllegalStateException(); }
+    @Override public boolean equals(java.lang.Object that) { if (that instanceof getOptimizingNodeUrls_args) return this.equals((getOptimizingNodeUrls_args)that); return false; }
+    public boolean equals(getOptimizingNodeUrls_args that) { if (that == null) return false; if (this == that) return true; return true; }
+    @Override public int hashCode() { int hashCode = 1; return hashCode; }
+    @Override public int compareTo(getOptimizingNodeUrls_args other) { if (!getClass().equals(other.getClass())) { return getClass().getName().compareTo(other.getClass().getName()); } int lastComparison = 0; return 0; }
+    @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable
+    @Override public _Fields fieldForId(int fieldId) { return _Fields.findByThriftId(fieldId); }
+    @Override public void read(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol iprot) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException { scheme(iprot).read(iprot, this); }
+    @Override public void write(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol oprot) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException { scheme(oprot).write(oprot, this); }
+    @Override public java.lang.String toString() { java.lang.StringBuilder sb = new java.lang.StringBuilder("getOptimizingNodeUrls_args("); sb.append(")"); return sb.toString(); }
+    public void validate() throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {}
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException { try { write(new org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TCompactProtocol(new org.apache.amoro.shade.thrift.org.apache.thrift.transport.TIOStreamTransport(out))); } catch (org.apache.amoro.shade.thrift.org.apache.thrift.TException te) { throw new java.io.IOException(te); } }
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException { try { read(new org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TCompactProtocol(new org.apache.amoro.shade.thrift.org.apache.thrift.transport.TIOStreamTransport(in))); } catch (org.apache.amoro.shade.thrift.org.apache.thrift.TException te) { throw new java.io.IOException(te); } }
+    private static class getOptimizingNodeUrls_argsStandardSchemeFactory implements org.apache.amoro.shade.thrift.org.apache.thrift.scheme.SchemeFactory {
+      @Override public getOptimizingNodeUrls_argsStandardScheme getScheme() { return new getOptimizingNodeUrls_argsStandardScheme(); }
+    }
+    private static class getOptimizingNodeUrls_argsStandardScheme extends org.apache.amoro.shade.thrift.org.apache.thrift.scheme.StandardScheme<getOptimizingNodeUrls_args> {
+      @Override public void read(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol iprot, getOptimizingNodeUrls_args struct) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {
+        org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true) { schemeField = iprot.readFieldBegin(); if (schemeField.type == org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TType.STOP) { break; } switch (schemeField.id) { default: org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type); } iprot.readFieldEnd(); }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+      @Override public void write(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol oprot, getOptimizingNodeUrls_args struct) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {
+        struct.validate();
+        oprot.writeStructBegin(STRUCT_DESC);
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+    }
+    private static class getOptimizingNodeUrls_argsTupleSchemeFactory implements org.apache.amoro.shade.thrift.org.apache.thrift.scheme.SchemeFactory {
+      @Override public getOptimizingNodeUrls_argsTupleScheme getScheme() { return new getOptimizingNodeUrls_argsTupleScheme(); }
+    }
+    private static class getOptimizingNodeUrls_argsTupleScheme extends org.apache.amoro.shade.thrift.org.apache.thrift.scheme.TupleScheme<getOptimizingNodeUrls_args> {
+      @Override public void write(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol prot, getOptimizingNodeUrls_args struct) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException { org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TTupleProtocol oprot = (org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TTupleProtocol) prot; }
+      @Override public void read(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol prot, getOptimizingNodeUrls_args struct) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException { org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TTupleProtocol iprot = (org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TTupleProtocol) prot; }
+    }
+    private static <S extends org.apache.amoro.shade.thrift.org.apache.thrift.scheme.IScheme> S scheme(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol proto) {
+      return (org.apache.amoro.shade.thrift.org.apache.thrift.scheme.StandardScheme.class.equals(proto.getScheme()) ? STANDARD_SCHEME_FACTORY : TUPLE_SCHEME_FACTORY).getScheme();
+    }
+  }
+
+  @SuppressWarnings({"cast", "rawtypes", "serial", "unchecked", "unused"})
+  public static class getOptimizingNodeUrls_result implements org.apache.amoro.shade.thrift.org.apache.thrift.TBase<getOptimizingNodeUrls_result, getOptimizingNodeUrls_result._Fields>, java.io.Serializable, Cloneable, Comparable<getOptimizingNodeUrls_result>   {
+    private static final org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TStruct("getOptimizingNodeUrls_result");
+
+    private static final org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TField("success", org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TType.LIST, (short)0);
+    private static final org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TField E1_FIELD_DESC = new org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TField("e1", org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final org.apache.amoro.shade.thrift.org.apache.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new getOptimizingNodeUrls_resultStandardSchemeFactory();
+    private static final org.apache.amoro.shade.thrift.org.apache.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new getOptimizingNodeUrls_resultTupleSchemeFactory();
+
+    public @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable java.util.List<java.lang.String> success;
+    public @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable org.apache.amoro.api.AmoroException e1;
+
+    public enum _Fields implements org.apache.amoro.shade.thrift.org.apache.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success"),
+      E1((short)1, "e1");
+      private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
+      static { for (_Fields field : java.util.EnumSet.allOf(_Fields.class)) { byName.put(field.getFieldName(), field); } }
+      @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable
+      public static _Fields findByThriftId(int fieldId) { switch(fieldId) { case 0: return SUCCESS; case 1: return E1; default: return null; } }
+      public static _Fields findByThriftIdOrThrow(int fieldId) { _Fields fields = findByThriftId(fieldId); if (fields == null) throw new java.lang.IllegalArgumentException("Field " + fieldId + " doesn't exist!"); return fields; }
+      @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable
+      public static _Fields findByName(java.lang.String name) { return byName.get(name); }
+      private final short _thriftId;
+      private final java.lang.String _fieldName;
+      _Fields(short thriftId, java.lang.String fieldName) { _thriftId = thriftId; _fieldName = fieldName; }
+      @Override public short getThriftFieldId() { return _thriftId; }
+      @Override public java.lang.String getFieldName() { return _fieldName; }
+    }
+
+    public static final java.util.Map<_Fields, org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      java.util.Map<_Fields, org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.FieldMetaData("success", org.apache.amoro.shade.thrift.org.apache.thrift.TFieldRequirementType.DEFAULT,
+          new org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.ListMetaData(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TType.LIST,
+              new org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.FieldValueMetaData(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TType.STRING))));
+      tmpMap.put(_Fields.E1, new org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.FieldMetaData("e1", org.apache.amoro.shade.thrift.org.apache.thrift.TFieldRequirementType.DEFAULT,
+          new org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.StructMetaData(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TType.STRUCT, org.apache.amoro.api.AmoroException.class)));
+      metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
+      org.apache.amoro.shade.thrift.org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getOptimizingNodeUrls_result.class, metaDataMap);
+    }
+
+    public getOptimizingNodeUrls_result() {}
+    public getOptimizingNodeUrls_result(java.util.List<java.lang.String> success, org.apache.amoro.api.AmoroException e1) { this(); this.success = success; this.e1 = e1; }
+    public getOptimizingNodeUrls_result(getOptimizingNodeUrls_result other) {
+      if (other.isSetSuccess()) { this.success = new java.util.ArrayList<java.lang.String>(other.success); }
+      if (other.isSetE1()) { this.e1 = new org.apache.amoro.api.AmoroException(other.e1); }
+    }
+    @Override public getOptimizingNodeUrls_result deepCopy() { return new getOptimizingNodeUrls_result(this); }
+    @Override public void clear() { this.success = null; this.e1 = null; }
+
+    @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable
+    public java.util.List<java.lang.String> getSuccess() { return this.success; }
+    public getOptimizingNodeUrls_result setSuccess(@org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable java.util.List<java.lang.String> success) { this.success = success; return this; }
+    public void unsetSuccess() { this.success = null; }
+    public boolean isSetSuccess() { return this.success != null; }
+    public void setSuccessIsSet(boolean value) { if (!value) { this.success = null; } }
+
+    @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable
+    public org.apache.amoro.api.AmoroException getE1() { return this.e1; }
+    public getOptimizingNodeUrls_result setE1(@org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable org.apache.amoro.api.AmoroException e1) { this.e1 = e1; return this; }
+    public void unsetE1() { this.e1 = null; }
+    public boolean isSetE1() { return this.e1 != null; }
+    public void setE1IsSet(boolean value) { if (!value) { this.e1 = null; } }
+
+    @Override
+    public void setFieldValue(_Fields field, @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable java.lang.Object value) {
+      switch (field) {
+      case SUCCESS: if (value == null) { unsetSuccess(); } else { setSuccess((java.util.List<java.lang.String>)value); } break;
+      case E1: if (value == null) { unsetE1(); } else { setE1((org.apache.amoro.api.AmoroException)value); } break;
+      }
+    }
+    @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable
+    @Override
+    public java.lang.Object getFieldValue(_Fields field) {
+      switch (field) { case SUCCESS: return getSuccess(); case E1: return getE1(); }
+      throw new java.lang.IllegalStateException();
+    }
+    @Override
+    public boolean isSet(_Fields field) {
+      if (field == null) { throw new java.lang.IllegalArgumentException(); }
+      switch (field) { case SUCCESS: return isSetSuccess(); case E1: return isSetE1(); }
+      throw new java.lang.IllegalStateException();
+    }
+    @Override public boolean equals(java.lang.Object that) { if (that instanceof getOptimizingNodeUrls_result) return this.equals((getOptimizingNodeUrls_result)that); return false; }
+    public boolean equals(getOptimizingNodeUrls_result that) {
+      if (that == null) return false;
+      if (this == that) return true;
+      boolean this_present_success = true && this.isSetSuccess();
+      boolean that_present_success = true && that.isSetSuccess();
+      if (this_present_success || that_present_success) { if (!(this_present_success && that_present_success)) return false; if (!this.success.equals(that.success)) return false; }
+      boolean this_present_e1 = true && this.isSetE1();
+      boolean that_present_e1 = true && that.isSetE1();
+      if (this_present_e1 || that_present_e1) { if (!(this_present_e1 && that_present_e1)) return false; if (!this.e1.equals(that.e1)) return false; }
+      return true;
+    }
+    @Override public int hashCode() { int hashCode = 1; hashCode = hashCode * 8191 + ((isSetSuccess()) ? 131071 : 524287); if (isSetSuccess()) hashCode = hashCode * 8191 + success.hashCode(); hashCode = hashCode * 8191 + ((isSetE1()) ? 131071 : 524287); if (isSetE1()) hashCode = hashCode * 8191 + e1.hashCode(); return hashCode; }
+    @Override
+    public int compareTo(getOptimizingNodeUrls_result other) {
+      if (!getClass().equals(other.getClass())) { return getClass().getName().compareTo(other.getClass().getName()); }
+      int lastComparison = 0;
+      lastComparison = java.lang.Boolean.compare(isSetSuccess(), other.isSetSuccess()); if (lastComparison != 0) return lastComparison;
+      if (isSetSuccess()) { lastComparison = org.apache.amoro.shade.thrift.org.apache.thrift.TBaseHelper.compareTo(this.success, other.success); if (lastComparison != 0) return lastComparison; }
+      lastComparison = java.lang.Boolean.compare(isSetE1(), other.isSetE1()); if (lastComparison != 0) return lastComparison;
+      if (isSetE1()) { lastComparison = org.apache.amoro.shade.thrift.org.apache.thrift.TBaseHelper.compareTo(this.e1, other.e1); if (lastComparison != 0) return lastComparison; }
+      return 0;
+    }
+    @org.apache.amoro.shade.thrift.org.apache.thrift.annotation.Nullable
+    @Override public _Fields fieldForId(int fieldId) { return _Fields.findByThriftId(fieldId); }
+    @Override public void read(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol iprot) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException { scheme(iprot).read(iprot, this); }
+    public void write(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol oprot) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException { scheme(oprot).write(oprot, this); }
+    @Override
+    public java.lang.String toString() {
+      java.lang.StringBuilder sb = new java.lang.StringBuilder("getOptimizingNodeUrls_result(");
+      boolean first = true;
+      sb.append("success:"); if (this.success == null) { sb.append("null"); } else { sb.append(this.success); } first = false;
+      if (!first) sb.append(", "); sb.append("e1:"); if (this.e1 == null) { sb.append("null"); } else { sb.append(this.e1); } first = false;
+      sb.append(")"); return sb.toString();
+    }
+    public void validate() throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {}
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException { try { write(new org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TCompactProtocol(new org.apache.amoro.shade.thrift.org.apache.thrift.transport.TIOStreamTransport(out))); } catch (org.apache.amoro.shade.thrift.org.apache.thrift.TException te) { throw new java.io.IOException(te); } }
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException { try { read(new org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TCompactProtocol(new org.apache.amoro.shade.thrift.org.apache.thrift.transport.TIOStreamTransport(in))); } catch (org.apache.amoro.shade.thrift.org.apache.thrift.TException te) { throw new java.io.IOException(te); } }
+
+    private static class getOptimizingNodeUrls_resultStandardSchemeFactory implements org.apache.amoro.shade.thrift.org.apache.thrift.scheme.SchemeFactory {
+      @Override public getOptimizingNodeUrls_resultStandardScheme getScheme() { return new getOptimizingNodeUrls_resultStandardScheme(); }
+    }
+    private static class getOptimizingNodeUrls_resultStandardScheme extends org.apache.amoro.shade.thrift.org.apache.thrift.scheme.StandardScheme<getOptimizingNodeUrls_result> {
+      @Override
+      public void read(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol iprot, getOptimizingNodeUrls_result struct) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {
+        org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true) {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TType.STOP) { break; }
+          switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TType.LIST) {
+                org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TList _list0 = iprot.readListBegin();
+                struct.success = new java.util.ArrayList<java.lang.String>(_list0.size);
+                java.lang.String _elem0;
+                for (int _i0 = 0; _i0 < _list0.size; ++_i0) { _elem0 = iprot.readString(); struct.success.add(_elem0); }
+                iprot.readListEnd();
+                struct.setSuccessIsSet(true);
+              } else { org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type); }
+              break;
+            case 1: // E1
+              if (schemeField.type == org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TType.STRUCT) {
+                struct.e1 = new org.apache.amoro.api.AmoroException();
+                struct.e1.read(iprot);
+                struct.setE1IsSet(true);
+              } else { org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type); }
+              break;
+            default: org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+      @Override
+      public void write(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol oprot, getOptimizingNodeUrls_result struct) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {
+        struct.validate();
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.success != null) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          oprot.writeListBegin(new org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TList(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TType.STRING, struct.success.size()));
+          for (java.lang.String _iter : struct.success) { oprot.writeString(_iter); }
+          oprot.writeListEnd();
+          oprot.writeFieldEnd();
+        }
+        if (struct.e1 != null) {
+          oprot.writeFieldBegin(E1_FIELD_DESC);
+          struct.e1.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+    }
+    private static class getOptimizingNodeUrls_resultTupleSchemeFactory implements org.apache.amoro.shade.thrift.org.apache.thrift.scheme.SchemeFactory {
+      @Override public getOptimizingNodeUrls_resultTupleScheme getScheme() { return new getOptimizingNodeUrls_resultTupleScheme(); }
+    }
+    private static class getOptimizingNodeUrls_resultTupleScheme extends org.apache.amoro.shade.thrift.org.apache.thrift.scheme.TupleScheme<getOptimizingNodeUrls_result> {
+      @Override
+      public void write(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol prot, getOptimizingNodeUrls_result struct) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {
+        org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TTupleProtocol oprot = (org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet optionals = new java.util.BitSet();
+        if (struct.isSetSuccess()) { optionals.set(0); }
+        if (struct.isSetE1()) { optionals.set(1); }
+        oprot.writeBitSet(optionals, 2);
+        if (struct.isSetSuccess()) {
+          oprot.writeI32(struct.success.size());
+          for (java.lang.String _iter : struct.success) { oprot.writeString(_iter); }
+        }
+        if (struct.isSetE1()) { struct.e1.write(oprot); }
+      }
+      @Override
+      public void read(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol prot, getOptimizingNodeUrls_result struct) throws org.apache.amoro.shade.thrift.org.apache.thrift.TException {
+        org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TTupleProtocol iprot = (org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TTupleProtocol) prot;
+        java.util.BitSet incoming = iprot.readBitSet(2);
+        if (incoming.get(0)) {
+          int _size1 = iprot.readI32();
+          struct.success = new java.util.ArrayList<java.lang.String>(_size1);
+          for (int _i = 0; _i < _size1; ++_i) { struct.success.add(iprot.readString()); }
+          struct.setSuccessIsSet(true);
+        }
+        if (incoming.get(1)) { struct.e1 = new org.apache.amoro.api.AmoroException(); struct.e1.read(iprot); struct.setE1IsSet(true); }
+      }
+    }
     private static <S extends org.apache.amoro.shade.thrift.org.apache.thrift.scheme.IScheme> S scheme(org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol proto) {
       return (org.apache.amoro.shade.thrift.org.apache.thrift.scheme.StandardScheme.class.equals(proto.getScheme()) ? STANDARD_SCHEME_FACTORY : TUPLE_SCHEME_FACTORY).getScheme();
     }
