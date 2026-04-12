@@ -52,7 +52,6 @@ public class TestDefaultKeyedFile extends TableTestBase {
     Assert.assertEquals(3, defaultKeyedFile.node().mask());
     Assert.assertEquals(0, defaultKeyedFile.node().index());
     Assert.assertEquals(txId, defaultKeyedFile.transactionId());
-
   }
 
   private List<Record> writeRecords() {
