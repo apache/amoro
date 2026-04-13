@@ -754,6 +754,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
     // bucket IDs, mirroring the behaviour of exploreInternalCatalog.
     serverTableIdentifiers.values().stream()
         .filter(i -> !tableRuntimeMap.containsKey(i.getId()))
+        .filter(i -> tableIdentifiers.contains(new TableIdentity(i)))
         .forEach(
             i -> {
               try {
