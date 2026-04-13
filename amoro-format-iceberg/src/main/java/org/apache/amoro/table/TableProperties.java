@@ -117,7 +117,6 @@ public class TableProperties {
    */
   public static final String SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL =
       "self-optimizing.minor.trigger.interval";
-
   public static final int SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT = 3600000; // 1 h
 
   public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO =
