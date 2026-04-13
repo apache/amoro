@@ -36,7 +36,7 @@ import org.apache.amoro.table.TableSnapshot;
 import org.apache.amoro.utils.ExpressionUtil;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
-import org.apache.iceberg.DataFiles;
+import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
@@ -325,7 +325,7 @@ public abstract class AbstractOptimizingEvaluator {
               // For unpartitioned tables, use an empty record since there's no path to parse
               struct = TablePropertyUtil.EMPTY_STRUCT;
             } else {
-              struct = DataFiles.data(spec, partitionPath);
+              struct = MixedDataFiles.data(spec, partitionPath);
             }
             partitions.computeIfAbsent(specId, k -> Sets.newHashSet()).add(struct);
           }
