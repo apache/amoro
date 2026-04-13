@@ -33,6 +33,7 @@ import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.TableSnapshot;
 import org.apache.iceberg.DataFile;
@@ -120,6 +121,65 @@ public class TestOptimizingEvaluator extends MixedTablePlanTestBase {
     pendingInput = optimizingEvaluator.getOptimizingPendingInput();
 
     assertInput(pendingInput, FileInfo.buildFileInfo(dataFiles));
+  }
+
+  @Test
+  public void testPendingInputSerializationRoundTrip() throws Exception {
+    closeFullOptimizingInterval();
+    updateBaseHashBucket(1);
+    List<Record> newRecords =
+        OptimizingTestHelpers.generateRecord(tableTestHelper(), 1, 4, "2022-01-01T12:00:00");
+    long transactionId = beginTransaction();
+    OptimizingTestHelpers.appendBase(
+        getMixedTable(),
+        tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false));
+
+    newRecords =
+        OptimizingTestHelpers.generateRecord(tableTestHelper(), 5, 8, "2022-01-01T12:00:00");
+    transactionId = beginTransaction();
+    OptimizingTestHelpers.appendBase(
+        getMixedTable(),
+        tableTestHelper().writeBaseStore(getMixedTable(), transactionId, newRecords, false));
+
+    AbstractOptimizingEvaluator evaluator = buildOptimizingEvaluator();
+    Assert.assertTrue(evaluator.isNecessary());
+    AbstractOptimizingEvaluator.PendingInput original = evaluator.getOptimizingPendingInput();
+    Assert.assertFalse(original.getPartitions().isEmpty());
+    Assert.assertFalse(original.getPartitionPaths().isEmpty());
+
+    // Build partition paths before serialization (simulating what happens before DB persistence)
+    original.buildPartitionPaths(getMixedTable());
+
+    // Serialize to JSON and deserialize back (simulating DB persistence round-trip)
+    ObjectMapper mapper = new ObjectMapper();
+    String json = mapper.writeValueAsString(original);
+    AbstractOptimizingEvaluator.PendingInput deserialized =
+        mapper.readValue(json, AbstractOptimizingEvaluator.PendingInput.class);
+
+    // After deserialization, partitions map should be empty (it's @JsonIgnore)
+    Assert.assertTrue(deserialized.getPartitions().isEmpty());
+    // But partitionPaths should be preserved
+    Assert.assertEquals(original.getPartitionPaths(), deserialized.getPartitionPaths());
+
+    // Rebuild partitions from paths
+    deserialized.rebuildPartitions(getMixedTable());
+    Assert.assertFalse(deserialized.getPartitions().isEmpty());
+    Assert.assertEquals(original.getPartitions().size(), deserialized.getPartitions().size());
+    // Verify each specId has the same number of partitions
+    for (Map.Entry<Integer, Set<StructLike>> entry : original.getPartitions().entrySet()) {
+      Assert.assertTrue(deserialized.getPartitions().containsKey(entry.getKey()));
+      Assert.assertEquals(
+          entry.getValue().size(), deserialized.getPartitions().get(entry.getKey()).size());
+    }
+
+    // Verify other fields are preserved
+    Assert.assertEquals(original.getDataFileCount(), deserialized.getDataFileCount());
+    Assert.assertEquals(original.getDataFileSize(), deserialized.getDataFileSize());
+    Assert.assertEquals(
+        original.getEqualityDeleteFileCount(), deserialized.getEqualityDeleteFileCount());
+    Assert.assertEquals(
+        original.getPositionalDeleteFileCount(), deserialized.getPositionalDeleteFileCount());
+    Assert.assertEquals(original.getHealthScore(), deserialized.getHealthScore());
   }
 
   @Test
