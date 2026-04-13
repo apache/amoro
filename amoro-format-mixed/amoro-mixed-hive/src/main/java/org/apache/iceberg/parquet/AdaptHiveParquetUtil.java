@@ -43,6 +43,7 @@ import org.apache.parquet.schema.MessageType;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -136,7 +137,7 @@ public class AdaptHiveParquetUtil {
               Literal<?> min;
               Literal<?> max;
               @SuppressWarnings("unchecked")
-              java.util.Comparator<Object> cmp = (java.util.Comparator<Object>) val1.comparator();
+              Comparator<Object> cmp = (Comparator<Object>) val1.comparator();
               if (isInt96(column) && cmp.compare(val1.value(), val2.value()) > 0) {
                 min = val2;
                 max = val1;
