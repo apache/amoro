@@ -40,6 +40,62 @@ public interface MaintainerMetrics {
    */
   void recordOrphanMetadataFilesCleaned(int expected, int cleaned);
 
+  /**
+   * Record dangling delete files cleaning result.
+   *
+   * @param cleaned number of files cleaned
+   */
+  void recordDanglingDeleteFilesCleaned(int cleaned);
+
+  /**
+   * Record snapshot expiration operation result.
+   *
+   * @param snapshotCount number of snapshots expired
+   * @param dataFilesDeleted number of data files deleted
+   */
+  void recordSnapshotsExpired(int snapshotCount, int dataFilesDeleted);
+
+  /**
+   * Record data expiration operation result.
+   *
+   * @param dataFilesExpired number of data files expired
+   * @param deleteFilesExpired number of delete files expired
+   */
+  void recordDataExpired(int dataFilesExpired, int deleteFilesExpired);
+
+  /**
+   * Record tag creation operation result.
+   *
+   * @param tagsCreated number of tags created
+   */
+  void recordTagsCreated(int tagsCreated);
+
+  /**
+   * Record partition expiration operation result.
+   *
+   * @param partitionsExpired number of partitions expired
+   * @param filesExpired number of files expired
+   */
+  void recordPartitionsExpired(int partitionsExpired, int filesExpired);
+
+  /**
+   * Record operation success completion.
+   *
+   * @param operationType operation type
+   * @param durationMillis operation duration in milliseconds
+   */
+  void recordOperationSuccess(MaintainerOperationType operationType, long durationMillis);
+
+  /**
+   * Record operation failure.
+   *
+   * @param operationType operation type
+   * @param durationMillis operation duration in milliseconds
+   * @param throwable exception information
+   */
+  void recordOperationFailure(
+      MaintainerOperationType operationType, long durationMillis, Throwable throwable);
+
   /** No-op implementation that does nothing. */
   MaintainerMetrics NOOP =
       new MaintainerMetrics() {
@@ -48,5 +104,28 @@ public interface MaintainerMetrics {
 
         @Override
         public void recordOrphanMetadataFilesCleaned(int expected, int cleaned) {}
+
+        @Override
+        public void recordDanglingDeleteFilesCleaned(int cleaned) {}
+
+        @Override
+        public void recordSnapshotsExpired(int snapshotCount, int dataFilesDeleted) {}
+
+        @Override
+        public void recordDataExpired(int dataFilesExpired, int deleteFilesExpired) {}
+
+        @Override
+        public void recordTagsCreated(int tagsCreated) {}
+
+        @Override
+        public void recordPartitionsExpired(int partitionsExpired, int filesExpired) {}
+
+        @Override
+        public void recordOperationSuccess(
+            MaintainerOperationType operationType, long durationMillis) {}
+
+        @Override
+        public void recordOperationFailure(
+            MaintainerOperationType operationType, long durationMillis, Throwable throwable) {}
       };
 }

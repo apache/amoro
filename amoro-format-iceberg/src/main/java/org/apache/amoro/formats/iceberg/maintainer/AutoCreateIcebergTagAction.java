@@ -51,20 +51,27 @@ public class AutoCreateIcebergTagAction {
     this.tagName = tagConfig.getTriggerPeriod().generateTagName(tagTime, tagConfig.getTagFormat());
   }
 
-  public void execute() {
+  /**
+   * Execute the tag creation action.
+   *
+   * @return the number of tags created (0 or 1)
+   */
+  public int execute() {
     if (!tagConfig.isAutoCreateTag()) {
-      return;
+      return 0;
     }
     LOG.debug("Start checking the automatic creation of tags for {}", table.name());
     if (tagExist()) {
       LOG.debug("Found the expected tag on {}, skip", table.name());
-      return;
+      return 0;
     }
     boolean success = createTag();
     if (success) {
       LOG.info("Created a tag successfully on {}", table.name());
+      return 1;
     } else {
       LOG.info("Skipped tag creation on {}", table.name());
+      return 0;
     }
   }
 
