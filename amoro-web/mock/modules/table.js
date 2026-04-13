@@ -307,6 +307,61 @@ export default [
     }),
   },
   {
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/processes',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": {
+        "list": [
+          {
+            "processId": 1715862413340,
+            "tableId": 1,
+            "externalProcessIdentifier": "application_1715862413340_0001",
+            "status": "RUNNING",
+            "processType": "OPTIMIZE",
+            "processStage": "planning",
+            "executionEngine": "local",
+            "retryNumber": 0,
+            "createTime": 1715862413340,
+            "finishTime": 0,
+            "failMessage": "",
+            "processParameters": {
+              "plan-group": "default",
+              "target-file-size-bytes": "134217728"
+            },
+            "summary": {
+              "scheduled-tasks": "2",
+              "input-files": "16"
+            }
+          },
+          {
+            "processId": 1715862415340,
+            "tableId": 1,
+            "externalProcessIdentifier": "application_1715862415340_0002",
+            "status": "FAILED",
+            "processType": "OPTIMIZE",
+            "processStage": "committing",
+            "executionEngine": "local",
+            "retryNumber": 1,
+            "createTime": 1715862415340,
+            "finishTime": 1715862417871,
+            "failMessage": "Commit failed because output snapshot is stale.",
+            "processParameters": {
+              "plan-group": "default",
+              "rewrite-type": "major"
+            },
+            "summary": {
+              "scheduled-tasks": "4",
+              "output-files": "2"
+            }
+          }
+        ],
+        "total": 2
+      }
+    }),
+  },
+  {
     url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/optimizing-types',
     method: 'get',
     response: () => ({

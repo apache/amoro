@@ -52,6 +52,7 @@ import org.apache.amoro.server.dashboard.controller.OptimizerController;
 import org.apache.amoro.server.dashboard.controller.OptimizerGroupController;
 import org.apache.amoro.server.dashboard.controller.OverviewController;
 import org.apache.amoro.server.dashboard.controller.PlatformFileInfoController;
+import org.apache.amoro.server.dashboard.controller.ProcessController;
 import org.apache.amoro.server.dashboard.controller.SettingController;
 import org.apache.amoro.server.dashboard.controller.TableController;
 import org.apache.amoro.server.dashboard.controller.TerminalController;
@@ -91,6 +92,7 @@ public class DashboardServer {
   private final OptimizerController optimizerController;
   private final PlatformFileInfoController platformFileInfoController;
   private final SettingController settingController;
+  private final ProcessController processController;
   private final TableController tableController;
   private final TerminalController terminalController;
   private final VersionController versionController;
@@ -122,6 +124,7 @@ public class DashboardServer {
     this.settingController = new SettingController(serviceConfig, optimizerManager);
     ServerTableDescriptor tableDescriptor =
         new ServerTableDescriptor(catalogManager, tableManager, serviceConfig);
+    this.processController = new ProcessController(tableManager);
     this.tableController =
         new TableController(catalogManager, tableManager, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
@@ -298,6 +301,9 @@ public class DashboardServer {
             post(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/optimizing-processes/{processId}/cancel",
                 tableController::cancelOptimizingProcess);
+            get(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/processes",
+                processController::getTableProcesses);
           });
       get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
 

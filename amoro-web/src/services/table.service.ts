@@ -199,6 +199,23 @@ export function getTasksByOptimizingProcessId(
   return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes/${processId}/tasks`, { params: { page, pageSize, token } })
 }
 
+// get table processes
+export function getTableProcesses(
+  params: {
+    catalog: string
+    db: string
+    table: string
+    type: string
+    status: string
+    page: number
+    pageSize: number
+    token?: string
+  },
+) {
+  const { catalog, db, table, type, status, page, pageSize, token } = params
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/processes`, { params: { page, pageSize, token, type, status } })
+}
+
 export function upgradeHiveTable(
   { catalog = '' as string, db = '' as string, table = '' as string, properties = {} as IMap<string>, pkList = [] as IMap<string>[] },
 ) {

@@ -24,6 +24,7 @@ import UFiles from './components/Files.vue'
 import UOperations from './components/Operations.vue'
 import USnapshots from './components/Snapshots.vue'
 import UOptimizing from './components/Optimizing.vue'
+import UProcess from './components/Process.vue'
 import UHealthScore from './components/HealthScoreDetails.vue'
 import TableExplorer from './components/TableExplorer.vue'
 import useStore from '@/store/index'
@@ -38,6 +39,7 @@ export default defineComponent({
     UOperations,
     USnapshots,
     UOptimizing,
+    UProcess,
     UHealthScore,
     TableExplorer,
   },
@@ -107,6 +109,7 @@ export default defineComponent({
       { key: 'Snapshots', label: 'snapshots' },
       { key: 'Optimizing', label: 'optimizing' },
       { key: 'Operations', label: 'operations' },
+      { key: 'Process', label: 'process' },
     ])
 
     const state = reactive({
