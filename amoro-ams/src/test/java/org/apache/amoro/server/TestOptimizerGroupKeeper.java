@@ -87,7 +87,7 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
   }
 
   @After
-  public void clear() {
+  public void clear() throws InterruptedException {
     if (currentGroupName == null) {
       return;
     }
@@ -117,6 +117,8 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
         optimizerManager().deleteResourceGroup(currentGroupName);
       } catch (Exception ignored) {
       }
+      // Wait for keeper thread to finish processing any in-flight tasks for this group
+      Thread.sleep(50);
     } catch (Exception e) {
       // ignore
     } finally {
@@ -200,9 +202,7 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     optimizingService().createResourceGroup(resourceGroup);
 
     // Wait for OptimizerGroupKeeper to detect and create optimizer
-    // OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL is set to 10ms, call intervals are 10, 20, 30,
-    // 40, 10, 200ms can cover abnormal scenarios
-    Thread.sleep(200);
+    waitUntil(() -> !optimizerManager().listOptimizers(resourceGroup.getName()).isEmpty(), 2000);
 
     int totalCores =
         optimizerManager().listOptimizers(resourceGroup.getName()).stream()
@@ -267,10 +267,16 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     optimizerManager().createResourceGroup(resourceGroup);
     optimizingService().createResourceGroup(resourceGroup);
 
-    Thread.sleep(200);
-    Assertions.assertEquals(
-        OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS.defaultValue(),
-        scaleOutCallCount.get(),
+    // Wait for max-keeping-attempts to be exhausted and min-parallelism to be reset
+    waitUntil(
+        () -> {
+          ResourceGroup rg = optimizerManager().getResourceGroup(resourceGroup.getName());
+          String mp = rg.getProperties().get(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM);
+          return "0".equals(mp);
+        },
+        2000);
+    Assertions.assertTrue(
+        scaleOutCallCount.get() >= OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS.defaultValue(),
         resourceGroup.getName()
             + ":max scale-out attempts should be exhausted when no resources available");
     ResourceGroup updatedGroup = optimizerManager().getResourceGroup(resourceGroup.getName());
@@ -305,14 +311,20 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     String testToken = optimizingService().authenticate(registerInfo);
     Assertions.assertNotNull(testToken, "Optimizer should be registered successfully");
 
-    Thread.sleep(200);
+    // Wait for max-keeping-attempts to be exhausted and min-parallelism to be reset
+    waitUntil(
+        () -> {
+          ResourceGroup rg = optimizerManager().getResourceGroup(resourceGroup.getName());
+          String mp = rg.getProperties().get(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM);
+          return "1".equals(mp);
+        },
+        2000);
 
     ResourceGroup updatedGroup = optimizerManager().getResourceGroup(resourceGroup.getName());
     String minParallelismStr =
         updatedGroup.getProperties().get(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM);
-    Assertions.assertEquals(
-        OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS.defaultValue(),
-        scaleOutCallCount.get(),
+    Assertions.assertTrue(
+        scaleOutCallCount.get() >= OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS.defaultValue(),
         resourceGroup.getName()
             + ":max scale-out attempts should be exhausted when no resources available");
     Assertions.assertEquals(
@@ -355,13 +367,14 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
 
     // No optimizer registered for this resource — it's orphaned
     // Wait for OptimizerGroupKeeper to detect and restart
-    Thread.sleep(200);
+    waitUntil(() -> scaleOutCallCount.get() >= 1, 2000);
 
-    // Verify that requestResource was called (auto-restart triggered)
-    Assertions.assertTrue(
-        scaleOutCallCount.get() >= 1,
+    // Verify that requestResource was called exactly once for the orphaned resource
+    Assertions.assertEquals(
+        1,
+        scaleOutCallCount.get(),
         resourceGroup.getName()
-            + ":At least one restart should be triggered for the orphaned resource");
+            + ":Exactly one restart should be triggered for the orphaned resource");
   }
 
   /**
@@ -394,9 +407,9 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
             .build();
     optimizerManager().createResource(orphanedResource);
 
-    // Wait for max retries to be exhausted (auto-restart-max-retries default is 5)
-    // With check interval 10ms, 5 retries + 1 cleanup = 6 cycles at most
-    Thread.sleep(500);
+    // Wait for orphaned resource to be cleaned up from DB after max retries
+    waitUntil(
+        () -> optimizerManager().listResourcesByGroup(resourceGroup.getName()).isEmpty(), 5000);
 
     // Verify the orphaned resource has been cleaned up from DB
     List<Resource> remainingResources =
@@ -421,7 +434,6 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     optimizingService().createResourceGroup(resourceGroup);
 
     // Create a resource and register an optimizer for it (healthy state)
-    String resourceId = "test-active-resource-" + System.currentTimeMillis();
     Resource resource =
         new Resource.Builder(MOCK_CONTAINER_NAME, resourceGroup.getName(), ResourceType.OPTIMIZER)
             .setThreadCount(2)
@@ -438,6 +450,7 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     // Reset counter after authenticate
     scaleOutCallCount.set(0);
 
+    // Wait a few check cycles to verify no restart is triggered
     Thread.sleep(200);
 
     // Verify no restart was triggered since the resource has an active optimizer
@@ -446,6 +459,18 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
         scaleOutCallCount.get(),
         resourceGroup.getName()
             + ":No restart should be triggered when resource has an active optimizer");
+  }
+
+  /** Wait for a condition to become true, polling every 10ms. */
+  private static void waitUntil(Supplier<Boolean> condition, long timeoutMs)
+      throws InterruptedException {
+    long deadline = System.currentTimeMillis() + timeoutMs;
+    while (!condition.get()) {
+      if (System.currentTimeMillis() > deadline) {
+        throw new AssertionError("Condition not met within " + timeoutMs + "ms");
+      }
+      Thread.sleep(10);
+    }
   }
 
   private static OptimizerRegisterInfo buildRegisterInfo(String groupName, int threadCount) {

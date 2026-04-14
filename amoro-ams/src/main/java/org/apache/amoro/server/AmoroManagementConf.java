@@ -647,8 +647,18 @@ public class AmoroManagementConf {
           .intType()
           .defaultValue(5)
           .withDescription(
-              "Maximum number of consecutive restart attempts for a single orphaned resource. "
+              "Maximum number of restart attempts for a single orphaned resource "
+                  + "(counted per AMS lifecycle). "
                   + "When exceeded, the orphaned resource will be cleaned up instead of retried.");
+
+  public static final ConfigOption<Duration> OPTIMIZER_AUTO_RESTART_GRACE_PERIOD =
+      ConfigOptions.key("optimizer.auto-restart-grace-period")
+          .durationType()
+          .defaultValue(Duration.ofMinutes(5))
+          .withDescription(
+              "Grace period after an orphaned resource is first detected before it is considered "
+                  + "for restart. This avoids restarting resources whose optimizer process is still "
+                  + "starting up (e.g. Flink/Kubernetes containers).");
 
   public static final ConfigOption<Duration> OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL =
       ConfigOptions.key("optimizer-group.min-parallelism-check-interval")

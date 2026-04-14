@@ -30,6 +30,8 @@ public interface ResourceManager {
 
   void createResource(Resource resource);
 
+  void updateResource(Resource resource);
+
   void deleteResource(String resourceId);
 
   List<ResourceGroup> listResourceGroups();

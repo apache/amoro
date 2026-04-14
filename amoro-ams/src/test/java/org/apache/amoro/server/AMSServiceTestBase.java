@@ -49,6 +49,8 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
           AmoroManagementConf.OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL,
           Duration.ofMillis(10L));
       configurations.set(AmoroManagementConf.OPTIMIZER_AUTO_RESTART_ENABLED, true);
+      configurations.set(
+          AmoroManagementConf.OPTIMIZER_AUTO_RESTART_GRACE_PERIOD, Duration.ofMillis(0L));
       TABLE_SERVICE =
           new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactory);
       OPTIMIZING_SERVICE =
