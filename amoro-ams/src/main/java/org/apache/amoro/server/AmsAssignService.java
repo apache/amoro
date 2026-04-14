@@ -526,24 +526,35 @@ public class AmsAssignService {
       }
       try {
         long lastUpdateTime = assignStore.getLastUpdateTime(node);
-        if (lastUpdateTime > 0 && (currentTime - lastUpdateTime) > nodeOfflineTimeoutMs) {
-          // Node heartbeat timeout and not in alive list, mark as offline
+        boolean shouldMarkOffline;
+        if (lastUpdateTime <= 0) {
+          // Missing timestamp means the node's saveAssignments never completed its
+          // updateLastUpdateTime call (e.g. leader crashed between the two ZK writes)
+          // or the store data was corrupted.  Since the node is already absent from
+          // the alive list, treat it as offline immediately to avoid stranded buckets.
+          shouldMarkOffline = true;
+          LOG.warn(
+              "Node {} is considered offline (missing last update time, not in alive list)", node);
+        } else if ((currentTime - lastUpdateTime) > nodeOfflineTimeoutMs) {
+          shouldMarkOffline = true;
+          LOG.warn(
+              "Node {} is considered offline due to timeout. Last update: {}",
+              node,
+              lastUpdateTime);
+        } else {
+          shouldMarkOffline = false;
+          LOG.debug(
+              "Node {} is not in alive list but heartbeat not timeout (last update: {}), waiting for timeout",
+              node,
+              lastUpdateTime);
+        }
+        if (shouldMarkOffline) {
           for (AmsServerInfo storedNode : currentAssignments.keySet()) {
             if (getNodeKey(storedNode).equals(nodeKey)) {
               offlineNodes.add(storedNode);
               break;
             }
           }
-          LOG.warn(
-              "Node {} is considered offline due to timeout. Last update: {}",
-              node,
-              lastUpdateTime);
-        } else {
-          // Node is not in alive list but heartbeat not timeout yet, waiting
-          LOG.debug(
-              "Node {} is not in alive list but heartbeat not timeout (last update: {}), waiting for timeout",
-              node,
-              lastUpdateTime);
         }
       } catch (BucketAssignStoreException e) {
         LOG.warn("Failed to get last update time for node {}, treating as offline", node, e);
