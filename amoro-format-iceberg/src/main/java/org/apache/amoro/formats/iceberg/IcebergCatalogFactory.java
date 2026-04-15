@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.formats.iceberg;
@@ -21,6 +23,8 @@ package org.apache.amoro.formats.iceberg;
 import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.FormatCatalogFactory;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.aws.StaticAwsCredentialsProvider;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedFormatCatalogUtil;
@@ -39,6 +43,10 @@ public class IcebergCatalogFactory implements FormatCatalogFactory {
     properties =
         MixedFormatCatalogUtil.withIcebergCatalogInitializeProperties(
             name, metastoreType, properties);
+    // apply glue credentials to glue catalog
+    if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equalsIgnoreCase(metastoreType)) {
+      properties = StaticAwsCredentialsProvider.applyGlueCredentials(properties);
+    }
 
     Catalog icebergCatalog =
         CatalogUtil.buildIcebergCatalog(name, properties, metaStore.getConfiguration());
