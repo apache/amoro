@@ -69,7 +69,12 @@ public class InternalMixedIcebergHandler extends InternalIcebergHandler {
 
       MixedHadoopTableOperations ops =
           new MixedHadoopTableOperations(new Path(tableLocation), io, metaStore.getConfiguration());
-      org.apache.iceberg.TableMetadata current = ops.current();
+      // Use refresh() instead of current() so that the returned TableMetadata reference is the
+      // same object cached inside ops. Iceberg 1.7.x commit() starts with versionAndMetadata()
+      // which compares the `base` argument against the cached reference using == (reference
+      // equality). If current() and versionAndMetadata() return different object instances,
+      // commit() throws CommitFailedException even when the metadata content is identical.
+      org.apache.iceberg.TableMetadata current = ops.refresh();
       if (current == null) {
         return ops;
       }
