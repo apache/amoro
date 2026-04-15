@@ -352,13 +352,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     secondDataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.deleteFile(deleteFile);
 
-    overwriteFiles.commit();
-
-    List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
-    Assert.assertEquals(secondDataFiles.size(), afterFiles.size());
-
-    int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
-    Assert.assertEquals(firstDataFiles.size() + secondDataFiles.size() - 1, totalLiveFiles);
+    Assert.assertThrows(CannotAlterHiveLocationException.class, overwriteFiles::commit);
   }
 
   @Test
@@ -400,10 +394,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
         HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
     secondDataFiles.forEach(overwriteFiles::addFile);
 
-    overwriteFiles.commit();
-
-    int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
-    Assert.assertEquals(firstDataFiles.size() + secondDataFiles.size(), totalLiveFiles);
+    Assert.assertThrows(CannotAlterHiveLocationException.class, overwriteFiles::commit);
   }
 
   @Test
@@ -450,7 +441,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     UpdateHiveFilesTestHelpers.validateHiveTableValues(
         TEST_HMS.getHiveClient(), getMixedTable(), firstDataFiles);
 
-    // ================== test add files only
+    // ================== test add files only in a different dir
     insertRecords.clear();
     insertRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-03T12:00:00"));
@@ -459,13 +450,7 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
     overwriteFiles = baseStore.newOverwrite();
     secondDataFiles.forEach(overwriteFiles::addFile);
 
-    overwriteFiles.commit();
-
-    List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
-    Assert.assertEquals(secondDataFiles.size(), afterFiles.size());
-
-    int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
-    Assert.assertEquals(firstDataFiles.size() + secondDataFiles.size(), totalLiveFiles);
+    Assert.assertThrows(CannotAlterHiveLocationException.class, overwriteFiles::commit);
   }
 
   @Test
@@ -518,5 +503,8 @@ public class TestOverwriteFiles extends MixedHiveTableTestBase {
 
     int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
     Assert.assertEquals(dataFiles.size(), totalLiveFiles);
+
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(
+        TEST_HMS.getHiveClient(), getMixedTable(), afterFiles);
   }
 }

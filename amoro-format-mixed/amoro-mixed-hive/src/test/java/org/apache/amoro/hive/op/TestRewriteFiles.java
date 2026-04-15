@@ -282,16 +282,10 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     insertRecords.add(tableTestHelper().generateTestRecord(3, "john", 0, "2022-01-01T12:00:00"));
     List<DataFile> dataFiles =
         HiveDataTestHelpers.writerOf(getMixedTable()).transactionId(1L).writeHive(insertRecords);
+
     RewriteFiles rewriteFiles = baseStore.newRewrite();
     rewriteFiles.rewriteFiles(Sets.newHashSet(deleteFile), Sets.newHashSet(dataFiles));
-
-    rewriteFiles.commit();
-
-    List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
-    Assert.assertEquals(dataFiles.size(), afterFiles.size());
-
-    int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
-    Assert.assertEquals(initDataFiles.size() + dataFiles.size() - 1, totalLiveFiles);
+    Assert.assertThrows(CannotAlterHiveLocationException.class, rewriteFiles::commit);
   }
 
   @Test
@@ -337,13 +331,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     RewriteFiles rewriteFiles = baseStore.newRewrite();
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), addFiles);
 
-    rewriteFiles.commit();
-
-    List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
-    Assert.assertEquals(addFiles.size(), afterFiles.size());
-
-    int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
-    Assert.assertEquals(addFiles.size(), totalLiveFiles);
+    Assert.assertThrows(CannotAlterHiveLocationException.class, rewriteFiles::commit);
   }
 
   @Test
@@ -381,13 +369,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
     RewriteFiles rewriteFiles = baseStore.newRewrite();
     rewriteFiles.rewriteFiles(Sets.newHashSet(initDataFiles), addFiles);
 
-    rewriteFiles.commit();
-
-    List<DataFile> afterFiles = HiveDataTestHelpers.lastedAddedFiles(baseStore);
-    Assert.assertEquals(addFiles.size(), afterFiles.size());
-
-    int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
-    Assert.assertEquals(addFiles.size(), totalLiveFiles);
+    Assert.assertThrows(CannotAlterHiveLocationException.class, rewriteFiles::commit);
   }
 
   @Test
@@ -402,7 +384,7 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
   }
 
   @Test
-  public void testRewriteWithSameLocationNonPartitioned() {
+  public void testRewriteWithSameLocationNonPartitioned() throws TException {
     Assume.assumeFalse(isPartitionedTable());
     initDataFiles();
     UnkeyedTable baseStore = MixedTableUtil.baseStore(getMixedTable());
@@ -416,5 +398,8 @@ public class TestRewriteFiles extends MixedHiveTableTestBase {
 
     int totalLiveFiles = Lists.newArrayList(baseStore.newScan().planFiles()).size();
     Assert.assertEquals(initDataFiles.size(), totalLiveFiles);
+
+    UpdateHiveFilesTestHelpers.validateHiveTableValues(
+        TEST_HMS.getHiveClient(), getMixedTable(), afterFiles);
   }
 }
