@@ -78,6 +78,32 @@ public class TestAmoroManagementConf {
   }
 
   @Test
+  void testNewDurationConfigDefaults() {
+    Configurations serviceConfig = new Configurations();
+    Assertions.assertEquals(
+        Duration.ofDays(30),
+        serviceConfig.get(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_TIME));
+    Assertions.assertEquals(
+        Duration.ofHours(1),
+        serviceConfig.get(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL));
+    Assertions.assertEquals(
+        Duration.ofDays(7), serviceConfig.get(AmoroManagementConf.PROCESS_HISTORY_DATA_KEEP_TIME));
+  }
+
+  @Test
+  void testDeprecatedIntegerConfigDefaults() {
+    Configurations serviceConfig = new Configurations();
+    Assertions.assertEquals(
+        30, serviceConfig.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_DAYS));
+    Assertions.assertEquals(
+        1,
+        serviceConfig.getInteger(
+            AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL_HOURS));
+    Assertions.assertEquals(
+        7, serviceConfig.getInteger(AmoroManagementConf.PROCESS_HISTORY_DATA_KEEP_DAYS));
+  }
+
+  @Test
   void testParsingDefaultStorageRelatedConfigs() {
     Configurations serviceConfig = new Configurations();
     Configurations expectedConfig =

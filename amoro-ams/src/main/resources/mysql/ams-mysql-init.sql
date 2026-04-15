@@ -288,5 +288,6 @@ CREATE TABLE IF NOT EXISTS bucket_assignments (
   server_info_json   TEXT         NULL COMMENT 'JSON encoded AmsServerInfo',
   assignments_json   TEXT         NULL COMMENT 'JSON array of bucket IDs',
   last_update_time   BIGINT       NOT NULL DEFAULT 0 COMMENT 'Last update timestamp (ms since epoch)',
+  node_heartbeat_ts  BIGINT       NOT NULL DEFAULT 0 COMMENT 'Per-node heartbeat timestamp updated only by the owning node (ms since epoch)',
   PRIMARY KEY (cluster_name, node_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Bucket ID assignments per AMS node for master-slave mode';

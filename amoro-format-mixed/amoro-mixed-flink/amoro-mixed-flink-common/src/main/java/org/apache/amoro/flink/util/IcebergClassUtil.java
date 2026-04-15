@@ -35,12 +35,12 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.flink.TableLoader;
+import org.apache.iceberg.flink.sink.FlinkWriteResult;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.flink.source.FlinkInputFormat;
 import org.apache.iceberg.flink.source.ScanContext;
 import org.apache.iceberg.flink.source.StreamingReaderOperator;
 import org.apache.iceberg.io.FileIO;
-import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.util.ThreadPools;
 
 import java.lang.reflect.Constructor;
@@ -76,7 +76,7 @@ public class IcebergClassUtil {
     }
   }
 
-  public static OneInputStreamOperator<WriteResult, Void> newIcebergFilesCommitter(
+  public static OneInputStreamOperator<FlinkWriteResult, Void> newIcebergFilesCommitter(
       TableLoader tableLoader, boolean replacePartitions, String branch, PartitionSpec spec) {
     try {
       Class<?> clazz = forName(ICEBERG_FILE_COMMITTER_CLASS);
@@ -89,7 +89,7 @@ public class IcebergClassUtil {
               String.class,
               PartitionSpec.class);
       c.setAccessible(true);
-      return (OneInputStreamOperator<WriteResult, Void>)
+      return (OneInputStreamOperator<FlinkWriteResult, Void>)
           c.newInstance(
               tableLoader,
               replacePartitions,
@@ -105,13 +105,13 @@ public class IcebergClassUtil {
     }
   }
 
-  public static OneInputStreamOperator<WriteResult, Void> newIcebergFilesCommitter(
+  public static OneInputStreamOperator<FlinkWriteResult, Void> newIcebergFilesCommitter(
       TableLoader tableLoader,
       boolean replacePartitions,
       String branch,
       PartitionSpec spec,
       AuthenticatedFileIO authenticatedFileIO) {
-    OneInputStreamOperator<WriteResult, Void> obj =
+    OneInputStreamOperator<FlinkWriteResult, Void> obj =
         newIcebergFilesCommitter(tableLoader, replacePartitions, branch, spec);
     return (OneInputStreamOperator) ProxyUtil.getProxy(obj, authenticatedFileIO);
   }

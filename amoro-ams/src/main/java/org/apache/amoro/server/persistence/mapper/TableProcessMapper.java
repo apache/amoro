@@ -42,6 +42,13 @@ public interface TableProcessMapper {
   @Delete("DELETE FROM table_process WHERE process_id <= #{processId} AND table_id = #{tableId}")
   void deleteBefore(@Param("tableId") long tableId, @Param("processId") long processId);
 
+  @Delete(
+      "DELETE FROM table_process WHERE process_id <= #{minProcessId} "
+          + "AND table_id = #{tableId} "
+          + "AND status NOT IN ('SUBMITTED', 'RUNNING', 'PENDING', 'CANCELING')")
+  void deleteExpiredProcesses(
+      @Param("tableId") long tableId, @Param("minProcessId") long minProcessId);
+
   @Insert(
       "INSERT INTO table_process "
           + "(process_id, table_id, external_process_identifier, status, process_type, process_stage, execution_engine, retry_number, "

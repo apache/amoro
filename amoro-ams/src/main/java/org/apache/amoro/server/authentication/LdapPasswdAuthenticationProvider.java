@@ -54,12 +54,14 @@ public class LdapPasswdAuthenticationProvider implements PasswdAuthenticationPro
 
   @Override
   public BasicPrincipal authenticate(PasswordCredential credential) throws SignatureCheckException {
+    String username = normalizeUsername(credential.username());
     Hashtable<String, Object> env = new Hashtable<String, Object>();
     env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
     env.put(Context.PROVIDER_URL, ldapUrl);
     env.put(Context.SECURITY_AUTHENTICATION, "simple");
     env.put(Context.SECURITY_CREDENTIALS, credential.password());
-    env.put(Context.SECURITY_PRINCIPAL, formatter.format(new String[] {credential.username()}));
+    env.put(Context.SECURITY_PRINCIPAL, formatter.format(new String[] {username}));
+    env.put(Context.REFERRAL, "follow");
 
     InitialDirContext initialLdapContext = null;
     try {
@@ -75,6 +77,17 @@ public class LdapPasswdAuthenticationProvider implements PasswdAuthenticationPro
         }
       }
     }
-    return new BasicPrincipal(credential.username());
+    return new BasicPrincipal(username);
+  }
+
+  /**
+   * Strip email domain suffix if present so that "amoro@apache.org" becomes "amoro". The LDAP
+   * user-pattern template expects a plain username, not an email address.
+   */
+  private static String normalizeUsername(String username) {
+    if (username != null && username.contains("@")) {
+      return username.substring(0, username.indexOf('@'));
+    }
+    return username;
   }
 }

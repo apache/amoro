@@ -34,6 +34,7 @@ import type { ICatalogItem, IIOptimizeGroupItem, ILableAndValue, IMap } from '@/
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { getResourceGroupsListAPI } from '@/services/optimize.service'
 import { downloadWithHeader } from '@/utils/request'
+import { canManageCatalog } from '@/utils/permission'
 
 interface IStorageConfigItem {
   label: string
@@ -107,6 +108,7 @@ const isHiveMetastore = computed(() => {
   return formState.catalog.type === 'hive'
 })
 const loading = ref<boolean>(false)
+const writable = computed(() => canManageCatalog())
 const formRef = ref()
 const propertiesRef = ref()
 const tablePropertiesRef = ref()
@@ -778,7 +780,7 @@ onMounted(() => {
         </a-form>
       </div>
     </div>
-    <div v-if="isEdit" class="footer-btn">
+    <div v-if="isEdit && writable" class="footer-btn">
       <a-button type="primary" class="save-btn g-mr-12" @click="handleSave">
         {{ $t('save') }}
       </a-button>
@@ -786,7 +788,7 @@ onMounted(() => {
         {{ $t('cancel') }}
       </a-button>
     </div>
-    <div v-if="!isEdit" class="footer-btn">
+    <div v-if="!isEdit && writable" class="footer-btn">
       <a-button type="primary" class="edit-btn g-mr-12" @click="handleEdit">
         {{ $t('edit') }}
       </a-button>

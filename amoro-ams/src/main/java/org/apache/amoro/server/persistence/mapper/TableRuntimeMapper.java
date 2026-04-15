@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.persistence.mapper;
 
+import org.apache.amoro.server.persistence.BucketIdCount;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.TableRuntimeState;
 import org.apache.ibatis.annotations.Delete;
@@ -58,6 +59,17 @@ public interface TableRuntimeMapper {
           + "     bucket_id        = #{bucketId, jdbcType=VARCHAR} "
           + " WHERE table_id = #{tableId}")
   int updateRuntime(TableRuntimeMeta meta);
+
+  /**
+   * Sets bucket_id only when it is still null. Avoids overwriting status/config/summary with stale
+   * snapshots from a prior read.
+   */
+  @Update(
+      "UPDATE "
+          + TABLE_NAME
+          + " SET bucket_id = #{bucketId, jdbcType=VARCHAR} "
+          + "WHERE table_id = #{tableId} AND bucket_id IS NULL")
+  int updateBucketIdIfNull(@Param("tableId") Long tableId, @Param("bucketId") String bucketId);
 
   /* ---------- delete ---------- */
   @Delete("DELETE FROM " + TABLE_NAME + " WHERE table_id = #{tableId}")
@@ -101,6 +113,29 @@ public interface TableRuntimeMapper {
   @Select("SELECT " + SELECT_COLS + "FROM " + TABLE_NAME)
   @ResultMap("tableRuntimeMeta")
   List<TableRuntimeMeta> selectAllRuntimes();
+
+  @Select(
+      "<script>"
+          + "SELECT "
+          + SELECT_COLS
+          + "FROM "
+          + TABLE_NAME
+          + " WHERE bucket_id IN "
+          + "<foreach item='item' collection='bucketIds' open='(' separator=',' close=')'>"
+          + "#{item}"
+          + "</foreach>"
+          + "<if test='includeNullBucketId'> OR bucket_id IS NULL </if>"
+          + "</script>")
+  /**
+   * Select runtimes by bucket ids.
+   *
+   * @param includeNullBucketId false = only rows with bucket_id in list (master-slave); true = also
+   *     include bucket_id IS NULL (e.g. for non-master-slave compatibility)
+   */
+  @ResultMap("tableRuntimeMeta")
+  List<TableRuntimeMeta> selectRuntimesByBucketIds(
+      @Param("bucketIds") List<String> bucketIds,
+      @Param("includeNullBucketId") boolean includeNullBucketId);
 
   @Select(
       "<script>"
@@ -180,4 +215,19 @@ public interface TableRuntimeMapper {
 
   @Delete("DELETE FROM " + STATE_TABLE_NAME + " WHERE table_id = #{tableId}")
   void removeAllTableStates(@Param("tableId") long tableId);
+
+  /**
+   * Count tables per bucketId. Returns a map where key is bucketId and value is the count of tables
+   * for that bucketId. Only counts non-null and non-empty bucketIds.
+   */
+  @Select(
+      "SELECT bucket_id, COUNT(*) as table_count FROM "
+          + TABLE_NAME
+          + " WHERE bucket_id IS NOT NULL AND bucket_id != '' "
+          + "GROUP BY bucket_id")
+  @Results({
+    @Result(column = "bucket_id", property = "bucketId"),
+    @Result(column = "table_count", property = "count")
+  })
+  List<BucketIdCount> countTablesByBucketId();
 }

@@ -51,8 +51,7 @@ public class TestDefaultKeyedFile extends TableTestBase {
     Assert.assertEquals(DataFileType.INSERT_FILE, defaultKeyedFile.type());
     Assert.assertEquals(3, defaultKeyedFile.node().mask());
     Assert.assertEquals(0, defaultKeyedFile.node().index());
-    // TODO check transactionId
-
+    Assert.assertEquals(txId, defaultKeyedFile.transactionId());
   }
 
   private List<Record> writeRecords() {

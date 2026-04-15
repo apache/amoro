@@ -295,6 +295,17 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
   }
 
   /**
+   * Get the current node's optimizing service server info. ZK-registered node data uses this info,
+   * so bucket-assignment lookups must use the same port.
+   *
+   * @return The current node's optimizing service server info, null if HA is not enabled
+   */
+  @Override
+  public AmsServerInfo getOptimizingServiceServerInfo() {
+    return optimizingServiceServerInfo;
+  }
+
+  /**
    * Get the ZooKeeper client. This is used for creating BucketAssignStore.
    *
    * @return The ZooKeeper client, null if HA is not enabled

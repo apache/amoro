@@ -250,12 +250,17 @@ public class AmoroServiceContainer {
 
     DefaultTableRuntimeFactory defaultRuntimeFactory = new DefaultTableRuntimeFactory();
     defaultRuntimeFactory.initialize(processFactories);
-    // In master-slave mode, create AmsAssignService for bucket assignment
+
+    BucketAssignStore bucketAssignStore = null;
     if (IS_MASTER_SLAVE_MODE && haContainer != null) {
+      bucketAssignStore = BucketAssignStoreFactory.create(haContainer, serviceConfig);
+    }
+
+    // In master-slave mode, create AmsAssignService for bucket assignment (shares BucketAssignStore
+    // with DefaultTableService).
+    if (IS_MASTER_SLAVE_MODE && haContainer != null && bucketAssignStore != null) {
       try {
-        // Create and start AmsAssignService for bucket assignment
-        // The factory will handle different HA types (ZK, database, etc.)
-        amsAssignService = new AmsAssignService(haContainer, serviceConfig);
+        amsAssignService = new AmsAssignService(haContainer, serviceConfig, bucketAssignStore);
         amsAssignService.start();
         LOG.info("AmsAssignService started for master-slave mode");
       } catch (UnsupportedOperationException e) {
@@ -267,10 +272,18 @@ public class AmoroServiceContainer {
 
     List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
 
-    tableService = new DefaultTableService(serviceConfig, catalogManager, defaultRuntimeFactory);
+    tableService =
+        new DefaultTableService(
+            serviceConfig, catalogManager, defaultRuntimeFactory, haContainer, bucketAssignStore);
     processService = new ProcessService(tableService, actionCoordinators, executeEngineManager);
     optimizingService =
-        new DefaultOptimizingService(serviceConfig, catalogManager, optimizerManager, tableService);
+        new DefaultOptimizingService(
+            serviceConfig,
+            catalogManager,
+            optimizerManager,
+            tableService,
+            bucketAssignStore,
+            haContainer);
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);
@@ -280,7 +293,7 @@ public class AmoroServiceContainer {
     addHandlerChain(InlineTableExecutors.getInstance().getOrphanFilesCleaningExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getDanglingDeleteFilesCleaningExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getOptimizingCommitExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getOptimizingExpiringExecutor());
+    addHandlerChain(InlineTableExecutors.getInstance().getProcessDataExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getBlockerExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getHiveCommitSyncExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getTableRefreshingExecutor());

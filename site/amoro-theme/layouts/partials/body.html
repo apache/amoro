@@ -14,6 +14,19 @@
     </script>
 </head>
 {{ partial "header.html" . }}
+{{ $isLatestDocs := and (eq .Site.Params.siteType "docs") (or (in .Site.BaseURL "/docs/latest") (in .Site.Home.Permalink "/docs/latest")) }}
+{{ $stableVersionName := "" }}
+{{ $stableVersionURL := "" }}
+{{ range .Site.Menus.topnav }}
+    {{ if eq .Name "Docs" }}
+        {{ range .Children }}
+            {{ if and (ne .Name "latest") (eq $stableVersionName "") }}
+                {{ $stableVersionName = .Name }}
+                {{ $stableVersionURL = .URL }}
+            {{ end }}
+        {{ end }}
+    {{ end }}
+{{ end }}
 <body dir="{{ .Site.Language.LanguageDirection | default " ltr" }}">
     <section>
         <div class="grid-container {{ if and (not .Params.disableSidebar) (not .Params.disableToc) }}leftnav-and-toc{{ else if not .Params.disableSidebar }}left-nav-only{{ else if not .Params.disableToc }}toc-only{{ else }}content-only{{ end }}">
@@ -22,6 +35,15 @@
             {{ end }}
             <div id="content" class="markdown-body">
                 <div class="{{ if not .Params.disableToc }}margin-for-toc{{ else }}margin-without-toc{{ end }}">
+                    {{ if $isLatestDocs }}
+                    <div class="latest-docs-note">
+                        <p>This documentation reflects the <code>latest</code> development version and may change before the next official release.</p>
+                        <p>
+                            For the latest stable documentation, see
+                            <a href="{{ $.Site.BaseURL }}{{ $stableVersionURL }}"><strong>{{ $stableVersionName }}</strong></a>.
+                        </p>
+                    </div>
+                    {{ end }}
                     {{- .Content -}}
                 </div>
                 {{ if not .Params.disableToc }}

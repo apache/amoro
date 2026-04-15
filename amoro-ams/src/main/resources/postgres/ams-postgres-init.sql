@@ -462,6 +462,7 @@ CREATE TABLE IF NOT EXISTS bucket_assignments (
   server_info_json   TEXT         NULL,
   assignments_json   TEXT         NULL,
   last_update_time   BIGINT       NOT NULL DEFAULT 0,
+  node_heartbeat_ts  BIGINT       NOT NULL DEFAULT 0,
   PRIMARY KEY (cluster_name, node_key)
 );
 

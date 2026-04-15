@@ -34,8 +34,8 @@ import java.util.List;
 public interface BucketAssignMapper {
 
   @Insert(
-      "INSERT INTO bucket_assignments (cluster_name, node_key, server_info_json, assignments_json, last_update_time) "
-          + "VALUES (#{meta.clusterName}, #{meta.nodeKey}, #{meta.serverInfoJson}, #{meta.assignmentsJson}, #{meta.lastUpdateTime})")
+      "INSERT INTO bucket_assignments (cluster_name, node_key, server_info_json, assignments_json, last_update_time, node_heartbeat_ts) "
+          + "VALUES (#{meta.clusterName}, #{meta.nodeKey}, #{meta.serverInfoJson}, #{meta.assignmentsJson}, #{meta.lastUpdateTime}, #{meta.nodeHeartbeatTs})")
   int insert(@Param("meta") BucketAssignmentMeta meta);
 
   @Update(
@@ -56,8 +56,20 @@ public interface BucketAssignMapper {
       @Param("nodeKey") String nodeKey,
       @Param("lastUpdateTime") Long lastUpdateTime);
 
+  /**
+   * Update only the per-node heartbeat timestamp. Must be called only by the owning node, never by
+   * the leader on behalf of other nodes.
+   */
+  @Update(
+      "UPDATE bucket_assignments SET node_heartbeat_ts = #{nodeHeartbeatTs} "
+          + "WHERE cluster_name = #{clusterName} AND node_key = #{nodeKey}")
+  int updateNodeHeartbeat(
+      @Param("clusterName") String clusterName,
+      @Param("nodeKey") String nodeKey,
+      @Param("nodeHeartbeatTs") Long nodeHeartbeatTs);
+
   @Select(
-      "SELECT cluster_name, node_key, server_info_json, assignments_json, last_update_time "
+      "SELECT cluster_name, node_key, server_info_json, assignments_json, last_update_time, node_heartbeat_ts "
           + "FROM bucket_assignments WHERE cluster_name = #{clusterName} AND node_key = #{nodeKey}")
   @Results(
       id = "BucketAssignmentMetaMap",
@@ -66,13 +78,14 @@ public interface BucketAssignMapper {
         @Result(column = "node_key", property = "nodeKey"),
         @Result(column = "server_info_json", property = "serverInfoJson"),
         @Result(column = "assignments_json", property = "assignmentsJson"),
-        @Result(column = "last_update_time", property = "lastUpdateTime")
+        @Result(column = "last_update_time", property = "lastUpdateTime"),
+        @Result(column = "node_heartbeat_ts", property = "nodeHeartbeatTs")
       })
   BucketAssignmentMeta selectByNode(
       @Param("clusterName") String clusterName, @Param("nodeKey") String nodeKey);
 
   @Select(
-      "SELECT cluster_name, node_key, server_info_json, assignments_json, last_update_time "
+      "SELECT cluster_name, node_key, server_info_json, assignments_json, last_update_time, node_heartbeat_ts "
           + "FROM bucket_assignments WHERE cluster_name = #{clusterName}")
   @ResultMap("BucketAssignmentMetaMap")
   List<BucketAssignmentMeta> selectAllByCluster(@Param("clusterName") String clusterName);

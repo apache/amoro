@@ -63,8 +63,9 @@ public final class BucketAssignStoreFactory {
             "Cannot create ZkBucketAssignStore: ZK client not available or invalid container type");
 
       case AmoroManagementConf.HA_TYPE_DATABASE:
+        long nodeHeartbeatTtlMs = conf.get(AmoroManagementConf.HA_LEASE_TTL).toMillis();
         LOG.info("Creating DBBucketAssignStore for cluster: {}", clusterName);
-        return new DBBucketAssignStore(clusterName);
+        return new DBBucketAssignStore(clusterName, nodeHeartbeatTtlMs);
 
       default:
         throw new IllegalArgumentException(

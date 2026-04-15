@@ -36,8 +36,8 @@ import org.apache.flink.types.RowKind;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.TableScan;
+import org.apache.iceberg.flink.sink.FlinkWriteResult;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -52,15 +52,15 @@ public class TestMixedFormatFileCommitter extends FlinkTestBase {
         new BasicTableTestHelper(true, true));
   }
 
-  public OneInputStreamOperatorTestHarness<WriteResult, Void> createMixedFormatFileCommitter(
+  public OneInputStreamOperatorTestHarness<FlinkWriteResult, Void> createMixedFormatFileCommitter(
       MixedFormatTableLoader tableLoader,
       MixedTable table,
       OperatorSubtaskState operatorSubtaskState)
       throws Exception {
-    OneInputStreamOperator<WriteResult, Void> committer =
+    OneInputStreamOperator<FlinkWriteResult, Void> committer =
         FlinkSink.createFileCommitter(
             table, tableLoader, false, SnapshotRef.MAIN_BRANCH, table.spec());
-    OneInputStreamOperatorTestHarness<WriteResult, Void> harness =
+    OneInputStreamOperatorTestHarness<FlinkWriteResult, Void> harness =
         new OneInputStreamOperatorTestHarness<>(committer, 1, 1, 0);
 
     harness.setup();
@@ -93,19 +93,19 @@ public class TestMixedFormatFileCommitter extends FlinkTestBase {
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     KeyedTable table = MixedFormatUtils.loadMixedTable(tableLoader).asKeyedTable();
 
-    List<WriteResult> completedFiles = prepareChangeFiles();
+    List<FlinkWriteResult> completedFiles = prepareChangeFiles();
     OperatorSubtaskState snapshot;
     long checkpoint = 1;
-    try (OneInputStreamOperatorTestHarness<WriteResult, Void> testHarness =
+    try (OneInputStreamOperatorTestHarness<FlinkWriteResult, Void> testHarness =
         createMixedFormatFileCommitter(tableLoader, table, null)) {
 
-      for (WriteResult completedFile : completedFiles) {
+      for (FlinkWriteResult completedFile : completedFiles) {
         testHarness.processElement(new StreamRecord<>(completedFile));
       }
       snapshot = testHarness.snapshot(checkpoint, System.currentTimeMillis());
     }
 
-    try (OneInputStreamOperatorTestHarness<WriteResult, Void> testHarness =
+    try (OneInputStreamOperatorTestHarness<FlinkWriteResult, Void> testHarness =
         createMixedFormatFileCommitter(tableLoader, table, snapshot)) {
       testHarness.notifyOfCompletedCheckpoint(checkpoint);
     }
@@ -113,10 +113,10 @@ public class TestMixedFormatFileCommitter extends FlinkTestBase {
     checkChangeFiles(7, 9, table);
   }
 
-  private List<WriteResult> prepareChangeFiles() throws Exception {
-    List<WriteResult> changeFiles;
+  private List<FlinkWriteResult> prepareChangeFiles() throws Exception {
+    List<FlinkWriteResult> changeFiles;
     long checkpointId = 1L;
-    try (OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness =
+    try (OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult> testHarness =
         TestMixedFormatFileWriter.createMixedFormatStreamWriter(tableLoader)) {
       // The first checkpoint
       testHarness.processElement(createRowData(1, "hello", "2020-10-11T10:10:11.0"), 1);
@@ -125,7 +125,8 @@ public class TestMixedFormatFileCommitter extends FlinkTestBase {
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       Assert.assertEquals(1, testHarness.extractOutputValues().size());
-      Assert.assertEquals(3, testHarness.extractOutputValues().get(0).dataFiles().length);
+      Assert.assertEquals(
+          3, testHarness.extractOutputValues().get(0).writeResult().dataFiles().length);
 
       checkpointId = checkpointId + 1;
 
@@ -143,7 +144,8 @@ public class TestMixedFormatFileCommitter extends FlinkTestBase {
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       // testHarness.extractOutputValues() compute the sum
       Assert.assertEquals(2, testHarness.extractOutputValues().size());
-      Assert.assertEquals(4, testHarness.extractOutputValues().get(1).dataFiles().length);
+      Assert.assertEquals(
+          4, testHarness.extractOutputValues().get(1).writeResult().dataFiles().length);
       changeFiles = testHarness.extractOutputValues();
     }
     return changeFiles;

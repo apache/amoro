@@ -553,15 +553,7 @@ public class TestAmsAssignService {
   /** Create AmsAssignService with mock BucketAssignStore. */
   private AmsAssignService createAssignServiceWithMockStore(HighAvailabilityContainer container)
       throws Exception {
-    AmsAssignService service = new AmsAssignService(container, serviceConfig);
-
-    // Use reflection to inject mock assign store
-    java.lang.reflect.Field assignStoreField =
-        AmsAssignService.class.getDeclaredField("assignStore");
-    assignStoreField.setAccessible(true);
-    assignStoreField.set(service, mockAssignStore);
-
-    return service;
+    return new AmsAssignService(container, serviceConfig, mockAssignStore);
   }
 
   /** Create a mock CuratorFramework that uses MockZkState for storage. */
@@ -878,6 +870,15 @@ public class TestAmsAssignService {
     public void updateLastUpdateTime(AmsServerInfo nodeInfo) throws BucketAssignStoreException {
       String nodeKey = getNodeKey(nodeInfo);
       lastUpdateTimes.put(nodeKey, System.currentTimeMillis());
+    }
+
+    @Override
+    public List<AmsServerInfo> getAliveNodes() throws BucketAssignStoreException {
+      List<AmsServerInfo> nodes = new ArrayList<>();
+      for (String nodeKey : assignments.keySet()) {
+        nodes.add(nodeInfoMap.getOrDefault(nodeKey, parseNodeKey(nodeKey)));
+      }
+      return nodes;
     }
 
     private AmsServerInfo parseNodeKey(String nodeKey) {
