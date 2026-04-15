@@ -781,31 +781,27 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   private boolean triggerTableAdded(
       ServerCatalog catalog, ServerTableIdentifier serverTableIdentifier) {
-    // Clean up any pre-existing runtime to prevent metric registration conflicts.
-    // This can happen when a table is deleted from DB (e.g., by dispose after filter change)
-    // but its runtime and metrics remain in memory. We search by table name rather than by ID
-    // because re-syncing a table creates a new DB row with a different ID.
-    tableRuntimeMap
-        .values()
-        .removeIf(
-            existing -> {
-              ServerTableIdentifier existingId = existing.getTableIdentifier();
-              if (existingId.getCatalog().equals(serverTableIdentifier.getCatalog())
-                  && existingId.getDatabase().equals(serverTableIdentifier.getDatabase())
-                  && existingId.getTableName().equals(serverTableIdentifier.getTableName())) {
-                LOG.warn(
-                    "Found existing table runtime for {}, disposing before re-adding.",
-                    serverTableIdentifier);
-                try {
-                  existing.dispose();
-                } catch (Exception e) {
-                  LOG.warn(
-                      "Error disposing existing table runtime for {}", serverTableIdentifier, e);
-                }
-                return true;
-              }
-              return false;
-            });
+    cleanupStaleRuntimeWithSameName(serverTableIdentifier);
+
+    TableRuntime existedRuntime = tableRuntimeMap.get(serverTableIdentifier.getId());
+    if (existedRuntime != null) {
+      TableRuntimeMeta existingRuntimeMeta =
+          getAs(
+              TableRuntimeMapper.class,
+              mapper -> mapper.selectRuntime(serverTableIdentifier.getId()));
+      if (existingRuntimeMeta != null) {
+        LOG.info(
+            "Table runtime already exists for {}, skip duplicate add trigger.",
+            serverTableIdentifier);
+        return true;
+      }
+
+      LOG.warn(
+          "Found stale in-memory runtime for {}, runtime metadata is missing, re-creating.",
+          serverTableIdentifier);
+      disposeRuntimeSafely(existedRuntime, serverTableIdentifier, "while repairing stale runtime");
+      tableRuntimeMap.remove(serverTableIdentifier.getId(), existedRuntime);
+    }
 
     AmoroTable<?> table =
         catalog.loadTable(
@@ -899,6 +895,39 @@ public class DefaultTableService extends PersistentBase implements TableService 
       headHandler.fireTableAdded(table, tableRuntime);
     }
     return true;
+  }
+
+  private void cleanupStaleRuntimeWithSameName(ServerTableIdentifier serverTableIdentifier) {
+    tableRuntimeMap
+        .values()
+        .removeIf(
+            existing -> {
+              ServerTableIdentifier existingId = existing.getTableIdentifier();
+              if (Objects.equal(existingId.getId(), serverTableIdentifier.getId())) {
+                return false;
+              }
+
+              if (existingId.getCatalog().equals(serverTableIdentifier.getCatalog())
+                  && existingId.getDatabase().equals(serverTableIdentifier.getDatabase())
+                  && existingId.getTableName().equals(serverTableIdentifier.getTableName())) {
+                LOG.warn(
+                    "Found stale runtime {} for table {}, disposing before re-adding.",
+                    existingId,
+                    serverTableIdentifier);
+                disposeRuntimeSafely(existing, existingId, "while cleaning stale runtime");
+                return true;
+              }
+              return false;
+            });
+  }
+
+  private void disposeRuntimeSafely(
+      TableRuntime runtime, ServerTableIdentifier tableIdentifier, String operation) {
+    try {
+      runtime.dispose();
+    } catch (Exception e) {
+      LOG.warn("Error disposing runtime for {} {}", tableIdentifier, operation, e);
+    }
   }
 
   private Optional<TableRuntime> createTableRuntime(

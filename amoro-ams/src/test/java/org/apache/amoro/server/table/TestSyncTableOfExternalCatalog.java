@@ -62,6 +62,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
@@ -500,7 +501,6 @@ public class TestSyncTableOfExternalCatalog extends AMSTableTestBase {
     ServerTableIdentifier tableIdentifier = serverTableIdentifier();
     MetricRegistry globalRegistry = MetricManager.getInstance().getGlobalRegistry();
 
-    // Verify initial state: 1 runtime, metrics registered
     Assert.assertEquals(1, persistency.getTableRuntimeMetas().size());
     int metricCountBefore = globalRegistry.getMetrics().size();
     Assert.assertTrue(metricCountBefore > 0);
@@ -528,6 +528,56 @@ public class TestSyncTableOfExternalCatalog extends AMSTableTestBase {
 
     // The old runtime should be gone from the map (old ID)
     Assert.assertFalse(tableService().contains(tableIdentifier.getId()));
+
+    dropTable();
+    dropDatabase();
+  }
+
+  @Test
+  public void testTriggerTableAddedDuplicateSameTableIdIsIdempotent() {
+    ExternalCatalog externalCatalog = initExternalCatalog();
+    createTable();
+    ServerTableIdentifier tableIdentifier = serverTableIdentifier();
+    MetricRegistry globalRegistry = MetricManager.getInstance().getGlobalRegistry();
+
+    Assert.assertEquals(1, persistency.getTableRuntimeMetas().size());
+    int metricCountBefore = globalRegistry.getMetrics().size();
+    Assert.assertTrue(metricCountBefore > 0);
+
+    boolean added = invokeTriggerTableAdded(externalCatalog, tableIdentifier);
+
+    Assert.assertTrue(added);
+    Assert.assertEquals(1, persistency.getTableRuntimeMetas().size());
+    Assert.assertTrue(tableService().contains(tableIdentifier.getId()));
+    Assert.assertEquals(metricCountBefore, globalRegistry.getMetrics().size());
+
+    dropTable();
+    dropDatabase();
+  }
+
+  @Test
+  public void testTriggerTableAddedRepairStaleRuntimeSameTableId() {
+    ExternalCatalog externalCatalog = initExternalCatalog();
+    createTable();
+    ServerTableIdentifier tableIdentifier = serverTableIdentifier();
+    MetricRegistry globalRegistry = MetricManager.getInstance().getGlobalRegistry();
+
+    int metricCountBefore = globalRegistry.getMetrics().size();
+    Assert.assertTrue(metricCountBefore > 0);
+
+    persistency.deleteTableRuntime(tableIdentifier.getId());
+    Assert.assertEquals(0, persistency.getTableRuntimeMetas().size());
+    Assert.assertTrue(tableService().contains(tableIdentifier.getId()));
+
+    boolean added = invokeTriggerTableAdded(externalCatalog, tableIdentifier);
+
+    Assert.assertTrue(added);
+    Assert.assertEquals(1, persistency.getTableRuntimeMetas().size());
+    Assert.assertTrue(tableService().contains(tableIdentifier.getId()));
+    Assert.assertEquals(metricCountBefore, globalRegistry.getMetrics().size());
+
+    tableService().exploreTableRuntimes();
+    Assert.assertEquals(1, persistency.getTableRuntimeMetas().size());
 
     dropTable();
     dropDatabase();
@@ -657,6 +707,19 @@ public class TestSyncTableOfExternalCatalog extends AMSTableTestBase {
     TEST_HMS.getHiveClient().dropDatabase(dbName, false, true);
     // drop catalog
     catalogManager().dropCatalog(catalogName);
+  }
+
+  private boolean invokeTriggerTableAdded(
+      ServerCatalog catalog, ServerTableIdentifier tableIdentifier) {
+    try {
+      Method triggerTableAddedMethod =
+          DefaultTableService.class.getDeclaredMethod(
+              "triggerTableAdded", ServerCatalog.class, ServerTableIdentifier.class);
+      triggerTableAddedMethod.setAccessible(true);
+      return (boolean) triggerTableAddedMethod.invoke(tableService(), catalog, tableIdentifier);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private static class Persistency extends PersistentBase {
