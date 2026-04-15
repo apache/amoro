@@ -1156,8 +1156,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private static class OrphanedResourceState {
     final long firstDetectedTime;
     /**
-     * Timestamp of the most recent restart attempt (-1 if no restart has been attempted yet).
-     * Used to enforce the grace period between consecutive restart attempts.
+     * Timestamp of the most recent restart attempt (-1 if no restart has been attempted yet). Used
+     * to enforce the grace period between consecutive restart attempts.
      */
     long lastRestartTime = -1;
 
