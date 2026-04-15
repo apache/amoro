@@ -62,6 +62,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
@@ -455,6 +456,133 @@ public class TestSyncTableOfExternalCatalog extends AMSTableTestBase {
     return externalCatalog;
   }
 
+  /**
+   * Test that a table can be re-added after disposal without metric conflicts. This verifies the
+   * fix for the "Metric is already been registered" error that occurs when database-filter changes
+   * cause tables to be disposed and then re-synced.
+   */
+  @Test
+  public void testTableReAddAfterDispose_MetricsClean() {
+    createTable();
+    ServerTableIdentifier tableIdentifier = serverTableIdentifier();
+    MetricRegistry globalRegistry = MetricManager.getInstance().getGlobalRegistry();
+
+    // Verify table runtime and metrics are registered
+    List<TableRuntimeMeta> runtimesAfterAdd = persistency.getTableRuntimeMetas();
+    Assert.assertEquals(1, runtimesAfterAdd.size());
+    Assert.assertFalse(globalRegistry.getMetrics().isEmpty());
+
+    // Dispose the table (simulates filter change excluding all databases)
+    tableService().disposeTable(tableIdentifier);
+    List<TableRuntimeMeta> runtimesAfterDispose = persistency.getTableRuntimeMetas();
+    Assert.assertEquals(0, runtimesAfterDispose.size());
+
+    // Re-sync via exploreTableRuntimes (simulates filter being removed, table re-discovered)
+    // The external iceberg table still exists, so it will be re-synced.
+    // This should NOT throw "Metric is already been registered"
+    tableService().exploreTableRuntimes();
+    List<TableRuntimeMeta> runtimesAfterReAdd = persistency.getTableRuntimeMetas();
+    Assert.assertEquals(1, runtimesAfterReAdd.size());
+    Assert.assertFalse(globalRegistry.getMetrics().isEmpty());
+
+    dropTable();
+    dropDatabase();
+  }
+
+  /**
+   * Test that triggerTableAdded is idempotent: if a table runtime already exists in the map (e.g.,
+   * due to incomplete disposal), re-adding the table should dispose the old runtime first and
+   * succeed without metric conflicts.
+   */
+  @Test
+  public void testTriggerTableAddedIdempotent() {
+    ExternalCatalog externalCatalog = initExternalCatalog();
+    createTable();
+    ServerTableIdentifier tableIdentifier = serverTableIdentifier();
+    MetricRegistry globalRegistry = MetricManager.getInstance().getGlobalRegistry();
+
+    Assert.assertEquals(1, persistency.getTableRuntimeMetas().size());
+    int metricCountBefore = globalRegistry.getMetrics().size();
+    Assert.assertTrue(metricCountBefore > 0);
+
+    // Simulate inconsistent state: delete table records from DB but leave runtime in map.
+    // This mimics the scenario where disposeTable's DB operation fails and the table is
+    // later removed from DB by another path, leaving orphaned metrics in the registry.
+    persistency.deleteTableRuntime(tableIdentifier.getId());
+    persistency.deleteTableIdentifier(tableIdentifier.getIdentifier().buildTableIdentifier());
+
+    // Verify DB is empty but runtime (with metrics) is still in memory
+    Assert.assertEquals(0, persistency.getTableRuntimeMetas().size());
+    Assert.assertEquals(0, tableManager().listManagedTables().size());
+    Assert.assertTrue(tableService().contains(tableIdentifier.getId()));
+
+    // exploreExternalCatalog should detect the table in external catalog but not in DB,
+    // and call syncTable -> triggerTableAdded. With the fix, it should dispose the old
+    // runtime (by table name match) first, then register the new one without conflict.
+    tableService().exploreExternalCatalog(externalCatalog);
+
+    // Verify: table is re-registered successfully with new ID, metrics present
+    List<TableRuntimeMeta> runtimesAfterReSync = persistency.getTableRuntimeMetas();
+    Assert.assertEquals(1, runtimesAfterReSync.size());
+    Assert.assertFalse(globalRegistry.getMetrics().isEmpty());
+
+    // The old runtime should be gone from the map (old ID)
+    Assert.assertFalse(tableService().contains(tableIdentifier.getId()));
+
+    dropTable();
+    dropDatabase();
+  }
+
+  @Test
+  public void testTriggerTableAddedDuplicateSameTableIdIsIdempotent() {
+    ExternalCatalog externalCatalog = initExternalCatalog();
+    createTable();
+    ServerTableIdentifier tableIdentifier = serverTableIdentifier();
+    MetricRegistry globalRegistry = MetricManager.getInstance().getGlobalRegistry();
+
+    Assert.assertEquals(1, persistency.getTableRuntimeMetas().size());
+    int metricCountBefore = globalRegistry.getMetrics().size();
+    Assert.assertTrue(metricCountBefore > 0);
+
+    boolean added = invokeTriggerTableAdded(externalCatalog, tableIdentifier);
+
+    Assert.assertTrue(added);
+    Assert.assertEquals(1, persistency.getTableRuntimeMetas().size());
+    Assert.assertTrue(tableService().contains(tableIdentifier.getId()));
+    Assert.assertEquals(metricCountBefore, globalRegistry.getMetrics().size());
+
+    dropTable();
+    dropDatabase();
+  }
+
+  @Test
+  public void testTriggerTableAddedRepairStaleRuntimeSameTableId() {
+    ExternalCatalog externalCatalog = initExternalCatalog();
+    createTable();
+    ServerTableIdentifier tableIdentifier = serverTableIdentifier();
+    MetricRegistry globalRegistry = MetricManager.getInstance().getGlobalRegistry();
+
+    int metricCountBefore = globalRegistry.getMetrics().size();
+    Assert.assertTrue(metricCountBefore > 0);
+
+    persistency.deleteTableRuntime(tableIdentifier.getId());
+    Assert.assertEquals(0, persistency.getTableRuntimeMetas().size());
+    Assert.assertTrue(tableService().contains(tableIdentifier.getId()));
+
+    boolean added = invokeTriggerTableAdded(externalCatalog, tableIdentifier);
+
+    Assert.assertTrue(added);
+    Assert.assertEquals(1, persistency.getTableRuntimeMetas().size());
+    Assert.assertTrue(tableService().contains(tableIdentifier.getId()));
+    Assert.assertEquals(metricCountBefore, globalRegistry.getMetrics().size());
+
+    tableService().exploreTableRuntimes();
+    Assert.assertEquals(1, persistency.getTableRuntimeMetas().size());
+
+    dropTable();
+    dropDatabase();
+  }
+
   @Mock private DefaultTableRuntime tableRuntimeWithException;
   @Mock private ServerTableIdentifier tableIdentifierWithException;
 
@@ -579,6 +707,19 @@ public class TestSyncTableOfExternalCatalog extends AMSTableTestBase {
     TEST_HMS.getHiveClient().dropDatabase(dbName, false, true);
     // drop catalog
     catalogManager().dropCatalog(catalogName);
+  }
+
+  private boolean invokeTriggerTableAdded(
+      ServerCatalog catalog, ServerTableIdentifier tableIdentifier) {
+    try {
+      Method triggerTableAddedMethod =
+          DefaultTableService.class.getDeclaredMethod(
+              "triggerTableAdded", ServerCatalog.class, ServerTableIdentifier.class);
+      triggerTableAddedMethod.setAccessible(true);
+      return (boolean) triggerTableAddedMethod.invoke(tableService(), catalog, tableIdentifier);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private static class Persistency extends PersistentBase {
