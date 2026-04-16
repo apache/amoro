@@ -157,7 +157,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
     this.bucketAssignStore = bucketAssignStore;
     this.haContainer = haContainer;
     this.isMasterSlaveMode =
-        haContainer != null && serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
+        haContainer != null
+            && serviceConfig.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE);
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
     this.planExecutor =
         Executors.newCachedThreadPool(

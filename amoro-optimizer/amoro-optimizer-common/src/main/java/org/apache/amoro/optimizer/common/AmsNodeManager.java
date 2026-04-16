@@ -46,7 +46,7 @@ public class AmsNodeManager implements Serializable {
   private final AtomicReference<List<String>> amsUrls =
       new AtomicReference<>(Collections.emptyList());
   private volatile long lastRefreshTime = 0;
-  private transient Object refreshLock;
+  private transient volatile Object refreshLock;
 
   public AmsNodeManager(String amsUrl) {
     Matcher m = ZOOKEEPER_PATTERN.matcher(amsUrl);
@@ -59,6 +59,17 @@ public class AmsNodeManager implements Serializable {
     refreshNodes();
   }
 
+  private Object getRefreshLock() {
+    if (refreshLock == null) {
+      synchronized (this) {
+        if (refreshLock == null) {
+          refreshLock = new Object();
+        }
+      }
+    }
+    return refreshLock;
+  }
+
   /** Get all available AMS URLs. */
   public List<String> getAllAmsUrls() {
     refreshNodesIfNeeded();
@@ -67,7 +78,7 @@ public class AmsNodeManager implements Serializable {
 
   /** Manually refresh node list from ZooKeeper. */
   public void refreshNodes() {
-    synchronized (refreshLock) {
+    synchronized (getRefreshLock()) {
       refreshNodesInternal();
       lastRefreshTime = System.currentTimeMillis();
     }
@@ -75,12 +86,11 @@ public class AmsNodeManager implements Serializable {
 
   /** Refresh node list from ZooKeeper if needed. */
   private void refreshNodesIfNeeded() {
-    long now = System.currentTimeMillis();
-    if (now - lastRefreshTime > REFRESH_INTERVAL_MS) {
-      synchronized (refreshLock) {
-        if (now - lastRefreshTime > REFRESH_INTERVAL_MS) {
+    if (System.currentTimeMillis() - lastRefreshTime > REFRESH_INTERVAL_MS) {
+      synchronized (getRefreshLock()) {
+        if (System.currentTimeMillis() - lastRefreshTime > REFRESH_INTERVAL_MS) {
           refreshNodesInternal();
-          lastRefreshTime = now;
+          lastRefreshTime = System.currentTimeMillis();
         }
       }
     }
@@ -89,24 +99,41 @@ public class AmsNodeManager implements Serializable {
   /** Refresh node list from ZooKeeper (internal implementation). */
   private void refreshNodesInternal() {
     try {
-      LOG.info("Refreshing nodes from {}", zkServerAddress);
+      LOG.debug("Refreshing AMS nodes from ZooKeeper: {}", zkServerAddress);
       List<String> nodeUrls = new ArrayList<>();
       List<AmsServerInfo> amsServerInfos = AmsThriftUrl.parseMasterSlaveAmsNodes(zkServerAddress);
-      LOG.info("Refreshing nodes from {}", amsServerInfos);
       for (AmsServerInfo amsServerInfo : amsServerInfos) {
         nodeUrls.add(buildAmsUrl(amsServerInfo));
       }
 
+      List<String> previousUrls = amsUrls.get();
       if (!nodeUrls.isEmpty()) {
         amsUrls.set(nodeUrls);
-        LOG.info("Refreshed AMS nodes, found {} nodes: {}", nodeUrls.size(), nodeUrls);
+        if (!nodeUrls.equals(previousUrls)) {
+          LOG.info(
+              "AMS node list updated: {} -> {} ({} nodes)",
+              previousUrls.isEmpty() ? "(empty)" : previousUrls,
+              nodeUrls,
+              nodeUrls.size());
+        } else {
+          LOG.debug("AMS node list unchanged: {} ({} nodes)", nodeUrls, nodeUrls.size());
+        }
       } else {
-        LOG.warn("No AMS nodes found in ZooKeeper");
         amsUrls.set(Collections.emptyList());
+        if (!previousUrls.isEmpty()) {
+          LOG.warn(
+              "All AMS nodes disappeared from ZooKeeper (was: {}), "
+                  + "will fall back to configured URL until nodes re-register",
+              previousUrls);
+        } else {
+          LOG.warn("No AMS nodes found in ZooKeeper path for {}", zkServerAddress);
+        }
       }
     } catch (Exception e) {
-      LOG.error("Failed to refresh AMS nodes from ZooKeeper", e);
-      // Keep existing nodes on error
+      LOG.error(
+          "Failed to refresh AMS nodes from ZooKeeper, keeping previous list: {}",
+          amsUrls.get(),
+          e);
     }
   }
 

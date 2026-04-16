@@ -18,7 +18,7 @@
 
 package org.apache.amoro.server;
 
-import static org.apache.amoro.server.AmoroManagementConf.USE_MASTER_SLAVE_MODE;
+import static org.apache.amoro.server.AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -373,7 +373,7 @@ public class AmoroServiceContainer {
   private void initConfig() throws Exception {
     LOG.info("initializing configurations...");
     new ConfigurationHelper().init();
-    IS_MASTER_SLAVE_MODE = serviceConfig.getBoolean(USE_MASTER_SLAVE_MODE);
+    IS_MASTER_SLAVE_MODE = serviceConfig.getBoolean(HA_USE_MASTER_SLAVE_MODE);
   }
 
   public Configurations getServiceConfig() {
@@ -667,6 +667,12 @@ public class AmoroServiceContainer {
           containerProperties.putIfAbsent(
               OptimizerProperties.AMS_OPTIMIZER_URI,
               AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
+          // When master-slave mode is enabled, automatically inject the flag into container
+          // properties to ensure the -msm argument is correctly passed when starting optimizers.
+          if (serviceConfig.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE)) {
+            containerProperties.putIfAbsent(
+                OptimizerProperties.OPTIMIZER_MASTER_SLAVE_MODE_ENABLED, "true");
+          }
           // put addition system properties
           container.setProperties(containerProperties);
           containerList.add(container);

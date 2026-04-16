@@ -141,7 +141,8 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
 
   @Override
   public void registerAndElect() throws Exception {
-    boolean isMasterSlaveMode = serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
+    boolean isMasterSlaveMode =
+        serviceConfig.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE);
     if (!isMasterSlaveMode) {
       LOG.debug("Master-slave mode is not enabled, skip node registration");
       return;
@@ -220,7 +221,8 @@ public class DataBaseHighAvailabilityContainer extends PersistentBase
     }
     // Remove this node from bucket_assignments so the leader immediately stops seeing it
     // as alive without waiting for the heartbeat TTL to expire.
-    boolean isMasterSlaveMode = serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
+    boolean isMasterSlaveMode =
+        serviceConfig.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE);
     if (isMasterSlaveMode) {
       try {
         String nodeKey = getNodeKey();

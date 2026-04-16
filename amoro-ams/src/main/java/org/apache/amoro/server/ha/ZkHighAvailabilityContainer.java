@@ -67,7 +67,7 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
   private String registeredNodePath;
 
   public ZkHighAvailabilityContainer(Configurations serviceConfig) throws Exception {
-    this.isMasterSlaveMode = serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE);
+    this.isMasterSlaveMode = serviceConfig.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE);
     if (serviceConfig.getBoolean(AmoroManagementConf.HA_ENABLE)) {
       String zkServerAddress = serviceConfig.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS);
       int zkSessionTimeout =
@@ -212,6 +212,29 @@ public class ZkHighAvailabilityContainer implements HighAvailabilityContainer, L
         tableServiceServerInfo.toString(),
         optimizingServiceServerInfo.toString());
     followerLatch = new CountDownLatch(1);
+    // Write server info to ZK master paths on leadership gained, so that both master-slave mode
+    // (which skips waitLeaderShip()) and active-standby mode have the correct JSON data in ZK.
+    try {
+      CuratorOp tableServiceMasterPathOp =
+          zkClient
+              .transactionOp()
+              .setData()
+              .forPath(
+                  tableServiceMasterPath,
+                  JacksonUtil.toJSONString(tableServiceServerInfo)
+                      .getBytes(StandardCharsets.UTF_8));
+      CuratorOp optimizingServiceMasterPathOp =
+          zkClient
+              .transactionOp()
+              .setData()
+              .forPath(
+                  optimizingServiceMasterPath,
+                  JacksonUtil.toJSONString(optimizingServiceServerInfo)
+                      .getBytes(StandardCharsets.UTF_8));
+      zkClient.transaction().forOperations(tableServiceMasterPathOp, optimizingServiceMasterPathOp);
+    } catch (Exception e) {
+      LOG.error("Failed to write server info to ZK master paths on leadership gained", e);
+    }
   }
 
   @Override
