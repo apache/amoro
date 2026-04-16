@@ -37,7 +37,7 @@ RUN AMORO_VERSION=`cat pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.
     && tar -xzvf /usr/local/apache-amoro-${AMORO_VERSION}-bin.tar.gz -C /usr/local \
     && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/flink -rf \
     && rm /usr/local/amoro-${AMORO_VERSION}/plugin/optimizer/spark -rf \
-    && mv /usr/local/amoro-${AMORO_VERSION} /usr/local/amoro \
+    && mv /usr/local/amoro-${AMORO_VERSION} /usr/local/fusion \
     && rm -rf /workspace/amoro
 
 
@@ -45,14 +45,13 @@ FROM eclipse-temurin:17-jdk-jammy
 
 ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 
-ENV AMORO_HOME /usr/local/amoro
-ENV AMORO_CONF_DIR ${AMORO_HOME}/conf
-ENV LOG_LEVEL info
+ENV AMORO_HOME=/usr/local/fusion
+ENV LOG_LEVEL=info
 EXPOSE 1630 1260 1261
 
 COPY ./docker/amoro/entrypoint.sh /
 RUN chmod +x /entrypoint.sh
-COPY --from=builder "/usr/local/amoro" "/usr/local/amoro"
+COPY --from=builder "/usr/local/fusion" "/usr/local/fusion"
 
 WORKDIR ${AMORO_HOME}
 

@@ -29,11 +29,19 @@ else
 fi
 
 if [ -z "$AMORO_LOG_DIR" ]; then
-    export AMORO_LOG_DIR="${AMORO_HOME}/logs"
+    if [ -n "$LOG_DIR" ]; then
+        export AMORO_LOG_DIR="$LOG_DIR"
+    else
+        export AMORO_LOG_DIR="${AMORO_HOME}/logs"
+    fi
 fi
 
 if [ -z "$AMORO_CONF_DIR" ]; then
-    export AMORO_CONF_DIR="${AMORO_HOME}/conf"
+    if [ -n "$FUSION_CONF_DIR" ]; then
+        export AMORO_CONF_DIR="$FUSION_CONF_DIR"
+    else
+        export AMORO_CONF_DIR="${AMORO_HOME}/conf"
+    fi
 fi
 
 if [ -z "$AMORO_LOG_CONF_FILE" ]; then

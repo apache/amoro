@@ -18,7 +18,7 @@
 
 COMPOSE_DIR  := local-test
 KIND_CLUSTER := fusion-cluster
-AMORO_LOG_DIR ?= $(CURDIR)/docker/kind/amoro-logs
+FUSION_LOG_DIR ?= $(CURDIR)/docker/kind/fusion-logs
 DIST_TAR     := $(CURDIR)/dist/target/apache-amoro-0.9-SNAPSHOT-bin.tar.gz
 RUNTIME_HOME := $(CURDIR)/dist/target/amoro-0.9-SNAPSHOT
 BIN_HOME     := $(CURDIR)/dist/src/main/amoro-bin
@@ -119,8 +119,8 @@ stop-deps:
 
 start-fusion-docker:
 	@echo "Starting Fusion (Kind cluster + all services)..."
-	@mkdir -p "$(AMORO_LOG_DIR)"
-	@AMORO_LOG_DIR="$(AMORO_LOG_DIR)" docker compose -f $(COMPOSE_DIR)/docker-compose.yml --profile prod up -d
+	@mkdir -p "$(FUSION_LOG_DIR)"
+	@FUSION_LOG_DIR="$(FUSION_LOG_DIR)" docker compose -f $(COMPOSE_DIR)/docker-compose.yml --profile prod up -d
 	@kind export kubeconfig --name $(KIND_CLUSTER) 2>/dev/null
 
 clean-fusion-docker:

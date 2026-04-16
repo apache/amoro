@@ -42,12 +42,12 @@ services:
       KUBECONFIG: /root/.kube/config
       AWS_ACCESS_KEY_ID: admin
       AWS_SECRET_ACCESS_KEY: password
-      LOG_DIR: /mnt/amoro-logs/compaction
+      LOG_DIR: /mnt/fusion-logs
     volumes:
-      - ./config.yaml:/usr/local/amoro/conf/config.yaml:ro
+      - ./config.yaml:/usr/local/fusion/conf/config.yaml:ro
       - kind-kubeconfig:/root/.kube:ro
       - spark-home:/opt/spark:ro
-      - ${AMORO_LOG_DIR:-/opt/amoro-logs}:/mnt/amoro-logs
+      - ${FUSION_LOG_DIR:-/opt/fusion-logs}:/mnt/fusion-logs
     command: ["/entrypoint.sh", "ams"]
     tty: true
     stdin_open: true
@@ -246,7 +246,7 @@ services:
     networks:
       iceberg-net:
     environment:
-      AMORO_LOG_DIR: ${AMORO_LOG_DIR:-/opt/amoro-logs}
+      FUSION_LOG_DIR: ${FUSION_LOG_DIR:-/opt/fusion-logs}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - kind-kubeconfig:/output
@@ -258,11 +258,11 @@ services:
       - |
         set -e
 
-        LOG_DIR="$${AMORO_LOG_DIR:-/opt/amoro-logs}"
+        LOG_DIR="$${FUSION_LOG_DIR:-/opt/fusion-logs}"
         echo "==> Log directory: $$LOG_DIR"
 
         echo "==> Generating kind cluster config..."
-        sed "s|AMORO_LOG_PLACEHOLDER|$$LOG_DIR|g" /kind-config.yaml > /tmp/kind-config-gen.yaml
+        sed "s|FUSION_LOG_PLACEHOLDER|$$LOG_DIR|g" /kind-config.yaml > /tmp/kind-config-gen.yaml
 
         echo "==> Installing kind..."
         apk add --no-cache curl >/dev/null 2>&1

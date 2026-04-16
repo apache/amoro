@@ -183,12 +183,14 @@ containers:
       spark-conf.spark.kubernetes.executor.secretKeyRef.AWS_SECRET_ACCESS_KEY: "fusion-s3-credentials:secret-access-key"
       # Mount shared log volume so driver/executor pods write logs to the same path
       # that LogController reads from (via the Kind node hostPath extraMount).
-      spark-conf.spark.kubernetes.driver.volumes.hostPath.amoro-logs.mount.path: "/mnt/amoro-logs"
-      spark-conf.spark.kubernetes.driver.volumes.hostPath.amoro-logs.mount.readOnly: "false"
-      spark-conf.spark.kubernetes.driver.volumes.hostPath.amoro-logs.options.path: "/mnt/amoro-logs"
-      spark-conf.spark.kubernetes.executor.volumes.hostPath.amoro-logs.mount.path: "/mnt/amoro-logs"
-      spark-conf.spark.kubernetes.executor.volumes.hostPath.amoro-logs.mount.readOnly: "false"
-      spark-conf.spark.kubernetes.executor.volumes.hostPath.amoro-logs.options.path: "/mnt/amoro-logs"
+      spark-conf.spark.kubernetes.driver.volumes.hostPath.fusion-logs.mount.path: "/mnt/fusion-logs"
+      spark-conf.spark.kubernetes.driver.volumes.hostPath.fusion-logs.mount.readOnly: "false"
+      spark-conf.spark.kubernetes.driver.volumes.hostPath.fusion-logs.options.path: "/mnt/fusion-logs"
+      spark-conf.spark.kubernetes.executor.volumes.hostPath.fusion-logs.mount.path: "/mnt/fusion-logs"
+      spark-conf.spark.kubernetes.executor.volumes.hostPath.fusion-logs.mount.readOnly: "false"
+      spark-conf.spark.kubernetes.executor.volumes.hostPath.fusion-logs.options.path: "/mnt/fusion-logs"
+      spark-conf.spark.kubernetes.driverEnv.LOG_DIR: "/mnt/fusion-logs"
+      spark-conf.spark.kubernetes.executorEnv.LOG_DIR: "/mnt/fusion-logs"
       # Force Log4j2 to use the routing config (belt-and-suspenders with the Dockerfile COPY)
       spark-conf.spark.driver.extraJavaOptions: "-Dlog4j2.configurationFile=file:///opt/spark/conf/log4j2.xml"
       spark-conf.spark.executor.extraJavaOptions: "-Dlog4j2.configurationFile=file:///opt/spark/conf/log4j2.xml"

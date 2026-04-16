@@ -27,6 +27,12 @@ if [ -n "$LOG_LEVEL" ]; then
   export CONSOLE_LOG_LEVEL=$LOG_LEVEL
 fi
 
+if [ -n "$FUSION_CONF_DIR" ]; then
+  export AMORO_CONF_DIR="$FUSION_CONF_DIR"
+elif [ -z "$AMORO_CONF_DIR" ]; then
+  export AMORO_CONF_DIR="${AMORO_HOME}/conf"
+fi
+
 configure_jvm_options() {
   JVM_PROPERTIES_FILE="${AMORO_CONF_DIR}/jvm.properties"
   for option in $(printenv | perl -sne 'print "$1 " if m/^JVM_(.+?)=.*/' ); do
