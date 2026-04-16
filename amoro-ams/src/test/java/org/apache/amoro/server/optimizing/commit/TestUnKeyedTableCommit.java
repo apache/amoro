@@ -28,8 +28,6 @@ import org.apache.amoro.exception.OptimizingCommitException;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
-import org.apache.amoro.server.optimizing.TaskRuntime;
-import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.ContentFile;
@@ -281,10 +279,7 @@ public class TestUnKeyedTableCommit extends TableTestBase {
     RewriteFilesInput input = getRewriteInput(rewriteData, rewritePos, deletes);
     RewriteFilesOutput output = new RewriteFilesOutput(dataOutput, deleteOutput, null);
 
-    TaskRuntime<RewriteStageTask> taskRuntime = Mockito.mock(TaskRuntime.class);
     RewriteStageTask task = Mockito.mock(RewriteStageTask.class);
-    Mockito.when(taskRuntime.getStatus()).thenReturn(Status.SUCCESS);
-    Mockito.when(taskRuntime.getTaskDescriptor()).thenReturn(task);
     Mockito.when(task.getPartition()).thenReturn(partitionPath);
     Mockito.when(task.getInput()).thenReturn(input);
     Mockito.when(task.getOutput()).thenReturn(output);
@@ -294,7 +289,7 @@ public class TestUnKeyedTableCommit extends TableTestBase {
                 .map(Snapshot::snapshotId)
                 .orElse(null),
             getMixedTable(),
-            Collections.singletonList(taskRuntime));
+            Collections.singletonList(task));
     commit.commit();
   }
 

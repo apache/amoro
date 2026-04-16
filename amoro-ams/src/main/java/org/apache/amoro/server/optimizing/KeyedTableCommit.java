@@ -32,13 +32,18 @@ import org.apache.amoro.op.SnapshotSummary;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.TableOptimizingCommitter;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.ContentFiles;
+import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.amoro.utils.MixedTableUtil;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.exceptions.ValidationException;
@@ -51,15 +56,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-public class KeyedTableCommit extends UnKeyedTableCommit {
+public class KeyedTableCommit extends UnKeyedTableCommit implements TableOptimizingCommitter {
 
   private static final Logger LOG = LoggerFactory.getLogger(KeyedTableCommit.class);
 
   protected MixedTable table;
 
-  protected Collection<TaskRuntime<RewriteStageTask>> tasks;
+  protected Collection<RewriteStageTask> tasks;
 
   protected Long fromSnapshotId;
 
@@ -69,16 +76,32 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
 
   public KeyedTableCommit(
       MixedTable table,
-      Collection<TaskRuntime<RewriteStageTask>> tasks,
+      Collection<RewriteStageTask> tasks,
       Long fromSnapshotId,
-      StructLikeMap<Long> fromSequenceOfPartitions,
-      StructLikeMap<Long> toSequenceOfPartitions) {
+      Map<String, Long> fromSequence,
+      Map<String, Long> toSequence) {
     super(fromSnapshotId, table, tasks);
     this.table = table;
     this.tasks = tasks;
     this.fromSnapshotId = fromSnapshotId == null ? Constants.INVALID_SNAPSHOT_ID : fromSnapshotId;
-    this.fromSequenceOfPartitions = fromSequenceOfPartitions;
-    this.toSequenceOfPartitions = toSequenceOfPartitions;
+    this.fromSequenceOfPartitions = convertPartitionSequence(table, fromSequence);
+    this.toSequenceOfPartitions = convertPartitionSequence(table, toSequence);
+  }
+
+  private static StructLikeMap<Long> convertPartitionSequence(
+      MixedTable table, Map<String, Long> partitionSequence) {
+    PartitionSpec spec = table.spec();
+    StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
+    partitionSequence.forEach(
+        (partition, sequence) -> {
+          if (spec.isUnpartitioned()) {
+            results.put(TablePropertyUtil.EMPTY_STRUCT, sequence);
+          } else {
+            StructLike partitionData = MixedDataFiles.data(spec, partition);
+            results.put(partitionData, sequence);
+          }
+        });
+    return results;
   }
 
   @Override
@@ -94,6 +117,19 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
         tasks.size(),
         fromSnapshotId);
 
+    // Filter tasks with null output to avoid deleting input files of failed tasks
+    List<RewriteStageTask> successTasks =
+        tasks.stream().filter(task -> task.getOutput() != null).collect(Collectors.toList());
+
+    if (successTasks.isEmpty()) {
+      LOG.info("No tasks with output to commit for table {}", table.id());
+      return;
+    }
+
+    // Rebuild toSequenceOfPartitions from only success tasks to avoid consuming
+    // change files that belong to failed tasks
+    rebuildToSequenceOfPartitions(successTasks);
+
     // In the scene of moving files to hive, the files will be renamed
     List<DataFile> hiveNewDataFiles = moveFile2HiveIfNeed();
 
@@ -105,8 +141,11 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
     StructLikeMap<Long> partitionOptimizedSequence =
         MixedTableUtil.readOptimizedSequence(table.asKeyedTable());
 
-    for (TaskRuntime<RewriteStageTask> taskRuntime : tasks) {
-      RewriteFilesInput input = taskRuntime.getTaskDescriptor().getInput();
+    for (RewriteStageTask task : successTasks) {
+      RewriteFilesInput input = task.getInput();
+      if (input == null) {
+        continue;
+      }
       StructLike partition = partition(input);
 
       // Check if the partition version has expired
@@ -115,6 +154,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
         toSequenceOfPartitions.remove(partition);
         continue;
       }
+
       // Only base data file need to remove
       if (input.rewrittenDataFiles() != null) {
         Arrays.stream(input.rewrittenDataFiles())
@@ -131,7 +171,7 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
             .forEach(removedDeleteFiles::add);
       }
 
-      RewriteFilesOutput output = taskRuntime.getTaskDescriptor().getOutput();
+      RewriteFilesOutput output = task.getOutput();
       if (CollectionUtils.isNotEmpty(hiveNewDataFiles)) {
         addedDataFiles.addAll(hiveNewDataFiles);
       } else if (output.getDataFiles() != null) {
@@ -218,5 +258,26 @@ public class KeyedTableCommit extends UnKeyedTableCommit {
 
   private StructLike partition(RewriteFilesInput input) {
     return input.allFiles()[0].partition();
+  }
+
+  private void rebuildToSequenceOfPartitions(List<RewriteStageTask> successTasks) {
+    toSequenceOfPartitions.clear();
+    for (RewriteStageTask task : successTasks) {
+      RewriteFilesInput input = task.getInput();
+      if (input == null) {
+        continue;
+      }
+      StructLike partition = partition(input);
+      for (ContentFile<?> file : input.allFiles()) {
+        if (ContentFiles.isDeleteFile(file)) {
+          continue;
+        }
+        DataFileType type = ((PrimaryKeyedFile) ContentFiles.asDataFile(file)).type();
+        if (type == DataFileType.INSERT_FILE || type == DataFileType.EQ_DELETE_FILE) {
+          long seq = file.dataSequenceNumber();
+          toSequenceOfPartitions.merge(partition, seq, Math::max);
+        }
+      }
+    }
   }
 }

@@ -21,19 +21,25 @@ package org.apache.amoro.server.process.iceberg;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.IcebergActions;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.optimizing.TableOptimizingCommitter;
 import org.apache.amoro.process.LocalExecutionEngine;
 import org.apache.amoro.process.ProcessTriggerStrategy;
+import org.apache.amoro.server.optimizing.KeyedTableCommit;
+import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.cleanup.TableRuntimeCleanupState;
+import org.apache.amoro.table.MixedTable;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -61,6 +67,37 @@ public class TestIcebergProcessFactory {
     ProcessTriggerStrategy strategy =
         factory.triggerStrategy(TableFormat.ICEBERG, IcebergActions.EXPIRE_SNAPSHOTS);
     Assert.assertEquals(Duration.ofHours(1), strategy.getTriggerInterval());
+  }
+
+  @Test
+  public void testSupportedFormatsForOptimizing() {
+    IcebergProcessFactory factory = new IcebergProcessFactory();
+
+    Set<TableFormat> supportedFormats = factory.supportedFormats();
+    Assert.assertTrue(supportedFormats.contains(TableFormat.ICEBERG));
+    Assert.assertTrue(supportedFormats.contains(TableFormat.MIXED_ICEBERG));
+    Assert.assertTrue(supportedFormats.contains(TableFormat.MIXED_HIVE));
+  }
+
+  @Test
+  public void testCreateCommitterForDifferentTableTypes() {
+    IcebergProcessFactory factory = new IcebergProcessFactory();
+    @SuppressWarnings("unchecked")
+    AmoroTable<Object> table = mock(AmoroTable.class);
+    MixedTable mixedTable = mock(MixedTable.class);
+    doReturn(mixedTable).when(table).originalTable();
+
+    doReturn(true).when(mixedTable).isUnkeyedTable();
+    TableOptimizingCommitter unkeyedCommitter =
+        factory.createCommitter(
+            table, 1L, 2L, Collections.emptyList(), Collections.emptyMap(), Collections.emptyMap());
+    Assert.assertTrue(unkeyedCommitter instanceof UnKeyedTableCommit);
+
+    doReturn(false).when(mixedTable).isUnkeyedTable();
+    TableOptimizingCommitter keyedCommitter =
+        factory.createCommitter(
+            table, 1L, 2L, Collections.emptyList(), Collections.emptyMap(), Collections.emptyMap());
+    Assert.assertTrue(keyedCommitter instanceof KeyedTableCommit);
   }
 
   @Test

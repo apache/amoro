@@ -21,6 +21,7 @@ package org.apache.amoro.server.optimizing;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
@@ -28,10 +29,13 @@ import org.apache.amoro.exception.OptimizingClosedException;
 import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.exception.TaskNotFoundException;
 import org.apache.amoro.optimizing.MetricsSummary;
+import org.apache.amoro.optimizing.OptimizingPlanResult;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteStageTask;
-import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
+import org.apache.amoro.optimizing.TableOptimizingCommitter;
+import org.apache.amoro.optimizing.TableOptimizingPlanner;
+import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
@@ -50,20 +54,13 @@ import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.blocker.TableBlocker;
-import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ExceptionUtil;
-import org.apache.amoro.utils.MixedDataFiles;
-import org.apache.amoro.utils.TablePropertyUtil;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.StructLike;
-import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,6 +101,7 @@ public class OptimizingQueue extends PersistentBase {
   private final int maxPlanningParallelism;
   private final OptimizerGroupMetrics metrics;
   private ResourceGroup optimizerGroup;
+  private final ProcessFactory optimizingFactory;
   private final Map<ServerTableIdentifier, AtomicInteger> optimizingTasksMap =
       new ConcurrentHashMap<>();
 
@@ -113,7 +111,8 @@ public class OptimizingQueue extends PersistentBase {
       QuotaProvider quotaProvider,
       Executor planExecutor,
       List<DefaultTableRuntime> tableRuntimeList,
-      int maxPlanningParallelism) {
+      int maxPlanningParallelism,
+      ProcessFactory optimizingFactory) {
     Preconditions.checkNotNull(optimizerGroup, "Optimizer group can not be null");
     this.planExecutor = planExecutor;
     this.optimizerGroup = optimizerGroup;
@@ -121,6 +120,7 @@ public class OptimizingQueue extends PersistentBase {
     this.scheduler = new SchedulingPolicy(optimizerGroup);
     this.catalogManager = catalogManager;
     this.maxPlanningParallelism = maxPlanningParallelism;
+    this.optimizingFactory = optimizingFactory;
     this.metrics =
         new OptimizerGroupMetrics(
             optimizerGroup.getName(), MetricManager.getInstance().getGlobalRegistry(), this);
@@ -133,6 +133,11 @@ public class OptimizingQueue extends PersistentBase {
       TableOptimizingProcess process = loadProcess(tableRuntime);
 
       if (!tableRuntime.getOptimizingConfig().isEnabled()) {
+        closeProcessIfRunning(process);
+        return;
+      }
+
+      if (!isFormatSupported(tableRuntime)) {
         closeProcessIfRunning(process);
         return;
       }
@@ -220,6 +225,9 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   public void refreshTable(DefaultTableRuntime tableRuntime) {
+    if (!isFormatSupported(tableRuntime)) {
+      return;
+    }
     if (tableRuntime.getOptimizingConfig().isEnabled()
         && !tableRuntime.getOptimizingStatus().isProcessing()) {
       LOG.info(
@@ -230,6 +238,19 @@ public class OptimizingQueue extends PersistentBase {
           System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
       scheduler.addTable(tableRuntime);
     }
+  }
+
+  private boolean isFormatSupported(DefaultTableRuntime tableRuntime) {
+    TableFormat format = tableRuntime.getFormat();
+    if (!optimizingFactory.supportedFormats().contains(format)) {
+      LOG.debug(
+          "Skip table {} with unsupported format {} for queue {}",
+          tableRuntime.getTableIdentifier(),
+          format,
+          optimizerGroup.getName());
+      return false;
+    }
+    return true;
   }
 
   public void releaseTable(DefaultTableRuntime tableRuntime) {
@@ -378,14 +399,19 @@ public class OptimizingQueue extends PersistentBase {
     try {
       ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
       AmoroTable<?> table = catalogManager.loadTable(identifier.getIdentifier());
-      AbstractOptimizingPlanner planner =
-          IcebergTableUtil.createOptimizingPlanner(
-              tableRuntime.refresh(table),
-              (MixedTable) table.originalTable(),
-              getAvailableCore(),
-              maxInputSizePerThread());
+      tableRuntime.refresh(table);
+
+      if (!isFormatSupported(tableRuntime)) {
+        tableRuntime.completeEmptyProcess();
+        return null;
+      }
+
+      TableOptimizingPlanner planner =
+          optimizingFactory.createPlanner(
+              tableRuntime, table, getAvailableCore(), maxInputSizePerThread());
       if (planner.isNecessary()) {
-        return new TableOptimizingProcess(planner, tableRuntime);
+        OptimizingPlanResult planResult = planner.plan();
+        return new TableOptimizingProcess(planResult, tableRuntime);
       } else {
         tableRuntime.completeEmptyProcess();
         return null;
@@ -539,16 +565,16 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     public TableOptimizingProcess(
-        AbstractOptimizingPlanner planner, DefaultTableRuntime tableRuntime) {
-      processId = planner.getProcessId();
+        OptimizingPlanResult planResult, DefaultTableRuntime tableRuntime) {
+      processId = planResult.getProcessId();
       this.tableRuntime = tableRuntime;
-      optimizingType = planner.getOptimizingType();
-      planTime = planner.getPlanTime();
-      targetSnapshotId = planner.getTargetSnapshotId();
-      targetChangeSnapshotId = planner.getTargetChangeSnapshotId();
-      loadTaskRuntimes(planner.planTasks());
-      fromSequence = planner.getFromSequence();
-      toSequence = planner.getToSequence();
+      optimizingType = planResult.getOptimizingType();
+      planTime = planResult.getPlanTime();
+      targetSnapshotId = planResult.getTargetSnapshotId();
+      targetChangeSnapshotId = planResult.getTargetChangeSnapshotId();
+      loadTaskRuntimes(planResult.getTasks());
+      fromSequence = planResult.getFromSequence();
+      toSequence = planResult.getToSequence();
       beginAndPersistProcess();
     }
 
@@ -860,38 +886,21 @@ public class OptimizingQueue extends PersistentBase {
       return new MetricsSummary(taskSummaries);
     }
 
-    private UnKeyedTableCommit buildCommit() {
-      MixedTable table =
-          (MixedTable)
-              catalogManager
-                  .loadTable(tableRuntime.getTableIdentifier().getIdentifier())
-                  .originalTable();
-      if (table.isUnkeyedTable()) {
-        return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
-      } else {
-        return new KeyedTableCommit(
-            table,
-            taskMap.values(),
-            targetSnapshotId,
-            convertPartitionSequence(table, fromSequence),
-            convertPartitionSequence(table, toSequence));
-      }
-    }
-
-    private StructLikeMap<Long> convertPartitionSequence(
-        MixedTable table, Map<String, Long> partitionSequence) {
-      PartitionSpec spec = table.spec();
-      StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
-      partitionSequence.forEach(
-          (partition, sequence) -> {
-            if (spec.isUnpartitioned()) {
-              results.put(TablePropertyUtil.EMPTY_STRUCT, sequence);
-            } else {
-              StructLike partitionData = MixedDataFiles.data(spec, partition);
-              results.put(partitionData, sequence);
-            }
-          });
-      return results;
+    private TableOptimizingCommitter buildCommit() {
+      AmoroTable<?> table =
+          catalogManager.loadTable(tableRuntime.getTableIdentifier().getIdentifier());
+      List<RewriteStageTask> taskDescriptors =
+          taskMap.values().stream()
+              .filter(task -> task.getStatus() == Status.SUCCESS)
+              .map(TaskRuntime::getTaskDescriptor)
+              .collect(Collectors.toList());
+      return optimizingFactory.createCommitter(
+          table,
+          targetSnapshotId,
+          targetChangeSnapshotId,
+          taskDescriptors,
+          fromSequence,
+          toSequence);
     }
 
     private void beginAndPersistProcess() {

@@ -19,10 +19,12 @@
 package org.apache.amoro.server;
 
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.process.ProcessService;
+import org.apache.amoro.server.process.iceberg.IcebergProcessFactory;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.DefaultTableRuntimeFactory;
 import org.apache.amoro.server.table.DefaultTableService;
@@ -31,6 +33,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 
 import java.time.Duration;
+import java.util.Collections;
 
 public abstract class AMSServiceTestBase extends AMSManagerTestBase {
   private static DefaultTableService TABLE_SERVICE = null;
@@ -50,9 +53,16 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
           Duration.ofMillis(10L));
       TABLE_SERVICE =
           new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactory);
+      ProcessFactory processFactory = new IcebergProcessFactory();
       OPTIMIZING_SERVICE =
           new DefaultOptimizingService(
-              configurations, CATALOG_MANAGER, OPTIMIZER_MANAGER, TABLE_SERVICE, null, null);
+              configurations,
+              CATALOG_MANAGER,
+              OPTIMIZER_MANAGER,
+              TABLE_SERVICE,
+              null,
+              null,
+              Collections.singletonList(processFactory));
       PROCESS_SERVICE = new ProcessService(TABLE_SERVICE);
 
       TABLE_SERVICE.addHandlerChain(OPTIMIZING_SERVICE.getTableRuntimeHandler());

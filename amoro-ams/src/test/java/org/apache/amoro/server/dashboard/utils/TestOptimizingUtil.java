@@ -28,12 +28,14 @@ import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
+import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
+import org.apache.amoro.server.process.iceberg.IcebergProcessFactory;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.AMSTableTestBase;
@@ -62,6 +64,7 @@ public class TestOptimizingUtil extends AMSTableTestBase {
   private final long MAX_POLLING_TIME = 5000;
   private final Executor planExecutor = Executors.newSingleThreadExecutor();
   private final QuotaProvider quotaProvider = resourceGroup -> 1;
+  private final ProcessFactory optimizingFactory = new IcebergProcessFactory();
 
   private final OptimizerThread optimizerThread =
       new OptimizerThread(1, null) {
@@ -133,7 +136,8 @@ public class TestOptimizingUtil extends AMSTableTestBase {
         quotaProvider,
         planExecutor,
         Collections.singletonList(tableRuntime),
-        1);
+        1,
+        optimizingFactory);
   }
 
   protected static ResourceGroup testResourceGroup() {

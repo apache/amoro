@@ -30,6 +30,7 @@ import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_PLANING_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
 
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
@@ -46,8 +47,11 @@ import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.resource.ResourceGroup;
+import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.process.iceberg.IcebergProcessFactory;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
@@ -68,7 +72,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.Mockito;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -82,6 +88,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   private final Executor planExecutor = Executors.newSingleThreadExecutor();
   private final QuotaProvider quotaProvider = resourceGroup -> 1;
+  private final ProcessFactory optimizingFactory = new IcebergProcessFactory();
   private final long MAX_POLLING_TIME = 5000;
 
   private final OptimizerThread optimizerThread =
@@ -142,7 +149,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         quotaProvider,
         planExecutor,
         Collections.singletonList(tableRuntime),
-        1);
+        1,
+        optimizingFactory);
   }
 
   private OptimizingQueue buildOptimizingGroupService() {
@@ -152,7 +160,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         quotaProvider,
         planExecutor,
         Collections.emptyList(),
-        1);
+        1,
+        optimizingFactory);
   }
 
   @Test
@@ -207,7 +216,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             resourceGroup -> 2,
             planExecutor,
             Collections.singletonList(tableRuntime),
-            1);
+            1,
+            optimizingFactory);
 
     TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME, false);
     Assert.assertNotNull(task);
@@ -242,7 +252,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             resourceGroup -> 2,
             planExecutor,
             Collections.singletonList(tableRuntime),
-            1);
+            1,
+            optimizingFactory);
 
     TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task);
@@ -278,7 +289,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             resourceGroup -> 2,
             planExecutor,
             Collections.singletonList(tableRuntime),
-            1);
+            1,
+            optimizingFactory);
     TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     queue.ackTask(task.getTaskId(), optimizerThread);
     Assert.assertEquals(
@@ -685,6 +697,47 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
     Assert.assertEquals(1, released.size());
     Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
+  }
+
+  @Test
+  public void testSkipPlanningForUnsupportedFormat() throws Exception {
+    CatalogManager catalogManager = Mockito.mock(CatalogManager.class);
+    DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
+    @SuppressWarnings("unchecked")
+    AmoroTable<Object> paimonTable = Mockito.mock(AmoroTable.class);
+
+    ServerTableIdentifier tableIdentifier =
+        ServerTableIdentifier.of(
+            org.apache.amoro.table.TableIdentifier.of("mock", "db", "unsupported_table"),
+            TableFormat.PAIMON);
+    tableIdentifier.setId(9999L);
+
+    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(tableIdentifier);
+    Mockito.doReturn(paimonTable).when(catalogManager).loadTable(tableIdentifier.getIdentifier());
+    Mockito.when(paimonTable.format()).thenReturn(TableFormat.PAIMON);
+
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            catalogManager,
+            testResourceGroup(),
+            quotaProvider,
+            planExecutor,
+            Collections.emptyList(),
+            1,
+            optimizingFactory);
+
+    Method planInternal =
+        OptimizingQueue.class.getDeclaredMethod("planInternal", DefaultTableRuntime.class);
+    planInternal.setAccessible(true);
+    Object process = planInternal.invoke(queue, tableRuntime);
+
+    Assert.assertNull(process);
+    Mockito.verify(tableRuntime).beginPlanning();
+    Mockito.verify(tableRuntime).refresh(paimonTable);
+    Mockito.verify(tableRuntime).completeEmptyProcess();
+    Mockito.verify(tableRuntime, Mockito.never()).planFailed();
+
+    queue.dispose();
   }
 
   protected DefaultTableRuntime initTableWithFiles() {

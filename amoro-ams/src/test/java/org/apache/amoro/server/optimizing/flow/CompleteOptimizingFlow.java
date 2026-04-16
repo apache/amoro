@@ -42,13 +42,8 @@ import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.utils.MixedDataFiles;
-import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.StructLike;
 import org.apache.iceberg.UpdateProperties;
-import org.apache.iceberg.util.StructLikeMap;
 import org.mockito.Mockito;
 
 import javax.annotation.Nullable;
@@ -115,10 +110,12 @@ public class CompleteOptimizingFlow {
     List<TaskRuntime<RewriteStageTask>> taskRuntimes = mockTaskRuntime(taskDescriptors);
 
     asyncExecute(taskRuntimes);
+    List<RewriteStageTask> completedTasks =
+        taskRuntimes.stream().map(TaskRuntime::getTaskDescriptor).collect(Collectors.toList());
 
     UnKeyedTableCommit committer =
         committer(
-            taskRuntimes,
+            completedTasks,
             planner.getFromSequence(),
             planner.getToSequence(),
             planner.getTargetSnapshotId());
@@ -219,20 +216,15 @@ public class CompleteOptimizingFlow {
   }
 
   private UnKeyedTableCommit committer(
-      List<TaskRuntime<RewriteStageTask>> taskRuntimes,
+      List<RewriteStageTask> tasks,
       Map<String, Long> fromSequence,
       Map<String, Long> toSequence,
       Long formSnapshotId) {
 
     if (table.isUnkeyedTable()) {
-      return new UnKeyedTableCommit(formSnapshotId, table, taskRuntimes);
+      return new UnKeyedTableCommit(formSnapshotId, table, tasks);
     } else {
-      return new KeyedTableCommit(
-          table,
-          taskRuntimes,
-          formSnapshotId,
-          getStructLike(fromSequence),
-          getStructLike(toSequence));
+      return new KeyedTableCommit(table, tasks, formSnapshotId, fromSequence, toSequence);
     }
   }
 
@@ -250,21 +242,6 @@ public class CompleteOptimizingFlow {
     } else {
       return Constants.INVALID_SNAPSHOT_ID;
     }
-  }
-
-  private StructLikeMap<Long> getStructLike(Map<String, Long> partitionSequence) {
-    PartitionSpec spec = table.spec();
-    StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
-    partitionSequence.forEach(
-        (partition, sequence) -> {
-          if (spec.isUnpartitioned()) {
-            results.put(TablePropertyUtil.EMPTY_STRUCT, sequence);
-          } else {
-            StructLike partitionData = MixedDataFiles.data(spec, partition);
-            results.put(partitionData, sequence);
-          }
-        });
-    return results;
   }
 
   public interface Checker {
