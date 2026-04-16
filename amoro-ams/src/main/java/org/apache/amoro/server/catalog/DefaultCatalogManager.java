@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server.catalog;
@@ -80,11 +82,19 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
     listCatalogMetas()
         .forEach(
             c -> {
-              ServerCatalog serverCatalog =
-                  CatalogBuilder.buildServerCatalog(c, serverConfiguration);
-              serverCatalogMap.put(c.getCatalogName(), serverCatalog);
-              metaCache.put(c.getCatalogName(), Optional.of(c));
-              LOG.info("Load catalog {}, type:{}", c.getCatalogName(), c.getCatalogType());
+              try {
+                ServerCatalog serverCatalog =
+                    CatalogBuilder.buildServerCatalog(c, serverConfiguration);
+                serverCatalogMap.put(c.getCatalogName(), serverCatalog);
+                metaCache.put(c.getCatalogName(), Optional.of(c));
+                LOG.info("Load catalog {}, type:{}", c.getCatalogName(), c.getCatalogType());
+              } catch (Exception e) {
+                LOG.warn(
+                    "Skipping catalog {} (type: {}) - failed to initialize",
+                    c.getCatalogName(),
+                    c.getCatalogType(),
+                    e);
+              }
             });
     LOG.info("DefaultCatalogManager initialized, total catalogs: {}", serverCatalogMap.size());
   }

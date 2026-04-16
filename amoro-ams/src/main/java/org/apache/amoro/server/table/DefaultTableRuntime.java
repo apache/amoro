@@ -697,7 +697,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime
 
   private long doRefreshSnapshots(UnkeyedTable table) {
     long currentSnapshotId = Constants.INVALID_SNAPSHOT_ID;
-    Snapshot currentSnapshot = IcebergTableUtil.getSnapshot(table, false);
+    Snapshot currentSnapshot = IcebergTableUtil.getSnapshot(table, true);
     if (currentSnapshot != null) {
       currentSnapshotId = currentSnapshot.snapshotId();
     }
