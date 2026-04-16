@@ -14,6 +14,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified by Datazip Inc. in 2026
  */
 
 package org.apache.amoro.server.terminal;
@@ -21,6 +23,7 @@ package org.apache.amoro.server.terminal;
 import org.apache.amoro.Constants;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.aws.StaticAwsCredentialsProvider;
 import org.apache.amoro.config.ConfigOptions;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.properties.CatalogMetaProperties;
@@ -400,6 +403,15 @@ public class TerminalManager {
             CatalogMetaProperties.KEY_WAREHOUSE, catalogMeta.getCatalogName());
       } else if (!catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
         catalogMeta.putToCatalogProperties("type", catalogType);
+      }
+      // apply glue credentials to glue catalog
+      if (CatalogMetaProperties.CATALOG_TYPE_GLUE.equalsIgnoreCase(catalogType)) {
+        Map<String, String> props = catalogMeta.getCatalogProperties();
+        Map<String, String> enriched = StaticAwsCredentialsProvider.applyGlueCredentials(props);
+        // Only merge when a new map was produced: same instance means nothing to add, and merging
+        if (enriched != null && enriched != props) {
+          enriched.forEach(catalogMeta::putToCatalogProperties);
+        }
       }
     } else if (formats.contains(TableFormat.PAIMON) && "hive".equals(catalogType)) {
       catalogMeta.putToCatalogProperties("metastore", catalogType);
