@@ -81,6 +81,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | ha.node-offline.timeout | 5 min | Timeout duration to determine if a node is offline. After this duration, the node's bucket IDs will be reassigned. |
 | ha.session-timeout | 30 s | The Zookeeper session timeout in milliseconds. |
 | ha.type | zk | High availability implementation type: zk or database. |
+| ha.use-master-slave-mode | false | This setting controls whether to enable the AMS horizontal scaling feature, which is currently under development and testing. |
 | ha.zookeeper-address |  | The Zookeeper address used for high availability. |
 | ha.zookeeper-auth-keytab |  | The Zookeeper authentication keytab file path when auth type is KERBEROS. |
 | ha.zookeeper-auth-principal |  | The Zookeeper authentication principal when auth type is KERBEROS. |
@@ -145,7 +146,6 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | thrift-server.selector-thread-count | 2 | The number of selector threads for the Thrift server. |
 | thrift-server.table-service.bind-port | 1260 | Port that the table service thrift server is bound to. |
 | thrift-server.table-service.worker-thread-count | 20 | The number of worker threads for the Thrift server. |
-| use-master-slave-mode | false | This setting controls whether to enable the AMS horizontal scaling feature, which is currently under development and testing. |
 
 ## RBAC Example
 

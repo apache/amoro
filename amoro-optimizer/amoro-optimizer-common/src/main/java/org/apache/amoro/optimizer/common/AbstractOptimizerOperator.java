@@ -52,27 +52,58 @@ public class AbstractOptimizerOperator implements Serializable {
   private volatile boolean stopped = false;
   private transient volatile AmsNodeManager amsNodeManager;
   private transient volatile ThriftAmsNodeManager thriftAmsNodeManager;
+  // Throttle the "no AMS nodes discovered" warning to at most once per minute.
+  private volatile long lastEmptyNodesWarnTime = 0;
 
   public AbstractOptimizerOperator(OptimizerConfig config) {
     Preconditions.checkNotNull(config);
     this.config = config;
-    if (config.isMasterSlaveMode()) {
-      String amsUrl = config.getAmsUrl();
-      if (amsUrl.startsWith("zookeeper://")) {
-        // ZK HA mode: discover nodes from ZooKeeper ephemeral nodes
-        try {
-          this.amsNodeManager = new AmsNodeManager(amsUrl);
-          LOG.info("Initialized ZK AmsNodeManager for master-slave mode");
-        } catch (Exception e) {
-          LOG.warn("Failed to initialize AmsNodeManager, will use single AMS URL", e);
+    // Node managers are initialized lazily in ensureNodeManagerInitialized() rather than here,
+    // because Flink serializes operators on the client side and deserializes them on TaskManagers.
+    // Since amsNodeManager and thriftAmsNodeManager are transient (they hold non-serializable
+    // ZK/Thrift clients), they would be lost after deserialization. Lazy initialization in
+    // getAmsNodeUrls() ensures they are properly created on the TaskManager where they are needed.
+  }
+
+  /**
+   * Lazily initialize the node manager after Flink deserialization.
+   *
+   * <p>Flink serializes operators (including OptimizerExecutor/OptimizerToucher) on the client side
+   * and deserializes them on TaskManagers. Since {@code amsNodeManager} and {@code
+   * thriftAmsNodeManager} are {@code transient} (they hold non-serializable ZK/Thrift clients),
+   * they are {@code null} after deserialization. This method re-creates them on demand.
+   */
+  private void ensureNodeManagerInitialized() {
+    if (!config.isMasterSlaveMode()) {
+      return;
+    }
+    String amsUrl = config.getAmsUrl();
+    if (amsUrl.startsWith("zookeeper://")) {
+      if (amsNodeManager == null) {
+        synchronized (this) {
+          if (amsNodeManager == null) {
+            try {
+              this.amsNodeManager = new AmsNodeManager(amsUrl);
+              LOG.info("Initialized ZK AmsNodeManager for master-slave mode (url: {})", amsUrl);
+            } catch (Exception e) {
+              LOG.warn("Failed to initialize AmsNodeManager, will use single AMS URL", e);
+            }
+          }
         }
-      } else {
-        // DB HA mode: discover nodes via getOptimizingNodeUrls() Thrift RPC
-        try {
-          this.thriftAmsNodeManager = new ThriftAmsNodeManager(amsUrl);
-          LOG.info("Initialized ThriftAmsNodeManager for master-slave mode (DB HA)");
-        } catch (Exception e) {
-          LOG.warn("Failed to initialize ThriftAmsNodeManager, will use single AMS URL", e);
+      }
+    } else {
+      if (thriftAmsNodeManager == null) {
+        synchronized (this) {
+          if (thriftAmsNodeManager == null) {
+            try {
+              this.thriftAmsNodeManager = new ThriftAmsNodeManager(amsUrl);
+              LOG.info(
+                  "Initialized ThriftAmsNodeManager for master-slave mode (DB HA, url: {})",
+                  amsUrl);
+            } catch (Exception e) {
+              LOG.warn("Failed to initialize ThriftAmsNodeManager, will use single AMS URL", e);
+            }
+          }
         }
       }
     }
@@ -80,11 +111,13 @@ public class AbstractOptimizerOperator implements Serializable {
 
   /** Get the AmsNodeManager instance if available (ZK mode). */
   protected AmsNodeManager getAmsNodeManager() {
+    ensureNodeManagerInitialized();
     return amsNodeManager;
   }
 
   /** Get the ThriftAmsNodeManager instance if available (DB mode). */
   protected ThriftAmsNodeManager getThriftAmsNodeManager() {
+    ensureNodeManagerInitialized();
     return thriftAmsNodeManager;
   }
 
@@ -93,6 +126,7 @@ public class AbstractOptimizerOperator implements Serializable {
    * whether to use master-slave polling logic.
    */
   protected boolean hasAmsNodeManager() {
+    ensureNodeManagerInitialized();
     return amsNodeManager != null || thriftAmsNodeManager != null;
   }
 
@@ -101,10 +135,21 @@ public class AbstractOptimizerOperator implements Serializable {
    * node manager is available or the node list is empty.
    */
   protected List<String> getAmsNodeUrls() {
+    ensureNodeManagerInitialized();
     if (amsNodeManager != null) {
       List<String> urls = amsNodeManager.getAllAmsUrls();
       if (!urls.isEmpty()) {
         return urls;
+      }
+      long now = System.currentTimeMillis();
+      if (now - lastEmptyNodesWarnTime > TimeUnit.MINUTES.toMillis(1)) {
+        lastEmptyNodesWarnTime = now;
+        LOG.warn(
+            "Optimizer is configured for master-slave mode but no AMS nodes were discovered "
+                + "from ZooKeeper nodes path. Falling back to the configured URL [{}] (master only). "
+                + "Ensure that all AMS nodes have 'ha.use-master-slave-mode: true' configured so "
+                + "they register themselves to ZooKeeper and can be discovered by optimizers.",
+            getConfig().getAmsUrl());
       }
     }
     if (thriftAmsNodeManager != null) {
@@ -174,10 +219,6 @@ public class AbstractOptimizerOperator implements Serializable {
    */
   protected <T> T callAuthenticatedAms(String amsUrl, AmsAuthenticatedCallOperation<T> operation)
       throws TException {
-    // Maximum retry time window for auth errors in master-slave mode (30 seconds)
-    long maxAuthRetryTimeWindow = TimeUnit.SECONDS.toMillis(30);
-    Long firstAuthErrorTime = null;
-
     // Per-node retry budget: in master-slave mode, limit consecutive shouldRetryLater retries so
     // that a permanently unreachable node does not block the multi-node polling loop indefinitely.
     int consecutiveRetries = 0;
@@ -190,50 +231,42 @@ public class AbstractOptimizerOperator implements Serializable {
         } catch (Throwable t) {
           if (t instanceof AmoroException
               && ErrorCodes.PLUGIN_RETRY_AUTH_ERROR_CODE == ((AmoroException) (t)).getErrorCode()) {
-            // In master-slave mode, the slave node may not have completed optimizer
-            // auto-registration
-            // yet, so we should retry within a time window before resetting the token
             boolean isMasterSlaveMode = config.isMasterSlaveMode() && hasAmsNodeManager();
-            long currentTime = System.currentTimeMillis();
 
             if (isMasterSlaveMode) {
-              if (firstAuthErrorTime == null) {
-                // First auth error, record the time
-                firstAuthErrorTime = currentTime;
-              }
-
-              long elapsedTime = currentTime - firstAuthErrorTime;
-              if (elapsedTime < maxAuthRetryTimeWindow) {
-                // Still within retry time window, retry after waiting
-                LOG.warn(
-                    "Got an authorization error while calling ams {} in master-slave mode (elapsed: {}ms/{}ms). "
-                        + "This may be because the slave node hasn't completed optimizer auto-registration yet. "
-                        + "Will retry after waiting.",
-                    amsUrl,
-                    elapsedTime,
-                    maxAuthRetryTimeWindow,
-                    t);
-                waitAShortTime();
-              } else {
-                // Exceeded retry time window, reset token
-                LOG.error(
-                    "Got authorization errors from ams {} in master-slave mode for {}ms, exceeded retry time window ({}ms). "
-                        + "Reset token and wait for a new one",
-                    amsUrl,
-                    elapsedTime,
-                    maxAuthRetryTimeWindow,
-                    t);
-                resetToken(token);
-                firstAuthErrorTime = null;
-              }
-            } else {
-              // Non-master-slave mode, reset token immediately
-              LOG.error(
-                  "Got a authorization error while calling ams {}, reset token and wait for a new one",
+              // In master-slave mode, fail fast and let the multi-node polling loop in
+              // OptimizerExecutor move on to the next node immediately.
+              //
+              // The root cause of auth failures on a slave is usually that the slave has not yet
+              // synced the optimizer registration from the database. Blocking here for 30 seconds
+              // and then resetting the GLOBAL token (which is also used by the master and other
+              // healthy nodes) would:
+              //   1. Block the for-loop from polling other nodes for 30+ seconds.
+              //   2. Re-register with master → get new token → slave still fails → infinite loop.
+              //
+              // Instead, throw immediately so pollTask() returns, the for-loop advances to the
+              // next node, and the slave is retried on the NEXT poll round (basePollInterval
+              // later).
+              // The global token is left intact so master/other nodes continue to work normally.
+              LOG.warn(
+                  "Optimizer executor got authorization error from AMS {} in master-slave mode. "
+                      + "The slave node may not have synced the optimizer registration yet. "
+                      + "Skipping this node for this round; will retry on the next poll cycle.",
                   amsUrl,
                   t);
+              if (t instanceof TException) {
+                throw (TException) t;
+              }
+              throw new TException("Auth error for slave " + amsUrl, t);
+            } else {
+              // Single-node mode: reset token and wait for OptimizerToucher to re-register.
+              LOG.error(
+                  "Got authorization error while calling AMS {} (token: {} is now invalid). "
+                      + "Token reset; will re-register on the next heartbeat cycle.",
+                  amsUrl,
+                  token,
+                  t);
               resetToken(token);
-              firstAuthErrorTime = null;
             }
           } else if (shouldReturnNull(t)) {
             return null;

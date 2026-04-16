@@ -78,9 +78,9 @@ public class TestAmsAssignService {
     serviceConfig.setBoolean(AmoroManagementConf.HA_ENABLE, true);
     serviceConfig.setString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS, "127.0.0.1:2181");
     serviceConfig.setString(AmoroManagementConf.HA_CLUSTER_NAME, "test-cluster");
-    serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
     serviceConfig.setInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT, 100);
-    serviceConfig.set(AmoroManagementConf.HA_NODE_OFFLINE_TIMEOUT, java.time.Duration.ofMinutes(5));
+    serviceConfig.set(AmoroManagementConf.HA_NODE_OFFLINE_TIMEOUT, java.time.Duration.ofMillis(50));
 
     haContainer = createContainerWithMockZk();
 
@@ -382,6 +382,51 @@ public class TestAmsAssignService {
   }
 
   @Test
+  public void testOfflineNodeWithMissingLastUpdateTime() throws Exception {
+    // Verify that a node absent from the alive list with lastUpdateTime == 0
+    // is still reclaimed instead of being stranded forever.
+    haContainer.registerAndElect();
+    Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
+    HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
+    haContainer2.registerAndElect();
+
+    try {
+      Thread.sleep(100);
+
+      // Initial assignment — both nodes get buckets
+      assignService.doAssign();
+      Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
+      Assert.assertEquals("Should have 2 nodes", 2, initialAssignments.size());
+
+      // Simulate node2 going offline (remove from ZK)
+      mockZkState.deleteNodeByHost("127.0.0.2");
+
+      // Clear node2's lastUpdateTime to simulate the edge case where
+      // saveAssignments wrote the assignment but crashed before
+      // updateLastUpdateTime completed (two non-atomic ZK writes).
+      mockAssignStore.clearLastUpdateTime("127.0.0.2");
+
+      Thread.sleep(100);
+
+      // Trigger reassignment — node2 should be reclaimed even without a timestamp
+      assignService.doAssign();
+
+      Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
+      Assert.assertEquals(
+          "Node with missing lastUpdateTime should be reclaimed", 1, newAssignments.size());
+
+      List<String> remainingBuckets = newAssignments.values().iterator().next();
+      Assert.assertEquals("All buckets should be redistributed", 100, remainingBuckets.size());
+    } finally {
+      try {
+        haContainer2.close();
+      } catch (Exception e) {
+        // ignore
+      }
+    }
+  }
+
+  @Test
   public void testServiceStartStop() {
     // Test that service can start and stop without errors
     assignService.start();
@@ -428,9 +473,9 @@ public class TestAmsAssignService {
     config.setBoolean(AmoroManagementConf.HA_ENABLE, true);
     config.setString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS, "127.0.0.1:2181");
     config.setString(AmoroManagementConf.HA_CLUSTER_NAME, "test-cluster");
-    config.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
+    config.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
     config.setInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT, 100);
-    config.set(AmoroManagementConf.HA_NODE_OFFLINE_TIMEOUT, java.time.Duration.ofMinutes(5));
+    config.set(AmoroManagementConf.HA_NODE_OFFLINE_TIMEOUT, java.time.Duration.ofMillis(50));
     return config;
   }
 
@@ -490,7 +535,7 @@ public class TestAmsAssignService {
         ZkHighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
     isMasterSlaveModeField.setAccessible(true);
     isMasterSlaveModeField.set(
-        container, config.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE));
+        container, config.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE));
 
     if (config.getBoolean(AmoroManagementConf.HA_ENABLE)) {
       String haClusterName = config.getString(AmoroManagementConf.HA_CLUSTER_NAME);
@@ -879,6 +924,19 @@ public class TestAmsAssignService {
         nodes.add(nodeInfoMap.getOrDefault(nodeKey, parseNodeKey(nodeKey)));
       }
       return nodes;
+    }
+
+    /**
+     * Clear lastUpdateTime for all nodes matching the given host, simulating a missing timestamp.
+     */
+    void clearLastUpdateTime(String host) {
+      List<String> toClear = new ArrayList<>();
+      for (String nodeKey : lastUpdateTimes.keySet()) {
+        if (nodeKey.startsWith(host + ":")) {
+          toClear.add(nodeKey);
+        }
+      }
+      toClear.forEach(lastUpdateTimes::remove);
     }
 
     private AmsServerInfo parseNodeKey(String nodeKey) {
