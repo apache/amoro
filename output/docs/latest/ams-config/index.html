@@ -895,6 +895,11 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
           <td>High availability implementation type: zk or database.</td>
       </tr>
       <tr>
+          <td>ha.use-master-slave-mode</td>
+          <td>false</td>
+          <td>This setting controls whether to enable the AMS horizontal scaling feature, which is currently under development and testing.</td>
+      </tr>
+      <tr>
           <td>ha.zookeeper-address</td>
           <td></td>
           <td>The Zookeeper address used for high availability.</td>
@@ -1213,11 +1218,6 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
           <td>thrift-server.table-service.worker-thread-count</td>
           <td>20</td>
           <td>The number of worker threads for the Thrift server.</td>
-      </tr>
-      <tr>
-          <td>use-master-slave-mode</td>
-          <td>false</td>
-          <td>This setting controls whether to enable the AMS horizontal scaling feature, which is currently under development and testing.</td>
       </tr>
   </tbody>
 </table>
