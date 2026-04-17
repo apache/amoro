@@ -18,6 +18,8 @@
 
 package org.apache.amoro.optimizing;
 
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED;
+
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
@@ -28,6 +30,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
@@ -48,6 +51,7 @@ import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.types.TypeUtil;
+import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -57,6 +61,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -206,6 +211,296 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
         .addField(Expressions.month("op_time"))
         .commit();
     readAllData();
+  }
+
+  @Test
+  public void testParquetRowGroupMergeEnableCondition() throws IOException {
+    // parquet row-group merge should only be enabled for Parquet files.
+    if (fileFormat != FileFormat.PARQUET) {
+      Assert.assertFalse(newExecutor(dataScanTask).canParquetRowGroupMerge());
+      return;
+    }
+
+    // All parquet row-group merge preconditions are satisfied.
+    prepareParquetRowGroupMergeTableConditions(true);
+    Assert.assertTrue(newExecutor(dataScanTask).canParquetRowGroupMerge());
+
+    // parquet row-group merge should be disabled if the table property is not enabled.
+    prepareParquetRowGroupMergeTableConditions(false);
+    Assert.assertFalse(newExecutor(dataScanTask).canParquetRowGroupMerge());
+
+    // parquet row-group merge should be disabled if there are delete files.
+    prepareParquetRowGroupMergeTableConditions(true);
+    RewriteFilesInput rewrittenDeleteInput =
+        new RewriteFilesInput(
+            dataScanTask.rewrittenDataFiles(),
+            dataScanTask.rePosDeletedDataFiles(),
+            new DeleteFile[] {},
+            new DeleteFile[] {(DeleteFile) scanTask.readOnlyDeleteFiles()[0]},
+            getMixedTable());
+    Assert.assertFalse(newExecutor(rewrittenDeleteInput).canParquetRowGroupMerge());
+
+    rewrittenDeleteInput =
+        new RewriteFilesInput(
+            dataScanTask.rewrittenDataFiles(),
+            dataScanTask.rePosDeletedDataFiles(),
+            new DeleteFile[] {(DeleteFile) scanTask.readOnlyDeleteFiles()[0]},
+            new DeleteFile[] {},
+            getMixedTable());
+    Assert.assertFalse(newExecutor(rewrittenDeleteInput).canParquetRowGroupMerge());
+
+    // parquet row-group merge should be disabled if the bloom filter is enabled.
+    resetParquetRowGroupMergeTestState();
+    Assert.assertTrue(newExecutor(dataScanTask).canParquetRowGroupMerge());
+    getMixedTable()
+        .asUnkeyedTable()
+        .updateProperties()
+        .set(
+            org.apache.iceberg.TableProperties.PARQUET_BLOOM_FILTER_COLUMN_ENABLED_PREFIX + "id",
+            "true")
+        .commit();
+    Assert.assertFalse(newExecutor(dataScanTask).canParquetRowGroupMerge());
+
+    // parquet row-group merge should be disabled if the table spec evolves so that the source files
+    // no longer match the partition spec.
+    resetParquetRowGroupMergeTestState();
+    Assert.assertTrue(newExecutor(dataScanTask).canParquetRowGroupMerge());
+    getMixedTable().asUnkeyedTable().updateSpec().addField(Expressions.month("op_time")).commit();
+    Assert.assertFalse(newExecutor(dataScanTask).canParquetRowGroupMerge());
+
+    // parquet row-group merge should be disabled if table has a sort order.
+    resetParquetRowGroupMergeTestState();
+    Assert.assertTrue(newExecutor(dataScanTask).canParquetRowGroupMerge());
+    getMixedTable().asUnkeyedTable().replaceSortOrder().asc("id").commit();
+    Assert.assertFalse(newExecutor(dataScanTask).canParquetRowGroupMerge());
+  }
+
+  @Test
+  public void testParquetRowGroupMergeWithEncryptedDataFile() throws IOException {
+    Assume.assumeTrue(fileFormat == FileFormat.PARQUET);
+    prepareParquetRowGroupMergeTableConditions(true);
+    Assert.assertTrue(newExecutor(dataScanTask).canParquetRowGroupMerge());
+
+    DataFile encryptedDataFile =
+        DataFiles.builder(getMixedTable().spec())
+            .copy(dataScanTask.rewrittenDataFiles()[0])
+            .withEncryptionKeyMetadata(ByteBuffer.wrap(new byte[] {1}))
+            .build();
+
+    RewriteFilesInput encryptedInput =
+        new RewriteFilesInput(
+            new DataFile[] {encryptedDataFile},
+            new DataFile[] {},
+            new DeleteFile[] {},
+            new DeleteFile[] {},
+            getMixedTable());
+    // parquet row-group merge should be disabled if the data file is encrypted.
+    Assert.assertFalse(newExecutor(encryptedInput).canParquetRowGroupMerge());
+  }
+
+  @Test
+  public void testParquetRowGroupMergeExecuteSplitAndCommitDataIntegrity() throws IOException {
+    Assume.assumeTrue(fileFormat == FileFormat.PARQUET);
+    prepareParquetRowGroupMergeTableConditions(true);
+
+    // Create 5 data files, and each data file has 3 records.
+    List<List<Record>> inputRecordGroups = parquetRowGroupMergeSourceRecordGroups();
+    List<DataFile> sourceDataFiles = Lists.newArrayListWithExpectedSize(inputRecordGroups.size());
+    long txId = 1L;
+    for (List<Record> records : inputRecordGroups) {
+      sourceDataFiles.addAll(
+          MixedDataTestHelpers.writeAndCommitBaseStore(getMixedTable(), txId++, records, false));
+    }
+
+    // Set the targetSize
+    long splitTargetSize =
+        sourceDataFiles.get(0).fileSizeInBytes()
+            + sourceDataFiles.get(1).fileSizeInBytes()
+            + sourceDataFiles.get(2).fileSizeInBytes();
+    getMixedTable()
+        .asUnkeyedTable()
+        .updateProperties()
+        .set(
+            org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+            String.valueOf(splitTargetSize))
+        .commit();
+
+    // Build a rewrite input with only data files and no delete files.
+    RewriteFilesInput rewriteFilesInput = newDataOnlyInput(sourceDataFiles);
+    IcebergRewriteExecutor executor = newExecutor(rewriteFilesInput);
+
+    // Verify parquet row-group merge eligibility and execute the merge.
+    Assert.assertTrue(executor.canParquetRowGroupMerge());
+
+    RewriteFilesOutput output = executor.execute();
+    // With this target, the first 3 source files are grouped into one output and
+    // the last 2 into another.
+    Assert.assertEquals(2, output.getDataFiles().length);
+
+    // Commit merge result and validate the iceberg table data contains all records from the
+    // source files.
+    getMixedTable()
+        .asUnkeyedTable()
+        .newRewrite()
+        .rewriteFiles(Sets.newHashSet(sourceDataFiles), Sets.newHashSet(output.getDataFiles()))
+        .commit();
+
+    // Get the source records
+    Map<Integer, Record> expectedRecordsById = new HashMap<>();
+    for (List<Record> recordGroup : inputRecordGroups) {
+      for (Record record : recordGroup) {
+        expectedRecordsById.put((Integer) record.get(0), record);
+      }
+    }
+
+    // Get the current records after merge and commit, and compare with the source records.
+    List<Record> currentRecords =
+        MixedDataTestHelpers.readBaseStore(getMixedTable(), Expressions.alwaysTrue());
+    Assert.assertEquals(15, currentRecords.size());
+    for (Record currentRecord : currentRecords) {
+      Integer id = (Integer) currentRecord.get(0);
+      Record expectedRecord = expectedRecordsById.get(id);
+      // Compare all fields to ensure the record is correctly merged.
+      Assert.assertEquals(expectedRecord.get(0), currentRecord.get(0));
+      Assert.assertEquals(expectedRecord.get(1), currentRecord.get(1));
+      Assert.assertEquals(expectedRecord.get(2), currentRecord.get(2));
+      Assert.assertEquals(expectedRecord.get(3), currentRecord.get(3));
+    }
+  }
+
+  @Test
+  public void testParquetRowGroupMergeWithSchemaDifferent() throws IOException {
+    Assume.assumeTrue(fileFormat == FileFormat.PARQUET);
+    prepareParquetRowGroupMergeTableConditions(true);
+
+    // Scenario 1: schema differs by adding new field.
+    List<DataFile> sourceDataFiles = Lists.newArrayList();
+    sourceDataFiles.addAll(
+        MixedDataTestHelpers.writeAndCommitBaseStore(
+            getMixedTable(),
+            301L,
+            Collections.singletonList(
+                MixedDataTestHelpers.createRecord(301, "field_old", 11L, "1970-01-03T08:00:00")),
+            false));
+    // add new field
+    getMixedTable()
+        .asUnkeyedTable()
+        .updateSchema()
+        .addColumn("new_col", Types.StringType.get())
+        .commit();
+    sourceDataFiles.addAll(
+        MixedDataTestHelpers.writeAndCommitBaseStore(
+            getMixedTable(),
+            302L,
+            Collections.singletonList(
+                MixedDataTestHelpers.createRecord(
+                    getMixedTable().schema(), 302, "field_new", 12L, "1970-01-04T08:00:00", "x")),
+            false));
+
+    RewriteFilesInput rewriteInput = newDataOnlyInput(sourceDataFiles);
+    IcebergRewriteExecutor executor = newExecutor(rewriteInput);
+
+    Assert.assertTrue(executor.canParquetRowGroupMerge());
+    String expectedErrorMessage =
+        "The input parquet files have inconsistent schemas and cannot be merged.";
+    String errorMessage =
+        Assert.assertThrows(IllegalStateException.class, executor::parquetRowGroupMergeFiles)
+            .getMessage();
+    Assert.assertEquals(expectedErrorMessage, errorMessage);
+
+    // Scenario 2: schema differs by type promotion.
+    resetParquetRowGroupMergeTestState();
+    sourceDataFiles = Lists.newArrayList();
+    sourceDataFiles.addAll(
+        MixedDataTestHelpers.writeAndCommitBaseStore(
+            getMixedTable(),
+            401L,
+            Collections.singletonList(
+                MixedDataTestHelpers.createRecord(401, "type_old", 21L, "1970-01-05T08:00:00")),
+            false));
+    // change the type
+    getMixedTable()
+        .asUnkeyedTable()
+        .updateSchema()
+        .updateColumn("id", Types.LongType.get())
+        .commit();
+    sourceDataFiles.addAll(
+        MixedDataTestHelpers.writeAndCommitBaseStore(
+            getMixedTable(),
+            402L,
+            Collections.singletonList(
+                MixedDataTestHelpers.createRecord(
+                    getMixedTable().schema(), 402L, "type_new", 22L, "1970-01-06T08:00:00")),
+            false));
+
+    rewriteInput = newDataOnlyInput(sourceDataFiles);
+    executor = newExecutor(rewriteInput);
+
+    Assert.assertTrue(executor.canParquetRowGroupMerge());
+    errorMessage =
+        Assert.assertThrows(IllegalStateException.class, executor::parquetRowGroupMergeFiles)
+            .getMessage();
+    Assert.assertEquals(expectedErrorMessage, errorMessage);
+  }
+
+  private RewriteFilesInput newDataOnlyInput(List<DataFile> dataFiles) {
+    DataFile[] wrappedDataFiles = new DataFile[dataFiles.size()];
+    for (int i = 0; i < dataFiles.size(); i++) {
+      wrappedDataFiles[i] =
+          MixedDataTestHelpers.wrapIcebergDataFile(dataFiles.get(i), (long) i + 1);
+    }
+
+    return new RewriteFilesInput(
+        wrappedDataFiles,
+        new DataFile[] {},
+        new DeleteFile[] {},
+        new DeleteFile[] {},
+        getMixedTable());
+  }
+
+  private IcebergRewriteExecutor newExecutor(RewriteFilesInput input) {
+    return new IcebergRewriteExecutor(input, getMixedTable(), Collections.emptyMap());
+  }
+
+  private void resetParquetRowGroupMergeTestState() throws IOException {
+    dropTable();
+    setupTable();
+    initDataAndReader();
+    prepareParquetRowGroupMergeTableConditions(true);
+  }
+
+  private List<List<Record>> parquetRowGroupMergeSourceRecordGroups() {
+    return Arrays.asList(
+        Arrays.asList(
+            MixedDataTestHelpers.createRecord(11, "john", 0, "1970-01-01T08:00:00"),
+            MixedDataTestHelpers.createRecord(21, "lily", 1, "1970-01-01T08:00:00"),
+            MixedDataTestHelpers.createRecord(31, "sam", 2, "1970-01-01T08:00:00")),
+        Arrays.asList(
+            MixedDataTestHelpers.createRecord(41, "tom", 3, "1970-01-02T08:00:00"),
+            MixedDataTestHelpers.createRecord(51, "lucy", 4, "1970-01-02T08:00:00"),
+            MixedDataTestHelpers.createRecord(61, "kate", 5, "1970-01-02T08:00:00")),
+        Arrays.asList(
+            MixedDataTestHelpers.createRecord(71, "ben", 6, "1970-01-03T08:00:00"),
+            MixedDataTestHelpers.createRecord(81, "mia", 7, "1970-01-03T08:00:00"),
+            MixedDataTestHelpers.createRecord(91, "zoe", 8, "1970-01-03T08:00:00")),
+        Arrays.asList(
+            MixedDataTestHelpers.createRecord(101, "max", 9, "1970-01-04T08:00:00"),
+            MixedDataTestHelpers.createRecord(111, "eve", 10, "1970-01-04T08:00:00"),
+            MixedDataTestHelpers.createRecord(121, "amy", 11, "1970-01-04T08:00:00")),
+        Arrays.asList(
+            MixedDataTestHelpers.createRecord(131, "leo", 12, "1970-01-05T08:00:00"),
+            MixedDataTestHelpers.createRecord(141, "ivy", 13, "1970-01-05T08:00:00"),
+            MixedDataTestHelpers.createRecord(151, "jay", 14, "1970-01-05T08:00:00")));
+  }
+
+  // Configure only the table properties that are relevant to parquet row-group merge eligibility
+  // checks.
+  private void prepareParquetRowGroupMergeTableConditions(boolean enabled) {
+    getMixedTable()
+        .asUnkeyedTable()
+        .updateProperties()
+        .set(SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED, String.valueOf(enabled))
+        .commit();
   }
 
   @Test

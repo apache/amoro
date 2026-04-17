@@ -173,6 +173,11 @@ public class TableProperties {
   public static final long SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS_DEFAULT =
       30000; // 30s
 
+  public static final String SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED =
+      "self-optimizing.rewrite.use-parquet-row-group-merge.enabled";
+  public static final boolean SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED_DEFAULT =
+      false;
+
   /**
    * The retention period for snapshots created by Flink checkpoints. Snapshots older than this
    * duration may be cleaned up. Avoid keeping the last flink checkpoint snapshot for too long, as
