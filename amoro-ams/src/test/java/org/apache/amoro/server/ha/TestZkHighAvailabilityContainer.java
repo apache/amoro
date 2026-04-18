@@ -83,7 +83,7 @@ public class TestZkHighAvailabilityContainer {
   @Test
   public void testRegisterAndElectWithoutMasterSlaveMode() throws Exception {
     // Test that node registration is skipped when master-slave mode is disabled
-    serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, false);
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, false);
     haContainer = createContainerWithMockZk();
 
     // Should not throw exception and should not register node
@@ -99,7 +99,7 @@ public class TestZkHighAvailabilityContainer {
   @Test
   public void testRegisterAndElectWithMasterSlaveMode() throws Exception {
     // Test that node registration works when master-slave mode is enabled
-    serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
     haContainer = createContainerWithMockZk();
 
     // Register node
@@ -127,7 +127,7 @@ public class TestZkHighAvailabilityContainer {
   @Test
   public void testGetAliveNodesWithoutMasterSlaveMode() throws Exception {
     // Test that getAliveNodes returns empty list when master-slave mode is disabled
-    serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, false);
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, false);
     haContainer = createContainerWithMockZk();
 
     List<AmsServerInfo> aliveNodes = haContainer.getAliveNodes();
@@ -141,7 +141,7 @@ public class TestZkHighAvailabilityContainer {
   @Test
   public void testGetAliveNodesWhenNotLeader() throws Exception {
     // Test that getAliveNodes returns empty list when not leader
-    serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
     mockLeaderLatch = createMockLeaderLatch(false); // Not leader
     haContainer = createContainerWithMockZk();
 
@@ -157,7 +157,7 @@ public class TestZkHighAvailabilityContainer {
   @Test
   public void testGetAliveNodesAsLeader() throws Exception {
     // Test that getAliveNodes returns nodes when leader
-    serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
     mockLeaderLatch = createMockLeaderLatch(true); // Is leader
     haContainer = createContainerWithMockZk();
 
@@ -184,7 +184,7 @@ public class TestZkHighAvailabilityContainer {
   @Test
   public void testGetAliveNodesWithMultipleNodes() throws Exception {
     // Test that getAliveNodes returns all registered nodes
-    serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
     mockLeaderLatch = createMockLeaderLatch(true); // Is leader
     haContainer = createContainerWithMockZk();
 
@@ -216,7 +216,7 @@ public class TestZkHighAvailabilityContainer {
   @Test
   public void testCloseUnregistersNode() throws Exception {
     // Test that close() unregisters the node
-    serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
     haContainer = createContainerWithMockZk();
 
     // Register node
@@ -239,7 +239,7 @@ public class TestZkHighAvailabilityContainer {
   @Test
   public void testHasLeadership() throws Exception {
     // Test hasLeadership() method
-    serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
     mockLeaderLatch = createMockLeaderLatch(false); // Not leader initially
     haContainer = createContainerWithMockZk();
 
@@ -258,7 +258,7 @@ public class TestZkHighAvailabilityContainer {
   public void testRegisterAndElectWithoutHAEnabled() throws Exception {
     // Test that registAndElect skips when HA is not enabled
     serviceConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
-    serviceConfig.setBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE, true);
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
     haContainer = new ZkHighAvailabilityContainer(serviceConfig);
 
     // Should not throw exception
@@ -312,7 +312,7 @@ public class TestZkHighAvailabilityContainer {
         ZkHighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
     isMasterSlaveModeField.setAccessible(true);
     isMasterSlaveModeField.set(
-        container, serviceConfig.getBoolean(AmoroManagementConf.USE_MASTER_SLAVE_MODE));
+        container, serviceConfig.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE));
 
     if (serviceConfig.getBoolean(AmoroManagementConf.HA_ENABLE)) {
       String haClusterName = serviceConfig.getString(AmoroManagementConf.HA_CLUSTER_NAME);

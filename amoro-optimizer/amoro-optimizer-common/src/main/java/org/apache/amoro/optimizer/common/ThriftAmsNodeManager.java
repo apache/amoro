@@ -43,7 +43,7 @@ public class ThriftAmsNodeManager implements Serializable {
   private final AtomicReference<List<String>> amsUrls =
       new AtomicReference<>(Collections.emptyList());
   private volatile long lastRefreshTime = 0;
-  private transient Object refreshLock;
+  private transient volatile Object refreshLock;
 
   public ThriftAmsNodeManager(String initialAmsUrl) {
     this.initialAmsUrl = initialAmsUrl;
@@ -70,12 +70,11 @@ public class ThriftAmsNodeManager implements Serializable {
   }
 
   private void refreshNodesIfNeeded() {
-    long now = System.currentTimeMillis();
-    if (now - lastRefreshTime > REFRESH_INTERVAL_MS) {
+    if (System.currentTimeMillis() - lastRefreshTime > REFRESH_INTERVAL_MS) {
       synchronized (getLock()) {
-        if (now - lastRefreshTime > REFRESH_INTERVAL_MS) {
+        if (System.currentTimeMillis() - lastRefreshTime > REFRESH_INTERVAL_MS) {
           refreshNodesInternal();
-          lastRefreshTime = now;
+          lastRefreshTime = System.currentTimeMillis();
         }
       }
     }
@@ -103,7 +102,11 @@ public class ThriftAmsNodeManager implements Serializable {
 
   private Object getLock() {
     if (refreshLock == null) {
-      refreshLock = new Object();
+      synchronized (this) {
+        if (refreshLock == null) {
+          refreshLock = new Object();
+        }
+      }
     }
     return refreshLock;
   }
