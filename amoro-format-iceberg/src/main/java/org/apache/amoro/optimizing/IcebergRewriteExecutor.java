@@ -297,9 +297,24 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
       }
 
       return outputFiles;
+    } catch (Exception e) {
+      // Clean up already finalized rollover outputs to avoid leaving orphan files before fallback.
+      cleanupMergedOutputFiles(outputFiles);
+      throw e;
     } finally {
       if (parquetFileMergeRunner != null) {
         parquetFileMergeRunner.close();
+      }
+    }
+  }
+
+  private void cleanupMergedOutputFiles(List<DataFile> outputFiles) {
+    for (DataFile outputFile : outputFiles) {
+      try {
+        io.deleteFile(outputFile.location());
+      } catch (RuntimeException e) {
+        LOG.warn(
+            "Failed to delete merged parquet output during cleanup: {}", outputFile.location(), e);
       }
     }
   }
