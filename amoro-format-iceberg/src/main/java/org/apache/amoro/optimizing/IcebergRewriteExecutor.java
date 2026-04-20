@@ -20,7 +20,6 @@ package org.apache.amoro.optimizing;
 
 import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED;
 import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED_DEFAULT;
-import static org.apache.iceberg.TableProperties.PARQUET_BLOOM_FILTER_COLUMN_ENABLED_PREFIX;
 
 import org.apache.amoro.io.reader.GenericCombinedIcebergDataReader;
 import org.apache.amoro.io.writer.GenericIcebergPartitionedFanoutWriter;
@@ -29,6 +28,7 @@ import org.apache.amoro.table.MixedTable;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetricsConfig;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.TableProperties;
@@ -61,6 +61,8 @@ import java.util.UUID;
 /** OptimizingExecutor for iceberg format. */
 public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergRewriteExecutor.class);
+  private static final String PARQUET_BLOOM_FILTER_ENABLED_PREFIX =
+      "write.parquet.bloom-filter-enabled";
 
   private static class FileSchemaContext {
     private final MessageType parquetSchema;
@@ -173,6 +175,7 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   protected boolean canParquetRowGroupMerge() {
     return isParquetRowGroupMergeEnabled()
+        && isTableVersionAllowed()
         && isTableUnsorted()
         && isParquetFormat()
         && hasNoEncryptedDataFiles()
@@ -180,6 +183,20 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
         && hasNoRewrittenDeleteFiles()
         && hasNoBloomFilter()
         && allFilesHaveCurrentSpecId();
+  }
+
+  private boolean isTableVersionAllowed() {
+    if (!(table.asUnkeyedTable() instanceof HasTableOperations)) {
+      return checkCondition(false, "table operations are unavailable");
+    }
+
+    HasTableOperations tableWithOperations = (HasTableOperations) table.asUnkeyedTable();
+    int formatVersion = tableWithOperations.operations().current().formatVersion();
+
+    // Keep parquet row-group merge scoped to V2 tables for now. Iceberg V3 row-lineage
+    // semantics (_row_id, _last_updated_sequence_number) are still unsettled here,
+    // so V3 tables fall back to row-based rewrite.
+    return checkCondition(formatVersion < 3, "table format version is " + formatVersion);
   }
 
   private boolean isTableUnsorted() {
@@ -211,6 +228,7 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
       inputFiles.add(inputFile);
       fileSizes.add(file.fileSizeInBytes());
 
+      // TODO: remove ParquetIOBridge once Iceberg exposes a public ParquetIO.file() helper.
       try (ParquetFileReader reader = ParquetFileReader.open(ParquetIOBridge.file(inputFile))) {
         // Get parquet schema from file metadata.
         MessageType currentSchema = reader.getFileMetaData().getSchema();
@@ -241,7 +259,7 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
     List<DataFile> outputFiles = new ArrayList<>();
     OutputFileFactory outputFileFactory = newRowGroupMergeOutputFileFactory();
     FileSchemaContext fileSchemaContext = checkSchemaAndBuildContext();
-    long maxOutputSize = super.targetSize();
+    long maxOutputSize = targetSize();
     long currentOutputSize = 0L;
     ParquetFileMergeRunner parquetFileMergeRunner = null;
 
@@ -263,7 +281,7 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
                   table.spec(),
                   partition(),
                   parquetRowGroupSize(),
-                  MetricsConfig.forTable(table.asUnkeyedTable()));
+                  metricsConfig());
           EncryptedOutputFile outputFile = newRowGroupMergeOutputFile(outputFileFactory);
           parquetFileMergeRunner.start(outputFile);
           currentOutputSize = 0L;
@@ -332,9 +350,11 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   private boolean hasNoBloomFilter() {
     // Check if bloom filter is enabled by looking for properties
-    // with the prefix 'write.parquet.bloom-filter-enabled.column.' and value 'true'
+    // with the prefix 'write.parquet.bloom-filter-enabled' and value 'true'
+    // such as 'write.parquet.bloom-filter-enabled.default' or
+    // 'write.parquet.bloom-filter-enabled.column.'.
     for (Map.Entry<String, String> entry : table.properties().entrySet()) {
-      if (entry.getKey().startsWith(PARQUET_BLOOM_FILTER_COLUMN_ENABLED_PREFIX)
+      if (entry.getKey().startsWith(PARQUET_BLOOM_FILTER_ENABLED_PREFIX)
           && Boolean.parseBoolean(entry.getValue())) {
         return checkCondition(false, "table has bloom filter");
       }
@@ -370,6 +390,12 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
       LOG.debug("Skip parquet row-group merge due to {}", message);
     }
     return condition;
+  }
+
+  private MetricsConfig metricsConfig() {
+    return table.isKeyedTable()
+        ? MetricsConfig.forTable(table.asKeyedTable().baseTable())
+        : MetricsConfig.forTable(table.asUnkeyedTable());
   }
 
   private OutputFileFactory newRowGroupMergeOutputFileFactory() {

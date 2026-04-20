@@ -33,9 +33,11 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.TestHelpers;
 import org.apache.iceberg.avro.Avro;
@@ -261,6 +263,16 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
         .commit();
     Assert.assertFalse(newExecutor(dataScanTask).canParquetRowGroupMerge());
 
+    // parquet row-group merge should be disabled if the global bloom filter switch is enabled.
+    resetParquetRowGroupMergeTestState();
+    Assert.assertTrue(newExecutor(dataScanTask).canParquetRowGroupMerge());
+    getMixedTable()
+        .asUnkeyedTable()
+        .updateProperties()
+        .set("write.parquet.bloom-filter-enabled.default", "true")
+        .commit();
+    Assert.assertFalse(newExecutor(dataScanTask).canParquetRowGroupMerge());
+
     // parquet row-group merge should be disabled if the table spec evolves so that the source files
     // no longer match the partition spec.
     resetParquetRowGroupMergeTestState();
@@ -296,6 +308,20 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
             getMixedTable());
     // parquet row-group merge should be disabled if the data file is encrypted.
     Assert.assertFalse(newExecutor(encryptedInput).canParquetRowGroupMerge());
+  }
+
+  @Test
+  public void testParquetRowGroupMergeDisabledForV3Table() throws IOException {
+    Assume.assumeTrue(fileFormat == FileFormat.PARQUET);
+    prepareParquetRowGroupMergeTableConditions(true);
+    Assert.assertTrue(newExecutor(dataScanTask).canParquetRowGroupMerge());
+
+    HasTableOperations tableWithOperations = (HasTableOperations) getMixedTable().asUnkeyedTable();
+    TableMetadata current = tableWithOperations.operations().current();
+    tableWithOperations.operations().commit(current, current.upgradeToFormatVersion(3));
+    getMixedTable().asUnkeyedTable().refresh();
+
+    Assert.assertFalse(newExecutor(dataScanTask).canParquetRowGroupMerge());
   }
 
   @Test
