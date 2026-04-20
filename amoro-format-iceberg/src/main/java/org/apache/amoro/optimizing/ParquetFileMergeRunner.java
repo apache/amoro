@@ -30,9 +30,7 @@ import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.parquet.ParquetIOBridge;
 import org.apache.iceberg.parquet.ParquetUtil;
-import org.apache.parquet.column.ParquetProperties;
 import org.apache.parquet.hadoop.ParquetFileWriter;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.schema.MessageType;
@@ -115,9 +113,7 @@ public final class ParquetFileMergeRunner implements Closeable {
             parquetSchema,
             ParquetFileWriter.Mode.CREATE,
             rowGroupSize,
-            ParquetWriter.MAX_PADDING_SIZE_DEFAULT,
-            null,
-            ParquetProperties.builder().build());
+            0);
     writer.start();
   }
 
