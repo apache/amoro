@@ -63,6 +63,7 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergRewriteExecutor.class);
   private static final String PARQUET_BLOOM_FILTER_ENABLED_PREFIX =
       "write.parquet.bloom-filter-enabled";
+  private FileSchemaContext fileSchemaContext;
 
   private static class FileSchemaContext {
     private final MessageType parquetSchema;
@@ -174,6 +175,7 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   }
 
   protected boolean canParquetRowGroupMerge() {
+    fileSchemaContext = null;
     return isParquetRowGroupMergeEnabled()
         && isTableVersionAllowed()
         && isTableUnsorted()
@@ -182,7 +184,8 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
         && hasNoReadOnlyDeleteFiles()
         && hasNoRewrittenDeleteFiles()
         && hasNoBloomFilter()
-        && allFilesHaveCurrentSpecId();
+        && allFilesHaveCurrentSpecId()
+        && canPrepareParquetSchemaContext();
   }
 
   private boolean isTableVersionAllowed() {
@@ -258,7 +261,11 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   protected List<DataFile> parquetRowGroupMergeFiles() throws Exception {
     List<DataFile> outputFiles = new ArrayList<>();
     OutputFileFactory outputFileFactory = newRowGroupMergeOutputFileFactory();
-    FileSchemaContext fileSchemaContext = checkSchemaAndBuildContext();
+    if (fileSchemaContext == null) {
+      throw new IllegalStateException(
+          "Parquet row-group merge context is not prepared. Call canParquetRowGroupMerge() first.");
+    }
+
     long maxOutputSize = targetSize();
     long currentOutputSize = 0L;
     ParquetFileMergeRunner parquetFileMergeRunner = null;
@@ -302,9 +309,19 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
       cleanupMergedOutputFiles(outputFiles);
       throw e;
     } finally {
+      fileSchemaContext = null;
       if (parquetFileMergeRunner != null) {
         parquetFileMergeRunner.close();
       }
+    }
+  }
+
+  private boolean canPrepareParquetSchemaContext() {
+    try {
+      fileSchemaContext = checkSchemaAndBuildContext();
+      return true;
+    } catch (IllegalStateException e) {
+      return checkCondition(false, e.getMessage());
     }
   }
 
