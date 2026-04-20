@@ -426,13 +426,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
     RewriteFilesInput rewriteInput = newDataOnlyInput(sourceDataFiles);
     IcebergRewriteExecutor executor = newExecutor(rewriteInput);
 
-    Assert.assertTrue(executor.canParquetRowGroupMerge());
-    String expectedErrorMessage =
-        "The input parquet files have inconsistent schemas and cannot be merged.";
-    String errorMessage =
-        Assert.assertThrows(IllegalStateException.class, executor::parquetRowGroupMergeFiles)
-            .getMessage();
-    Assert.assertEquals(expectedErrorMessage, errorMessage);
+    Assert.assertFalse(executor.canParquetRowGroupMerge());
 
     // Scenario 2: schema differs by type promotion.
     resetParquetRowGroupMergeTestState();
@@ -462,11 +456,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
     rewriteInput = newDataOnlyInput(sourceDataFiles);
     executor = newExecutor(rewriteInput);
 
-    Assert.assertTrue(executor.canParquetRowGroupMerge());
-    errorMessage =
-        Assert.assertThrows(IllegalStateException.class, executor::parquetRowGroupMergeFiles)
-            .getMessage();
-    Assert.assertEquals(expectedErrorMessage, errorMessage);
+    Assert.assertFalse(executor.canParquetRowGroupMerge());
   }
 
   private RewriteFilesInput newDataOnlyInput(List<DataFile> dataFiles) {
