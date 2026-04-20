@@ -185,6 +185,7 @@ public final class ParquetFileMergeRunner implements Closeable {
       }
     }
 
+    // Clean up output file if writer did not succeed.
     if (!success && outputFile != null) {
       String location = outputFile.encryptingOutputFile().location();
       try {
