@@ -459,6 +459,59 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
     Assert.assertFalse(executor.canParquetRowGroupMerge());
   }
 
+  @Test
+  public void testParquetRowGroupMergeMinAvgRowGroupSizeThreshold() throws IOException {
+    Assume.assumeTrue(fileFormat == FileFormat.PARQUET);
+    prepareParquetRowGroupMergeTableConditions(true);
+
+    List<DataFile> sourceDataFiles = Lists.newArrayList();
+    sourceDataFiles.addAll(
+        MixedDataTestHelpers.writeAndCommitBaseStore(
+            getMixedTable(),
+            1L,
+            Arrays.asList(
+                MixedDataTestHelpers.createRecord(1, "a", 0L, "1970-01-01T08:00:00"),
+                MixedDataTestHelpers.createRecord(2, "b", 1L, "1970-01-01T08:00:00")),
+            false));
+    sourceDataFiles.addAll(
+        MixedDataTestHelpers.writeAndCommitBaseStore(
+            getMixedTable(),
+            2L,
+            Arrays.asList(
+                MixedDataTestHelpers.createRecord(3, "c", 2L, "1970-01-02T08:00:00"),
+                MixedDataTestHelpers.createRecord(4, "d", 3L, "1970-01-02T08:00:00")),
+            false));
+
+    // We compute the actual avg row-group size from file metadata and use it to set thresholds.
+    // Each small test file has exactly 1 row group, so avgRowGroupSize = totalFileSize / 2.
+    long totalFileSize = sourceDataFiles.stream().mapToLong(DataFile::fileSizeInBytes).sum();
+    int totalRowGroups = sourceDataFiles.size();
+    long avgRowGroupSize = totalFileSize / totalRowGroups;
+
+    RewriteFilesInput rewriteInput = newDataOnlyInput(sourceDataFiles);
+    // Case 1: threshold = avgRowGroupSize + 1 < threshold → merge disabled.
+    setMinAvgRowGroupSizeThreshold(avgRowGroupSize + 1);
+    boolean result = newExecutor(rewriteInput).canParquetRowGroupMerge();
+    Assert.assertFalse(result);
+
+    // Case 2: threshold = avgRowGroupSize >= threshold → merge enabled (boundary).
+    setMinAvgRowGroupSizeThreshold(avgRowGroupSize);
+    result = newExecutor(rewriteInput).canParquetRowGroupMerge();
+    Assert.assertTrue(result);
+  }
+
+  private void setMinAvgRowGroupSizeThreshold(long threshold) {
+    getMixedTable()
+        .asUnkeyedTable()
+        .updateProperties()
+        .set(
+            org.apache.amoro.table.TableProperties
+                .SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_MIN_AVG_ROW_GROUP_SIZE_BYTES,
+            String.valueOf(threshold))
+        .commit();
+    getMixedTable().asUnkeyedTable().refresh();
+  }
+
   private RewriteFilesInput newDataOnlyInput(List<DataFile> dataFiles) {
     DataFile[] wrappedDataFiles = new DataFile[dataFiles.size()];
     for (int i = 0; i < dataFiles.size(); i++) {
@@ -510,12 +563,17 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
   }
 
   // Configure only the table properties that are relevant to parquet row-group merge eligibility
-  // checks.
+  // checks. The min-avg-row-group-size is set to 0 so that small test files are not filtered
+  // out by the threshold gate.
   private void prepareParquetRowGroupMergeTableConditions(boolean enabled) {
     getMixedTable()
         .asUnkeyedTable()
         .updateProperties()
         .set(SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED, String.valueOf(enabled))
+        .set(
+            org.apache.amoro.table.TableProperties
+                .SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_MIN_AVG_ROW_GROUP_SIZE_BYTES,
+            "0")
         .commit();
   }
 

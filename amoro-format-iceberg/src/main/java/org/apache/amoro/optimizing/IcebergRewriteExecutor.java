@@ -20,6 +20,8 @@ package org.apache.amoro.optimizing;
 
 import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED;
 import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED_DEFAULT;
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_MIN_AVG_ROW_GROUP_SIZE_BYTES;
+import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_MIN_AVG_ROW_GROUP_SIZE_DEFAULT;
 
 import org.apache.amoro.io.reader.GenericCombinedIcebergDataReader;
 import org.apache.amoro.io.writer.GenericIcebergPartitionedFanoutWriter;
@@ -70,16 +72,19 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
     private final Map<String, String> keyValueMetadata;
     private final List<InputFile> inputFiles;
     private final List<Long> fileSizes;
+    private final long totalRowGroupCount;
 
     private FileSchemaContext(
         MessageType parquetSchema,
         Map<String, String> keyValueMetadata,
         List<InputFile> inputFiles,
-        List<Long> fileSizes) {
+        List<Long> fileSizes,
+        long totalRowGroupCount) {
       this.parquetSchema = parquetSchema;
       this.keyValueMetadata = keyValueMetadata;
       this.inputFiles = inputFiles;
       this.fileSizes = fileSizes;
+      this.totalRowGroupCount = totalRowGroupCount;
     }
   }
 
@@ -225,6 +230,7 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
     Map<String, String> firstMetadata = null;
     List<InputFile> inputFiles = new ArrayList<>(input.rewrittenDataFiles().length);
     List<Long> fileSizes = new ArrayList<>(input.rewrittenDataFiles().length);
+    long totalRowGroupCount = 0;
 
     for (DataFile file : input.rewrittenDataFiles()) {
       InputFile inputFile = io.newInputFile(file.location(), file.fileSizeInBytes());
@@ -233,6 +239,7 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
 
       // TODO: remove ParquetIOBridge once Iceberg exposes a public ParquetIO.file() helper.
       try (ParquetFileReader reader = ParquetFileReader.open(ParquetIOBridge.file(inputFile))) {
+        totalRowGroupCount += reader.getRowGroups().size();
         // Get parquet schema from file metadata.
         MessageType currentSchema = reader.getFileMetaData().getSchema();
         if (firstSchema == null) {
@@ -255,7 +262,8 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
           "No valid input parquet files are available for parquet row-group merge.");
     }
 
-    return new FileSchemaContext(firstSchema, firstMetadata, inputFiles, fileSizes);
+    return new FileSchemaContext(
+        firstSchema, firstMetadata, inputFiles, fileSizes, totalRowGroupCount);
   }
 
   protected List<DataFile> parquetRowGroupMergeFiles() throws Exception {
@@ -319,6 +327,27 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   private boolean canPrepareParquetSchemaContext() {
     try {
       fileSchemaContext = checkSchemaAndBuildContext();
+      if (fileSchemaContext.totalRowGroupCount > 0) {
+        long totalInputSize = fileSchemaContext.fileSizes.stream().mapToLong(Long::longValue).sum();
+        long avgRowGroupSize = totalInputSize / fileSchemaContext.totalRowGroupCount;
+        long minAvgRowGroupSize =
+            PropertyUtil.propertyAsLong(
+                table.properties(),
+                SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_MIN_AVG_ROW_GROUP_SIZE_BYTES,
+                SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_MIN_AVG_ROW_GROUP_SIZE_DEFAULT);
+
+        if (avgRowGroupSize < minAvgRowGroupSize) {
+          LOG.debug(
+              "Skip parquet row-group merge: avg row-group size {} bytes ({} input files, {} row groups) "
+                  + "is below threshold {} bytes ({}), falling back to row-level rewrite",
+              avgRowGroupSize,
+              fileSchemaContext.inputFiles.size(),
+              fileSchemaContext.totalRowGroupCount,
+              minAvgRowGroupSize,
+              SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_MIN_AVG_ROW_GROUP_SIZE_BYTES);
+          return false;
+        }
+      }
       return true;
     } catch (IllegalStateException e) {
       return checkCondition(false, e.getMessage());
