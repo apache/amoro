@@ -237,7 +237,6 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
       inputFiles.add(inputFile);
       fileSizes.add(file.fileSizeInBytes());
 
-      // TODO: remove ParquetIOBridge once Iceberg exposes a public ParquetIO.file() helper.
       try (ParquetFileReader reader = ParquetFileReader.open(ParquetIOBridge.file(inputFile))) {
         totalRowGroupCount += reader.getRowGroups().size();
         // Get parquet schema from file metadata.
