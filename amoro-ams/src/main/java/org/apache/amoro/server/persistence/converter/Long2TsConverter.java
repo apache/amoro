@@ -35,7 +35,7 @@ public class Long2TsConverter extends LongTypeHandler {
   @Override
   public void setNonNullParameter(PreparedStatement ps, int i, Long parameter, JdbcType jdbcType)
       throws SQLException {
-    if (parameter == 0) {
+    if (parameter <= 0) {
       ps.setTimestamp(i, null);
     } else {
       ps.setTimestamp(i, new Timestamp(parameter));
