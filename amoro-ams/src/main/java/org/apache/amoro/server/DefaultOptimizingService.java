@@ -1163,6 +1163,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
     /**
      * Timestamp of the most recent restart attempt (-1 if no restart has been attempted yet). Used
      * to enforce the grace period between consecutive restart attempts.
+     *
+     * <p>Also doubles as a log-once sentinel for containers that opted out of auto-restart: once
+     * set (from -1), subsequent keeper cycles skip the warn log and are silenced via the grace
+     * period check. Semantically this is "we've already told the operator about this orphan once".
      */
     long lastRestartTime = -1;
 

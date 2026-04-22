@@ -45,10 +45,17 @@ public interface InternalResourceContainer extends ResourceContainer {
    * Whether AMS should drive auto-restart (re-invoking {@link #requestResource}) for this container
    * when an optimizer is detected as orphaned.
    *
-   * <p>Containers that already have their own process-level self-healing (e.g. a Kubernetes
-   * Deployment that recreates crashed Pods via its ReplicaSet) should return {@code false}. In that
-   * case AMS will neither re-request the resource nor delete the resource DB row after the max
-   * retry threshold — doing so would race with or undo the external self-healing.
+   * <p>Containers that already have their own process-level self-healing should return {@code
+   * false}. A Kubernetes Deployment is the canonical example: its ReplicaSet recreates crashed
+   * Pods, so AMS-driven restart would race against the controller. Flink/Spark containers may also
+   * want to return {@code false} when the underlying engine is configured with JobManager HA, since
+   * the engine will resurrect the driver on its own.
+   *
+   * <p>When this returns {@code false}, the orphaned resource is logged once and then left alone:
+   * AMS will not re-request the resource, will not consume retry attempts, and will not delete the
+   * resource DB row after the max-retry threshold. The implication is that if the external
+   * self-healing itself fails permanently (e.g. an ImagePullBackOff), the row will accumulate in
+   * the DB until an operator cleans it up manually.
    *
    * <p>Returns {@code true} by default. Override in containers that manage lifecycle externally.
    */
