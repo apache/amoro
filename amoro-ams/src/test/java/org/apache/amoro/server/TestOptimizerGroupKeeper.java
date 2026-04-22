@@ -130,65 +130,39 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     }
   }
 
-  // Saved previous values of auto-restart fields on OPTIMIZING_SERVICE so we can restore them
-  // in @AfterClass. The parent AMSServiceTestBase intentionally leaves auto-restart disabled
-  // to avoid interfering with sibling tests (otherwise the keeper's orphan-detection SELECTs
-  // collide with DerbyPersistence's TRUNCATE on teardown, deadlocking the test JVM). Only this
-  // test class enables it, and only for its own lifetime.
+  // The parent AMSServiceTestBase intentionally leaves auto-restart disabled to avoid
+  // interfering with sibling tests (otherwise the keeper's orphan-detection SELECTs collide with
+  // DerbyPersistence's TRUNCATE on teardown, deadlocking the test JVM). Only this test class
+  // enables it, and only for its own lifetime — these fields remember the previous values so
+  // @AfterClass can restore them.
   private static boolean prevAutoRestartEnabled;
   private static long prevAutoRestartGracePeriodMs;
 
   @BeforeClass
-  public static void enableAutoRestartForThisClass() throws Exception {
-    DynFields.UnboundField<Boolean> enabledField =
-        DynFields.builder()
-            .hiddenImpl(DefaultOptimizingService.class, "autoRestartEnabled")
-            .build();
-    DynFields.UnboundField<Long> graceField =
-        DynFields.builder()
-            .hiddenImpl(DefaultOptimizingService.class, "autoRestartGracePeriodMs")
-            .build();
-    prevAutoRestartEnabled = enabledField.bind(optimizingServiceRef()).get();
-    prevAutoRestartGracePeriodMs = graceField.bind(optimizingServiceRef()).get();
-    enabledField.bind(optimizingServiceRef()).set(true);
-    graceField.bind(optimizingServiceRef()).set(0L);
+  public static void enableAutoRestartForThisClass() {
+    DefaultOptimizingService svc = optimizingServiceStatic();
+    prevAutoRestartEnabled = svc.isAutoRestartEnabled();
+    prevAutoRestartGracePeriodMs = svc.getAutoRestartGracePeriodMs();
+    svc.setAutoRestartForTest(true, 0L);
   }
 
   @AfterClass
-  public static void cleanup() throws Exception {
+  public static void cleanup() {
     try {
-      DynFields.UnboundField<Boolean> enabledField =
-          DynFields.builder()
-              .hiddenImpl(DefaultOptimizingService.class, "autoRestartEnabled")
-              .build();
-      DynFields.UnboundField<Long> graceField =
-          DynFields.builder()
-              .hiddenImpl(DefaultOptimizingService.class, "autoRestartGracePeriodMs")
-              .build();
-      enabledField.bind(optimizingServiceRef()).set(prevAutoRestartEnabled);
-      graceField.bind(optimizingServiceRef()).set(prevAutoRestartGracePeriodMs);
-    } catch (Throwable ignored) {
-      // OPTIMIZING_SERVICE may already have been disposed; restoring is best-effort.
+      optimizingServiceStatic()
+          .setAutoRestartForTest(prevAutoRestartEnabled, prevAutoRestartGracePeriodMs);
+    } catch (Throwable t) {
+      // JUnit4 runs @AfterClass children-first so OPTIMIZING_SERVICE should still be alive, but
+      // defensively log if we ever fail to restore: an uncaught failure here would silently
+      // poison the next test class with autoRestartEnabled=true (which is exactly the CI
+      // regression we fixed in this PR).
+      org.slf4j.LoggerFactory.getLogger(TestOptimizerGroupKeeper.class)
+          .warn("Failed to restore auto-restart fields on shared OPTIMIZING_SERVICE", t);
     }
     if (!originIsInitialized) {
       DynFields.UnboundField<Boolean> initializedField =
           DynFields.builder().hiddenImpl(Containers.class, "isInitialized").build();
       initializedField.asStatic().set(false);
-    }
-  }
-
-  /**
-   * Retrieve the shared OPTIMIZING_SERVICE instance from the parent class via reflection, since the
-   * field is package-private static and we need to mutate it from a static @BeforeClass hook that
-   * runs after the parent's @BeforeClass has initialized it.
-   */
-  private static DefaultOptimizingService optimizingServiceRef() {
-    try {
-      java.lang.reflect.Field f = AMSServiceTestBase.class.getDeclaredField("OPTIMIZING_SERVICE");
-      f.setAccessible(true);
-      return (DefaultOptimizingService) f.get(null);
-    } catch (Throwable t) {
-      throw new RuntimeException(t);
     }
   }
 

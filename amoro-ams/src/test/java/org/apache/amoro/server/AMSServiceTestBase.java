@@ -95,6 +95,15 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
     return OPTIMIZING_SERVICE;
   }
 
+  /**
+   * Static accessor for the shared {@link DefaultOptimizingService}. Used by subclasses that need
+   * to read or mutate service state from a {@code @BeforeClass} / {@code @AfterClass} hook, where
+   * the instance-level {@link #optimizingService()} is not reachable.
+   */
+  protected static DefaultOptimizingService optimizingServiceStatic() {
+    return OPTIMIZING_SERVICE;
+  }
+
   protected ProcessService processServiceService() {
     return PROCESS_SERVICE;
   }

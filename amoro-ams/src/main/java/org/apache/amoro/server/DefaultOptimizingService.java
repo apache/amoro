@@ -58,6 +58,7 @@ import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -109,9 +110,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final long pollingTimeout;
   private final boolean breakQuotaLimit;
   private final long refreshGroupInterval;
-  private final boolean autoRestartEnabled;
+  // Non-final + volatile so tests can override via setAutoRestartForTest without relying on
+  // reflection against final fields. In production these are written once in the constructor
+  // and never modified after.
+  private volatile boolean autoRestartEnabled;
   private final int autoRestartMaxRetries;
-  private final long autoRestartGracePeriodMs;
+  private volatile long autoRestartGracePeriodMs;
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
@@ -438,6 +442,30 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizingQueueByGroup.clear();
     optimizingQueueByToken.clear();
     authOptimizers.clear();
+  }
+
+  /**
+   * Override the auto-restart settings for testing purposes. This avoids having to recreate the
+   * service (and its keeper threads) just to change these two values, and avoids reflection against
+   * final fields in test code.
+   *
+   * <p>Production code must not call this: the fields are set once in the constructor and should
+   * stay fixed.
+   */
+  @VisibleForTesting
+  void setAutoRestartForTest(boolean enabled, long gracePeriodMs) {
+    this.autoRestartEnabled = enabled;
+    this.autoRestartGracePeriodMs = gracePeriodMs;
+  }
+
+  @VisibleForTesting
+  boolean isAutoRestartEnabled() {
+    return autoRestartEnabled;
+  }
+
+  @VisibleForTesting
+  long getAutoRestartGracePeriodMs() {
+    return autoRestartGracePeriodMs;
   }
 
   @Override
