@@ -48,13 +48,10 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
       configurations.set(
           AmoroManagementConf.OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL,
           Duration.ofMillis(10L));
-      // Enable auto-restart with 0ms grace period so that TestOptimizerGroupKeeper's orphan
-      // detection tests don't need to wait for the default 5-minute grace period.
-      // Other subclasses are unaffected: auto-restart only fires when orphaned resources
-      // (resources without an active optimizer) are present, which normal tests avoid.
-      configurations.set(AmoroManagementConf.OPTIMIZER_AUTO_RESTART_ENABLED, true);
-      configurations.set(
-          AmoroManagementConf.OPTIMIZER_AUTO_RESTART_GRACE_PERIOD, Duration.ofMillis(0L));
+      // Note: auto-restart is intentionally left at its production default (disabled) here so
+      // that sibling AMS tests are not affected by the keeper's orphan-detection queries. The
+      // TestOptimizerGroupKeeper class enables auto-restart on the shared OPTIMIZING_SERVICE
+      // instance only for its own lifetime via reflection and resets it afterwards.
       TABLE_SERVICE =
           new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactory);
       OPTIMIZING_SERVICE =
