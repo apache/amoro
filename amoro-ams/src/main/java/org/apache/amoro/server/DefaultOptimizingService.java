@@ -109,6 +109,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final long pollingTimeout;
   private final boolean breakQuotaLimit;
   private final long refreshGroupInterval;
+  private final boolean autoRestartEnabled;
+  private final int autoRestartMaxRetries;
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
@@ -151,6 +153,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
             AmoroManagementConf.OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL);
     this.groupMaxKeepingAttempts =
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS);
+    this.autoRestartEnabled =
+        serviceConfig.getBoolean(AmoroManagementConf.OPTIMIZER_AUTO_RESTART_ENABLED);
+    this.autoRestartMaxRetries =
+        serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_AUTO_RESTART_MAX_RETRIES);
     this.tableService = tableService;
     this.catalogManager = catalogManager;
     this.optimizerManager = optimizerManager;
@@ -889,6 +895,13 @@ public class DefaultOptimizingService extends StatedPersistentBase
    */
   private class OptimizerGroupKeeper extends AbstractKeeper<OptimizerGroupKeepingTask> {
 
+    /**
+     * Tracks the number of restart attempts for each orphaned resource. Key is resourceId, value is
+     * the number of consecutive restart attempts. Entries are removed when the optimizer
+     * successfully registers or when the resource is cleaned up.
+     */
+    private final Map<String, Integer> orphanedResourceRetries = new ConcurrentHashMap<>();
+
     public OptimizerGroupKeeper(String threadName) {
       super(threadName);
     }
@@ -909,6 +922,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
         LOG.warn(
             "ResourceGroup:{} may have been deleted, stop keeping it", keepingTask.getGroupName());
         return;
+      }
+
+      // Check and restart orphaned resources if auto-restart is enabled
+      if (autoRestartEnabled) {
+        restartOrphanedOptimizers(resourceGroup);
       }
 
       int requiredCores = keepingTask.tryKeeping(resourceGroup);
@@ -955,6 +973,98 @@ public class DefaultOptimizingService extends StatedPersistentBase
           "Resource Group:{} has insufficient resources, created an optimizer with parallelism of {}",
           resourceGroup.getName(),
           requiredCores);
+    }
+
+    /**
+     * Detect and restart orphaned resources for a resource group. An orphaned resource is one that
+     * exists in the resource table but has no corresponding optimizer instance in the optimizer
+     * table, indicating the optimizer process died unexpectedly.
+     *
+     * <p>For each orphaned resource:
+     *
+     * <ul>
+     *   <li>If retries < max retries: attempt to restart the optimizer via the container
+     *   <li>If retries >= max retries: clean up the orphaned resource from the resource table
+     * </ul>
+     */
+    private void restartOrphanedOptimizers(ResourceGroup resourceGroup) {
+      try {
+        String groupName = resourceGroup.getName();
+        List<Resource> resources = optimizerManager.listResourcesByGroup(groupName);
+        if (resources.isEmpty()) {
+          return;
+        }
+
+        // Collect all optimizer resourceIds in this group
+        List<OptimizerInstance> optimizers = optimizerManager.listOptimizers(groupName);
+        Set<String> activeResourceIds =
+            optimizers.stream()
+                .map(OptimizerInstance::getResourceId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        // Find orphaned resources (resources without any active optimizer)
+        List<Resource> orphanedResources =
+            resources.stream()
+                .filter(r -> !activeResourceIds.contains(r.getResourceId()))
+                .collect(Collectors.toList());
+
+        // Clean up retry tracking for resources that are no longer orphaned
+        orphanedResourceRetries
+            .keySet()
+            .removeIf(
+                resourceId ->
+                    resources.stream().noneMatch(r -> resourceId.equals(r.getResourceId()))
+                        || activeResourceIds.contains(resourceId));
+
+        for (Resource orphanedResource : orphanedResources) {
+          String resourceId = orphanedResource.getResourceId();
+          int retries = orphanedResourceRetries.getOrDefault(resourceId, 0);
+
+          if (retries >= autoRestartMaxRetries) {
+            LOG.warn(
+                "Orphaned resource {} in group {} has exceeded max restart retries ({}), "
+                    + "cleaning up the resource",
+                resourceId,
+                groupName,
+                autoRestartMaxRetries);
+            try {
+              ResourceContainer rc = Containers.get(orphanedResource.getContainerName());
+              ((AbstractOptimizerContainer) rc).releaseResource(orphanedResource);
+            } catch (Throwable t) {
+              LOG.warn(
+                  "Failed to release orphaned resource {} via container, will still remove from DB",
+                  resourceId,
+                  t);
+            }
+            optimizerManager.deleteResource(resourceId);
+            orphanedResourceRetries.remove(resourceId);
+          } else {
+            LOG.info(
+                "Detected orphaned resource {} in group {}, attempting restart (attempt {}/{})",
+                resourceId,
+                groupName,
+                retries + 1,
+                autoRestartMaxRetries);
+            try {
+              ResourceContainer rc = Containers.get(orphanedResource.getContainerName());
+              ((AbstractOptimizerContainer) rc).requestResource(orphanedResource);
+              orphanedResourceRetries.put(resourceId, retries + 1);
+            } catch (Throwable t) {
+              LOG.error(
+                  "Failed to restart orphaned resource {} in group {}, attempt {}/{}",
+                  resourceId,
+                  groupName,
+                  retries + 1,
+                  autoRestartMaxRetries,
+                  t);
+              orphanedResourceRetries.put(resourceId, retries + 1);
+            }
+          }
+        }
+      } catch (Throwable t) {
+        LOG.error("Failed to check orphaned resources for group {}", resourceGroup.getName(), t);
+      }
     }
   }
 }

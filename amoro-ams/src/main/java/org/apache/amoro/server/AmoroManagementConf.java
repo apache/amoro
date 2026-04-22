@@ -632,6 +632,24 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofSeconds(3))
           .withDescription("Optimizer polling task timeout.");
 
+  public static final ConfigOption<Boolean> OPTIMIZER_AUTO_RESTART_ENABLED =
+      ConfigOptions.key("optimizer.auto-restart-enabled")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription(
+              "Whether to automatically restart optimizers that are unexpectedly down. "
+                  + "When enabled, the system periodically checks for orphaned resources "
+                  + "(resources in the resource table without corresponding optimizer instances) "
+                  + "and restarts the optimizer for those resources.");
+
+  public static final ConfigOption<Integer> OPTIMIZER_AUTO_RESTART_MAX_RETRIES =
+      ConfigOptions.key("optimizer.auto-restart-max-retries")
+          .intType()
+          .defaultValue(5)
+          .withDescription(
+              "Maximum number of consecutive restart attempts for a single orphaned resource. "
+                  + "When exceeded, the orphaned resource will be cleaned up instead of retried.");
+
   public static final ConfigOption<Duration> OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL =
       ConfigOptions.key("optimizer-group.min-parallelism-check-interval")
           .durationType()

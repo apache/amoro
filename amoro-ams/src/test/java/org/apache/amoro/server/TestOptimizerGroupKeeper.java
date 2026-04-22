@@ -30,6 +30,7 @@ import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceContainer;
 import org.apache.amoro.resource.ResourceGroup;
+import org.apache.amoro.resource.ResourceType;
 import org.apache.amoro.server.manager.AbstractOptimizerContainer;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
@@ -45,6 +46,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -97,6 +99,13 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
               optimizer ->
                   optimizingService()
                       .deleteOptimizer(optimizer.getGroupName(), optimizer.getResourceId()));
+      // Clean up remaining resources
+      try {
+        optimizerManager()
+            .listResourcesByGroup(currentGroupName)
+            .forEach(resource -> optimizerManager().deleteResource(resource.getResourceId()));
+      } catch (Exception ignored) {
+      }
       // Delete resource group from optimizing service first (this will dispose and unregister
       // metrics)
       try {
@@ -311,6 +320,132 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
         minParallelismStr,
         resourceGroup.getName()
             + ":min-parallelism should be reset to optimizer's current total cores (1) when no more resources available");
+  }
+
+  /**
+   * Test scenario 5: When auto-restart is enabled and an optimizer goes down unexpectedly, the
+   * orphaned resource should be detected and the optimizer restarted automatically.
+   *
+   * <p>Steps:
+   *
+   * <ol>
+   *   <li>Create a resource group and manually insert a resource (simulating a previous optimizer
+   *       start)
+   *   <li>Do NOT register any optimizer (simulating optimizer crash before/after registration)
+   *   <li>Wait for OptimizerGroupKeeper to detect the orphaned resource and restart the optimizer
+   *   <li>Verify that the container's requestResource was called to restart
+   * </ol>
+   */
+  @Test
+  public void testOrphanedResourceAutoRestart() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup resourceGroup = buildTestResourceGroup(TEST_GROUP_NAME + "-5", 0);
+
+    optimizerManager().createResourceGroup(resourceGroup);
+    optimizingService().createResourceGroup(resourceGroup);
+
+    // Manually create a resource in DB (simulating a previously started optimizer)
+    Resource orphanedResource =
+        new Resource.Builder(MOCK_CONTAINER_NAME, resourceGroup.getName(), ResourceType.OPTIMIZER)
+            .setThreadCount(2)
+            .setProperties(resourceGroup.getProperties())
+            .build();
+    optimizerManager().createResource(orphanedResource);
+
+    // No optimizer registered for this resource — it's orphaned
+    // Wait for OptimizerGroupKeeper to detect and restart
+    Thread.sleep(200);
+
+    // Verify that requestResource was called (auto-restart triggered)
+    Assertions.assertTrue(
+        scaleOutCallCount.get() >= 1,
+        resourceGroup.getName()
+            + ":At least one restart should be triggered for the orphaned resource");
+  }
+
+  /**
+   * Test scenario 6: When auto-restart is enabled and the restart fails repeatedly, the orphaned
+   * resource should be cleaned up after exceeding max retries.
+   *
+   * <p>Steps:
+   *
+   * <ol>
+   *   <li>Create a resource group with an orphaned resource
+   *   <li>Set resource unavailable (container throws exception on requestResource)
+   *   <li>Wait for max retries to be exhausted
+   *   <li>Verify the orphaned resource is deleted from DB
+   * </ol>
+   */
+  @Test
+  public void testOrphanedResourceCleanupAfterMaxRetries() throws InterruptedException {
+    resourceAvailable.set(false);
+    scaleOutCallCount.set(0);
+    ResourceGroup resourceGroup = buildTestResourceGroup(TEST_GROUP_NAME + "-6", 0);
+
+    optimizerManager().createResourceGroup(resourceGroup);
+    optimizingService().createResourceGroup(resourceGroup);
+
+    // Manually create a resource (simulating a previously started optimizer that crashed)
+    Resource orphanedResource =
+        new Resource.Builder(MOCK_CONTAINER_NAME, resourceGroup.getName(), ResourceType.OPTIMIZER)
+            .setThreadCount(2)
+            .setProperties(resourceGroup.getProperties())
+            .build();
+    optimizerManager().createResource(orphanedResource);
+
+    // Wait for max retries to be exhausted (auto-restart-max-retries default is 5)
+    // With check interval 10ms, 5 retries + 1 cleanup = 6 cycles at most
+    Thread.sleep(500);
+
+    // Verify the orphaned resource has been cleaned up from DB
+    List<Resource> remainingResources =
+        optimizerManager().listResourcesByGroup(resourceGroup.getName());
+    Assertions.assertTrue(
+        remainingResources.isEmpty(),
+        resourceGroup.getName()
+            + ":Orphaned resource should be cleaned up after max retries are exhausted");
+  }
+
+  /**
+   * Test scenario 7: When auto-restart is enabled but the resource already has an active optimizer,
+   * no restart should be triggered.
+   */
+  @Test
+  public void testNoRestartWhenOptimizerIsActive() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup resourceGroup = buildTestResourceGroup(TEST_GROUP_NAME + "-7", 0);
+
+    optimizerManager().createResourceGroup(resourceGroup);
+    optimizingService().createResourceGroup(resourceGroup);
+
+    // Create a resource and register an optimizer for it (healthy state)
+    String resourceId = "test-active-resource-" + System.currentTimeMillis();
+    Resource resource =
+        new Resource.Builder(MOCK_CONTAINER_NAME, resourceGroup.getName(), ResourceType.OPTIMIZER)
+            .setThreadCount(2)
+            .setProperties(resourceGroup.getProperties())
+            .build();
+    optimizerManager().createResource(resource);
+
+    // Register an optimizer for this resource
+    OptimizerRegisterInfo registerInfo =
+        buildRegisterInfo(resourceGroup.getName(), resource.getThreadCount());
+    registerInfo.setResourceId(resource.getResourceId());
+    optimizingService().authenticate(registerInfo);
+
+    // Reset counter after authenticate
+    scaleOutCallCount.set(0);
+
+    Thread.sleep(200);
+
+    // Verify no restart was triggered since the resource has an active optimizer
+    Assertions.assertEquals(
+        0,
+        scaleOutCallCount.get(),
+        resourceGroup.getName()
+            + ":No restart should be triggered when resource has an active optimizer");
   }
 
   private static OptimizerRegisterInfo buildRegisterInfo(String groupName, int threadCount) {
