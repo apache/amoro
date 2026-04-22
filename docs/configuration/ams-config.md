@@ -105,6 +105,9 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | http-server.session-timeout | 7 d | Timeout for http session. |
 | optimizer-group.max-keeping-attempts | 3 | The maximum number of consecutive attempts to keep the optimizer group at its current parallelism. |
 | optimizer-group.min-parallelism-check-interval | 5 min | The interval for checking and ensuring the optimizer group meets its minimum parallelism requirement. When the current parallelism falls below the configured min-parallelism, the system will attempt to scale out optimizers at this interval. The actual scale-out timing is calculated as: consecutive keeping attempts * this interval. |
+| optimizer.auto-restart-enabled | false | Whether to automatically restart optimizers that are unexpectedly down. When enabled, the system periodically checks for orphaned resources (resources in the resource table without corresponding optimizer instances) and restarts the optimizer for those resources. |
+| optimizer.auto-restart-grace-period | 5 min | Grace period after an orphaned resource is first detected before it is considered for restart. This avoids restarting resources whose optimizer process is still starting up (e.g. Flink/Kubernetes containers). |
+| optimizer.auto-restart-max-retries | 5 | Maximum number of restart attempts for a single orphaned resource (counted per AMS lifecycle). When exceeded, the orphaned resource will be cleaned up instead of retried. |
 | optimizer.heart-beat-timeout | 1 min | Timeout duration for Optimizer heartbeat. |
 | optimizer.max-planning-parallelism | 1 | Max planning parallelism in one optimizer group. |
 | optimizer.polling-timeout | 3 s | Optimizer polling task timeout. |

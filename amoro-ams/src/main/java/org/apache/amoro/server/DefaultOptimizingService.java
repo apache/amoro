@@ -902,9 +902,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
      * Tracks orphaned resource state. Key is resourceId. Value records the timestamp when the
      * resource was first detected as orphaned and the number of restart attempts so far. Entries
      * are removed when the optimizer successfully registers or when the resource is cleaned up.
+     *
+     * <p>Accessed only from the single keeper thread — no synchronization needed.
      */
-    private final Map<String, OrphanedResourceState> orphanedResourceStates =
-        new ConcurrentHashMap<>();
+    private final Map<String, OrphanedResourceState> orphanedResourceStates = new HashMap<>();
 
     public OptimizerGroupKeeper(String threadName) {
       super(threadName);
@@ -934,7 +935,15 @@ public class DefaultOptimizingService extends StatedPersistentBase
         orphanedCores = restartOrphanedOptimizers(resourceGroup);
       }
 
-      int requiredCores = keepingTask.tryKeeping(resourceGroup) - orphanedCores;
+      // rawRequiredCores = minParallelism - currently active optimizer cores.
+      // Used for minParallelism reset so that orphaned cores (whose optimizer processes are
+      // dead) are NOT counted as "satisfied" capacity.
+      int rawRequiredCores = keepingTask.tryKeeping(resourceGroup);
+
+      // Subtract orphaned cores already being restarted to avoid double-provisioning.
+      // Clamp to 0: orphanedCores can exceed rawRequiredCores when orphaned resources cover
+      // more than the group's parallelism deficit.
+      int requiredCores = Math.max(0, rawRequiredCores - orphanedCores);
       if (requiredCores <= 0) {
         LOG.debug(
             "The Resource Group:{} has sufficient resources, keep it", resourceGroup.getName());
@@ -949,12 +958,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
             resourceGroup.getName(),
             keepingTask.getAttempts(),
             minParallelism,
-            minParallelism - requiredCores);
+            minParallelism - rawRequiredCores);
         resourceGroup
             .getProperties()
             .put(
                 OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM,
-                String.valueOf(minParallelism - requiredCores));
+                String.valueOf(minParallelism - rawRequiredCores));
         updateResourceGroup(resourceGroup);
         optimizerManager.updateResourceGroup(resourceGroup);
         keepInTouch(resourceGroup.getName(), 1);
@@ -1009,7 +1018,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
           return 0;
         }
 
-        // Collect all optimizer resourceIds in this group
+        // Collect all optimizer resourceIds in this group.
+        // Note: these two DB queries are not in the same transaction. An optimizer could
+        // register between the two calls, making it appear orphaned. The grace period
+        // is intentionally designed to absorb such transient windows.
+        // TODO: consider replacing this DB query with authOptimizers (in-memory map) to
+        //  avoid a full table scan per keeper cycle when many groups are active.
         List<OptimizerInstance> optimizers = optimizerManager.listOptimizers(groupName);
         Set<String> activeResourceIds =
             optimizers.stream()
@@ -1038,14 +1052,18 @@ public class DefaultOptimizingService extends StatedPersistentBase
               orphanedResourceStates.computeIfAbsent(
                   resourceId, k -> new OrphanedResourceState(now));
 
-          // Grace period: skip restart if resource was recently detected as orphaned
-          if (now - state.firstDetectedTime < autoRestartGracePeriodMs) {
+          // Grace period: skip restart if the resource was recently first detected or last
+          // restarted. This avoids false-positive restarts for newly started optimizers and
+          // rate-limits retry attempts after a restart.
+          long gracePeriodStart =
+              state.lastRestartTime >= 0 ? state.lastRestartTime : state.firstDetectedTime;
+          if (now - gracePeriodStart < autoRestartGracePeriodMs) {
             LOG.debug(
                 "Orphaned resource {} in group {} is within grace period ({} ms remaining), "
                     + "skipping restart",
                 resourceId,
                 groupName,
-                autoRestartGracePeriodMs - (now - state.firstDetectedTime));
+                autoRestartGracePeriodMs - (now - gracePeriodStart));
             orphanedThreadCount += orphanedResource.getThreadCount();
             continue;
           }
@@ -1069,6 +1087,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   resourceId,
                   t);
             }
+            // Defensively remove any optimizer that may have registered for this resourceId
+            // in the window between our two DB queries (TOCTOU). deleteOptimizer is idempotent.
+            optimizerManager.deleteOptimizer(groupName, resourceId);
             optimizerManager.deleteResource(resourceId);
             orphanedResourceStates.remove(resourceId);
           } else {
@@ -1083,19 +1104,26 @@ public class DefaultOptimizingService extends StatedPersistentBase
               if (rc instanceof InternalResourceContainer) {
                 ((InternalResourceContainer) rc).requestResource(orphanedResource);
               } else {
-                LOG.warn(
-                    "Container {} for orphaned resource {} is not an InternalResourceContainer, "
-                        + "cannot restart",
-                    orphanedResource.getContainerName(),
-                    resourceId);
-                state.restartAttempts++;
+                // Auto-restart is not supported for this container type. Log once to alert
+                // operators, then suppress further warnings via lastRestartTime so the
+                // grace period silences subsequent cycles. Do NOT consume restartAttempts —
+                // the resource requires manual intervention, not automatic cleanup.
+                if (state.lastRestartTime < 0) {
+                  LOG.warn(
+                      "Container {} for orphaned resource {} is not an InternalResourceContainer,"
+                          + " auto-restart is not supported. Manual intervention required.",
+                      orphanedResource.getContainerName(),
+                      resourceId);
+                  state.lastRestartTime = now;
+                }
+                orphanedThreadCount += orphanedResource.getThreadCount();
                 continue;
               }
               // Persist updated properties (e.g. new job-id from doScaleOut)
               optimizerManager.updateResource(orphanedResource);
               state.restartAttempts++;
-              // Reset grace period timer so the next cycle waits for the optimizer to register
-              state.firstDetectedTime = now;
+              // Record restart time so the next cycle waits a grace period before retrying
+              state.lastRestartTime = now;
               orphanedThreadCount += orphanedResource.getThreadCount();
             } catch (Throwable t) {
               LOG.error(
@@ -1106,6 +1134,14 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   autoRestartMaxRetries,
                   t);
               state.restartAttempts++;
+              // Record restart time so failed attempts also respect the grace period
+              state.lastRestartTime = now;
+              // Intentionally do NOT add to orphanedThreadCount on failure: the restart
+              // request itself failed, so no optimizer process was launched. Allowing
+              // tryKeeping() to provision a new resource provides fast recovery while
+              // the orphaned resource is retried in the background. This may temporarily
+              // result in both the orphaned record and a new resource coexisting in the DB,
+              // but the orphan will eventually be cleaned up after max retries.
             }
           }
         }
@@ -1118,7 +1154,13 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   /** Tracks the state of an orphaned resource for auto-restart. */
   private static class OrphanedResourceState {
-    long firstDetectedTime;
+    final long firstDetectedTime;
+    /**
+     * Timestamp of the most recent restart attempt (-1 if no restart has been attempted yet).
+     * Used to enforce the grace period between consecutive restart attempts.
+     */
+    long lastRestartTime = -1;
+
     int restartAttempts;
 
     OrphanedResourceState(long firstDetectedTime) {

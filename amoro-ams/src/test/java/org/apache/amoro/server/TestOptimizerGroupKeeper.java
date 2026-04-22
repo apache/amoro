@@ -368,8 +368,13 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     // No optimizer registered for this resource — it's orphaned
     // Wait for OptimizerGroupKeeper to detect and restart
     waitUntil(() -> scaleOutCallCount.get() >= 1, 2000);
+    // Allow one extra keeper cycle (interval=10ms) to settle: the mock doScaleOut registers
+    // the optimizer synchronously, so the very next tick sees it as active and stops retrying.
+    // The sleep eliminates any residual scheduling race between waitUntil returning and the
+    // assertion being evaluated.
+    Thread.sleep(50);
 
-    // Verify that requestResource was called exactly once for the orphaned resource
+    // Verify that requestResource was called exactly once for the orphaned resource.
     Assertions.assertEquals(
         1,
         scaleOutCallCount.get(),
@@ -433,24 +438,29 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     optimizerManager().createResourceGroup(resourceGroup);
     optimizingService().createResourceGroup(resourceGroup);
 
-    // Create a resource and register an optimizer for it (healthy state)
+    // Build the resource object (in memory only, not yet in DB) to obtain its resourceId.
     Resource resource =
         new Resource.Builder(MOCK_CONTAINER_NAME, resourceGroup.getName(), ResourceType.OPTIMIZER)
             .setThreadCount(2)
             .setProperties(resourceGroup.getProperties())
             .build();
-    optimizerManager().createResource(resource);
 
-    // Register an optimizer for this resource
+    // Authenticate (register optimizer) BEFORE inserting the resource into DB.
+    // This eliminates the race window where the resource exists in the resource table
+    // without a corresponding optimizer, which would trigger auto-restart with grace period=0.
     OptimizerRegisterInfo registerInfo =
         buildRegisterInfo(resourceGroup.getName(), resource.getThreadCount());
     registerInfo.setResourceId(resource.getResourceId());
     optimizingService().authenticate(registerInfo);
 
-    // Reset counter after authenticate
+    // Now insert the resource — by this point the optimizer is already registered,
+    // so the keeper will never see this as an orphaned resource.
+    optimizerManager().createResource(resource);
     scaleOutCallCount.set(0);
 
-    // Wait a few check cycles to verify no restart is triggered
+    // Negative assertion: sleep long enough for multiple keeper cycles (interval = 10ms,
+    // 200ms ≈ 20 cycles) to confirm that no restart is triggered. Thread.sleep is the
+    // correct pattern here — waitUntil cannot express "nothing should happen".
     Thread.sleep(200);
 
     // Verify no restart was triggered since the resource has an active optimizer
