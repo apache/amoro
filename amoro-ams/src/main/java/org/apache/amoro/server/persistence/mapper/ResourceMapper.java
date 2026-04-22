@@ -96,7 +96,6 @@ public interface ResourceMapper {
 
   @Update(
       "UPDATE resource SET thread_count = #{resource.threadCount}, total_memory = #{resource.memoryMb},"
-          + " start_time = CURRENT_TIMESTAMP,"
           + " properties = #{resource.properties, typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter}"
           + " WHERE resource_id = #{resource.resourceId}")
   void updateResource(@Param("resource") Resource resource);

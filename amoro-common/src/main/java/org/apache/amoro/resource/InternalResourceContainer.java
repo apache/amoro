@@ -40,4 +40,19 @@ public interface InternalResourceContainer extends ResourceContainer {
    * @param resource resource information to release the optimizer
    */
   void releaseResource(Resource resource);
+
+  /**
+   * Whether AMS should drive auto-restart (re-invoking {@link #requestResource}) for this container
+   * when an optimizer is detected as orphaned.
+   *
+   * <p>Containers that already have their own process-level self-healing (e.g. a Kubernetes
+   * Deployment that recreates crashed Pods via its ReplicaSet) should return {@code false}. In that
+   * case AMS will neither re-request the resource nor delete the resource DB row after the max
+   * retry threshold — doing so would race with or undo the external self-healing.
+   *
+   * <p>Returns {@code true} by default. Override in containers that manage lifecycle externally.
+   */
+  default boolean supportsAutoRestart() {
+    return true;
+  }
 }

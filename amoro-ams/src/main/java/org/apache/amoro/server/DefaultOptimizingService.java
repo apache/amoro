@@ -994,6 +994,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
      * exists in the resource table but has no corresponding optimizer instance in the optimizer
      * table, indicating the optimizer process died unexpectedly.
      *
+     * <p>In master-slave mode this method is reached only on the leader: {@link
+     * AbstractKeeper#run()} gates {@code processTask} (and therefore every call into this method)
+     * behind {@code haContainer.hasLeadership()}, so two AMS nodes cannot race on the same orphan.
+     *
      * <p>A grace period ({@link AmoroManagementConf#OPTIMIZER_AUTO_RESTART_GRACE_PERIOD}) is
      * applied before an orphaned resource is considered for restart, to avoid interfering with
      * resources whose optimizer processes are still starting up (e.g. Flink/Kubernetes).
@@ -1068,6 +1072,28 @@ public class DefaultOptimizingService extends StatedPersistentBase
             continue;
           }
 
+          ResourceContainer rc = Containers.get(orphanedResource.getContainerName());
+          InternalResourceContainer irc =
+              rc instanceof InternalResourceContainer ? (InternalResourceContainer) rc : null;
+          // Opt-out path: container cannot or should not be auto-restarted by AMS (e.g.
+          // KubernetesOptimizerContainer, which has Pod-level self-healing). Log once, then
+          // suppress further cycles via the grace period. Do NOT consume restartAttempts and
+          // do NOT clean up the resource after max retries — that would race with or undo the
+          // container's own lifecycle management.
+          if (irc == null || !irc.supportsAutoRestart()) {
+            if (state.lastRestartTime < 0) {
+              LOG.warn(
+                  "Container {} for orphaned resource {} does not support AMS-driven auto-restart."
+                      + " Skipping. Manual intervention required if the container cannot recover"
+                      + " on its own.",
+                  orphanedResource.getContainerName(),
+                  resourceId);
+              state.lastRestartTime = now;
+            }
+            orphanedThreadCount += orphanedResource.getThreadCount();
+            continue;
+          }
+
           if (state.restartAttempts >= autoRestartMaxRetries) {
             LOG.warn(
                 "Orphaned resource {} in group {} has exceeded max restart retries ({}), "
@@ -1076,10 +1102,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
                 groupName,
                 autoRestartMaxRetries);
             try {
-              ResourceContainer rc = Containers.get(orphanedResource.getContainerName());
-              if (rc instanceof InternalResourceContainer) {
-                ((InternalResourceContainer) rc).releaseResource(orphanedResource);
-              }
+              irc.releaseResource(orphanedResource);
             } catch (Throwable t) {
               LOG.warn(
                   "Failed to release orphaned resource {} via container, "
@@ -1100,25 +1123,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
                 state.restartAttempts + 1,
                 autoRestartMaxRetries);
             try {
-              ResourceContainer rc = Containers.get(orphanedResource.getContainerName());
-              if (rc instanceof InternalResourceContainer) {
-                ((InternalResourceContainer) rc).requestResource(orphanedResource);
-              } else {
-                // Auto-restart is not supported for this container type. Log once to alert
-                // operators, then suppress further warnings via lastRestartTime so the
-                // grace period silences subsequent cycles. Do NOT consume restartAttempts —
-                // the resource requires manual intervention, not automatic cleanup.
-                if (state.lastRestartTime < 0) {
-                  LOG.warn(
-                      "Container {} for orphaned resource {} is not an InternalResourceContainer,"
-                          + " auto-restart is not supported. Manual intervention required.",
-                      orphanedResource.getContainerName(),
-                      resourceId);
-                  state.lastRestartTime = now;
-                }
-                orphanedThreadCount += orphanedResource.getThreadCount();
-                continue;
-              }
+              irc.requestResource(orphanedResource);
               // Persist updated properties (e.g. new job-id from doScaleOut)
               optimizerManager.updateResource(orphanedResource);
               state.restartAttempts++;

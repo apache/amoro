@@ -60,6 +60,17 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
 
   private static final Logger LOG = LoggerFactory.getLogger(KubernetesOptimizerContainer.class);
 
+  /**
+   * Kubernetes Deployments self-heal at the Pod level via their ReplicaSet — a crashed optimizer
+   * Pod is recreated automatically. AMS-driven auto-restart would either race against that
+   * self-healing (the current {@code doScaleOut} creates a Deployment and fails if it already
+   * exists) or delete the Deployment once retries are exhausted. Opt out of AMS auto-restart.
+   */
+  @Override
+  public boolean supportsAutoRestart() {
+    return false;
+  }
+
   public static final String MEMORY_PROPERTY = "memory";
   public static final String CPU_FACTOR_PROPERTY = "cpu.factor";
   public static final String NAMESPACE = "namespace";

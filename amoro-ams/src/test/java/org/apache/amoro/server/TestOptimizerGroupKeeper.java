@@ -67,6 +67,9 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
   private static boolean originIsInitialized = false;
   // Track the current test's group name for cleanup
   private String currentGroupName;
+  // Reference to the injected mock so individual tests can tweak its behavior (e.g. flip
+  // supportsAutoRestart to simulate a Kubernetes-like container).
+  private MockOptimizerContainer mockContainerRef;
 
   public TestOptimizerGroupKeeper(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -140,6 +143,7 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     MockOptimizerContainer mockContainer =
         new MockOptimizerContainer(
             resourceAvailable, scaleOutCallCount, optimizerRegistrar, targetGroupNameSupplier);
+    this.mockContainerRef = mockContainer;
 
     // Use reflection to set isInitialized to true
     DynFields.UnboundField<Boolean> initializedField =
@@ -471,6 +475,52 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
             + ":No restart should be triggered when resource has an active optimizer");
   }
 
+  /**
+   * Test scenario 8: Containers that opt out of AMS-driven auto-restart (e.g.
+   * KubernetesOptimizerContainer, whose Deployment self-heals Pods) must not be restarted by the
+   * keeper, and their orphaned resource records must not be deleted after max retries.
+   *
+   * <p>Simulates the Kubernetes case by flipping {@code supportsAutoRestart=false} on the mock
+   * container before creating the orphan.
+   */
+  @Test
+  public void testNoRestartWhenContainerOptsOut() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    // Simulate a Kubernetes-like container that manages its own Pod lifecycle.
+    mockContainerRef.setSupportsAutoRestart(false);
+
+    try {
+      ResourceGroup resourceGroup = buildTestResourceGroup(TEST_GROUP_NAME + "-8", 0);
+      optimizerManager().createResourceGroup(resourceGroup);
+      optimizingService().createResourceGroup(resourceGroup);
+
+      Resource orphanedResource =
+          new Resource.Builder(MOCK_CONTAINER_NAME, resourceGroup.getName(), ResourceType.OPTIMIZER)
+              .setThreadCount(2)
+              .setProperties(resourceGroup.getProperties())
+              .build();
+      optimizerManager().createResource(orphanedResource);
+
+      // Sleep long enough for multiple keeper cycles (interval = 10ms) to confirm nothing
+      // happens. If the opt-out check were broken, the keeper would eventually either call
+      // requestResource (incrementing scaleOutCallCount) or delete the DB row after max retries.
+      Thread.sleep(500);
+
+      Assertions.assertEquals(
+          0,
+          scaleOutCallCount.get(),
+          resourceGroup.getName()
+              + ":requestResource must not be called when the container opts out of auto-restart");
+      Assertions.assertFalse(
+          optimizerManager().listResourcesByGroup(resourceGroup.getName()).isEmpty(),
+          resourceGroup.getName()
+              + ":Orphaned resource must not be deleted when the container opts out of auto-restart");
+    } finally {
+      mockContainerRef.setSupportsAutoRestart(true);
+    }
+  }
+
   /** Wait for a condition to become true, polling every 10ms. */
   private static void waitUntil(Supplier<Boolean> condition, long timeoutMs)
       throws InterruptedException {
@@ -512,6 +562,7 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     private final AtomicInteger scaleOutCallCount;
     private final Function<OptimizerRegisterInfo, String> optimizerRegistrar;
     private final Supplier<String> targetGroupNameSupplier;
+    private volatile boolean supportsAutoRestart = true;
 
     public MockOptimizerContainer(
         AtomicBoolean resourceAvailable,
@@ -522,6 +573,15 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
       this.scaleOutCallCount = scaleOutCallCount;
       this.optimizerRegistrar = optimizerRegistrar;
       this.targetGroupNameSupplier = targetGroupNameSupplier;
+    }
+
+    public void setSupportsAutoRestart(boolean supportsAutoRestart) {
+      this.supportsAutoRestart = supportsAutoRestart;
+    }
+
+    @Override
+    public boolean supportsAutoRestart() {
+      return supportsAutoRestart;
     }
 
     @Override
