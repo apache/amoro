@@ -20,15 +20,15 @@ package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
-import org.apache.amoro.TableRuntime;
-import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableRuntimeMapper;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.DefaultTableRuntimeStore;
-import org.apache.amoro.server.table.TableRuntimeHandler;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
 import org.apache.amoro.table.TableRuntimeStore;
 import org.apache.amoro.table.TableSummary;
@@ -48,6 +48,12 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
   private static final String TEST_CATALOG = "test_catalog";
   private static final String TEST_DB = "test_db";
   private static final String TEST_TABLE = "test_table";
+  private static final List<CleanupOperation> CLEANUP_OPERATIONS =
+      Arrays.asList(
+          CleanupOperation.ORPHAN_FILES_CLEANING,
+          CleanupOperation.DANGLING_DELETE_FILES_CLEANING,
+          CleanupOperation.DATA_EXPIRING,
+          CleanupOperation.SNAPSHOTS_EXPIRING);
 
   static {
     try {
@@ -56,18 +62,6 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
       throw new RuntimeException("Failed to initialize Derby persistence", e);
     }
   }
-
-  private static final TableRuntimeHandler TEST_HANDLER =
-      new TableRuntimeHandler() {
-        @Override
-        public void handleTableChanged(
-            TableRuntime tableRuntime,
-            org.apache.amoro.server.optimizing.OptimizingStatus originalStatus) {}
-
-        @Override
-        public void handleTableChanged(
-            TableRuntime tableRuntime, TableConfiguration originalConfig) {}
-      };
 
   /**
    * Create a test server table identifier with the given ID
@@ -103,7 +97,7 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
     return new DefaultTableRuntime(store, () -> null);
   }
 
-  private void cleanUpTableRuntimeData(List<Long> tableIds) {
+  private void cleanupTableRuntimeData(List<Long> tableIds) {
     doAs(
         TableRuntimeMapper.class,
         mapper -> {
@@ -135,7 +129,7 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
    * @param testTableIds list of table IDs to clean up
    */
   private void prepareTestEnvironment(List<Long> testTableIds) {
-    cleanUpTableRuntimeData(testTableIds);
+    cleanupTableRuntimeData(testTableIds);
   }
 
   /**
@@ -165,16 +159,8 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
    */
   @Test
   public void testShouldExecuteTaskWithNoPreviousCleanup() {
-    List<CleanupOperation> operations =
-        Arrays.asList(
-            CleanupOperation.ORPHAN_FILES_CLEANING,
-            CleanupOperation.DANGLING_DELETE_FILES_CLEANING,
-            CleanupOperation.DATA_EXPIRING,
-            CleanupOperation.SNAPSHOTS_EXPIRING);
-
-    for (CleanupOperation operation : operations) {
-      List<Long> testTableIds = Collections.singletonList(1L);
-      prepareTestEnvironment(testTableIds);
+    for (CleanupOperation operation : CLEANUP_OPERATIONS) {
+      prepareTestEnvironment(Collections.singletonList(1L));
 
       PeriodicTableSchedulerTestBase executor = createTestExecutor(operation);
       ServerTableIdentifier identifier = createTableIdentifier(1L);
@@ -190,16 +176,8 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
   /** Test should not execute task with recent cleanup */
   @Test
   public void testShouldNotExecuteTaskWithRecentCleanup() {
-    List<CleanupOperation> operations =
-        Arrays.asList(
-            CleanupOperation.ORPHAN_FILES_CLEANING,
-            CleanupOperation.DANGLING_DELETE_FILES_CLEANING,
-            CleanupOperation.DATA_EXPIRING,
-            CleanupOperation.SNAPSHOTS_EXPIRING);
-
-    for (CleanupOperation operation : operations) {
-      List<Long> testTableIds = Collections.singletonList(1L);
-      cleanUpTableRuntimeData(testTableIds);
+    for (CleanupOperation operation : CLEANUP_OPERATIONS) {
+      cleanupTableRuntimeData(Collections.singletonList(1L));
 
       PeriodicTableSchedulerTestBase executor = createTestExecutor(operation);
 
@@ -220,16 +198,8 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
   /** Test should execute task with old cleanup */
   @Test
   public void testShouldExecuteTaskWithOldCleanup() {
-    List<CleanupOperation> operations =
-        Arrays.asList(
-            CleanupOperation.ORPHAN_FILES_CLEANING,
-            CleanupOperation.DANGLING_DELETE_FILES_CLEANING,
-            CleanupOperation.DATA_EXPIRING,
-            CleanupOperation.SNAPSHOTS_EXPIRING);
-
-    for (CleanupOperation operation : operations) {
-      List<Long> testTableIds = Collections.singletonList(1L);
-      cleanUpTableRuntimeData(testTableIds);
+    for (CleanupOperation operation : CLEANUP_OPERATIONS) {
+      cleanupTableRuntimeData(Collections.singletonList(1L));
 
       PeriodicTableSchedulerTestBase executor = createTestExecutor(operation);
 
@@ -261,5 +231,52 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
     // Should always execute with NONE operation
     boolean shouldExecute = executor.shouldExecuteTaskForTest(tableRuntime, CleanupOperation.NONE);
     Assert.assertTrue("Should always execute with NONE operation", shouldExecute);
+  }
+
+  /** Test cleanup process info is persisted with SUCCESS status for each cleanup operation */
+  @Test
+  public void testCleanupProcessPersistedOnSuccess() {
+    for (CleanupOperation operation : CLEANUP_OPERATIONS) {
+      assertCleanupProcessPersisted(operation, null, ProcessStatus.SUCCESS, null);
+    }
+  }
+
+  /** Test cleanup process info is persisted with FAILED status when execution fails */
+  @Test
+  public void testCleanupProcessPersistedOnFailure() {
+    for (CleanupOperation operation : CLEANUP_OPERATIONS) {
+      Exception error = new RuntimeException("Simulated cleanup failure for " + operation);
+      assertCleanupProcessPersisted(operation, error, ProcessStatus.FAILED, error.getMessage());
+    }
+  }
+
+  /** Assert cleanup process is persisted with expected status and failMessage */
+  private void assertCleanupProcessPersisted(
+      CleanupOperation operation,
+      Exception executionError,
+      ProcessStatus expectedStatus,
+      String expectedFailMessage) {
+    prepareTestEnvironment(Collections.singletonList(1L));
+
+    PeriodicTableSchedulerTestBase executor = createTestExecutor(operation);
+    DefaultTableRuntime tableRuntime = createDefaultTableRuntime(createTableIdentifier(1L));
+
+    // 1、Create cleanup process info and persist result
+    TableProcessMeta meta = executor.createCleanupProcessInfo(tableRuntime, operation);
+
+    // 2、Update cleanup result with execution outcome
+    long cleanupEndTime = System.currentTimeMillis();
+    executor.persistCleanupResult(tableRuntime, operation, meta, cleanupEndTime, executionError);
+
+    // 3、Verify persisted process info in database
+    TableProcessMeta persisted =
+        getAs(TableProcessMapper.class, mapper -> mapper.getProcessMeta(meta.getProcessId()));
+
+    Assert.assertEquals(expectedStatus, persisted.getStatus());
+    Assert.assertEquals(operation.name(), persisted.getProcessType());
+    Assert.assertEquals(cleanupEndTime, persisted.getFinishTime());
+    if (expectedFailMessage != null) {
+      Assert.assertEquals(expectedFailMessage, persisted.getFailMessage());
+    }
   }
 }

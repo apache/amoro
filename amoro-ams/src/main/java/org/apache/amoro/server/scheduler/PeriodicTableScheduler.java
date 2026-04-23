@@ -24,17 +24,25 @@ import org.apache.amoro.IcebergActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.exception.PersistenceException;
+import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.persistence.PersistentBase;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
+import org.apache.amoro.server.utils.SnowflakeIdGenerator;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -48,6 +56,12 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
   protected final Logger logger = LoggerFactory.getLogger(getClass());
 
   private static final long START_DELAY = 10 * 1000L;
+  private static final String CLEANUP_EXECUTION_ENGINE = "AMORO";
+  private static final String CLEANUP_PROCESS_STAGE = "CLEANUP";
+  private static final String EXTERNAL_PROCESS_IDENTIFIER = "";
+  private static final SnowflakeIdGenerator ID_GENERATOR = new SnowflakeIdGenerator();
+
+  private final PersistenceHelper persistenceHelper = new PersistenceHelper();
 
   protected final Set<ServerTableIdentifier> scheduledTables =
       Collections.synchronizedSet(new HashSet<>());
@@ -123,16 +137,31 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
   }
 
   private void executeTask(TableRuntime tableRuntime) {
+    TableProcessMeta cleanupProcessMeta = null;
+    CleanupOperation cleanupOperation = null;
+    Exception executionError = null;
+    long cleanupEndTime = 0L;
+
     try {
       if (isExecutable(tableRuntime)) {
+        cleanupOperation = getCleanupOperation();
+        // create and persist cleanup process info
+        cleanupProcessMeta = createCleanupProcessInfo(tableRuntime, cleanupOperation);
+
         execute(tableRuntime);
+
         // Different tables take different amounts of time to execute the end of execute(),
         // so you need to perform the update operation separately for each table.
-        persistUpdatingCleanupTime(tableRuntime);
+        cleanupEndTime = System.currentTimeMillis();
+        persistUpdatingCleanupTime(tableRuntime, cleanupEndTime);
       }
     } catch (Exception e) {
       logger.error("exception when schedule for table: {}", tableRuntime.getTableIdentifier(), e);
+      executionError = e;
     } finally {
+      // persist cleanup result info.
+      persistCleanupResult(
+          tableRuntime, cleanupOperation, cleanupProcessMeta, cleanupEndTime, executionError);
       scheduledTables.remove(tableRuntime.getTableIdentifier());
       scheduleIfNecessary(tableRuntime, getNextExecutingTime(tableRuntime));
     }
@@ -156,14 +185,13 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
     return true;
   }
 
-  private void persistUpdatingCleanupTime(TableRuntime tableRuntime) {
+  private void persistUpdatingCleanupTime(TableRuntime tableRuntime, long currentTime) {
     CleanupOperation cleanupOperation = getCleanupOperation();
     if (shouldSkipOperation(tableRuntime, cleanupOperation)) {
       return;
     }
 
     try {
-      long currentTime = System.currentTimeMillis();
       ((DefaultTableRuntime) tableRuntime).updateLastCleanTime(cleanupOperation, currentTime);
 
       logger.debug(
@@ -175,6 +203,125 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
           "Failed to update lastCleanTime for table {}",
           tableRuntime.getTableIdentifier().getTableName(),
           e);
+    }
+  }
+
+  @VisibleForTesting
+  public TableProcessMeta createCleanupProcessInfo(
+      TableRuntime tableRuntime, CleanupOperation cleanupOperation) {
+    if (shouldSkipOperation(tableRuntime, cleanupOperation)) {
+      return null;
+    }
+
+    TableProcessMeta cleanupProcessMeta = buildCleanupProcessMeta(tableRuntime, cleanupOperation);
+    persistenceHelper.beginAndPersistCleanupProcess(cleanupProcessMeta);
+    logger.debug(
+        "Successfully persist cleanup process [processId={}, tableId={}, processType={}]",
+        cleanupProcessMeta.getProcessId(),
+        cleanupProcessMeta.getTableId(),
+        cleanupProcessMeta.getProcessType());
+
+    return cleanupProcessMeta;
+  }
+
+  private TableProcessMeta buildCleanupProcessMeta(
+      TableRuntime tableRuntime, CleanupOperation cleanupOperation) {
+    TableProcessMeta cleanupProcessMeta = new TableProcessMeta();
+
+    cleanupProcessMeta.setTableId(tableRuntime.getTableIdentifier().getId());
+    cleanupProcessMeta.setProcessId(ID_GENERATOR.generateId());
+    cleanupProcessMeta.setExternalProcessIdentifier(EXTERNAL_PROCESS_IDENTIFIER);
+    cleanupProcessMeta.setStatus(ProcessStatus.RUNNING);
+    cleanupProcessMeta.setProcessType(cleanupOperation.name());
+    cleanupProcessMeta.setProcessStage(CLEANUP_PROCESS_STAGE);
+    cleanupProcessMeta.setExecutionEngine(CLEANUP_EXECUTION_ENGINE);
+    cleanupProcessMeta.setRetryNumber(0);
+    cleanupProcessMeta.setFinishTime(0);
+    cleanupProcessMeta.setFailMessage("");
+    cleanupProcessMeta.setCreateTime(System.currentTimeMillis());
+    cleanupProcessMeta.setProcessParameters(new HashMap<>());
+    cleanupProcessMeta.setSummary(new HashMap<>());
+
+    return cleanupProcessMeta;
+  }
+
+  @VisibleForTesting
+  public void persistCleanupResult(
+      TableRuntime tableRuntime,
+      CleanupOperation cleanupOperation,
+      TableProcessMeta cleanupProcessMeta,
+      long cleanupEndTime,
+      Exception executionError) {
+
+    if (cleanupOperation == null
+        || cleanupProcessMeta == null
+        || shouldSkipOperation(tableRuntime, cleanupOperation)) {
+      return;
+    }
+
+    cleanupProcessMeta.setFinishTime(cleanupEndTime);
+    if (executionError != null) {
+      cleanupProcessMeta.setStatus(ProcessStatus.FAILED);
+      cleanupProcessMeta.setFailMessage(executionError.getMessage());
+    } else {
+      cleanupProcessMeta.setStatus(ProcessStatus.SUCCESS);
+    }
+
+    try {
+      persistenceHelper.updateAndPersistCleanupProcess(cleanupProcessMeta);
+    } catch (PersistenceException e) {
+      logger.error(
+          "Failed to persist cleanup process result [processId={}, tableId={}, processType={}]",
+          cleanupProcessMeta.getProcessId(),
+          cleanupProcessMeta.getTableId(),
+          cleanupProcessMeta.getProcessType(),
+          e);
+    }
+
+    logger.debug(
+        "Successfully updated lastCleanTime and cleanupProcess for table {} with processId={}, cleanup operation {}",
+        tableRuntime.getTableIdentifier().getTableName(),
+        cleanupProcessMeta.getProcessId(),
+        cleanupOperation);
+  }
+
+  private static class PersistenceHelper extends PersistentBase {
+
+    public PersistenceHelper() {}
+
+    private void beginAndPersistCleanupProcess(TableProcessMeta meta) {
+      doAs(
+          TableProcessMapper.class,
+          mapper ->
+              mapper.insertProcess(
+                  meta.getTableId(),
+                  meta.getProcessId(),
+                  meta.getExternalProcessIdentifier(),
+                  meta.getStatus(),
+                  meta.getProcessType(),
+                  meta.getProcessStage(),
+                  meta.getExecutionEngine(),
+                  meta.getRetryNumber(),
+                  meta.getCreateTime(),
+                  meta.getProcessParameters(),
+                  meta.getSummary()));
+    }
+
+    private void updateAndPersistCleanupProcess(TableProcessMeta meta) {
+      doAs(
+          TableProcessMapper.class,
+          mapper ->
+              mapper.updateProcess(
+                  meta.getTableId(),
+                  meta.getProcessId(),
+                  meta.getExternalProcessIdentifier(),
+                  meta.getStatus(),
+                  meta.getProcessStage(),
+                  meta.getRetryNumber(),
+                  meta.getFinishTime(),
+                  meta.getFailMessage(),
+                  meta.getProcessParameters(),
+                  meta.getSummary()));
     }
   }
 
