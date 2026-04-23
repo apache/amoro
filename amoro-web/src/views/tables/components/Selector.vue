@@ -216,6 +216,12 @@ onMounted(() => {
                 </div>
               </template>
               <span v-else class="empty-tips">{{ $t('nothingToShow') }}</span>
+              <div class="create-tag-btn-wrapper">
+                <a-button type="link" size="small" block @click="openCreateTagModal">
+                  <plus-outlined />
+                  <span>{{ $t('createTag') }}</span>
+                </a-button>
+              </div>
             </a-tab-pane>
             <a-tab-pane v-if="consumerList.length !== 0" :key="branchTypeMap.CONSUMER" :tab="$t('consumers')">
               <template v-if="!!actualConsumerList.length">

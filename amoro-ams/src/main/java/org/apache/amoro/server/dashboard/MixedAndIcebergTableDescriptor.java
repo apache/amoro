@@ -666,6 +666,10 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     Preconditions.checkNotNull(base, "Table metadata is null");
     Preconditions.checkNotNull(
         base.snapshot(snapshotId), "Snapshot %s not found in table", snapshotId);
+    // Align with Iceberg createTag semantics (create-only, fail on existing ref)
+    // to avoid silently overwriting an existing tag or branch with the same name.
+    Preconditions.checkArgument(
+        base.ref(tagName) == null, "Ref %s already exists in table", tagName);
 
     TableMetadata.Builder builder = TableMetadata.buildFrom(base);
     SnapshotRef.Builder refBuilder = SnapshotRef.tagBuilder(snapshotId);
