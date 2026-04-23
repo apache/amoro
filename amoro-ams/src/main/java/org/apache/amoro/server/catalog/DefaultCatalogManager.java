@@ -80,11 +80,19 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
     listCatalogMetas()
         .forEach(
             c -> {
-              ServerCatalog serverCatalog =
-                  CatalogBuilder.buildServerCatalog(c, serverConfiguration);
-              serverCatalogMap.put(c.getCatalogName(), serverCatalog);
-              metaCache.put(c.getCatalogName(), Optional.of(c));
-              LOG.info("Load catalog {}, type:{}", c.getCatalogName(), c.getCatalogType());
+              try {
+                ServerCatalog serverCatalog =
+                    CatalogBuilder.buildServerCatalog(c, serverConfiguration);
+                serverCatalogMap.put(c.getCatalogName(), serverCatalog);
+                metaCache.put(c.getCatalogName(), Optional.of(c));
+                LOG.info("Load catalog {}, type:{}", c.getCatalogName(), c.getCatalogType());
+              } catch (Exception e) {
+                LOG.error(
+                    "Failed to load catalog {}, type:{}, skipping",
+                    c.getCatalogName(),
+                    c.getCatalogType(),
+                    e);
+              }
             });
     LOG.info("DefaultCatalogManager initialized, total catalogs: {}", serverCatalogMap.size());
   }
@@ -135,6 +143,11 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
   @VisibleForTesting
   public void setServerCatalog(ServerCatalog catalog) {
     serverCatalogMap.put(catalog.name(), catalog);
+  }
+
+  @VisibleForTesting
+  public void removeServerCatalog(String catalogName) {
+    serverCatalogMap.remove(catalogName);
   }
 
   @Override
@@ -216,12 +229,36 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
 
   @Override
   public void updateCatalog(CatalogMeta catalogMeta) {
-    ServerCatalog catalog = getServerCatalog(catalogMeta.getCatalogName());
-    validateCatalogUpdate(catalog.getMetadata(), catalogMeta);
+    String catalogName = catalogMeta.getCatalogName();
+    ServerCatalog catalog = serverCatalogMap.get(catalogName);
 
-    catalog.updateMetadata(catalogMeta);
-    metaCache.invalidate(catalogMeta.getCatalogName());
-    LOG.info("Update catalog metadata: {}", catalogMeta.getCatalogName());
+    if (catalog != null) {
+      validateCatalogUpdate(catalog.getMetadata(), catalogMeta);
+      catalog.updateMetadata(catalogMeta);
+    } else {
+      // Catalog failed to load during initialization — update DB directly
+      // and attempt to rebuild with the new metadata
+      CatalogMeta oldMeta =
+          getAs(CatalogMetaMapper.class, mapper -> mapper.getCatalog(catalogName));
+      if (oldMeta == null) {
+        throw new ObjectNotExistsException("Catalog " + catalogName);
+      }
+      validateCatalogUpdate(oldMeta, catalogMeta);
+      doAs(CatalogMetaMapper.class, mapper -> mapper.updateCatalog(catalogMeta));
+      try {
+        ServerCatalog rebuilt = CatalogBuilder.buildServerCatalog(catalogMeta, serverConfiguration);
+        serverCatalogMap.put(catalogName, rebuilt);
+        LOG.info("Catalog {} rebuilt successfully after metadata update", catalogName);
+      } catch (Exception e) {
+        LOG.warn(
+            "Catalog {} metadata updated in DB but failed to initialize: {}",
+            catalogName,
+            e.getMessage());
+      }
+    }
+
+    metaCache.invalidate(catalogName);
+    LOG.info("Updated catalog metadata: {}", catalogName);
   }
 
   @Override

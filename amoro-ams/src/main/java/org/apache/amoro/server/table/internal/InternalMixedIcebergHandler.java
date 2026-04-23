@@ -32,6 +32,7 @@ import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.exceptions.CommitFailedException;
 
 import java.util.Map;
 
@@ -81,7 +82,18 @@ public class InternalMixedIcebergHandler extends InternalIcebergHandler {
       org.apache.iceberg.TableMetadata legacyCurrent = legacyTableMetadata(current, changeStore);
       if (!current.equals(legacyCurrent)) {
         // add rest based mixed-format table properties
-        ops.commit(current, legacyCurrent);
+        try {
+          ops.commit(current, legacyCurrent);
+        } catch (CommitFailedException e) {
+          // A concurrent caller (e.g. background table-explorer racing with onTableCreated) may
+          // have already committed the same property update. Refresh to get the latest metadata;
+          // if properties are now up-to-date, proceed normally. Otherwise re-throw.
+          current = ops.refresh();
+          legacyCurrent = legacyTableMetadata(current, changeStore);
+          if (!current.equals(legacyCurrent)) {
+            throw e;
+          }
+        }
       }
       return ops;
     }
