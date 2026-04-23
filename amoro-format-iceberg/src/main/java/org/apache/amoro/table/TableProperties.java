@@ -173,6 +173,18 @@ public class TableProperties {
   public static final long SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS_DEFAULT =
       30000; // 30s
 
+  public static final String SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED =
+      "self-optimizing.rewrite.use-parquet-row-group-merge.enabled";
+  public static final boolean SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED_DEFAULT =
+      false;
+
+  public static final String
+      SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_MIN_AVG_ROW_GROUP_SIZE_BYTES =
+          "self-optimizing.rewrite.use-parquet-row-group-merge.min-avg-row-group-size-bytes";
+  public static final long
+      SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_MIN_AVG_ROW_GROUP_SIZE_DEFAULT =
+          8388608; // 8 MB
+
   /**
    * The retention period for snapshots created by Flink checkpoints. Snapshots older than this
    * duration may be cleaned up. Avoid keeping the last flink checkpoint snapshot for too long, as
