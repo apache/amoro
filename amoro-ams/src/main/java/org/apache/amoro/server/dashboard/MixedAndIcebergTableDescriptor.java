@@ -695,6 +695,9 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     TableMetadata updated = builder.build();
     ops.commit(base, updated);
   }
+
+  @Override
+  public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
     ServerTableIdentifier identifier =

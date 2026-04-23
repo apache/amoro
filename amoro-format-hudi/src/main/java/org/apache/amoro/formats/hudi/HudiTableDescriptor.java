@@ -721,6 +721,19 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
+  public void createTag(
+      AmoroTable<?> amoroTable, String tagName, long snapshotId, Long maxRefAgeMs) {
+    throw new UnsupportedOperationException(
+        "Creating tags via dashboard is not supported for Hudi tables");
+  }
+
+  @Override
+  public void deleteTag(AmoroTable<?> amoroTable, String tagName) {
+    throw new UnsupportedOperationException(
+        "Deleting tags via dashboard is not supported for Hudi tables");
+  }
+
+  @Override
   public List<ConsumerInfo> getTableConsumerInfos(AmoroTable<?> amoroTable) {
     return Collections.emptyList();
   }
