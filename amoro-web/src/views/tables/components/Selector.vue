@@ -18,13 +18,16 @@ limitations under the License.
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { Modal, message } from 'ant-design-vue'
 import type { IBranchItem, IServiceBranchItem } from '@/types/common.type'
 import { branchTypeMap, operationMap } from '@/types/common.type'
-import { getBranches, getConsumers, getTags } from '@/services/table.service'
+import { getBranches, getConsumers, getTags, createTag as createTagApi, deleteTag as deleteTagApi } from '@/services/table.service'
 
 const props = defineProps({ catalog: String, db: String, table: String, disabled: Boolean })
 const emit = defineEmits(['refChange', 'consumerChange'])
 
+const { t } = useI18n()
 const disabled = computed(() => props.disabled)
 
 const selectedObj = ref<IBranchItem>({ value: '', type: branchTypeMap.BRANCH, label: '' })
@@ -42,6 +45,15 @@ const actualConsumerList = computed(() => consumerList.value.filter(item => !con
 
 const operation = ref<string>(operationMap.ALL)
 const operationList = reactive([operationMap.ALL, operationMap.OPTIMIZING, operationMap.NONOPTIMIZING])
+
+// Create Tag modal state
+const createTagModalVisible = ref<boolean>(false)
+const createTagLoading = ref<boolean>(false)
+const createTagForm = reactive({
+  tagName: '',
+  snapshotId: '' as string,
+  maxRefAgeMs: undefined as number | undefined,
+})
 
 function onClickInput(e: MouseEvent) {
   e.stopPropagation()
@@ -80,6 +92,76 @@ async function getTagList() {
 async function getConsumerList() {
   const result = await getConsumers(props as any)
   consumerList.value = (result.list || []).map((l: IServiceBranchItem) => ({ value: l.consumerId, label: l.consumerId, type: branchTypeMap.CONSUMER, amoroCurrentSnapshotsOfTable: l.amoroCurrentSnapshotsOfTable }))
+}
+
+// Open the Create Tag modal
+function openCreateTagModal(e: MouseEvent) {
+  e.stopPropagation()
+  createTagForm.tagName = ''
+  createTagForm.snapshotId = ''
+  createTagForm.maxRefAgeMs = undefined
+  createTagModalVisible.value = true
+}
+
+// Submit Create Tag
+async function handleCreateTag() {
+  if (!createTagForm.tagName) {
+    message.warning(t('tagNameRequired'))
+    return
+  }
+  if (!createTagForm.snapshotId || !createTagForm.snapshotId.trim()) {
+    message.warning(t('snapshotIdRequired'))
+    return
+  }
+  try {
+    createTagLoading.value = true
+    await createTagApi({
+      catalog: props.catalog!,
+      db: props.db!,
+      table: props.table!,
+      tagName: createTagForm.tagName,
+      snapshotId: createTagForm.snapshotId.trim(),
+      maxRefAgeMs: createTagForm.maxRefAgeMs,
+    })
+    message.success(t('createTagSuccess'))
+    createTagModalVisible.value = false
+    await getTagList()
+  } catch (error) {
+    // Error is handled by the global interceptor
+  } finally {
+    createTagLoading.value = false
+  }
+}
+
+// Delete Tag
+function handleDeleteTag(item: IBranchItem, e: MouseEvent) {
+  e.stopPropagation()
+  Modal.confirm({
+    title: t('deleteTag'),
+    content: t('deleteTagConfirm', { name: item.label }),
+    okText: t('confirm'),
+    cancelText: t('cancel'),
+    onOk: async () => {
+      try {
+        await deleteTagApi({
+          catalog: props.catalog!,
+          db: props.db!,
+          table: props.table!,
+          tagName: item.value,
+        })
+        message.success(t('deleteTagSuccess'))
+        // If the deleted tag is currently selected, switch back to the first branch
+        if (selectedObj.value.value === item.value && selectedObj.value.type === branchTypeMap.TAG) {
+          if (branchList.value.length) {
+            selectObject(branchList.value[0])
+          }
+        }
+        await getTagList()
+      } catch (error) {
+        // Error is handled by the global interceptor
+      }
+    },
+  })
 }
 async function init() {
   await Promise.all([getBranchList(), getTagList(), getConsumerList()])
@@ -128,9 +210,18 @@ onMounted(() => {
                     <check-outlined v-if="item.value === selectedObj.value" />
                   </div>
                   <span class="item-label">{{ item.label }}</span>
+                  <a-button type="link" size="small" danger class="tag-delete-btn" @click="handleDeleteTag(item, $event)">
+                    <delete-outlined />
+                  </a-button>
                 </div>
               </template>
               <span v-else class="empty-tips">{{ $t('nothingToShow') }}</span>
+              <div class="create-tag-btn-wrapper">
+                <a-button type="link" size="small" block @click="openCreateTagModal">
+                  <plus-outlined />
+                  <span>{{ $t('createTag') }}</span>
+                </a-button>
+              </div>
             </a-tab-pane>
             <a-tab-pane v-if="consumerList.length !== 0" :key="branchTypeMap.CONSUMER" :tab="$t('consumers')">
               <template v-if="!!actualConsumerList.length">
@@ -174,6 +265,28 @@ onMounted(() => {
     <div class="selector-extra">
       <slot name="extra" />
     </div>
+
+    <!-- Create Tag Modal -->
+    <a-modal
+      v-model:visible="createTagModalVisible"
+      :title="$t('createTag')"
+      :ok-text="$t('confirm')"
+      :cancel-text="$t('cancel')"
+      :confirm-loading="createTagLoading"
+      @ok="handleCreateTag"
+    >
+      <a-form layout="vertical">
+        <a-form-item :label="$t('tagName')" required>
+          <a-input v-model:value="createTagForm.tagName" :placeholder="$t('inputPlaceholder', { inputPh: $t('tagName') })" />
+        </a-form-item>
+        <a-form-item :label="$t('snapshotIdLabel')" required>
+          <a-input v-model:value="createTagForm.snapshotId" :placeholder="$t('inputPlaceholder', { inputPh: $t('snapshotIdLabel') })" />
+        </a-form-item>
+        <a-form-item :label="$t('maxRefAgeMs')">
+          <a-input-number v-model:value="createTagForm.maxRefAgeMs" :placeholder="$t('inputPlaceholder', { inputPh: $t('maxRefAgeMs') })" :min="0" style="width: 100%" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -259,6 +372,22 @@ onMounted(() => {
     display: flex;
     align-items: center;
     padding-left: 18px;
+  }
+
+  .create-tag-btn-wrapper {
+    padding: 8px 16px;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  .tag-delete-btn {
+    opacity: 0;
+    transition: opacity 0.2s;
+    padding: 0 4px;
+    font-size: 12px;
+  }
+
+  .branch-selector-item:hover .tag-delete-btn {
+    opacity: 1;
   }
 }
 </style>

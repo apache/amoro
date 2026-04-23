@@ -577,6 +577,19 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     return consumerInfos;
   }
 
+  @Override
+  public void createTag(
+      AmoroTable<?> amoroTable, String tagName, long snapshotId, Long maxRefAgeMs) {
+    throw new UnsupportedOperationException(
+        "Creating tags via dashboard is not supported for Paimon tables");
+  }
+
+  @Override
+  public void deleteTag(AmoroTable<?> amoroTable, String tagName) {
+    throw new UnsupportedOperationException(
+        "Deleting tags via dashboard is not supported for Paimon tables");
+  }
+
   private AmoroSnapshotsOfTable manifestListInfo(
       FileStore<?> store,
       Snapshot snapshot,

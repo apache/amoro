@@ -128,6 +128,19 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getTableConsumerInfos(amoroTable);
   }
 
+  public void createTag(
+      TableIdentifier tableIdentifier, String tagName, long snapshotId, Long maxRefAgeMs) {
+    AmoroTable<?> amoroTable = loadTable(tableIdentifier);
+    FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
+    formatTableDescriptor.createTag(amoroTable, tagName, snapshotId, maxRefAgeMs);
+  }
+
+  public void deleteTag(TableIdentifier tableIdentifier, String tagName) {
+    AmoroTable<?> amoroTable = loadTable(tableIdentifier);
+    FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
+    formatTableDescriptor.deleteTag(amoroTable, tagName);
+  }
+
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       TableIdentifier tableIdentifier, String type, ProcessStatus status, int limit, int offset) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);

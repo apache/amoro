@@ -88,6 +88,7 @@ import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.data.GenericRecord;
@@ -651,6 +652,52 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   @Override
   public List<ConsumerInfo> getTableConsumerInfos(AmoroTable<?> amoroTable) {
     return Collections.emptyList();
+  }
+
+  @Override
+  public void createTag(
+      AmoroTable<?> amoroTable, String tagName, long snapshotId, Long maxRefAgeMs) {
+    MixedTable mixedTable = getTable(amoroTable);
+    Preconditions.checkArgument(
+        !mixedTable.isKeyedTable(), "Creating tags on KeyedTable is not supported yet");
+    Table icebergTable = mixedTable.asUnkeyedTable();
+    TableOperations ops = ((HasTableOperations) icebergTable).operations();
+    TableMetadata base = ops.refresh();
+    Preconditions.checkNotNull(base, "Table metadata is null");
+    Preconditions.checkNotNull(
+        base.snapshot(snapshotId), "Snapshot %s not found in table", snapshotId);
+    // Align with Iceberg createTag semantics (create-only, fail on existing ref)
+    // to avoid silently overwriting an existing tag or branch with the same name.
+    Preconditions.checkArgument(
+        base.ref(tagName) == null, "Ref %s already exists in table", tagName);
+
+    TableMetadata.Builder builder = TableMetadata.buildFrom(base);
+    SnapshotRef.Builder refBuilder = SnapshotRef.tagBuilder(snapshotId);
+    if (maxRefAgeMs != null && maxRefAgeMs > 0) {
+      refBuilder.maxRefAgeMs(maxRefAgeMs);
+    }
+    builder.setRef(tagName, refBuilder.build());
+    TableMetadata updated = builder.build();
+    ops.commit(base, updated);
+  }
+
+  @Override
+  public void deleteTag(AmoroTable<?> amoroTable, String tagName) {
+    MixedTable mixedTable = getTable(amoroTable);
+    Preconditions.checkArgument(
+        !mixedTable.isKeyedTable(), "Deleting tags on KeyedTable is not supported yet");
+    Table icebergTable = mixedTable.asUnkeyedTable();
+    TableOperations ops = ((HasTableOperations) icebergTable).operations();
+    TableMetadata base = ops.refresh();
+    Preconditions.checkNotNull(base, "Table metadata is null");
+    SnapshotRef existingRef = base.ref(tagName);
+    Preconditions.checkArgument(
+        existingRef != null && existingRef.isTag(), "Tag %s not found in table", tagName);
+
+    TableMetadata.Builder builder = TableMetadata.buildFrom(base);
+    builder.removeRef(tagName);
+    TableMetadata updated = builder.build();
+    ops.commit(base, updated);
   }
 
   @Override

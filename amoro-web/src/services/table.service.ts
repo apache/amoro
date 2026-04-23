@@ -229,3 +229,31 @@ export function getConsumers(params: { catalog: string, db: string, table: strin
   const { catalog, db, table } = params
   return request.get(`/api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/consumers`)
 }
+
+// Create a tag manually
+export function createTag(params: {
+  catalog: string
+  db: string
+  table: string
+  tagName: string
+  snapshotId: string
+  maxRefAgeMs?: number
+}) {
+  const { catalog, db, table, tagName, snapshotId, maxRefAgeMs } = params
+  return request.post(`/api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/tags`, {
+    tagName,
+    snapshotId,
+    maxRefAgeMs,
+  })
+}
+
+// Delete a tag
+export function deleteTag(params: {
+  catalog: string
+  db: string
+  table: string
+  tagName: string
+}) {
+  const { catalog, db, table, tagName } = params
+  return request.delete(`/api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/tags/${tagName}`)
+}

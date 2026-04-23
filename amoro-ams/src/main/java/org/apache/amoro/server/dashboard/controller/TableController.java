@@ -641,6 +641,60 @@ public class TableController {
     ctx.json(OkResponse.of(amsPageResult));
   }
 
+  /**
+   * Create a tag manually for an Iceberg table.
+   *
+   * @param ctx - context for handling the request and response
+   */
+  public void createTag(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
+    String tableName = ctx.pathParam("table");
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(catalog)
+            && StringUtils.isNotBlank(database)
+            && StringUtils.isNotBlank(tableName),
+        "catalog.database.tableName can not be empty in any element");
+
+    CreateTagRequest request = ctx.bodyAsClass(CreateTagRequest.class);
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(request.getTagName()), "tagName can not be empty");
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(request.getSnapshotId()), "snapshotId can not be null");
+    long snapshotId = Long.parseLong(request.getSnapshotId().trim());
+
+    Long maxRefAgeMs = request.getMaxRefAgeMs();
+
+    tableDescriptor.createTag(
+        TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(),
+        request.getTagName(),
+        snapshotId,
+        maxRefAgeMs);
+    ctx.json(OkResponse.ok());
+  }
+
+  /**
+   * Delete a tag from an Iceberg table.
+   *
+   * @param ctx - context for handling the request and response
+   */
+  public void deleteTag(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
+    String tableName = ctx.pathParam("table");
+    String tagName = ctx.pathParam("tagName");
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(catalog)
+            && StringUtils.isNotBlank(database)
+            && StringUtils.isNotBlank(tableName)
+            && StringUtils.isNotBlank(tagName),
+        "catalog.database.tableName.tagName can not be empty in any element");
+
+    tableDescriptor.deleteTag(
+        TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(), tagName);
+    ctx.json(OkResponse.ok());
+  }
+
   public void getTableBranches(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
@@ -735,5 +789,36 @@ public class TableController {
               return columnInfo;
             })
         .collect(Collectors.toList());
+  }
+
+  /** Request body for creating a tag on an Iceberg table. */
+  public static class CreateTagRequest {
+    private String tagName;
+    private String snapshotId;
+    private Long maxRefAgeMs;
+
+    public String getTagName() {
+      return tagName;
+    }
+
+    public void setTagName(String tagName) {
+      this.tagName = tagName;
+    }
+
+    public String getSnapshotId() {
+      return snapshotId;
+    }
+
+    public void setSnapshotId(String snapshotId) {
+      this.snapshotId = snapshotId;
+    }
+
+    public Long getMaxRefAgeMs() {
+      return maxRefAgeMs;
+    }
+
+    public void setMaxRefAgeMs(Long maxRefAgeMs) {
+      this.maxRefAgeMs = maxRefAgeMs;
+    }
   }
 }

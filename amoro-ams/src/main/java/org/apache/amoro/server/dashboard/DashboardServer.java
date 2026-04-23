@@ -289,6 +289,11 @@ public class DashboardServer {
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/operations",
                 tableController::getTableOperations);
             get("/catalogs/{catalog}/dbs/{db}/tables/{table}/tags", tableController::getTableTags);
+            post(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/tags", tableController::createTag);
+            delete(
+                "/catalogs/{catalog}/dbs/{db}/tables/{table}/tags/{tagName}",
+                tableController::deleteTag);
             get(
                 "/catalogs/{catalog}/dbs/{db}/tables/{table}/branches",
                 tableController::getTableBranches);
