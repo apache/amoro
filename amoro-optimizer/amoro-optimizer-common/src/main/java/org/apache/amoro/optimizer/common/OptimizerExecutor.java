@@ -27,9 +27,9 @@ import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
+import org.apache.amoro.utils.DynConstructors;
 import org.apache.amoro.utils.ExceptionUtil;
 import org.apache.amoro.utils.SerializationUtil;
-import org.apache.iceberg.common.DynConstructors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
