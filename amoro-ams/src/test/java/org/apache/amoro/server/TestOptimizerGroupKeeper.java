@@ -155,6 +155,10 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
       // regression we fixed in this PR).
       org.slf4j.LoggerFactory.getLogger(TestOptimizerGroupKeeper.class)
           .warn("Failed to restore auto-restart fields on shared OPTIMIZING_SERVICE", t);
+    } finally {
+      // Clear the static handle so a forked JVM reusing this class doesn't see a stale
+      // already-closed instance on the next @BeforeClass invocation.
+      autoRestartRestore = null;
     }
     if (!originIsInitialized) {
       DynFields.UnboundField<Boolean> initializedField =
