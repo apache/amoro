@@ -133,24 +133,21 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
   // The parent AMSServiceTestBase intentionally leaves auto-restart disabled to avoid
   // interfering with sibling tests (otherwise the keeper's orphan-detection SELECTs collide with
   // DerbyPersistence's TRUNCATE on teardown, deadlocking the test JVM). Only this test class
-  // enables it, and only for its own lifetime — these fields remember the previous values so
-  // @AfterClass can restore them.
-  private static boolean prevAutoRestartEnabled;
-  private static long prevAutoRestartGracePeriodMs;
+  // enables it, and only for its own lifetime — the handle below restores the previous values
+  // when closed in @AfterClass.
+  private static AutoCloseable autoRestartRestore;
 
   @BeforeClass
   public static void enableAutoRestartForThisClass() {
-    DefaultOptimizingService svc = optimizingServiceStatic();
-    prevAutoRestartEnabled = svc.isAutoRestartEnabled();
-    prevAutoRestartGracePeriodMs = svc.getAutoRestartGracePeriodMs();
-    svc.setAutoRestartForTest(true, 0L);
+    autoRestartRestore = optimizingServiceStatic().overrideAutoRestartForTest(true, 0L);
   }
 
   @AfterClass
   public static void cleanup() {
     try {
-      optimizingServiceStatic()
-          .setAutoRestartForTest(prevAutoRestartEnabled, prevAutoRestartGracePeriodMs);
+      if (autoRestartRestore != null) {
+        autoRestartRestore.close();
+      }
     } catch (Throwable t) {
       // JUnit4 runs @AfterClass children-first so OPTIMIZING_SERVICE should still be alive, but
       // defensively log if we ever fail to restore: an uncaught failure here would silently

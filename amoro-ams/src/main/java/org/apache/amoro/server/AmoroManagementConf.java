@@ -640,7 +640,11 @@ public class AmoroManagementConf {
               "Whether to automatically restart optimizers that are unexpectedly down. "
                   + "When enabled, the system periodically checks for orphaned resources "
                   + "(resources in the resource table without corresponding optimizer instances) "
-                  + "and restarts the optimizer for those resources.");
+                  + "and restarts the optimizer for those resources. "
+                  + "Note: when a restart request itself fails (e.g. Flink submission rejected), "
+                  + "the orphaned row is kept and retried in the background while a fresh optimizer "
+                  + "is provisioned to restore parallelism quickly. Short-lived duplicate resources "
+                  + "may therefore appear until the orphan is cleaned up after max retries.");
 
   public static final ConfigOption<Integer> OPTIMIZER_AUTO_RESTART_MAX_RETRIES =
       ConfigOptions.key("optimizer.auto-restart-max-retries")
@@ -648,17 +652,20 @@ public class AmoroManagementConf {
           .defaultValue(5)
           .withDescription(
               "Maximum number of restart attempts for a single orphaned resource "
-                  + "(counted per AMS lifecycle). "
-                  + "When exceeded, the orphaned resource will be cleaned up instead of retried.");
+                  + "(counted per leader tenure — master-slave failover resets the counter). "
+                  + "When exceeded, the orphaned resource will be cleaned up instead of retried. "
+                  + "The worst-case time before cleanup is approximately "
+                  + "max-retries * auto-restart-grace-period.");
 
   public static final ConfigOption<Duration> OPTIMIZER_AUTO_RESTART_GRACE_PERIOD =
       ConfigOptions.key("optimizer.auto-restart-grace-period")
           .durationType()
           .defaultValue(Duration.ofMinutes(5))
           .withDescription(
-              "Grace period after an orphaned resource is first detected before it is considered "
-                  + "for restart. This avoids restarting resources whose optimizer process is still "
-                  + "starting up (e.g. Flink/Kubernetes containers).");
+              "Grace period after an orphaned resource is first detected (and between consecutive "
+                  + "restart attempts) before the next restart fires. This avoids restarting "
+                  + "resources whose optimizer process is still starting up (e.g. "
+                  + "Flink/Kubernetes containers) and rate-limits retries after a failed attempt.");
 
   public static final ConfigOption<Duration> OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL =
       ConfigOptions.key("optimizer-group.min-parallelism-check-interval")

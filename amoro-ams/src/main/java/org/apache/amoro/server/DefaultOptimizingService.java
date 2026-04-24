@@ -110,8 +110,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final long pollingTimeout;
   private final boolean breakQuotaLimit;
   private final long refreshGroupInterval;
-  // Non-final + volatile so tests can override via setAutoRestartForTest without relying on
-  // reflection against final fields. In production these are written once in the constructor
+  // Non-final + volatile so tests can override via overrideAutoRestartForTest without relying
+  // on reflection against final fields. In production these are written once in the constructor
   // and never modified after.
   private volatile boolean autoRestartEnabled;
   private final int autoRestartMaxRetries;
@@ -445,27 +445,24 @@ public class DefaultOptimizingService extends StatedPersistentBase
   }
 
   /**
-   * Override the auto-restart settings for testing purposes. This avoids having to recreate the
-   * service (and its keeper threads) just to change these two values, and avoids reflection against
-   * final fields in test code.
+   * Override the auto-restart settings for testing purposes, returning an {@link AutoCloseable}
+   * that restores the previous values when closed. This avoids having to recreate the service (and
+   * its keeper threads) just to change these two values, and avoids reflection against final fields
+   * in test code.
    *
    * <p>Production code must not call this: the fields are set once in the constructor and should
    * stay fixed.
    */
   @VisibleForTesting
-  void setAutoRestartForTest(boolean enabled, long gracePeriodMs) {
+  AutoCloseable overrideAutoRestartForTest(boolean enabled, long gracePeriodMs) {
+    boolean prevEnabled = this.autoRestartEnabled;
+    long prevGracePeriodMs = this.autoRestartGracePeriodMs;
     this.autoRestartEnabled = enabled;
     this.autoRestartGracePeriodMs = gracePeriodMs;
-  }
-
-  @VisibleForTesting
-  boolean isAutoRestartEnabled() {
-    return autoRestartEnabled;
-  }
-
-  @VisibleForTesting
-  long getAutoRestartGracePeriodMs() {
-    return autoRestartGracePeriodMs;
+    return () -> {
+      this.autoRestartEnabled = prevEnabled;
+      this.autoRestartGracePeriodMs = prevGracePeriodMs;
+    };
   }
 
   @Override
@@ -963,9 +960,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
         orphanedCores = restartOrphanedOptimizers(resourceGroup);
       }
 
-      // rawRequiredCores = minParallelism - currently active optimizer cores.
-      // Used for minParallelism reset so that orphaned cores (whose optimizer processes are
-      // dead) are NOT counted as "satisfied" capacity.
+      // rawRequiredCores = minParallelism - currently live optimizer cores (tryKeeping queries
+      // the optimizer table, so only registered, heartbeating optimizers count toward the
+      // "live" total; orphaned rows — those without a live optimizer — do not).
       int rawRequiredCores = keepingTask.tryKeeping(resourceGroup);
 
       // Subtract orphaned cores already being restarted to avoid double-provisioning.
@@ -1100,9 +1097,28 @@ public class DefaultOptimizingService extends StatedPersistentBase
             continue;
           }
 
-          ResourceContainer rc = Containers.get(orphanedResource.getContainerName());
-          InternalResourceContainer irc =
-              rc instanceof InternalResourceContainer ? (InternalResourceContainer) rc : null;
+          // Resolve the container. Failures here (container deregistered from config, class
+          // load error, etc.) must not abort the whole cycle — otherwise one zombie row with a
+          // missing container would silently block restart of every other orphan in the group.
+          // Treat any resolution failure as an opt-out so we log once and move on.
+          InternalResourceContainer irc;
+          try {
+            ResourceContainer rc = Containers.get(orphanedResource.getContainerName());
+            irc = rc instanceof InternalResourceContainer ? (InternalResourceContainer) rc : null;
+          } catch (Throwable t) {
+            if (state.lastRestartTime < 0) {
+              LOG.warn(
+                  "Failed to resolve container {} for orphaned resource {}; cannot auto-restart."
+                      + " Manual cleanup required.",
+                  orphanedResource.getContainerName(),
+                  resourceId,
+                  t);
+              state.lastRestartTime = now;
+            }
+            orphanedThreadCount += orphanedResource.getThreadCount();
+            continue;
+          }
+
           // Opt-out path: container cannot or should not be auto-restarted by AMS (e.g.
           // KubernetesOptimizerContainer, which has Pod-level self-healing). Log once, then
           // suppress further cycles via the grace period. Do NOT consume restartAttempts and
