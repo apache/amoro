@@ -33,6 +33,7 @@ import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.IllegalTaskStateException;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.exception.PluginRetryAuthException;
+import org.apache.amoro.resource.InternalResourceContainer;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceContainer;
 import org.apache.amoro.resource.ResourceGroup;
@@ -40,7 +41,6 @@ import org.apache.amoro.resource.ResourceType;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
-import org.apache.amoro.server.manager.AbstractOptimizerContainer;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
@@ -58,6 +58,7 @@ import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -109,6 +110,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final long pollingTimeout;
   private final boolean breakQuotaLimit;
   private final long refreshGroupInterval;
+  // Non-final + volatile so tests can override via overrideAutoRestartForTest without relying
+  // on reflection against final fields. In production these are written once in the constructor
+  // and never modified after.
+  private volatile boolean autoRestartEnabled;
+  private final int autoRestartMaxRetries;
+  private volatile long autoRestartGracePeriodMs;
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
@@ -151,6 +158,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
             AmoroManagementConf.OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL);
     this.groupMaxKeepingAttempts =
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS);
+    this.autoRestartEnabled =
+        serviceConfig.getBoolean(AmoroManagementConf.OPTIMIZER_AUTO_RESTART_ENABLED);
+    this.autoRestartMaxRetries =
+        serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_AUTO_RESTART_MAX_RETRIES);
+    this.autoRestartGracePeriodMs =
+        serviceConfig.getDurationInMillis(AmoroManagementConf.OPTIMIZER_AUTO_RESTART_GRACE_PERIOD);
     this.tableService = tableService;
     this.catalogManager = catalogManager;
     this.optimizerManager = optimizerManager;
@@ -429,6 +442,27 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizingQueueByGroup.clear();
     optimizingQueueByToken.clear();
     authOptimizers.clear();
+  }
+
+  /**
+   * Override the auto-restart settings for testing purposes, returning an {@link AutoCloseable}
+   * that restores the previous values when closed. This avoids having to recreate the service (and
+   * its keeper threads) just to change these two values, and avoids reflection against final fields
+   * in test code.
+   *
+   * <p>Production code must not call this: the fields are set once in the constructor and should
+   * stay fixed.
+   */
+  @VisibleForTesting
+  AutoCloseable overrideAutoRestartForTest(boolean enabled, long gracePeriodMs) {
+    boolean prevEnabled = this.autoRestartEnabled;
+    long prevGracePeriodMs = this.autoRestartGracePeriodMs;
+    this.autoRestartEnabled = enabled;
+    this.autoRestartGracePeriodMs = gracePeriodMs;
+    return () -> {
+      this.autoRestartEnabled = prevEnabled;
+      this.autoRestartGracePeriodMs = prevGracePeriodMs;
+    };
   }
 
   @Override
@@ -889,6 +923,15 @@ public class DefaultOptimizingService extends StatedPersistentBase
    */
   private class OptimizerGroupKeeper extends AbstractKeeper<OptimizerGroupKeepingTask> {
 
+    /**
+     * Tracks orphaned resource state. Key is resourceId. Value records the timestamp when the
+     * resource was first detected as orphaned and the number of restart attempts so far. Entries
+     * are removed when the optimizer successfully registers or when the resource is cleaned up.
+     *
+     * <p>Accessed only from the single keeper thread — no synchronization needed.
+     */
+    private final Map<String, OrphanedResourceState> orphanedResourceStates = new HashMap<>();
+
     public OptimizerGroupKeeper(String threadName) {
       super(threadName);
     }
@@ -911,7 +954,21 @@ public class DefaultOptimizingService extends StatedPersistentBase
         return;
       }
 
-      int requiredCores = keepingTask.tryKeeping(resourceGroup);
+      // Check and restart orphaned resources if auto-restart is enabled
+      int orphanedCores = 0;
+      if (autoRestartEnabled) {
+        orphanedCores = restartOrphanedOptimizers(resourceGroup);
+      }
+
+      // rawRequiredCores = minParallelism - currently live optimizer cores (tryKeeping queries
+      // the optimizer table, so only registered, heartbeating optimizers count toward the
+      // "live" total; orphaned rows — those without a live optimizer — do not).
+      int rawRequiredCores = keepingTask.tryKeeping(resourceGroup);
+
+      // Subtract orphaned cores already being restarted to avoid double-provisioning.
+      // Clamp to 0: orphanedCores can exceed rawRequiredCores when orphaned resources cover
+      // more than the group's parallelism deficit.
+      int requiredCores = Math.max(0, rawRequiredCores - orphanedCores);
       if (requiredCores <= 0) {
         LOG.debug(
             "The Resource Group:{} has sufficient resources, keep it", resourceGroup.getName());
@@ -926,12 +983,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
             resourceGroup.getName(),
             keepingTask.getAttempts(),
             minParallelism,
-            minParallelism - requiredCores);
+            minParallelism - rawRequiredCores);
         resourceGroup
             .getProperties()
             .put(
                 OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM,
-                String.valueOf(minParallelism - requiredCores));
+                String.valueOf(minParallelism - rawRequiredCores));
         updateResourceGroup(resourceGroup);
         optimizerManager.updateResourceGroup(resourceGroup);
         keepInTouch(resourceGroup.getName(), 1);
@@ -946,7 +1003,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
               .build();
       ResourceContainer rc = Containers.get(resource.getContainerName());
       try {
-        ((AbstractOptimizerContainer) rc).requestResource(resource);
+        ((InternalResourceContainer) rc).requestResource(resource);
         optimizerManager.createResource(resource);
       } finally {
         keepInTouch(resourceGroup.getName(), keepingTask.getAttempts() + 1);
@@ -955,6 +1012,213 @@ public class DefaultOptimizingService extends StatedPersistentBase
           "Resource Group:{} has insufficient resources, created an optimizer with parallelism of {}",
           resourceGroup.getName(),
           requiredCores);
+    }
+
+    /**
+     * Detect and restart orphaned resources for a resource group. An orphaned resource is one that
+     * exists in the resource table but has no corresponding optimizer instance in the optimizer
+     * table, indicating the optimizer process died unexpectedly.
+     *
+     * <p>In master-slave mode this method is reached only on the leader: {@link
+     * AbstractKeeper#run()} gates {@code processTask} (and therefore every call into this method)
+     * behind {@code haContainer.hasLeadership()}, so two AMS nodes cannot race on the same orphan.
+     *
+     * <p>A grace period ({@link AmoroManagementConf#OPTIMIZER_AUTO_RESTART_GRACE_PERIOD}) is
+     * applied before an orphaned resource is considered for restart, to avoid interfering with
+     * resources whose optimizer processes are still starting up (e.g. Flink/Kubernetes).
+     *
+     * <p>For each orphaned resource past the grace period:
+     *
+     * <ul>
+     *   <li>If retries &lt; max retries: attempt to restart the optimizer via the container
+     *   <li>If retries &gt;= max retries: clean up the orphaned resource from the resource table
+     * </ul>
+     *
+     * @return the total thread count of orphaned resources that are pending restart (either in
+     *     grace period or actively being restarted), so that {@code tryKeeping} can subtract this
+     *     from {@code requiredCores} to avoid double provisioning.
+     */
+    private int restartOrphanedOptimizers(ResourceGroup resourceGroup) {
+      int orphanedThreadCount = 0;
+      try {
+        String groupName = resourceGroup.getName();
+        List<Resource> resources = optimizerManager.listResourcesByGroup(groupName);
+        if (resources.isEmpty()) {
+          return 0;
+        }
+
+        // Collect all optimizer resourceIds in this group.
+        // Note: these two DB queries are not in the same transaction. An optimizer could
+        // register between the two calls, making it appear orphaned. The grace period
+        // is intentionally designed to absorb such transient windows.
+        // TODO: consider replacing this DB query with authOptimizers (in-memory map) to
+        //  avoid a full table scan per keeper cycle when many groups are active.
+        List<OptimizerInstance> optimizers = optimizerManager.listOptimizers(groupName);
+        Set<String> activeResourceIds =
+            optimizers.stream()
+                .map(OptimizerInstance::getResourceId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        // Find orphaned resources (resources without any active optimizer)
+        List<Resource> orphanedResources =
+            resources.stream()
+                .filter(r -> !activeResourceIds.contains(r.getResourceId()))
+                .collect(Collectors.toList());
+
+        // Clean up tracking for resources that are no longer orphaned
+        orphanedResourceStates
+            .keySet()
+            .removeIf(
+                resourceId ->
+                    resources.stream().noneMatch(r -> resourceId.equals(r.getResourceId()))
+                        || activeResourceIds.contains(resourceId));
+
+        long now = System.currentTimeMillis();
+        for (Resource orphanedResource : orphanedResources) {
+          String resourceId = orphanedResource.getResourceId();
+          OrphanedResourceState state =
+              orphanedResourceStates.computeIfAbsent(
+                  resourceId, k -> new OrphanedResourceState(now));
+
+          // Grace period: skip restart if the resource was recently first detected or last
+          // restarted. This avoids false-positive restarts for newly started optimizers and
+          // rate-limits retry attempts after a restart.
+          long gracePeriodStart =
+              state.lastRestartTime >= 0 ? state.lastRestartTime : state.firstDetectedTime;
+          if (now - gracePeriodStart < autoRestartGracePeriodMs) {
+            LOG.debug(
+                "Orphaned resource {} in group {} is within grace period ({} ms remaining), "
+                    + "skipping restart",
+                resourceId,
+                groupName,
+                autoRestartGracePeriodMs - (now - gracePeriodStart));
+            orphanedThreadCount += orphanedResource.getThreadCount();
+            continue;
+          }
+
+          // Resolve the container. Failures here (container deregistered from config, class
+          // load error, etc.) must not abort the whole cycle — otherwise one zombie row with a
+          // missing container would silently block restart of every other orphan in the group.
+          // Treat any resolution failure as an opt-out so we log once and move on.
+          InternalResourceContainer irc;
+          try {
+            ResourceContainer rc = Containers.get(orphanedResource.getContainerName());
+            irc = rc instanceof InternalResourceContainer ? (InternalResourceContainer) rc : null;
+          } catch (Throwable t) {
+            if (state.lastRestartTime < 0) {
+              LOG.warn(
+                  "Failed to resolve container {} for orphaned resource {}; cannot auto-restart."
+                      + " Manual cleanup required.",
+                  orphanedResource.getContainerName(),
+                  resourceId,
+                  t);
+              state.lastRestartTime = now;
+            }
+            orphanedThreadCount += orphanedResource.getThreadCount();
+            continue;
+          }
+
+          // Opt-out path: container cannot or should not be auto-restarted by AMS (e.g.
+          // KubernetesOptimizerContainer, which has Pod-level self-healing). Log once, then
+          // suppress further cycles via the grace period. Do NOT consume restartAttempts and
+          // do NOT clean up the resource after max retries — that would race with or undo the
+          // container's own lifecycle management.
+          if (irc == null || !irc.supportsAutoRestart()) {
+            if (state.lastRestartTime < 0) {
+              LOG.warn(
+                  "Container {} for orphaned resource {} does not support AMS-driven auto-restart."
+                      + " Skipping. Manual intervention required if the container cannot recover"
+                      + " on its own.",
+                  orphanedResource.getContainerName(),
+                  resourceId);
+              state.lastRestartTime = now;
+            }
+            orphanedThreadCount += orphanedResource.getThreadCount();
+            continue;
+          }
+
+          if (state.restartAttempts >= autoRestartMaxRetries) {
+            LOG.warn(
+                "Orphaned resource {} in group {} has exceeded max restart retries ({}), "
+                    + "cleaning up the resource",
+                resourceId,
+                groupName,
+                autoRestartMaxRetries);
+            try {
+              irc.releaseResource(orphanedResource);
+            } catch (Throwable t) {
+              LOG.warn(
+                  "Failed to release orphaned resource {} via container, "
+                      + "will still remove from DB",
+                  resourceId,
+                  t);
+            }
+            // Defensively remove any optimizer that may have registered for this resourceId
+            // in the window between our two DB queries (TOCTOU). deleteOptimizer is idempotent.
+            optimizerManager.deleteOptimizer(groupName, resourceId);
+            optimizerManager.deleteResource(resourceId);
+            orphanedResourceStates.remove(resourceId);
+          } else {
+            LOG.info(
+                "Detected orphaned resource {} in group {}, attempting restart (attempt {}/{})",
+                resourceId,
+                groupName,
+                state.restartAttempts + 1,
+                autoRestartMaxRetries);
+            try {
+              irc.requestResource(orphanedResource);
+              // Persist updated properties (e.g. new job-id from doScaleOut)
+              optimizerManager.updateResource(orphanedResource);
+              state.restartAttempts++;
+              // Record restart time so the next cycle waits a grace period before retrying
+              state.lastRestartTime = now;
+              orphanedThreadCount += orphanedResource.getThreadCount();
+            } catch (Throwable t) {
+              LOG.error(
+                  "Failed to restart orphaned resource {} in group {}, attempt {}/{}",
+                  resourceId,
+                  groupName,
+                  state.restartAttempts + 1,
+                  autoRestartMaxRetries,
+                  t);
+              state.restartAttempts++;
+              // Record restart time so failed attempts also respect the grace period
+              state.lastRestartTime = now;
+              // Intentionally do NOT add to orphanedThreadCount on failure: the restart
+              // request itself failed, so no optimizer process was launched. Allowing
+              // tryKeeping() to provision a new resource provides fast recovery while
+              // the orphaned resource is retried in the background. This may temporarily
+              // result in both the orphaned record and a new resource coexisting in the DB,
+              // but the orphan will eventually be cleaned up after max retries.
+            }
+          }
+        }
+      } catch (Throwable t) {
+        LOG.error("Failed to check orphaned resources for group {}", resourceGroup.getName(), t);
+      }
+      return orphanedThreadCount;
+    }
+  }
+
+  /** Tracks the state of an orphaned resource for auto-restart. */
+  private static class OrphanedResourceState {
+    final long firstDetectedTime;
+    /**
+     * Timestamp of the most recent restart attempt (-1 if no restart has been attempted yet). Used
+     * to enforce the grace period between consecutive restart attempts.
+     *
+     * <p>Also doubles as a log-once sentinel for containers that opted out of auto-restart: once
+     * set (from -1), subsequent keeper cycles skip the warn log and are silenced via the grace
+     * period check. Semantically this is "we've already told the operator about this orphan once".
+     */
+    long lastRestartTime = -1;
+
+    int restartAttempts;
+
+    OrphanedResourceState(long firstDetectedTime) {
+      this.firstDetectedTime = firstDetectedTime;
+      this.restartAttempts = 0;
     }
   }
 }

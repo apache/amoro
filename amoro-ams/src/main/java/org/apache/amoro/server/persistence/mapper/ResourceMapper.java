@@ -94,6 +94,12 @@ public interface ResourceMapper {
           + " #{resource.properties, typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter})")
   void insertResource(@Param("resource") Resource resource);
 
+  @Update(
+      "UPDATE resource SET thread_count = #{resource.threadCount}, total_memory = #{resource.memoryMb},"
+          + " properties = #{resource.properties, typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter}"
+          + " WHERE resource_id = #{resource.resourceId}")
+  void updateResource(@Param("resource") Resource resource);
+
   @Delete("DELETE FROM resource WHERE resource_id = #{resourceId}")
   void deleteResource(@Param("resourceId") String resourceId);
 

@@ -48,6 +48,10 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
       configurations.set(
           AmoroManagementConf.OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL,
           Duration.ofMillis(10L));
+      // Note: auto-restart is intentionally left at its production default (disabled) here so
+      // that sibling AMS tests are not affected by the keeper's orphan-detection queries. The
+      // TestOptimizerGroupKeeper class enables auto-restart on the shared OPTIMIZING_SERVICE
+      // instance only for its own lifetime via reflection and resets it afterwards.
       TABLE_SERVICE =
           new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactory);
       OPTIMIZING_SERVICE =
@@ -88,6 +92,15 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
   }
 
   protected DefaultOptimizingService optimizingService() {
+    return OPTIMIZING_SERVICE;
+  }
+
+  /**
+   * Static accessor for the shared {@link DefaultOptimizingService}. Used by subclasses that need
+   * to read or mutate service state from a {@code @BeforeClass} / {@code @AfterClass} hook, where
+   * the instance-level {@link #optimizingService()} is not reachable.
+   */
+  protected static DefaultOptimizingService optimizingServiceStatic() {
     return OPTIMIZING_SERVICE;
   }
 

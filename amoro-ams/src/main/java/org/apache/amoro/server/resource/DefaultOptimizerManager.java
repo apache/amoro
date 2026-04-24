@@ -113,6 +113,11 @@ public class DefaultOptimizerManager extends PersistentBase implements Optimizer
   }
 
   @Override
+  public void updateResource(Resource resource) {
+    doAs(ResourceMapper.class, mapper -> mapper.updateResource(resource));
+  }
+
+  @Override
   public void deleteResource(String resourceId) {
     doAs(ResourceMapper.class, mapper -> mapper.deleteResource(resourceId));
   }

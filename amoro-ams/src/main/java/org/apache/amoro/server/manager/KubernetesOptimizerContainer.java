@@ -101,6 +101,17 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
     this.client = new KubernetesClientBuilder().withConfig(config).build();
   }
 
+  /**
+   * Kubernetes Deployments self-heal at the Pod level via their ReplicaSet — a crashed optimizer
+   * Pod is recreated automatically. AMS-driven auto-restart would either race against that
+   * self-healing (the current {@code doScaleOut} creates a Deployment and fails if it already
+   * exists) or delete the Deployment once retries are exhausted. Opt out of AMS auto-restart.
+   */
+  @Override
+  public boolean supportsAutoRestart() {
+    return false;
+  }
+
   @Override
   protected Map<String, String> doScaleOut(Resource resource) {
     Map<String, String> groupProperties = Maps.newHashMap();

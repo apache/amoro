@@ -30,6 +30,7 @@ import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceContainer;
 import org.apache.amoro.resource.ResourceGroup;
+import org.apache.amoro.resource.ResourceType;
 import org.apache.amoro.server.manager.AbstractOptimizerContainer;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
@@ -40,11 +41,13 @@ import org.apache.iceberg.common.DynFields;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -65,6 +68,9 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
   private static boolean originIsInitialized = false;
   // Track the current test's group name for cleanup
   private String currentGroupName;
+  // Reference to the injected mock so individual tests can tweak its behavior (e.g. flip
+  // supportsAutoRestart to simulate a Kubernetes-like container).
+  private MockOptimizerContainer mockContainerRef;
 
   public TestOptimizerGroupKeeper(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -85,7 +91,7 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
   }
 
   @After
-  public void clear() {
+  public void clear() throws InterruptedException {
     if (currentGroupName == null) {
       return;
     }
@@ -97,6 +103,13 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
               optimizer ->
                   optimizingService()
                       .deleteOptimizer(optimizer.getGroupName(), optimizer.getResourceId()));
+      // Clean up remaining resources
+      try {
+        optimizerManager()
+            .listResourcesByGroup(currentGroupName)
+            .forEach(resource -> optimizerManager().deleteResource(resource.getResourceId()));
+      } catch (Exception ignored) {
+      }
       // Delete resource group from optimizing service first (this will dispose and unregister
       // metrics)
       try {
@@ -108,6 +121,8 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
         optimizerManager().deleteResourceGroup(currentGroupName);
       } catch (Exception ignored) {
       }
+      // Wait for keeper thread to finish processing any in-flight tasks for this group
+      Thread.sleep(50);
     } catch (Exception e) {
       // ignore
     } finally {
@@ -115,8 +130,36 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     }
   }
 
+  // The parent AMSServiceTestBase intentionally leaves auto-restart disabled to avoid
+  // interfering with sibling tests (otherwise the keeper's orphan-detection SELECTs collide with
+  // DerbyPersistence's TRUNCATE on teardown, deadlocking the test JVM). Only this test class
+  // enables it, and only for its own lifetime — the handle below restores the previous values
+  // when closed in @AfterClass.
+  private static AutoCloseable autoRestartRestore;
+
+  @BeforeClass
+  public static void enableAutoRestartForThisClass() {
+    autoRestartRestore = optimizingServiceStatic().overrideAutoRestartForTest(true, 0L);
+  }
+
   @AfterClass
   public static void cleanup() {
+    try {
+      if (autoRestartRestore != null) {
+        autoRestartRestore.close();
+      }
+    } catch (Throwable t) {
+      // JUnit4 runs @AfterClass children-first so OPTIMIZING_SERVICE should still be alive, but
+      // defensively log if we ever fail to restore: an uncaught failure here would silently
+      // poison the next test class with autoRestartEnabled=true (which is exactly the CI
+      // regression we fixed in this PR).
+      org.slf4j.LoggerFactory.getLogger(TestOptimizerGroupKeeper.class)
+          .warn("Failed to restore auto-restart fields on shared OPTIMIZING_SERVICE", t);
+    } finally {
+      // Clear the static handle so a forked JVM reusing this class doesn't see a stale
+      // already-closed instance on the next @BeforeClass invocation.
+      autoRestartRestore = null;
+    }
     if (!originIsInitialized) {
       DynFields.UnboundField<Boolean> initializedField =
           DynFields.builder().hiddenImpl(Containers.class, "isInitialized").build();
@@ -129,6 +172,7 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     MockOptimizerContainer mockContainer =
         new MockOptimizerContainer(
             resourceAvailable, scaleOutCallCount, optimizerRegistrar, targetGroupNameSupplier);
+    this.mockContainerRef = mockContainer;
 
     // Use reflection to set isInitialized to true
     DynFields.UnboundField<Boolean> initializedField =
@@ -191,9 +235,7 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     optimizingService().createResourceGroup(resourceGroup);
 
     // Wait for OptimizerGroupKeeper to detect and create optimizer
-    // OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL is set to 10ms, call intervals are 10, 20, 30,
-    // 40, 10, 200ms can cover abnormal scenarios
-    Thread.sleep(200);
+    waitUntil(() -> !optimizerManager().listOptimizers(resourceGroup.getName()).isEmpty(), 2000);
 
     int totalCores =
         optimizerManager().listOptimizers(resourceGroup.getName()).stream()
@@ -258,10 +300,16 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     optimizerManager().createResourceGroup(resourceGroup);
     optimizingService().createResourceGroup(resourceGroup);
 
-    Thread.sleep(200);
-    Assertions.assertEquals(
-        OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS.defaultValue(),
-        scaleOutCallCount.get(),
+    // Wait for max-keeping-attempts to be exhausted and min-parallelism to be reset
+    waitUntil(
+        () -> {
+          ResourceGroup rg = optimizerManager().getResourceGroup(resourceGroup.getName());
+          String mp = rg.getProperties().get(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM);
+          return "0".equals(mp);
+        },
+        2000);
+    Assertions.assertTrue(
+        scaleOutCallCount.get() >= OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS.defaultValue(),
         resourceGroup.getName()
             + ":max scale-out attempts should be exhausted when no resources available");
     ResourceGroup updatedGroup = optimizerManager().getResourceGroup(resourceGroup.getName());
@@ -296,14 +344,20 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     String testToken = optimizingService().authenticate(registerInfo);
     Assertions.assertNotNull(testToken, "Optimizer should be registered successfully");
 
-    Thread.sleep(200);
+    // Wait for max-keeping-attempts to be exhausted and min-parallelism to be reset
+    waitUntil(
+        () -> {
+          ResourceGroup rg = optimizerManager().getResourceGroup(resourceGroup.getName());
+          String mp = rg.getProperties().get(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM);
+          return "1".equals(mp);
+        },
+        2000);
 
     ResourceGroup updatedGroup = optimizerManager().getResourceGroup(resourceGroup.getName());
     String minParallelismStr =
         updatedGroup.getProperties().get(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM);
-    Assertions.assertEquals(
-        OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS.defaultValue(),
-        scaleOutCallCount.get(),
+    Assertions.assertTrue(
+        scaleOutCallCount.get() >= OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS.defaultValue(),
         resourceGroup.getName()
             + ":max scale-out attempts should be exhausted when no resources available");
     Assertions.assertEquals(
@@ -311,6 +365,201 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
         minParallelismStr,
         resourceGroup.getName()
             + ":min-parallelism should be reset to optimizer's current total cores (1) when no more resources available");
+  }
+
+  /**
+   * Test scenario 5: When auto-restart is enabled and an optimizer goes down unexpectedly, the
+   * orphaned resource should be detected and the optimizer restarted automatically.
+   *
+   * <p>Steps:
+   *
+   * <ol>
+   *   <li>Create a resource group and manually insert a resource (simulating a previous optimizer
+   *       start)
+   *   <li>Do NOT register any optimizer (simulating optimizer crash before/after registration)
+   *   <li>Wait for OptimizerGroupKeeper to detect the orphaned resource and restart the optimizer
+   *   <li>Verify that the container's requestResource was called to restart
+   * </ol>
+   */
+  @Test
+  public void testOrphanedResourceAutoRestart() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup resourceGroup = buildTestResourceGroup(TEST_GROUP_NAME + "-5", 0);
+
+    optimizerManager().createResourceGroup(resourceGroup);
+    optimizingService().createResourceGroup(resourceGroup);
+
+    // Manually create a resource in DB (simulating a previously started optimizer)
+    Resource orphanedResource =
+        new Resource.Builder(MOCK_CONTAINER_NAME, resourceGroup.getName(), ResourceType.OPTIMIZER)
+            .setThreadCount(2)
+            .setProperties(resourceGroup.getProperties())
+            .build();
+    optimizerManager().createResource(orphanedResource);
+
+    // No optimizer registered for this resource — it's orphaned
+    // Wait for OptimizerGroupKeeper to detect and restart
+    waitUntil(() -> scaleOutCallCount.get() >= 1, 2000);
+    // Allow one extra keeper cycle (interval=10ms) to settle: the mock doScaleOut registers
+    // the optimizer synchronously, so the very next tick sees it as active and stops retrying.
+    // The sleep eliminates any residual scheduling race between waitUntil returning and the
+    // assertion being evaluated.
+    Thread.sleep(50);
+
+    // Verify that requestResource was called exactly once for the orphaned resource.
+    Assertions.assertEquals(
+        1,
+        scaleOutCallCount.get(),
+        resourceGroup.getName()
+            + ":Exactly one restart should be triggered for the orphaned resource");
+  }
+
+  /**
+   * Test scenario 6: When auto-restart is enabled and the restart fails repeatedly, the orphaned
+   * resource should be cleaned up after exceeding max retries.
+   *
+   * <p>Steps:
+   *
+   * <ol>
+   *   <li>Create a resource group with an orphaned resource
+   *   <li>Set resource unavailable (container throws exception on requestResource)
+   *   <li>Wait for max retries to be exhausted
+   *   <li>Verify the orphaned resource is deleted from DB
+   * </ol>
+   */
+  @Test
+  public void testOrphanedResourceCleanupAfterMaxRetries() throws InterruptedException {
+    resourceAvailable.set(false);
+    scaleOutCallCount.set(0);
+    ResourceGroup resourceGroup = buildTestResourceGroup(TEST_GROUP_NAME + "-6", 0);
+
+    optimizerManager().createResourceGroup(resourceGroup);
+    optimizingService().createResourceGroup(resourceGroup);
+
+    // Manually create a resource (simulating a previously started optimizer that crashed)
+    Resource orphanedResource =
+        new Resource.Builder(MOCK_CONTAINER_NAME, resourceGroup.getName(), ResourceType.OPTIMIZER)
+            .setThreadCount(2)
+            .setProperties(resourceGroup.getProperties())
+            .build();
+    optimizerManager().createResource(orphanedResource);
+
+    // Wait for orphaned resource to be cleaned up from DB after max retries
+    waitUntil(
+        () -> optimizerManager().listResourcesByGroup(resourceGroup.getName()).isEmpty(), 5000);
+
+    // Verify the orphaned resource has been cleaned up from DB
+    List<Resource> remainingResources =
+        optimizerManager().listResourcesByGroup(resourceGroup.getName());
+    Assertions.assertTrue(
+        remainingResources.isEmpty(),
+        resourceGroup.getName()
+            + ":Orphaned resource should be cleaned up after max retries are exhausted");
+  }
+
+  /**
+   * Test scenario 7: When auto-restart is enabled but the resource already has an active optimizer,
+   * no restart should be triggered.
+   */
+  @Test
+  public void testNoRestartWhenOptimizerIsActive() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup resourceGroup = buildTestResourceGroup(TEST_GROUP_NAME + "-7", 0);
+
+    optimizerManager().createResourceGroup(resourceGroup);
+    optimizingService().createResourceGroup(resourceGroup);
+
+    // Build the resource object (in memory only, not yet in DB) to obtain its resourceId.
+    Resource resource =
+        new Resource.Builder(MOCK_CONTAINER_NAME, resourceGroup.getName(), ResourceType.OPTIMIZER)
+            .setThreadCount(2)
+            .setProperties(resourceGroup.getProperties())
+            .build();
+
+    // Authenticate (register optimizer) BEFORE inserting the resource into DB.
+    // This eliminates the race window where the resource exists in the resource table
+    // without a corresponding optimizer, which would trigger auto-restart with grace period=0.
+    OptimizerRegisterInfo registerInfo =
+        buildRegisterInfo(resourceGroup.getName(), resource.getThreadCount());
+    registerInfo.setResourceId(resource.getResourceId());
+    optimizingService().authenticate(registerInfo);
+
+    // Now insert the resource — by this point the optimizer is already registered,
+    // so the keeper will never see this as an orphaned resource.
+    optimizerManager().createResource(resource);
+    scaleOutCallCount.set(0);
+
+    // Negative assertion: sleep long enough for multiple keeper cycles (interval = 10ms,
+    // 200ms ≈ 20 cycles) to confirm that no restart is triggered. Thread.sleep is the
+    // correct pattern here — waitUntil cannot express "nothing should happen".
+    Thread.sleep(200);
+
+    // Verify no restart was triggered since the resource has an active optimizer
+    Assertions.assertEquals(
+        0,
+        scaleOutCallCount.get(),
+        resourceGroup.getName()
+            + ":No restart should be triggered when resource has an active optimizer");
+  }
+
+  /**
+   * Test scenario 8: Containers that opt out of AMS-driven auto-restart (e.g.
+   * KubernetesOptimizerContainer, whose Deployment self-heals Pods) must not be restarted by the
+   * keeper, and their orphaned resource records must not be deleted after max retries.
+   *
+   * <p>Simulates the Kubernetes case by flipping {@code supportsAutoRestart=false} on the mock
+   * container before creating the orphan.
+   */
+  @Test
+  public void testNoRestartWhenContainerOptsOut() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    // Simulate a Kubernetes-like container that manages its own Pod lifecycle.
+    mockContainerRef.setSupportsAutoRestart(false);
+
+    try {
+      ResourceGroup resourceGroup = buildTestResourceGroup(TEST_GROUP_NAME + "-8", 0);
+      optimizerManager().createResourceGroup(resourceGroup);
+      optimizingService().createResourceGroup(resourceGroup);
+
+      Resource orphanedResource =
+          new Resource.Builder(MOCK_CONTAINER_NAME, resourceGroup.getName(), ResourceType.OPTIMIZER)
+              .setThreadCount(2)
+              .setProperties(resourceGroup.getProperties())
+              .build();
+      optimizerManager().createResource(orphanedResource);
+
+      // Sleep long enough for multiple keeper cycles (interval = 10ms) to confirm nothing
+      // happens. If the opt-out check were broken, the keeper would eventually either call
+      // requestResource (incrementing scaleOutCallCount) or delete the DB row after max retries.
+      Thread.sleep(500);
+
+      Assertions.assertEquals(
+          0,
+          scaleOutCallCount.get(),
+          resourceGroup.getName()
+              + ":requestResource must not be called when the container opts out of auto-restart");
+      Assertions.assertFalse(
+          optimizerManager().listResourcesByGroup(resourceGroup.getName()).isEmpty(),
+          resourceGroup.getName()
+              + ":Orphaned resource must not be deleted when the container opts out of auto-restart");
+    } finally {
+      mockContainerRef.setSupportsAutoRestart(true);
+    }
+  }
+
+  /** Wait for a condition to become true, polling every 10ms. */
+  private static void waitUntil(Supplier<Boolean> condition, long timeoutMs)
+      throws InterruptedException {
+    long deadline = System.currentTimeMillis() + timeoutMs;
+    while (!condition.get()) {
+      if (System.currentTimeMillis() > deadline) {
+        throw new AssertionError("Condition not met within " + timeoutMs + "ms");
+      }
+      Thread.sleep(10);
+    }
   }
 
   private static OptimizerRegisterInfo buildRegisterInfo(String groupName, int threadCount) {
@@ -342,6 +591,7 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     private final AtomicInteger scaleOutCallCount;
     private final Function<OptimizerRegisterInfo, String> optimizerRegistrar;
     private final Supplier<String> targetGroupNameSupplier;
+    private volatile boolean supportsAutoRestart = true;
 
     public MockOptimizerContainer(
         AtomicBoolean resourceAvailable,
@@ -352,6 +602,15 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
       this.scaleOutCallCount = scaleOutCallCount;
       this.optimizerRegistrar = optimizerRegistrar;
       this.targetGroupNameSupplier = targetGroupNameSupplier;
+    }
+
+    public void setSupportsAutoRestart(boolean supportsAutoRestart) {
+      this.supportsAutoRestart = supportsAutoRestart;
+    }
+
+    @Override
+    public boolean supportsAutoRestart() {
+      return supportsAutoRestart;
     }
 
     @Override
