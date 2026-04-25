@@ -456,6 +456,58 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         getDefaultTableRuntime(serverTableIdentifier().getId()).getOptimizingStatus());
   }
 
+  /**
+   * Regression test for issue #4172: a {@code RUNNING} optimizing process whose tasks have all
+   * succeeded must not stay stuck in {@code *_OPTIMIZING} forever when a previous {@code
+   * beginCommitting()} transition failed transiently and AMS keeps running (i.e. no restart).
+   * {@link TableRuntimeRefreshExecutor#execute} should detect the stuck state on the next refresh
+   * cycle and re-drive the transition to {@code COMMITTING}.
+   *
+   * <p>This complements {@link #testReloadAllTasksCompletedNotYetCommitting}, which only exercises
+   * the restart-recovery path in {@code OptimizingQueue#initTableRuntime}.
+   */
+  @Test
+  public void testRefreshExecutorHealsStuckRunningProcess() {
+    // 1. Poll / ack / complete - the table should be in COMMITTING with a RUNNING process.
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+    optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
+    optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
+
+    DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
+    Assertions.assertEquals(OptimizingStatus.COMMITTING, runtime.getOptimizingStatus());
+    Assertions.assertNotNull(runtime.getOptimizingProcess());
+    Assertions.assertEquals(ProcessStatus.RUNNING, runtime.getOptimizingProcess().getStatus());
+    Assertions.assertTrue(
+        runtime.getOptimizingProcess().allTasksPrepared(),
+        "All tasks should be prepared after successful completeTask()");
+
+    // 2. Simulate the stuck state described in issue #4172: pretend beginCommitting() never
+    // transitioned the status out of *_OPTIMIZING. Mutate the in-memory status directly via the
+    // state store (no reload, so we model "AMS is still running but beginCommitting() silently
+    // failed / was rolled back").
+    runtime
+        .store()
+        .begin()
+        .updateStatusCode(code -> OptimizingStatus.MINOR_OPTIMIZING.getCode())
+        .commit();
+    Assertions.assertEquals(OptimizingStatus.MINOR_OPTIMIZING, runtime.getOptimizingStatus());
+
+    // 3. Trigger a refresh cycle — the executor should detect the stuck state and self-heal
+    // by re-invoking beginCommitting().
+    TableRuntimeRefresher refresher = new TableRuntimeRefresher();
+    try {
+      refresher.refreshPending();
+    } finally {
+      refresher.dispose();
+    }
+
+    Assertions.assertEquals(
+        OptimizingStatus.COMMITTING,
+        getDefaultTableRuntime(serverTableIdentifier().getId()).getOptimizingStatus(),
+        "TableRuntimeRefreshExecutor must re-drive beginCommitting() for a stuck RUNNING process");
+  }
+
   @Test
   public void testReloadPlanningWithOrphanedProcess() {
     // 1. Poll and ack a task - table is now in optimizing state with an active process
