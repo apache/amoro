@@ -54,8 +54,16 @@ public abstract class AbstractTableMetrics {
 
   public void register(MetricRegistry registry) {
     if (globalRegistry == null) {
-      registerMetrics(registry);
-      globalRegistry = registry;
+      try {
+        registerMetrics(registry);
+        globalRegistry = registry;
+      } catch (Exception e) {
+        // Roll back any metrics that were partially registered before the failure so that the
+        // next retry call finds a clean state (globalRegistry stays null, partial keys removed).
+        registeredMetricKeys.forEach(registry::unregister);
+        registeredMetricKeys.clear();
+        throw e;
+      }
     }
   }
 

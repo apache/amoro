@@ -32,6 +32,7 @@ import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.exceptions.CommitFailedException;
 
 import java.util.Map;
 
@@ -69,14 +70,30 @@ public class InternalMixedIcebergHandler extends InternalIcebergHandler {
 
       MixedHadoopTableOperations ops =
           new MixedHadoopTableOperations(new Path(tableLocation), io, metaStore.getConfiguration());
-      org.apache.iceberg.TableMetadata current = ops.current();
+      // Use refresh() instead of current() so that the returned TableMetadata reference is the
+      // same object cached inside ops. Iceberg 1.7.x commit() starts with versionAndMetadata()
+      // which compares the `base` argument against the cached reference using == (reference
+      // equality). If current() and versionAndMetadata() return different object instances,
+      // commit() throws CommitFailedException even when the metadata content is identical.
+      org.apache.iceberg.TableMetadata current = ops.refresh();
       if (current == null) {
         return ops;
       }
       org.apache.iceberg.TableMetadata legacyCurrent = legacyTableMetadata(current, changeStore);
       if (!current.equals(legacyCurrent)) {
         // add rest based mixed-format table properties
-        ops.commit(current, legacyCurrent);
+        try {
+          ops.commit(current, legacyCurrent);
+        } catch (CommitFailedException e) {
+          // A concurrent caller (e.g. background table-explorer racing with onTableCreated) may
+          // have already committed the same property update. Refresh to get the latest metadata;
+          // if properties are now up-to-date, proceed normally. Otherwise re-throw.
+          current = ops.refresh();
+          legacyCurrent = legacyTableMetadata(current, changeStore);
+          if (!current.equals(legacyCurrent)) {
+            throw e;
+          }
+        }
       }
       return ops;
     }

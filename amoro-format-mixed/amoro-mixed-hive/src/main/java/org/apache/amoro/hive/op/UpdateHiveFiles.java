@@ -510,7 +510,47 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     if (this.addFiles.isEmpty()) {
       unpartitionTableLocation = createUnpartitionEmptyLocationForHive();
     } else {
-      unpartitionTableLocation = TableFileUtil.getFileDir(this.addFiles.get(0).path().toString());
+      String firstFileDir = TableFileUtil.getFileDir(this.addFiles.get(0).path().toString());
+      for (DataFile dataFile : this.addFiles) {
+        String fileDir = TableFileUtil.getFileDir(dataFile.path().toString());
+        if (!new Path(firstFileDir).equals(new Path(fileDir))) {
+          throw new CannotAlterHiveLocationException(
+              "can't update hive location for non-partitioned table, "
+                  + "files are not under the same directory. "
+                  + "expected: "
+                  + firstFileDir
+                  + ", actual: "
+                  + fileDir);
+        }
+      }
+      checkNonPartitionedHiveLocationChange(firstFileDir);
+      unpartitionTableLocation = firstFileDir;
+    }
+  }
+
+  private void checkNonPartitionedHiveLocationChange(String newLocation) {
+    String currentHiveLocation = hiveTable.getSd().getLocation();
+    if (!validateLocation
+        || currentHiveLocation == null
+        || isPathEquals(newLocation, currentHiveLocation)) {
+      return;
+    }
+    Set<String> deleteFilePaths =
+        deleteFiles.stream().map(f -> f.path().toString()).collect(Collectors.toSet());
+    try (CloseableIterable<FileScanTask> tasks = table.newScan().planFiles()) {
+      for (FileScanTask task : tasks) {
+        String filePath = task.file().path().toString();
+        if (filePath.startsWith(currentHiveLocation) && !deleteFilePaths.contains(filePath)) {
+          throw new CannotAlterHiveLocationException(
+              "can't update hive location for non-partitioned table, "
+                  + "not all files in current hive location are deleted. "
+                  + "file: "
+                  + filePath
+                  + " is not in the delete set");
+        }
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 

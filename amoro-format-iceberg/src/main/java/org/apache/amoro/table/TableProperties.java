@@ -76,6 +76,10 @@ public class TableProperties {
 
   public static final boolean ENABLE_SELF_OPTIMIZING_DEFAULT = true;
 
+  public static final String TABLE_SUMMARY_ENABLED = "table-summary.enabled";
+
+  public static final boolean TABLE_SUMMARY_ENABLED_DEFAULT = false;
+
   public static final String SELF_OPTIMIZING_ALLOW_PARTIAL_COMMIT =
       "self-optimizing.allow-partial-commit";
   public static final boolean SELF_OPTIMIZING_ALLOW_PARTIAL_COMMIT_DEFAULT = false;
