@@ -270,6 +270,51 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     assertTaskCompleted(taskRuntime);
   }
 
+  /**
+   * Regression test for issue #4172: a {@code RUNNING} optimizing process whose tasks have all
+   * succeeded must not stay stuck in {@code *_OPTIMIZING} forever when a previous {@code
+   * beginCommitting()} transition failed. {@link TableRuntimeRefreshExecutor#execute} should detect
+   * the stuck state and re-drive the transition to {@code COMMITTING}.
+   */
+  @Test
+  public void testRefreshExecutorHealsStuckRunningProcess() throws Exception {
+    // 1. poll / ack / complete - the table should be in COMMITTING with a RUNNING process.
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+    optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
+    optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
+
+    TableRuntime runtime = tableService().getRuntime(serverTableIdentifier().getId());
+    Assertions.assertEquals(OptimizingStatus.COMMITTING, runtime.getOptimizingStatus());
+    OptimizingProcess process = runtime.getOptimizingProcess();
+    Assertions.assertNotNull(process);
+    Assertions.assertEquals(OptimizingProcess.Status.RUNNING, process.getStatus());
+    Assertions.assertTrue(
+        process.allTasksPrepared(), "All tasks should be prepared after successful completeTask()");
+
+    // 2. Simulate the stuck state described in issue #4172: pretend beginCommitting() never
+    // transitioned the status out of *_OPTIMIZING (e.g. DB lock wait timeout made the UPDATE
+    // fail and invokeConsistency rolled the in-memory status back).
+    java.lang.reflect.Field statusField = TableRuntime.class.getDeclaredField("optimizingStatus");
+    statusField.setAccessible(true);
+    statusField.set(runtime, OptimizingStatus.MINOR_OPTIMIZING);
+    Assertions.assertEquals(OptimizingStatus.MINOR_OPTIMIZING, runtime.getOptimizingStatus());
+
+    // 3. Trigger a refresh cycle - the executor should detect the stuck state and self-heal
+    // by re-invoking beginCommitting().
+    TableRuntimeRefresher refresher = new TableRuntimeRefresher();
+    try {
+      refresher.refreshPending();
+    } finally {
+      refresher.dispose();
+    }
+
+    Assertions.assertEquals(
+        OptimizingStatus.COMMITTING,
+        runtime.getOptimizingStatus(),
+        "TableRuntimeRefreshExecutor must re-drive beginCommitting() for a stuck RUNNING process");
+  }
+
   @Test
   public void testReloadScheduledTask() {
     // 1.poll task

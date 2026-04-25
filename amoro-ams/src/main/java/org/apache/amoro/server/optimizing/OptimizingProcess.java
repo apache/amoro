@@ -44,6 +44,21 @@ public interface OptimizingProcess {
 
   MetricsSummary getSummary();
 
+  /**
+   * Whether all tasks in this process have reached {@code SUCCESS} status and are ready to be
+   * committed.
+   *
+   * <p>This flag is primarily used by {@link
+   * org.apache.amoro.server.table.executor.TableRuntimeRefreshExecutor} to detect a stuck {@code
+   * RUNNING} process whose tasks all succeeded but never transitioned to {@code COMMITTING} (see
+   * issue #4172: transient failures of {@code beginCommitting()}, such as DB lock wait timeout,
+   * leave the table permanently stuck in {@code *_OPTIMIZING} until AMS is restarted).
+   *
+   * @return {@code true} if the process has at least one task and all of them are in {@code
+   *     SUCCESS} status
+   */
+  boolean allTasksPrepared();
+
   enum Status {
     RUNNING,
     CLOSED,

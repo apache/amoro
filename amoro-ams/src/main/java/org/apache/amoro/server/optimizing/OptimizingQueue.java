@@ -525,15 +525,26 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     /**
-     * if all tasks are Prepared
+     * Whether all tasks in this process are in {@code SUCCESS} status.
+     *
+     * <p>Lock-protected so that callers from other threads (e.g. {@link
+     * org.apache.amoro.server.table.executor.TableRuntimeRefreshExecutor}) observe a consistent
+     * view of {@code taskMap}. See issue #4172.
      *
      * @return true if tasks is not empty and all Prepared
      */
-    private boolean allTasksPrepared() {
-      if (!taskMap.isEmpty()) {
-        return taskMap.values().stream().allMatch(t -> t.getStatus() == TaskRuntime.Status.SUCCESS);
+    @Override
+    public boolean allTasksPrepared() {
+      lock.lock();
+      try {
+        if (!taskMap.isEmpty()) {
+          return taskMap.values().stream()
+              .allMatch(t -> t.getStatus() == TaskRuntime.Status.SUCCESS);
+        }
+        return false;
+      } finally {
+        lock.unlock();
       }
-      return false;
     }
 
     /**
