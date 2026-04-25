@@ -21,6 +21,7 @@ package org.apache.amoro.io.writer;
 import org.apache.amoro.data.DataTreeNode;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
@@ -30,9 +31,11 @@ import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.DeleteWriteResult;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.FileWriter;
+import org.apache.iceberg.util.PropertyUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -62,6 +65,45 @@ public class MixedTreeNodePosDeleteWriter<T>
   private final String location;
 
   private final PartitionSpec spec;
+  private final double heapUsageRatioThreshold;
+  private final long recordsNumThreshold;
+  private final int heapFlushMinRecords;
+
+  public MixedTreeNodePosDeleteWriter(
+      FileAppenderFactory<T> appenderFactory,
+      FileFormat format,
+      StructLike partition,
+      AuthenticatedFileIO fileIO,
+      EncryptionManager encryptionManager,
+      Long transactionId,
+      String location,
+      PartitionSpec spec,
+      Map<String, String> properties) {
+    Map<String, String> safeProperties = properties == null ? Collections.emptyMap() : properties;
+    this.appenderFactory = appenderFactory;
+    this.format = format;
+    this.partition = partition;
+    this.fileIO = fileIO;
+    this.encryptionManager = encryptionManager;
+    this.transactionId = transactionId;
+    this.location = location;
+    this.spec = spec;
+    this.heapUsageRatioThreshold =
+        PropertyUtil.propertyAsDouble(
+            safeProperties,
+            TableProperties.POS_DELETE_FLUSH_HEAP_RATIO,
+            TableProperties.POS_DELETE_FLUSH_HEAP_RATIO_DEFAULT);
+    this.recordsNumThreshold =
+        PropertyUtil.propertyAsLong(
+            safeProperties,
+            TableProperties.POS_DELETE_FLUSH_RECORDS,
+            TableProperties.POS_DELETE_FLUSH_RECORDS_DEFAULT);
+    this.heapFlushMinRecords =
+        PropertyUtil.propertyAsInt(
+            safeProperties,
+            TableProperties.POS_DELETE_FLUSH_HEAP_MIN_RECORDS,
+            TableProperties.POS_DELETE_FLUSH_HEAP_MIN_RECORDS_DEFAULT);
+  }
 
   public MixedTreeNodePosDeleteWriter(
       FileAppenderFactory<T> appenderFactory,
@@ -72,14 +114,16 @@ public class MixedTreeNodePosDeleteWriter<T>
       Long transactionId,
       String location,
       PartitionSpec spec) {
-    this.appenderFactory = appenderFactory;
-    this.format = format;
-    this.partition = partition;
-    this.fileIO = fileIO;
-    this.encryptionManager = encryptionManager;
-    this.transactionId = transactionId;
-    this.location = location;
-    this.spec = spec;
+    this(
+        appenderFactory,
+        format,
+        partition,
+        fileIO,
+        encryptionManager,
+        transactionId,
+        location,
+        spec,
+        Collections.emptyMap());
   }
 
   @Override
@@ -109,7 +153,10 @@ public class MixedTreeNodePosDeleteWriter<T>
         format,
         treeNode.mask(),
         treeNode.index(),
-        partition);
+        partition,
+        recordsNumThreshold,
+        heapUsageRatioThreshold,
+        heapFlushMinRecords);
   }
 
   public List<DeleteFile> complete() throws IOException {

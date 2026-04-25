@@ -287,6 +287,16 @@ public class TableProperties {
       org.apache.iceberg.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
   public static final long WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT = 134217728; // 128 MB
 
+  public static final String POS_DELETE_FLUSH_HEAP_RATIO = "pos-delete.flush.heap.ratio";
+  public static final double POS_DELETE_FLUSH_HEAP_RATIO_DEFAULT = 0.8d;
+
+  public static final String POS_DELETE_FLUSH_RECORDS = "pos-delete.flush.records";
+  public static final long POS_DELETE_FLUSH_RECORDS_DEFAULT = Long.MAX_VALUE;
+
+  public static final String POS_DELETE_FLUSH_HEAP_MIN_RECORDS =
+      "pos-delete.flush.heap.min-records";
+  public static final int POS_DELETE_FLUSH_HEAP_MIN_RECORDS_DEFAULT = 1000;
+
   public static final String UPSERT_ENABLED = "write.upsert.enabled";
   public static final boolean UPSERT_ENABLED_DEFAULT = false;
 
