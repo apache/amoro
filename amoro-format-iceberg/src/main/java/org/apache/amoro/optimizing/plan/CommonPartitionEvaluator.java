@@ -35,6 +35,9 @@ import org.apache.iceberg.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 
@@ -412,8 +415,27 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
   }
 
   protected boolean reachMinorInterval() {
-    return config.getMinorLeastInterval() >= 0
-        && planTime - lastMinorOptimizingTime > config.getMinorLeastInterval();
+    if (config.getMinorLeastInterval() < 0) {
+      return false;
+    }
+    if (planTime - lastMinorOptimizingTime > config.getMinorLeastInterval()) {
+      return true;
+    }
+    // When minorLeastInterval is less than one day, use a cross-day fallback to ensure
+    // partitions with few small files still get optimized at least once per day, avoiding
+    // starvation caused by table-level lastMinorOptimizingTime being frequently reset by
+    // high-traffic partitions. See https://github.com/apache/amoro/issues/4055
+    long oneDayMillis = 24 * 60 * 60 * 1000L;
+    if (config.getMinorLeastInterval() < oneDayMillis) {
+      return isDifferentDay(lastMinorOptimizingTime, planTime);
+    }
+    return false;
+  }
+
+  private boolean isDifferentDay(long time1, long time2) {
+    LocalDate day1 = Instant.ofEpochMilli(time1).atZone(ZoneId.systemDefault()).toLocalDate();
+    LocalDate day2 = Instant.ofEpochMilli(time2).atZone(ZoneId.systemDefault()).toLocalDate();
+    return !day1.equals(day2);
   }
 
   protected boolean reachFullInterval() {

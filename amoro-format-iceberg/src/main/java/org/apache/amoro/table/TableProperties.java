@@ -114,8 +114,14 @@ public class TableProperties {
       "self-optimizing.minor.trigger.file-count";
   public static final int SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT = 12;
 
+  /**
+   * The minimum interval for triggering minor optimizing, in milliseconds. Should be less than one
+   * day (86400000 ms). When the interval is less than one day, a cross-day fallback mechanism
+   * ensures that partitions with few small files still get optimized at least once per day.
+   */
   public static final String SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL =
       "self-optimizing.minor.trigger.interval";
+
   public static final int SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT = 3600000; // 1 h
 
   public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO =
