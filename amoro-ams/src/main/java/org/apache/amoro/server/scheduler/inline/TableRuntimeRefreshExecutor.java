@@ -181,8 +181,55 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
         long newInterval = getAdaptiveExecutingInterval(defaultTableRuntime);
         defaultTableRuntime.setLatestRefreshInterval(newInterval);
       }
+
+      // issue #4172: a RUNNING process whose tasks all succeeded may remain stuck in
+      // *_OPTIMIZING when a previous beginCommitting() failed transiently (e.g. DB lock
+      // wait timeout). Detect it here and re-drive the transition to COMMITTING so that
+      // OptimizingCommitExecutor can take over normally.
+      tryHealStuckCommitting(defaultTableRuntime);
     } catch (Throwable throwable) {
       logger.error("Refreshing table {} failed.", tableRuntime.getTableIdentifier(), throwable);
+    }
+  }
+
+  /**
+   * Detects and heals a {@code RUNNING} optimizing process whose tasks have all succeeded but the
+   * table's status never transitioned to {@link OptimizingStatus#COMMITTING} (e.g. because the
+   * previous {@code beginCommitting()} DB update failed transiently). Without this self-heal, the
+   * table stays in {@code *_OPTIMIZING} forever until AMS is restarted - see issue #4172.
+   *
+   * <p>The recovery path in {@code OptimizingQueue#initTableRuntime} already handles this case on
+   * AMS restart; this method handles it while AMS is still running, by re-invoking {@link
+   * DefaultTableRuntime#beginCommitting()} from the periodic refresh loop. On success, the status
+   * transition will fire {@code handleTableChanged} and the normal {@code OptimizingCommitExecutor}
+   * pipeline will resume. On failure (e.g. the DB is still unhealthy), this method logs and
+   * returns; the next refresh cycle will try again.
+   */
+  private void tryHealStuckCommitting(DefaultTableRuntime tableRuntime) {
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    if (process == null
+        || process.getStatus() != ProcessStatus.RUNNING
+        || tableRuntime.getOptimizingStatus() == OptimizingStatus.COMMITTING
+        || !tableRuntime.getOptimizingStatus().isProcessing()) {
+      return;
+    }
+    if (!process.allTasksPrepared()) {
+      return;
+    }
+    logger.warn(
+        "{} detected stuck RUNNING optimizing process (processId={}, status={}): all tasks have "
+            + "succeeded but the table never transitioned to COMMITTING. Self-healing by "
+            + "re-driving beginCommitting() (issue #4172).",
+        tableRuntime.getTableIdentifier(),
+        process.getProcessId(),
+        tableRuntime.getOptimizingStatus());
+    try {
+      tableRuntime.beginCommitting();
+    } catch (Exception e) {
+      logger.warn(
+          "{} self-heal beginCommitting() failed, will retry on the next refresh cycle.",
+          tableRuntime.getTableIdentifier(),
+          e);
     }
   }
 

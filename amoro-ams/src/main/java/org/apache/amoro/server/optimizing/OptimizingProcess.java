@@ -49,4 +49,20 @@ public interface OptimizingProcess {
   void commit();
 
   MetricsSummary getSummary();
+
+  /**
+   * Whether all tasks in this process have reached {@code SUCCESS} status and are ready to be
+   * committed.
+   *
+   * <p>This is primarily used by {@link
+   * org.apache.amoro.server.scheduler.inline.TableRuntimeRefreshExecutor} to detect a stuck {@code
+   * RUNNING} process whose tasks all succeeded but never transitioned to {@link
+   * OptimizingStatus#COMMITTING} (see issue #4172: a transient failure of {@code
+   * beginCommitting()}, such as a DB lock wait timeout, otherwise leaves the table permanently
+   * stuck in {@code *_OPTIMIZING} until AMS is restarted).
+   *
+   * @return {@code true} if the process has at least one task and all of them are in {@code
+   *     SUCCESS} status
+   */
+  boolean allTasksPrepared();
 }
