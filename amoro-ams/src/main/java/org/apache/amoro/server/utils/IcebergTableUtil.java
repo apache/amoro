@@ -274,16 +274,23 @@ public class IcebergTableUtil {
       MixedTable table,
       double availableCore,
       long maxInputSizePerThread) {
-    Expression partitionFilter =
-        tableRuntime.getPendingInput() == null
-            ? Expressions.alwaysTrue()
-            : tableRuntime.getPendingInput().getPartitions().entrySet().stream()
-                .map(
-                    entry ->
-                        ExpressionUtil.convertPartitionDataToDataFilter(
-                            table, entry.getKey(), entry.getValue()))
-                .reduce(Expressions::or)
-                .orElse(Expressions.alwaysTrue());
+    AbstractOptimizingEvaluator.PendingInput pendingInput = tableRuntime.getPendingInput();
+    Expression partitionFilter;
+    if (pendingInput == null) {
+      partitionFilter = Expressions.alwaysTrue();
+    } else {
+      // Rebuild the in-memory partitions map from serialized partition paths,
+      // since the partitions field is @JsonIgnore and lost during DB persistence.
+      pendingInput.rebuildPartitions(table);
+      partitionFilter =
+          pendingInput.getPartitions().entrySet().stream()
+              .map(
+                  entry ->
+                      ExpressionUtil.convertPartitionDataToDataFilter(
+                          table, entry.getKey(), entry.getValue()))
+              .reduce(Expressions::or)
+              .orElse(Expressions.alwaysTrue());
+    }
     long processId = snowflakeIdGenerator.generateId();
     ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
     OptimizingConfig config = tableRuntime.getOptimizingConfig();

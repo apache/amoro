@@ -29,10 +29,14 @@ import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableSnapshot;
 import org.apache.amoro.utils.ExpressionUtil;
+import org.apache.amoro.utils.MixedDataFiles;
+import org.apache.amoro.utils.MixedTableUtil;
+import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
@@ -166,22 +170,29 @@ public abstract class AbstractOptimizingEvaluator {
     // to be inconsistent with the snapshot summary of iceberg
     if (TableFormat.ICEBERG == mixedTable.format()) {
       Snapshot snapshot = mixedTable.asUnkeyedTable().snapshot(currentSnapshot.snapshotId());
-      return new PendingInput(partitionPlanMap.values(), snapshot);
+      PendingInput pendingInput = new PendingInput(partitionPlanMap.values(), snapshot);
+      pendingInput.buildPartitionPaths(mixedTable);
+      return pendingInput;
     }
 
-    return new PendingInput(partitionPlanMap.values());
+    PendingInput pendingInput = new PendingInput(partitionPlanMap.values());
+    pendingInput.buildPartitionPaths(mixedTable);
+    return pendingInput;
   }
 
   public PendingInput getOptimizingPendingInput() {
     if (!isInitialized) {
       initEvaluator();
     }
-    return new PendingInput(needOptimizingPlanMap.values());
+    PendingInput pendingInput = new PendingInput(needOptimizingPlanMap.values());
+    pendingInput.buildPartitionPaths(mixedTable);
+    return pendingInput;
   }
 
   public static class PendingInput {
 
     @JsonIgnore private final Map<Integer, Set<StructLike>> partitions = Maps.newHashMap();
+    private Set<String> partitionPaths = Sets.newHashSet();
 
     private int totalFileCount = 0;
     private long totalFileSize = 0L;
@@ -273,6 +284,72 @@ public abstract class AbstractOptimizingEvaluator {
 
     public Map<Integer, Set<StructLike>> getPartitions() {
       return partitions;
+    }
+
+    /**
+     * Get serializable partition paths for JSON persistence. Each entry is in the format
+     * "specId:partitionPath", e.g. "1:dt=2024-01-01/hour=00".
+     */
+    @JsonProperty("partitionPaths")
+    public Set<String> getPartitionPaths() {
+      return partitionPaths;
+    }
+
+    @JsonProperty("partitionPaths")
+    public void setPartitionPaths(Set<String> partitionPaths) {
+      this.partitionPaths = partitionPaths != null ? partitionPaths : Sets.newHashSet();
+    }
+
+    /**
+     * Rebuild the in-memory partitions map from serializable partition paths. Must be called before
+     * {@link #getPartitions()} when PendingInput is deserialized from JSON.
+     *
+     * @param table the table to resolve partition specs
+     */
+    public void rebuildPartitions(MixedTable table) {
+      if (!partitions.isEmpty() || partitionPaths.isEmpty()) {
+        return;
+      }
+      for (String path : partitionPaths) {
+        try {
+          int colonIdx = path.indexOf(':');
+          if (colonIdx <= 0) {
+            continue;
+          }
+          int specId = Integer.parseInt(path.substring(0, colonIdx));
+          String partitionPath = path.substring(colonIdx + 1);
+          PartitionSpec spec = MixedTableUtil.getMixedTablePartitionSpecById(table, specId);
+          if (spec != null) {
+            StructLike struct;
+            if (spec.isUnpartitioned() || partitionPath.isEmpty()) {
+              // For unpartitioned tables, use an empty record since there's no path to parse
+              struct = TablePropertyUtil.EMPTY_STRUCT;
+            } else {
+              struct = MixedDataFiles.data(spec, partitionPath);
+            }
+            partitions.computeIfAbsent(specId, k -> Sets.newHashSet()).add(struct);
+          }
+        } catch (Exception e) {
+          LOG.warn("Failed to rebuild partition from path: {}", path, e);
+        }
+      }
+    }
+
+    /** Build serializable partition paths from in-memory partitions. Called before persisting. */
+    public void buildPartitionPaths(MixedTable table) {
+      if (!partitionPaths.isEmpty()) {
+        return;
+      }
+      for (Map.Entry<Integer, Set<StructLike>> entry : partitions.entrySet()) {
+        int specId = entry.getKey();
+        PartitionSpec spec = MixedTableUtil.getMixedTablePartitionSpecById(table, specId);
+        if (spec == null) {
+          continue;
+        }
+        for (StructLike struct : entry.getValue()) {
+          partitionPaths.add(specId + ":" + spec.partitionToPath(struct));
+        }
+      }
     }
 
     public int getDataFileCount() {
