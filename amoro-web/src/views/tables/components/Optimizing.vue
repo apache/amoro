@@ -181,8 +181,17 @@ function change({ current = 1, pageSize = 25 }) {
     breadcrumbPagination.pageSize = pageSize
   }
   else {
-    // Reset lastSnapshot when returning to first page or changing page size
-    if (current === 1 || pageSize !== pagination.pageSize) {
+    const prevCurrent = pagination.current
+    // Reset cursor-based pagination when:
+    //   - returning to first page
+    //   - page size changed
+    //   - non-sequential jump (user skipped pages or went backward)
+    // Cursor (lastSnapshot) is only valid for a sequential prev → prev+1 step.
+    if (
+      current === 1
+      || pageSize !== pagination.pageSize
+      || current !== prevCurrent + 1
+    ) {
       lastSnapshot.value = null
     }
     pagination.current = current

@@ -73,7 +73,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -95,6 +94,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   private static final Logger LOG = LoggerFactory.getLogger(PaimonTableDescriptor.class);
 
   public static final String PAIMON_MAIN_BRANCH_NAME = "main";
+
+  private static final String PAIMON_OPTIMIZING_TYPE_FULL = "FULL";
+  private static final String PAIMON_OPTIMIZING_TYPE_MINOR = "MINOR";
 
   private ExecutorService executor;
 
@@ -197,7 +199,44 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     long total = 0;
     if (table.branchManager().branchExists(ref) || BranchManager.isMainBranch(ref)) {
       SnapshotManager snapshotManager = table.snapshotManager().copyWithBranch(ref);
-      total = snapshotManager.latestSnapshotId() - snapshotManager.earliestSnapshotId();
+      // Guard empty table: a freshly created Paimon table has no snapshots and
+      // latestSnapshotId() returns null. The previous unboxed subtraction NPE'd.
+      Long latestId = snapshotManager.latestSnapshotId();
+      if (latestId == null) {
+        return Pair.of(Collections.emptyList(), 0L);
+      }
+      // Compute the correct total. The previous (latest - earliest) expression
+      // was off-by-one (ignores the earliest id itself) and ignored operationType
+      // entirely, so OPTIMIZING / NON_OPTIMIZING pagination totals were lifted
+      // straight from the unfiltered id range. For the unfiltered path we use
+      // the kernel's snapshotCount() which is an O(1) directory listing (see
+      // SnapshotManager#snapshotIdStream — it only lists the snapshot dir, does
+      // not parse any snapshot JSON). For filtered paths we must iterate and
+      // apply the same predicate the paginator uses; no cheaper kernel shortcut
+      // exists and correctness matters more than speed for the non-default view.
+      if (operationType == null || operationType == OperationType.ALL) {
+        try {
+          total = snapshotManager.snapshotCount();
+        } catch (IOException e) {
+          throw new RuntimeException(
+              "Failed to count snapshots for branch " + ref + " of " + amoroTable.id(), e);
+        }
+      } else {
+        try {
+          Iterator<Snapshot> it = snapshotManager.snapshots();
+          long filtered = 0;
+          while (it.hasNext()) {
+            Snapshot s = it.next();
+            if (matchesOperationType(s, operationType)) {
+              filtered++;
+            }
+          }
+          total = filtered;
+        } catch (IOException e) {
+          throw new RuntimeException(
+              "Failed to iterate snapshots for branch " + ref + " of " + amoroTable.id(), e);
+        }
+      }
       // Parse lastSnapshot if provided
       Long lastSnapshotId =
           (lastSnapshot != null && !lastSnapshot.trim().isEmpty())
@@ -256,6 +295,23 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
             : Pair.of(Collections.emptyList(), 0L);
       }
     }
+  }
+
+  /**
+   * Mirrors the predicate used inside {@link SnapShotsScanUtils} so that the total count computed
+   * here for filtered views stays consistent with the paginated result. {@code OPTIMIZING} maps to
+   * COMPACT commits; {@code NON_OPTIMIZING} maps to everything else; {@code ALL} and {@code null}
+   * match everything.
+   */
+  private static boolean matchesOperationType(Snapshot snapshot, OperationType operationType) {
+    if (operationType == null || operationType == OperationType.ALL) {
+      return true;
+    }
+    if (operationType == OperationType.OPTIMIZING) {
+      return snapshot.commitKind() == Snapshot.CommitKind.COMPACT;
+    }
+    // NON_OPTIMIZING
+    return snapshot.commitKind() != Snapshot.CommitKind.COMPACT;
   }
 
   @Override
@@ -401,6 +457,15 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     return partitionFileBases;
   }
 
+  /**
+   * Returns a bounded paged view of the table's COMPACT-commit processes.
+   *
+   * <p>This is intentionally stateless: it reads one bounded snapshot-id window through Paimon's
+   * {@link SnapshotManager#snapshotsWithinRange(Optional, Optional)} path, identifies COMPACT
+   * snapshots from {@link Snapshot#commitKind()}, and then materialises only those compact
+   * snapshots into process rows. The returned total is an upper-bound estimate, not a global exact
+   * count; exact filtered totals would require scanning the full snapshot history.
+   */
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
       AmoroTable<?> amoroTable,
@@ -410,122 +475,151 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
       int offset,
       String lastSnapshot) {
     // Temporary solution for Paimon. TODO: Get compaction info from Paimon compaction task
-    List<OptimizingProcessInfo> processInfoList;
     TableIdentifier tableIdentifier = amoroTable.id();
     FileStoreTable fileStoreTable = (FileStoreTable) amoroTable.originalTable();
     FileStore<?> store = fileStoreTable.store();
     boolean isPrimaryTable = !fileStoreTable.primaryKeys().isEmpty();
     int maxLevel = CoreOptions.fromMap(fileStoreTable.options()).numLevels() - 1;
-    int totalCompactSnapshots = 0;
-    try {
-      SnapshotManager snapshotManager = store.snapshotManager();
-      // Parse lastSnapshot if provided
-      Long lastSnapshotId =
-          (lastSnapshot != null && !lastSnapshot.trim().isEmpty())
-              ? Long.valueOf(lastSnapshot)
-              : null;
-      // Use the enhanced pagination method to get compact snapshots
-      Pair<List<Snapshot>, Integer> result =
-          SnapShotsScanUtils.getSnapshotsWithPagination(
-              snapshotManager, Snapshot.CommitKind.COMPACT, limit, offset, lastSnapshotId);
-      List<Snapshot> compactSnapshots = result.getLeft();
-      ManifestFile manifestFile = store.manifestFileFactory().create();
-      ManifestList manifestList = store.manifestListFactory().create();
-      processInfoList =
-          compactSnapshots.stream()
-              .sorted(Comparator.comparing(Snapshot::id).reversed())
-              .map(
-                  s -> {
-                    OptimizingProcessInfo optimizingProcessInfo = new OptimizingProcessInfo();
-                    optimizingProcessInfo.setProcessId(String.valueOf(s.id()));
-                    optimizingProcessInfo.setCatalogName(tableIdentifier.getCatalog());
-                    optimizingProcessInfo.setDbName(tableIdentifier.getDatabase());
-                    optimizingProcessInfo.setTableName(tableIdentifier.getTableName());
-                    optimizingProcessInfo.setStatus(ProcessStatus.SUCCESS);
-                    optimizingProcessInfo.setFinishTime(s.timeMillis());
-                    FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
-                    FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
-                    List<ManifestFileMeta> manifestFileMetas = manifestList.readDeltaManifests(s);
-                    boolean hasMaxLevels = false;
-                    long minCreateTime = Long.MAX_VALUE;
-                    long maxCreateTime = Long.MIN_VALUE;
-                    Set<Integer> buckets = new HashSet<>();
-                    HashMap<String, String> summary = new HashMap<>(8);
-                    Long totalAddRowCount = 0L;
-                    Long deleteAddRowCount = 0L;
-                    for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
-                      List<ManifestEntry> compactManifestEntries =
-                          manifestFile.read(manifestFileMeta.fileName());
-                      for (ManifestEntry compactManifestEntry : compactManifestEntries) {
-                        long addRowCount = compactManifestEntry.file().rowCount();
-                        totalAddRowCount += addRowCount;
-                        Optional<Long> deleteRowCount =
-                            compactManifestEntry.file().deleteRowCount();
-                        if (deleteRowCount.isPresent()) {
-                          deleteAddRowCount += deleteRowCount.get();
-                        }
-                        if (compactManifestEntry.file().level() == maxLevel) {
-                          hasMaxLevels = true;
-                        }
-                        buckets.add(compactManifestEntry.bucket());
-                        if (compactManifestEntry.kind() == FileKind.DELETE) {
-                          inputBuilder.addFile(compactManifestEntry.file().fileSize());
-                        } else {
-                          minCreateTime =
-                              Math.min(
-                                  minCreateTime, getFileCreationTimeMillis(compactManifestEntry));
-                          maxCreateTime =
-                              Math.max(
-                                  maxCreateTime, getFileCreationTimeMillis(compactManifestEntry));
-                          outputBuilder.addFile(compactManifestEntry.file().fileSize());
-                        }
-                      }
-                    }
-                    if (isPrimaryTable && hasMaxLevels) {
-                      optimizingProcessInfo.setOptimizingType("FULL");
-                    } else {
-                      optimizingProcessInfo.setOptimizingType("MINOR");
-                    }
-                    optimizingProcessInfo.setSuccessTasks(buckets.size());
-                    optimizingProcessInfo.setTotalTasks(buckets.size());
-                    optimizingProcessInfo.setStartTime(minCreateTime);
-                    optimizingProcessInfo.setDuration(s.timeMillis() - minCreateTime);
-                    optimizingProcessInfo.setInputFiles(inputBuilder.build());
-                    optimizingProcessInfo.setOutputFiles(outputBuilder.build());
-                    summary.put(
-                        "input-data-files(rewrite)",
-                        String.valueOf(optimizingProcessInfo.getInputFiles().getFileCnt()));
-                    summary.put(
-                        "input-data-size(rewrite)",
-                        String.valueOf(optimizingProcessInfo.getInputFiles().getTotalSize()));
-                    summary.put("input-data-records(rewrite)", String.valueOf(totalAddRowCount));
-                    summary.put(
-                        "output-data-files",
-                        String.valueOf(optimizingProcessInfo.getOutputFiles().getFileCnt()));
-                    summary.put(
-                        "output-data-size",
-                        String.valueOf(optimizingProcessInfo.getOutputFiles().getTotalSize()));
-                    summary.put("output-data-records", String.valueOf(deleteAddRowCount));
-                    optimizingProcessInfo.setSummary(summary);
-                    return optimizingProcessInfo;
-                  })
-              .collect(Collectors.toList());
-      processInfoList =
-          processInfoList.stream()
-              .filter(
-                  p -> StringUtils.isBlank(type) || type.equalsIgnoreCase(p.getOptimizingType()))
-              .filter(p -> status == null || status == p.getStatus())
-              .collect(Collectors.toList());
-      // The estimated approximate number of Compactions
-      totalCompactSnapshots =
-          (int)
-              Math.ceil(
-                  ((snapshotManager.latestSnapshotId() - snapshotManager.earliestSnapshotId()) / 2L)
-                      * 0.6);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    SnapshotManager snapshotManager = store.snapshotManager();
+
+    // Empty-table guard: a freshly-created Paimon table has no snapshots and
+    // latestSnapshotId() returns null. The old heuristic total — (latest -
+    // earliest) / 2L * 0.6 — unboxed that null and threw NPE before any
+    // result could be produced. Short-circuit here keeps the scan off the
+    // critical path and returns an empty, stable container.
+    if (snapshotManager.latestSnapshotId() == null) {
+      return Pair.of(Collections.emptyList(), 0);
     }
-    return Pair.of(processInfoList, totalCompactSnapshots);
+    if (status != null && status != ProcessStatus.SUCCESS) {
+      return Pair.of(Collections.emptyList(), 0);
+    }
+
+    ManifestFile manifestFile = store.manifestFileFactory().create();
+    ManifestList manifestList = store.manifestListFactory().create();
+
+    Long lastSnapshotId =
+        (lastSnapshot != null && !lastSnapshot.trim().isEmpty())
+            ? Long.valueOf(lastSnapshot)
+            : null;
+    Pair<List<Snapshot>, Integer> compactSnapshots =
+        SnapShotsScanUtils.getSnapshotsWithBoundedPagination(
+            snapshotManager,
+            s -> s.commitKind() == Snapshot.CommitKind.COMPACT,
+            limit,
+            offset,
+            lastSnapshotId);
+
+    List<OptimizingProcessInfo> processes =
+        compactSnapshots.getLeft().stream()
+            .map(
+                s ->
+                    toOptimizingProcessInfo(
+                        s, tableIdentifier, manifestFile, manifestList, isPrimaryTable, maxLevel))
+            .collect(Collectors.toList());
+
+    List<OptimizingProcessInfo> page =
+        processes.stream()
+            .filter(p -> StringUtils.isBlank(type) || type.equalsIgnoreCase(p.getOptimizingType()))
+            .filter(p -> status == null || status == p.getStatus())
+            .collect(Collectors.toList());
+
+    int total =
+        page.isEmpty()
+            ? compactSnapshots.getRight()
+            : Math.max(compactSnapshots.getRight(), Math.max(offset, 0) + page.size());
+
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(
+          "getOptimizingProcessesInfo for {}: bounded compact candidates {}, estimated total {}, type={}, status={}, offset={}, limit={}, returned {}",
+          tableIdentifier,
+          compactSnapshots.getLeft().size(),
+          total,
+          type,
+          status,
+          offset,
+          limit,
+          page.size());
+    }
+
+    return Pair.of(page, total);
+  }
+
+  /**
+   * Builds a single {@link OptimizingProcessInfo} from a COMPACT snapshot by walking its delta
+   * manifests. Extracted so bounded pagination can reuse the same per-snapshot materialisation
+   * logic after selecting compact candidates.
+   */
+  private OptimizingProcessInfo toOptimizingProcessInfo(
+      Snapshot s,
+      TableIdentifier tableIdentifier,
+      ManifestFile manifestFile,
+      ManifestList manifestList,
+      boolean isPrimaryTable,
+      int maxLevel) {
+    OptimizingProcessInfo optimizingProcessInfo = new OptimizingProcessInfo();
+    optimizingProcessInfo.setProcessId(String.valueOf(s.id()));
+    optimizingProcessInfo.setCatalogName(tableIdentifier.getCatalog());
+    optimizingProcessInfo.setDbName(tableIdentifier.getDatabase());
+    optimizingProcessInfo.setTableName(tableIdentifier.getTableName());
+    optimizingProcessInfo.setStatus(ProcessStatus.SUCCESS);
+    optimizingProcessInfo.setFinishTime(s.timeMillis());
+    FilesStatisticsBuilder inputBuilder = new FilesStatisticsBuilder();
+    FilesStatisticsBuilder outputBuilder = new FilesStatisticsBuilder();
+    List<ManifestFileMeta> manifestFileMetas = manifestList.readDeltaManifests(s);
+    boolean hasMaxLevels = false;
+    long minCreateTime = Long.MAX_VALUE;
+    long maxCreateTime = Long.MIN_VALUE;
+    Set<Integer> buckets = new HashSet<>();
+    HashMap<String, String> summary = new HashMap<>(8);
+    Long totalAddRowCount = 0L;
+    Long deleteAddRowCount = 0L;
+    for (ManifestFileMeta manifestFileMeta : manifestFileMetas) {
+      List<ManifestEntry> compactManifestEntries = manifestFile.read(manifestFileMeta.fileName());
+      for (ManifestEntry compactManifestEntry : compactManifestEntries) {
+        long addRowCount = compactManifestEntry.file().rowCount();
+        totalAddRowCount += addRowCount;
+        Optional<Long> deleteRowCount = compactManifestEntry.file().deleteRowCount();
+        if (deleteRowCount.isPresent()) {
+          deleteAddRowCount += deleteRowCount.get();
+        }
+        if (compactManifestEntry.file().level() == maxLevel) {
+          hasMaxLevels = true;
+        }
+        buckets.add(compactManifestEntry.bucket());
+        if (compactManifestEntry.kind() == FileKind.DELETE) {
+          inputBuilder.addFile(compactManifestEntry.file().fileSize());
+        } else {
+          minCreateTime = Math.min(minCreateTime, getFileCreationTimeMillis(compactManifestEntry));
+          maxCreateTime = Math.max(maxCreateTime, getFileCreationTimeMillis(compactManifestEntry));
+          outputBuilder.addFile(compactManifestEntry.file().fileSize());
+        }
+      }
+    }
+    if (isPrimaryTable && hasMaxLevels) {
+      optimizingProcessInfo.setOptimizingType(PAIMON_OPTIMIZING_TYPE_FULL);
+    } else {
+      optimizingProcessInfo.setOptimizingType(PAIMON_OPTIMIZING_TYPE_MINOR);
+    }
+    optimizingProcessInfo.setSuccessTasks(buckets.size());
+    optimizingProcessInfo.setTotalTasks(buckets.size());
+    optimizingProcessInfo.setStartTime(minCreateTime);
+    optimizingProcessInfo.setDuration(s.timeMillis() - minCreateTime);
+    optimizingProcessInfo.setInputFiles(inputBuilder.build());
+    optimizingProcessInfo.setOutputFiles(outputBuilder.build());
+    summary.put(
+        "input-data-files(rewrite)",
+        String.valueOf(optimizingProcessInfo.getInputFiles().getFileCnt()));
+    summary.put(
+        "input-data-size(rewrite)",
+        String.valueOf(optimizingProcessInfo.getInputFiles().getTotalSize()));
+    summary.put("input-data-records(rewrite)", String.valueOf(totalAddRowCount));
+    summary.put(
+        "output-data-files", String.valueOf(optimizingProcessInfo.getOutputFiles().getFileCnt()));
+    summary.put(
+        "output-data-size", String.valueOf(optimizingProcessInfo.getOutputFiles().getTotalSize()));
+    summary.put("output-data-records", String.valueOf(deleteAddRowCount));
+    optimizingProcessInfo.setSummary(summary);
+    return optimizingProcessInfo;
   }
 
   @Override

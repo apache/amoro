@@ -36,6 +36,8 @@ public class SnapShotsScanUtils {
 
   private static final Logger LOG = LoggerFactory.getLogger(SnapShotsScanUtils.class);
 
+  private static final int DEFAULT_BOUNDED_SCAN_MULTIPLIER = 1;
+
   /**
    * Get snapshots with cursor-based pagination to avoid full scan. Uses smart scanning to only scan
    * the necessary ranges for the requested page. Supports cursor-based pagination with
@@ -84,6 +86,66 @@ public class SnapShotsScanUtils {
 
     return scanWithPagination(
         snapshotManager, filter, limit, offset, lastSnapshotId, "general page");
+  }
+
+  /**
+   * Returns a bounded newest-first page without scanning the whole snapshot history.
+   *
+   * <p>The returned total is intentionally an upper-bound estimate. Exact filtered totals require
+   * scanning every snapshot, which this helper is designed to avoid. When older snapshots exist
+   * outside the scanned window, the total includes one sentinel row beyond the current page so the
+   * UI can keep next-page navigation available.
+   */
+  public static Pair<List<Snapshot>, Integer> getSnapshotsWithBoundedPagination(
+      SnapshotManager snapshotManager,
+      Predicate<Snapshot> filter,
+      int limit,
+      int offset,
+      Long lastSnapshotId) {
+    if (limit <= 0) {
+      return Pair.of(Collections.emptyList(), 0);
+    }
+
+    Long earliestSnapshotId = snapshotManager.earliestSnapshotId();
+    Long latestSnapshotId = snapshotManager.latestSnapshotId();
+    if (earliestSnapshotId == null || latestSnapshotId == null) {
+      return Pair.of(Collections.emptyList(), 0);
+    }
+
+    long requestedStart =
+        lastSnapshotId == null ? latestSnapshotId - Math.max(offset, 0) : lastSnapshotId - 1;
+    if (requestedStart < earliestSnapshotId) {
+      return Pair.of(Collections.emptyList(), Math.max(offset, 0));
+    }
+    long currentStart = Math.min(latestSnapshotId, requestedStart);
+
+    int scanLimit = Math.max(limit, limit * DEFAULT_BOUNDED_SCAN_MULTIPLIER);
+    long minSnapshotId = Math.max(earliestSnapshotId, currentStart - scanLimit + 1L);
+    Iterator<Snapshot> rangeSnapshots =
+        snapshotManager.snapshotsWithinRange(Optional.of(currentStart), Optional.of(minSnapshotId));
+
+    List<Snapshot> matched = new ArrayList<>();
+    while (rangeSnapshots.hasNext()) {
+      Snapshot snapshot = rangeSnapshots.next();
+      if (filter.test(snapshot)) {
+        matched.add(snapshot);
+      }
+    }
+    matched.sort((s1, s2) -> Long.compare(s2.id(), s1.id()));
+
+    List<Snapshot> page =
+        matched.size() <= limit ? matched : new ArrayList<>(matched.subList(0, limit));
+    boolean mayHaveOlderSnapshots = minSnapshotId > earliestSnapshotId;
+    int estimatedTotal = Math.max(offset, 0) + page.size() + (mayHaveOlderSnapshots ? 1 : 0);
+
+    LOG.debug(
+        "Bounded snapshot pagination scanned [{}, {}], matched {}, returned {}, estimatedTotal {}",
+        minSnapshotId,
+        currentStart,
+        matched.size(),
+        page.size(),
+        estimatedTotal);
+    return Pair.of(page, estimatedTotal);
   }
 
   /**
