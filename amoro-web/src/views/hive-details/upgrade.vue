@@ -18,7 +18,7 @@ limitations under the License.
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import schemaField from './components/Field.vue'
 import partitionField from './components/Partition.vue'
 import otherProperties from './components/Properties.vue'
@@ -29,6 +29,7 @@ const emit = defineEmits<{
   (e: 'goBack'): void
   (e: 'refresh'): void
 }>()
+const storageTableKey = 'easylake-menu-catalog-db-table'
 const loading = ref<boolean>(false)
 const field = reactive<DetailColumnItem[]>([])
 const partitionFields = reactive<DetailColumnItem[]>([])
@@ -36,6 +37,7 @@ const propertiesObj = reactive<IMap<string>>({})
 const pkName = reactive<IMap<string>[]>([])
 
 const route = useRoute()
+const router = useRouter()
 
 const params = computed(() => {
   return {
@@ -44,6 +46,19 @@ const params = computed(() => {
 })
 const schemaFieldRef = ref()
 const propertiesRef = ref()
+
+function updateStoredTableType(type: string) {
+  const { catalog, db, table } = params.value
+  if (!catalog || !db || !table) {
+    return
+  }
+  localStorage.setItem(storageTableKey, JSON.stringify({
+    catalog,
+    database: db,
+    tableName: table,
+    type,
+  }))
+}
 
 async function getDetails() {
   try {
@@ -101,7 +116,14 @@ async function upgradeTable() {
       pkList: pkName,
       properties: propertiesObj,
     })
-    goBack()
+    updateStoredTableType('ARCTIC')
+    router.replace({
+      path: '/tables',
+      query: {
+        ...params.value,
+        type: 'ARCTIC',
+      },
+    })
     emit('refresh')
   }
   catch (error) {

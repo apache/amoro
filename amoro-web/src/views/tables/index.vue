@@ -27,6 +27,7 @@ import UOptimizing from './components/Optimizing.vue'
 import UProcess from './components/Process.vue'
 import UHealthScore from './components/HealthScoreDetails.vue'
 import TableExplorer from './components/TableExplorer.vue'
+import HiveDetails from './components/HiveDetails.vue'
 import useStore from '@/store/index'
 import type { IBaseDetailInfo } from '@/types/common.type'
 import { usePageScroll } from '@/hooks/usePageScroll'
@@ -42,6 +43,7 @@ export default defineComponent({
     UProcess,
     UHealthScore,
     TableExplorer,
+    HiveDetails,
   },
   setup() {
     const router = useRouter()
@@ -137,6 +139,8 @@ export default defineComponent({
     })
 
     const hasSelectedTable = computed(() => !!(route.query?.catalog && route.query?.db && route.query?.table))
+    const isHiveTable = computed(() => route.query?.type === 'HIVE')
+    const isHiveUpgrade = computed(() => route.path.includes('hive-upgrade'))
 
     const setBaseDetailInfo = (baseInfo: IBaseDetailInfo & { comment?: string }) => {
       state.detailLoaded = true
@@ -183,9 +187,13 @@ export default defineComponent({
     watch(
       () => route.query,
       (value, oldVal) => {
-        const { catalog, db, table } = value
-        const { catalog: oldCatalog, db: oldDb, table: oldTable } = oldVal
-        if (`${catalog}${db}${table}` !== `${oldCatalog}${oldDb}${oldTable}`) {
+        const { catalog, db, table, type } = value
+        const { catalog: oldCatalog, db: oldDb, table: oldTable, type: oldType } = oldVal
+        if (isHiveTable.value || isHiveUpgrade.value) {
+          state.activeKey = (value.tab as string) || 'Details'
+          return
+        }
+        if (`${catalog}${db}${table}${type}` !== `${oldCatalog}${oldDb}${oldTable}${oldType}`) {
           state.activeKey = 'Details'
           nextTick(() => {
             if (detailRef.value) {
@@ -201,7 +209,7 @@ export default defineComponent({
     watch(
       hasSelectedTable,
       (value, oldVal) => {
-        if (value && !oldVal && detailRef.value) {
+        if (value && !oldVal && !isHiveTable.value && !isHiveUpgrade.value && detailRef.value) {
           detailRef.value.getTableDetails()
         }
       },
@@ -212,7 +220,7 @@ export default defineComponent({
       state.activeKey = (route.query?.tab as string) || 'Details'
 
       nextTick(() => {
-        if (detailRef.value && hasSelectedTable.value) {
+        if (detailRef.value && hasSelectedTable.value && !isHiveTable.value && !isHiveUpgrade.value) {
           detailRef.value.getTableDetails()
         }
       })
@@ -230,6 +238,8 @@ export default defineComponent({
       store,
       isIceberg,
       hasSelectedTable,
+      isHiveTable,
+      isHiveUpgrade,
       setBaseDetailInfo,
       handleTableNotFound,
       goBack,
@@ -243,7 +253,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="page-scroll" ref="pageScrollRef">
+  <div ref="pageScrollRef" class="page-scroll">
     <div class="tables-wrap">
       <div v-if="!isSecondaryNav" class="tables-content">
         <div
@@ -254,7 +264,9 @@ export default defineComponent({
         </div>
         <div class="tables-divider" aria-hidden="true" @mousedown="startSidebarResize" />
         <div class="tables-main">
-          <template v-if="hasSelectedTable">
+          <router-view v-if="isHiveUpgrade" @go-back="goBack" />
+          <HiveDetails v-else-if="hasSelectedTable && isHiveTable" />
+          <template v-else-if="hasSelectedTable">
             <div class="tables-main-header g-flex-jsb">
               <div class="g-flex-col">
                 <div class="g-flex">

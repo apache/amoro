@@ -146,27 +146,35 @@ export default defineComponent({
         let catalog: string | undefined
         let db: string | undefined
         let tableName: string | undefined
+        let type: string | undefined
 
         try {
           const stored = localStorage.getItem('easylake-menu-catalog-db-table')
           if (stored) {
-            const parsed = JSON.parse(stored) as { catalog?: string; database?: string; tableName?: string }
+            const parsed = JSON.parse(stored) as {
+              catalog?: string
+              database?: string
+              tableName?: string
+              type?: string
+            }
             catalog = parsed.catalog
             db = parsed.database
             tableName = parsed.tableName
+            type = parsed.type
           }
         }
         catch (e) {
           // ignore localStorage read/parse errors
         }
 
-        if (catalog && db && tableName) {
+        if (catalog && db && tableName && type) {
           router.replace({
             path: '/tables',
             query: {
               catalog,
               db,
               table: tableName,
+              type,
             },
           })
         }
