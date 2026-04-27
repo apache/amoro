@@ -46,7 +46,6 @@ import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
-import org.apache.amoro.utils.CommonUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.paimon.CoreOptions;
@@ -152,37 +151,38 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     }
     Snapshot snapshot = store.snapshotManager().latestSnapshot();
     if (snapshot != null) {
-      AmoroSnapshotsOfTable snapshotsOfTable =
-          manifestListInfo(store, snapshot, ManifestList::readDataManifests);
-      long fileSize = snapshotsOfTable.getOriginalFileSize();
-      String totalSize = CommonUtil.byteToXB(fileSize);
-      int fileCount = snapshotsOfTable.getFileCount();
+      long fileCount = currentDataFileCount(store, snapshot);
+      Long totalRecordCount = snapshot.totalRecordCount();
+      long records = totalRecordCount == null ? 0L : totalRecordCount;
 
-      String averageFileSize = CommonUtil.byteToXB(fileCount == 0 ? 0 : fileSize / fileCount);
+      tableSummary = new TableSummary(fileCount, null, null, records, "paimon");
 
-      tableSummary =
-          new TableSummary(
-              fileCount, totalSize, averageFileSize, snapshotsOfTable.getRecords(), "paimon");
-
-      baseMetric.put("totalSize", totalSize);
+      baseMetric.put("totalSize", null);
       baseMetric.put("fileCount", fileCount);
-      baseMetric.put("averageFileSize", averageFileSize);
+      baseMetric.put("averageFileSize", null);
       baseMetric.put("lastCommitTime", snapshot.timeMillis());
       Long watermark = snapshot.watermark();
       if (watermark != null && watermark > 0) {
         baseMetric.put("baseWatermark", watermark);
       }
     } else {
-      tableSummary = new TableSummary(0, "0", "0", 0, "paimon");
+      tableSummary = new TableSummary(0, null, null, 0, "paimon");
 
-      baseMetric.put("totalSize", 0);
+      baseMetric.put("totalSize", null);
       baseMetric.put("fileCount", 0);
-      baseMetric.put("averageFileSize", 0);
+      baseMetric.put("averageFileSize", null);
     }
     serverTableMeta.setTableSummary(tableSummary);
     serverTableMeta.setBaseMetrics(baseMetric);
 
     return serverTableMeta;
+  }
+
+  private long currentDataFileCount(FileStore<?> store, Snapshot snapshot) {
+    ManifestList manifestList = store.manifestListFactory().create();
+    return manifestList.readDataManifests(snapshot).stream()
+        .mapToLong(manifest -> manifest.numAddedFiles() - manifest.numDeletedFiles())
+        .sum();
   }
 
   @Override
