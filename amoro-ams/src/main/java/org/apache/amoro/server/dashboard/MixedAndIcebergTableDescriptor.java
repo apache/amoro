@@ -272,7 +272,45 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
             .filter(s -> validOperationType(s, operationType))
             .sorted((o1, o2) -> Long.compare(o2.getCommitTime(), o1.getCommitTime()))
             .collect(Collectors.toList());
-    return Pair.of(amoroSnapshotsOfTables, (long) amoroSnapshotsOfTables.size());
+    return paginate(amoroSnapshotsOfTables, limit, offset, lastSnapshot);
+  }
+
+  /**
+   * Apply pagination against a pre-filtered, pre-sorted snapshot list.
+   *
+   * <p>Semantics mirror {@code PaimonTableDescriptor.getSnapshots}: if {@code lastSnapshot} is a
+   * non-empty cursor, skip forward until the matching snapshotId is found and return the next
+   * {@code limit} items; if the cursor is missing (snapshot rolled off), fall back to offset-based
+   * behaviour. Otherwise apply {@code offset} + {@code limit} directly. The total count always
+   * reflects the full filtered list.
+   */
+  static Pair<List<AmoroSnapshotsOfTable>, Long> paginate(
+      List<AmoroSnapshotsOfTable> amoroSnapshotsOfTables,
+      int limit,
+      int offset,
+      String lastSnapshot) {
+    int total = amoroSnapshotsOfTables.size();
+    int safeLimit = Math.max(limit, 0);
+    int safeOffset = Math.max(offset, 0);
+    int startIdx = resolveStartIndex(amoroSnapshotsOfTables, lastSnapshot, safeOffset);
+    if (startIdx >= total) {
+      return Pair.of(Collections.emptyList(), (long) total);
+    }
+    int endIdx = Math.min(startIdx + safeLimit, total);
+    return Pair.of(new ArrayList<>(amoroSnapshotsOfTables.subList(startIdx, endIdx)), (long) total);
+  }
+
+  private static int resolveStartIndex(
+      List<AmoroSnapshotsOfTable> snapshots, String lastSnapshot, int offset) {
+    if (lastSnapshot != null && !lastSnapshot.isEmpty()) {
+      for (int i = 0; i < snapshots.size(); i++) {
+        if (lastSnapshot.equals(snapshots.get(i).getSnapshotId())) {
+          return i + 1;
+        }
+      }
+      // Cursor not found (snapshot rolled off) — fall back to offset.
+    }
+    return offset;
   }
 
   private boolean validOperationType(AmoroSnapshotsOfTable snapshot, OperationType operationType) {
