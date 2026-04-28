@@ -20,6 +20,7 @@ limitations under the License.
 import { computed, onBeforeMount, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCatalogList, getDatabaseList, getTableList } from '@/services/table.service'
+import { tableTypeIconMap } from '@/types/common.type'
 import type { ICatalogItem } from '@/types/common.type'
 
 // Node types: Catalog / Database / Table
@@ -235,11 +236,11 @@ function handleSelectTable(catalog: string, db: string, tableName: string, table
     catalog,
     database: db,
     tableName,
+    type,
   }))
 
-  const path = type === 'HIVE' ? '/hive-tables' : '/tables'
   const pathQuery = {
-    path,
+    path: '/tables',
     query: {
       catalog,
       db,
@@ -334,7 +335,7 @@ function getNodeIcon(node: TreeNode) {
   if (node.nodeType === 'database') {
     return 'database'
   }
-  return 'tables'
+  return tableTypeIconMap[node.tableType as keyof typeof tableTypeIconMap] || 'tables'
 }
 
 function normalizeKeyword(raw: string) {
@@ -601,7 +602,6 @@ onBeforeMount(async () => {
         <span>No results..</span>
       </div>
     </div>
-
   </div>
 </template>
 

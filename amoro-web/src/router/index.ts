@@ -17,13 +17,13 @@
   */
 
 import type { RouteRecordRaw } from 'vue-router'
-import { createRouter, createWebHashHistory  } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
+
 const SwaggerUI = () => import('@/components/SwaggerUI.vue')
 const Home = () => import('@/views/Home.vue')
 const Page404 = () => import('@/views/404.vue')
 const Catalogs = () => import('@/views/catalogs/index.vue')
 const Tables = () => import('@/views/tables/index.vue')
-const HiveTables = () => import('@/views/hive-details/index.vue')
 const UpgradeTable = () => import('@/views/hive-details/upgrade.vue')
 const CreateTable = () => import('@/views/tables/create.vue')
 // const Optimizing = () => import('@/views/optimize/index.vue')
@@ -55,19 +55,34 @@ const routes: Array<RouteRecordRaw> = [
             name: 'Create',
             component: CreateTable,
           },
+          {
+            path: 'hive-upgrade',
+            name: 'HiveUpgrade',
+            component: UpgradeTable,
+          },
         ],
       },
       {
         path: 'hive-tables',
         name: 'HiveTables',
-        component: HiveTables,
-        children: [
-          {
-            path: 'upgrade',
-            name: 'Upgrade',
-            component: UpgradeTable,
+        redirect: to => ({
+          path: '/tables',
+          query: {
+            ...to.query,
+            type: 'HIVE',
           },
-        ],
+        }),
+      },
+      {
+        path: 'hive-tables/upgrade',
+        name: 'Upgrade',
+        redirect: to => ({
+          path: '/tables/hive-upgrade',
+          query: {
+            ...to.query,
+            type: 'HIVE',
+          },
+        }),
       },
       {
         path: 'optimizing',
@@ -115,7 +130,7 @@ const routes: Array<RouteRecordRaw> = [
     path: '/:pathMatch(.*)*',
     name: 'Page404',
     component: Page404,
-  }
+  },
 ]
 
 const router = createRouter({

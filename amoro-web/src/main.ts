@@ -112,7 +112,7 @@ RegisterComponents(app);
         })
         return
       }
-      if (to.path === '/hive-tables/upgrade' && !canManageTable()) {
+      if ((to.path === '/hive-tables/upgrade' || to.path === '/tables/hive-upgrade') && !canManageTable()) {
         next({
           path: getDefaultRoute(),
         })

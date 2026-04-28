@@ -157,11 +157,11 @@ export default defineComponent({
         catalog: state.curCatalog,
         database: state.database,
         tableName: item.label,
+        type: state.type,
       }))
       store.updateTablesMenu(false)
-      const path = item.type === 'HIVE' ? '/hive-tables' : '/tables'
       const pathQuery = {
-        path,
+        path: '/tables',
         query: {
           catalog: state.curCatalog,
           db: state.database,
