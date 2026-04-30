@@ -96,7 +96,7 @@ start() {
 }
 
 start-foreground() {
-  $CMDS
+  exec $CMDS
 }
 
 #0:pid bad and proc OK;   1:pid ok and proc bad;    2:pid bad

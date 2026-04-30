@@ -108,10 +108,16 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
   public static class TestOptimizingInput extends BaseOptimizingInput {
     private final int inputId;
     private final boolean executeSuccess;
+    private final long executionTimeMs;
 
     private TestOptimizingInput(int inputId, boolean executeSuccess) {
+      this(inputId, executeSuccess, 0L);
+    }
+
+    private TestOptimizingInput(int inputId, boolean executeSuccess, long executionTimeMs) {
       this.inputId = inputId;
       this.executeSuccess = executeSuccess;
+      this.executionTimeMs = executionTimeMs;
     }
 
     public static TestOptimizingInput successInput(int inputId) {
@@ -122,8 +128,16 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
       return new TestOptimizingInput(inputId, false);
     }
 
+    public static TestOptimizingInput slowSuccessInput(int inputId, long executionTimeMs) {
+      return new TestOptimizingInput(inputId, true, executionTimeMs);
+    }
+
     private int inputId() {
       return inputId;
+    }
+
+    private long executionTimeMs() {
+      return executionTimeMs;
     }
 
     public OptimizingTask toTask(long processId, int taskId) {
@@ -159,6 +173,14 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
 
     @Override
     public TestOptimizingOutput execute() {
+      if (input.executionTimeMs() > 0) {
+        try {
+          Thread.sleep(input.executionTimeMs());
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new IllegalStateException("Task was interrupted before completion", e);
+        }
+      }
       if (input.executeSuccess) {
         return new TestOptimizingOutput(input.inputId());
       } else {
