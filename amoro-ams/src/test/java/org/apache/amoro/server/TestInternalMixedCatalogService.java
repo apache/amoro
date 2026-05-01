@@ -165,16 +165,20 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       MixedFormatCatalog catalog = loadMixedIcebergCatalog();
       Assertions.assertEquals(
           InternalMixedIcebergCatalog.class.getName(), catalog.getClass().getName());
-      Assertions.assertTrue(catalog.listDatabases().isEmpty());
+      int initialDatabaseCount = catalog.listDatabases().size();
+      int initialNamespaceCount = nsCatalog.listNamespaces(Namespace.of()).size();
+      Assertions.assertFalse(catalog.listDatabases().contains(database));
 
       catalog.createDatabase(database);
-      Assertions.assertEquals(1, catalog.listDatabases().size());
+      Assertions.assertEquals(initialDatabaseCount + 1, catalog.listDatabases().size());
       Assertions.assertTrue(catalog.listDatabases().contains(database));
-      Assertions.assertEquals(1, nsCatalog.listNamespaces(Namespace.of()).size());
+      Assertions.assertEquals(
+          initialNamespaceCount + 1, nsCatalog.listNamespaces(Namespace.of()).size());
 
       catalog.dropDatabase(database);
-      Assertions.assertTrue(catalog.listDatabases().isEmpty());
-      Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
+      Assertions.assertEquals(initialDatabaseCount, catalog.listDatabases().size());
+      Assertions.assertFalse(catalog.listDatabases().contains(database));
+      Assertions.assertEquals(initialNamespaceCount, nsCatalog.listNamespaces().size());
     }
   }
 

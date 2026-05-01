@@ -104,12 +104,18 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
   public class NamespaceTests {
     @Test
     public void testNamespaceOperations() throws IOException {
-      Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
-      nsCatalog.createNamespace(Namespace.of(database));
-      Assertions.assertEquals(1, nsCatalog.listNamespaces().size());
-      Assertions.assertEquals(0, nsCatalog.listNamespaces(Namespace.of(database)).size());
-      nsCatalog.dropNamespace(Namespace.of(database));
-      Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
+      Namespace dbNamespace = Namespace.of(database);
+      int initialNamespaceCount = nsCatalog.listNamespaces().size();
+      Assertions.assertFalse(nsCatalog.listNamespaces().contains(dbNamespace));
+
+      nsCatalog.createNamespace(dbNamespace);
+      Assertions.assertEquals(initialNamespaceCount + 1, nsCatalog.listNamespaces().size());
+      Assertions.assertTrue(nsCatalog.listNamespaces().contains(dbNamespace));
+      Assertions.assertEquals(0, nsCatalog.listNamespaces(dbNamespace).size());
+
+      nsCatalog.dropNamespace(dbNamespace);
+      Assertions.assertEquals(initialNamespaceCount, nsCatalog.listNamespaces().size());
+      Assertions.assertFalse(nsCatalog.listNamespaces().contains(dbNamespace));
     }
   }
 

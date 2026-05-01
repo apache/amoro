@@ -43,13 +43,16 @@ import org.junit.jupiter.api.BeforeEach;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class RestCatalogServiceTestBase {
 
   static AmsEnvironment ams = AmsEnvironment.getIntegrationInstances();
   static String restCatalogUri = RestCatalogService.ICEBERG_REST_API_PREFIX;
 
-  protected final String database = "test_ns";
+  private static final AtomicLong TEST_INSTANCE_COUNTER = new AtomicLong();
+
+  protected final String database = "test_ns_" + TEST_INSTANCE_COUNTER.incrementAndGet();
   protected final String table = "test_iceberg_tbl";
   protected final TableIdentifier tableIdentifier =
       TableIdentifier.of(catalogName(), database, table);
