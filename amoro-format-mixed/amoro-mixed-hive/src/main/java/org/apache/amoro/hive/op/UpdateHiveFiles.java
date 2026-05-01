@@ -189,7 +189,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
         commitPartitionedTable();
       }
     } catch (Exception e) {
-      LOG.warn("Commit operation to HMS failed.", e);
+      LOG.warn("Commit Hive partition operations to HMS failed for table {}.", table.id(), e);
     }
   }
 
@@ -455,6 +455,12 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
 
   private void commitPartitionedTable() {
     if (!partitionToDelete.isEmpty()) {
+      LOG.info(
+          "Dropping {} Hive partitions for table {}, txId {}, partitions {}",
+          partitionToDelete.size(),
+          table.id(),
+          txId,
+          partitionsSummary(partitionToDelete.values()));
       for (Partition p : partitionToDelete.values()) {
         try {
           transactionClient.run(
@@ -469,22 +475,48 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
                 return 0;
               });
         } catch (NoSuchObjectException e) {
-          LOG.warn("try to delete hive partition {} but partition not exist.", p);
+          LOG.warn(
+              "Tried to drop Hive partition for table {} but partition does not exist: {}",
+              table.id(),
+              partitionToString(p));
         } catch (TException | InterruptedException e) {
+          LOG.warn(
+              "Failed to drop Hive partition for table {}, partition {}",
+              table.id(),
+              partitionToString(p),
+              e);
           throw new RuntimeException(e);
         }
       }
     }
 
     if (!partitionToCreate.isEmpty()) {
+      LOG.info(
+          "Creating {} Hive partitions for table {}, txId {}, partitions {}",
+          partitionToCreate.size(),
+          table.id(),
+          txId,
+          partitionsSummary(partitionToCreate.values()));
       try {
         transactionClient.run(c -> c.addPartitions(Lists.newArrayList(partitionToCreate.values())));
       } catch (TException | InterruptedException e) {
+        LOG.warn(
+            "Failed to create {} Hive partitions for table {}, partitions {}",
+            partitionToCreate.size(),
+            table.id(),
+            partitionsSummary(partitionToCreate.values()),
+            e);
         throw new RuntimeException(e);
       }
     }
 
     if (!partitionToAlter.isEmpty()) {
+      LOG.info(
+          "Altering {} Hive partitions for table {}, txId {}, partitions {}",
+          partitionToAlter.size(),
+          table.id(),
+          txId,
+          partitionsSummary(partitionToAlter.values()));
       try {
         transactionClient.run(
             c -> {
@@ -501,9 +533,23 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
               return null;
             });
       } catch (TException | InterruptedException e) {
+        LOG.warn(
+            "Failed to alter {} Hive partitions for table {}, partitions {}",
+            partitionToAlter.size(),
+            table.id(),
+            partitionsSummary(partitionToAlter.values()),
+            e);
         throw new RuntimeException(e);
       }
     }
+  }
+
+  private static String partitionsSummary(java.util.Collection<Partition> partitions) {
+    int max = 5;
+    return partitions.stream()
+        .limit(max)
+        .map(UpdateHiveFiles::partitionToString)
+        .collect(Collectors.joining(", ", "[", partitions.size() > max ? ", ...]" : "]"));
   }
 
   private void generateUnpartitionTableLocation() {
@@ -611,7 +657,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     return path1.equals(path2);
   }
 
-  private String partitionToString(Partition p) {
+  private static String partitionToString(Partition p) {
     return "Partition(values: ["
         + Joiner.on("/").join(p.getValues())
         + "], location: "

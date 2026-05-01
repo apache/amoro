@@ -325,6 +325,20 @@ public class ReplaceHivePartitions implements ReplacePartitions {
   }
 
   private void commitPartitionedTable() {
+    if (!rewritePartitions.isEmpty()) {
+      LOG.info(
+          "Altering {} Hive partitions for table {}, partitions {}",
+          rewritePartitions.size(),
+          table.id(),
+          partitionsSummary(rewritePartitions.values()));
+    }
+    if (!newPartitions.isEmpty()) {
+      LOG.info(
+          "Creating {} Hive partitions for table {}, partitions {}",
+          newPartitions.size(),
+          table.id(),
+          partitionsSummary(newPartitions.values()));
+    }
     try {
       transactionalHMSClient.run(
           c -> {
@@ -346,8 +360,28 @@ public class ReplaceHivePartitions implements ReplacePartitions {
             return 0;
           });
     } catch (TException | InterruptedException e) {
+      LOG.warn(
+          "Failed to commit Hive partition operations for table {}: alter {}, create {}",
+          table.id(),
+          rewritePartitions.size(),
+          newPartitions.size(),
+          e);
       throw new RuntimeException(e);
     }
+  }
+
+  private static String partitionsSummary(java.util.Collection<Partition> partitions) {
+    int max = 5;
+    return partitions.stream()
+        .limit(max)
+        .map(
+            p ->
+                "Partition(values: ["
+                    + Joiner.on("/").join(p.getValues())
+                    + "], location: "
+                    + p.getSd().getLocation()
+                    + ")")
+        .collect(Collectors.joining(", ", "[", partitions.size() > max ? ", ...]" : "]"));
   }
 
   private void checkDataFileInSameLocation(String partitionLocation, List<DataFile> files) {

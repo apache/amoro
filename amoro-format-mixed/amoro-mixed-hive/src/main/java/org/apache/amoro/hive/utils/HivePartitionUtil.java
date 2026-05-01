@@ -225,17 +225,20 @@ public class HivePartitionUtil {
   public static void alterPartition(
       HMSClientPool hiveClient, TableIdentifier tableIdentifier, String partition, String newPath)
       throws IOException {
+    String oldLocation = null;
     try {
-      LOG.info(
-          "alter table {} hive partition {} to new location {}",
-          tableIdentifier,
-          partition,
-          newPath);
       Partition oldPartition =
           hiveClient.run(
               client ->
                   client.getPartition(
                       tableIdentifier.getDatabase(), tableIdentifier.getTableName(), partition));
+      oldLocation = oldPartition.getSd().getLocation();
+      LOG.info(
+          "Altering Hive partition location for table {}, partition {}, location {} -> {}",
+          tableIdentifier,
+          partition,
+          oldLocation,
+          newPath);
       Partition newPartition = new Partition(oldPartition);
       newPartition.getSd().setLocation(newPath);
       hiveClient.run(
@@ -255,7 +258,20 @@ public class HivePartitionUtil {
                 }
                 return null;
               });
+      LOG.info(
+          "Altered Hive partition location for table {}, partition {}, location {} -> {}",
+          tableIdentifier,
+          partition,
+          oldLocation,
+          newPath);
     } catch (Exception e) {
+      LOG.warn(
+          "Failed to alter Hive partition location for table {}, partition {}, location {} -> {}",
+          tableIdentifier,
+          partition,
+          oldLocation,
+          newPath,
+          e);
       throw new IOException(e);
     }
   }
@@ -282,18 +298,40 @@ public class HivePartitionUtil {
               partition =
                   newPartition(
                       hiveTable, partitionValues, partitionLocation, dataFiles, accessTimestamp);
+              LOG.info(
+                  "Creating Hive partition for table {}, partition values {}, location {}",
+                  mixedTable.id(),
+                  partitionValues,
+                  partitionLocation);
               client.addPartition(partition);
+              LOG.info(
+                  "Created Hive partition for table {}, partition values {}, location {}",
+                  mixedTable.id(),
+                  partitionValues,
+                  partitionLocation);
               return partition;
             }
           });
     } catch (Exception e) {
+      LOG.warn(
+          "Failed to create Hive partition for table {}, partition values {}, location {}",
+          mixedTable.id(),
+          partitionValues,
+          partitionLocation,
+          e);
       throw new RuntimeException(e);
     }
   }
 
   public static void dropPartition(
       HMSClientPool hmsClient, MixedTable mixedTable, Partition hivePartition) {
+    String location = hivePartition.getSd() == null ? null : hivePartition.getSd().getLocation();
     try {
+      LOG.info(
+          "Dropping Hive partition for table {}, partition values {}, location {}",
+          mixedTable.id(),
+          hivePartition.getValues(),
+          location);
       hmsClient.run(
           client -> {
             PartitionDropOptions options =
@@ -308,7 +346,18 @@ public class HivePartitionUtil {
                 hivePartition.getValues(),
                 options);
           });
+      LOG.info(
+          "Dropped Hive partition for table {}, partition values {}, location {}",
+          mixedTable.id(),
+          hivePartition.getValues(),
+          location);
     } catch (TException | InterruptedException e) {
+      LOG.warn(
+          "Failed to drop Hive partition for table {}, partition values {}, location {}",
+          mixedTable.id(),
+          hivePartition.getValues(),
+          location,
+          e);
       throw new RuntimeException(e);
     }
   }
@@ -320,6 +369,13 @@ public class HivePartitionUtil {
       String newLocation,
       List<DataFile> dataFiles,
       int accessTimestamp) {
+    String oldLocation = hivePartition.getSd() == null ? null : hivePartition.getSd().getLocation();
+    LOG.info(
+        "Updating Hive partition location for table {}, partition values {}, location {} -> {}",
+        mixedTable.id(),
+        hivePartition.getValues(),
+        oldLocation,
+        newLocation);
     dropPartition(hmsClient, mixedTable, hivePartition);
     createPartitionIfAbsent(
         hmsClient, mixedTable, hivePartition.getValues(), newLocation, dataFiles, accessTimestamp);
