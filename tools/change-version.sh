@@ -17,8 +17,8 @@
 # limitations under the License.
 ################################################################################
 
-OLD="0.8-SNAPSHOT"
-NEW="0.9-SNAPSHOT"
+OLD="0.9-SNAPSHOT"
+NEW="0.9-incubating"
 
 
 HERE=` basename "$PWD"`
