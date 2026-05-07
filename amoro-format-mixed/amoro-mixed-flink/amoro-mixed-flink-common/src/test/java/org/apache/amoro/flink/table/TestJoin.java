@@ -45,12 +45,10 @@ import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,8 +66,6 @@ public class TestJoin extends FlinkTestBase {
 
   public static final Logger LOG = LoggerFactory.getLogger(TestJoin.class);
 
-  @Rule public TemporaryFolder tempFolder = new TemporaryFolder();
-
   private static final String DB = TableTestHelper.TEST_DB_NAME;
   private static final String TABLE = "test_keyed";
   private static final TableIdentifier TABLE_ID =
@@ -81,14 +77,13 @@ public class TestJoin extends FlinkTestBase {
         new BasicTableTestHelper(false, false));
   }
 
-  @Before
-  public void before() throws Exception {
-    super.before();
+  @BeforeEach
+  public void configProps() {
     super.config();
   }
 
-  @After
-  public void after() {
+  @AfterEach
+  public void dropTestTable() {
     getMixedFormatCatalog().dropTable(TABLE_ID, true);
   }
 
@@ -151,7 +146,7 @@ public class TestJoin extends FlinkTestBase {
     expected.add(new Object[] {"d", 1000022L, null, null});
     expected.add(new Object[] {"e", 1000021L, null, null});
     expected.add(new Object[] {"e", 1000016L, null, null});
-    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
   @Test
@@ -246,7 +241,7 @@ public class TestJoin extends FlinkTestBase {
     expected.add(new Object[] {"f", 6L, 324, "lily"});
     expected.add(new Object[] {"g", 8L, null, null});
     expected.add(new Object[] {"h", 9L, null, null});
-    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
   @Test
@@ -342,7 +337,7 @@ public class TestJoin extends FlinkTestBase {
     expected.add(new Object[] {"f", 6L, "lily"});
     expected.add(new Object[] {"g", 8L, null});
     expected.add(new Object[] {"h", 9L, null});
-    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
   private void writeChange(KeyedTable keyedTable, RowType rowType) {

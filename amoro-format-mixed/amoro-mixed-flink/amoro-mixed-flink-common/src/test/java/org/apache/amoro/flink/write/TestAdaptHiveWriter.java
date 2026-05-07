@@ -23,7 +23,7 @@ import static org.apache.amoro.table.TableProperties.FILE_FORMAT_ORC;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
-import org.apache.amoro.catalog.TableTestBase;
+import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.read.AdaptHiveFlinkParquetReaders;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
@@ -50,12 +50,13 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -67,189 +68,250 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
-public class TestAdaptHiveWriter extends TableTestBase {
+public class TestAdaptHiveWriter extends FlinkTestBase {
 
-  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
+  static final TestHMS TEST_HMS = new TestHMS();
 
-  public TestAdaptHiveWriter(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
-    super(catalogTestHelper, tableTestHelper);
+  @BeforeAll
+  public static void startTestHms() throws Exception {
+    TEST_HMS.before();
   }
 
-  @Parameterized.Parameters(name = "{0}, {1}")
-  public static Object[] parameters() {
-    return new Object[][] {
-      {
-        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(true, true)
-      },
-      {
-        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(true, false)
-      },
-      {
-        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, true)
-      },
-      {
-        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, false)
-      },
-      {
-        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(true, true, FILE_FORMAT_ORC)
-      },
-      {
-        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(true, false, FILE_FORMAT_ORC)
-      },
-      {
-        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, true, FILE_FORMAT_ORC)
-      },
-      {
-        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(false, false, FILE_FORMAT_ORC)
-      }
-    };
+  @AfterAll
+  public static void stopTestHms() {
+    TEST_HMS.after();
   }
 
-  @Test
-  public void testKeyedTableWriteTypeFromOperateKind() {
-    Assume.assumeTrue(isKeyedTable());
+  static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, true)),
+        Arguments.of(
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, false)),
+        Arguments.of(
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(false, true)),
+        Arguments.of(
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(false, false)),
+        Arguments.of(
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, true, FILE_FORMAT_ORC)),
+        Arguments.of(
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, false, FILE_FORMAT_ORC)),
+        Arguments.of(
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(false, true, FILE_FORMAT_ORC)),
+        Arguments.of(
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(false, false, FILE_FORMAT_ORC)));
+  }
+
+  private void setUpForParam(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper)
+      throws Exception {
+    initFlinkTestBase(catalogTestHelper, tableTestHelper);
+  }
+
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testKeyedTableWriteTypeFromOperateKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeTrue(isKeyedTable());
     MixedTable testKeyedHiveTable = getMixedTable();
     FlinkTaskWriterBuilder builder =
         FlinkTaskWriterBuilder.buildFor(testKeyedHiveTable)
             .withFlinkSchema(FlinkSchemaUtil.convert(testKeyedHiveTable.schema()));
 
-    Assert.assertTrue(
+    Assertions.assertTrue(
         builder.buildWriter(ChangeLocationKind.INSTANT) instanceof FlinkChangeTaskWriter);
-    Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
-    Assert.assertTrue(builder.buildWriter(HiveLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
+    Assertions.assertTrue(
+        builder.buildWriter(BaseLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
+    Assertions.assertTrue(
+        builder.buildWriter(HiveLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
 
-    Assert.assertTrue(
+    Assertions.assertTrue(
         builder.buildWriter(WriteOperationKind.APPEND) instanceof FlinkChangeTaskWriter);
-    Assert.assertTrue(
+    Assertions.assertTrue(
         builder.buildWriter(WriteOperationKind.OVERWRITE) instanceof FlinkBaseTaskWriter);
-    Assert.assertTrue(
+    Assertions.assertTrue(
         builder.buildWriter(WriteOperationKind.MINOR_OPTIMIZE) instanceof FlinkBaseTaskWriter);
-    Assert.assertTrue(
+    Assertions.assertTrue(
         builder.buildWriter(WriteOperationKind.MAJOR_OPTIMIZE) instanceof FlinkBaseTaskWriter);
-    Assert.assertTrue(
+    Assertions.assertTrue(
         builder.buildWriter(WriteOperationKind.FULL_OPTIMIZE) instanceof FlinkBaseTaskWriter);
   }
 
-  @Test
-  public void testUnKeyedTableWriteTypeFromOperateKind() {
-    Assume.assumeFalse(isKeyedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testUnKeyedTableWriteTypeFromOperateKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeFalse(isKeyedTable());
     MixedTable testHiveTable = getMixedTable();
     FlinkTaskWriterBuilder builder =
         FlinkTaskWriterBuilder.buildFor(testHiveTable)
             .withFlinkSchema(FlinkSchemaUtil.convert(testHiveTable.schema()));
 
-    Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
-    Assert.assertTrue(builder.buildWriter(HiveLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
+    Assertions.assertTrue(
+        builder.buildWriter(BaseLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
+    Assertions.assertTrue(
+        builder.buildWriter(HiveLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
 
-    Assert.assertTrue(
+    Assertions.assertTrue(
         builder.buildWriter(WriteOperationKind.APPEND) instanceof FlinkBaseTaskWriter);
-    Assert.assertTrue(
+    Assertions.assertTrue(
         builder.buildWriter(WriteOperationKind.OVERWRITE) instanceof FlinkBaseTaskWriter);
-    Assert.assertTrue(
+    Assertions.assertTrue(
         builder.buildWriter(WriteOperationKind.MAJOR_OPTIMIZE) instanceof FlinkBaseTaskWriter);
-    Assert.assertTrue(
+    Assertions.assertTrue(
         builder.buildWriter(WriteOperationKind.FULL_OPTIMIZE) instanceof FlinkBaseTaskWriter);
   }
 
-  @Test
-  public void testKeyedTableChangeWriteByLocationKind() throws IOException {
-    Assume.assumeTrue(isKeyedTable());
-    Assume.assumeTrue(isPartitionedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testKeyedTableChangeWriteByLocationKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeTrue(isKeyedTable());
+    Assumptions.assumeTrue(isPartitionedTable());
     testWrite(getMixedTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
   }
 
-  @Test
-  public void testKeyedTableBaseWriteByLocationKind() throws IOException {
-    Assume.assumeTrue(isKeyedTable());
-    Assume.assumeTrue(isPartitionedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testKeyedTableBaseWriteByLocationKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeTrue(isKeyedTable());
+    Assumptions.assumeTrue(isPartitionedTable());
     testWrite(getMixedTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
   }
 
-  @Test
-  public void testKeyedTableHiveWriteByLocationKind() throws IOException {
-    Assume.assumeTrue(isKeyedTable());
-    Assume.assumeTrue(isPartitionedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testKeyedTableHiveWriteByLocationKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeTrue(isKeyedTable());
+    Assumptions.assumeTrue(isPartitionedTable());
     testWrite(getMixedTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
   }
 
-  @Test
-  public void testUnPartitionKeyedTableChangeWriteByLocationKind() throws IOException {
-    Assume.assumeTrue(isKeyedTable());
-    Assume.assumeFalse(isPartitionedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testUnPartitionKeyedTableChangeWriteByLocationKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeTrue(isKeyedTable());
+    Assumptions.assumeFalse(isPartitionedTable());
     testWrite(getMixedTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
   }
 
-  @Test
-  public void testUnPartitionKeyedTableBaseWriteByLocationKind() throws IOException {
-    Assume.assumeTrue(isKeyedTable());
-    Assume.assumeFalse(isPartitionedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testUnPartitionKeyedTableBaseWriteByLocationKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeTrue(isKeyedTable());
+    Assumptions.assumeFalse(isPartitionedTable());
     testWrite(getMixedTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
   }
 
-  @Test
-  public void testUnPartitionKeyedTableHiveWriteByLocationKind() throws IOException {
-    Assume.assumeTrue(isKeyedTable());
-    Assume.assumeFalse(isPartitionedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testUnPartitionKeyedTableHiveWriteByLocationKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeTrue(isKeyedTable());
+    Assumptions.assumeFalse(isPartitionedTable());
     testWrite(getMixedTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
   }
 
-  @Test
-  public void testUnKeyedTableChangeWriteByLocationKind() throws IOException {
-    Assume.assumeFalse(isKeyedTable());
-    Assume.assumeTrue(isPartitionedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testUnKeyedTableChangeWriteByLocationKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeFalse(isKeyedTable());
+    Assumptions.assumeTrue(isPartitionedTable());
     try {
       testWrite(getMixedTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
     } catch (Exception e) {
-      Assert.assertTrue(e instanceof IllegalArgumentException);
+      Assertions.assertTrue(e instanceof IllegalArgumentException);
     }
   }
 
-  @Test
-  public void testUnKeyedTableBaseWriteByLocationKind() throws IOException {
-    Assume.assumeFalse(isKeyedTable());
-    Assume.assumeTrue(isPartitionedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testUnKeyedTableBaseWriteByLocationKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeFalse(isKeyedTable());
+    Assumptions.assumeTrue(isPartitionedTable());
     testWrite(getMixedTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
   }
 
-  @Test
-  public void testUnKeyedTableHiveWriteByLocationKind() throws IOException {
-    Assume.assumeFalse(isKeyedTable());
-    Assume.assumeTrue(isPartitionedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testUnKeyedTableHiveWriteByLocationKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeFalse(isKeyedTable());
+    Assumptions.assumeTrue(isPartitionedTable());
     testWrite(getMixedTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
   }
 
-  @Test
-  public void testUnPartitionUnKeyedTableChangeWriteByLocationKind() throws IOException {
-    Assume.assumeFalse(isKeyedTable());
-    Assume.assumeFalse(isPartitionedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testUnPartitionUnKeyedTableChangeWriteByLocationKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeFalse(isKeyedTable());
+    Assumptions.assumeFalse(isPartitionedTable());
     try {
       testWrite(getMixedTable(), ChangeLocationKind.INSTANT, geneRowData(), "change");
     } catch (Exception e) {
-      Assert.assertTrue(e instanceof IllegalArgumentException);
+      Assertions.assertTrue(e instanceof IllegalArgumentException);
     }
   }
 
-  @Test
-  public void testUnPartitionUnKeyedTableBaseWriteByLocationKind() throws IOException {
-    Assume.assumeFalse(isKeyedTable());
-    Assume.assumeFalse(isPartitionedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testUnPartitionUnKeyedTableBaseWriteByLocationKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeFalse(isKeyedTable());
+    Assumptions.assumeFalse(isPartitionedTable());
     testWrite(getMixedTable(), BaseLocationKind.INSTANT, geneRowData(), "base");
   }
 
-  @Test
-  public void testUnPartitionUnKeyedTableHiveWriteByLocationKind() throws IOException {
-    Assume.assumeFalse(isKeyedTable());
-    Assume.assumeFalse(isPartitionedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testUnPartitionUnKeyedTableHiveWriteByLocationKind(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper);
+
+    Assumptions.assumeFalse(isKeyedTable());
+    Assumptions.assumeFalse(isPartitionedTable());
     testWrite(getMixedTable(), HiveLocationKind.INSTANT, geneRowData(), "hive");
   }
 
@@ -266,7 +328,7 @@ public class TestAdaptHiveWriter extends TableTestBase {
     }
     WriteResult complete = changeWrite.complete();
     Arrays.stream(complete.dataFiles())
-        .forEach(s -> Assert.assertTrue(s.path().toString().contains(pathFeature)));
+        .forEach(s -> Assertions.assertTrue(s.path().toString().contains(pathFeature)));
     CloseableIterable<RowData> concat =
         CloseableIterable.concat(
             Arrays.stream(complete.dataFiles())
@@ -285,7 +347,7 @@ public class TestAdaptHiveWriter extends TableTestBase {
                 .collect(Collectors.toList()));
     Set<RowData> result = new HashSet<>();
     Iterators.addAll(result, concat.iterator());
-    Assert.assertEquals(result, records.stream().collect(Collectors.toSet()));
+    Assertions.assertEquals(result, records.stream().collect(Collectors.toSet()));
   }
 
   private CloseableIterable<RowData> readParquet(Schema schema, String path) {

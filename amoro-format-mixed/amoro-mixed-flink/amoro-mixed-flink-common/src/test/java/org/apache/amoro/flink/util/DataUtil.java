@@ -33,7 +33,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -80,16 +80,16 @@ public class DataUtil {
   }
 
   public static void assertEqual(Collection<Object[]> expected, Collection<Object[]> actual) {
-    Assert.assertEquals(
+    Assertions.assertEquals(
         CollectionUtil.isNullOrEmpty(expected), CollectionUtil.isNullOrEmpty(actual));
     if (expected == null) {
       return;
     }
-    Assert.assertEquals(expected.size(), actual.size());
+    Assertions.assertEquals(expected.size(), actual.size());
     for (Iterator<Object[]> i1 = expected.iterator(), i2 = actual.iterator(); i1.hasNext(); ) {
       Object[] actualRow = i2.next();
       System.out.println(ArrayUtils.toString(actualRow));
-      Assert.assertArrayEquals(i1.next(), actualRow);
+      Assertions.assertArrayEquals(i1.next(), actualRow);
     }
   }
 

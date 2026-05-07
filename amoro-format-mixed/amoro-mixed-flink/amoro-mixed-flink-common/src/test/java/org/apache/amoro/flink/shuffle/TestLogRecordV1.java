@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.shuffle;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.log.Bytes;
@@ -35,8 +35,8 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -83,7 +83,7 @@ public class TestLogRecordV1 extends FormatTestBase {
 
     byte[] bytes = logDataJsonSerialization.serialize(logData);
 
-    Assert.assertNotNull(bytes);
+    Assertions.assertNotNull(bytes);
     String actualJson = new String(Bytes.subByte(bytes, 18, bytes.length - 18));
     String expected =
         "{\"f_boolean\":true,\"f_int\":1,\"f_long\":123456789,\"f_list_string\":[null,\"b\",null,\"c\",null]}";
@@ -93,7 +93,7 @@ public class TestLogRecordV1 extends FormatTestBase {
         new LogDataJsonDeserialization<>(
             userSchema, LogRecordV1.factory, LogRecordV1.arrayFactory, LogRecordV1.mapFactory);
     LogData<RowData> result = logDataJsonDeserialization.deserialize(bytes);
-    Assert.assertNotNull(result);
+    Assertions.assertNotNull(result);
     check(logData, result);
   }
 
@@ -118,7 +118,7 @@ public class TestLogRecordV1 extends FormatTestBase {
 
     byte[] bytes = logDataJsonSerialization.serialize(logData);
 
-    Assert.assertNotNull(bytes);
+    Assertions.assertNotNull(bytes);
     String actualJson = new String(Bytes.subByte(bytes, 18, bytes.length - 18));
     String expected =
         "{\"f_boolean\":true,\"f_int\":1,\"f_long\":123456789,\"f_list_string\":[null,null,null]}";
@@ -128,7 +128,7 @@ public class TestLogRecordV1 extends FormatTestBase {
         new LogDataJsonDeserialization<>(
             userSchema, LogRecordV1.factory, LogRecordV1.arrayFactory, LogRecordV1.mapFactory);
     LogData<RowData> result = logDataJsonDeserialization.deserialize(bytes);
-    Assert.assertNotNull(result);
+    Assertions.assertNotNull(result);
     check(logData, result);
   }
 

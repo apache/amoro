@@ -34,39 +34,33 @@ import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.data.Record;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-@RunWith(Parameterized.class)
 public class TestFlinkSink extends FlinkTestBase {
 
-  public TestFlinkSink(boolean isKeyed) {
-    super(
+  private void setUpForParam(boolean isKeyed) throws Exception {
+    initFlinkTestBase(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(isKeyed, false));
   }
 
-  @Parameterized.Parameters(name = "{0}")
-  public static Collection parameters() {
-    return Arrays.asList(new Object[][] {{true}, {false}});
-  }
+  @ParameterizedTest(name = "isKeyed = {0}")
+  @ValueSource(booleans = {true, false})
+  public void testKeyedSink(boolean isKeyed) throws Exception {
+    setUpForParam(isKeyed);
 
-  @Test
-  public void testKeyedSink() throws Exception {
-    Assume.assumeTrue(isKeyedTable());
+    Assumptions.assumeTrue(isKeyedTable());
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     KeyedTable testKeyedTable = getMixedTable().asKeyedTable();
 
@@ -135,12 +129,15 @@ public class TestFlinkSink extends FlinkTestBase {
     List<Record> actual = MixedDataTestHelpers.readKeyedTable(testKeyedTable, null);
 
     Set<Record> expected = toRecords(DataUtil.toRowSet(data));
-    Assert.assertEquals(expected, new HashSet<>(actual));
+    Assertions.assertEquals(expected, new HashSet<>(actual));
   }
 
-  @Test
-  public void testUnkeyedSink() throws Exception {
-    Assume.assumeFalse(isKeyedTable());
+  @ParameterizedTest(name = "isKeyed = {0}")
+  @ValueSource(booleans = {true, false})
+  public void testUnkeyedSink(boolean isKeyed) throws Exception {
+    setUpForParam(isKeyed);
+
+    Assumptions.assumeFalse(isKeyedTable());
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     UnkeyedTable testTable = getMixedTable().asUnkeyedTable();
 
@@ -178,12 +175,15 @@ public class TestFlinkSink extends FlinkTestBase {
     Set<Record> actual = DataUtil.read(testTable);
 
     Set<Record> expected = toRecords(DataUtil.toRowSet(data));
-    Assert.assertEquals(expected, actual);
+    Assertions.assertEquals(expected, actual);
   }
 
-  @Test
-  public void testUnkeyedOverwrite() throws Exception {
-    Assume.assumeFalse(isKeyedTable());
+  @ParameterizedTest(name = "isKeyed = {0}")
+  @ValueSource(booleans = {true, false})
+  public void testUnkeyedOverwrite(boolean isKeyed) throws Exception {
+    setUpForParam(isKeyed);
+
+    Assumptions.assumeFalse(isKeyedTable());
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     UnkeyedTable testTable = getMixedTable().asUnkeyedTable();
 
@@ -241,6 +241,6 @@ public class TestFlinkSink extends FlinkTestBase {
     Set<Record> actual = DataUtil.read(testTable);
 
     Set<Record> expected = toRecords(DataUtil.toRowSet(data));
-    Assert.assertEquals(expected, actual);
+    Assertions.assertEquals(expected, actual);
   }
 }

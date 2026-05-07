@@ -35,10 +35,10 @@ import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.io.TaskWriter;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,7 +57,7 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
         new BasicTableTestHelper(true, false));
   }
 
-  @Before
+  @BeforeEach
   public void setup() throws IOException {
     List<String> dbs = getMixedFormatCatalog().listDatabases();
     if (dbs.isEmpty()) {
@@ -96,7 +96,7 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
         true);
   }
 
-  @After
+  @AfterEach
   public void drop() {
     exec("drop table mixed_catalog.%s.L", db);
     exec("drop table mixed_catalog.%s.DIM_2", db);
@@ -128,7 +128,7 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
       }
     }
 
-    Assert.assertEquals(expected, actual.size());
+    Assertions.assertEquals(expected, actual.size());
     List<Row> rows =
         expects.stream()
             .map(
@@ -137,7 +137,7 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
                         ? Row.ofKind((RowKind) r[0], ArrayUtils.subarray(r, 1, r.length))
                         : Row.of(r))
             .collect(Collectors.toList());
-    Assert.assertEquals(
+    Assertions.assertEquals(
         rows.stream().sorted(Comparator.comparing(Row::toString)).collect(Collectors.toList()),
         actual.stream().sorted(Comparator.comparing(Row::toString)).collect(Collectors.toList()));
   }
@@ -173,7 +173,7 @@ public class TestLookupSecondary extends CatalogITCaseBase implements FlinkTaskW
       boolean upsertEnabled)
       throws IOException {
     MixedTable mixedTable = getMixedFormatCatalog().loadTable(table);
-    Assert.assertNotNull(mixedTable);
+    Assertions.assertNotNull(mixedTable);
     RowType rowType = FlinkSchemaUtil.convert(mixedTable.schema());
     for (RowData rowData : expected) {
       try (TaskWriter<RowData> taskWriter =

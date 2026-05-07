@@ -21,7 +21,7 @@ package org.apache.amoro.flink.read.hidden.kafka;
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
 import static org.apache.amoro.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.amoro.flink.kafka.testutils.KafkaConfigGenerate;
 import org.apache.amoro.flink.kafka.testutils.KafkaContainerTest;
@@ -51,10 +51,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,7 +79,7 @@ public class TestLogKafkaPartitionSplitReader {
   private static Map<Integer, Map<String, KafkaPartitionSplit>> splitsByOwners;
   private static final byte[] JOB_ID = IdGenerator.generateUpstreamId();
 
-  @BeforeClass
+  @BeforeAll
   public static void prepare() throws Exception {
     KAFKA_CONTAINER.start();
 
@@ -89,12 +89,12 @@ public class TestLogKafkaPartitionSplitReader {
     splitsByOwners = getSplitsByOwners(earliestOffsets);
   }
 
-  @AfterClass
+  @AfterAll
   public static void shutdown() throws Exception {
     KAFKA_CONTAINER.close();
   }
 
-  @Before
+  @BeforeEach
   public void initData() throws Exception {
     // |0 1 2 3 4 5 6 7 8 9 Flip 10 11 12 13 14| 15 16 17 18 19
     write(TOPIC1, 0);
@@ -222,9 +222,10 @@ public class TestLogKafkaPartitionSplitReader {
     numConsumedRecords.forEach(
         (splitId, recordCount) -> {
           assertEquals(
-              String.format("%s should have %d records.", splits.get(splitId), expectedRecordCount),
               expectedRecordCount,
-              (long) recordCount);
+              (long) recordCount,
+              String.format(
+                  "%s should have %d records.", splits.get(splitId), expectedRecordCount));
         });
   }
 

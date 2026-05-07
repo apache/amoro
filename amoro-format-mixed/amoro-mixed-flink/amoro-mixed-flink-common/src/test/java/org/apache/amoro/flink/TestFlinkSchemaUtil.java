@@ -21,8 +21,8 @@ package org.apache.amoro.flink;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.iceberg.Schema;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -55,6 +55,6 @@ public class TestFlinkSchemaUtil {
     TableSchema fromIcebergSchema =
         FlinkSchemaUtil.toSchema(icebergSchema, new ArrayList<>(), extraOptions);
 
-    Assert.assertEquals(flinkSchema, fromIcebergSchema);
+    Assertions.assertEquals(flinkSchema, fromIcebergSchema);
   }
 }

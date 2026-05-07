@@ -44,9 +44,9 @@ import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.io.TaskWriter;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -79,7 +79,7 @@ public class TestMixedFormatSourceEnumerator extends FlinkTestBase {
   protected static final LocalDateTime LDT =
       LocalDateTime.of(LocalDate.of(2022, 1, 1), LocalTime.of(0, 0, 0, 0));
 
-  @Before
+  @BeforeEach
   public void init() throws IOException {
     testKeyedTable = getMixedTable().asKeyedTable();
     // write change insert
@@ -152,7 +152,7 @@ public class TestMixedFormatSourceEnumerator extends FlinkTestBase {
 
     Collection<MixedFormatSplitState> pendingSplitsEmpty =
         enumerator.snapshotState(1).pendingSplits();
-    Assert.assertEquals(splitCount, pendingSplitsEmpty.size());
+    Assertions.assertEquals(splitCount, pendingSplitsEmpty.size());
 
     // register readers, and let them request a split
     // 4 split, 5 subtask, one or more subtask will fetch empty split
@@ -177,13 +177,13 @@ public class TestMixedFormatSourceEnumerator extends FlinkTestBase {
     enumerator.addReader(4);
     enumerator.handleSourceEvent(4, new SplitRequestEvent());
 
-    Assert.assertEquals(parallelism - splitCount, enumerator.getReadersAwaitingSplit().size());
-    Assert.assertTrue(enumerator.snapshotState(2).pendingSplits().isEmpty());
+    Assertions.assertEquals(parallelism - splitCount, enumerator.getReadersAwaitingSplit().size());
+    Assertions.assertTrue(enumerator.snapshotState(2).pendingSplits().isEmpty());
   }
 
   private void assertSnapshot(ShuffleSplitAssigner assigner, int splitCount) {
     Collection<MixedFormatSplitState> stateBeforeGet = assigner.state();
-    Assert.assertEquals(splitCount, stateBeforeGet.size());
+    Assertions.assertEquals(splitCount, stateBeforeGet.size());
   }
 
   private ShuffleSplitAssigner instanceSplitAssigner(

@@ -34,44 +34,49 @@ import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
 import org.apache.flink.table.catalog.ObjectPath;
-import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 import org.apache.flink.types.Row;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
-@RunWith(value = Parameterized.class)
 public class FlinkUnifiedCatalogITCase extends CatalogITCaseBase {
   static final TestHMS TEST_HMS = new TestHMS();
   AbstractCatalog flinkCatalog;
   TableIdentifier identifier;
 
-  public FlinkUnifiedCatalogITCase(CatalogTestHelper catalogTestHelper) {
-    super(catalogTestHelper, new BasicTableTestHelper(true, false));
+  static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf())),
+        Arguments.of(new HiveCatalogTestHelper(TableFormat.MIXED_ICEBERG, TEST_HMS.getHiveConf())),
+        Arguments.of(new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())));
   }
 
-  @Parameterized.Parameters(name = "catalogTestHelper = {0}")
-  public static Object[][] parameters() {
-    return new Object[][] {
-      {new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf())},
-      {new HiveCatalogTestHelper(TableFormat.MIXED_ICEBERG, TEST_HMS.getHiveConf())},
-      {new HiveCatalogTestHelper(TableFormat.ICEBERG, TEST_HMS.getHiveConf())}
-    };
-  }
-
-  @BeforeClass
-  public static void beforeAll() throws Exception {
+  @BeforeAll
+  public static void startTestHms() throws Exception {
     TEST_HMS.before();
   }
 
-  @Before
-  public void setup() throws Exception {
+  @AfterAll
+  public static void stopTestHms() {
+    TEST_HMS.after();
+  }
+
+  @AfterEach
+  public void teardown() {
+    if (flinkCatalog != null) {
+      flinkCatalog.close();
+    }
+  }
+
+  private void setUpForParam(CatalogTestHelper catalogTestHelper) throws Exception {
+    initCatalogITCase(catalogTestHelper, new BasicTableTestHelper(true, false));
     String catalog = "unified_catalog";
     exec("CREATE CATALOG %s WITH ('type'='unified', 'ams.uri'='%s')", catalog, getCatalogUri());
     exec("USE CATALOG %s", catalog);
@@ -83,16 +88,10 @@ public class FlinkUnifiedCatalogITCase extends CatalogITCaseBase {
     identifier = tableTestHelper().id();
   }
 
-  @After
-  public void teardown() {
-    TEST_HMS.after();
-    if (flinkCatalog != null) {
-      flinkCatalog.close();
-    }
-  }
-
-  @Test
-  public void testTableExists() throws TableNotExistException {
+  @ParameterizedTest(name = "catalogTestHelper = {0}")
+  @MethodSource("parameters")
+  public void testTableExists(CatalogTestHelper catalogTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper);
     CatalogBaseTable catalogBaseTable =
         flinkCatalog.getTable(new ObjectPath(identifier.getDatabase(), identifier.getTableName()));
     assertNotNull(catalogBaseTable);
@@ -101,8 +100,10 @@ public class FlinkUnifiedCatalogITCase extends CatalogITCaseBase {
         catalogBaseTable.getUnresolvedSchema().getColumns().size());
   }
 
-  @Test
-  public void testInsertAndQuery() throws Exception {
+  @ParameterizedTest(name = "catalogTestHelper = {0}")
+  @MethodSource("parameters")
+  public void testInsertAndQuery(CatalogTestHelper catalogTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper);
     exec(
         "INSERT INTO %s SELECT 1, 'Lily', 1234567890, TO_TIMESTAMP('2020-01-01 01:02:03')",
         identifier.getTableName());
@@ -116,8 +117,10 @@ public class FlinkUnifiedCatalogITCase extends CatalogITCaseBase {
         Row.of(1, "Lily", 1234567890L, "2020-01-01T01:02:03").toString(), actualRow.toString());
   }
 
-  @Test
-  public void testSwitchCurrentCatalog() {
+  @ParameterizedTest(name = "catalogTestHelper = {0}")
+  @MethodSource("parameters")
+  public void testSwitchCurrentCatalog(CatalogTestHelper catalogTestHelper) throws Exception {
+    setUpForParam(catalogTestHelper);
     String memCatalog = "mem_catalog";
     exec("create catalog %s with('type'='generic_in_memory')", memCatalog);
     exec(

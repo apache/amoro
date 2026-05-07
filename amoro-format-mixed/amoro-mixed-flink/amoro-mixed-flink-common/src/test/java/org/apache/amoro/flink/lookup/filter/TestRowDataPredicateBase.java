@@ -36,7 +36,7 @@ import org.apache.flink.table.planner.delegation.PlannerBase;
 import org.apache.flink.table.planner.expressions.RexNodeExpression;
 import org.apache.flink.table.planner.plan.utils.RexNodeToExpressionConverter;
 import org.apache.flink.table.types.logical.RowType;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +47,7 @@ public abstract class TestRowDataPredicateBase {
   public static StreamExecutionEnvironment env;
   public static TableEnvironment tEnv;
 
-  @Before
+  @BeforeEach
   public void init() {
     env = StreamExecutionEnvironment.getExecutionEnvironment();
     tEnv = StreamTableEnvironment.create(env);

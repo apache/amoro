@@ -47,8 +47,8 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -145,7 +145,7 @@ public class TestFlinkSource extends FlinkTestBase {
                 GenericRowData.of(
                     o.getInt(0), o.getString(1), o.getLong(2), o.getTimestamp(3, 6))));
 
-    Assert.assertEquals(new HashSet<>(expectedRecords), rowData);
+    Assertions.assertEquals(new HashSet<>(expectedRecords), rowData);
   }
 
   @Test
@@ -198,7 +198,7 @@ public class TestFlinkSource extends FlinkTestBase {
     }
     jobClient.cancel();
 
-    Assert.assertEquals(new HashSet<>(expectedRecords), rowData);
+    Assertions.assertEquals(new HashSet<>(expectedRecords), rowData);
   }
 
   @Test
@@ -272,7 +272,7 @@ public class TestFlinkSource extends FlinkTestBase {
     }
     jobClient.cancel();
 
-    Assert.assertEquals(new HashSet<>(expectedRecords), rowData);
+    Assertions.assertEquals(new HashSet<>(expectedRecords), rowData);
 
     CloseableIterator<RowData> resultIterator =
         FlinkSource.forRowData()
@@ -299,6 +299,6 @@ public class TestFlinkSource extends FlinkTestBase {
                     o.getInt(0), o.getString(1), o.getLong(2), o.getTimestamp(3, 6))));
 
     expectedRecords = DataUtil.toRowData(s1);
-    Assert.assertEquals(new HashSet<>(expectedRecords), rowData);
+    Assertions.assertEquals(new HashSet<>(expectedRecords), rowData);
   }
 }

@@ -56,9 +56,9 @@ import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Snapshot;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +90,7 @@ public class MixedFormatFileWriterITCase extends FlinkTestBase {
         new BasicTableTestHelper(true, true));
   }
 
-  @Before
+  @BeforeEach
   public void setup() {
     this.latchId = UUID.randomUUID().toString();
     // We wait for two successful checkpoints in sources before shutting down. This ensures that
@@ -293,7 +293,7 @@ public class MixedFormatFileWriterITCase extends FlinkTestBase {
       long maxTxIdInSnapshot = -1;
       for (DataFile addedFile : snapshot.addedDataFiles(keyedTable.io())) {
         String path = addedFile.path().toString();
-        Assert.assertFalse(paths.contains(path));
+        Assertions.assertFalse(paths.contains(path));
         paths.add(path);
         LOG.info("add file: {}", addedFile.path());
 
@@ -301,11 +301,11 @@ public class MixedFormatFileWriterITCase extends FlinkTestBase {
         minTxIdInSnapshot = Math.min(minTxIdInSnapshot, txId);
         maxTxIdInSnapshot = Math.max(maxTxIdInSnapshot, txId);
       }
-      Assert.assertTrue(maxTxId <= minTxIdInSnapshot);
+      Assertions.assertTrue(maxTxId <= minTxIdInSnapshot);
 
       maxTxId = maxTxIdInSnapshot;
     }
 
-    Assert.assertEquals(exceptedSize, TestMixedFormatSource.tableRecords(keyedTable).size());
+    Assertions.assertEquals(exceptedSize, TestMixedFormatSource.tableRecords(keyedTable).size());
   }
 }

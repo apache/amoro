@@ -41,7 +41,7 @@ import org.apache.iceberg.flink.source.FlinkSource;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.TypeUtil;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
     RowType rowType = (RowType) flinkTableSchema.toRowDataType().getLogicalType();
 
     try (TaskWriter<RowData> taskWriter = createTaskWriter(mixedTable, rowType)) {
-      Assert.assertNotNull(taskWriter);
+      Assertions.assertNotNull(taskWriter);
 
       writeAndCommit(expected, taskWriter, mixedTable);
 
@@ -96,8 +96,8 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
               selectedSchema,
               flinkTableSchema);
     }
-    Assert.assertEquals(1, records.size());
-    Assert.assertEquals(expected, records.get(0));
+    Assertions.assertEquals(1, records.size());
+    Assertions.assertEquals(expected, records.get(0));
   }
 
   /** For asserting unkeyed table records. */
@@ -121,7 +121,7 @@ public interface FlinkTaskWriterBaseTest extends FlinkTableTestBase {
     WriteResult writerResult = taskWriter.complete();
     boolean writeToBase = mixedTable.isUnkeyedTable();
     commit(mixedTable, writerResult, writeToBase);
-    Assert.assertEquals(upsertEnabled ? 2 : 1, writerResult.dataFiles().length);
+    Assertions.assertEquals(upsertEnabled ? 2 : 1, writerResult.dataFiles().length);
   }
 
   default boolean upsertEnabled() {

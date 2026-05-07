@@ -31,8 +31,8 @@ import org.apache.flink.api.connector.source.SplitsAssignment;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.groups.SplitEnumeratorMetricGroup;
 import org.apache.flink.table.data.RowData;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +67,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
       }
     }
 
-    Assert.assertEquals(splitList.size(), actual.size());
+    Assertions.assertEquals(splitList.size(), actual.size());
   }
 
   @Test
@@ -90,7 +90,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
       }
     }
 
-    Assert.assertEquals(splitList.size(), actual.size());
+    Assertions.assertEquals(splitList.size(), actual.size());
   }
 
   @Test
@@ -156,7 +156,7 @@ public class TestShuffleSplitAssigner extends TestRowDataReaderFunction {
             .map(treeNode -> new long[] {treeNode.mask(), treeNode.index()})
             .toArray(value -> new long[actualNodes.size()][]);
 
-    Assert.assertArrayEquals(expectNodes, result);
+    Assertions.assertArrayEquals(expectNodes, result);
   }
 
   @Test

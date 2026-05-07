@@ -408,6 +408,17 @@
             <version>${assertj.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!--
+          AmoroRunListener (registered via META-INF/services/org.junit.platform.launcher.TestExecutionListener)
+          requires the JUnit Platform launcher API at compile time. Surefire pulls it in transitively at
+          runtime, but it is not part of junit-jupiter, so we declare it explicitly.
+        -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -416,12 +427,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <properties>
-                        <property>
-                            <name>listener</name>
-                            <value>org.apache.amoro.listener.AmoroRunListener</value>
-                        </property>
-                    </properties>
                     <argLine>-verbose:class</argLine>
                 </configuration>
             </plugin>

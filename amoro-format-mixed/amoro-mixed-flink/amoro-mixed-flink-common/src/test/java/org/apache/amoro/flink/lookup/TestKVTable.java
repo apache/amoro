@@ -20,7 +20,7 @@ package org.apache.amoro.flink.lookup;
 
 import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.LOOKUP_CACHE_TTL_AFTER_WRITE;
 import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.ROCKSDB_WRITING_THREADS;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.amoro.flink.lookup.filter.RowDataPredicate;
 import org.apache.amoro.flink.lookup.filter.RowDataPredicateExpressionVisitor;
@@ -50,14 +50,10 @@ import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.types.Types;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,16 +71,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-@RunWith(value = Parameterized.class)
 public class TestKVTable extends TestRowDataPredicateBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestKVTable.class);
-  @Rule public TemporaryFolder temp = new TemporaryFolder();
-  @Rule public TestName name = new TestName();
+  @TempDir public java.nio.file.Path temp;
+
   private final Configuration config = new Configuration();
   private final List<String> primaryKeys = Lists.newArrayList("id", "grade");
   private final List<String> primaryKeysDisorder = Lists.newArrayList("grade", "num", "id");
 
-  private final boolean guavaCacheEnabled;
+  private boolean guavaCacheEnabled;
 
   private final Schema mixedTableSchema =
       new Schema(
@@ -94,25 +89,19 @@ public class TestKVTable extends TestRowDataPredicateBase {
 
   private String dbPath;
 
-  @Parameterized.Parameters(name = "guavaCacheEnabled = {0}")
-  public static Object[][] parameters() {
-    return new Object[][] {{true}, {false}};
-  }
-
-  public TestKVTable(boolean guavaCacheEnabled) {
+  private void setUpForParam(boolean guavaCacheEnabled) throws IOException {
     this.guavaCacheEnabled = guavaCacheEnabled;
-  }
-
-  @Before
-  public void before() throws IOException {
-    dbPath = temp.newFolder().getPath();
+    dbPath = java.nio.file.Files.createTempDirectory(temp, "kv-table").toFile().getPath();
     if (!guavaCacheEnabled) {
       config.set(MixedFormatValidator.LOOKUP_CACHE_MAX_ROWS, 0L);
     }
   }
 
-  @Test
-  public void testRowDataSerializer() throws IOException {
+  @ParameterizedTest(name = "guavaCacheEnabled = {0}")
+  @ValueSource(booleans = {true, false})
+  public void testRowDataSerializer(boolean guavaCacheEnabled) throws IOException {
+    setUpForParam(guavaCacheEnabled);
+
     BinaryRowDataSerializer binaryRowDataSerializer = new BinaryRowDataSerializer(3);
 
     GenericRowData genericRowData = (GenericRowData) row(1, "2", 3);
@@ -126,10 +115,10 @@ public class TestKVTable extends TestRowDataPredicateBase {
 
     BinaryRowData desRowData =
         binaryRowDataSerializer.deserialize(new DataInputDeserializer(view.getCopyOfBuffer()));
-    Assert.assertNotNull(desRowData);
-    Assert.assertEquals(record.getInt(0), desRowData.getInt(0));
-    Assert.assertEquals(record.getInt(1), desRowData.getInt(1));
-    Assert.assertEquals(record.getInt(2), desRowData.getInt(2));
+    Assertions.assertNotNull(desRowData);
+    Assertions.assertEquals(record.getInt(0), desRowData.getInt(0));
+    Assertions.assertEquals(record.getInt(1), desRowData.getInt(1));
+    Assertions.assertEquals(record.getInt(2), desRowData.getInt(2));
 
     // test join key rowData
     binaryRowDataSerializer = new BinaryRowDataSerializer(2);
@@ -149,11 +138,14 @@ public class TestKVTable extends TestRowDataPredicateBase {
     view.clear();
     binaryRowDataSerializer.serialize(binaryRowData1, view);
     byte[] rowBytes1 = view.getCopyOfBuffer();
-    Assert.assertArrayEquals(rowBytes1, rowBytes);
+    Assertions.assertArrayEquals(rowBytes1, rowBytes);
   }
 
-  @Test
-  public void testInitialUniqueKeyTable() throws IOException {
+  @ParameterizedTest(name = "guavaCacheEnabled = {0}")
+  @ValueSource(booleans = {true, false})
+  public void testInitialUniqueKeyTable(boolean guavaCacheEnabled) throws IOException {
+    setUpForParam(guavaCacheEnabled);
+
     config.setInteger(ROCKSDB_WRITING_THREADS, 5);
     List<String> joinKeys = Lists.newArrayList("id", "grade");
     try (UniqueIndexTable uniqueIndexTable = (UniqueIndexTable) createTable(joinKeys)) {
@@ -212,8 +204,11 @@ public class TestKVTable extends TestRowDataPredicateBase {
     }
   }
 
-  @Test
-  public void testSecondaryKeysMapping() throws IOException {
+  @ParameterizedTest(name = "guavaCacheEnabled = {0}")
+  @ValueSource(booleans = {true, false})
+  public void testSecondaryKeysMapping(boolean guavaCacheEnabled) throws IOException {
+    setUpForParam(guavaCacheEnabled);
+
     // primary keys are id and grade.
     List<String> joinKeys = Lists.newArrayList("grade", "id");
     try (SecondaryIndexTable secondaryIndexTable =
@@ -252,8 +247,11 @@ public class TestKVTable extends TestRowDataPredicateBase {
     }
   }
 
-  @Test
-  public void testInitialSecondaryKeyTable() throws IOException {
+  @ParameterizedTest(name = "guavaCacheEnabled = {0}")
+  @ValueSource(booleans = {true, false})
+  public void testInitialSecondaryKeyTable(boolean guavaCacheEnabled) throws IOException {
+    setUpForParam(guavaCacheEnabled);
+
     config.setInteger(ROCKSDB_WRITING_THREADS, 10);
     config.set(LOOKUP_CACHE_TTL_AFTER_WRITE, Duration.ofMinutes(1000));
     // primary keys are id and grade.
@@ -303,8 +301,11 @@ public class TestKVTable extends TestRowDataPredicateBase {
     assertTableSet(secondaryIndexTable, row(3), row(3, "3", 5), row(3, "4", 4));
   }
 
-  @Test
-  public void testCacheExpired() throws InterruptedException {
+  @ParameterizedTest(name = "guavaCacheEnabled = {0}")
+  @ValueSource(booleans = {true, false})
+  public void testCacheExpired(boolean guavaCacheEnabled) throws Exception {
+    setUpForParam(guavaCacheEnabled);
+
     Cache<Integer, Integer> cache =
         CacheBuilder.newBuilder().expireAfterWrite(Duration.ofSeconds(1)).build();
     cache.put(1, 1);
@@ -318,21 +319,24 @@ public class TestKVTable extends TestRowDataPredicateBase {
               }
               return v;
             });
-    Assert.assertEquals(Integer.valueOf(1), cache.getIfPresent(1));
-    Assert.assertEquals(Integer.valueOf(2), cache.getIfPresent(2));
+    Assertions.assertEquals(Integer.valueOf(1), cache.getIfPresent(1));
+    Assertions.assertEquals(Integer.valueOf(2), cache.getIfPresent(2));
     Thread.sleep(1001);
-    Assert.assertEquals(2, cache.size());
-    Assert.assertNull(cache.getIfPresent(1));
-    Assert.assertNull(cache.getIfPresent(2));
+    Assertions.assertEquals(2, cache.size());
+    Assertions.assertNull(cache.getIfPresent(1));
+    Assertions.assertNull(cache.getIfPresent(2));
     cache.cleanUp();
     cache.put(3, 3);
-    Assert.assertEquals(1, cache.size());
-    Assert.assertNull(cache.getIfPresent(1));
-    Assert.assertEquals(Integer.valueOf(3), cache.getIfPresent(3));
+    Assertions.assertEquals(1, cache.size());
+    Assertions.assertNull(cache.getIfPresent(1));
+    Assertions.assertEquals(Integer.valueOf(3), cache.getIfPresent(3));
   }
 
-  @Test
-  public void testPredicate() throws IOException {
+  @ParameterizedTest(name = "guavaCacheEnabled = {0}")
+  @ValueSource(booleans = {true, false})
+  public void testPredicate(boolean guavaCacheEnabled) throws IOException {
+    setUpForParam(guavaCacheEnabled);
+
     String filter = "id >= 2 and num < 5 and num > 2";
     Optional<RowDataPredicate> rowDataPredicate = generatePredicate(filter);
 
@@ -388,8 +392,11 @@ public class TestKVTable extends TestRowDataPredicateBase {
         row(4, "4", 4));
   }
 
-  @Test
-  public void testSecondaryIndexPredicate() throws IOException {
+  @ParameterizedTest(name = "guavaCacheEnabled = {0}")
+  @ValueSource(booleans = {true, false})
+  public void testSecondaryIndexPredicate(boolean guavaCacheEnabled) throws IOException {
+    setUpForParam(guavaCacheEnabled);
+
     String filter = "id >= 2 and num < 5 and num > 2";
     Optional<RowDataPredicate> rowDataPredicate = generatePredicate(filter);
 
@@ -500,12 +507,12 @@ public class TestKVTable extends TestRowDataPredicateBase {
       RowData key = rows[i], expected = rows[i + 1];
 
       List<RowData> values = table.get(key);
-      Assert.assertNotNull(values);
+      Assertions.assertNotNull(values);
       if (expected == null) {
-        Assert.assertEquals(0, values.size());
+        Assertions.assertEquals(0, values.size());
         continue;
       }
-      Assert.assertEquals(expected.toString(), 1, values.size());
+      Assertions.assertEquals(1, values.size(), expected.toString());
       RowData actual = values.get(0);
       assertRecord(expected, actual);
     }
@@ -515,10 +522,10 @@ public class TestKVTable extends TestRowDataPredicateBase {
       throws IOException {
     List<RowData> values = table.get(key);
     if (expects == null) {
-      Assert.assertEquals(0, values.size());
+      Assertions.assertEquals(0, values.size());
       return;
     }
-    Assert.assertEquals(expects.length, values.size());
+    Assertions.assertEquals(expects.length, values.size());
     values = values.stream().sorted(compare()).collect(Collectors.toList());
     List<RowData> expectsAfterSort =
         Arrays.stream(expects).sorted(compare()).collect(Collectors.toList());
@@ -546,16 +553,16 @@ public class TestKVTable extends TestRowDataPredicateBase {
       switch (j) {
         case 0:
         case 2:
-          Assert.assertEquals(
-              String.format("expected:%s, actual:%s.", expected.toString(), actual),
+          Assertions.assertEquals(
               expected.getInt(j),
-              binaryRowData.getInt(j));
+              binaryRowData.getInt(j),
+              String.format("expected:%s, actual:%s.", expected.toString(), actual));
           break;
         case 1:
-          Assert.assertEquals(
-              String.format("expected:%s, actual:%s.", expected, actual),
+          Assertions.assertEquals(
               expected.getString(j),
-              binaryRowData.getString(j));
+              binaryRowData.getString(j),
+              String.format("expected:%s, actual:%s.", expected, actual));
           break;
       }
     }

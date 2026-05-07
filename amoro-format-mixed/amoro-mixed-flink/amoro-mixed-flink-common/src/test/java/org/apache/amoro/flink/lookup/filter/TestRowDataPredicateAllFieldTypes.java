@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.lookup.filter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.amoro.flink.util.DateTimeUtils;
 import org.apache.flink.table.api.DataTypes;
@@ -33,8 +33,8 @@ import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.expressions.ResolvedExpression;
 import org.apache.flink.table.types.DataType;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -53,7 +53,7 @@ public class TestRowDataPredicateAllFieldTypes extends TestRowDataPredicateBase 
   List<Column> columns = new ArrayList<>();
   protected ResolvedSchema schema;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     columns.add(0, Column.physical("f0", DataTypes.INT()));
     columns.add(1, Column.physical("f1", DataTypes.STRING()));

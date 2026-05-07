@@ -30,8 +30,8 @@ import org.apache.amoro.flink.table.MixedFormatTableLoader;
 import org.apache.amoro.table.MixedTable;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.iceberg.UpdateProperties;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
@@ -56,15 +56,17 @@ public class TestAutomaticDoubleWriteStatus extends FlinkTestBase {
         new AutomaticDoubleWriteStatus(tableLoader, Duration.ofSeconds(10));
     status.open();
 
-    Assert.assertFalse(status.isDoubleWrite());
+    Assertions.assertFalse(status.isDoubleWrite());
     status.processWatermark(new Watermark(System.currentTimeMillis() - 11 * 1000));
-    Assert.assertFalse(status.isDoubleWrite());
-    Assert.assertFalse(Boolean.parseBoolean(mixedTable.properties().get(LOG_STORE_CATCH_UP.key())));
+    Assertions.assertFalse(status.isDoubleWrite());
+    Assertions.assertFalse(
+        Boolean.parseBoolean(mixedTable.properties().get(LOG_STORE_CATCH_UP.key())));
     status.processWatermark(new Watermark(System.currentTimeMillis() - 9 * 1000));
-    Assert.assertTrue(status.isDoubleWrite());
-    Assert.assertTrue(status.isDoubleWrite());
+    Assertions.assertTrue(status.isDoubleWrite());
+    Assertions.assertTrue(status.isDoubleWrite());
 
     mixedTable.refresh();
-    Assert.assertTrue(Boolean.parseBoolean(mixedTable.properties().get(LOG_STORE_CATCH_UP.key())));
+    Assertions.assertTrue(
+        Boolean.parseBoolean(mixedTable.properties().get(LOG_STORE_CATCH_UP.key())));
   }
 }

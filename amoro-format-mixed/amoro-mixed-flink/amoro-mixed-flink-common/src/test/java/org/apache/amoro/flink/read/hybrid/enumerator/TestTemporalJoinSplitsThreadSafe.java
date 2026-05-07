@@ -20,8 +20,8 @@ package org.apache.amoro.flink.read.hybrid.enumerator;
 
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.TemporalJoinSplits;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,7 +72,7 @@ public class TestTemporalJoinSplitsThreadSafe {
     CompletableFuture<Void> f4 =
         CompletableFuture.runAsync(() -> temporalJoinSplits.addSplitsBack(as2));
     CompletableFuture.allOf(f1, f2, f3, f4).join();
-    Assert.assertTrue(temporalJoinSplits.removeAndReturnIfAllFinished(allSplit));
+    Assertions.assertTrue(temporalJoinSplits.removeAndReturnIfAllFinished(allSplit));
   }
 
   static class TestMixedFormatSplit extends MixedFormatSplit {

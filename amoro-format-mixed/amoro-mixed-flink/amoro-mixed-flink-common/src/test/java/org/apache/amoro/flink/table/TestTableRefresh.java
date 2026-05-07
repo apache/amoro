@@ -32,41 +32,44 @@ import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.table.MixedTable;
 import org.apache.iceberg.UpdateProperties;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Map;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestTableRefresh extends FlinkTestBase {
-  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
+  static final TestHMS TEST_HMS = new TestHMS();
 
-  public TestTableRefresh(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
-    super(catalogTestHelper, tableTestHelper);
-  }
-
-  @Parameterized.Parameters(name = "{0}, {1}")
-  public static Collection parameters() {
-    return Arrays.asList(
-        new Object[][] {
-          {
+  static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(
             new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-            new HiveTableTestHelper(true, true)
-          },
-          {
+            new HiveTableTestHelper(true, true)),
+        Arguments.of(
             new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-            new BasicTableTestHelper(true, true)
-          }
-        });
+            new BasicTableTestHelper(true, true)));
   }
 
-  @Test
-  public void testRefresh() {
+  @BeforeAll
+  public static void startTestHms() throws Exception {
+    TEST_HMS.before();
+  }
+
+  @AfterAll
+  public static void stopTestHms() {
+    TEST_HMS.after();
+  }
+
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testRefresh(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper)
+      throws Exception {
+    initFlinkTestBase(catalogTestHelper, tableTestHelper);
     MixedFormatTableLoader tableLoader =
         MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
 
@@ -82,7 +85,7 @@ public class TestTableRefresh extends FlinkTestBase {
 
     mixedTable.refresh();
     Map<String, String> properties = mixedTable.properties();
-    Assert.assertEquals(String.valueOf(catchUp), properties.get(LOG_STORE_CATCH_UP.key()));
-    Assert.assertEquals(catchUpTs, properties.get(LOG_STORE_CATCH_UP_TIMESTAMP.key()));
+    Assertions.assertEquals(String.valueOf(catchUp), properties.get(LOG_STORE_CATCH_UP.key()));
+    Assertions.assertEquals(catchUpTs, properties.get(LOG_STORE_CATCH_UP_TIMESTAMP.key()));
   }
 }

@@ -23,7 +23,7 @@ import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.getPrope
 import static org.apache.amoro.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
 import static org.apache.amoro.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
 import static org.apache.amoro.flink.table.descriptors.MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.amoro.flink.kafka.testutils.KafkaContainerTest;
 import org.apache.amoro.flink.read.source.log.kafka.LogKafkaPartitionSplit;
@@ -51,12 +51,11 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,23 +76,21 @@ public class TestKafkaSourceReader {
   private static final int NUM_RECORDS_PER_SPLIT = 10;
   private static final int TOTAL_NUM_RECORDS = NUM_RECORDS_PER_SPLIT * NUM_SPLITS;
 
-  @Rule public TestName testName = new TestName();
-
   private static final byte[] JOB_ID = IdGenerator.generateUpstreamId();
 
-  @BeforeClass
+  @BeforeAll
   public static void prepare() throws Exception {
     KAFKA_CONTAINER.start();
   }
 
-  @AfterClass
+  @AfterAll
   public static void shutdown() throws Exception {
     KAFKA_CONTAINER.close();
   }
 
-  @Before
-  public void initData() throws Exception {
-    topic = TestUtil.getUtMethodName(testName);
+  @BeforeEach
+  public void initData(TestInfo testInfo) throws Exception {
+    topic = TestUtil.getUtMethodName(testInfo);
     KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, 1, topic);
     write(topic, TOTAL_NUM_RECORDS);
   }
@@ -233,16 +230,16 @@ public class TestKafkaSourceReader {
 
     public void validate() {
       assertEquals(
-          String.format("Should be %d distinct elements in total", TOTAL_NUM_RECORDS),
           TOTAL_NUM_RECORDS,
-          consumedValues.size());
+          consumedValues.size(),
+          String.format("Should be %d distinct elements in total", TOTAL_NUM_RECORDS));
       assertEquals(
-          String.format("Should be %d elements in total", TOTAL_NUM_RECORDS),
           TOTAL_NUM_RECORDS,
-          count);
-      assertEquals("The min value should be 0", 0, min);
+          count,
+          String.format("Should be %d elements in total", TOTAL_NUM_RECORDS));
+      assertEquals(0, min, "The min value should be 0");
       assertEquals(
-          "The max value should be " + (TOTAL_NUM_RECORDS - 1), TOTAL_NUM_RECORDS - 1, max);
+          TOTAL_NUM_RECORDS - 1, max, "The max value should be " + (TOTAL_NUM_RECORDS - 1));
     }
 
     public int count() {

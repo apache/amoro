@@ -25,7 +25,7 @@ import static org.apache.amoro.shade.guava32.com.google.common.base.Precondition
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.flink.kafka.testutils.KafkaConfigGenerate;
@@ -44,10 +44,10 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.InstantiationUtil;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,12 +59,12 @@ import java.util.UUID;
 public class TestHiddenKafkaProducer extends TestBaseLog {
   private static final Logger LOG = LoggerFactory.getLogger(TestHiddenKafkaProducer.class);
 
-  @BeforeClass
+  @BeforeAll
   public static void prepare() throws Exception {
     KAFKA_CONTAINER.start();
   }
 
-  @AfterClass
+  @AfterAll
   public static void shutdown() throws Exception {
     KAFKA_CONTAINER.close();
   }
@@ -170,7 +170,7 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
 
     byte[] bytes = logDataJsonSerialization.serialize(logData);
 
-    Assert.assertNotNull(bytes);
+    Assertions.assertNotNull(bytes);
     String actualJson = new String(Bytes.subByte(bytes, 18, bytes.length - 18));
 
     String expected =
@@ -179,7 +179,7 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
 
     LogDataJsonDeserialization<RowData> logDataDeserialization = createLogDataDeserialization();
     LogData<RowData> result = logDataDeserialization.deserialize(bytes);
-    Assert.assertNotNull(result);
+    Assertions.assertNotNull(result);
   }
 
   @Test
@@ -190,6 +190,6 @@ public class TestHiddenKafkaProducer extends TestBaseLog {
     byte[] bytes = InstantiationUtil.serializeObject(actual);
     LogDataJsonSerialization<RowData> result =
         InstantiationUtil.deserializeObject(bytes, actual.getClass().getClassLoader());
-    Assert.assertNotNull(result);
+    Assertions.assertNotNull(result);
   }
 }

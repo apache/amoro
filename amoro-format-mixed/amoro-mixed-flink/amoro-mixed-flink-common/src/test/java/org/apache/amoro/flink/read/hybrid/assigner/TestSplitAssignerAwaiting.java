@@ -21,8 +21,8 @@ package org.apache.amoro.flink.read.hybrid.assigner;
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplitState;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.List;
@@ -36,8 +36,8 @@ public class TestSplitAssignerAwaiting extends TestShuffleSplitAssigner {
   public void testEmpty() {
     ShuffleSplitAssigner splitAssigner = instanceSplitAssigner(1);
     Split split = splitAssigner.getNext(0);
-    Assert.assertNotNull(split);
-    Assert.assertEquals(Split.Status.UNAVAILABLE, split.status());
+    Assertions.assertNotNull(split);
+    Assertions.assertEquals(Split.Status.UNAVAILABLE, split.status());
   }
 
   @Test
@@ -91,11 +91,11 @@ public class TestSplitAssignerAwaiting extends TestShuffleSplitAssigner {
     // calling isAvailable again should return the same object reference
     // note that thenAccept will return a new future.
     // we want to assert the same instance on the assigner returned future
-    Assert.assertSame(future, assigner.isAvailable());
+    Assertions.assertSame(future, assigner.isAvailable());
 
     // now add some splits
     addSplitsRunnable.run();
-    Assert.assertTrue(futureCompleted.get());
+    Assertions.assertTrue(futureCompleted.get());
 
     for (int i = 0; i < 1; ++i) {
       assertGetNext(assigner, Split.Status.AVAILABLE);
@@ -106,21 +106,21 @@ public class TestSplitAssignerAwaiting extends TestShuffleSplitAssigner {
 
   private void assertGetNext(ShuffleSplitAssigner assigner, Split.Status expectedStatus) {
     Split result = assigner.getNext(0);
-    Assert.assertEquals(expectedStatus, result.status());
+    Assertions.assertEquals(expectedStatus, result.status());
     switch (expectedStatus) {
       case AVAILABLE:
-        Assert.assertNotNull(result.split());
+        Assertions.assertNotNull(result.split());
         break;
       case UNAVAILABLE:
-        Assert.assertNull(result.split());
+        Assertions.assertNull(result.split());
         break;
       default:
-        Assert.fail("Unknown status: " + expectedStatus);
+        Assertions.fail("Unknown status: " + expectedStatus);
     }
   }
 
   private void assertSnapshot(ShuffleSplitAssigner assigner, int splitCount) {
     Collection<MixedFormatSplitState> stateBeforeGet = assigner.state();
-    Assert.assertEquals(splitCount, stateBeforeGet.size());
+    Assertions.assertEquals(splitCount, stateBeforeGet.size());
   }
 }

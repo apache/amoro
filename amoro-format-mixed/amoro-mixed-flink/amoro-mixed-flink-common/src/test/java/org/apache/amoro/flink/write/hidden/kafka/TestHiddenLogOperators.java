@@ -53,10 +53,10 @@ import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,12 +79,12 @@ public class TestHiddenLogOperators {
   public static final TestGlobalAggregateManager GLOBAL_AGGREGATE_MANGER =
       new TestGlobalAggregateManager();
 
-  @BeforeClass
+  @BeforeAll
   public static void prepare() throws Exception {
     KAFKA_CONTAINER.start();
   }
 
-  @AfterClass
+  @AfterAll
   public static void shutdown() throws Exception {
     KAFKA_CONTAINER.close();
   }

@@ -18,8 +18,8 @@
 
 package org.apache.amoro.flink.lookup;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,8 +38,8 @@ public class ByteArraySetSerializerTest {
     byteSet.add(new ByteArrayWrapper(data, data.length));
     byte[] serialized = ByteArraySetSerializer.serialize(byteSet);
     Set<ByteArrayWrapper> actualSet = ByteArraySetSerializer.deserialize(serialized);
-    Assert.assertEquals(byteSet.size(), actualSet.size());
-    Assert.assertEquals(byteSet, actualSet);
+    Assertions.assertEquals(byteSet.size(), actualSet.size());
+    Assertions.assertEquals(byteSet, actualSet);
   }
 
   @Test
@@ -56,13 +56,13 @@ public class ByteArraySetSerializerTest {
       totalSize += 4 + tmp.length;
     }
     LOG.info("added {} items process time: {}", num, System.currentTimeMillis() - start);
-    Assert.assertEquals(num, byteArraySet.size());
+    Assertions.assertEquals(num, byteArraySet.size());
 
     start = System.currentTimeMillis();
     byte[] serialized = ByteArraySetSerializer.serialize(byteArraySet);
     long cost = System.currentTimeMillis() - start;
     assert serialized != null;
-    Assert.assertEquals(totalSize, serialized.length);
+    Assertions.assertEquals(totalSize, serialized.length);
     LOG.info(
         "serialized cost: {}, num= {}, result byte array size={}.", cost, num, serialized.length);
 
@@ -70,14 +70,14 @@ public class ByteArraySetSerializerTest {
     Set<ByteArrayWrapper> actualSet = ByteArraySetSerializer.deserialize(serialized);
     cost = System.currentTimeMillis() - start;
     LOG.info("deserialized cost: {}, num= {}, set size={}.", cost, num, actualSet.size());
-    Assert.assertEquals(byteArraySet, actualSet);
+    Assertions.assertEquals(byteArraySet, actualSet);
 
     // exists
     sb = new StringBuilder();
     start = System.currentTimeMillis();
     for (int i = 0; i < num; i++) {
       sb.append(i);
-      Assert.assertTrue(
+      Assertions.assertTrue(
           actualSet.contains(
               new ByteArrayWrapper(sb.toString().getBytes(), sb.toString().getBytes().length)));
     }

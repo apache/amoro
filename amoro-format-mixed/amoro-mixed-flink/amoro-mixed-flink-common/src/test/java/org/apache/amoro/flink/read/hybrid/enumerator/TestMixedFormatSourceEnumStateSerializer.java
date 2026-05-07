@@ -25,8 +25,8 @@ import org.apache.amoro.flink.read.hybrid.assigner.TestShuffleSplitAssigner;
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.TemporalJoinSplits;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,12 +60,12 @@ public class TestMixedFormatSourceEnumStateSerializer extends TestShuffleSplitAs
         new MixedFormatSourceEnumStateSerializer();
     byte[] ser = mixedFormatSourceEnumStateSerializer.serialize(expect);
 
-    Assert.assertNotNull(ser);
+    Assertions.assertNotNull(ser);
 
     MixedFormatSourceEnumState actual = mixedFormatSourceEnumStateSerializer.deserialize(1, ser);
 
-    Assert.assertEquals(expect.pendingSplits().size(), actual.pendingSplits().size());
-    Assert.assertEquals(
+    Assertions.assertEquals(expect.pendingSplits().size(), actual.pendingSplits().size());
+    Assertions.assertEquals(
         Objects.requireNonNull(expect.shuffleSplitRelation()).length,
         Objects.requireNonNull(actual.shuffleSplitRelation()).length);
 
@@ -86,10 +86,10 @@ public class TestMixedFormatSourceEnumStateSerializer extends TestShuffleSplitAs
         }
       }
 
-      Assert.assertEquals(splitList.size(), actualSplits.size());
+      Assertions.assertEquals(splitList.size(), actualSplits.size());
 
       TemporalJoinSplits temporalJoinSplits = actual.temporalJoinSplits();
-      Assert.assertEquals(expect.temporalJoinSplits(), temporalJoinSplits);
+      Assertions.assertEquals(expect.temporalJoinSplits(), temporalJoinSplits);
     }
   }
 }

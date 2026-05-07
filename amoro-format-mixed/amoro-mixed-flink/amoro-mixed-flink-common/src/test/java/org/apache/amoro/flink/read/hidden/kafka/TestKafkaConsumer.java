@@ -35,10 +35,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,12 +54,12 @@ import java.util.stream.Collectors;
 public class TestKafkaConsumer extends TestBaseLog {
   private static final Logger LOG = LoggerFactory.getLogger(TestKafkaConsumer.class);
 
-  @BeforeClass
+  @BeforeAll
   public static void prepare() throws Exception {
     KAFKA_CONTAINER.start();
   }
 
-  @AfterClass
+  @AfterAll
   public static void shutdown() throws Exception {
     KAFKA_CONTAINER.close();
   }

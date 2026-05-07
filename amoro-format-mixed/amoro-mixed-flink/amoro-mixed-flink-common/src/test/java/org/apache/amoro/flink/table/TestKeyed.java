@@ -49,26 +49,19 @@ import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -76,14 +69,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@RunWith(Parameterized.class)
 public class TestKeyed extends FlinkTestBase {
 
   public static final Logger LOG = LoggerFactory.getLogger(TestKeyed.class);
 
-  @Rule public TemporaryFolder tempFolder = new TemporaryFolder();
-  @Rule public TestName testName = new TestName();
-  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
+  static final TestHMS TEST_HMS = new TestHMS();
 
   private static final String DB = TableTestHelper.TEST_TABLE_ID.getDatabase();
   private static final String TABLE = "test_keyed";
@@ -94,68 +84,67 @@ public class TestKeyed extends FlinkTestBase {
   private final Map<String, String> tableProperties = new HashMap<>();
   public boolean isHive;
 
-  public TestKeyed(
-      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive) {
-    super(catalogTestHelper, tableTestHelper);
-    this.isHive = isHive;
-  }
-
-  @Parameterized.Parameters(name = "{0}, {1}, {2}")
-  public static Collection parameters() {
-    return Arrays.asList(
-        new Object[][] {
-          {
+  static java.util.stream.Stream<Arguments> parameters() {
+    return java.util.stream.Stream.of(
+        Arguments.of(
             new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
             new HiveTableTestHelper(true, true),
-            true
-          },
-          {
+            true),
+        Arguments.of(
             new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
             new HiveTableTestHelper(true, true),
-            true
-          },
-          {
+            true),
+        Arguments.of(
             new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
             new BasicTableTestHelper(true, true),
-            false
-          },
-          {
+            false),
+        Arguments.of(
             new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
             new BasicTableTestHelper(true, true),
-            false
-          }
-        });
+            false));
   }
 
-  @BeforeClass
+  @BeforeAll
   public static void beforeClass() throws Exception {
+    TEST_HMS.before();
     FlinkTestBase.prepare();
   }
 
-  @AfterClass
+  @AfterAll
   public static void afterClass() throws Exception {
-    FlinkTestBase.shutdown();
+    try {
+      FlinkTestBase.shutdown();
+    } finally {
+      TEST_HMS.after();
+    }
   }
 
-  @Before
-  public void before() throws Exception {
+  @AfterEach
+  public void dropTestTable() {
+    if (db != null) {
+      sql("DROP TABLE IF EXISTS mixed_catalog." + db + "." + TABLE);
+    }
+  }
+
+  private void setUpForParam(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    this.isHive = isHive;
     if (isHive) {
       db = HiveTableTestHelper.TEST_DB_NAME;
     } else {
       db = DB;
     }
-    super.before();
-    prepareLog();
-    super.config();
+    initFlinkTestBase(catalogTestHelper, tableTestHelper);
+    prepareLog(testInfo);
+    config();
   }
 
-  @After
-  public void after() {
-    sql("DROP TABLE IF EXISTS mixed_catalog." + db + "." + TABLE);
-  }
-
-  private void prepareLog() {
-    topic = TestUtil.getUtMethodName(testName) + isHive;
+  private void prepareLog(TestInfo testInfo) {
+    topic = TestUtil.getUtMethodName(testInfo) + isHive;
     tableProperties.clear();
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
@@ -165,8 +154,15 @@ public class TestKeyed extends FlinkTestBase {
         LOG_STORE_ADDRESS, KafkaContainerTest.KAFKA_CONTAINER.getBootstrapServers());
   }
 
-  @Test
-  public void testSinkSourceFile() throws IOException {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testSinkSourceFile(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive, testInfo);
 
     List<Object[]> data = new LinkedList<>();
     data.add(
@@ -293,11 +289,19 @@ public class TestKeyed extends FlinkTestBase {
           LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()
         });
 
-    Assert.assertTrue(CollectionUtils.isEqualCollection(DataUtil.toRowList(expected), actual));
+    Assertions.assertTrue(CollectionUtils.isEqualCollection(DataUtil.toRowList(expected), actual));
   }
 
-  @Test
-  public void testUnpartitionLogSinkSource() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testUnpartitionLogSinkSource(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive, testInfo);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a"});
     data.add(new Object[] {1000015, "b"});
@@ -358,12 +362,20 @@ public class TestKeyed extends FlinkTestBase {
         actual.add(row);
       }
     }
-    Assert.assertEquals(DataUtil.toRowSet(data), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(data), actual);
     result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
-  @Test
-  public void testUnpartitionLogSinkSourceWithSelectedFields() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testUnpartitionLogSinkSourceWithSelectedFields(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive, testInfo);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[] {1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -435,12 +447,20 @@ public class TestKeyed extends FlinkTestBase {
     expected.add(new Object[] {1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
     expected.add(new Object[] {1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
 
-    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(expected), actual);
     result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
-  @Test
-  public void testUnPartitionDoubleSink() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testUnPartitionDoubleSink(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive, testInfo);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a"});
     data.add(new Object[] {1000015, "b"});
@@ -480,7 +500,7 @@ public class TestKeyed extends FlinkTestBase {
             + ") */"
             + "select id, name from input");
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
         DataUtil.toRowSet(data),
         new HashSet<>(
             sql(
@@ -503,12 +523,19 @@ public class TestKeyed extends FlinkTestBase {
         actual.add(iterator.next());
       }
     }
-    Assert.assertEquals(DataUtil.toRowSet(data), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(data), actual);
     result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
-  @Test
-  public void testPartitionSinkFile() throws IOException {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testPartitionSinkFile(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive, testInfo);
 
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -551,7 +578,7 @@ public class TestKeyed extends FlinkTestBase {
             + ")*/"
             + " select * from input");
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
         DataUtil.toRowSet(data),
         new HashSet<>(
             sql(
@@ -564,8 +591,15 @@ public class TestKeyed extends FlinkTestBase {
                     + ") */")));
   }
 
-  @Test
-  public void testSinkSourceFileWithoutSelectPK() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testSinkSourceFileWithoutSelectPK(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive, testInfo);
 
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -633,11 +667,18 @@ public class TestKeyed extends FlinkTestBase {
     expected.add(new Object[] {"d", LocalDateTime.parse("2022-06-18T10:10:11.0")});
     expected.add(new Object[] {"e", LocalDateTime.parse("2022-06-18T10:10:11.0")});
 
-    Assert.assertEquals(DataUtil.toRowSet(expected), new HashSet<>(actual));
+    Assertions.assertEquals(DataUtil.toRowSet(expected), new HashSet<>(actual));
   }
 
-  @Test
-  public void testFileUpsert() {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testFileUpsert(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive, testInfo);
 
     List<Object[]> data = new LinkedList<>();
     data.add(
@@ -722,7 +763,7 @@ public class TestKeyed extends FlinkTestBase {
         new Object[] {RowKind.INSERT, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
     expected.add(
         new Object[] {RowKind.INSERT, 1000021, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    Assert.assertEquals(
+    Assertions.assertEquals(
         DataUtil.toRowSet(expected),
         new HashSet<>(
             sql(
@@ -735,8 +776,15 @@ public class TestKeyed extends FlinkTestBase {
                     + ") */")));
   }
 
-  @Test
-  public void testFileCDC() {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testFileCDC(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive, testInfo);
 
     List<Object[]> data = new LinkedList<>();
     data.add(
@@ -846,7 +894,7 @@ public class TestKeyed extends FlinkTestBase {
         new Object[] {RowKind.INSERT, 1000031, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(
         new Object[] {RowKind.INSERT, 1000032, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    Assert.assertEquals(
+    Assertions.assertEquals(
         DataUtil.toRowSet(expected),
         new HashSet<>(
             sql(
@@ -859,8 +907,15 @@ public class TestKeyed extends FlinkTestBase {
                     + ") */")));
   }
 
-  @Test
-  public void testFileUpsertWithSamePrimaryKey() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testFileUpsertWithSamePrimaryKey(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive, testInfo);
 
     List<Object[]> data = new LinkedList<>();
     data.add(
@@ -937,13 +992,21 @@ public class TestKeyed extends FlinkTestBase {
         DataUtil.groupByPrimaryKey(DataUtil.toRowList(expected), 0);
 
     for (Object key : actualMap.keySet()) {
-      Assert.assertTrue(
+      Assertions.assertTrue(
           CollectionUtils.isEqualCollection(actualMap.get(key), expectedMap.get(key)));
     }
   }
 
-  @Test
-  public void testPartitionLogSinkSource() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testPartitionLogSinkSource(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive, testInfo);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[] {1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -1005,12 +1068,20 @@ public class TestKeyed extends FlinkTestBase {
         actual.add(row);
       }
     }
-    Assert.assertEquals(DataUtil.toRowSet(data), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(data), actual);
     result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
-  @Test
-  public void testPartitionLogSinkSourceWithSelectedFields() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testPartitionLogSinkSourceWithSelectedFields(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive, testInfo);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[] {1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -1082,12 +1153,20 @@ public class TestKeyed extends FlinkTestBase {
     expected.add(new Object[] {1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
     expected.add(new Object[] {1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
 
-    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(expected), actual);
     result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
-  @Test
-  public void testPartitionDoubleSink() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testPartitionDoubleSink(
+      CatalogTestHelper catalogTestHelper,
+      TableTestHelper tableTestHelper,
+      boolean isHive,
+      TestInfo testInfo)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive, testInfo);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[] {1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -1131,7 +1210,7 @@ public class TestKeyed extends FlinkTestBase {
             + ") */"
             + "select * from input");
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
         DataUtil.toRowSet(data),
         new HashSet<>(
             sql(
@@ -1157,7 +1236,7 @@ public class TestKeyed extends FlinkTestBase {
         actual.add(row);
       }
     }
-    Assert.assertEquals(DataUtil.toRowSet(data), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(data), actual);
 
     result.getJobClient().ifPresent(TestUtil::cancelJob);
   }

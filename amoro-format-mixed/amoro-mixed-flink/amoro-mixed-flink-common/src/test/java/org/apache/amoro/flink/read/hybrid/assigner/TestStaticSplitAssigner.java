@@ -21,8 +21,8 @@ package org.apache.amoro.flink.read.hybrid.assigner;
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +53,7 @@ public class TestStaticSplitAssigner extends TestRowDataReaderFunction {
         }
       }
 
-      Assert.assertEquals(splitList.size(), actual.size());
+      Assertions.assertEquals(splitList.size(), actual.size());
     }
   }
 
@@ -77,7 +77,7 @@ public class TestStaticSplitAssigner extends TestRowDataReaderFunction {
         }
       }
 
-      Assert.assertEquals(splitList.size(), actual.size());
+      Assertions.assertEquals(splitList.size(), actual.size());
     }
   }
 

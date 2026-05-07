@@ -41,8 +41,8 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,7 +179,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   }
 
   protected void assertArrayEquals(RowData[] excepts, List<RowData> actual) {
-    Assert.assertArrayEquals(excepts, sortRowDataCollection(actual));
+    Assertions.assertArrayEquals(excepts, sortRowDataCollection(actual));
   }
 
   protected RowData[] sortRowDataCollection(Collection<RowData> records) {
@@ -207,7 +207,7 @@ public class TestRowDataReaderFunction extends TestContinuousSplitPlannerImpl {
   protected void writeUpdateWithSpecifiedMask(List<RowData> input, KeyedTable table, long mask)
       throws IOException {
     // write change update
-    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(table, ROW_TYPE, false, mask);
+    TaskWriter<RowData> taskWriter = createKeyedTaskWriterWithMask(table, ROW_TYPE, false, mask);
 
     for (RowData record : input) {
       taskWriter.write(record);

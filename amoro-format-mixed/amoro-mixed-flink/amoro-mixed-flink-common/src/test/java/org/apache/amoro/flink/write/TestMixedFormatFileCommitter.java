@@ -38,8 +38,8 @@ import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.flink.sink.FlinkWriteResult;
 import org.apache.iceberg.io.CloseableIterable;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -84,8 +84,8 @@ public class TestMixedFormatFileCommitter extends FlinkTestBase {
       actualFileCnt++;
       actualRecordCnt += fileScanTask.file().recordCount();
     }
-    Assert.assertEquals(fileCnt, actualFileCnt);
-    Assert.assertEquals(recordCnt, actualRecordCnt);
+    Assertions.assertEquals(fileCnt, actualFileCnt);
+    Assertions.assertEquals(recordCnt, actualRecordCnt);
   }
 
   @Test
@@ -124,8 +124,8 @@ public class TestMixedFormatFileCommitter extends FlinkTestBase {
       testHarness.processElement(createRowData(3, "hello", "2020-10-13T10:10:11.0"), 1);
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
-      Assert.assertEquals(1, testHarness.extractOutputValues().size());
-      Assert.assertEquals(
+      Assertions.assertEquals(1, testHarness.extractOutputValues().size());
+      Assertions.assertEquals(
           3, testHarness.extractOutputValues().get(0).writeResult().dataFiles().length);
 
       checkpointId = checkpointId + 1;
@@ -143,8 +143,8 @@ public class TestMixedFormatFileCommitter extends FlinkTestBase {
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       // testHarness.extractOutputValues() compute the sum
-      Assert.assertEquals(2, testHarness.extractOutputValues().size());
-      Assert.assertEquals(
+      Assertions.assertEquals(2, testHarness.extractOutputValues().size());
+      Assertions.assertEquals(
           4, testHarness.extractOutputValues().get(1).writeResult().dataFiles().length);
       changeFiles = testHarness.extractOutputValues();
     }

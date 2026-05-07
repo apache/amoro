@@ -41,34 +41,32 @@ import org.apache.iceberg.flink.sink.RowDataTaskWriterFactory;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestMixedFormatFileWriter extends FlinkTestBase {
 
   public static final long TARGET_FILE_SIZE = 128 * 1024 * 1024;
   public MixedFormatTableLoader tableLoader;
-  private final boolean submitEmptySnapshots;
+  private boolean submitEmptySnapshots;
 
-  @Parameterized.Parameters(name = "{0}, {1}")
-  public static Object[][] parameters() {
-    return new Object[][] {
-      {true, false},
-      {true, true},
-      {false, false},
-      {false, true}
-    };
+  static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(true, false),
+        Arguments.of(true, true),
+        Arguments.of(false, false),
+        Arguments.of(false, true));
   }
 
-  public TestMixedFormatFileWriter(boolean isKeyed, boolean submitEmptySnapshots) {
-    super(
+  private void setUpForParam(boolean isKeyed, boolean submitEmptySnapshots) throws Exception {
+    initFlinkTestBase(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(isKeyed, true));
     this.submitEmptySnapshots = submitEmptySnapshots;
@@ -133,44 +131,51 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
     return taskWriterFactory.create();
   }
 
-  @Test
-  public void testInsertWrite() throws Exception {
-    Assume.assumeTrue(isKeyedTable());
+  @ParameterizedTest(name = "isKeyed = {0}, submitEmptySnapshots = {1}")
+  @MethodSource("parameters")
+  public void testInsertWrite(boolean isKeyed, boolean submitEmptySnapshots) throws Exception {
+    setUpForParam(isKeyed, submitEmptySnapshots);
+
+    Assumptions.assumeTrue(isKeyedTable());
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
     try (OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult> testHarness =
         createMixedFormatStreamWriter(tableLoader)) {
       MixedFormatFileWriter fileWriter = (MixedFormatFileWriter) testHarness.getOneInputOperator();
-      Assert.assertNotNull(fileWriter.getWriter());
+      Assertions.assertNotNull(fileWriter.getWriter());
       // The first checkpoint
       testHarness.processElement(createRowData(1, "hello", "2020-10-11T10:10:11.0"), 1);
       testHarness.processElement(createRowData(2, "hello", "2020-10-12T10:10:11.0"), 1);
       testHarness.processElement(createRowData(3, "hello", "2020-10-13T10:10:11.0"), 1);
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
-      Assert.assertNull(fileWriter.getWriter());
-      Assert.assertEquals(1, testHarness.extractOutputValues().size());
-      Assert.assertEquals(
+      Assertions.assertNull(fileWriter.getWriter());
+      Assertions.assertEquals(1, testHarness.extractOutputValues().size());
+      Assertions.assertEquals(
           3, testHarness.extractOutputValues().get(0).writeResult().dataFiles().length);
 
       checkpointId = checkpointId + 1;
 
       // The second checkpoint
       testHarness.processElement(createRowData(1, "hello", "2020-10-12T10:10:11.0"), 1);
-      Assert.assertNotNull(fileWriter.getWriter());
+      Assertions.assertNotNull(fileWriter.getWriter());
       testHarness.processElement(createRowData(2, "hello", "2020-10-12T10:10:11.0"), 1);
       testHarness.processElement(createRowData(3, "hello", "2020-10-12T10:10:11.0"), 1);
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       // testHarness.extractOutputValues() calculates the cumulative value
       List<FlinkWriteResult> completedFiles = testHarness.extractOutputValues();
-      Assert.assertEquals(2, completedFiles.size());
-      Assert.assertEquals(3, completedFiles.get(1).writeResult().dataFiles().length);
+      Assertions.assertEquals(2, completedFiles.size());
+      Assertions.assertEquals(3, completedFiles.get(1).writeResult().dataFiles().length);
     }
   }
 
-  @Test
-  public void testSnapshotMultipleTimes() throws Exception {
+  @ParameterizedTest(name = "isKeyed = {0}, submitEmptySnapshots = {1}")
+  @MethodSource("parameters")
+  public void testSnapshotMultipleTimes(boolean isKeyed, boolean submitEmptySnapshots)
+      throws Exception {
+    setUpForParam(isKeyed, submitEmptySnapshots);
+
     long checkpointId = 1;
     long timestamp = 1;
 
@@ -190,8 +195,8 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
                       .map(FlinkWriteResult::writeResult)
                       .collect(java.util.stream.Collectors.toList()))
               .build();
-      Assert.assertEquals(0, result.deleteFiles().length);
-      Assert.assertEquals(expectedDataFiles, result.dataFiles().length);
+      Assertions.assertEquals(0, result.deleteFiles().length);
+      Assertions.assertEquals(expectedDataFiles, result.dataFiles().length);
 
       // snapshot again immediately.
       for (int i = 0; i < 5; i++) {
@@ -204,15 +209,19 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
                         .map(FlinkWriteResult::writeResult)
                         .collect(java.util.stream.Collectors.toList()))
                 .build();
-        Assert.assertEquals(0, result.deleteFiles().length);
-        Assert.assertEquals(expectedDataFiles, result.dataFiles().length);
+        Assertions.assertEquals(0, result.deleteFiles().length);
+        Assertions.assertEquals(expectedDataFiles, result.dataFiles().length);
       }
     }
   }
 
-  @Test
-  public void testInsertWriteWithoutPk() throws Exception {
-    Assume.assumeFalse(isKeyedTable());
+  @ParameterizedTest(name = "isKeyed = {0}, submitEmptySnapshots = {1}")
+  @MethodSource("parameters")
+  public void testInsertWriteWithoutPk(boolean isKeyed, boolean submitEmptySnapshots)
+      throws Exception {
+    setUpForParam(isKeyed, submitEmptySnapshots);
+
+    Assumptions.assumeFalse(isKeyedTable());
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
     try (OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult> testHarness =
@@ -223,8 +232,8 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
       testHarness.processElement(createRowData(3, "hello", "2020-10-13T10:10:11.0"), 1);
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
-      Assert.assertEquals(1, testHarness.extractOutputValues().size());
-      Assert.assertEquals(
+      Assertions.assertEquals(1, testHarness.extractOutputValues().size());
+      Assertions.assertEquals(
           3, testHarness.extractOutputValues().get(0).writeResult().dataFiles().length);
 
       checkpointId = checkpointId + 1;
@@ -237,14 +246,17 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       // testHarness.extractOutputValues() calculates the cumulative value
       List<FlinkWriteResult> completedFiles = testHarness.extractOutputValues();
-      Assert.assertEquals(2, completedFiles.size());
-      Assert.assertEquals(1, completedFiles.get(1).writeResult().dataFiles().length);
+      Assertions.assertEquals(2, completedFiles.size());
+      Assertions.assertEquals(1, completedFiles.get(1).writeResult().dataFiles().length);
     }
   }
 
-  @Test
-  public void testDeleteWrite() throws Exception {
-    Assume.assumeTrue(isKeyedTable());
+  @ParameterizedTest(name = "isKeyed = {0}, submitEmptySnapshots = {1}")
+  @MethodSource("parameters")
+  public void testDeleteWrite(boolean isKeyed, boolean submitEmptySnapshots) throws Exception {
+    setUpForParam(isKeyed, submitEmptySnapshots);
+
+    Assumptions.assumeTrue(isKeyedTable());
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
     try (OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult> testHarness =
@@ -260,8 +272,8 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
           createRowData(1, "hello", "2020-10-11T10:10:11.0", RowKind.DELETE), 1);
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
-      Assert.assertEquals(1, testHarness.extractOutputValues().size());
-      Assert.assertEquals(
+      Assertions.assertEquals(1, testHarness.extractOutputValues().size());
+      Assertions.assertEquals(
           3, testHarness.extractOutputValues().get(0).writeResult().dataFiles().length);
 
       checkpointId = checkpointId + 1;
@@ -276,15 +288,18 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       // testHarness.extractOutputValues() calculates the cumulative value
-      Assert.assertEquals(2, testHarness.extractOutputValues().size());
-      Assert.assertEquals(
+      Assertions.assertEquals(2, testHarness.extractOutputValues().size());
+      Assertions.assertEquals(
           3, testHarness.extractOutputValues().get(1).writeResult().dataFiles().length);
     }
   }
 
-  @Test
-  public void testUpdateWrite() throws Exception {
-    Assume.assumeTrue(isKeyedTable());
+  @ParameterizedTest(name = "isKeyed = {0}, submitEmptySnapshots = {1}")
+  @MethodSource("parameters")
+  public void testUpdateWrite(boolean isKeyed, boolean submitEmptySnapshots) throws Exception {
+    setUpForParam(isKeyed, submitEmptySnapshots);
+
+    Assumptions.assumeTrue(isKeyedTable());
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
     try (OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult> testHarness =
@@ -300,8 +315,8 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
           createRowData(1, "hello", "2020-10-13T10:10:11.0", RowKind.UPDATE_AFTER), 1);
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
-      Assert.assertEquals(1, testHarness.extractOutputValues().size());
-      Assert.assertEquals(
+      Assertions.assertEquals(1, testHarness.extractOutputValues().size());
+      Assertions.assertEquals(
           3, testHarness.extractOutputValues().get(0).writeResult().dataFiles().length);
 
       checkpointId = checkpointId + 1;
@@ -317,15 +332,18 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       // testHarness.extractOutputValues() calculates the cumulative value
-      Assert.assertEquals(2, testHarness.extractOutputValues().size());
-      Assert.assertEquals(
+      Assertions.assertEquals(2, testHarness.extractOutputValues().size());
+      Assertions.assertEquals(
           3, testHarness.extractOutputValues().get(1).writeResult().dataFiles().length);
     }
   }
 
-  @Test
-  public void testEmitEmptyResults() throws Exception {
-    Assume.assumeTrue(isKeyedTable());
+  @ParameterizedTest(name = "isKeyed = {0}, submitEmptySnapshots = {1}")
+  @MethodSource("parameters")
+  public void testEmitEmptyResults(boolean isKeyed, boolean submitEmptySnapshots) throws Exception {
+    setUpForParam(isKeyed, submitEmptySnapshots);
+
+    Assumptions.assumeTrue(isKeyedTable());
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
     long excepted = submitEmptySnapshots ? 1 : 0;
@@ -334,13 +352,13 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
       // The first checkpoint
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
-      Assert.assertEquals(excepted, testHarness.extractOutputValues().size());
+      Assertions.assertEquals(excepted, testHarness.extractOutputValues().size());
 
       checkpointId = checkpointId + 1;
 
       // The second checkpoint
       testHarness.prepareSnapshotPreBarrier(checkpointId);
-      Assert.assertEquals(excepted, testHarness.extractOutputValues().size());
+      Assertions.assertEquals(excepted, testHarness.extractOutputValues().size());
     }
   }
 }

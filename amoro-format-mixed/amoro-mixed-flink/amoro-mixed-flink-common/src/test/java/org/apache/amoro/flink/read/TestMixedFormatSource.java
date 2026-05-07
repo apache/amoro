@@ -81,11 +81,10 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,7 +108,6 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
   private static final long serialVersionUID = 7418812854449034756L;
   private static final int PARALLELISM = 1;
 
-  @Rule
   public final MiniClusterWithClientResource miniClusterResource =
       new MiniClusterWithClientResource(
           new MiniClusterResourceConfiguration.Builder()
@@ -119,13 +117,23 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
               .withHaLeadershipControl()
               .build());
 
+  @BeforeEach
+  public void startMiniClusterResource() throws Exception {
+    miniClusterResource.before();
+  }
+
+  @AfterEach
+  public void stopMiniClusterResource() {
+    miniClusterResource.after();
+  }
+
   protected KeyedTable testFailoverTable;
   protected static final String SINK_TABLE_NAME = "test_sink_exactly_once";
   protected static final TableIdentifier FAIL_TABLE_ID =
       TableIdentifier.of(
           TableTestHelper.TEST_CATALOG_NAME, TableTestHelper.TEST_DB_NAME, SINK_TABLE_NAME);
 
-  @Before
+  @BeforeEach
   public void testSetup() throws IOException {
     MixedFormatCatalog testCatalog = getMixedFormatCatalog();
 
@@ -145,7 +153,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     }
   }
 
-  @After
+  @AfterEach
   public void dropTable() {
     miniClusterResource.cancelAllJobs();
     getMixedFormatCatalog().dropTable(FAIL_TABLE_ID, true);
@@ -266,7 +274,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
       Thread.sleep(1000);
       LOG.info("wait for watermark after failover");
     }
-    Assert.assertEquals(Long.MAX_VALUE, WatermarkAwareFailWrapper.getWatermarkAfterFailover());
+    Assertions.assertEquals(Long.MAX_VALUE, WatermarkAwareFailWrapper.getWatermarkAfterFailover());
   }
 
   @Test
@@ -359,7 +367,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     List<RowData> actualResult =
         collectRecordsFromUnboundedStream(clientAndIterator, baseData.size());
 
-    Assert.assertEquals(new HashSet<>(baseData), new HashSet<>(actualResult));
+    Assertions.assertEquals(new HashSet<>(baseData), new HashSet<>(actualResult));
 
     LOG.info(
         "begin write update_before update_after data and commit new snapshot to change table.");
@@ -369,7 +377,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length * 2);
     jobClient.cancel();
 
-    Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
+    Assertions.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
     getMixedFormatCatalog().dropTable(tableId, true);
   }
 
@@ -429,7 +437,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     commit(table, result, false);
 
     for (DataFile dataFile : changeDataFiles) {
-      Assert.assertTrue(table.io().exists(dataFile.path().toString()));
+      Assertions.assertTrue(table.io().exists(dataFile.path().toString()));
     }
 
     final Duration monitorInterval = Duration.ofSeconds(1);
@@ -446,12 +454,12 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
 
     List<RowData> actualResult =
         collectRecordsFromUnboundedStream(clientAndIterator, changeData.size());
-    Assert.assertEquals(new HashSet<>(changeData), new HashSet<>(actualResult));
+    Assertions.assertEquals(new HashSet<>(changeData), new HashSet<>(actualResult));
 
     // expire changeTable snapshots
     DeleteFiles deleteFiles = table.changeTable().newDelete();
     for (DataFile dataFile : changeDataFiles) {
-      Assert.assertTrue(table.io().exists(dataFile.path().toString()));
+      Assertions.assertTrue(table.io().exists(dataFile.path().toString()));
       deleteFiles.deleteFile(dataFile);
     }
     deleteFiles.commit();
@@ -472,7 +480,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length * 2);
     jobClient.cancel();
 
-    Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
+    Assertions.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
     getMixedFormatCatalog().dropTable(tableId, true);
   }
 
@@ -532,7 +540,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     commit(table, result, true);
 
     for (DataFile dataFile : baseDataFiles) {
-      Assert.assertTrue(table.io().exists(dataFile.path().toString()));
+      Assertions.assertTrue(table.io().exists(dataFile.path().toString()));
     }
 
     final Duration monitorInterval = Duration.ofSeconds(1);
@@ -549,12 +557,12 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
 
     List<RowData> actualResult =
         collectRecordsFromUnboundedStream(clientAndIterator, baseData.size());
-    Assert.assertEquals(new HashSet<>(baseData), new HashSet<>(actualResult));
+    Assertions.assertEquals(new HashSet<>(baseData), new HashSet<>(actualResult));
 
     // expire baseTable snapshots
     DeleteFiles deleteFiles = table.baseTable().newDelete();
     for (DataFile dataFile : baseDataFiles) {
-      Assert.assertTrue(table.io().exists(dataFile.path().toString()));
+      Assertions.assertTrue(table.io().exists(dataFile.path().toString()));
       deleteFiles.deleteFile(dataFile);
     }
     deleteFiles.commit();
@@ -575,7 +583,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length * 2);
     jobClient.cancel();
 
-    Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
+    Assertions.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
     getMixedFormatCatalog().dropTable(tableId, true);
   }
 
@@ -682,7 +690,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
     try {
       RowData[] expectedArray = sortRowDataCollection(expected);
       RowData[] actualArray = sortRowDataCollection(tableRecords);
-      Assert.assertArrayEquals(expectedArray, actualArray);
+      Assertions.assertArrayEquals(expectedArray, actualArray);
       return true;
     } catch (Throwable e) {
       return false;
@@ -813,12 +821,12 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
       }
     }
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
+        numElements,
+        result.size(),
         String.format(
             "The stream ended before reaching the requested %d records. Only %d records were received, received list:%s.",
-            numElements, result.size(), Arrays.toString(result.toArray())),
-        numElements,
-        result.size());
+            numElements, result.size(), Arrays.toString(result.toArray())));
 
     return result;
   }
@@ -855,7 +863,8 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
         env.fromSource(
                 mixedFormatSource, WatermarkStrategy.noWatermarks(), "MixedFormatParallelSource")
             .setParallelism(PARALLELISM);
-    return DataStreamUtils.collectWithClient(source, "job_" + name.getMethodName());
+    return DataStreamUtils.collectWithClient(
+        source, "job_" + getClass().getSimpleName() + "_" + System.nanoTime());
   }
 
   private static GenericRowData convert(RowData row) {
@@ -1113,7 +1122,7 @@ public class TestMixedFormatSource extends TestRowDataReaderFunction implements 
         }
         if (failoverHappened) {
           LOG.info("failover happened, watermark: {}", mark);
-          Assert.assertEquals(Long.MAX_VALUE, mark.getTimestamp());
+          Assertions.assertEquals(Long.MAX_VALUE, mark.getTimestamp());
           if (watermarkAfterFailover == -1) {
             watermarkAfterFailover = mark.getTimestamp();
           } else {

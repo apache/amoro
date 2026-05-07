@@ -49,23 +49,16 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.types.Types;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -73,10 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@RunWith(Parameterized.class)
 public class TestUnkeyed extends FlinkTestBase {
-
-  @Rule public TemporaryFolder tempFolder = new TemporaryFolder();
 
   private static final String TABLE = "test_unkeyed";
   private static final String DB = TableTestHelper.TEST_TABLE_ID.getDatabase();
@@ -86,49 +76,51 @@ public class TestUnkeyed extends FlinkTestBase {
   private String db;
   private String topic;
 
-  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
+  static final TestHMS TEST_HMS = new TestHMS();
   public boolean isHive;
 
-  public TestUnkeyed(
-      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive) {
-    super(catalogTestHelper, tableTestHelper);
-    this.isHive = isHive;
-  }
-
-  @Parameterized.Parameters(name = "{0}, {1}, {2}")
-  public static Collection parameters() {
-    return Arrays.asList(
-        new Object[][] {
-          {
+  static java.util.stream.Stream<Arguments> parameters() {
+    return java.util.stream.Stream.of(
+        Arguments.of(
             new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
             new HiveTableTestHelper(true, true),
-            true
-          },
-          {
+            true),
+        Arguments.of(
             new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
             new BasicTableTestHelper(true, true),
-            false
-          },
-          {
+            false),
+        Arguments.of(
             new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
             new BasicTableTestHelper(true, true),
-            false
-          }
-        });
+            false));
   }
 
-  @BeforeClass
+  @BeforeAll
   public static void beforeClass() throws Exception {
+    TEST_HMS.before();
     KAFKA_CONTAINER.start();
   }
 
-  @AfterClass
+  @AfterAll
   public static void afterClass() throws Exception {
-    KAFKA_CONTAINER.close();
+    try {
+      KAFKA_CONTAINER.close();
+    } finally {
+      TEST_HMS.after();
+    }
   }
 
-  @Before
-  public void before() throws Exception {
+  @AfterEach
+  public void dropTestTable() {
+    if (db != null) {
+      sql("DROP TABLE IF EXISTS mixed_catalog." + db + "." + TABLE);
+    }
+  }
+
+  private void setUpForParam(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    this.isHive = isHive;
     if (isHive) {
       catalog = HiveTableTestHelper.TEST_CATALOG_NAME;
       db = HiveTableTestHelper.TEST_DB_NAME;
@@ -136,19 +128,19 @@ public class TestUnkeyed extends FlinkTestBase {
       catalog = TEST_CATALOG_NAME;
       db = DB;
     }
-    super.before();
+    initFlinkTestBase(catalogTestHelper, tableTestHelper);
     mixedFormatCatalog = getMixedFormatCatalog();
     topic = String.join(".", catalog, db, TABLE);
-    super.config();
+    config();
   }
 
-  @After
-  public void after() {
-    sql("DROP TABLE IF EXISTS mixed_catalog." + db + "." + TABLE);
-  }
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testUnPartitionDDL(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
 
-  @Test
-  public void testUnPartitionDDL() throws IOException {
     sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     sql(
@@ -172,11 +164,16 @@ public class TestUnkeyed extends FlinkTestBase {
             Types.NestedField.optional(6, "height", Types.FloatType.get()),
             Types.NestedField.optional(7, "speed", Types.DoubleType.get()),
             Types.NestedField.optional(8, "ts", Types.TimestampType.withoutZone()));
-    Assert.assertEquals(required.asStruct(), table.schema().asStruct());
+    Assertions.assertEquals(required.asStruct(), table.schema().asStruct());
   }
 
-  @Test
-  public void testPartitionDDL() throws IOException {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testPartitionDDL(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     sql("CREATE CATALOG mixed_catalog WITH %s", toWithClause(props));
 
     sql(
@@ -199,14 +196,19 @@ public class TestUnkeyed extends FlinkTestBase {
             Types.NestedField.optional(7, "speed", Types.DoubleType.get()),
             Types.NestedField.optional(8, "ts", Types.TimestampType.withoutZone()));
     MixedTable table = mixedFormatCatalog.loadTable(TableIdentifier.of(catalog, db, TABLE));
-    Assert.assertEquals(required.asStruct(), table.schema().asStruct());
+    Assertions.assertEquals(required.asStruct(), table.schema().asStruct());
 
     PartitionSpec requiredSpec = PartitionSpec.builderFor(required).identity("ts").build();
-    Assert.assertEquals(requiredSpec, table.spec());
+    Assertions.assertEquals(requiredSpec, table.spec());
   }
 
-  @Test
-  public void testUnkeyedWatermarkSet() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testUnkeyedWatermarkSet(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     List<Object[]> data = new LinkedList<>();
 
     data.add(new Object[] {1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -263,13 +265,18 @@ public class TestUnkeyed extends FlinkTestBase {
         actual.add(iterator.next());
       }
     }
-    Assert.assertEquals(DataUtil.toRowSet(data), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(data), actual);
 
     result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
-  @Test
-  public void testSinkBatchRead() throws IOException {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testSinkBatchRead(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[] {1000015, "b", LocalDateTime.parse("2022-06-17T10:08:11.0")});
@@ -310,7 +317,7 @@ public class TestUnkeyed extends FlinkTestBase {
     Iterable<Snapshot> snapshots = table.asUnkeyedTable().snapshots();
     Snapshot s = snapshots.iterator().next();
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
         DataUtil.toRowSet(data),
         new HashSet<>(
             sql(
@@ -327,8 +334,13 @@ public class TestUnkeyed extends FlinkTestBase {
                     + ")*/")));
   }
 
-  @Test
-  public void testSinkStreamRead() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testSinkStreamRead(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a"});
     data.add(new Object[] {1000015, "b"});
@@ -374,7 +386,7 @@ public class TestUnkeyed extends FlinkTestBase {
       }
     }
     resultWithEarliestPosition.getJobClient().ifPresent(TestUtil::cancelJob);
-    Assert.assertEquals(DataUtil.toRowSet(data), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(data), actual);
 
     // verify in latest scan-startup-mode file read
     TableResult resultWithLatestPosition =
@@ -413,16 +425,21 @@ public class TestUnkeyed extends FlinkTestBase {
     try (CloseableIterator<Row> iterator = resultWithLatestPosition.collect()) {
       sql("insert into mixed_catalog." + db + "." + TABLE + " select * from appendInput");
       for (int i = 0; i < appendData.size(); i++) {
-        Assert.assertTrue("Should have more records", iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext(), "Should have more records");
         actual.add(iterator.next());
       }
     }
     resultWithLatestPosition.getJobClient().ifPresent(TestUtil::cancelJob);
-    Assert.assertEquals(DataUtil.toRowSet(appendData), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(appendData), actual);
   }
 
-  @Test
-  public void testLogSinkSource() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testLogSinkSource(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     String topic = this.topic + "testLogSinkSource";
     KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, 1, topic);
 
@@ -488,14 +505,19 @@ public class TestUnkeyed extends FlinkTestBase {
         actual.add(iterator.next());
       }
     }
-    Assert.assertEquals(DataUtil.toRowSet(data), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(data), actual);
 
     result.getJobClient().ifPresent(TestUtil::cancelJob);
     KafkaContainerTest.deleteTopics(topic);
   }
 
-  @Test
-  public void testUnpartitionLogSinkSourceWithSelectedFields() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testUnpartitionLogSinkSourceWithSelectedFields(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     data.add(new Object[] {1000015, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
@@ -570,13 +592,18 @@ public class TestUnkeyed extends FlinkTestBase {
     expected.add(new Object[] {1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
     expected.add(new Object[] {1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
 
-    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(expected), actual);
 
     result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
-  @Test
-  public void testUnPartitionDoubleSink() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testUnPartitionDoubleSink(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     String topic = this.topic + "testUnPartitionDoubleSink";
     KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, 1, topic);
 
@@ -624,7 +651,7 @@ public class TestUnkeyed extends FlinkTestBase {
             + ") */"
             + "select id, name from input");
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
         DataUtil.toRowSet(data),
         sqlSet(
             "select * from mixed_catalog."
@@ -646,13 +673,18 @@ public class TestUnkeyed extends FlinkTestBase {
         actual.add(iterator.next());
       }
     }
-    Assert.assertEquals(DataUtil.toRowSet(data), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(data), actual);
     result.getJobClient().ifPresent(TestUtil::cancelJob);
     KafkaContainerTest.deleteTopics(topic);
   }
 
-  @Test
-  public void testPartitionSinkBatchRead() throws IOException {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testPartitionSinkBatchRead(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", "2022-05-17"});
     data.add(new Object[] {1000015, "b", "2022-05-17"});
@@ -702,7 +734,7 @@ public class TestUnkeyed extends FlinkTestBase {
     Iterable<Snapshot> snapshots = table.asUnkeyedTable().snapshots();
     Snapshot s = snapshots.iterator().next();
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
         DataUtil.toRowSet(expected),
         sqlSet(
             "select * from mixed_catalog."
@@ -716,7 +748,7 @@ public class TestUnkeyed extends FlinkTestBase {
                 + "'"
                 + ", 'streaming'='false'"
                 + ")*/"));
-    Assert.assertEquals(
+    Assertions.assertEquals(
         DataUtil.toRowSet(expected),
         sqlSet(
             "select * from mixed_catalog."
@@ -732,8 +764,13 @@ public class TestUnkeyed extends FlinkTestBase {
                 + ")*/"));
   }
 
-  @Test
-  public void testPartitionSinkStreamRead() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testPartitionSinkStreamRead(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", "2022-05-17"});
     data.add(new Object[] {1000015, "b", "2022-05-17"});
@@ -814,11 +851,16 @@ public class TestUnkeyed extends FlinkTestBase {
       }
     }
     result.getJobClient().ifPresent(TestUtil::cancelJob);
-    Assert.assertEquals(new HashSet<>(expected), actual);
+    Assertions.assertEquals(new HashSet<>(expected), actual);
   }
 
-  @Test
-  public void testPartitionLogSinkSource() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testPartitionLogSinkSource(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     String topic = this.topic + "testUnKeyedPartitionLogSinkSource";
     KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, 1, topic);
 
@@ -885,14 +927,19 @@ public class TestUnkeyed extends FlinkTestBase {
         actual.add(iterator.next());
       }
     }
-    Assert.assertEquals(DataUtil.toRowSet(data), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(data), actual);
 
     result.getJobClient().ifPresent(TestUtil::cancelJob);
     KafkaContainerTest.deleteTopics(topic);
   }
 
-  @Test
-  public void testPartitionLogSinkSourceWithSelectedFields() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testPartitionLogSinkSourceWithSelectedFields(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     String topic = this.topic + "testPartitionLogSinkSourceWithSelectedFields";
     KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, 1, topic);
 
@@ -969,14 +1016,19 @@ public class TestUnkeyed extends FlinkTestBase {
     expected.add(new Object[] {1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
     expected.add(new Object[] {1000007, LocalDateTime.parse("2022-06-18T10:10:11.0")});
 
-    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(expected), actual);
 
     result.getJobClient().ifPresent(TestUtil::cancelJob);
     KafkaContainerTest.deleteTopics(topic);
   }
 
-  @Test
-  public void testPartitionDoubleSink() throws Exception {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testPartitionDoubleSink(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     String topic = this.topic + "testUnkeyedPartitionDoubleSink";
     KafkaContainerTest.createTopics(KAFKA_PARTITION_NUMS, 1, topic);
 
@@ -1024,7 +1076,7 @@ public class TestUnkeyed extends FlinkTestBase {
             + ") */"
             + "select * from input");
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
         DataUtil.toRowSet(data),
         sqlSet(
             "select * from mixed_catalog."
@@ -1045,7 +1097,7 @@ public class TestUnkeyed extends FlinkTestBase {
         actual.add(iterator.next());
       }
     }
-    Assert.assertEquals(DataUtil.toRowSet(data), actual);
+    Assertions.assertEquals(DataUtil.toRowSet(data), actual);
     result.getJobClient().ifPresent(TestUtil::cancelJob);
     KafkaContainerTest.deleteTopics(topic);
   }

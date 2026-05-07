@@ -20,26 +20,26 @@ package org.apache.amoro.flink.util;
 
 import org.apache.amoro.flink.table.descriptors.MixedFormatValidator;
 import org.apache.flink.configuration.Configuration;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class TestCompatibleFlinkPropertyUtil {
   @Test
   public void testGetNewProperty() {
     Configuration config = new Configuration();
-    Assert.assertEquals(
+    Assertions.assertEquals(
         MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue(),
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             config, MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE));
 
     config.setBoolean(MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE, true);
-    Assert.assertTrue(
+    Assertions.assertTrue(
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             config, MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE));
 
     config.setBoolean(
         MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY, false);
-    Assert.assertTrue(
+    Assertions.assertTrue(
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             config, MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE));
   }
@@ -49,7 +49,7 @@ public class TestCompatibleFlinkPropertyUtil {
     Configuration config = new Configuration();
     config.setBoolean(
         MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY, true);
-    Assert.assertTrue(
+    Assertions.assertTrue(
         CompatibleFlinkPropertyUtil.propertyAsBoolean(
             config, MixedFormatValidator.MIXED_FORMAT_LOG_CONSISTENCY_GUARANTEE_ENABLE));
   }

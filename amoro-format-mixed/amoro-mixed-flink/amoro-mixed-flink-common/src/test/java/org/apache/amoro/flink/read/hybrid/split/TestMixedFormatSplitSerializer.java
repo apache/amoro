@@ -21,8 +21,8 @@ package org.apache.amoro.flink.read.hybrid.split;
 import org.apache.amoro.flink.read.FlinkSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.reader.TestRowDataReaderFunction;
 import org.apache.flink.util.FlinkRuntimeException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
@@ -60,7 +60,7 @@ public class TestMixedFormatSplitSerializer extends TestRowDataReaderFunction {
                 })
             .collect(Collectors.toList());
 
-    Assert.assertArrayEquals(
+    Assertions.assertArrayEquals(
         expected.toArray(new MixedFormatSplit[0]),
         contents.stream()
             .map(
@@ -84,6 +84,6 @@ public class TestMixedFormatSplitSerializer extends TestRowDataReaderFunction {
 
     MixedFormatSplit actual = serializer.deserialize(1, ser);
 
-    Assert.assertNull(actual);
+    Assertions.assertNull(actual);
   }
 }

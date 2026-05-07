@@ -21,7 +21,7 @@ package org.apache.amoro.flink.read.hybrid.reader;
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
-import org.apache.amoro.catalog.TableTestBase;
+import org.apache.amoro.flink.FlinkTestBase;
 import org.apache.amoro.flink.read.MixedIncrementalLoader;
 import org.apache.amoro.flink.read.hybrid.enumerator.ContinuousSplitPlanner;
 import org.apache.amoro.flink.read.hybrid.enumerator.MergeOnReadIncrementalPlanner;
@@ -42,34 +42,25 @@ import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.flink.data.RowDataUtil;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@RunWith(value = Parameterized.class)
-public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTaskWriterBaseTest {
+public class MixedIncrementalLoaderTest extends FlinkTestBase implements FlinkTaskWriterBaseTest {
 
-  public MixedIncrementalLoaderTest(boolean partitionedTable) {
-    super(
+  private void setUpForParam(boolean partitionedTable) throws Exception {
+    initFlinkTestBase(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, partitionedTable));
+    populateTable();
   }
 
-  @Parameterized.Parameters(name = "partitionedTable = {0}")
-  public static Object[][] parameters() {
-    // todo mix hive test
-    return new Object[][] {{true}, {false}};
-  }
-
-  @Before
-  public void before() throws IOException {
+  private void populateTable() throws IOException {
     MixedTable mixedTable = getMixedTable();
     TableSchema flinkPartialSchema =
         TableSchema.builder()
@@ -109,8 +100,10 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
     }
   }
 
-  @Test
-  public void testMOR() {
+  @ParameterizedTest(name = "partitionedTable = {0}")
+  @ValueSource(booleans = {true, false})
+  public void testMOR(boolean partitionedTable) throws Exception {
+    setUpForParam(partitionedTable);
     KeyedTable keyedTable = getMixedTable().asKeyedTable();
     List<Expression> expressions =
         Lists.newArrayList(Expressions.greaterThan("op_time", "2022-06-20T10:10:11.0"));
@@ -154,9 +147,9 @@ public class MixedIncrementalLoaderTest extends TableTestBase implements FlinkTa
       }
     }
     if (isPartitionedTable()) {
-      Assert.assertEquals(6, actuals.size());
+      Assertions.assertEquals(6, actuals.size());
     } else {
-      Assert.assertEquals(9, actuals.size());
+      Assertions.assertEquals(9, actuals.size());
     }
   }
 

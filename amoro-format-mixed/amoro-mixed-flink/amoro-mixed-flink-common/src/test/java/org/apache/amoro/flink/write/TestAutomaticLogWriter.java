@@ -64,14 +64,12 @@ import org.apache.iceberg.flink.sink.FlinkWriteResult;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,53 +88,53 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestAutomaticLogWriter extends FlinkTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestAutomaticLogWriter.class);
   public MixedFormatTableLoader tableLoader;
   public static final TestGlobalAggregateManager GLOBAL_AGGREGATE_MANGER =
       new TestGlobalAggregateManager();
 
-  private final boolean isGapNone;
-  private final boolean logstoreEnabled;
+  private boolean isGapNone;
+  private boolean logstoreEnabled;
 
-  public TestAutomaticLogWriter(boolean isGapNone, boolean logstoreEnabled) {
+  public TestAutomaticLogWriter() {
     super(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, true));
-    this.isGapNone = isGapNone;
-    this.logstoreEnabled = logstoreEnabled;
   }
 
-  @Parameterized.Parameters(name = "isGapNone={0}, logstoreEnabled={1}")
-  public static Object[][] parameters() {
-    return new Object[][] {
-      {true, true},
-      {false, false},
-      {false, true},
-      {true, false}
-    };
+  static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(true, true),
+        Arguments.of(false, false),
+        Arguments.of(false, true),
+        Arguments.of(true, false));
   }
 
-  @BeforeClass
+  @BeforeAll
   public static void prepare() throws Exception {
     KAFKA_CONTAINER.start();
   }
 
-  @AfterClass
+  @AfterAll
   public static void shutdown() throws Exception {
     KAFKA_CONTAINER.close();
   }
 
-  @Before
-  public void init() {
+  private void setUpForParam(boolean isGapNone, boolean logstoreEnabled) {
+    this.isGapNone = isGapNone;
+    this.logstoreEnabled = logstoreEnabled;
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     tableLoader.open();
   }
 
-  @Test
-  public void testHasCaughtUp() throws Exception {
+  @ParameterizedTest(name = "isGapNone={0}, logstoreEnabled={1}")
+  @MethodSource("parameters")
+  public void testHasCaughtUp(boolean isGapNone, boolean logstoreEnabled) throws Exception {
+    setUpForParam(isGapNone, logstoreEnabled);
+
     String topic =
         Thread.currentThread().getStackTrace()[1].getMethodName() + isGapNone + logstoreEnabled;
 
@@ -225,7 +223,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     List<Record> actual = MixedDataTestHelpers.readKeyedTable(testKeyedTable, null);
 
     Set<Record> expected = toRecords(DataUtil.toRowSet(expects));
-    Assert.assertEquals(expected, new HashSet<>(actual));
+    Assertions.assertEquals(expected, new HashSet<>(actual));
     if (logstoreEnabled) {
       checkLogstoreDataAccuracy(topic, expects);
     } else {
@@ -233,8 +231,11 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     }
   }
 
-  @Test
-  public void testHasNotCaughtUp() throws Exception {
+  @ParameterizedTest(name = "isGapNone={0}, logstoreEnabled={1}")
+  @MethodSource("parameters")
+  public void testHasNotCaughtUp(boolean isGapNone, boolean logstoreEnabled) throws Exception {
+    setUpForParam(isGapNone, logstoreEnabled);
+
     String topic =
         Thread.currentThread().getStackTrace()[1].getMethodName() + isGapNone + logstoreEnabled;
     byte[] jobId = IdGenerator.generateUpstreamId();
@@ -258,7 +259,7 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     List<Object[]> expects = new LinkedList<>();
     List<FlinkWriteResult> results;
     testKeyedTable.refresh();
-    Assert.assertFalse(
+    Assertions.assertFalse(
         Boolean.parseBoolean(
             testKeyedTable.properties().getOrDefault(LOG_STORE_CATCH_UP.key(), "false")));
     try (TestOneInputStreamOperatorIntern<RowData, FlinkWriteResult> harness =
@@ -313,13 +314,13 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
     }
 
     // check expects accuracy.
-    Assert.assertEquals(3, results.size());
-    results.forEach(result -> Assert.assertEquals(1, result.writeResult().dataFiles().length));
+    Assertions.assertEquals(3, results.size());
+    results.forEach(result -> Assertions.assertEquals(1, result.writeResult().dataFiles().length));
     List<Object[]> expected = isGapNone ? expects : expects.subList(2, expects.size());
     checkLogstoreDataAccuracy(topic, expected);
     testKeyedTable.refresh();
     if (!isGapNone) {
-      Assert.assertTrue(
+      Assertions.assertTrue(
           Boolean.parseBoolean(testKeyedTable.properties().get(LOG_STORE_CATCH_UP.key())));
     }
   }

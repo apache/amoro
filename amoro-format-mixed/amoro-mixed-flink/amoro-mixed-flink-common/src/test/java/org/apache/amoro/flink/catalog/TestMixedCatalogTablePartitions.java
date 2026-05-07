@@ -44,8 +44,9 @@ import org.apache.flink.table.expressions.FieldReferenceExpression;
 import org.apache.flink.table.expressions.ResolvedExpression;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.types.RowKind;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -61,8 +62,8 @@ public class TestMixedCatalogTablePartitions extends FlinkTestBase {
         new BasicTableTestHelper(true, true));
   }
 
-  public void before() throws Exception {
-    super.before();
+  @BeforeEach
+  public void configProps() {
     super.config();
   }
 
@@ -105,7 +106,7 @@ public class TestMixedCatalogTablePartitions extends FlinkTestBase {
         new CatalogPartitionSpec(ImmutableMap.of("dt", "2023-10-02"));
     expected.add(partitionSpec1);
     expected.add(partitionSpec2);
-    Assert.assertEquals("Should produce the expected catalog partition specs.", list, expected);
+    Assertions.assertEquals(list, expected, "Should produce the expected catalog partition specs.");
   }
 
   @Test
@@ -149,8 +150,8 @@ public class TestMixedCatalogTablePartitions extends FlinkTestBase {
         new CatalogPartitionSpec(ImmutableMap.of("dt", "2023-10-02"));
     expected.add(partitionSpec1);
     expected.add(partitionSpec2);
-    Assert.assertEquals(
-        "Should produce the expected catalog partition specs.", partitionList, expected);
+    Assertions.assertEquals(
+        partitionList, expected, "Should produce the expected catalog partition specs.");
   }
 
   @Test
@@ -203,21 +204,21 @@ public class TestMixedCatalogTablePartitions extends FlinkTestBase {
         new CatalogPartitionSpec(ImmutableMap.of("dt", "2023-10-01", "name", "mark"));
     expected.add(partitionSpec1);
     expected.add(partitionSpec2);
-    Assert.assertEquals("Should produce the expected catalog partition specs.", list, expected);
+    Assertions.assertEquals(list, expected, "Should produce the expected catalog partition specs.");
 
     List<CatalogPartitionSpec> listCatalogPartitionSpec =
         mixedCatalog.listPartitions(
             objectPath,
             new CatalogPartitionSpec(ImmutableMap.of("dt", "2023-10-01", "name", "Gerry")));
-    Assert.assertEquals(
-        "Should produce the expected catalog partition specs.", listCatalogPartitionSpec.size(), 1);
+    Assertions.assertEquals(
+        listCatalogPartitionSpec.size(), 1, "Should produce the expected catalog partition specs.");
 
     try {
       mixedCatalog.listPartitions(
           objectPath,
           new CatalogPartitionSpec(ImmutableMap.of("dt", "2023-10-01", "name1", "Gerry")));
     } catch (Exception e) {
-      Assert.assertTrue(e instanceof PartitionSpecInvalidException);
+      Assertions.assertTrue(e instanceof PartitionSpecInvalidException);
     }
   }
 }

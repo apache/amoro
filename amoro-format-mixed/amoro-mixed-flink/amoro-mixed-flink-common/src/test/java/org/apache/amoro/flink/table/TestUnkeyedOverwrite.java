@@ -24,7 +24,6 @@ import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.flink.FlinkTestBase;
-import org.apache.amoro.flink.MiniClusterResource;
 import org.apache.amoro.flink.util.DataUtil;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
@@ -32,79 +31,79 @@ import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.test.util.MiniClusterWithClientResource;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-@RunWith(Parameterized.class)
 public class TestUnkeyedOverwrite extends FlinkTestBase {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TestUnkeyedOverwrite.class);
-
-  @Rule public TemporaryFolder tempFolder = new TemporaryFolder();
-
-  @ClassRule
-  public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
-      MiniClusterResource.createWithClassloaderCheckDisabled();
 
   private static final String TABLE = "test_unkeyed";
   private static final String DB = TableTestHelper.TEST_TABLE_ID.getDatabase();
 
   private String db;
   public boolean isHive;
-  @ClassRule public static TestHMS TEST_HMS = new TestHMS();
+  static final TestHMS TEST_HMS = new TestHMS();
 
-  public TestUnkeyedOverwrite(
-      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive) {
-    super(catalogTestHelper, tableTestHelper);
+  static java.util.stream.Stream<Arguments> parameters() {
+    return java.util.stream.Stream.of(
+        Arguments.of(
+            new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
+            new HiveTableTestHelper(true, true),
+            true),
+        Arguments.of(
+            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, true),
+            false));
+  }
+
+  @BeforeAll
+  public static void startTestHms() throws Exception {
+    TEST_HMS.before();
+  }
+
+  @AfterAll
+  public static void stopTestHms() {
+    TEST_HMS.after();
+  }
+
+  @AfterEach
+  public void dropTestTable() {
+    if (db != null) {
+      sql("DROP TABLE IF EXISTS mixed_catalog." + db + "." + TABLE);
+    }
+  }
+
+  private void setUpForParam(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
     this.isHive = isHive;
-  }
-
-  @Parameterized.Parameters(name = "{0}, {1}, {2}")
-  public static Object[] parameters() {
-    return new Object[][] {
-      {
-        new HiveCatalogTestHelper(TableFormat.MIXED_HIVE, TEST_HMS.getHiveConf()),
-        new HiveTableTestHelper(true, true),
-        true
-      },
-      {
-        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(true, true),
-        false
-      }
-    };
-  }
-
-  public void before() throws Exception {
     if (isHive) {
       db = HiveTableTestHelper.TEST_DB_NAME;
     } else {
       db = DB;
     }
-    super.before();
-    super.config();
+    initFlinkTestBase(catalogTestHelper, tableTestHelper);
+    config();
   }
 
-  @After
-  public void after() {
-    sql("DROP TABLE IF EXISTS mixed_catalog." + db + "." + TABLE);
-  }
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testInsertOverwrite(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
 
-  @Test
-  public void testInsertOverwrite() throws IOException {
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a"});
     data.add(new Object[] {1000015, "b"});
@@ -135,7 +134,7 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
 
     sql("insert overwrite mixed_catalog." + db + "." + TABLE + " select * from input");
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
         DataUtil.toRowSet(data),
         sqlSet(
             "select * from mixed_catalog."
@@ -147,8 +146,13 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
                 + ") */"));
   }
 
-  @Test
-  public void testPartitionInsertOverwrite() throws IOException {
+  @ParameterizedTest(name = "{0}, {1}, {2}")
+  @MethodSource("parameters")
+  public void testPartitionInsertOverwrite(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper, boolean isHive)
+      throws Exception {
+    setUpForParam(catalogTestHelper, tableTestHelper, isHive);
+
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[] {1000004, "a", "2022-05-17"});
     data.add(new Object[] {1000015, "b", "2022-05-17"});
@@ -193,7 +197,7 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
             + TABLE
             + " PARTITION (dt='2022-05-18') select id, name from input where dt = '2022-05-19'");
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
         DataUtil.toRowSet(expected),
         sqlSet(
             "select id, name, '2022-05-19' from mixed_catalog."

@@ -18,9 +18,9 @@
 
 package org.apache.amoro.flink.lookup.filter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.catalog.Column;
@@ -29,8 +29,8 @@ import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.expressions.ResolvedExpression;
 import org.apache.flink.table.types.DataType;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,7 +47,7 @@ public class TestRowDataPredicateExpressionVisitor extends TestRowDataPredicateB
   List<Column> columns = new ArrayList<>();
   ResolvedSchema schema;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     columns.add(0, Column.physical("id", DataTypes.INT()));
     columns.add(1, Column.physical("name", DataTypes.STRING()));
