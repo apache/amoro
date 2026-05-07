@@ -28,7 +28,6 @@ public class InlineTableExecutors {
 
   private static final InlineTableExecutors instance = new InlineTableExecutors();
   private TableRuntimeRefreshExecutor tableRefreshingExecutor;
-  private OrphanFilesCleaningExecutor orphanFilesCleaningExecutor;
   private DanglingDeleteFilesCleaningExecutor danglingDeleteFilesCleaningExecutor;
   private BlockerExpiringExecutor blockerExpiringExecutor;
   private OptimizingCommitExecutor optimizingCommitExecutor;
@@ -42,13 +41,6 @@ public class InlineTableExecutors {
   }
 
   public void setup(TableService tableService, Configurations conf) {
-    if (conf.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
-      this.orphanFilesCleaningExecutor =
-          new OrphanFilesCleaningExecutor(
-              tableService,
-              conf.getInteger(AmoroManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT),
-              conf.get(AmoroManagementConf.CLEAN_ORPHAN_FILES_INTERVAL));
-    }
     if (conf.getBoolean(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_ENABLED)) {
       this.danglingDeleteFilesCleaningExecutor =
           new DanglingDeleteFilesCleaningExecutor(
@@ -106,10 +98,6 @@ public class InlineTableExecutors {
 
   public TableRuntimeRefreshExecutor getTableRefreshingExecutor() {
     return tableRefreshingExecutor;
-  }
-
-  public OrphanFilesCleaningExecutor getOrphanFilesCleaningExecutor() {
-    return orphanFilesCleaningExecutor;
   }
 
   public DanglingDeleteFilesCleaningExecutor getDanglingDeleteFilesCleaningExecutor() {
