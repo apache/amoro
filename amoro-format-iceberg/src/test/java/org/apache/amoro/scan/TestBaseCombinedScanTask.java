@@ -24,8 +24,8 @@ import org.apache.amoro.utils.ManifestEntryFields;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
@@ -62,6 +62,6 @@ public class TestBaseCombinedScanTask {
             + "\t\tfileSizeInBytes=10, \n"
             + "\t\trecordCount=100}], \n"
             + "\tdeleteFiles=[]}}";
-    Assert.assertEquals(expected, baseCombinedScanTask.toString());
+    Assertions.assertEquals(expected, baseCombinedScanTask.toString());
   }
 }

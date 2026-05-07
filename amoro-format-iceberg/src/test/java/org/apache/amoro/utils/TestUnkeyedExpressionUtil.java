@@ -36,24 +36,18 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.types.Types;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestUnkeyedExpressionUtil extends TableTestBase {
-
-  public TestUnkeyedExpressionUtil(TableFormat tableFormat, PartitionSpec partitionSpec) {
-    super(
-        new BasicCatalogTestHelper(tableFormat),
-        new BasicTableTestHelper(TABLE_SCHEMA, false, partitionSpec));
-  }
 
   public static final Schema TABLE_SCHEMA =
       new Schema(
@@ -67,36 +61,56 @@ public class TestUnkeyedExpressionUtil extends TableTestBase {
     return super.getMixedTable();
   }
 
-  @Parameterized.Parameters(name = "{0}, {1}")
-  public static Object[][] parameters() {
-    return new Object[][] {
-      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).identity("op_time").build()},
-      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).bucket("name", 2).build()},
-      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).truncate("ts", 10).build()},
-      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).year("op_time").build()},
-      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).month("op_time").build()},
-      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).day("op_time").build()},
-      {TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).hour("op_time").build()},
-      {TableFormat.ICEBERG, PartitionSpec.unpartitioned()},
-      {
-        TableFormat.MIXED_ICEBERG,
-        PartitionSpec.builderFor(TABLE_SCHEMA).identity("op_time").build()
-      },
-      {TableFormat.MIXED_ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).bucket("name", 2).build()},
-      {
-        TableFormat.MIXED_ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).truncate("ts", 10).build()
-      },
-      {TableFormat.MIXED_ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).year("op_time").build()},
-      {TableFormat.MIXED_ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).month("op_time").build()},
-      {TableFormat.MIXED_ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).day("op_time").build()},
-      {TableFormat.MIXED_ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).hour("op_time").build()},
-      {TableFormat.MIXED_ICEBERG, PartitionSpec.unpartitioned()}
-    };
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(
+            TableFormat.ICEBERG,
+            PartitionSpec.builderFor(TABLE_SCHEMA).identity("op_time").build()),
+        Arguments.of(
+            TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).bucket("name", 2).build()),
+        Arguments.of(
+            TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).truncate("ts", 10).build()),
+        Arguments.of(
+            TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).year("op_time").build()),
+        Arguments.of(
+            TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).month("op_time").build()),
+        Arguments.of(
+            TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).day("op_time").build()),
+        Arguments.of(
+            TableFormat.ICEBERG, PartitionSpec.builderFor(TABLE_SCHEMA).hour("op_time").build()),
+        Arguments.of(TableFormat.ICEBERG, PartitionSpec.unpartitioned()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            PartitionSpec.builderFor(TABLE_SCHEMA).identity("op_time").build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            PartitionSpec.builderFor(TABLE_SCHEMA).bucket("name", 2).build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            PartitionSpec.builderFor(TABLE_SCHEMA).truncate("ts", 10).build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            PartitionSpec.builderFor(TABLE_SCHEMA).year("op_time").build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            PartitionSpec.builderFor(TABLE_SCHEMA).month("op_time").build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            PartitionSpec.builderFor(TABLE_SCHEMA).day("op_time").build()),
+        Arguments.of(
+            TableFormat.MIXED_ICEBERG,
+            PartitionSpec.builderFor(TABLE_SCHEMA).hour("op_time").build()),
+        Arguments.of(TableFormat.MIXED_ICEBERG, PartitionSpec.unpartitioned()));
   }
 
-  @Test
-  public void testUnkeyedConvertPartitionStructLikeToDataFilter() throws IOException {
-    Assume.assumeTrue(getMixedTable().isUnkeyedTable());
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testUnkeyedConvertPartitionStructLikeToDataFilter(
+      TableFormat tableFormat, PartitionSpec partitionSpec) throws IOException {
+    setupTable(
+        new BasicCatalogTestHelper(tableFormat),
+        new BasicTableTestHelper(TABLE_SCHEMA, false, partitionSpec));
+    Assumptions.assumeTrue(getMixedTable().isUnkeyedTable());
     UnkeyedTable table = getMixedTable().asUnkeyedTable();
     ArrayList<Record> records =
         Lists.newArrayList(
@@ -132,9 +146,9 @@ public class TestUnkeyedExpressionUtil extends TableTestBase {
       throw new RuntimeException(e);
     }
     if (isPartitionedTable()) {
-      Assert.assertEquals(2, baseDataFiles.size());
+      Assertions.assertEquals(2, baseDataFiles.size());
     } else {
-      Assert.assertEquals(1, baseDataFiles.size());
+      Assertions.assertEquals(1, baseDataFiles.size());
     }
     baseDataFiles.clear();
 
@@ -148,9 +162,9 @@ public class TestUnkeyedExpressionUtil extends TableTestBase {
       throw new RuntimeException(e);
     }
     if (isPartitionedTable()) {
-      Assert.assertEquals(1, baseDataFiles.size());
+      Assertions.assertEquals(1, baseDataFiles.size());
     } else {
-      Assert.assertEquals(1, baseDataFiles.size());
+      Assertions.assertEquals(1, baseDataFiles.size());
     }
   }
 }

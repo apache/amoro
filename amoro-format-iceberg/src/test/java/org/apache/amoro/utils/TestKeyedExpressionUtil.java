@@ -34,25 +34,19 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.types.Types;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestKeyedExpressionUtil extends TableTestBase {
-
-  public TestKeyedExpressionUtil(PartitionSpec partitionSpec) {
-    super(
-        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(TABLE_SCHEMA, true, partitionSpec));
-  }
 
   public static final Schema TABLE_SCHEMA =
       new Schema(
@@ -61,23 +55,26 @@ public class TestKeyedExpressionUtil extends TableTestBase {
           Types.NestedField.required(3, "ts", Types.LongType.get()),
           Types.NestedField.optional(4, "op_time", Types.TimestampType.withoutZone()));
 
-  @Parameterized.Parameters(name = "{0}")
-  public static Object[] parameters() {
-    return new Object[][] {
-      {PartitionSpec.builderFor(TABLE_SCHEMA).identity("op_time").build()},
-      {PartitionSpec.builderFor(TABLE_SCHEMA).bucket("name", 2).build()},
-      {PartitionSpec.builderFor(TABLE_SCHEMA).truncate("ts", 10).build()},
-      {PartitionSpec.builderFor(TABLE_SCHEMA).year("op_time").build()},
-      {PartitionSpec.builderFor(TABLE_SCHEMA).month("op_time").build()},
-      {PartitionSpec.builderFor(TABLE_SCHEMA).day("op_time").build()},
-      {PartitionSpec.builderFor(TABLE_SCHEMA).hour("op_time").build()},
-      {PartitionSpec.unpartitioned()}
-    };
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(PartitionSpec.builderFor(TABLE_SCHEMA).identity("op_time").build()),
+        Arguments.of(PartitionSpec.builderFor(TABLE_SCHEMA).bucket("name", 2).build()),
+        Arguments.of(PartitionSpec.builderFor(TABLE_SCHEMA).truncate("ts", 10).build()),
+        Arguments.of(PartitionSpec.builderFor(TABLE_SCHEMA).year("op_time").build()),
+        Arguments.of(PartitionSpec.builderFor(TABLE_SCHEMA).month("op_time").build()),
+        Arguments.of(PartitionSpec.builderFor(TABLE_SCHEMA).day("op_time").build()),
+        Arguments.of(PartitionSpec.builderFor(TABLE_SCHEMA).hour("op_time").build()),
+        Arguments.of(PartitionSpec.unpartitioned()));
   }
 
-  @Test
-  public void testKeyedConvertPartitionStructLikeToDataFilter() {
-    Assume.assumeTrue(isKeyedTable());
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("parameters")
+  public void testKeyedConvertPartitionStructLikeToDataFilter(PartitionSpec partitionSpec)
+      throws IOException {
+    setupTable(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(TABLE_SCHEMA, true, partitionSpec));
+    Assumptions.assumeTrue(isKeyedTable());
     ArrayList<Record> baseStoreRecords =
         Lists.newArrayList(
             // hash("111") = -210118348, hash("222") = -699778209
@@ -137,8 +134,8 @@ public class TestKeyedExpressionUtil extends TableTestBase {
       throw new RuntimeException(e);
     }
 
-    Assert.assertEquals(4, baseDataFiles.size());
-    Assert.assertEquals(4, insertFiles.size());
+    Assertions.assertEquals(4, baseDataFiles.size());
+    Assertions.assertEquals(4, insertFiles.size());
     baseDataFiles.clear();
     insertFiles.clear();
 
@@ -157,11 +154,11 @@ public class TestKeyedExpressionUtil extends TableTestBase {
       throw new RuntimeException(e);
     }
     if (isPartitionedTable()) {
-      Assert.assertEquals(2, baseDataFiles.size());
-      Assert.assertEquals(2, insertFiles.size());
+      Assertions.assertEquals(2, baseDataFiles.size());
+      Assertions.assertEquals(2, insertFiles.size());
     } else {
-      Assert.assertEquals(4, baseDataFiles.size());
-      Assert.assertEquals(4, insertFiles.size());
+      Assertions.assertEquals(4, baseDataFiles.size());
+      Assertions.assertEquals(4, insertFiles.size());
     }
   }
 }

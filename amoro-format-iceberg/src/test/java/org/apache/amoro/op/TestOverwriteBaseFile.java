@@ -27,13 +27,20 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.util.StructLikeMap;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
 public class TestOverwriteBaseFile extends TableDataTestBase {
+
+  @BeforeEach
+  public void setUp() throws IOException {
+    initData();
+  }
 
   /** overwrite all partition, add new data files */
   @Test
@@ -60,22 +67,22 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     StructLikeMap<Long> partitionOptimizedSequence =
         MixedTableUtil.readOptimizedSequence(getMixedTable().asKeyedTable());
     // expect result: all partition with new txId
-    Assert.assertEquals(
+    Assertions.assertEquals(
         txId,
         partitionOptimizedSequence
             .get(MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00"))
             .longValue());
-    Assert.assertEquals(
+    Assertions.assertEquals(
         txId,
         partitionOptimizedSequence
             .get(MixedDataTestHelpers.recordPartition("2022-01-02T12:00:00"))
             .longValue());
-    Assert.assertEquals(
+    Assertions.assertEquals(
         txId,
         partitionOptimizedSequence
             .get(MixedDataTestHelpers.recordPartition("2022-01-03T12:00:00"))
             .longValue());
-    Assert.assertEquals(
+    Assertions.assertEquals(
         txId,
         partitionOptimizedSequence
             .get(MixedDataTestHelpers.recordPartition("2022-01-04T12:00:00"))
@@ -105,18 +112,18 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
         MixedDataTestHelpers.readKeyedTable(
             getMixedTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]
-    Assert.assertEquals(3, rows.size());
+    Assertions.assertEquals(3, rows.size());
 
     Set<Integer> resultIdSet = Sets.newHashSet();
     rows.forEach(r -> resultIdSet.add((Integer) r.get(0)));
-    Assert.assertTrue(resultIdSet.contains(7));
-    Assert.assertTrue(resultIdSet.contains(8));
-    Assert.assertTrue(resultIdSet.contains(9));
+    Assertions.assertTrue(resultIdSet.contains(7));
+    Assertions.assertTrue(resultIdSet.contains(8));
+    Assertions.assertTrue(resultIdSet.contains(9));
   }
 
   private void assertRange(long from, long to, long actual) {
-    Assert.assertTrue(actual >= from);
-    Assert.assertTrue(actual <= to);
+    Assertions.assertTrue(actual >= from);
+    Assertions.assertTrue(actual <= to);
   }
 
   @Test
@@ -147,20 +154,20 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
     StructLikeMap<Long> partitionOptimizedSequence =
         MixedTableUtil.readOptimizedSequence(getMixedTable().asKeyedTable());
     // expect result: 1,2,4 partition with new txId, 3 partition is null
-    Assert.assertEquals(
+    Assertions.assertEquals(
         txId,
         partitionOptimizedSequence
             .get(MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00"))
             .longValue());
-    Assert.assertEquals(
+    Assertions.assertEquals(
         txId,
         partitionOptimizedSequence
             .get(MixedDataTestHelpers.recordPartition("2022-01-02T12:00:00"))
             .longValue());
-    Assert.assertNull(
+    Assertions.assertNull(
         partitionOptimizedSequence.get(
             MixedDataTestHelpers.recordPartition("2022-01-03T12:00:00")));
-    Assert.assertEquals(
+    Assertions.assertEquals(
         txId,
         partitionOptimizedSequence
             .get(MixedDataTestHelpers.recordPartition("2022-01-02T12:00:00"))
@@ -177,7 +184,7 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
         before,
         after,
         partitionOptimizedTime.get(MixedDataTestHelpers.recordPartition("2022-01-02T12:00:00")));
-    Assert.assertNull(
+    Assertions.assertNull(
         partitionOptimizedTime.get(MixedDataTestHelpers.recordPartition("2022-01-03T12:00:00")));
     assertRange(
         before,
@@ -189,14 +196,14 @@ public class TestOverwriteBaseFile extends TableDataTestBase {
             getMixedTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]
     // partition3 -> base[3]
-    Assert.assertEquals(4, rows.size());
+    Assertions.assertEquals(4, rows.size());
 
     Set<Integer> resultIdSet = Sets.newHashSet();
     rows.forEach(r -> resultIdSet.add((Integer) r.get(0)));
-    Assert.assertTrue(resultIdSet.contains(7));
-    Assert.assertTrue(resultIdSet.contains(8));
-    Assert.assertTrue(resultIdSet.contains(9));
+    Assertions.assertTrue(resultIdSet.contains(7));
+    Assertions.assertTrue(resultIdSet.contains(8));
+    Assertions.assertTrue(resultIdSet.contains(9));
 
-    Assert.assertTrue(resultIdSet.contains(3));
+    Assertions.assertTrue(resultIdSet.contains(3));
   }
 }

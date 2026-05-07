@@ -31,9 +31,11 @@ import org.apache.iceberg.Metrics;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Types;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -42,8 +44,9 @@ import java.util.Map;
 
 public class TestWatermarkGenerator extends TableTestBase {
 
-  public TestWatermarkGenerator() {
-    super(
+  @BeforeEach
+  public void setUp() throws IOException {
+    setupTable(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(false, false));
   }
@@ -52,9 +55,9 @@ public class TestWatermarkGenerator extends TableTestBase {
   public void testDefaultEventTime() {
     long start = System.currentTimeMillis();
     WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getMixedTable());
-    Assert.assertEquals(-1, watermarkGenerator.watermark());
+    Assertions.assertEquals(-1, watermarkGenerator.watermark());
     watermarkGenerator.addFile(DataFileTestHelpers.getFile(1));
-    Assert.assertTrue(watermarkGenerator.watermark() >= start);
+    Assertions.assertTrue(watermarkGenerator.watermark() >= start);
   }
 
   @Test
@@ -88,7 +91,7 @@ public class TestWatermarkGenerator extends TableTestBase {
             "/watermark", 1, PartitionSpec.unpartitioned(), null, metrics, false);
 
     watermarkGenerator.addFile(file1);
-    Assert.assertEquals(start - 20000, watermarkGenerator.watermark());
+    Assertions.assertEquals(start - 20000, watermarkGenerator.watermark());
 
     lowerBounds.put(4, Conversions.toByteBuffer(Types.TimestampType.withoutZone(), start));
     upperBounds.put(4, Conversions.toByteBuffer(Types.TimestampType.withoutZone(), start));
@@ -106,7 +109,7 @@ public class TestWatermarkGenerator extends TableTestBase {
         DataFileTestHelpers.getFile(
             "/watermark", 2, PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file2);
-    Assert.assertEquals(start - 10000, watermarkGenerator.watermark());
+    Assertions.assertEquals(start - 10000, watermarkGenerator.watermark());
   }
 
   @Test
@@ -140,7 +143,7 @@ public class TestWatermarkGenerator extends TableTestBase {
         DataFileTestHelpers.getFile(
             "/watermark", 1, PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file1);
-    Assert.assertEquals((start / 1000 * 1000) - 15000, watermarkGenerator.watermark());
+    Assertions.assertEquals((start / 1000 * 1000) - 15000, watermarkGenerator.watermark());
 
     lowerBounds.put(3, Conversions.toByteBuffer(Types.LongType.get(), start / 1000));
     upperBounds.put(3, Conversions.toByteBuffer(Types.LongType.get(), start / 1000));
@@ -158,7 +161,7 @@ public class TestWatermarkGenerator extends TableTestBase {
         DataFileTestHelpers.getFile(
             "/watermark", 2, PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file2);
-    Assert.assertEquals((start / 1000 * 1000) - 5000, watermarkGenerator.watermark());
+    Assertions.assertEquals((start / 1000 * 1000) - 5000, watermarkGenerator.watermark());
   }
 
   @Test
@@ -192,7 +195,8 @@ public class TestWatermarkGenerator extends TableTestBase {
         DataFileTestHelpers.getFile(
             "/watermark", 1, PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file1);
-    Assert.assertEquals(df.parse("2022-11-11 00:00:59").getTime(), watermarkGenerator.watermark());
+    Assertions.assertEquals(
+        df.parse("2022-11-11 00:00:59").getTime(), watermarkGenerator.watermark());
 
     lowerBounds.put(2, Conversions.toByteBuffer(Types.StringType.get(), "2022-11-11 00:00:00"));
     upperBounds.put(2, Conversions.toByteBuffer(Types.StringType.get(), "2022-11-11 00:02:00"));
@@ -210,7 +214,8 @@ public class TestWatermarkGenerator extends TableTestBase {
         DataFileTestHelpers.getFile(
             "/watermark", 2, PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file2);
-    Assert.assertEquals(df.parse("2022-11-11 00:01:59").getTime(), watermarkGenerator.watermark());
+    Assertions.assertEquals(
+        df.parse("2022-11-11 00:01:59").getTime(), watermarkGenerator.watermark());
   }
 
   @Test
@@ -242,6 +247,6 @@ public class TestWatermarkGenerator extends TableTestBase {
         DataFileTestHelpers.getFile(
             "/watermark", 1, PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file1);
-    Assert.assertEquals(-1, watermarkGenerator.watermark());
+    Assertions.assertEquals(-1, watermarkGenerator.watermark());
   }
 }

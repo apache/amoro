@@ -28,8 +28,8 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeWrapper;
 import org.apache.lucene.util.RamUsageEstimator;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
@@ -53,7 +53,7 @@ public class TestStructLikeWrapperSizeEstimator {
     // Because the size of map also will increase, so the record2Size should a little bigger than
     // the size of the record
     long estimateSize = new StructLikeWrapperSizeEstimator().sizeEstimate(wrapper);
-    Assert.assertEquals(1, record2Size / estimateSize);
+    Assertions.assertEquals(1, record2Size / estimateSize);
   }
 
   @Test
@@ -78,6 +78,6 @@ public class TestStructLikeWrapperSizeEstimator {
     StructLikeWrapper wrapper = StructLikeWrapper.forType(schema.asStruct()).set(record2);
 
     long estimateSize = new StructLikeWrapperSizeEstimator().sizeEstimate(wrapper);
-    Assert.assertEquals(1, record2Size / estimateSize);
+    Assertions.assertEquals(1, record2Size / estimateSize);
   }
 }

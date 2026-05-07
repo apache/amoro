@@ -24,13 +24,19 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.function.Predicate;
 
 public class TestMixedChangeTableScan extends TableDataTestBase {
+
+  @BeforeEach
+  public void setUp() throws IOException {
+    initData();
+  }
 
   @Test
   public void testIncrementalScan() throws IOException {
@@ -95,10 +101,10 @@ public class TestMixedChangeTableScan extends TableDataTestBase {
     int taskCount = 0;
     for (FileScanTask task : tasks) {
       taskCount++;
-      Assert.assertTrue(task instanceof BasicMixedFileScanTask);
-      Assert.assertTrue(validator.test(task));
+      Assertions.assertTrue(task instanceof BasicMixedFileScanTask);
+      Assertions.assertTrue(validator.test(task));
     }
-    Assert.assertEquals(fileCnt, taskCount);
+    Assertions.assertEquals(fileCnt, taskCount);
   }
 
   private void assertFilesSequence(

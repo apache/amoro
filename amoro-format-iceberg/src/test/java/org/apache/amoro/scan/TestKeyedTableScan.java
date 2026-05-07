@@ -28,8 +28,9 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.WriteResult;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,6 +38,11 @@ import java.util.Arrays;
 import java.util.List;
 
 public class TestKeyedTableScan extends TableDataTestBase {
+
+  @BeforeEach
+  public void setUp() throws IOException {
+    initData();
+  }
 
   @Test
   public void testScanWithInsertFileInBaseStore() throws IOException {
@@ -66,9 +72,9 @@ public class TestKeyedTableScan extends TableDataTestBase {
                 });
       }
     }
-    Assert.assertEquals(baseFileCnt, allBaseTasks.size());
-    Assert.assertEquals(insertFileCnt, allInsertTasks.size());
-    Assert.assertEquals(equDeleteFileCnt, allEquDeleteTasks.size());
+    Assertions.assertEquals(baseFileCnt, allBaseTasks.size());
+    Assertions.assertEquals(insertFileCnt, allInsertTasks.size());
+    Assertions.assertEquals(equDeleteFileCnt, allEquDeleteTasks.size());
   }
 
   private void writeInsertFileIntoBaseStore() throws IOException {

@@ -24,8 +24,8 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
@@ -64,13 +64,13 @@ public class TestTablePropertyUtil {
 
   @Test
   public void testEncodePartitionProperties() {
-    Assert.assertEquals(
+    Assertions.assertEquals(
         JSON_VALUE, TablePropertyUtil.encodePartitionProperties(SPEC, PARTITION_PROPERTIES));
   }
 
   @Test
   public void testDecodePartitionProperties() {
-    Assert.assertEquals(
+    Assertions.assertEquals(
         PARTITION_PROPERTIES, TablePropertyUtil.decodePartitionProperties(SPEC, JSON_VALUE));
   }
 }

@@ -29,15 +29,18 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.types.Types;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.Map;
 
 public class TestUpdateTable extends TableTestBase {
 
-  public TestUpdateTable() {
-    super(
+  @BeforeEach
+  public void setUp() throws IOException {
+    setupTable(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, true));
   }
@@ -51,25 +54,25 @@ public class TestUpdateTable extends TableTestBase {
     final String testProps2 = "test.props2";
     final String testPropsVal2 = "v2";
 
-    Assert.assertFalse(properties.containsKey(testProps));
-    Assert.assertFalse(properties.containsKey(testProps2));
+    Assertions.assertFalse(properties.containsKey(testProps));
+    Assertions.assertFalse(properties.containsKey(testProps2));
 
     UpdateProperties updateProperties = getMixedTable().updateProperties();
     updateProperties.set(testProps, testPropsValue);
     updateProperties.commit();
 
     properties = getMixedTable().properties();
-    Assert.assertTrue(properties.containsKey(testProps));
-    Assert.assertEquals(testPropsValue, properties.get(testProps));
+    Assertions.assertTrue(properties.containsKey(testProps));
+    Assertions.assertEquals(testPropsValue, properties.get(testProps));
 
     updateProperties = getMixedTable().updateProperties();
     updateProperties.remove(testProps);
     updateProperties.set(testProps2, testPropsVal2);
     updateProperties.commit();
     properties = getMixedTable().properties();
-    Assert.assertTrue(properties.containsKey(testProps2));
-    Assert.assertEquals(testPropsVal2, properties.get(testProps2));
-    Assert.assertFalse(properties.containsKey(testProps));
+    Assertions.assertTrue(properties.containsKey(testProps2));
+    Assertions.assertEquals(testPropsVal2, properties.get(testProps2));
+    Assertions.assertFalse(properties.containsKey(testProps));
   }
 
   @Test
@@ -165,9 +168,9 @@ public class TestUpdateTable extends TableTestBase {
     us.commit();
     KeyedSchemaUpdate.syncSchema(getMixedTable().asKeyedTable());
 
-    Assert.assertEquals(
-        "Should match base and change schema",
+    Assertions.assertEquals(
         getMixedTable().asKeyedTable().baseTable().schema().asStruct(),
-        getMixedTable().asKeyedTable().changeTable().schema().asStruct());
+        getMixedTable().asKeyedTable().changeTable().schema().asStruct(),
+        "Should match base and change schema");
   }
 }

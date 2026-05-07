@@ -24,8 +24,8 @@ import org.apache.amoro.data.DefaultKeyedFile;
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.io.writer.TaskWriterKey;
 import org.apache.iceberg.FileFormat;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class TestFileNameGenerator {
 
@@ -37,17 +37,17 @@ public class TestFileNameGenerator {
     String fileName = fileNameGenerator.fileName(writerKey);
     System.out.println(fileName);
     DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseBase(fileName);
-    Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
-    Assert.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
-    Assert.assertEquals(fileMeta.transactionId(), 2L);
+    Assertions.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
+    Assertions.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
+    Assertions.assertEquals(fileMeta.transactionId(), 2L);
   }
 
   @Test
   public void hiveFileName() {
     DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseBase("a");
-    Assert.assertEquals(fileMeta.node(), DataTreeNode.of(0, 0));
-    Assert.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
-    Assert.assertEquals(fileMeta.transactionId(), 0L);
+    Assertions.assertEquals(fileMeta.node(), DataTreeNode.of(0, 0));
+    Assertions.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
+    Assertions.assertEquals(fileMeta.transactionId(), 0L);
   }
 
   @Test
@@ -57,9 +57,9 @@ public class TestFileNameGenerator {
         new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.INSERT_FILE);
     String fileName = fileNameGenerator.fileName(writerKey);
     DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseBase(fileName);
-    Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
-    Assert.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
-    Assert.assertEquals(fileMeta.transactionId(), 0L);
+    Assertions.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
+    Assertions.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
+    Assertions.assertEquals(fileMeta.transactionId(), 0L);
   }
 
   @Test
@@ -69,9 +69,9 @@ public class TestFileNameGenerator {
         new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.INSERT_FILE);
     String fileName = fileNameGenerator.fileName(writerKey);
     DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseChange(fileName, 5L);
-    Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
-    Assert.assertEquals(fileMeta.type(), DataFileType.INSERT_FILE);
-    Assert.assertEquals(fileMeta.transactionId(), 5L);
+    Assertions.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
+    Assertions.assertEquals(fileMeta.type(), DataFileType.INSERT_FILE);
+    Assertions.assertEquals(fileMeta.transactionId(), 5L);
   }
 
   @Test
@@ -81,9 +81,9 @@ public class TestFileNameGenerator {
         new TaskWriterKey(null, DataTreeNode.of(3, 3), DataFileType.INSERT_FILE);
     String fileName = fileNameGenerator.fileName(writerKey);
     DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseChange(fileName, 6L);
-    Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
-    Assert.assertEquals(fileMeta.type(), DataFileType.INSERT_FILE);
-    Assert.assertEquals(fileMeta.transactionId(), 5L);
+    Assertions.assertEquals(fileMeta.node(), DataTreeNode.of(3, 3));
+    Assertions.assertEquals(fileMeta.type(), DataFileType.INSERT_FILE);
+    Assertions.assertEquals(fileMeta.transactionId(), 5L);
   }
 
   @Test
@@ -92,27 +92,27 @@ public class TestFileNameGenerator {
         FileNameRules.parseChange(
             "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/5-I-2-00000-941953957-0000000001.parquet",
             6L);
-    Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 1));
-    Assert.assertEquals(fileMeta.type(), DataFileType.INSERT_FILE);
-    Assert.assertEquals(fileMeta.transactionId(), 2L);
+    Assertions.assertEquals(fileMeta.node(), DataTreeNode.of(3, 1));
+    Assertions.assertEquals(fileMeta.type(), DataFileType.INSERT_FILE);
+    Assertions.assertEquals(fileMeta.transactionId(), 2L);
   }
 
   @Test
   public void testHiddenFileParse() {
     String path = "hdfs://test/animal_partition_two/hive/.5-I-2-00000-941953957-0000000001.parquet";
     DefaultKeyedFile.FileMeta fileMeta = FileNameRules.parseBase(path);
-    Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 1));
-    Assert.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
-    Assert.assertEquals(fileMeta.transactionId(), 2L);
+    Assertions.assertEquals(fileMeta.node(), DataTreeNode.of(3, 1));
+    Assertions.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
+    Assertions.assertEquals(fileMeta.transactionId(), 2L);
 
     long txId = FileNameRules.parseTransactionId(path);
-    Assert.assertEquals(2L, txId);
+    Assertions.assertEquals(2L, txId);
 
     String invalidPath =
         "hdfs://test/animal_partition_two/hive/A5-I-2-00000-941953957-0000000001.parquet";
     fileMeta = FileNameRules.parseBase(invalidPath);
-    Assert.assertEquals(fileMeta.node(), DataTreeNode.of(0, 0));
-    Assert.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
-    Assert.assertEquals(fileMeta.transactionId(), 0L);
+    Assertions.assertEquals(fileMeta.node(), DataTreeNode.of(0, 0));
+    Assertions.assertEquals(fileMeta.type(), DataFileType.BASE_FILE);
+    Assertions.assertEquals(fileMeta.transactionId(), 0L);
   }
 }

@@ -24,8 +24,8 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -122,6 +122,6 @@ public class TestExpressionUtil {
   }
 
   private void assertEqualExpressions(Expression exp1, Expression exp2) {
-    Assert.assertEquals(exp1.toString(), exp2.toString());
+    Assertions.assertEquals(exp1.toString(), exp2.toString());
   }
 }

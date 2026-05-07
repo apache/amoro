@@ -26,15 +26,18 @@ import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.List;
 
 public class TestDefaultKeyedFile extends TableTestBase {
 
-  public TestDefaultKeyedFile() {
-    super(
+  @BeforeEach
+  public void setUp() throws IOException {
+    setupTable(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, true));
   }
@@ -46,12 +49,12 @@ public class TestDefaultKeyedFile extends TableTestBase {
         MixedDataTestHelpers.writeChangeStore(
             getMixedTable().asKeyedTable(), txId, ChangeAction.INSERT, writeRecords(), false);
 
-    Assert.assertEquals(1, writeFiles.size());
+    Assertions.assertEquals(1, writeFiles.size());
     DefaultKeyedFile defaultKeyedFile = DefaultKeyedFile.parseChange(writeFiles.get(0));
-    Assert.assertEquals(DataFileType.INSERT_FILE, defaultKeyedFile.type());
-    Assert.assertEquals(3, defaultKeyedFile.node().mask());
-    Assert.assertEquals(0, defaultKeyedFile.node().index());
-    Assert.assertEquals(txId, defaultKeyedFile.transactionId());
+    Assertions.assertEquals(DataFileType.INSERT_FILE, defaultKeyedFile.type());
+    Assertions.assertEquals(3, defaultKeyedFile.node().mask());
+    Assertions.assertEquals(0, defaultKeyedFile.node().index());
+    Assertions.assertEquals(txId, defaultKeyedFile.transactionId());
   }
 
   private List<Record> writeRecords() {

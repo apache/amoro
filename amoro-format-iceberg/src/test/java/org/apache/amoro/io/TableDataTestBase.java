@@ -37,6 +37,13 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Dual-mode base class supporting both JUnit 4 and JUnit 5 subclasses. JUnit 4 subclasses (still in
+ * amoro-format-mixed-hive) use the legacy {@code (CatalogTestHelper, TableTestHelper)} constructor
+ * and rely on the inherited {@code @Before} lifecycle plus this class's own {@code @Before
+ * initData()}. JUnit 5 subclasses use the no-arg constructor and explicitly call {@link
+ * #initData()} or {@link #initData(CatalogTestHelper, TableTestHelper)} from a {@code @BeforeEach}.
+ */
 public abstract class TableDataTestBase extends TableTestBase {
 
   // 6 records, (id=1),(id=2),(id=3),(id=4),(id=5),(id=6)
@@ -45,14 +52,14 @@ public abstract class TableDataTestBase extends TableTestBase {
   protected DataFile dataFileForPositionDelete;
   protected DeleteFile deleteFileOfPositionDelete;
 
+  /** JUnit 4 constructor — kept for cross-module {@code @RunWith(Parameterized.class)} callers. */
   public TableDataTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper, tableTestHelper);
   }
 
+  /** JUnit 4 default constructor — used by JUnit 4 subclasses with fixed helpers. */
   public TableDataTestBase() {
-    this(
-        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(true, true));
+    super();
   }
 
   protected List<Record> baseRecords(List<Record> records) {
@@ -78,8 +85,31 @@ public abstract class TableDataTestBase extends TableTestBase {
     return builder.build();
   }
 
+  /**
+   * JUnit 4 lifecycle — fires for {@code @RunWith(Parameterized)} subclasses; tableTestHelper has
+   * already been set by the constructor and parent {@code @Before}. JUnit 5 subclasses must invoke
+   * {@link #initData()} explicitly from their {@code @BeforeEach}.
+   */
   @Before
   public void initData() throws IOException {
+    if (tableTestHelper == null) {
+      // JUnit 5 path with no helper yet — fall back to default helper combination.
+      initData(
+          new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+          new BasicTableTestHelper(true, true));
+      return;
+    }
+    populateData();
+  }
+
+  /** JUnit 5 entry point — call from a {@code @BeforeEach} or {@code @ParameterizedTest} body. */
+  protected void initData(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper)
+      throws IOException {
+    setupTable(catalogTestHelper, tableTestHelper);
+    populateData();
+  }
+
+  private void populateData() throws IOException {
     allRecords = Lists.newArrayListWithCapacity(6);
     allRecords.add(tableTestHelper().generateTestRecord(1, "john", 0, "2022-01-01T12:00:00"));
     allRecords.add(tableTestHelper().generateTestRecord(2, "lily", 0, "2022-01-02T12:00:00"));

@@ -18,13 +18,13 @@
 
 package org.apache.amoro.log;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.apache.amoro.data.ChangeAction;
 import org.apache.amoro.utils.IdGenerator;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -96,7 +96,7 @@ public class TestLogDataJsonSerialization extends FormatTestBase {
 
     byte[] bytes = logDataJsonSerialization.serialize(logData);
 
-    Assert.assertNotNull(bytes);
+    assertNotNull(bytes);
     String actualJson = new String(Bytes.subByte(bytes, 18, bytes.length - 18));
     String expected =
         "{\"f_boolean\":true,\"f_int\":1,\"f_long\":123456789,\"f_struct\":{\"f_sub_boolean\":false,\"f_sub_int\":2,"
@@ -112,7 +112,7 @@ public class TestLogDataJsonSerialization extends FormatTestBase {
     LogDataJsonDeserialization<UserPojo> logDataJsonDeserialization =
         new LogDataJsonDeserialization<>(userSchema, factory, arrayFactory, mapFactory);
     LogData<UserPojo> result = logDataJsonDeserialization.deserialize(bytes);
-    Assert.assertNotNull(result);
+    assertNotNull(result);
     check(logData, result);
   }
 

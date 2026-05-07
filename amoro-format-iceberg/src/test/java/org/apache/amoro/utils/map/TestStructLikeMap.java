@@ -24,8 +24,8 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.iceberg.util.StructProjection;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -81,7 +81,7 @@ public class TestStructLikeMap {
     for (long i = 0; i < count; i++) {
       StructLike data = new DataStructLike();
       StructLike key = StructProjection.create(DATA_SCHEMA, PK_SCHEMA).copyFor(data);
-      Assert.assertEquals(expectedMap.get(key), actualMap.get(key));
+      Assertions.assertEquals(expectedMap.get(key), actualMap.get(key));
     }
     actualMap.close();
   }

@@ -23,8 +23,8 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.rest.RESTCatalog;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,7 +56,7 @@ public class TestMixedFormatCatalogUtil {
 
     Map<String, String> result =
         MixedFormatCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** when log-store flag is off, remove all related props */
@@ -77,7 +77,7 @@ public class TestMixedFormatCatalogUtil {
 
     Map<String, String> result =
         MixedFormatCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** user-defined prop should not be overwritten by default props */
@@ -102,7 +102,7 @@ public class TestMixedFormatCatalogUtil {
 
     Map<String, String> result =
         MixedFormatCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** Other user-defined prop should not lose */
@@ -129,7 +129,7 @@ public class TestMixedFormatCatalogUtil {
 
     Map<String, String> result =
         MixedFormatCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /**
@@ -166,7 +166,7 @@ public class TestMixedFormatCatalogUtil {
 
     Map<String, String> result =
         MixedFormatCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /**
@@ -204,7 +204,7 @@ public class TestMixedFormatCatalogUtil {
 
     Map<String, String> result =
         MixedFormatCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /**
@@ -237,7 +237,7 @@ public class TestMixedFormatCatalogUtil {
 
     Map<String, String> result =
         MixedFormatCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /**
@@ -268,7 +268,7 @@ public class TestMixedFormatCatalogUtil {
 
     Map<String, String> result =
         MixedFormatCatalogUtil.mergeCatalogPropertiesToTable(userDefined, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   @Test
@@ -287,7 +287,7 @@ public class TestMixedFormatCatalogUtil {
     props =
         MixedFormatCatalogUtil.withIcebergCatalogInitializeProperties(
             name, typeHadoop, ImmutableMap.of(keyWarehouse, path));
-    Assert.assertEquals(typeHadoop, props.get(type));
+    Assertions.assertEquals(typeHadoop, props.get(type));
 
     // custom
     props =
@@ -295,9 +295,9 @@ public class TestMixedFormatCatalogUtil {
             name,
             typeCustom,
             ImmutableMap.of(keyWarehouse, path, CatalogProperties.CATALOG_IMPL, restImpl));
-    Assert.assertFalse(props.containsKey(type));
+    Assertions.assertFalse(props.containsKey(type));
     // custom args check
-    Assert.assertThrows(
+    Assertions.assertThrows(
         IllegalArgumentException.class,
         () -> {
           MixedFormatCatalogUtil.withIcebergCatalogInitializeProperties(
@@ -308,9 +308,9 @@ public class TestMixedFormatCatalogUtil {
     props =
         MixedFormatCatalogUtil.withIcebergCatalogInitializeProperties(
             name, typeAms, ImmutableMap.of(keyWarehouse, path));
-    Assert.assertEquals(name, props.get(keyWarehouse));
-    Assert.assertFalse(props.containsKey(type));
-    Assert.assertEquals(restImpl, props.get(CatalogProperties.CATALOG_IMPL));
+    Assertions.assertEquals(name, props.get(keyWarehouse));
+    Assertions.assertFalse(props.containsKey(type));
+    Assertions.assertEquals(restImpl, props.get(CatalogProperties.CATALOG_IMPL));
   }
 
   /** test merge writable properties basic case */
@@ -341,7 +341,7 @@ public class TestMixedFormatCatalogUtil {
     Map<String, String> result =
         MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
             tableProperties, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** test handling log-store related properties */
@@ -362,7 +362,7 @@ public class TestMixedFormatCatalogUtil {
     Map<String, String> result =
         MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
             tableProperties, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** test merge additional properties */
@@ -391,7 +391,7 @@ public class TestMixedFormatCatalogUtil {
         MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
             tableProperties, catalogProperties);
 
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** test merge additional props */
@@ -419,7 +419,7 @@ public class TestMixedFormatCatalogUtil {
     Map<String, String> result =
         MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
             tableProperties, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** test merge additional prefix */
@@ -446,7 +446,7 @@ public class TestMixedFormatCatalogUtil {
         MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
             tableProperties, catalogProperties);
 
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** test merge excluded props */
@@ -470,7 +470,7 @@ public class TestMixedFormatCatalogUtil {
     Map<String, String> result =
         MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
             tableProperties, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** test merge excluded prefix */
@@ -496,7 +496,7 @@ public class TestMixedFormatCatalogUtil {
     Map<String, String> result =
         MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
             tableProperties, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** test merge excluded prefix */
@@ -520,7 +520,7 @@ public class TestMixedFormatCatalogUtil {
     Map<String, String> result =
         MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
             tableProperties, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** test conflicts between excluded and additional config prop which is a default not-writable */
@@ -540,7 +540,7 @@ public class TestMixedFormatCatalogUtil {
     Map<String, String> result =
         MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
             tableProperties, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** test conflicts between excluded and additional config prop which is a default not-writable */
@@ -563,7 +563,7 @@ public class TestMixedFormatCatalogUtil {
     Map<String, String> result =
         MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
             tableProperties, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 
   /** test default non-persisted mixed-hive properties */
@@ -579,6 +579,6 @@ public class TestMixedFormatCatalogUtil {
     Map<String, String> result =
         MixedFormatCatalogUtil.mergePersistedCatalogPropertiesToTable(
             tableProperties, catalogProperties);
-    Assert.assertEquals(expected, result);
+    Assertions.assertEquals(expected, result);
   }
 }

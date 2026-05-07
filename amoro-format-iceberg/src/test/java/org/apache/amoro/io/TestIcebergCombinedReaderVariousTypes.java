@@ -49,45 +49,37 @@ import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
 
-  public TestIcebergCombinedReaderVariousTypes(Schema schema) {
-    super(
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(getSchema(Types.DateType.get())),
+        Arguments.of(getSchema(Types.TimeType.get())),
+        Arguments.of(getSchema(Types.TimestampType.withoutZone())),
+        Arguments.of(getSchema(Types.TimestampType.withZone())),
+        Arguments.of(getSchema(Types.DecimalType.of(5, 2))));
+  }
+
+  private void prepare(Schema schema) throws IOException {
+    setupTable(
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(
             schema,
             PrimaryKeySpec.noPrimaryKey(),
             PartitionSpec.unpartitioned(),
             buildTableProperties()));
-  }
-
-  @Parameterized.Parameters(name = "schema = {0}")
-  public static Object[] parameters() {
-    Schema dateSchema = getSchema(Types.DateType.get());
-
-    Schema timeSchema = getSchema(Types.TimeType.get());
-
-    Schema timestampWithoutZoneSchema = getSchema(Types.TimestampType.withoutZone());
-
-    Schema timestampWithZoneSchema = getSchema(Types.TimestampType.withZone());
-
-    Schema decimalSchema = getSchema(Types.DecimalType.of(5, 2));
-
-    return new Object[] {
-      dateSchema, timeSchema, timestampWithoutZoneSchema, timestampWithZoneSchema, decimalSchema
-    };
   }
 
   @NotNull
@@ -108,8 +100,10 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
     return tableProperties;
   }
 
-  @Test
-  public void valid() throws IOException {
+  @ParameterizedTest(name = "schema = {0}")
+  @MethodSource("parameters")
+  public void valid(Schema schema) throws IOException {
+    prepare(schema);
     UnkeyedTable table = getMixedTable().asUnkeyedTable();
     Record record = RandomGenericData.generate(table.schema(), 1, 1).get(0);
 
@@ -150,11 +144,13 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
                 "")
             .readData();
 
-    Assert.assertEquals(Iterables.size(readData), 1);
+    Assertions.assertEquals(Iterables.size(readData), 1);
   }
 
-  @Test
-  public void readDataEnableFilterEqDelete() throws IOException {
+  @ParameterizedTest(name = "schema = {0}")
+  @MethodSource("parameters")
+  public void readDataEnableFilterEqDelete(Schema schema) throws IOException {
+    prepare(schema);
     UnkeyedTable table = getMixedTable().asUnkeyedTable();
     List<Record> records = RandomGenericData.generate(table.schema(), 50, 1);
     List<Record> deleteRecords = RandomGenericData.generate(table.schema(), 200, 1);
@@ -179,8 +175,8 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
     DataFile[] dataFiles = dataFileList.toArray(new DataFile[0]);
     DeleteFile[] deleteFiles = deleteFileList.toArray(new DeleteFile[0]);
 
-    Assert.assertNotEquals(dataFiles.length, 0);
-    Assert.assertNotEquals(deleteFiles.length, 0);
+    Assertions.assertNotEquals(dataFiles.length, 0);
+    Assertions.assertNotEquals(deleteFiles.length, 0);
 
     RewriteFilesInput input =
         new RewriteFilesInput(
@@ -200,10 +196,10 @@ public class TestIcebergCombinedReaderVariousTypes extends TableTestBase {
             null,
             input,
             "");
-    Assert.assertTrue(reader.getDeleteFilter().isFilterEqDelete());
+    Assertions.assertTrue(reader.getDeleteFilter().isFilterEqDelete());
 
     CloseableIterable<Record> readData = reader.readData();
-    Assert.assertEquals(Iterables.size(readData), 0);
+    Assertions.assertEquals(Iterables.size(readData), 0);
   }
 
   private static void write(UnkeyedTable table, List<RecordWithAction> list) throws IOException {

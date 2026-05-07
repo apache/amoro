@@ -27,13 +27,20 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.WriteResult;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
 
 public class TestScanSplitTask extends TableDataTestBase {
+
+  @BeforeEach
+  public void setUp() throws IOException {
+    initData();
+  }
+
   @Test
   public void testSplitTaskByDeleteRatio() throws IOException {
     writeInsertFileIntoBaseStore();
@@ -42,7 +49,7 @@ public class TestScanSplitTask extends TableDataTestBase {
       CloseableIterable<CombinedScanTask> combinedScanTasks =
           getMixedTable().asKeyedTable().newScan().planTasks();
       for (CombinedScanTask combinedScanTask : combinedScanTasks) {
-        Assert.assertEquals(combinedScanTask.tasks().size(), 7);
+        Assertions.assertEquals(combinedScanTask.tasks().size(), 7);
       }
     }
     {
@@ -56,7 +63,7 @@ public class TestScanSplitTask extends TableDataTestBase {
         // delete content. Therefore, after enableSplitTaskByDeleteRatio is turned on, two
         // additional tasks will be
         // split out.
-        Assert.assertEquals(combinedScanTask.tasks().size(), 9);
+        Assertions.assertEquals(combinedScanTask.tasks().size(), 9);
       }
     }
   }

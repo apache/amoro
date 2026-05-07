@@ -19,9 +19,9 @@
 package org.apache.amoro.utils.map;
 
 import org.apache.amoro.AmoroIOException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ public class TestRocksDBBackend {
 
   public static final String CF_NAME = "TEST";
 
-  @Before
+  @BeforeEach
   public void setup() {}
 
   @Test
@@ -42,9 +42,9 @@ public class TestRocksDBBackend {
     RocksDBBackend rocksDBBackend = RocksDBBackend.getOrCreateInstance();
     int originalCfCount = rocksDBBackend.listColumnFamilies().size();
     rocksDBBackend.addColumnFamily(CF_NAME);
-    Assert.assertEquals(originalCfCount + 1, rocksDBBackend.listColumnFamilies().size());
+    Assertions.assertEquals(originalCfCount + 1, rocksDBBackend.listColumnFamilies().size());
     rocksDBBackend.dropColumnFamily(CF_NAME);
-    Assert.assertEquals(originalCfCount, rocksDBBackend.listColumnFamilies().size());
+    Assertions.assertEquals(originalCfCount, rocksDBBackend.listColumnFamilies().size());
   }
 
   @Test
@@ -54,23 +54,23 @@ public class TestRocksDBBackend {
     rocksDBBackend.put(CF_NAME, "name", "mj");
     rocksDBBackend.put(CF_NAME, 2, "zjs");
     rocksDBBackend.put(CF_NAME, 4556, "zyx");
-    Assert.assertEquals("zyx", rocksDBBackend.get(CF_NAME, 4556));
-    Assert.assertEquals("zjs", rocksDBBackend.get(CF_NAME, 2));
-    Assert.assertEquals("mj", rocksDBBackend.get(CF_NAME, "name"));
+    Assertions.assertEquals("zyx", rocksDBBackend.get(CF_NAME, 4556));
+    Assertions.assertEquals("zjs", rocksDBBackend.get(CF_NAME, 2));
+    Assertions.assertEquals("mj", rocksDBBackend.get(CF_NAME, "name"));
     rocksDBBackend.delete(CF_NAME, 4556);
     rocksDBBackend.delete(CF_NAME, "name");
-    Assert.assertNull(rocksDBBackend.get(CF_NAME, 4556));
-    Assert.assertNull(rocksDBBackend.get(CF_NAME, "name"));
+    Assertions.assertNull(rocksDBBackend.get(CF_NAME, 4556));
+    Assertions.assertNull(rocksDBBackend.get(CF_NAME, "name"));
     rocksDBBackend.put(CF_NAME, 2, "mj");
-    Assert.assertEquals("mj", rocksDBBackend.get(CF_NAME, 2));
+    Assertions.assertEquals("mj", rocksDBBackend.get(CF_NAME, 2));
     rocksDBBackend.put(CF_NAME, "name", "mj");
-    Assert.assertEquals("mj", rocksDBBackend.get(CF_NAME, "name"));
+    Assertions.assertEquals("mj", rocksDBBackend.get(CF_NAME, "name"));
     rocksDBBackend.dropColumnFamily(CF_NAME);
     try {
       rocksDBBackend.get(CF_NAME, "name");
-      Assert.fail();
+      Assertions.fail();
     } catch (Throwable t) {
-      Assert.assertTrue(t instanceof AmoroIOException);
+      Assertions.assertTrue(t instanceof AmoroIOException);
     }
   }
 
@@ -89,8 +89,8 @@ public class TestRocksDBBackend {
     }
     Collections.sort(expect);
     Collections.sort(valueList);
-    Assert.assertEquals(expect.size(), valueList.size());
-    Assert.assertArrayEquals(expect.toArray(), valueList.toArray());
+    Assertions.assertEquals(expect.size(), valueList.size());
+    Assertions.assertArrayEquals(expect.toArray(), valueList.toArray());
 
     rocksDBBackend.delete(CF_NAME, "name");
     valueList = new ArrayList<>();
@@ -98,7 +98,7 @@ public class TestRocksDBBackend {
     while (values.hasNext()) {
       valueList.add(values.next());
     }
-    Assert.assertEquals(2, valueList.size());
+    Assertions.assertEquals(2, valueList.size());
     rocksDBBackend.dropColumnFamily(CF_NAME);
   }
 
@@ -106,9 +106,9 @@ public class TestRocksDBBackend {
   public void testClose() {
     RocksDBBackend rocksDBBackend = RocksDBBackend.getOrCreateInstance();
     File baseFile = new File(rocksDBBackend.getRocksDBBasePath());
-    Assert.assertTrue(baseFile.exists());
-    Assert.assertTrue(baseFile.isDirectory());
+    Assertions.assertTrue(baseFile.exists());
+    Assertions.assertTrue(baseFile.isDirectory());
     rocksDBBackend.close();
-    Assert.assertFalse(baseFile.exists());
+    Assertions.assertFalse(baseFile.exists());
   }
 }

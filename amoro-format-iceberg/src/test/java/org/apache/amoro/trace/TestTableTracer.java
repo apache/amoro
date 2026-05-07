@@ -45,44 +45,44 @@ import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.data.Record;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /** Table trace is disabled for version 0.5.0 */
-@Ignore
-@RunWith(Parameterized.class)
+@Disabled
 public class TestTableTracer extends TableTestBase {
 
-  private final boolean onBaseTable;
+  private boolean onBaseTable;
 
   private UnkeyedTable operationTable;
 
-  public TestTableTracer(boolean keyedTable, boolean onBaseTable, boolean partitionedTable) {
-    super(
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(true, true, true),
+        Arguments.of(true, true, false),
+        Arguments.of(true, false, true),
+        Arguments.of(true, false, false),
+        Arguments.of(false, true, true),
+        Arguments.of(false, true, false));
+  }
+
+  private void prepare(boolean keyedTable, boolean onBaseTable, boolean partitionedTable)
+      throws IOException {
+    setupTable(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(keyedTable, partitionedTable));
     this.onBaseTable = onBaseTable;
-  }
-
-  @Parameterized.Parameters(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
-  public static Object[][] parameters() {
-    return new Object[][] {
-      {true, true, true},
-      {true, true, false},
-      {true, false, true},
-      {true, false, false},
-      {false, true, true},
-      {false, true, false}
-    };
+    getAmsHandler().getTableCommitMetas().remove(getOperationTable().id().buildTableIdentifier());
   }
 
   private UnkeyedTable getOperationTable() {
@@ -113,19 +113,17 @@ public class TestTableTracer extends TableTestBase {
     }
   }
 
-  @Before
-  public void clearCommitMeta() {
-    getAmsHandler().getTableCommitMetas().remove(getOperationTable().id().buildTableIdentifier());
-  }
-
-  @Test
-  public void testTraceAppendFiles() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceAppendFiles(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     operationTable.newAppend().appendFile(getDataFile(1)).appendFile(getDataFile(2)).commit();
 
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(0, tableCommitMetas.size());
+    Assertions.assertEquals(0, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(0);
     validateCommitMeta(
         commitMeta,
@@ -134,13 +132,16 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {});
   }
 
-  @Test
-  public void testTraceAppendFilesInTx() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceAppendFilesInTx(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     Transaction transaction = operationTable.newTransaction();
     transaction.newAppend().appendFile(getDataFile(1)).appendFile(getDataFile(2)).commit();
 
-    Assert.assertFalse(
+    Assertions.assertFalse(
         getAmsHandler()
             .getTableCommitMetas()
             .containsKey(operationTable.id().buildTableIdentifier()));
@@ -149,7 +150,7 @@ public class TestTableTracer extends TableTestBase {
 
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, tableCommitMetas.size());
+    Assertions.assertEquals(1, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(0);
     validateCommitMeta(
         commitMeta,
@@ -158,8 +159,11 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {});
   }
 
-  @Test
-  public void testTraceAppendFilesByOptimize() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceAppendFilesByOptimize(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     operationTable
         .newAppend()
@@ -170,9 +174,9 @@ public class TestTableTracer extends TableTestBase {
 
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, tableCommitMetas.size());
+    Assertions.assertEquals(1, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(0);
-    Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
+    Assertions.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
     validateCommitMeta(
         commitMeta,
         DataOperations.APPEND,
@@ -180,14 +184,17 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {});
   }
 
-  @Test
-  public void testTraceFastAppend() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceFastAppend(boolean keyedTable, boolean onBaseTable, boolean partitionedTable)
+      throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     operationTable.newFastAppend().appendFile(getDataFile(1)).appendFile(getDataFile(2)).commit();
 
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, tableCommitMetas.size());
+    Assertions.assertEquals(1, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(0);
     validateCommitMeta(
         commitMeta,
@@ -196,50 +203,56 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {});
   }
 
-  @Test
-  public void testTraceAppendNoneFiles() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceAppendNoneFiles(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     operationTable.newAppend().commit();
     List<TableCommitMeta> appendTableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, appendTableCommitMetas.size());
-    Assert.assertNotNull(appendTableCommitMetas.get(0).getChanges());
+    Assertions.assertEquals(1, appendTableCommitMetas.size());
+    Assertions.assertNotNull(appendTableCommitMetas.get(0).getChanges());
 
     Transaction overwriteTransaction = operationTable.newTransaction();
     overwriteTransaction.newOverwrite().commit();
     overwriteTransaction.commitTransaction();
     List<TableCommitMeta> overwriteTableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, overwriteTableCommitMetas.size());
-    Assert.assertEquals(1, overwriteTableCommitMetas.get(1).getChanges().size());
+    Assertions.assertEquals(2, overwriteTableCommitMetas.size());
+    Assertions.assertEquals(1, overwriteTableCommitMetas.get(1).getChanges().size());
 
     Transaction rewriteTransaction = operationTable.newTransaction();
     rewriteTransaction.newRewrite().commit();
     rewriteTransaction.commitTransaction();
     List<TableCommitMeta> rewriteTableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(3, rewriteTableCommitMetas.size());
-    Assert.assertEquals(1, rewriteTableCommitMetas.get(2).getChanges().size());
+    Assertions.assertEquals(3, rewriteTableCommitMetas.size());
+    Assertions.assertEquals(1, rewriteTableCommitMetas.get(2).getChanges().size());
 
     getMixedTable().updateSchema().commit();
     List<TableCommitMeta> updateSchemaCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(3, updateSchemaCommitMetas.size());
+    Assertions.assertEquals(3, updateSchemaCommitMetas.size());
 
     getMixedTable().updateProperties().commit();
     List<TableCommitMeta> updatePropertiesCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(4, updatePropertiesCommitMetas.size());
-    Assert.assertNull(rewriteTableCommitMetas.get(3).getChanges());
+    Assertions.assertEquals(4, updatePropertiesCommitMetas.size());
+    Assertions.assertNull(rewriteTableCommitMetas.get(3).getChanges());
   }
 
-  @Test
-  public void testTraceFastAppendInTx() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceFastAppendInTx(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     Transaction transaction = operationTable.newTransaction();
     transaction.newFastAppend().appendFile(getDataFile(1)).appendFile(getDataFile(2)).commit();
 
-    Assert.assertFalse(
+    Assertions.assertFalse(
         getAmsHandler()
             .getTableCommitMetas()
             .containsKey(operationTable.id().buildTableIdentifier()));
@@ -247,7 +260,7 @@ public class TestTableTracer extends TableTestBase {
     transaction.commitTransaction();
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, tableCommitMetas.size());
+    Assertions.assertEquals(1, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(0);
     validateCommitMeta(
         commitMeta,
@@ -256,8 +269,11 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {});
   }
 
-  @Test
-  public void testTraceFastAppendByOptimize() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceFastAppendByOptimize(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     operationTable
         .newFastAppend()
@@ -268,9 +284,9 @@ public class TestTableTracer extends TableTestBase {
 
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, tableCommitMetas.size());
+    Assertions.assertEquals(1, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(0);
-    Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
+    Assertions.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
     validateCommitMeta(
         commitMeta,
         DataOperations.APPEND,
@@ -278,8 +294,11 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {});
   }
 
-  @Test
-  public void testTraceOverwrite() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceOverwrite(boolean keyedTable, boolean onBaseTable, boolean partitionedTable)
+      throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     operationTable.newFastAppend().appendFile(getDataFile(1)).appendFile(getDataFile(2)).commit();
 
@@ -292,7 +311,7 @@ public class TestTableTracer extends TableTestBase {
 
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, tableCommitMetas.size());
+    Assertions.assertEquals(2, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(1);
     validateCommitMeta(
         commitMeta,
@@ -301,8 +320,11 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)});
   }
 
-  @Test
-  public void testTraceOverwriteInTx() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceOverwriteInTx(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     operationTable.newFastAppend().appendFile(getDataFile(1)).appendFile(getDataFile(2)).commit();
 
@@ -314,7 +336,7 @@ public class TestTableTracer extends TableTestBase {
         .addFile(getDataFile(3))
         .commit();
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
         1,
         getAmsHandler()
             .getTableCommitMetas()
@@ -324,7 +346,7 @@ public class TestTableTracer extends TableTestBase {
     transaction.commitTransaction();
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, tableCommitMetas.size());
+    Assertions.assertEquals(2, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(1);
     validateCommitMeta(
         commitMeta,
@@ -333,8 +355,11 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)});
   }
 
-  @Test
-  public void testTraceOverwriteByOptimize() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceOverwriteByOptimize(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     operationTable.newFastAppend().appendFile(getDataFile(1)).appendFile(getDataFile(2)).commit();
 
@@ -348,9 +373,9 @@ public class TestTableTracer extends TableTestBase {
 
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, tableCommitMetas.size());
+    Assertions.assertEquals(2, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(1);
-    Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
+    Assertions.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
     validateCommitMeta(
         commitMeta,
         DataOperations.OVERWRITE,
@@ -358,8 +383,11 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)});
   }
 
-  @Test
-  public void testTraceRewrite() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceRewrite(boolean keyedTable, boolean onBaseTable, boolean partitionedTable)
+      throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     operationTable.newFastAppend().appendFile(getDataFile(1)).appendFile(getDataFile(2)).commit();
 
@@ -371,7 +399,7 @@ public class TestTableTracer extends TableTestBase {
 
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, tableCommitMetas.size());
+    Assertions.assertEquals(2, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(1);
     validateCommitMeta(
         commitMeta,
@@ -380,8 +408,11 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)});
   }
 
-  @Test
-  public void testTraceRewriteInTx() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceRewriteInTx(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     operationTable.newFastAppend().appendFile(getDataFile(1)).appendFile(getDataFile(2)).commit();
 
@@ -392,7 +423,7 @@ public class TestTableTracer extends TableTestBase {
             Sets.newHashSet(getDataFile(1), getDataFile(2)), Sets.newHashSet(getDataFile(3)))
         .commit();
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
         1,
         getAmsHandler()
             .getTableCommitMetas()
@@ -402,7 +433,7 @@ public class TestTableTracer extends TableTestBase {
     transaction.commitTransaction();
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, tableCommitMetas.size());
+    Assertions.assertEquals(2, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(1);
     validateCommitMeta(
         commitMeta,
@@ -411,8 +442,11 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)});
   }
 
-  @Test
-  public void testTraceRewriteByOptimize() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceRewriteByOptimize(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     operationTable.newFastAppend().appendFile(getDataFile(1)).appendFile(getDataFile(2)).commit();
 
@@ -425,9 +459,9 @@ public class TestTableTracer extends TableTestBase {
 
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, tableCommitMetas.size());
+    Assertions.assertEquals(2, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(1);
-    Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
+    Assertions.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
     validateCommitMeta(
         commitMeta,
         DataOperations.REPLACE,
@@ -435,15 +469,18 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)});
   }
 
-  @Test
-  public void testMultipleOperationInTx() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testMultipleOperationInTx(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     Transaction transaction = operationTable.newTransaction();
     transaction.newAppend().appendFile(getDataFile(1)).appendFile(getDataFile(2)).commit();
 
     transaction.newOverwrite().deleteFile(getDataFile(1)).addFile(getDataFile(3)).commit();
 
-    Assert.assertFalse(
+    Assertions.assertFalse(
         getAmsHandler()
             .getTableCommitMetas()
             .containsKey(operationTable.id().buildTableIdentifier()));
@@ -451,12 +488,12 @@ public class TestTableTracer extends TableTestBase {
     transaction.commitTransaction();
 
     List<Snapshot> snapshots = Lists.newArrayList(operationTable.snapshots());
-    Assert.assertEquals(2, snapshots.size());
+    Assertions.assertEquals(2, snapshots.size());
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, tableCommitMetas.size());
+    Assertions.assertEquals(1, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(0);
-    Assert.assertEquals(2, commitMeta.getChanges().size());
+    Assertions.assertEquals(2, commitMeta.getChanges().size());
     validateTableChange(
         snapshots.get(0),
         commitMeta.getChanges().get(0),
@@ -469,8 +506,11 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {getDataFile(1)});
   }
 
-  @Test
-  public void testMultipleOperationInTxByOptimize() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testMultipleOperationInTxByOptimize(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
     UnkeyedTable operationTable = getOperationTable();
     Transaction transaction = operationTable.newTransaction();
     transaction
@@ -487,7 +527,7 @@ public class TestTableTracer extends TableTestBase {
         .set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name())
         .commit();
 
-    Assert.assertFalse(
+    Assertions.assertFalse(
         getAmsHandler()
             .getTableCommitMetas()
             .containsKey(operationTable.id().buildTableIdentifier()));
@@ -495,13 +535,13 @@ public class TestTableTracer extends TableTestBase {
     transaction.commitTransaction();
 
     List<Snapshot> snapshots = Lists.newArrayList(operationTable.snapshots());
-    Assert.assertEquals(2, snapshots.size());
+    Assertions.assertEquals(2, snapshots.size());
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, tableCommitMetas.size());
+    Assertions.assertEquals(1, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(0);
-    Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
-    Assert.assertEquals(2, commitMeta.getChanges().size());
+    Assertions.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
+    Assertions.assertEquals(2, commitMeta.getChanges().size());
     validateTableChange(
         snapshots.get(0),
         commitMeta.getChanges().get(0),
@@ -514,9 +554,12 @@ public class TestTableTracer extends TableTestBase {
         new org.apache.iceberg.DataFile[] {getDataFile(1)});
   }
 
-  @Test
-  public void testTracedReplacePartitions() {
-    Assume.assumeTrue(isPartitionedTable());
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTracedReplacePartitions(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws IOException {
+    prepare(keyedTable, onBaseTable, partitionedTable);
+    Assumptions.assumeTrue(isPartitionedTable());
     UnkeyedTable operationTable = getOperationTable();
     operationTable
         .newFastAppend()
@@ -532,7 +575,7 @@ public class TestTableTracer extends TableTestBase {
 
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, tableCommitMetas.size());
+    Assertions.assertEquals(2, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(1);
     validateCommitMeta(
         commitMeta,
@@ -545,9 +588,12 @@ public class TestTableTracer extends TableTestBase {
         });
   }
 
-  @Test
-  public void testTraceRemovePosDeleteInternal() throws Exception {
-    Assume.assumeTrue(isKeyedTable() && onBaseTable);
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceRemovePosDeleteInternal(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws Exception {
+    prepare(keyedTable, onBaseTable, partitionedTable);
+    Assumptions.assumeTrue(isKeyedTable() && this.onBaseTable);
     getMixedTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(1)).commit();
 
     SortedPosDeleteWriter<Record> writer =
@@ -570,16 +616,19 @@ public class TestTableTracer extends TableTestBase {
 
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(getMixedTable().id().buildTableIdentifier());
-    Assert.assertEquals(4, tableCommitMetas.size());
+    Assertions.assertEquals(4, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(tableCommitMetas.size() - 1);
-    Assert.assertEquals(1, commitMeta.getChanges().size());
+    Assertions.assertEquals(1, commitMeta.getChanges().size());
     TableChange tableChange = commitMeta.getChanges().get(0);
-    Assert.assertEquals(2, tableChange.deleteFiles.size());
+    Assertions.assertEquals(2, tableChange.deleteFiles.size());
   }
 
-  @Test
-  public void testTraceRemovePosDeleteInternalInTransaction() throws Exception {
-    Assume.assumeTrue(isKeyedTable() && onBaseTable);
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  @MethodSource("parameters")
+  public void testTraceRemovePosDeleteInternalInTransaction(
+      boolean keyedTable, boolean onBaseTable, boolean partitionedTable) throws Exception {
+    prepare(keyedTable, onBaseTable, partitionedTable);
+    Assumptions.assumeTrue(isKeyedTable() && this.onBaseTable);
     getMixedTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(1)).commit();
 
     SortedPosDeleteWriter<Record> writer =
@@ -607,11 +656,11 @@ public class TestTableTracer extends TableTestBase {
 
     List<TableCommitMeta> tableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(getMixedTable().id().buildTableIdentifier());
-    Assert.assertEquals(4, tableCommitMetas.size());
+    Assertions.assertEquals(4, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(tableCommitMetas.size() - 1);
-    Assert.assertEquals(2, commitMeta.getChanges().size());
+    Assertions.assertEquals(2, commitMeta.getChanges().size());
     TableChange tableChange = commitMeta.getChanges().get(0);
-    Assert.assertEquals(2, tableChange.deleteFiles.size());
+    Assertions.assertEquals(2, tableChange.deleteFiles.size());
   }
 
   private String getExpectedInnerTable() {
@@ -627,9 +676,9 @@ public class TestTableTracer extends TableTestBase {
       TableChange tableChange,
       org.apache.iceberg.DataFile[] addFiles,
       org.apache.iceberg.DataFile[] deleteFiles) {
-    Assert.assertEquals(getExpectedInnerTable(), tableChange.getInnerTable());
-    Assert.assertEquals(snapshot.snapshotId(), tableChange.getSnapshotId());
-    Assert.assertEquals(
+    Assertions.assertEquals(getExpectedInnerTable(), tableChange.getInnerTable());
+    Assertions.assertEquals(snapshot.snapshotId(), tableChange.getSnapshotId());
+    Assertions.assertEquals(
         snapshot.parentId() == null ? -1 : getOperationTable().currentSnapshot().parentId(),
         tableChange.getParentSnapshotId());
 
@@ -643,16 +692,16 @@ public class TestTableTracer extends TableTestBase {
       org.apache.iceberg.DataFile[] addFiles,
       org.apache.iceberg.DataFile[] deleteFiles) {
 
-    Assert.assertEquals(
+    Assertions.assertEquals(
         getMixedTable().id().buildTableIdentifier(), commitMeta.getTableIdentifier());
-    Assert.assertEquals(operation, commitMeta.getAction());
-    Assert.assertEquals(1, commitMeta.getChanges().size());
+    Assertions.assertEquals(operation, commitMeta.getAction());
+    Assertions.assertEquals(1, commitMeta.getChanges().size());
 
     TableChange tableChange = commitMeta.getChanges().get(0);
-    Assert.assertEquals(getExpectedInnerTable(), tableChange.getInnerTable());
-    Assert.assertEquals(
+    Assertions.assertEquals(getExpectedInnerTable(), tableChange.getInnerTable());
+    Assertions.assertEquals(
         getOperationTable().currentSnapshot().snapshotId(), tableChange.getSnapshotId());
-    Assert.assertEquals(
+    Assertions.assertEquals(
         getOperationTable().currentSnapshot().parentId() == null
             ? -1
             : getOperationTable().currentSnapshot().parentId(),
@@ -664,26 +713,26 @@ public class TestTableTracer extends TableTestBase {
 
   private void validateDataFile(
       List<DataFile> dataFiles, org.apache.iceberg.DataFile... icebergFiles) {
-    Assert.assertEquals(icebergFiles.length, dataFiles.size());
+    Assertions.assertEquals(icebergFiles.length, dataFiles.size());
     Map<String, org.apache.iceberg.DataFile> icebergFilesMap = Maps.newHashMap();
     Arrays.stream(icebergFiles).forEach(f -> icebergFilesMap.put(f.path().toString(), f));
     for (DataFile validateFile : dataFiles) {
       org.apache.iceberg.DataFile icebergFile = icebergFilesMap.get(validateFile.getPath());
-      Assert.assertEquals(icebergFile.path(), validateFile.getPath());
-      Assert.assertEquals(icebergFile.fileSizeInBytes(), validateFile.getFileSize());
-      Assert.assertEquals(icebergFile.recordCount(), validateFile.getRecordCount());
-      Assert.assertEquals(
+      Assertions.assertEquals(icebergFile.path(), validateFile.getPath());
+      Assertions.assertEquals(icebergFile.fileSizeInBytes(), validateFile.getFileSize());
+      Assertions.assertEquals(icebergFile.recordCount(), validateFile.getRecordCount());
+      Assertions.assertEquals(
           onBaseTable ? DataFileType.BASE_FILE.name() : DataFileType.INSERT_FILE.name(),
           validateFile.getFileType());
-      Assert.assertEquals(0, validateFile.getIndex());
-      Assert.assertEquals(0, validateFile.getMask());
+      Assertions.assertEquals(0, validateFile.getIndex());
+      Assertions.assertEquals(0, validateFile.getMask());
       if (isPartitionedTable()) {
-        Assert.assertEquals(getMixedTable().spec().specId(), validateFile.getSpecId());
-        Assert.assertEquals(1, validateFile.getPartitionSize());
-        Assert.assertEquals(
+        Assertions.assertEquals(getMixedTable().spec().specId(), validateFile.getSpecId());
+        Assertions.assertEquals(1, validateFile.getPartitionSize());
+        Assertions.assertEquals(
             getMixedTable().spec().fields().get(0).name(),
             validateFile.getPartition().get(0).getName());
-        Assert.assertEquals(
+        Assertions.assertEquals(
             getMixedTable().spec().partitionToPath(icebergFile.partition()),
             getMixedTable().spec().fields().get(0).name()
                 + "="

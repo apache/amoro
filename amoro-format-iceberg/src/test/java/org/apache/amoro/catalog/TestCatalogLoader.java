@@ -26,16 +26,27 @@ import org.apache.amoro.mixed.CatalogLoader;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
 public class TestCatalogLoader {
 
   private static final String TEST_CATALOG_NAME = "test";
-  @ClassRule public static TestAms TEST_AMS = new TestAms();
+  private static final TestAms TEST_AMS = new TestAms();
+
+  @BeforeAll
+  public static void startTestAms() throws Exception {
+    TEST_AMS.before();
+  }
+
+  @AfterAll
+  public static void stopTestAms() {
+    TEST_AMS.after();
+  }
 
   @Test
   public void testLoadMixedIcebergCatalog() {
@@ -49,17 +60,18 @@ public class TestCatalogLoader {
             TableFormat.MIXED_ICEBERG);
     TEST_AMS.getAmsHandler().createCatalog(catalogMeta);
     MixedFormatCatalog loadCatalog = CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME));
-    Assert.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
-    Assert.assertEquals(BasicMixedIcebergCatalog.class.getName(), loadCatalog.getClass().getName());
+    Assertions.assertEquals(TEST_CATALOG_NAME, loadCatalog.name());
+    Assertions.assertEquals(
+        BasicMixedIcebergCatalog.class.getName(), loadCatalog.getClass().getName());
     TEST_AMS.getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
   }
 
   @Test
   public void testLoadNotExistedCatalog() {
-    Assert.assertThrows(
-        "catalog not found, please check catalog name",
+    Assertions.assertThrows(
         IllegalArgumentException.class,
-        () -> CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME)));
+        () -> CatalogLoader.load(getCatalogUrl(TEST_CATALOG_NAME)),
+        "catalog not found, please check catalog name");
   }
 
   private String getCatalogUrl(String catalogName) {

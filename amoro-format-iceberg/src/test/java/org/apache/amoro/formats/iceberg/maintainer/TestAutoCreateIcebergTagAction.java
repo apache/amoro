@@ -31,9 +31,11 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.Table;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -45,8 +47,10 @@ import java.util.Map;
 
 public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
-  public TestAutoCreateIcebergTagAction() {
-    super(new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true));
+  @BeforeEach
+  public void setUp() throws IOException {
+    setupTable(
+        new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true));
   }
 
   @Test
@@ -325,7 +329,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
             .toInstant()
             .toEpochMilli();
 
-    Assert.assertEquals(expectedTriggerTime, actualTriggerTime);
+    Assertions.assertEquals(expectedTriggerTime, actualTriggerTime);
   }
 
   private void testTagTimePeriodDaily(
@@ -346,7 +350,7 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
             .toInstant()
             .toEpochMilli();
 
-    Assert.assertEquals(expectedTriggerTime, actualTriggerTime);
+    Assertions.assertEquals(expectedTriggerTime, actualTriggerTime);
   }
 
   /**
@@ -426,22 +430,23 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
   }
 
   private void checkNoTag(Table table) {
-    Assert.assertFalse(table.refs().values().stream().anyMatch(SnapshotRef::isTag));
+    Assertions.assertFalse(table.refs().values().stream().anyMatch(SnapshotRef::isTag));
   }
 
   private void checkTagCount(Table table, int count) {
-    Assert.assertEquals(count, table.refs().values().stream().filter(SnapshotRef::isTag).count());
+    Assertions.assertEquals(
+        count, table.refs().values().stream().filter(SnapshotRef::isTag).count());
   }
 
   private void checkTag(Table table, String tagName, Snapshot snapshot) {
     SnapshotRef snapshotRef = table.refs().get(tagName);
-    Assert.assertNotNull(snapshotRef);
-    Assert.assertTrue(snapshotRef.isTag());
-    Assert.assertEquals(snapshot.snapshotId(), snapshotRef.snapshotId());
+    Assertions.assertNotNull(snapshotRef);
+    Assertions.assertTrue(snapshotRef.isTag());
+    Assertions.assertEquals(snapshot.snapshotId(), snapshotRef.snapshotId());
   }
 
   private void checkSnapshots(Table table, int count) {
-    Assert.assertEquals(Iterables.size(table.snapshots()), count);
+    Assertions.assertEquals(Iterables.size(table.snapshots()), count);
   }
 
   private long waitUntilAfter(long timestampMillis) {

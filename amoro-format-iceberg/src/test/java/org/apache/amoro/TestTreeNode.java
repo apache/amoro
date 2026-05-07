@@ -19,16 +19,16 @@
 package org.apache.amoro;
 
 import org.apache.amoro.data.DataTreeNode;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 public class TestTreeNode {
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testParentNodeIllegal() {
-    DataTreeNode.of(0, 0).parent();
+    Assertions.assertThrows(IllegalArgumentException.class, () -> DataTreeNode.of(0, 0).parent());
   }
 
   @ParameterizedTest
@@ -40,12 +40,12 @@ public class TestTreeNode {
   @ParameterizedTest
   @CsvSource({"0, 0, 1", "1, 0, 2", "1, 1, 3", "3, 0, 4", "3, 3, 7", "7, 5, 13", "7, 3, 11"})
   public void testNodeId(int mask, int index, int expectedId) {
-    Assert.assertEquals(expectedId, DataTreeNode.of(mask, index).getId());
-    Assert.assertEquals(DataTreeNode.of(mask, index), DataTreeNode.ofId(expectedId));
+    Assertions.assertEquals(expectedId, DataTreeNode.of(mask, index).getId());
+    Assertions.assertEquals(DataTreeNode.of(mask, index), DataTreeNode.ofId(expectedId));
   }
 
   private void assertParentNode(DataTreeNode node) {
-    Assert.assertEquals(node, node.left().parent());
-    Assert.assertEquals(node, node.right().parent());
+    Assertions.assertEquals(node, node.left().parent());
+    Assertions.assertEquals(node, node.right().parent());
   }
 }

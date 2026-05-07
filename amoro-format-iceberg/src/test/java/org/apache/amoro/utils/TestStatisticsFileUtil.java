@@ -33,33 +33,37 @@ import org.apache.iceberg.StatisticsFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.util.StructLikeMap;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestStatisticsFileUtil extends TableTestBase {
 
-  @Parameterized.Parameters(name = "{0}, {1}")
-  public static Object[] parameters() {
-    return new Object[][] {
-      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true)},
-      {new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, false)},
-      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
-      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)}
-    };
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(
+            new BasicCatalogTestHelper(TableFormat.ICEBERG), new BasicTableTestHelper(false, true)),
+        Arguments.of(
+            new BasicCatalogTestHelper(TableFormat.ICEBERG),
+            new BasicTableTestHelper(false, false)),
+        Arguments.of(
+            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, true)),
+        Arguments.of(
+            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, false)));
   }
 
-  public TestStatisticsFileUtil(
-      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
-    super(catalogTestHelper, tableTestHelper);
-  }
-
-  @Test
-  public void testWriteAndReadPuffin() {
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testWriteAndReadPuffin(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws IOException {
+    setupTable(catalogTestHelper, tableTestHelper);
     UnkeyedTable table =
         getMixedTable().isKeyedTable()
             ? getMixedTable().asKeyedTable().baseTable()
@@ -115,14 +119,14 @@ public class TestStatisticsFileUtil extends TableTestBase {
     List<StructLikeMap<Long>> result =
         StatisticsFileUtil.reader(table)
             .read(findValidStatisticFile(table, type), type, dataSerializer);
-    Assert.assertEquals(1, result.size());
+    Assertions.assertEquals(1, result.size());
     return result.get(0);
   }
 
   private void assertStructLikeEquals(StructLikeMap<Long> expected, StructLikeMap<Long> actual) {
-    Assert.assertEquals(expected.size(), actual.size());
+    Assertions.assertEquals(expected.size(), actual.size());
     for (StructLike structLike : expected.keySet()) {
-      Assert.assertEquals(expected.get(structLike), actual.get(structLike));
+      Assertions.assertEquals(expected.get(structLike), actual.get(structLike));
     }
   }
 

@@ -26,9 +26,9 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Streams;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.io.OutputFile;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
@@ -40,14 +40,11 @@ public class TestRecoverableAuthenticatedFileIO extends TableTestBase {
   private String file2;
   private String file3;
 
-  public TestRecoverableAuthenticatedFileIO() {
-    super(
+  @BeforeEach
+  public void before() throws IOException {
+    setupTable(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, true));
-  }
-
-  @Before
-  public void before() {
     MixedTable mixedTable = getMixedTable();
     trashManager =
         TableTrashManagers.build(
@@ -68,8 +65,8 @@ public class TestRecoverableAuthenticatedFileIO extends TableTestBase {
   @Test
   public void exists() throws IOException {
     createFile(file1);
-    Assert.assertTrue(recoverableHadoopFileIO.exists(file1));
-    Assert.assertFalse(recoverableHadoopFileIO.exists(file2));
+    Assertions.assertTrue(recoverableHadoopFileIO.exists(file1));
+    Assertions.assertFalse(recoverableHadoopFileIO.exists(file2));
   }
 
   @Test
@@ -77,8 +74,8 @@ public class TestRecoverableAuthenticatedFileIO extends TableTestBase {
     String newLocation = getMixedTable().location() + "/base/test/test4.parquet";
     createFile(file1);
     recoverableHadoopFileIO.rename(file1, newLocation);
-    Assert.assertFalse(authenticatedFileIO.exists(file1));
-    Assert.assertTrue(authenticatedFileIO.exists(newLocation));
+    Assertions.assertFalse(authenticatedFileIO.exists(file1));
+    Assertions.assertTrue(authenticatedFileIO.exists(newLocation));
   }
 
   @Test
@@ -88,7 +85,7 @@ public class TestRecoverableAuthenticatedFileIO extends TableTestBase {
     createFile(file3);
     String dir = getMixedTable().location() + "/base/test";
     recoverableHadoopFileIO.deletePrefix(dir);
-    Assert.assertFalse(authenticatedFileIO.exists(dir));
+    Assertions.assertFalse(authenticatedFileIO.exists(dir));
   }
 
   @Test
@@ -98,68 +95,68 @@ public class TestRecoverableAuthenticatedFileIO extends TableTestBase {
     createFile(file3);
     Iterable<PathInfo> items =
         recoverableHadoopFileIO.listDirectory(getMixedTable().location() + "/base/test");
-    Assert.assertEquals(3L, Streams.stream(items).count());
+    Assertions.assertEquals(3L, Streams.stream(items).count());
   }
 
   @Test
   public void isDirectory() throws IOException {
     createFile(file1);
-    Assert.assertFalse(recoverableHadoopFileIO.isDirectory(file1));
-    Assert.assertTrue(recoverableHadoopFileIO.isDirectory(getMixedTable().location()));
+    Assertions.assertFalse(recoverableHadoopFileIO.isDirectory(file1));
+    Assertions.assertTrue(recoverableHadoopFileIO.isDirectory(getMixedTable().location()));
   }
 
   @Test
   public void isEmptyDirectory() {
     String dir = getMixedTable().location() + "/location";
     authenticatedFileIO.asFileSystemIO().makeDirectories(dir);
-    Assert.assertTrue(recoverableHadoopFileIO.isEmptyDirectory(dir));
-    Assert.assertFalse(recoverableHadoopFileIO.isEmptyDirectory(getMixedTable().location()));
+    Assertions.assertTrue(recoverableHadoopFileIO.isEmptyDirectory(dir));
+    Assertions.assertFalse(recoverableHadoopFileIO.isEmptyDirectory(getMixedTable().location()));
   }
 
   @Test
   public void deleteFile() throws IOException {
     createFile(file1);
     recoverableHadoopFileIO.deleteFile(file1);
-    Assert.assertFalse(authenticatedFileIO.exists(file1));
-    Assert.assertTrue(trashManager.fileExistInTrash(file1));
+    Assertions.assertFalse(authenticatedFileIO.exists(file1));
+    Assertions.assertTrue(trashManager.fileExistInTrash(file1));
   }
 
   @Test
   public void deleteInputFile() throws IOException {
     createFile(file1);
     recoverableHadoopFileIO.deleteFile(recoverableHadoopFileIO.newInputFile(file1));
-    Assert.assertFalse(authenticatedFileIO.exists(file1));
-    Assert.assertTrue(trashManager.fileExistInTrash(file1));
+    Assertions.assertFalse(authenticatedFileIO.exists(file1));
+    Assertions.assertTrue(trashManager.fileExistInTrash(file1));
   }
 
   @Test
   public void deleteOutputFile() throws IOException {
     createFile(file1);
     recoverableHadoopFileIO.deleteFile(recoverableHadoopFileIO.newOutputFile(file1));
-    Assert.assertFalse(authenticatedFileIO.exists(file1));
-    Assert.assertTrue(trashManager.fileExistInTrash(file1));
+    Assertions.assertFalse(authenticatedFileIO.exists(file1));
+    Assertions.assertTrue(trashManager.fileExistInTrash(file1));
   }
 
   @Test
   public void trashFilePattern() {
-    Assert.assertTrue(recoverableHadoopFileIO.matchTrashFilePattern(file1));
-    Assert.assertTrue(recoverableHadoopFileIO.matchTrashFilePattern(file2));
-    Assert.assertTrue(recoverableHadoopFileIO.matchTrashFilePattern(file3));
-    Assert.assertTrue(
+    Assertions.assertTrue(recoverableHadoopFileIO.matchTrashFilePattern(file1));
+    Assertions.assertTrue(recoverableHadoopFileIO.matchTrashFilePattern(file2));
+    Assertions.assertTrue(recoverableHadoopFileIO.matchTrashFilePattern(file3));
+    Assertions.assertTrue(
         recoverableHadoopFileIO.matchTrashFilePattern(
             getMixedTable().location() + "/metadata/version-hint.text"));
-    Assert.assertTrue(
+    Assertions.assertTrue(
         recoverableHadoopFileIO.matchTrashFilePattern(
             getMixedTable().location() + "/metadata/v2.metadata.json"));
-    Assert.assertTrue(
+    Assertions.assertTrue(
         recoverableHadoopFileIO.matchTrashFilePattern(
             getMixedTable().location()
                 + "/metadata/snap-1515213806302741636-1-85fc817e-941d-4e9a-ab41-2dbf7687bfcd.avro"));
-    Assert.assertTrue(
+    Assertions.assertTrue(
         recoverableHadoopFileIO.matchTrashFilePattern(
             getMixedTable().location() + "/metadata/3ce7600d-4853-45d0-8533-84c12a611916-m0.avro"));
 
-    Assert.assertFalse(
+    Assertions.assertFalse(
         recoverableHadoopFileIO.matchTrashFilePattern(
             getMixedTable().location() + "/metadata/3ce7600d-4853-45d0-8533-84c12a611916.avro"));
   }

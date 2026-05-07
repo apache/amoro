@@ -49,12 +49,11 @@ import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Pair;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -62,11 +61,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class IcebergRewriteExecutorTest extends TableTestBase {
 
-  private final FileFormat fileFormat;
+  private FileFormat fileFormat;
 
   private RewriteFilesInput scanTask;
 
@@ -75,20 +74,14 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
   private final Schema posSchema =
       new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
 
-  public IcebergRewriteExecutorTest(boolean hasPartition, FileFormat fileFormat) {
-    super(
-        new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(false, true, buildTableProperties(fileFormat)));
-    this.fileFormat = fileFormat;
-  }
-
-  @Parameterized.Parameters(name = "partitionedTable = {0}, fileFormat = {1}")
-  public static Object[][] parameters() {
-    return new Object[][] {
-      {true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
-      {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
-      {true, FileFormat.ORC}, {false, FileFormat.ORC}
-    };
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(true, FileFormat.PARQUET),
+        Arguments.of(false, FileFormat.PARQUET),
+        Arguments.of(true, FileFormat.AVRO),
+        Arguments.of(false, FileFormat.AVRO),
+        Arguments.of(true, FileFormat.ORC),
+        Arguments.of(false, FileFormat.ORC));
   }
 
   private static Map<String, String> buildTableProperties(FileFormat fileFormat) {
@@ -99,6 +92,14 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
     return tableProperties;
   }
 
+  private void prepare(boolean hasPartition, FileFormat fileFormat) throws IOException {
+    setupTable(
+        new BasicCatalogTestHelper(TableFormat.ICEBERG),
+        new BasicTableTestHelper(false, true, buildTableProperties(fileFormat)));
+    this.fileFormat = fileFormat;
+    initDataAndReader();
+  }
+
   private StructLike getPartitionData() {
     if (isPartitionedTable()) {
       return TestHelpers.Row.of(0);
@@ -107,8 +108,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
     }
   }
 
-  @Before
-  public void initDataAndReader() throws IOException {
+  private void initDataAndReader() throws IOException {
     StructLike partitionData = getPartitionData();
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(getMixedTable().asUnkeyedTable(), 0, 1)
@@ -164,8 +164,14 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
             getMixedTable());
   }
 
-  @Test
-  public void readAllData() throws IOException {
+  @ParameterizedTest(name = "partitionedTable = {0}, fileFormat = {1}")
+  @MethodSource("parameters")
+  public void readAllData(boolean hasPartition, FileFormat fileFormat) throws IOException {
+    prepare(hasPartition, fileFormat);
+    runReadAllData();
+  }
+
+  private void runReadAllData() throws IOException {
     IcebergRewriteExecutor executor =
         new IcebergRewriteExecutor(scanTask, getMixedTable(), Collections.emptyMap());
 
@@ -177,9 +183,9 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
             output.getDataFiles()[0].format(),
             getMixedTable().schema(),
             new HashMap<>())) {
-      Assert.assertEquals(1, Iterables.size(records));
+      Assertions.assertEquals(1, Iterables.size(records));
       Record record = Iterables.getFirst(records, null);
-      Assert.assertEquals(record.get(0), 3);
+      Assertions.assertEquals(record.get(0), 3);
     }
 
     try (CloseableIterable<Record> records =
@@ -188,28 +194,33 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
             output.getDataFiles()[0].format(),
             posSchema,
             new HashMap<>())) {
-      Assert.assertEquals(2, Iterables.size(records));
+      Assertions.assertEquals(2, Iterables.size(records));
       Record first = Iterables.getFirst(records, null);
-      Assert.assertEquals(first.get(1), 0L);
+      Assertions.assertEquals(first.get(1), 0L);
       Record last = Iterables.getLast(records);
-      Assert.assertEquals(last.get(1), 1L);
+      Assertions.assertEquals(last.get(1), 1L);
     }
   }
 
-  @Test
-  public void readAllDataWithPartitionEvolution() throws IOException {
-    Assume.assumeTrue(getMixedTable().spec().isPartitioned());
+  @ParameterizedTest(name = "partitionedTable = {0}, fileFormat = {1}")
+  @MethodSource("parameters")
+  public void readAllDataWithPartitionEvolution(boolean hasPartition, FileFormat fileFormat)
+      throws IOException {
+    prepare(hasPartition, fileFormat);
+    Assumptions.assumeTrue(getMixedTable().spec().isPartitioned());
     getMixedTable()
         .asUnkeyedTable()
         .updateSpec()
         .removeField("op_time_day")
         .addField(Expressions.month("op_time"))
         .commit();
-    readAllData();
+    runReadAllData();
   }
 
-  @Test
-  public void readOnlyData() throws IOException {
+  @ParameterizedTest(name = "partitionedTable = {0}, fileFormat = {1}")
+  @MethodSource("parameters")
+  public void readOnlyData(boolean hasPartition, FileFormat fileFormat) throws IOException {
+    prepare(hasPartition, fileFormat);
     IcebergRewriteExecutor executor =
         new IcebergRewriteExecutor(dataScanTask, getMixedTable(), Collections.emptyMap());
 
@@ -221,10 +232,10 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
             output.getDataFiles()[0].format(),
             getMixedTable().schema(),
             new HashMap<>())) {
-      Assert.assertEquals(3, Iterables.size(records));
+      Assertions.assertEquals(3, Iterables.size(records));
     }
 
-    Assert.assertTrue(output.getDeleteFiles() == null || output.getDeleteFiles().length == 0);
+    Assertions.assertTrue(output.getDeleteFiles() == null || output.getDeleteFiles().length == 0);
   }
 
   private CloseableIterable<Record> openFile(

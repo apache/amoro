@@ -20,8 +20,8 @@ package org.apache.amoro.utils;
 
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableProperties;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
@@ -30,7 +30,7 @@ public class TestCompatiblePropertyUtil {
   @Test
   public void testGetNewProperty() {
     Map<String, String> properties = Maps.newHashMap();
-    Assert.assertEquals(
+    Assertions.assertEquals(
         TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT,
         CompatiblePropertyUtil.propertyAsBoolean(
             properties,
@@ -38,7 +38,7 @@ public class TestCompatiblePropertyUtil {
             TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT));
 
     properties.put(TableProperties.ENABLE_SELF_OPTIMIZING, "false");
-    Assert.assertFalse(
+    Assertions.assertFalse(
         CompatiblePropertyUtil.propertyAsBoolean(
             properties,
             TableProperties.ENABLE_SELF_OPTIMIZING,
@@ -49,7 +49,7 @@ public class TestCompatiblePropertyUtil {
   public void testGetLegacyProperty() {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(TableProperties.ENABLE_SELF_OPTIMIZING, "false");
-    Assert.assertFalse(
+    Assertions.assertFalse(
         CompatiblePropertyUtil.propertyAsBoolean(
             properties,
             TableProperties.ENABLE_SELF_OPTIMIZING,

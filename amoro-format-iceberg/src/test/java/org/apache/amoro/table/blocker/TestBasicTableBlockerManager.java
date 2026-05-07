@@ -25,9 +25,11 @@ import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OperationConflictException;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,8 +42,9 @@ public class TestBasicTableBlockerManager extends TableTestBase {
     OPERATIONS.add(BlockableOperation.BATCH_WRITE);
   }
 
-  public TestBasicTableBlockerManager() {
-    super(
+  @BeforeEach
+  public void setUp() throws IOException {
+    setupTable(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(true, true));
   }
@@ -50,13 +53,13 @@ public class TestBasicTableBlockerManager extends TableTestBase {
   public void testBlockAndRelease() throws OperationConflictException {
     TableBlockerManager tableBlockerManager =
         getMixedFormatCatalog().getTableBlockerManager(TableTestHelper.TEST_TABLE_ID);
-    Assert.assertTrue(tableBlockerManager instanceof BasicTableBlockerManager);
+    Assertions.assertTrue(tableBlockerManager instanceof BasicTableBlockerManager);
     BasicTableBlockerManager blockerManager = (BasicTableBlockerManager) tableBlockerManager;
 
     Blocker block = blockerManager.block(OPERATIONS);
-    Assert.assertTrue(block instanceof RenewableBlocker);
+    Assertions.assertTrue(block instanceof RenewableBlocker);
 
     blockerManager.release(block);
-    Assert.assertTrue(((RenewableBlocker) block).getRenewTaskFuture() == null);
+    Assertions.assertTrue(((RenewableBlocker) block).getRenewTaskFuture() == null);
   }
 }

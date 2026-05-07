@@ -43,11 +43,10 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.types.TypeUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,6 +55,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Tests for StructProjection hoisting in CombinedDeleteFilter.initializeBloomFilter().
@@ -64,22 +64,21 @@ import java.util.stream.IntStream;
  * projection object via .wrap()) produces correct bloom filter initialization and equality-delete
  * filtering results, including the multiple-delete-schema scenario.
  */
-@RunWith(Parameterized.class)
 public class TestCombinedDeleteFilterStructProjection extends TableTestBase {
 
-  private final FileFormat fileFormat;
+  private FileFormat fileFormat;
 
-  @Parameterized.Parameters(name = "fileFormat = {0}")
-  public static Object[][] parameters() {
-    return new Object[][] {{FileFormat.PARQUET}, {FileFormat.AVRO}, {FileFormat.ORC}};
-  }
+  /**
+   * Lower the bloom-filter threshold so the filter is activated with a small dataset (< 3 data
+   * records) while still having > threshold eq-delete records.
+   */
+  private static final long BLOOM_TRIGGER = 2L;
 
-  public TestCombinedDeleteFilterStructProjection(FileFormat fileFormat) {
-    super(
-        new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(false, false, buildTableProperties(fileFormat)));
-    this.fileFormat = fileFormat;
-    System.setProperty(DeleteCache.DELETE_CACHE_ENABLED, "false");
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(FileFormat.PARQUET),
+        Arguments.of(FileFormat.AVRO),
+        Arguments.of(FileFormat.ORC));
   }
 
   private static Map<String, String> buildTableProperties(FileFormat fileFormat) {
@@ -90,14 +89,12 @@ public class TestCombinedDeleteFilterStructProjection extends TableTestBase {
     return props;
   }
 
-  /**
-   * Lower the bloom-filter threshold so the filter is activated with a small dataset (< 3 data
-   * records) while still having > threshold eq-delete records.
-   */
-  private static final long BLOOM_TRIGGER = 2L;
-
-  @Before
-  public void resetBloomFilterThreshold() {
+  private void prepare(FileFormat fileFormat) throws IOException {
+    setupTable(
+        new BasicCatalogTestHelper(TableFormat.ICEBERG),
+        new BasicTableTestHelper(false, false, buildTableProperties(fileFormat)));
+    this.fileFormat = fileFormat;
+    System.setProperty(DeleteCache.DELETE_CACHE_ENABLED, "false");
     CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = BLOOM_TRIGGER;
   }
 
@@ -153,8 +150,11 @@ public class TestCombinedDeleteFilterStructProjection extends TableTestBase {
    * Verifies that with the bloom-filter path active, records matched by equality-delete files are
    * filtered out and the remainder survives — exercising the hoisted StructProjection code.
    */
-  @Test
-  public void testBloomFilterWithHoistedProjection_singleDeleteSchema() throws IOException {
+  @ParameterizedTest(name = "fileFormat = {0}")
+  @MethodSource("parameters")
+  public void testBloomFilterWithHoistedProjection_singleDeleteSchema(FileFormat fileFormat)
+      throws IOException {
+    prepare(fileFormat);
     // 3 data rows: id=1,2,3
     DataFile dataFile =
         writeDataFile(
@@ -181,17 +181,18 @@ public class TestCombinedDeleteFilterStructProjection extends TableTestBase {
             getMixedTable());
 
     GenericCombinedIcebergDataReader reader = buildReader(input);
-    Assert.assertTrue("Bloom filter should be active", reader.getDeleteFilter().isFilterEqDelete());
+    Assertions.assertTrue(
+        reader.getDeleteFilter().isFilterEqDelete(), "Bloom filter should be active");
 
     try (CloseableIterable<Record> surviving = reader.readData()) {
       List<Record> result = Lists.newArrayList(surviving);
-      Assert.assertEquals("Only id=3 should survive", 1, result.size());
-      Assert.assertEquals(3, result.get(0).get(0));
+      Assertions.assertEquals(1, result.size(), "Only id=3 should survive");
+      Assertions.assertEquals(3, result.get(0).get(0));
     }
 
     try (CloseableIterable<Record> deleted = reader.readDeletedData()) {
-      Assert.assertEquals(
-          "id=1 and id=2 should be reported as deleted", 2, Iterables.size(deleted));
+      Assertions.assertEquals(
+          2, Iterables.size(deleted), "id=1 and id=2 should be reported as deleted");
     }
 
     reader.close();
@@ -206,8 +207,11 @@ public class TestCombinedDeleteFilterStructProjection extends TableTestBase {
    * Uses two equality-delete files whose schemas differ (id-only vs id+name). Both must be put into
    * the bloom filter correctly so that applyEqDeletesForSchema can later verify membership.
    */
-  @Test
-  public void testBloomFilterWithHoistedProjection_multipleDeleteSchemas() throws IOException {
+  @ParameterizedTest(name = "fileFormat = {0}")
+  @MethodSource("parameters")
+  public void testBloomFilterWithHoistedProjection_multipleDeleteSchemas(FileFormat fileFormat)
+      throws IOException {
+    prepare(fileFormat);
     DataFile dataFile =
         writeDataFile(
             Arrays.asList(
@@ -245,15 +249,16 @@ public class TestCombinedDeleteFilterStructProjection extends TableTestBase {
             getMixedTable());
 
     GenericCombinedIcebergDataReader reader = buildReader(input);
-    Assert.assertTrue("Bloom filter should be active", reader.getDeleteFilter().isFilterEqDelete());
+    Assertions.assertTrue(
+        reader.getDeleteFilter().isFilterEqDelete(), "Bloom filter should be active");
 
     // id=1,2,3 are all deleted by eqDeleteById; none should survive
     try (CloseableIterable<Record> surviving = reader.readData()) {
-      Assert.assertEquals("All records should be deleted", 0, Iterables.size(surviving));
+      Assertions.assertEquals(0, Iterables.size(surviving), "All records should be deleted");
     }
 
     try (CloseableIterable<Record> deleted = reader.readDeletedData()) {
-      Assert.assertEquals("All 3 rows should appear as deleted", 3, Iterables.size(deleted));
+      Assertions.assertEquals(3, Iterables.size(deleted), "All 3 rows should appear as deleted");
     }
 
     reader.close();
@@ -268,8 +273,11 @@ public class TestCombinedDeleteFilterStructProjection extends TableTestBase {
    * Ensures false-negative freedom: records NOT covered by any equality-delete survive even when
    * the bloom filter path is active (i.e. the hoisted StructProjection wraps records faithfully).
    */
-  @Test
-  public void testBloomFilterWithHoistedProjection_noFalseNegatives() throws IOException {
+  @ParameterizedTest(name = "fileFormat = {0}")
+  @MethodSource("parameters")
+  public void testBloomFilterWithHoistedProjection_noFalseNegatives(FileFormat fileFormat)
+      throws IOException {
+    prepare(fileFormat);
     DataFile dataFile =
         writeDataFile(
             Arrays.asList(
@@ -296,11 +304,12 @@ public class TestCombinedDeleteFilterStructProjection extends TableTestBase {
             getMixedTable());
 
     GenericCombinedIcebergDataReader reader = buildReader(input);
-    Assert.assertTrue("Bloom filter should be active", reader.getDeleteFilter().isFilterEqDelete());
+    Assertions.assertTrue(
+        reader.getDeleteFilter().isFilterEqDelete(), "Bloom filter should be active");
 
     try (CloseableIterable<Record> surviving = reader.readData()) {
       List<Record> result = Lists.newArrayList(surviving);
-      Assert.assertEquals("id=20 and id=30 should survive", 2, result.size());
+      Assertions.assertEquals(2, result.size(), "id=20 and id=30 should survive");
     }
 
     reader.close();
@@ -315,8 +324,10 @@ public class TestCombinedDeleteFilterStructProjection extends TableTestBase {
    * Resets the threshold above the delete-record count so the bloom filter is not activated.
    * Confirms the non-bloom code path still correctly applies equality deletes.
    */
-  @Test
-  public void testEqualityDeleteWithoutBloomFilter() throws IOException {
+  @ParameterizedTest(name = "fileFormat = {0}")
+  @MethodSource("parameters")
+  public void testEqualityDeleteWithoutBloomFilter(FileFormat fileFormat) throws IOException {
+    prepare(fileFormat);
     // Set threshold high so bloom filter is NOT activated
     CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 1_000_000L;
 
@@ -341,12 +352,12 @@ public class TestCombinedDeleteFilterStructProjection extends TableTestBase {
             getMixedTable());
 
     GenericCombinedIcebergDataReader reader = buildReader(input);
-    Assert.assertFalse(
-        "Bloom filter should NOT be active", reader.getDeleteFilter().isFilterEqDelete());
+    Assertions.assertFalse(
+        reader.getDeleteFilter().isFilterEqDelete(), "Bloom filter should NOT be active");
 
     try (CloseableIterable<Record> surviving = reader.readData()) {
       List<Record> result = Lists.newArrayList(surviving);
-      Assert.assertEquals("id=1 and id=3 should survive", 2, result.size());
+      Assertions.assertEquals(2, result.size(), "id=1 and id=3 should survive");
     }
 
     reader.close();

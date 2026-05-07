@@ -19,10 +19,10 @@
 package org.apache.amoro.utils.map;
 
 import org.apache.amoro.utils.SerializationUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 
@@ -30,7 +30,7 @@ public class TestSimpleSpilledMap {
 
   private SimpleSpillableMap.SimpleSpilledMap map;
 
-  @Before
+  @BeforeEach
   public void createMap() {
     SimpleSpillableMap spillableMap =
         new SimpleSpillableMap(
@@ -43,7 +43,7 @@ public class TestSimpleSpilledMap {
             null);
   }
 
-  @After
+  @AfterEach
   public void disposeMap() {
     map.close();
     map = null;
@@ -57,14 +57,14 @@ public class TestSimpleSpilledMap {
     map.put(2, "zjs");
     map.put(4556, "zyx");
     map.put(key, value);
-    Assert.assertEquals(555, map.get("name"));
-    Assert.assertEquals("zjs", map.get(2));
-    Assert.assertEquals("zyx", map.get(4556));
-    Assert.assertEquals(value, map.get(key));
+    Assertions.assertEquals(555, map.get("name"));
+    Assertions.assertEquals("zjs", map.get(2));
+    Assertions.assertEquals("zyx", map.get(4556));
+    Assertions.assertEquals(value, map.get(key));
     map.delete(4556);
-    Assert.assertNull(map.get(4556));
+    Assertions.assertNull(map.get(4556));
     map.put(4556, value);
-    Assert.assertEquals(value, map.get(4556));
+    Assertions.assertEquals(value, map.get(4556));
   }
 
   @Test
@@ -72,9 +72,9 @@ public class TestSimpleSpilledMap {
     Key key = new Key();
     Value value = new Value();
     map.put(key, value);
-    Assert.assertEquals(value, map.get(key));
-    Assert.assertThrows(Exception.class, () -> map.put(key, null));
-    Assert.assertThrows(Exception.class, () -> map.put(null, value));
+    Assertions.assertEquals(value, map.get(key));
+    Assertions.assertThrows(Exception.class, () -> map.put(key, null));
+    Assertions.assertThrows(Exception.class, () -> map.put(null, value));
   }
 
   private static class Key implements Serializable {

@@ -38,8 +38,9 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.WriteResult;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -48,6 +49,11 @@ import java.util.List;
 import java.util.Map;
 
 public class TestTableEntriesScan extends TableDataTestBase {
+
+  @BeforeEach
+  public void setUp() throws IOException {
+    initData();
+  }
 
   @Test
   public void testScanEntriesForDataFile() {
@@ -61,7 +67,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
       cnt++;
       assertEntry(expectedEntries, entry);
     }
-    Assert.assertEquals(3, cnt);
+    Assertions.assertEquals(3, cnt);
   }
 
   @Test
@@ -78,7 +84,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
       cnt++;
       assertEntry(expectedEntries, entry);
     }
-    Assert.assertEquals(1, cnt);
+    Assertions.assertEquals(1, cnt);
   }
 
   @Test
@@ -109,7 +115,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
       cnt++;
       assertEntry(expectedEntries1, entry);
     }
-    Assert.assertEquals(5, cnt);
+    Assertions.assertEquals(5, cnt);
 
     // current
     TableEntriesScan entryScan2 =
@@ -123,7 +129,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
       cnt++;
       assertEntry(expectedEntries2, entry);
     }
-    Assert.assertEquals(9, cnt);
+    Assertions.assertEquals(9, cnt);
 
     // all entries (in all snapshots)
     TableEntriesScan entryScan3 =
@@ -133,7 +139,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
             .withAliveEntry(false)
             .allEntries()
             .build();
-    Assert.assertEquals(13, Iterables.size(entryScan3.entries()));
+    Assertions.assertEquals(13, Iterables.size(entryScan3.entries()));
   }
 
   @Test
@@ -151,7 +157,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
       cnt++;
       assertEntry(expectedEntries, entry);
     }
-    Assert.assertEquals(2, cnt);
+    Assertions.assertEquals(2, cnt);
   }
 
   @Test
@@ -169,7 +175,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
         assertEntry(expectedEntries, entry);
       }
     }
-    Assert.assertEquals(1, cnt);
+    Assertions.assertEquals(1, cnt);
 
     // base table commit 4 insert files, then commit 1 pos-delete file
     Table baseTable = getMixedTable().asKeyedTable().baseTable();
@@ -186,7 +192,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
         assertEntry(expectedEntries, entry);
       }
     }
-    Assert.assertEquals(1, cnt);
+    Assertions.assertEquals(1, cnt);
   }
 
   @Test
@@ -198,7 +204,7 @@ public class TestTableEntriesScan extends TableDataTestBase {
     // evolve partition spec: add identity(id)
     baseTable.updateSpec().addField("id").commit();
     PartitionSpec newSpec = baseTable.spec();
-    Assert.assertNotEquals(originalSpec.specId(), newSpec.specId());
+    Assertions.assertNotEquals(originalSpec.specId(), newSpec.specId());
 
     // append a data file under the new spec
     DataFile newSpecFile =
@@ -222,18 +228,18 @@ public class TestTableEntriesScan extends TableDataTestBase {
       for (IcebergFileEntry entry : entries) {
         count++;
         ContentFile<?> file = entry.getFile();
-        Assert.assertNotNull(file.partition());
+        Assertions.assertNotNull(file.partition());
 
         // verify partition values are not null for partitioned files
         PartitionSpec fileSpec = baseTable.specs().get(file.specId());
         if (fileSpec.isPartitioned()) {
           // op_time_day should be present for all specs
-          Assert.assertNotNull(file.partition().get(0, Object.class));
+          Assertions.assertNotNull(file.partition().get(0, Object.class));
         }
       }
     }
     // original: 4 data + 1 pos-delete + 1 new data = 6
-    Assert.assertEquals(6, count);
+    Assertions.assertEquals(6, count);
   }
 
   private List<DataFile> writeIntoBase() throws IOException {
@@ -255,12 +261,13 @@ public class TestTableEntriesScan extends TableDataTestBase {
 
   private void assertEntry(Map<String, Entry> expected, IcebergFileEntry entry) {
     Entry expectEntry = expected.get(entry.getFile().path().toString());
-    Assert.assertNotNull(expectEntry);
-    Assert.assertEquals(
-        "fail file " + entry, expectEntry.getSequenceNumber(), entry.getSequenceNumber());
-    Assert.assertEquals("fail file " + entry, expectEntry.getSnapshotId(), entry.getSnapshotId());
-    Assert.assertEquals(
-        "fail file " + entry, expectEntry.getFileContent(), entry.getFile().content());
+    Assertions.assertNotNull(expectEntry);
+    Assertions.assertEquals(
+        expectEntry.getSequenceNumber(), entry.getSequenceNumber(), "fail file " + entry);
+    Assertions.assertEquals(
+        expectEntry.getSnapshotId(), entry.getSnapshotId(), "fail file " + entry);
+    Assertions.assertEquals(
+        expectEntry.getFileContent(), entry.getFile().content(), "fail file " + entry);
     if (expectEntry.isAliveEntry()) {
       assertAliveEntry(entry);
     } else {
@@ -334,13 +341,14 @@ public class TestTableEntriesScan extends TableDataTestBase {
   }
 
   private void assertAliveEntry(IcebergFileEntry entry) {
-    Assert.assertTrue(
-        "fail file " + entry,
+    Assertions.assertTrue(
         entry.getStatus() == ManifestEntryFields.Status.ADDED
-            || entry.getStatus() == ManifestEntryFields.Status.EXISTING);
+            || entry.getStatus() == ManifestEntryFields.Status.EXISTING,
+        "fail file " + entry);
   }
 
   private void assertDeletedEntry(IcebergFileEntry entry) {
-    Assert.assertSame("fail file " + entry, entry.getStatus(), ManifestEntryFields.Status.DELETED);
+    Assertions.assertSame(
+        entry.getStatus(), ManifestEntryFields.Status.DELETED, "fail file " + entry);
   }
 }

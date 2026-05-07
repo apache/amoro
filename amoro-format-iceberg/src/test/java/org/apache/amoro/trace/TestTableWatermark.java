@@ -33,32 +33,33 @@ import org.apache.iceberg.Metrics;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Types;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestTableWatermark extends TableTestBase {
 
-  private final boolean onBaseTable;
+  private boolean onBaseTable;
 
   private UnkeyedTable operationTable;
 
-  public TestTableWatermark(boolean keyedTable, boolean onBaseTable) {
-    super(
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(true, true), Arguments.of(true, false), Arguments.of(false, true));
+  }
+
+  private void prepare(boolean keyedTable, boolean onBaseTable) throws IOException {
+    setupTable(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(keyedTable, true));
     this.onBaseTable = onBaseTable;
-  }
-
-  @Parameterized.Parameters(name = "keyedTable = {0}, onBaseTable = {1}")
-  public static Object[][] parameters() {
-    return new Object[][] {{true, true}, {true, false}, {false, true}};
   }
 
   private UnkeyedTable getOperationTable() {
@@ -81,8 +82,11 @@ public class TestTableWatermark extends TableTestBase {
     return operationTable;
   }
 
-  @Test
-  public void testChangeWatermarkWithAppendFiles() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}")
+  @MethodSource("parameters")
+  public void testChangeWatermarkWithAppendFiles(boolean keyedTable, boolean onBaseTable)
+      throws IOException {
+    prepare(keyedTable, onBaseTable);
     testTableWatermark(
         addFile -> {
           getOperationTable().newAppend().appendFile(addFile).commit();
@@ -90,8 +94,11 @@ public class TestTableWatermark extends TableTestBase {
         });
   }
 
-  @Test
-  public void testChangeWatermarkWithAppendFilesInTx() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}")
+  @MethodSource("parameters")
+  public void testChangeWatermarkWithAppendFilesInTx(boolean keyedTable, boolean onBaseTable)
+      throws IOException {
+    prepare(keyedTable, onBaseTable);
     testTableWatermark(
         addFile -> {
           Transaction transaction = getOperationTable().newTransaction();
@@ -101,8 +108,11 @@ public class TestTableWatermark extends TableTestBase {
         });
   }
 
-  @Test
-  public void testChangeWatermarkWithOverwriteFiles() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}")
+  @MethodSource("parameters")
+  public void testChangeWatermarkWithOverwriteFiles(boolean keyedTable, boolean onBaseTable)
+      throws IOException {
+    prepare(keyedTable, onBaseTable);
     testTableWatermark(
         addFile -> {
           getOperationTable().newOverwrite().addFile(addFile).commit();
@@ -110,8 +120,11 @@ public class TestTableWatermark extends TableTestBase {
         });
   }
 
-  @Test
-  public void testChangeWatermarkWithOverwriteFilesInTx() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}")
+  @MethodSource("parameters")
+  public void testChangeWatermarkWithOverwriteFilesInTx(boolean keyedTable, boolean onBaseTable)
+      throws IOException {
+    prepare(keyedTable, onBaseTable);
     testTableWatermark(
         addFile -> {
           Transaction transaction = getOperationTable().newTransaction();
@@ -121,8 +134,11 @@ public class TestTableWatermark extends TableTestBase {
         });
   }
 
-  @Test
-  public void testChangeWatermarkWithReplacePartitions() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}")
+  @MethodSource("parameters")
+  public void testChangeWatermarkWithReplacePartitions(boolean keyedTable, boolean onBaseTable)
+      throws IOException {
+    prepare(keyedTable, onBaseTable);
     testTableWatermark(
         addFile -> {
           getOperationTable().newReplacePartitions().addFile(addFile).commit();
@@ -130,8 +146,11 @@ public class TestTableWatermark extends TableTestBase {
         });
   }
 
-  @Test
-  public void testChangeWatermarkWithReplacePartitionsInTx() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}")
+  @MethodSource("parameters")
+  public void testChangeWatermarkWithReplacePartitionsInTx(boolean keyedTable, boolean onBaseTable)
+      throws IOException {
+    prepare(keyedTable, onBaseTable);
     testTableWatermark(
         addFile -> {
           Transaction transaction = getOperationTable().newTransaction();
@@ -141,8 +160,11 @@ public class TestTableWatermark extends TableTestBase {
         });
   }
 
-  @Test
-  public void testChangeWatermarkWithRowDelta() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}")
+  @MethodSource("parameters")
+  public void testChangeWatermarkWithRowDelta(boolean keyedTable, boolean onBaseTable)
+      throws IOException {
+    prepare(keyedTable, onBaseTable);
     testTableWatermark(
         addFile -> {
           getOperationTable().newRowDelta().addRows(addFile).commit();
@@ -150,8 +172,11 @@ public class TestTableWatermark extends TableTestBase {
         });
   }
 
-  @Test
-  public void testChangeWatermarkWithRowDeltaFilesInTx() {
+  @ParameterizedTest(name = "keyedTable = {0}, onBaseTable = {1}")
+  @MethodSource("parameters")
+  public void testChangeWatermarkWithRowDeltaFilesInTx(boolean keyedTable, boolean onBaseTable)
+      throws IOException {
+    prepare(keyedTable, onBaseTable);
     testTableWatermark(
         addFile -> {
           Transaction transaction = getOperationTable().newTransaction();
@@ -192,7 +217,7 @@ public class TestTableWatermark extends TableTestBase {
             .withMetrics(metrics)
             .build();
     tableOperation.apply(file1);
-    Assert.assertEquals(
+    Assertions.assertEquals(
         start - 20000, TablePropertyUtil.getTableWatermark(getMixedTable().properties()));
   }
 }

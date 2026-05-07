@@ -21,9 +21,9 @@ package org.apache.amoro.utils.map;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.lucene.util.RamUsageEstimator;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -38,7 +38,7 @@ public class TestSimpleSpillableMap {
   private long keySize;
   private long valueSize;
 
-  @Before
+  @BeforeEach
   public void initSizes() {
     keySize = RamUsageEstimator.sizeOfObject(new Key(), 0);
     valueSize = RamUsageEstimator.sizeOfObject(new Value(), 0);
@@ -47,21 +47,21 @@ public class TestSimpleSpillableMap {
   @Test
   public void testMemoryMap() {
     SimpleSpillableMap<Key, Value> map = testMap(10, 10);
-    Assert.assertEquals(0, map.getSizeOfFileOnDiskInBytes());
+    Assertions.assertEquals(0, map.getSizeOfFileOnDiskInBytes());
     map.close();
   }
 
   @Test
   public void testSpilledMap() {
     SimpleSpillableMap<Key, Value> map = testMap(0, 20);
-    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() > 0);
+    Assertions.assertTrue(map.getSizeOfFileOnDiskInBytes() > 0);
     map.close();
   }
 
   @Test
   public void testSpillableMap() {
     SimpleSpillableMap<Key, Value> map = testMap(10, 20);
-    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() > 0);
+    Assertions.assertTrue(map.getSizeOfFileOnDiskInBytes() > 0);
     map.close();
   }
 
@@ -81,8 +81,8 @@ public class TestSimpleSpillableMap {
       expectedMap.put(key, value);
       actualMap.put(key, value);
     }
-    Assert.assertTrue(actualMap.getSizeOfFileOnDiskInBytes() > 0);
-    Assert.assertTrue(actualMap.getMemoryMapSize() < expectedMap.size());
+    Assertions.assertTrue(actualMap.getSizeOfFileOnDiskInBytes() > 0);
+    Assertions.assertTrue(actualMap.getMemoryMapSize() < expectedMap.size());
     assertSimpleMaps(actualMap, expectedMap);
 
     // update new value
@@ -123,15 +123,15 @@ public class TestSimpleSpillableMap {
 
     // remove k1 from memory
     actualMap.delete(k1);
-    Assert.assertEquals(v2, actualMap.get(k2));
+    Assertions.assertEquals(v2, actualMap.get(k2));
     // put a new value for k2
     Value v3 = new Value();
     actualMap.put(k2, v3);
-    Assert.assertEquals(v3, actualMap.get(k2));
+    Assertions.assertEquals(v3, actualMap.get(k2));
 
     actualMap.delete(k2);
     // should not exist in memory or on disk
-    Assert.assertNull(actualMap.get(k2));
+    Assertions.assertNull(actualMap.get(k2));
   }
 
   private SimpleSpillableMap<Key, Value> testMap(long expectMemorySize, int expectKeyCount) {
@@ -141,7 +141,7 @@ public class TestSimpleSpillableMap {
             null,
             new DefaultSizeEstimator<>(),
             new DefaultSizeEstimator<>());
-    Assert.assertEquals(0, actualMap.getSizeOfFileOnDiskInBytes());
+    Assertions.assertEquals(0, actualMap.getSizeOfFileOnDiskInBytes());
     Map<Key, Value> expectedMap = Maps.newHashMap();
     for (int i = 0; i < expectKeyCount; i++) {
       Key key = new Key();
@@ -150,15 +150,15 @@ public class TestSimpleSpillableMap {
       actualMap.put(key, value);
     }
     assertSimpleMaps(actualMap, expectedMap);
-    Assert.assertEquals(expectMemorySize, actualMap.getMemoryMapSize());
-    Assert.assertEquals(
+    Assertions.assertEquals(expectMemorySize, actualMap.getMemoryMapSize());
+    Assertions.assertEquals(
         expectMemorySize * (keySize + valueSize), actualMap.getMemoryMapSpaceSize());
     return actualMap;
   }
 
   private <K, V> void assertSimpleMaps(SimpleMap<K, V> actualMap, Map<K, V> expectedMap) {
     for (K key : expectedMap.keySet()) {
-      Assert.assertEquals(expectedMap.get(key), actualMap.get(key));
+      Assertions.assertEquals(expectedMap.get(key), actualMap.get(key));
     }
   }
 

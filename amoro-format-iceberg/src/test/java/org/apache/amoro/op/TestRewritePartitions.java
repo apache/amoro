@@ -27,13 +27,20 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.util.StructLikeMap;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
 public class TestRewritePartitions extends TableDataTestBase {
+
+  @BeforeEach
+  public void setUp() throws IOException {
+    initData();
+  }
 
   /** overwrite partition by data file. */
   @Test
@@ -56,18 +63,18 @@ public class TestRewritePartitions extends TableDataTestBase {
     StructLikeMap<Long> partitionOptimizedSequence =
         MixedTableUtil.readOptimizedSequence(getMixedTable().asKeyedTable());
     // expect result: 1 partition with new txId, 2,3 partition use old txId
-    Assert.assertEquals(
+    Assertions.assertEquals(
         txId,
         partitionOptimizedSequence
             .get(MixedDataTestHelpers.recordPartition("2022-01-01T12:00:00"))
             .longValue());
-    Assert.assertNull(
+    Assertions.assertNull(
         partitionOptimizedSequence.get(
             MixedDataTestHelpers.recordPartition("2022-01-02T12:00:00")));
-    Assert.assertNull(
+    Assertions.assertNull(
         partitionOptimizedSequence.get(
             MixedDataTestHelpers.recordPartition("2022-01-03T12:00:00")));
-    Assert.assertNull(
+    Assertions.assertNull(
         partitionOptimizedSequence.get(
             MixedDataTestHelpers.recordPartition("2022-01-04T12:00:00")));
 
@@ -77,14 +84,14 @@ public class TestRewritePartitions extends TableDataTestBase {
     // partition1 -> base[7,8,9]
     // partition2 -> base[2]
     // partition3 -> base[3]
-    Assert.assertEquals(5, rows.size());
+    Assertions.assertEquals(5, rows.size());
 
     Set<Integer> resultIdSet = Sets.newHashSet();
     rows.forEach(r -> resultIdSet.add((Integer) r.get(0)));
-    Assert.assertTrue(resultIdSet.contains(7));
-    Assert.assertTrue(resultIdSet.contains(8));
-    Assert.assertTrue(resultIdSet.contains(9));
-    Assert.assertTrue(resultIdSet.contains(2));
-    Assert.assertTrue(resultIdSet.contains(3));
+    Assertions.assertTrue(resultIdSet.contains(7));
+    Assertions.assertTrue(resultIdSet.contains(8));
+    Assertions.assertTrue(resultIdSet.contains(9));
+    Assertions.assertTrue(resultIdSet.contains(2));
+    Assertions.assertTrue(resultIdSet.contains(3));
   }
 }

@@ -28,20 +28,55 @@ import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
 
+import java.io.IOException;
+
+/**
+ * Dual-mode base class supporting both JUnit 4 and JUnit 5 subclasses. See {@link CatalogTestBase}
+ * for the full dual-mode rationale; the same constraints apply here. Cross-module
+ * {@code @RunWith(Parameterized.class)} subclasses keep the legacy two-arg constructor and rely on
+ * the {@code @Before} / {@code @After} hooks. In-module JUnit 5 subclasses use the no-arg
+ * constructor and explicitly call {@link #setupTable(CatalogTestHelper, TableTestHelper)} from
+ * their {@code @ParameterizedTest} method body or {@code @BeforeEach}.
+ */
 public abstract class TableTestBase extends CatalogTestBase {
 
-  private final TableTestHelper tableTestHelper;
+  protected TableTestHelper tableTestHelper;
   private MixedTable mixedTable;
   private TableMetaStore tableMetaStore;
 
+  /** JUnit 4 constructor — kept for cross-module {@code @RunWith(Parameterized.class)} callers. */
   public TableTestBase(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
     super(catalogTestHelper);
     this.tableTestHelper = tableTestHelper;
   }
 
+  /** JUnit 5 constructor — used by in-module migrated subclasses. */
+  public TableTestBase() {
+    super();
+  }
+
+  /** JUnit 4 lifecycle — fires when subclass uses {@code @RunWith(Parameterized)}. */
   @Before
   public void setupTable() {
+    if (tableTestHelper != null) {
+      doSetupTable();
+    }
+  }
+
+  /**
+   * JUnit 5 entry point — invoke from {@code @ParameterizedTest} method body or
+   * {@code @BeforeEach}.
+   */
+  protected void setupTable(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper)
+      throws IOException {
+    setupCatalog(catalogTestHelper);
+    this.tableTestHelper = tableTestHelper;
+    doSetupTable();
+  }
+
+  private void doSetupTable() {
     this.tableMetaStore = CatalogUtil.buildMetaStore(getCatalogMeta());
 
     getUnifiedCatalog().createDatabase(TableTestHelper.TEST_DB_NAME);
@@ -83,7 +118,11 @@ public abstract class TableTestBase extends CatalogTestBase {
   }
 
   @After
+  @AfterEach
   public void dropTable() {
+    if (tableTestHelper == null) {
+      return;
+    }
     getUnifiedCatalog()
         .dropTable(tableTestHelper.id().getDatabase(), tableTestHelper.id().getTableName(), true);
     try {

@@ -37,35 +37,36 @@ import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.DeleteSchemaUtil;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
 
-  private final FileFormat fileFormat;
+  private FileFormat fileFormat;
 
-  public TestIcebergFanoutPosDeleteWriter(boolean partitionedTable, FileFormat fileFormat) {
-    super(
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(true, FileFormat.PARQUET),
+        Arguments.of(false, FileFormat.PARQUET),
+        Arguments.of(true, FileFormat.AVRO),
+        Arguments.of(false, FileFormat.AVRO),
+        Arguments.of(true, FileFormat.ORC),
+        Arguments.of(false, FileFormat.ORC));
+  }
+
+  private void prepare(boolean partitionedTable, FileFormat fileFormat) throws IOException {
+    setupTable(
         new BasicCatalogTestHelper(TableFormat.ICEBERG),
         new BasicTableTestHelper(false, partitionedTable));
     this.fileFormat = fileFormat;
-  }
-
-  @Parameterized.Parameters(name = "partitionedTable = {0}, fileFormat = {1}")
-  public static Object[][] parameters() {
-    return new Object[][] {
-      {true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
-      {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
-      {true, FileFormat.ORC}, {false, FileFormat.ORC}
-    };
   }
 
   private StructLike getPartitionData() {
@@ -76,8 +77,11 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
     }
   }
 
-  @Test
-  public void testWritePosDelete() throws IOException {
+  @ParameterizedTest(name = "partitionedTable = {0}, fileFormat = {1}")
+  @MethodSource("parameters")
+  public void testWritePosDelete(boolean partitionedTable, FileFormat fileFormat)
+      throws IOException {
+    prepare(partitionedTable, fileFormat);
     StructLike partitionData = getPartitionData();
     GenericAppenderFactory appenderFactory =
         new GenericAppenderFactory(getMixedTable().schema(), getMixedTable().spec());
@@ -117,7 +121,7 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
     icebergPosDeleteWriter.delete(dataFile2Path, 8);
 
     List<DeleteFile> deleteFiles = icebergPosDeleteWriter.complete();
-    Assert.assertEquals(2, deleteFiles.size());
+    Assertions.assertEquals(2, deleteFiles.size());
     Map<String, DeleteFile> deleteFileMap =
         deleteFiles.stream().collect(Collectors.toMap(f -> f.path().toString(), f -> f));
     DeleteFile deleteFile1 =
@@ -126,10 +130,10 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
                     TableFileUtil.getNewFilePath(
                         dataDir, fileFormat.addExtension("data-1-delete-suffix")))
                 .toString());
-    Assert.assertNotNull(deleteFile1);
-    Assert.assertTrue(
+    Assertions.assertNotNull(deleteFile1);
+    Assertions.assertTrue(
         TableFileUtil.isOptimizingPosDeleteFile(dataFile1Path, deleteFile1.path().toString()));
-    Assert.assertEquals(3, deleteFile1.recordCount());
+    Assertions.assertEquals(3, deleteFile1.recordCount());
     // Check whether the path-pos pairs are sorted as expected.
     Schema pathPosSchema = DeleteSchemaUtil.pathPosSchema();
     Record record = GenericRecord.create(pathPosSchema);
@@ -138,7 +142,7 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
             record.copy("file_path", dataFile1Path, "pos", 0L),
             record.copy("file_path", dataFile1Path, "pos", 1L),
             record.copy("file_path", dataFile1Path, "pos", 3L));
-    Assert.assertEquals(
+    Assertions.assertEquals(
         expectedDeletes,
         MixedDataTestHelpers.readDataFile(fileFormat, pathPosSchema, deleteFile1.path()));
 
@@ -148,23 +152,23 @@ public class TestIcebergFanoutPosDeleteWriter extends TableTestBase {
                     TableFileUtil.getNewFilePath(
                         dataDir, fileFormat.addExtension("data-2-delete-suffix")))
                 .toString());
-    Assert.assertNotNull(deleteFile2);
-    Assert.assertTrue(
+    Assertions.assertNotNull(deleteFile2);
+    Assertions.assertTrue(
         TableFileUtil.isOptimizingPosDeleteFile(dataFile2Path, deleteFile2.path().toString()));
-    Assert.assertEquals(
+    Assertions.assertEquals(
         new Path(
                 TableFileUtil.getNewFilePath(
                     dataDir, fileFormat.addExtension("data-2-delete-suffix")))
             .toString(),
         deleteFile2.path().toString());
-    Assert.assertEquals(3, deleteFile2.recordCount());
+    Assertions.assertEquals(3, deleteFile2.recordCount());
     // Check whether the path-pos pairs are sorted as expected.
     expectedDeletes =
         Lists.newArrayList(
             record.copy("file_path", dataFile2Path, "pos", 8L),
             record.copy("file_path", dataFile2Path, "pos", 9L),
             record.copy("file_path", dataFile2Path, "pos", 10L));
-    Assert.assertEquals(
+    Assertions.assertEquals(
         expectedDeletes,
         MixedDataTestHelpers.readDataFile(fileFormat, pathPosSchema, deleteFile2.path()));
   }

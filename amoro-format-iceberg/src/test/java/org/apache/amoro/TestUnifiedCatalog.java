@@ -23,53 +23,58 @@ import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableMetaStore;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
+import java.nio.file.Path;
+import java.util.stream.Stream;
+
 public class TestUnifiedCatalog {
 
-  @ClassRule public static TestAms testAms = new TestAms();
+  private static final TestAms testAms = new TestAms();
 
-  @Rule public TemporaryFolder warehouse = new TemporaryFolder();
+  @TempDir public Path warehouse;
 
-  @Parameterized.Parameters
-  public static Object[] parameters() {
-    return new Object[] {
-      TestedCatalogs.hadoopCatalog(TableFormat.ICEBERG),
-    };
+  @BeforeAll
+  public static void startTestAms() throws Exception {
+    testAms.before();
   }
 
-  private final CatalogTestHelper testedCatalog;
-  private CatalogMeta meta;
-
-  public TestUnifiedCatalog(CatalogTestHelper testedCatalog) {
-    this.testedCatalog = testedCatalog;
+  @AfterAll
+  public static void stopTestAms() {
+    testAms.after();
   }
 
-  @Before
-  public void setupCatalogMeta() {
-    meta = testedCatalog.buildCatalogMeta(warehouse.getRoot().getAbsolutePath());
+  public static Stream<Arguments> parameters() {
+    return Stream.of(Arguments.of(TestedCatalogs.hadoopCatalog(TableFormat.ICEBERG)));
+  }
+
+  private CatalogMeta setupCatalogMeta(CatalogTestHelper testedCatalog) {
+    CatalogMeta meta = testedCatalog.buildCatalogMeta(warehouse.toFile().getAbsolutePath());
     testAms.getAmsHandler().dropCatalog(meta.getCatalogName());
     testAms.getAmsHandler().createCatalog(meta);
+    return meta;
   }
 
-  @Test
-  public void testCatalogLoader() {
+  @ParameterizedTest
+  @MethodSource("parameters")
+  public void testCatalogLoader(CatalogTestHelper testedCatalog) {
+    CatalogMeta meta = setupCatalogMeta(testedCatalog);
     UnifiedCatalog unifiedCatalog =
         UnifiedCatalogLoader.loadUnifiedCatalog(
             testAms.getServerUrl(), meta.getCatalogName(), Maps.newHashMap());
     validateUnifiedCatalog(unifiedCatalog);
   }
 
-  @Test
-  public void testCreateUnifiedCatalog() {
+  @ParameterizedTest
+  @MethodSource("parameters")
+  public void testCreateUnifiedCatalog(CatalogTestHelper testedCatalog) {
+    CatalogMeta meta = setupCatalogMeta(testedCatalog);
     UnifiedCatalog unifiedCatalog =
         new CommonUnifiedCatalog(
             meta.getCatalogName(),
@@ -80,13 +85,14 @@ public class TestUnifiedCatalog {
   }
 
   private void validateUnifiedCatalog(UnifiedCatalog unifiedCatalog) {
-    Assert.assertNotNull(unifiedCatalog);
-    Assert.assertEquals(CommonUnifiedCatalog.class.getName(), unifiedCatalog.getClass().getName());
+    Assertions.assertNotNull(unifiedCatalog);
+    Assertions.assertEquals(
+        CommonUnifiedCatalog.class.getName(), unifiedCatalog.getClass().getName());
 
     unifiedCatalog.createDatabase(TableTestHelper.TEST_DB_NAME);
-    Assert.assertEquals(
+    Assertions.assertEquals(
         Lists.newArrayList(TableTestHelper.TEST_DB_NAME), unifiedCatalog.listDatabases());
-    Assert.assertEquals(0, unifiedCatalog.listTables(TableTestHelper.TEST_DB_NAME).size());
+    Assertions.assertEquals(0, unifiedCatalog.listTables(TableTestHelper.TEST_DB_NAME).size());
     unifiedCatalog.dropDatabase(TableTestHelper.TEST_DB_NAME);
     unifiedCatalog.refresh();
   }

@@ -27,16 +27,17 @@ import org.apache.iceberg.Files;
 import org.apache.iceberg.io.FileInfo;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFile;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
@@ -51,7 +52,7 @@ public class TestFileUtil {
         TableFileUtil.getFileName(
             "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/"
                 + "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet");
-    Assert.assertEquals(
+    Assertions.assertEquals(
         "00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet", fileName);
   }
 
@@ -61,7 +62,7 @@ public class TestFileUtil {
         TableFileUtil.getFileDir(
             "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/"
                 + "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet");
-    Assert.assertEquals(
+    Assertions.assertEquals(
         "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26",
         fileDir);
   }
@@ -77,10 +78,10 @@ public class TestFileUtil {
         "a/b/c, a/b/c"
       })
   public void testGetUriPath(String expected, String path) {
-    Assert.assertEquals(expected, TableFileUtil.getUriPath(path));
+    Assertions.assertEquals(expected, TableFileUtil.getUriPath(path));
   }
 
-  private static final TemporaryFolder temp = new TemporaryFolder();
+  @TempDir public Path temp;
 
   static class LocalAuthenticatedFileIO
       implements AuthenticatedFileIO, SupportsFileSystemOperations {
@@ -113,10 +114,9 @@ public class TestFileUtil {
 
     @Override
     public void makeDirectories(String path) {
-      try {
-        temp.newFolder(path);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+      File dir = new File(path);
+      if (!dir.exists() && !dir.mkdirs()) {
+        throw new UncheckedIOException(new IOException("Failed to create directory: " + path));
       }
     }
 
@@ -176,16 +176,15 @@ public class TestFileUtil {
 
   @Test
   public void testDeleteEmptyDirectory() throws IOException {
-    temp.create();
-    String dataLocation = temp.newFolder("data").getAbsolutePath();
-    String metadataLocation = temp.newFolder("metadata").getAbsolutePath();
-    temp.newFile("metadata/metadata.json");
+    String dataLocation = newFolder(temp, "data").getAbsolutePath();
+    String metadataLocation = newFolder(temp, "metadata").getAbsolutePath();
+    newFile(temp, "metadata/metadata.json");
 
-    File emptyPartition1 = temp.newFolder("data/partition1");
-    File emptyPartition2 = temp.newFolder("data/partition2");
-    File emptySubPartition = temp.newFolder("data/partition2/sub-partition1");
-    File partition3 = temp.newFolder("data/partition3");
-    File file = temp.newFile("data/partition3/data-file-1");
+    File emptyPartition1 = newFolder(temp, "data/partition1");
+    File emptyPartition2 = newFolder(temp, "data/partition2");
+    File emptySubPartition = newFolder(temp, "data/partition2/sub-partition1");
+    File partition3 = newFolder(temp, "data/partition3");
+    File file = newFile(temp, "data/partition3/data-file-1");
 
     Set<String> exclude = Sets.newHashSet(file.getAbsolutePath());
     try (LocalAuthenticatedFileIO io = new LocalAuthenticatedFileIO()) {
@@ -196,10 +195,10 @@ public class TestFileUtil {
               partition3.getAbsolutePath(),
               metadataLocation)
           .forEach(f -> TableFileUtil.deleteEmptyDirectory(io, f, exclude));
-      Assert.assertFalse(io.exists(emptyPartition1.getAbsolutePath()));
-      Assert.assertFalse(io.exists(emptyPartition2.getAbsolutePath()));
-      Assert.assertTrue(io.exists(dataLocation));
-      Assert.assertTrue(io.exists(metadataLocation));
+      Assertions.assertFalse(io.exists(emptyPartition1.getAbsolutePath()));
+      Assertions.assertFalse(io.exists(emptyPartition2.getAbsolutePath()));
+      Assertions.assertTrue(io.exists(dataLocation));
+      Assertions.assertTrue(io.exists(metadataLocation));
     }
   }
 
@@ -209,7 +208,7 @@ public class TestFileUtil {
         "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/"
             + "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet";
     String parentDir = TableFileUtil.getParent(filePath);
-    Assert.assertEquals(
+    Assertions.assertEquals(
         "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/"
             + "opt_mon=202109/opt_day=26",
         parentDir);
@@ -219,19 +218,19 @@ public class TestFileUtil {
         "s3://my-bucket/user/warehouse/animal_partition_two/base/"
             + "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet";
     parentDir = TableFileUtil.getParent(filePath);
-    Assert.assertEquals(
+    Assertions.assertEquals(
         "s3://my-bucket/user/warehouse/animal_partition_two/base/" + "opt_mon=202109/opt_day=26",
         parentDir);
 
     // test wrapped by URI
     URI uri = URI.create(filePath);
     parentDir = TableFileUtil.getParent(uri.toString());
-    Assert.assertEquals(
+    Assertions.assertEquals(
         "s3://my-bucket/user/warehouse/animal_partition_two/base/" + "opt_mon=202109/opt_day=26",
         parentDir);
     // lose scheme when getting path from URI
     parentDir = TableFileUtil.getParent(uri.getPath());
-    Assert.assertEquals(
+    Assertions.assertEquals(
         "/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26", parentDir);
 
     // test no scheme
@@ -239,12 +238,32 @@ public class TestFileUtil {
         "/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26/"
             + "00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet";
     parentDir = TableFileUtil.getParent(filePath);
-    Assert.assertEquals(
+    Assertions.assertEquals(
         "/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26", parentDir);
 
     // test root path
     filePath = "/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet";
     parentDir = TableFileUtil.getParent(filePath);
-    Assert.assertEquals("/", parentDir);
+    Assertions.assertEquals("/", parentDir);
+  }
+
+  private static File newFolder(Path root, String relative) throws IOException {
+    File dir = root.resolve(relative).toFile();
+    if (!dir.exists() && !dir.mkdirs()) {
+      throw new IOException("Failed to create directory: " + dir);
+    }
+    return dir;
+  }
+
+  private static File newFile(Path root, String relative) throws IOException {
+    File file = root.resolve(relative).toFile();
+    File parent = file.getParentFile();
+    if (parent != null && !parent.exists() && !parent.mkdirs()) {
+      throw new IOException("Failed to create directory: " + parent);
+    }
+    if (!file.createNewFile()) {
+      throw new IOException("Failed to create file: " + file);
+    }
+    return file;
   }
 }

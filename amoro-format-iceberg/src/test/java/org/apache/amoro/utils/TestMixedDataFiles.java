@@ -26,8 +26,8 @@ import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.InternalRecordWrapper;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeWrapper;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -51,7 +51,7 @@ public class TestMixedDataFiles {
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
     p2.set(partitionData);
-    Assert.assertEquals(p1, p2);
+    Assertions.assertEquals(p1, p2);
   }
 
   @Test
@@ -68,7 +68,7 @@ public class TestMixedDataFiles {
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
     p2.set(partitionData);
-    Assert.assertEquals(p1, p2);
+    Assertions.assertEquals(p1, p2);
   }
 
   @Test
@@ -87,7 +87,7 @@ public class TestMixedDataFiles {
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
     p2.set(partitionData);
-    Assert.assertEquals(p1, p2);
+    Assertions.assertEquals(p1, p2);
 
     partitionKey.partition(
         internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T12:00:00"))));
@@ -95,7 +95,7 @@ public class TestMixedDataFiles {
     partitionData = MixedDataFiles.data(spec, partitionPath);
     p1.set(partitionKey);
     p2.set(partitionData);
-    Assert.assertEquals(p1, p2);
+    Assertions.assertEquals(p1, p2);
 
     partitionKey.partition(
         internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-11T15:30:00"))));
@@ -103,7 +103,7 @@ public class TestMixedDataFiles {
     partitionData = MixedDataFiles.data(spec, partitionPath);
     p1.set(partitionKey);
     p2.set(partitionData);
-    Assert.assertEquals(p1, p2);
+    Assertions.assertEquals(p1, p2);
 
     partitionKey.partition(
         internalRecordWrapper.wrap(record.copy("dt", LocalDateTime.parse("2022-11-12T00:00:00"))));
@@ -111,7 +111,7 @@ public class TestMixedDataFiles {
     partitionData = MixedDataFiles.data(spec, partitionPath);
     p1.set(partitionKey);
     p2.set(partitionData);
-    Assert.assertEquals(p1, p2);
+    Assertions.assertEquals(p1, p2);
   }
 
   @Test
@@ -128,7 +128,7 @@ public class TestMixedDataFiles {
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
     p2.set(partitionData);
-    Assert.assertEquals(p1, p2);
+    Assertions.assertEquals(p1, p2);
   }
 
   @Test
@@ -145,7 +145,7 @@ public class TestMixedDataFiles {
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
     p2.set(partitionData);
-    Assert.assertEquals(p1, p2);
+    Assertions.assertEquals(p1, p2);
   }
 
   @Test
@@ -155,7 +155,7 @@ public class TestMixedDataFiles {
     PartitionKey partitionKey = new PartitionKey(spec, schema);
     String partitionPath = "name=null";
     StructLike partitionData = MixedDataFiles.data(spec, partitionPath);
-    Assert.assertNull(partitionData.get(0, Types.StringType.get().typeId().javaClass()));
+    Assertions.assertNull(partitionData.get(0, Types.StringType.get().typeId().javaClass()));
   }
 
   @Test
@@ -173,14 +173,14 @@ public class TestMixedDataFiles {
             record.copy("day", "2023-01-01").copy("name", "AAA BBB/CCC=_*-\\%")));
 
     String partitionToPath = spec.partitionToPath(partitionKey);
-    Assert.assertEquals("day=2023-01-01/name=AAA+BBB%2FCCC%3D_*-%5C%25", partitionToPath);
+    Assertions.assertEquals("day=2023-01-01/name=AAA+BBB%2FCCC%3D_*-%5C%25", partitionToPath);
     GenericRecord partitionData = MixedDataFiles.data(spec, partitionToPath);
     StructLikeWrapper p1 = StructLikeWrapper.forType(spec.partitionType());
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
     p2.set(partitionData);
 
-    Assert.assertEquals(p1, p2);
+    Assertions.assertEquals(p1, p2);
   }
 
   @Test
@@ -199,7 +199,7 @@ public class TestMixedDataFiles {
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
     p2.set(partitionData);
-    Assert.assertEquals(p1, p2);
+    Assertions.assertEquals(p1, p2);
   }
 
   @Test
@@ -216,6 +216,6 @@ public class TestMixedDataFiles {
     p1.set(partitionKey);
     StructLikeWrapper p2 = StructLikeWrapper.forType(spec.partitionType());
     p2.set(partitionData);
-    Assert.assertEquals(p1, p2);
+    Assertions.assertEquals(p1, p2);
   }
 }

@@ -30,30 +30,20 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestUpsertPushDown extends TableTestBase {
-
-  public TestUpsertPushDown(PartitionSpec partitionSpec) {
-    super(
-        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
-        new BasicTableTestHelper(
-            BasicTableTestHelper.TABLE_SCHEMA,
-            BasicTableTestHelper.PRIMARY_KEY_SPEC,
-            partitionSpec,
-            buildTableProperties()));
-  }
 
   private static Map<String, String> buildTableProperties() {
     Map<String, String> properties = Maps.newHashMap();
@@ -61,20 +51,29 @@ public class TestUpsertPushDown extends TableTestBase {
     return properties;
   }
 
-  @Parameterized.Parameters(name = "spec = {0}")
-  public static Object[] parameters() {
-    return new Object[] {
-      PartitionSpec.unpartitioned(),
-      BasicTableTestHelper.SPEC,
-      PartitionSpec.builderFor(BasicTableTestHelper.TABLE_SCHEMA)
-          .day("op_time")
-          .identity("ts")
-          .build()
-    };
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(PartitionSpec.unpartitioned()),
+        Arguments.of(BasicTableTestHelper.SPEC),
+        Arguments.of(
+            PartitionSpec.builderFor(BasicTableTestHelper.TABLE_SCHEMA)
+                .day("op_time")
+                .identity("ts")
+                .build()));
   }
 
-  @Before
-  public void initChangeStoreData() {
+  private void prepareTable(PartitionSpec partitionSpec) throws IOException {
+    setupTable(
+        new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+        new BasicTableTestHelper(
+            BasicTableTestHelper.TABLE_SCHEMA,
+            BasicTableTestHelper.PRIMARY_KEY_SPEC,
+            partitionSpec,
+            buildTableProperties()));
+    initChangeStoreData();
+  }
+
+  private void initChangeStoreData() {
     MixedDataTestHelpers.writeAndCommitChangeStore(
         getMixedTable().asKeyedTable(),
         1L,
@@ -113,18 +112,23 @@ public class TestUpsertPushDown extends TableTestBase {
         false);
   }
 
-  @Test
-  public void testReadKeyedTableWithoutFilter() {
+  @ParameterizedTest(name = "spec = {0}")
+  @MethodSource("parameters")
+  public void testReadKeyedTableWithoutFilter(PartitionSpec partitionSpec) throws IOException {
+    prepareTable(partitionSpec);
     List<Record> records =
         MixedDataTestHelpers.readKeyedTable(
             getMixedTable().asKeyedTable(), Expressions.alwaysTrue());
-    Assert.assertEquals(records.size(), 2);
-    Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
+    Assertions.assertEquals(records.size(), 2);
+    Assertions.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
   }
 
-  @Test
-  public void testReadKeyedTableWithPartitionAndColumnFilter() {
-    Assume.assumeTrue(isPartitionedTable());
+  @ParameterizedTest(name = "spec = {0}")
+  @MethodSource("parameters")
+  public void testReadKeyedTableWithPartitionAndColumnFilter(PartitionSpec partitionSpec)
+      throws IOException {
+    prepareTable(partitionSpec);
+    Assumptions.assumeTrue(isPartitionedTable());
     Expression partitionAndColumnFilter =
         Expressions.and(
             Expressions.and(
@@ -136,13 +140,16 @@ public class TestUpsertPushDown extends TableTestBase {
             getMixedTable().asKeyedTable(), partitionAndColumnFilter);
     // Scan from change store only filter partition column expression, so record(name=ccc) is still
     // returned.
-    Assert.assertEquals(records.size(), 1);
-    Assert.assertTrue(recordToNameList(records).contains("ccc"));
+    Assertions.assertEquals(records.size(), 1);
+    Assertions.assertTrue(recordToNameList(records).contains("ccc"));
   }
 
-  @Test
-  public void testReadKeyedTableWithPartitionOrColumnFilter() {
-    Assume.assumeTrue(isPartitionedTable());
+  @ParameterizedTest(name = "spec = {0}")
+  @MethodSource("parameters")
+  public void testReadKeyedTableWithPartitionOrColumnFilter(PartitionSpec partitionSpec)
+      throws IOException {
+    prepareTable(partitionSpec);
+    Assumptions.assumeTrue(isPartitionedTable());
     Expression partitionOrColumnFilter =
         Expressions.or(
             Expressions.and(
@@ -152,35 +159,43 @@ public class TestUpsertPushDown extends TableTestBase {
     List<Record> records =
         MixedDataTestHelpers.readKeyedTable(
             getMixedTable().asKeyedTable(), partitionOrColumnFilter);
-    Assert.assertEquals(records.size(), 2);
-    Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
+    Assertions.assertEquals(records.size(), 2);
+    Assertions.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
   }
 
-  @Test
-  public void testReadKeyedTableWithPartitionFilter() {
-    Assume.assumeTrue(isPartitionedTable());
+  @ParameterizedTest(name = "spec = {0}")
+  @MethodSource("parameters")
+  public void testReadKeyedTableWithPartitionFilter(PartitionSpec partitionSpec)
+      throws IOException {
+    prepareTable(partitionSpec);
+    Assumptions.assumeTrue(isPartitionedTable());
     Expression partitionFilter =
         Expressions.and(
             Expressions.notNull("op_time"), Expressions.equal("op_time", "2022-01-02T12:00:00"));
     List<Record> records =
         MixedDataTestHelpers.readKeyedTable(getMixedTable().asKeyedTable(), partitionFilter);
-    Assert.assertEquals(records.size(), 1);
-    Assert.assertTrue(recordToNameList(records).contains("ccc"));
+    Assertions.assertEquals(records.size(), 1);
+    Assertions.assertTrue(recordToNameList(records).contains("ccc"));
   }
 
-  @Test
-  public void testReadKeyedTableWithColumnFilter() {
+  @ParameterizedTest(name = "spec = {0}")
+  @MethodSource("parameters")
+  public void testReadKeyedTableWithColumnFilter(PartitionSpec partitionSpec) throws IOException {
+    prepareTable(partitionSpec);
     Expression columnFilter =
         Expressions.and(Expressions.notNull("name"), Expressions.equal("name", "bbb"));
     List<Record> records =
         MixedDataTestHelpers.readKeyedTable(getMixedTable().asKeyedTable(), columnFilter);
-    Assert.assertEquals(records.size(), 2);
-    Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
+    Assertions.assertEquals(records.size(), 2);
+    Assertions.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
   }
 
-  @Test
-  public void testReadKeyedTableWithGreaterPartitionAndColumnFilter() {
-    Assume.assumeTrue(isPartitionedTable());
+  @ParameterizedTest(name = "spec = {0}")
+  @MethodSource("parameters")
+  public void testReadKeyedTableWithGreaterPartitionAndColumnFilter(PartitionSpec partitionSpec)
+      throws IOException {
+    prepareTable(partitionSpec);
+    Assumptions.assumeTrue(isPartitionedTable());
     Expression greaterPartitionAndColumnFilter =
         Expressions.and(
             Expressions.and(
@@ -190,8 +205,8 @@ public class TestUpsertPushDown extends TableTestBase {
     List<Record> records =
         MixedDataTestHelpers.readKeyedTable(
             getMixedTable().asKeyedTable(), greaterPartitionAndColumnFilter);
-    Assert.assertEquals(records.size(), 1);
-    Assert.assertTrue(recordToNameList(records).contains("ccc"));
+    Assertions.assertEquals(records.size(), 1);
+    Assertions.assertTrue(recordToNameList(records).contains("ccc"));
   }
 
   private List<Record> writeRecords(int id, String name, long ts, int day) {

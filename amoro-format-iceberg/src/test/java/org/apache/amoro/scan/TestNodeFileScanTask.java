@@ -24,8 +24,8 @@ import org.apache.amoro.utils.ManifestEntryFields;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
@@ -75,7 +75,7 @@ public class TestNodeFileScanTask {
     List<MixedFileScanTask> first = nodeTask.dataTasks();
     List<MixedFileScanTask> second = nodeTask.dataTasks();
 
-    Assert.assertSame("dataTasks() should return the same cached instance", first, second);
+    Assertions.assertSame(first, second, "dataTasks() should return the same cached instance");
   }
 
   @Test
@@ -87,16 +87,16 @@ public class TestNodeFileScanTask {
     nodeTask.addFile(baseTask);
 
     List<MixedFileScanTask> before = nodeTask.dataTasks();
-    Assert.assertEquals("Before addFile: should have 1 data task", 1, before.size());
+    Assertions.assertEquals(1, before.size(), "Before addFile: should have 1 data task");
 
     MixedFileScanTask insertTask =
         createInsertTask("/tmp/1-I-3-00000-0-9009257362994691056-00002.parquet");
     nodeTask.addFile(insertTask);
 
     List<MixedFileScanTask> after = nodeTask.dataTasks();
-    Assert.assertEquals("After addFile: should have 2 data tasks", 2, after.size());
-    Assert.assertNotSame(
-        "dataTasks() should return a new instance after addFile invalidates cache", before, after);
+    Assertions.assertEquals(2, after.size(), "After addFile: should have 2 data tasks");
+    Assertions.assertNotSame(
+        before, after, "dataTasks() should return a new instance after addFile invalidates cache");
   }
 
   @Test
@@ -108,7 +108,7 @@ public class TestNodeFileScanTask {
     List<MixedFileScanTask> tasks = nodeTask.dataTasks();
     try {
       tasks.add(baseTask);
-      Assert.fail("dataTasks() should return an unmodifiable list");
+      Assertions.fail("dataTasks() should return an unmodifiable list");
     } catch (UnsupportedOperationException e) {
       // expected
     }
@@ -126,10 +126,10 @@ public class TestNodeFileScanTask {
     nodeTask.addFile(insertTask);
 
     List<MixedFileScanTask> tasks = nodeTask.dataTasks();
-    Assert.assertEquals(
-        "dataTasks() should contain both baseTasks and insertTasks", 2, tasks.size());
-    Assert.assertTrue("dataTasks() should include the base task", tasks.contains(baseTask));
-    Assert.assertTrue("dataTasks() should include the insert task", tasks.contains(insertTask));
+    Assertions.assertEquals(
+        2, tasks.size(), "dataTasks() should contain both baseTasks and insertTasks");
+    Assertions.assertTrue(tasks.contains(baseTask), "dataTasks() should include the base task");
+    Assertions.assertTrue(tasks.contains(insertTask), "dataTasks() should include the insert task");
   }
 
   @Test
@@ -145,7 +145,8 @@ public class TestNodeFileScanTask {
     nodeTask.addFile(deleteTask);
 
     List<MixedFileScanTask> tasks = nodeTask.dataTasks();
-    Assert.assertEquals("dataTasks() should not include EQ_DELETE_FILE tasks", 1, tasks.size());
-    Assert.assertTrue("dataTasks() should include only the base task", tasks.contains(baseTask));
+    Assertions.assertEquals(1, tasks.size(), "dataTasks() should not include EQ_DELETE_FILE tasks");
+    Assertions.assertTrue(
+        tasks.contains(baseTask), "dataTasks() should include only the base task");
   }
 }

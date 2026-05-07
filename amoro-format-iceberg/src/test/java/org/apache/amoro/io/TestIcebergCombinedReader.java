@@ -45,11 +45,10 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.Pair;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -58,11 +57,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestIcebergCombinedReader extends TableTestBase {
 
-  private final FileFormat fileFormat;
+  private FileFormat fileFormat;
 
   private RewriteFilesInput scanTask;
 
@@ -70,36 +69,20 @@ public class TestIcebergCombinedReader extends TableTestBase {
 
   private RewriteFilesInput filterEqDeleteScanTask;
 
-  public TestIcebergCombinedReader(
-      boolean partitionedTable, FileFormat fileFormat, boolean deleteCacheEnabled) {
-    super(
-        new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(false, partitionedTable, buildTableProperties(fileFormat)));
-    this.fileFormat = fileFormat;
-    if (deleteCacheEnabled) {
-      System.setProperty(DeleteCache.DELETE_CACHE_ENABLED, "true");
-    } else {
-      System.setProperty(DeleteCache.DELETE_CACHE_ENABLED, "false");
-    }
-  }
-
-  @Parameterized.Parameters(
-      name = "partitionedTable = {0}, fileFormat = {1}, deleteCacheEnabled = {2}")
-  public static Object[][] parameters() {
-    return new Object[][] {
-      {true, FileFormat.PARQUET, true},
-      {false, FileFormat.PARQUET, true},
-      {true, FileFormat.AVRO, true},
-      {false, FileFormat.AVRO, true},
-      {true, FileFormat.ORC, true},
-      {false, FileFormat.ORC, true},
-      {true, FileFormat.PARQUET, false},
-      {false, FileFormat.PARQUET, false},
-      {true, FileFormat.AVRO, false},
-      {false, FileFormat.AVRO, false},
-      {true, FileFormat.ORC, false},
-      {false, FileFormat.ORC, false}
-    };
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(true, FileFormat.PARQUET, true),
+        Arguments.of(false, FileFormat.PARQUET, true),
+        Arguments.of(true, FileFormat.AVRO, true),
+        Arguments.of(false, FileFormat.AVRO, true),
+        Arguments.of(true, FileFormat.ORC, true),
+        Arguments.of(false, FileFormat.ORC, true),
+        Arguments.of(true, FileFormat.PARQUET, false),
+        Arguments.of(false, FileFormat.PARQUET, false),
+        Arguments.of(true, FileFormat.AVRO, false),
+        Arguments.of(false, FileFormat.AVRO, false),
+        Arguments.of(true, FileFormat.ORC, false),
+        Arguments.of(false, FileFormat.ORC, false));
   }
 
   private static Map<String, String> buildTableProperties(FileFormat fileFormat) {
@@ -110,6 +93,20 @@ public class TestIcebergCombinedReader extends TableTestBase {
     return tableProperties;
   }
 
+  private void prepare(boolean partitionedTable, FileFormat fileFormat, boolean deleteCacheEnabled)
+      throws IOException {
+    setupTable(
+        new BasicCatalogTestHelper(TableFormat.ICEBERG),
+        new BasicTableTestHelper(false, partitionedTable, buildTableProperties(fileFormat)));
+    this.fileFormat = fileFormat;
+    if (deleteCacheEnabled) {
+      System.setProperty(DeleteCache.DELETE_CACHE_ENABLED, "true");
+    } else {
+      System.setProperty(DeleteCache.DELETE_CACHE_ENABLED, "false");
+    }
+    initDataAndReader();
+  }
+
   private StructLike getPartitionData() {
     if (isPartitionedTable()) {
       return TestHelpers.Row.of(0);
@@ -118,8 +115,7 @@ public class TestIcebergCombinedReader extends TableTestBase {
     }
   }
 
-  @Before
-  public void initDataAndReader() throws IOException {
+  private void initDataAndReader() throws IOException {
     StructLike partitionData = getPartitionData();
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(getMixedTable().asUnkeyedTable(), 0, 1)
@@ -201,8 +197,12 @@ public class TestIcebergCombinedReader extends TableTestBase {
             getMixedTable());
   }
 
-  @Test
-  public void readAllData() throws IOException {
+  @ParameterizedTest(name = "partitionedTable = {0}, fileFormat = {1}, deleteCacheEnabled = {2}")
+  @MethodSource("parameters")
+  public void readAllData(
+      boolean partitionedTable, FileFormat fileFormat, boolean deleteCacheEnabled)
+      throws IOException {
+    prepare(partitionedTable, fileFormat, deleteCacheEnabled);
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
             getMixedTable().io(),
@@ -217,15 +217,19 @@ public class TestIcebergCombinedReader extends TableTestBase {
             scanTask,
             "");
     try (CloseableIterable<Record> records = dataReader.readData()) {
-      Assert.assertEquals(1, Iterables.size(records));
+      Assertions.assertEquals(1, Iterables.size(records));
       Record record = Iterables.getFirst(records, null);
-      Assert.assertEquals(record.get(0), 3);
+      Assertions.assertEquals(record.get(0), 3);
     }
     dataReader.close();
   }
 
-  @Test
-  public void readAllDataNegate() throws IOException {
+  @ParameterizedTest(name = "partitionedTable = {0}, fileFormat = {1}, deleteCacheEnabled = {2}")
+  @MethodSource("parameters")
+  public void readAllDataNegate(
+      boolean partitionedTable, FileFormat fileFormat, boolean deleteCacheEnabled)
+      throws IOException {
+    prepare(partitionedTable, fileFormat, deleteCacheEnabled);
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
             getMixedTable().io(),
@@ -240,17 +244,21 @@ public class TestIcebergCombinedReader extends TableTestBase {
             scanTask,
             "");
     try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
-      Assert.assertEquals(2, Iterables.size(records));
+      Assertions.assertEquals(2, Iterables.size(records));
       Record first = Iterables.getFirst(records, null);
-      Assert.assertEquals(first.get(1), 0L);
+      Assertions.assertEquals(first.get(1), 0L);
       Record last = Iterables.getLast(records);
-      Assert.assertEquals(last.get(1), 1L);
+      Assertions.assertEquals(last.get(1), 1L);
     }
     dataReader.close();
   }
 
-  @Test
-  public void readOnlyData() throws IOException {
+  @ParameterizedTest(name = "partitionedTable = {0}, fileFormat = {1}, deleteCacheEnabled = {2}")
+  @MethodSource("parameters")
+  public void readOnlyData(
+      boolean partitionedTable, FileFormat fileFormat, boolean deleteCacheEnabled)
+      throws IOException {
+    prepare(partitionedTable, fileFormat, deleteCacheEnabled);
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
             getMixedTable().io(),
@@ -265,13 +273,17 @@ public class TestIcebergCombinedReader extends TableTestBase {
             dataScanTask,
             "");
     try (CloseableIterable<Record> records = dataReader.readData()) {
-      Assert.assertEquals(3, Iterables.size(records));
+      Assertions.assertEquals(3, Iterables.size(records));
     }
     dataReader.close();
   }
 
-  @Test
-  public void readOnlyDataNegate() throws IOException {
+  @ParameterizedTest(name = "partitionedTable = {0}, fileFormat = {1}, deleteCacheEnabled = {2}")
+  @MethodSource("parameters")
+  public void readOnlyDataNegate(
+      boolean partitionedTable, FileFormat fileFormat, boolean deleteCacheEnabled)
+      throws IOException {
+    prepare(partitionedTable, fileFormat, deleteCacheEnabled);
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
             getMixedTable().io(),
@@ -286,13 +298,17 @@ public class TestIcebergCombinedReader extends TableTestBase {
             dataScanTask,
             "");
     try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
-      Assert.assertEquals(0, Iterables.size(records));
+      Assertions.assertEquals(0, Iterables.size(records));
     }
     dataReader.close();
   }
 
-  @Test
-  public void readDataEnableFilterEqDelete() throws IOException {
+  @ParameterizedTest(name = "partitionedTable = {0}, fileFormat = {1}, deleteCacheEnabled = {2}")
+  @MethodSource("parameters")
+  public void readDataEnableFilterEqDelete(
+      boolean partitionedTable, FileFormat fileFormat, boolean deleteCacheEnabled)
+      throws IOException {
+    prepare(partitionedTable, fileFormat, deleteCacheEnabled);
     CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 100L;
     GenericCombinedIcebergDataReader dataReader =
         new GenericCombinedIcebergDataReader(
@@ -308,20 +324,24 @@ public class TestIcebergCombinedReader extends TableTestBase {
             filterEqDeleteScanTask,
             "");
 
-    Assert.assertTrue(dataReader.getDeleteFilter().isFilterEqDelete());
+    Assertions.assertTrue(dataReader.getDeleteFilter().isFilterEqDelete());
 
     try (CloseableIterable<Record> records = dataReader.readData()) {
-      Assert.assertEquals(1, Iterables.size(records));
+      Assertions.assertEquals(1, Iterables.size(records));
     }
 
     try (CloseableIterable<Record> records = dataReader.readDeletedData()) {
-      Assert.assertEquals(2, Iterables.size(records));
+      Assertions.assertEquals(2, Iterables.size(records));
     }
     dataReader.close();
   }
 
-  @Test
-  public void readDataDropAEqField() throws IOException {
+  @ParameterizedTest(name = "partitionedTable = {0}, fileFormat = {1}, deleteCacheEnabled = {2}")
+  @MethodSource("parameters")
+  public void readDataDropAEqField(
+      boolean partitionedTable, FileFormat fileFormat, boolean deleteCacheEnabled)
+      throws IOException {
+    prepare(partitionedTable, fileFormat, deleteCacheEnabled);
     CombinedDeleteFilter.FILTER_EQ_DELETE_TRIGGER_RECORD_COUNT = 100L;
     StructLike partitionData = getPartitionData();
     OutputFileFactory outputFileFactory =
@@ -388,18 +408,22 @@ public class TestIcebergCombinedReader extends TableTestBase {
             task2,
             "");
     try (CloseableIterable<Record> readRecords = dataReader.readData()) {
-      Assert.assertEquals(1, Iterables.size(readRecords));
+      Assertions.assertEquals(1, Iterables.size(readRecords));
     }
 
     try (CloseableIterable<Record> readRecords = dataReader.readDeletedData()) {
-      Assert.assertEquals(2, Iterables.size(readRecords));
+      Assertions.assertEquals(2, Iterables.size(readRecords));
     }
 
     dataReader.close();
   }
 
-  @Test
-  public void readDataReplaceAEqField() throws IOException {
+  @ParameterizedTest(name = "partitionedTable = {0}, fileFormat = {1}, deleteCacheEnabled = {2}")
+  @MethodSource("parameters")
+  public void readDataReplaceAEqField(
+      boolean partitionedTable, FileFormat fileFormat, boolean deleteCacheEnabled)
+      throws IOException {
+    prepare(partitionedTable, fileFormat, deleteCacheEnabled);
     StructLike partitionData = getPartitionData();
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(getMixedTable().asUnkeyedTable(), 0, 1)
@@ -463,17 +487,21 @@ public class TestIcebergCombinedReader extends TableTestBase {
             task,
             "");
     try (CloseableIterable<Record> readRecords = dataReader.readData()) {
-      Assert.assertEquals(0, Iterables.size(readRecords));
+      Assertions.assertEquals(0, Iterables.size(readRecords));
     }
     try (CloseableIterable<Record> readRecords = dataReader.readDeletedData()) {
-      Assert.assertEquals(3, Iterables.size(readRecords));
+      Assertions.assertEquals(3, Iterables.size(readRecords));
     }
 
     dataReader.close();
   }
 
-  @Test
-  public void readReadAddAEqField() throws IOException {
+  @ParameterizedTest(name = "partitionedTable = {0}, fileFormat = {1}, deleteCacheEnabled = {2}")
+  @MethodSource("parameters")
+  public void readReadAddAEqField(
+      boolean partitionedTable, FileFormat fileFormat, boolean deleteCacheEnabled)
+      throws IOException {
+    prepare(partitionedTable, fileFormat, deleteCacheEnabled);
     StructLike partitionData = getPartitionData();
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(getMixedTable().asUnkeyedTable(), 0, 1)
@@ -539,10 +567,10 @@ public class TestIcebergCombinedReader extends TableTestBase {
             "");
 
     try (CloseableIterable<Record> readRecords = dataReader.readData()) {
-      Assert.assertEquals(0, Iterables.size(readRecords));
+      Assertions.assertEquals(0, Iterables.size(readRecords));
     }
     try (CloseableIterable<Record> readRecords = dataReader.readDeletedData()) {
-      Assert.assertEquals(3, Iterables.size(readRecords));
+      Assertions.assertEquals(3, Iterables.size(readRecords));
     }
 
     dataReader.close();

@@ -26,15 +26,18 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TestHelpers;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.util.StructLikeMap;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.Map;
 
 public class TestUpdatePartitionProperties extends TableTestBase {
 
-  public TestUpdatePartitionProperties() {
-    super(
+  @BeforeEach
+  public void setUp() throws IOException {
+    setupTable(
         new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
         new BasicTableTestHelper(false, true));
   }
@@ -43,7 +46,7 @@ public class TestUpdatePartitionProperties extends TableTestBase {
   public void testUpdatePartitionProperties() {
     StructLikeMap<Map<String, String>> partitionProperties =
         getMixedTable().asUnkeyedTable().partitionProperty();
-    Assert.assertEquals(0, partitionProperties.size());
+    Assertions.assertEquals(0, partitionProperties.size());
     StructLike p0 = TestHelpers.Row.of(1200);
     getMixedTable()
         .asUnkeyedTable()
@@ -51,8 +54,8 @@ public class TestUpdatePartitionProperties extends TableTestBase {
         .set(p0, "key", "value")
         .commit();
     partitionProperties = getMixedTable().asUnkeyedTable().partitionProperty();
-    Assert.assertEquals(1, partitionProperties.size());
-    Assert.assertEquals("value", partitionProperties.get(p0).get("key"));
+    Assertions.assertEquals(1, partitionProperties.size());
+    Assertions.assertEquals("value", partitionProperties.get(p0).get("key"));
   }
 
   @Test
@@ -60,7 +63,7 @@ public class TestUpdatePartitionProperties extends TableTestBase {
     StructLikeMap<Map<String, String>> partitionProperties =
         getMixedTable().asUnkeyedTable().partitionProperty();
     Transaction transaction = getMixedTable().asUnkeyedTable().newTransaction();
-    Assert.assertEquals(0, partitionProperties.size());
+    Assertions.assertEquals(0, partitionProperties.size());
     StructLike p0 = TestHelpers.Row.of(1200);
     getMixedTable()
         .asUnkeyedTable()
@@ -68,18 +71,18 @@ public class TestUpdatePartitionProperties extends TableTestBase {
         .set(p0, "key", "value")
         .commit();
     partitionProperties = getMixedTable().asUnkeyedTable().partitionProperty();
-    Assert.assertEquals(0, partitionProperties.size());
+    Assertions.assertEquals(0, partitionProperties.size());
     transaction.commitTransaction();
     partitionProperties = getMixedTable().asUnkeyedTable().partitionProperty();
-    Assert.assertEquals(1, partitionProperties.size());
-    Assert.assertEquals("value", partitionProperties.get(p0).get("key"));
+    Assertions.assertEquals(1, partitionProperties.size());
+    Assertions.assertEquals("value", partitionProperties.get(p0).get("key"));
   }
 
   @Test
   public void testRemovePartitionProperties() {
     StructLikeMap<Map<String, String>> partitionProperties =
         getMixedTable().asUnkeyedTable().partitionProperty();
-    Assert.assertEquals(0, partitionProperties.size());
+    Assertions.assertEquals(0, partitionProperties.size());
     StructLike p0 = TestHelpers.Row.of(1200);
     getMixedTable()
         .asUnkeyedTable()
@@ -87,10 +90,10 @@ public class TestUpdatePartitionProperties extends TableTestBase {
         .set(p0, "key", "value")
         .commit();
     partitionProperties = getMixedTable().asUnkeyedTable().partitionProperty();
-    Assert.assertEquals(1, partitionProperties.get(p0).size());
+    Assertions.assertEquals(1, partitionProperties.get(p0).size());
 
     getMixedTable().asUnkeyedTable().updatePartitionProperties(null).remove(p0, "key").commit();
     partitionProperties = getMixedTable().asUnkeyedTable().partitionProperty();
-    Assert.assertEquals(0, partitionProperties.get(p0).size());
+    Assertions.assertEquals(0, partitionProperties.get(p0).size());
   }
 }

@@ -25,56 +25,35 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Types;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-@RunWith(Parameterized.class)
+@ExtendWith(ParameterizedTestExtension.class)
 public class TestIcebergFindFiles extends TestBase {
 
-  @Parameterized.Parameters(name = "formatVersion = {0}")
+  @Parameters(name = "formatVersion = {0}")
   public static List<Object> parameters() {
     return Arrays.asList(1, 2);
   }
 
-  @Rule public TemporaryFolder tempDir = new TemporaryFolder();
+  // TestBase's @BeforeEach setupTable() and @AfterEach cleanupTables() already fire.
 
-  public TestIcebergFindFiles(int formatVersion) {
-    this.formatVersion = formatVersion;
-  }
-
-  @Before
-  public void setUp() throws Exception {
-    this.tableDir = tempDir.newFolder();
-    this.tableDir.delete();
-    super.setupTable();
-  }
-
-  @After
-  public void cleanUp() throws Exception {
-    super.cleanupTables();
-  }
-
-  @Test
+  @TestTemplate
   public void testBasicBehavior() {
     table.newAppend().appendFile(FILE_A).appendFile(FILE_B).commit();
 
     Iterable<ContentFile<?>> files = transform(new IcebergFindFiles(table).entries());
 
-    Assert.assertEquals(pathSet(FILE_A, FILE_B), pathSet(files));
+    Assertions.assertEquals(pathSet(FILE_A, FILE_B), pathSet(files));
   }
 
-  @Test
+  @TestTemplate
   public void testWithMetadataMatching() {
     table
         .newAppend()
@@ -89,10 +68,10 @@ public class TestIcebergFindFiles extends TestBase {
             new IcebergFindFiles(table)
                 .filterFiles(Expressions.startsWith("file_path", "/path/to/data-a"))
                 .entries());
-    Assert.assertEquals(pathSet(FILE_A), pathSet(files));
+    Assertions.assertEquals(pathSet(FILE_A), pathSet(files));
   }
 
-  @Test
+  @TestTemplate
   public void testWithRecordsMatching() {
     table
         .newAppend()
@@ -119,10 +98,10 @@ public class TestIcebergFindFiles extends TestBase {
     final Iterable<ContentFile<?>> files =
         transform(new IcebergFindFiles(table).filterData(Expressions.equal("id", 1)).entries());
 
-    Assert.assertEquals(Sets.newHashSet("/path/to/data-e.parquet"), pathSet(files));
+    Assertions.assertEquals(Sets.newHashSet("/path/to/data-e.parquet"), pathSet(files));
   }
 
-  @Test
+  @TestTemplate
   public void testInPartition() {
     table
         .newAppend()
@@ -140,10 +119,10 @@ public class TestIcebergFindFiles extends TestBase {
                     Lists.newArrayList(StaticDataTask.Row.of(1), StaticDataTask.Row.of(2)))
                 .entries());
 
-    Assert.assertEquals(pathSet(FILE_B, FILE_C), pathSet(files));
+    Assertions.assertEquals(pathSet(FILE_B, FILE_C), pathSet(files));
   }
 
-  @Test
+  @TestTemplate
   public void testInPartitionForRemovePartitionField() {
     table
         .newAppend()
@@ -173,7 +152,7 @@ public class TestIcebergFindFiles extends TestBase {
                     Lists.newArrayList(StaticDataTask.Row.of(1), StaticDataTask.Row.of(2)))
                 .entries());
 
-    Assert.assertEquals(pathSet(FILE_B, FILE_C), pathSet(files));
+    Assertions.assertEquals(pathSet(FILE_B, FILE_C), pathSet(files));
 
     Iterable<ContentFile<?>> files2 =
         transform(
@@ -181,10 +160,10 @@ public class TestIcebergFindFiles extends TestBase {
                 .inPartitions(table.spec(), StaticDataTask.Row.of(new Object[] {null}))
                 .entries());
 
-    Assert.assertEquals(pathSet(fileDropPartitionField), pathSet(files2));
+    Assertions.assertEquals(pathSet(fileDropPartitionField), pathSet(files2));
   }
 
-  @Test
+  @TestTemplate
   public void testInPartitionForAddPartitionField() {
     table
         .newAppend()
@@ -214,7 +193,7 @@ public class TestIcebergFindFiles extends TestBase {
                     table.specs().get(0), StaticDataTask.Row.of(1), StaticDataTask.Row.of(2))
                 .entries());
 
-    Assert.assertEquals(pathSet(FILE_B, FILE_C), pathSet(files));
+    Assertions.assertEquals(pathSet(FILE_B, FILE_C), pathSet(files));
 
     Iterable<ContentFile<?>> files2 =
         transform(
@@ -222,12 +201,12 @@ public class TestIcebergFindFiles extends TestBase {
                 .inPartitions(table.specs().get(1), StaticDataTask.Row.of(0, 1))
                 .entries());
 
-    Assert.assertEquals(pathSet(fileAddPartitionField), pathSet(files2));
+    Assertions.assertEquals(pathSet(fileAddPartitionField), pathSet(files2));
   }
 
-  @Test
+  @TestTemplate
   public void testInPartitionForReplacePartitionField() {
-    Assume.assumeTrue(formatVersion == 2);
+    Assumptions.assumeTrue(formatVersion == 2);
     table
         .newAppend()
         .appendFile(FILE_A) // bucket 0
@@ -261,7 +240,7 @@ public class TestIcebergFindFiles extends TestBase {
                     table.specs().get(0), StaticDataTask.Row.of(1), StaticDataTask.Row.of(2))
                 .entries());
 
-    Assert.assertEquals(pathSet(FILE_B, FILE_C), pathSet(files));
+    Assertions.assertEquals(pathSet(FILE_B, FILE_C), pathSet(files));
 
     Iterable<ContentFile<?>> files2 =
         transform(
@@ -269,10 +248,10 @@ public class TestIcebergFindFiles extends TestBase {
                 .inPartitions(table.specs().get(1), StaticDataTask.Row.of(1))
                 .entries());
 
-    Assert.assertEquals(pathSet(fileReplacePartitionField), pathSet(files2));
+    Assertions.assertEquals(pathSet(fileReplacePartitionField), pathSet(files2));
   }
 
-  @Test
+  @TestTemplate
   public void testAsOfTimestamp() {
     table.newAppend().appendFile(FILE_A).commit();
 
@@ -287,10 +266,10 @@ public class TestIcebergFindFiles extends TestBase {
     Iterable<ContentFile<?>> files =
         transform(new IcebergFindFiles(table).asOfTime(timestamp).entries());
 
-    Assert.assertEquals(pathSet(FILE_A, FILE_B), pathSet(files));
+    Assertions.assertEquals(pathSet(FILE_A, FILE_B), pathSet(files));
   }
 
-  @Test
+  @TestTemplate
   public void testSnapshotId() {
     table.newAppend().appendFile(FILE_A).appendFile(FILE_B).commit();
 
@@ -303,10 +282,10 @@ public class TestIcebergFindFiles extends TestBase {
     Iterable<ContentFile<?>> files =
         transform(new IcebergFindFiles(table).inSnapshot(snapshotId).entries());
 
-    Assert.assertEquals(pathSet(FILE_A, FILE_B, FILE_C), pathSet(files));
+    Assertions.assertEquals(pathSet(FILE_A, FILE_B, FILE_C), pathSet(files));
   }
 
-  @Test
+  @TestTemplate
   public void testCaseSensitivity() {
     table
         .newAppend()
@@ -323,10 +302,10 @@ public class TestIcebergFindFiles extends TestBase {
                 .filterFiles(Expressions.startsWith("FILE_PATH", "/path/to/data-a"))
                 .entries());
 
-    Assert.assertEquals(pathSet(FILE_A), pathSet(files));
+    Assertions.assertEquals(pathSet(FILE_A), pathSet(files));
   }
 
-  @Test
+  @TestTemplate
   public void testIncludeColumnStats() {
     table.newAppend().appendFile(FILE_WITH_STATS).commit();
 
@@ -334,32 +313,32 @@ public class TestIcebergFindFiles extends TestBase {
         transform(new IcebergFindFiles(table).includeColumnStats().entries());
     final ContentFile<?> file = files.iterator().next();
 
-    Assert.assertEquals(FILE_WITH_STATS.columnSizes(), file.columnSizes());
-    Assert.assertEquals(FILE_WITH_STATS.valueCounts(), file.valueCounts());
-    Assert.assertEquals(FILE_WITH_STATS.nullValueCounts(), file.nullValueCounts());
-    Assert.assertEquals(FILE_WITH_STATS.nanValueCounts(), file.nanValueCounts());
-    Assert.assertEquals(FILE_WITH_STATS.lowerBounds(), file.lowerBounds());
-    Assert.assertEquals(FILE_WITH_STATS.upperBounds(), file.upperBounds());
+    Assertions.assertEquals(FILE_WITH_STATS.columnSizes(), file.columnSizes());
+    Assertions.assertEquals(FILE_WITH_STATS.valueCounts(), file.valueCounts());
+    Assertions.assertEquals(FILE_WITH_STATS.nullValueCounts(), file.nullValueCounts());
+    Assertions.assertEquals(FILE_WITH_STATS.nanValueCounts(), file.nanValueCounts());
+    Assertions.assertEquals(FILE_WITH_STATS.lowerBounds(), file.lowerBounds());
+    Assertions.assertEquals(FILE_WITH_STATS.upperBounds(), file.upperBounds());
   }
 
-  @Test
+  @TestTemplate
   public void testFileContent() {
-    Assume.assumeTrue(formatVersion == 2);
+    Assumptions.assumeTrue(formatVersion == 2);
     table.newRowDelta().addRows(FILE_A).addDeletes(FILE_A_DELETES).commit();
 
     Iterable<ContentFile<?>> allFiles = transform(new IcebergFindFiles(table).entries());
-    Assert.assertEquals(pathSet(FILE_A, FILE_A_DELETES), pathSet(allFiles));
+    Assertions.assertEquals(pathSet(FILE_A, FILE_A_DELETES), pathSet(allFiles));
 
     Iterable<ContentFile<?>> dataFiles =
         transform(new IcebergFindFiles(table).fileContent(ManifestContent.DATA).entries());
-    Assert.assertEquals(pathSet(FILE_A), pathSet(dataFiles));
+    Assertions.assertEquals(pathSet(FILE_A), pathSet(dataFiles));
 
     Iterable<ContentFile<?>> deleteFiles =
         transform(new IcebergFindFiles(table).fileContent(ManifestContent.DELETES).entries());
-    Assert.assertEquals(pathSet(FILE_A_DELETES), pathSet(deleteFiles));
+    Assertions.assertEquals(pathSet(FILE_A_DELETES), pathSet(deleteFiles));
   }
 
-  @Test
+  @TestTemplate
   public void testNoSnapshot() {
     // a table has no snapshot when it just gets created and no data is loaded yet
 
@@ -367,7 +346,7 @@ public class TestIcebergFindFiles extends TestBase {
     Iterable<IcebergFindFiles.IcebergManifestEntry> files = new IcebergFindFiles(table).entries();
 
     // verify an empty collection of data file is returned
-    Assert.assertEquals(0, Sets.newHashSet(files).size());
+    Assertions.assertEquals(0, Sets.newHashSet(files).size());
   }
 
   private Set<String> pathSet(ContentFile<?>... files) {

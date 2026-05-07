@@ -33,32 +33,32 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestMixedTreeNodePosDeleteWriter extends TableTestBase {
 
-  public TestMixedTreeNodePosDeleteWriter(
-      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
-    super(catalogTestHelper, tableTestHelper);
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(
+            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, true)),
+        Arguments.of(
+            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, false)));
   }
 
-  @Parameterized.Parameters(name = "{1},{2}")
-  public static Object[] parameters() {
-    return new Object[][] {
-      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)},
-      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, false)}
-    };
-  }
-
-  @Test
-  public void test() throws IOException {
+  @ParameterizedTest(name = "{0},{1}")
+  @MethodSource("parameters")
+  public void test(CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper)
+      throws IOException {
+    setupTable(catalogTestHelper, tableTestHelper);
     UnkeyedTable table = getMixedTable().asKeyedTable().baseTable();
     GenericAppenderFactory appenderFactory =
         new GenericAppenderFactory(table.schema(), table.spec());
@@ -91,6 +91,6 @@ public class TestMixedTreeNodePosDeleteWriter extends TableTestBase {
 
     List<DeleteFile> complete = writer.complete();
 
-    Assert.assertEquals(complete.size(), 4);
+    Assertions.assertEquals(complete.size(), 4);
   }
 }

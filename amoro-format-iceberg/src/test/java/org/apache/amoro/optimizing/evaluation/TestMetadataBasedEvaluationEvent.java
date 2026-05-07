@@ -62,10 +62,10 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.Pair;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -75,14 +75,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-@RunWith(Parameterized.class)
 public class TestMetadataBasedEvaluationEvent extends TableTestBase {
-
-  public TestMetadataBasedEvaluationEvent(
-      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
-    super(catalogTestHelper, tableTestHelper);
-  }
 
   public static final Schema TABLE_SCHEMA =
       new Schema(
@@ -95,15 +90,14 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
   public static final PartitionSpec SPEC =
       PartitionSpec.builderFor(TABLE_SCHEMA).day("op_time").build();
 
-  @Parameterized.Parameters(name = "{0}, {1}")
-  public static Object[] parameters() {
-    return new Object[][] {
-      {
-        new BasicCatalogTestHelper(TableFormat.ICEBERG),
-        new BasicTableTestHelper(TABLE_SCHEMA, true, SPEC)
-      },
-      {new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG), new BasicTableTestHelper(true, true)}
-    };
+  public static Stream<Arguments> parameters() {
+    return Stream.of(
+        Arguments.of(
+            new BasicCatalogTestHelper(TableFormat.ICEBERG),
+            new BasicTableTestHelper(TABLE_SCHEMA, true, SPEC)),
+        Arguments.of(
+            new BasicCatalogTestHelper(TableFormat.MIXED_ICEBERG),
+            new BasicTableTestHelper(true, true)));
   }
 
   public void initData() throws IOException {
@@ -216,17 +210,23 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
     }
   }
 
-  @Test
-  public void test_evaluating_metadataBasedTriggerEnabled() {
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void test_evaluating_metadataBasedTriggerEnabled(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws IOException {
+    setupTable(catalogTestHelper, tableTestHelper);
     OptimizingConfig config = getDefaultOptimizingConfig();
-    Assert.assertFalse(config.isMetadataBasedTriggerEnabled());
+    Assertions.assertFalse(config.isMetadataBasedTriggerEnabled());
 
     config.setEvaluationFallbackInterval(Long.MAX_VALUE);
-    Assert.assertTrue(config.isMetadataBasedTriggerEnabled());
+    Assertions.assertTrue(config.isMetadataBasedTriggerEnabled());
   }
 
-  @Test
-  public void test_evaluating_emptyTable() {
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void test_evaluating_emptyTable(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws IOException {
+    setupTable(catalogTestHelper, tableTestHelper);
     // Temporarily set self-optimizing.evaluation.fallback-interval to Long.MAX_VALUE to prevent
     // triggering due to reaching the fallback interval.
     OptimizingConfig config =
@@ -236,18 +236,21 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
     // Verify the empty table stats
     TableStatsProvider.BasicFileStats stats =
         MixedAndIcebergTableStatsProvider.INSTANCE.collect(table);
-    Assert.assertEquals(0, stats.dataFileCnt);
-    Assert.assertEquals(0, stats.totalFileSize);
-    Assert.assertEquals(0, stats.deleteFileCnt);
+    Assertions.assertEquals(0, stats.dataFileCnt);
+    Assertions.assertEquals(0, stats.totalFileSize);
+    Assertions.assertEquals(0, stats.deleteFileCnt);
 
     // Verify the empty table evaluation
-    Assert.assertTrue(config.isMetadataBasedTriggerEnabled());
-    Assert.assertFalse(MetadataBasedEvaluationEvent.isReachFallbackInterval(config, 0L));
-    Assert.assertFalse(MetadataBasedEvaluationEvent.isEvaluatingNecessary(config, table, 0L));
+    Assertions.assertTrue(config.isMetadataBasedTriggerEnabled());
+    Assertions.assertFalse(MetadataBasedEvaluationEvent.isReachFallbackInterval(config, 0L));
+    Assertions.assertFalse(MetadataBasedEvaluationEvent.isEvaluatingNecessary(config, table, 0L));
   }
 
-  @Test
-  public void test_evaluating_nonEmptyTable() throws IOException {
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void test_evaluating_nonEmptyTable(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws IOException {
+    setupTable(catalogTestHelper, tableTestHelper);
     initData();
     OptimizingConfig config = getDefaultOptimizingConfig();
     MixedTable table = getMixedTable();
@@ -255,39 +258,42 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
     // Verify the nonEmpty table stats
     TableStatsProvider.BasicFileStats stats =
         MixedAndIcebergTableStatsProvider.INSTANCE.collect(table);
-    Assert.assertTrue(stats.dataFileCnt > 0);
-    Assert.assertTrue(stats.totalFileSize > 0);
-    Assert.assertEquals(0, stats.deleteFileCnt);
+    Assertions.assertTrue(stats.dataFileCnt > 0);
+    Assertions.assertTrue(stats.totalFileSize > 0);
+    Assertions.assertEquals(0, stats.deleteFileCnt);
 
     // 1. Test for metadata-based trigger disabled.
     config.setEvaluationFallbackInterval(-1);
-    Assert.assertFalse(config.isMetadataBasedTriggerEnabled());
+    Assertions.assertFalse(config.isMetadataBasedTriggerEnabled());
 
     // 2. Test for metadata-based trigger enabled.
     // Temporarily set self-optimizing.evaluation.fallback-interval to Long.MAX_VALUE to prevent
     // triggering due to reaching the fallback interval.
     config.setEvaluationFallbackInterval(Long.MAX_VALUE);
-    Assert.assertTrue(config.isMetadataBasedTriggerEnabled());
-    Assert.assertFalse(MetadataBasedEvaluationEvent.isReachFallbackInterval(config, 0L));
+    Assertions.assertTrue(config.isMetadataBasedTriggerEnabled());
+    Assertions.assertFalse(MetadataBasedEvaluationEvent.isReachFallbackInterval(config, 0L));
 
     // 2.1 Test for evaluating pendingInput necessary.
     config.setTargetSize(134217728);
-    Assert.assertTrue(MetadataBasedEvaluationEvent.isEvaluatingNecessary(config, table, 0L));
+    Assertions.assertTrue(MetadataBasedEvaluationEvent.isEvaluatingNecessary(config, table, 0L));
 
     // 2.2 Test for evaluating pendingInput not necessary
     // Temporarily set self-optimizing.target-size to a lower value than the average file size
     config.setTargetSize(100);
-    Assert.assertFalse(MetadataBasedEvaluationEvent.isEvaluatingNecessary(config, table, 0L));
+    Assertions.assertFalse(MetadataBasedEvaluationEvent.isEvaluatingNecessary(config, table, 0L));
 
     // 2.3 Test for evaluating pendingInput necessary because the fallback interval has been
     // reached.
     config.setEvaluationFallbackInterval(0L);
-    Assert.assertTrue(config.isMetadataBasedTriggerEnabled());
-    Assert.assertTrue(MetadataBasedEvaluationEvent.isEvaluatingNecessary(config, table, 0L));
+    Assertions.assertTrue(config.isMetadataBasedTriggerEnabled());
+    Assertions.assertTrue(MetadataBasedEvaluationEvent.isEvaluatingNecessary(config, table, 0L));
   }
 
-  @Test
-  public void test_evaluating_pendingInput_nonEmptyTable() throws IOException {
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void test_evaluating_pendingInput_nonEmptyTable(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws IOException {
+    setupTable(catalogTestHelper, tableTestHelper);
     initData();
     // Set metadata-based trigger enabled and fallback interval not reached.
     OptimizingConfig config =
@@ -300,51 +306,51 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
     Map<String, PartitionEvaluator> partitionPlanMap =
         initPartitionPlans(tableFileScanHelper, config);
 
-    Assert.assertEquals(1, partitionPlanMap.size());
+    Assertions.assertEquals(1, partitionPlanMap.size());
 
     long sizeSquaredErrorSum =
         ((CommonPartitionEvaluator) new ArrayList<>(partitionPlanMap.values()).get(0))
             .getFileSizeSquaredErrorSum();
-    Assert.assertEquals(0L, sizeSquaredErrorSum);
+    Assertions.assertEquals(0L, sizeSquaredErrorSum);
 
     List<PartitionEvaluator> necessaryPartitions =
         partitionPlanMap.values().stream()
             .filter(PartitionEvaluator::isNecessary)
             .collect(Collectors.toList());
-    Assert.assertEquals(1, necessaryPartitions.size());
+    Assertions.assertEquals(1, necessaryPartitions.size());
 
     // 2. Set mse tolerance > 0 to enabled file size square error sum update during initializing
     // Partition plans.
     config.setEvaluationMseTolerance(120000000);
     partitionPlanMap = initPartitionPlans(tableFileScanHelper, config);
-    Assert.assertEquals(1, partitionPlanMap.size());
+    Assertions.assertEquals(1, partitionPlanMap.size());
 
     sizeSquaredErrorSum =
         ((CommonPartitionEvaluator) new ArrayList<>(partitionPlanMap.values()).get(0))
             .getFileSizeSquaredErrorSum();
-    Assert.assertTrue(sizeSquaredErrorSum > 0);
+    Assertions.assertTrue(sizeSquaredErrorSum > 0);
 
     necessaryPartitions =
         partitionPlanMap.values().stream()
             .filter(PartitionEvaluator::isNecessary)
             .collect(Collectors.toList());
-    Assert.assertEquals(0, necessaryPartitions.size());
+    Assertions.assertEquals(0, necessaryPartitions.size());
 
     // 3. Test the file size variance updated after adding change data.
     addChangeStoreData();
     partitionPlanMap = initPartitionPlans(initTableFileScanHelper(), config);
-    Assert.assertEquals(1, partitionPlanMap.size());
+    Assertions.assertEquals(1, partitionPlanMap.size());
 
     long sizeSquaredErrorSumUpdated1 =
         ((CommonPartitionEvaluator) new ArrayList<>(partitionPlanMap.values()).get(0))
             .getFileSizeSquaredErrorSum();
-    Assert.assertNotEquals(sizeSquaredErrorSum, sizeSquaredErrorSumUpdated1);
+    Assertions.assertNotEquals(sizeSquaredErrorSum, sizeSquaredErrorSumUpdated1);
 
     necessaryPartitions =
         partitionPlanMap.values().stream()
             .filter(PartitionEvaluator::isNecessary)
             .collect(Collectors.toList());
-    Assert.assertEquals(0, necessaryPartitions.size());
+    Assertions.assertEquals(0, necessaryPartitions.size());
 
     // 4. Set mse tolerance smaller for partitions to test necessary pending.
     config.setEvaluationMseTolerance(100000000);
@@ -353,13 +359,13 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
     long sizeSquaredErrorSumUpdated2 =
         ((CommonPartitionEvaluator) new ArrayList<>(partitionPlanMap.values()).get(0))
             .getFileSizeSquaredErrorSum();
-    Assert.assertEquals(sizeSquaredErrorSumUpdated2, sizeSquaredErrorSumUpdated1);
+    Assertions.assertEquals(sizeSquaredErrorSumUpdated2, sizeSquaredErrorSumUpdated1);
 
     necessaryPartitions =
         partitionPlanMap.values().stream()
             .filter(PartitionEvaluator::isNecessary)
             .collect(Collectors.toList());
-    Assert.assertEquals(1, necessaryPartitions.size());
+    Assertions.assertEquals(1, necessaryPartitions.size());
   }
 
   private TableFileScanHelper initTableFileScanHelper() {
@@ -448,35 +454,41 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
     }
   }
 
-  @Test
-  public void test_setFileSizeMSETolerance() {
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void test_setFileSizeMSETolerance(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws IOException {
+    setupTable(catalogTestHelper, tableTestHelper);
     OptimizingConfig config = new OptimizingConfig();
-    Assert.assertEquals(0, config.getEvaluationMseTolerance());
+    Assertions.assertEquals(0, config.getEvaluationMseTolerance());
 
     config.setEvaluationMseTolerance(1000);
-    Assert.assertEquals(1000, config.getEvaluationMseTolerance());
+    Assertions.assertEquals(1000, config.getEvaluationMseTolerance());
 
     config.setEvaluationMseTolerance(140000000);
-    Assert.assertEquals(140000000, config.getEvaluationMseTolerance());
+    Assertions.assertEquals(140000000, config.getEvaluationMseTolerance());
   }
 
-  @Test
-  public void testBasicStatsAccept() {
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testBasicStatsAccept(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws IOException {
+    setupTable(catalogTestHelper, tableTestHelper);
     MixedAndIcebergTableStatsProvider.BasicFileStats stats =
         new MixedAndIcebergTableStatsProvider.BasicFileStats();
     // Initial state should be zeros
-    Assert.assertEquals(0, stats.deleteFileCnt);
-    Assert.assertEquals(0, stats.dataFileCnt);
-    Assert.assertEquals(0, stats.totalFileSize);
+    Assertions.assertEquals(0, stats.deleteFileCnt);
+    Assertions.assertEquals(0, stats.dataFileCnt);
+    Assertions.assertEquals(0, stats.totalFileSize);
     // Create first summary map
     Map<String, String> summary1 = new HashMap<>();
     summary1.put("total-delete-files", "5");
     summary1.put("total-data-files", "10");
     summary1.put("total-files-size", "1024");
     stats.accept(summary1);
-    Assert.assertEquals(5, stats.deleteFileCnt);
-    Assert.assertEquals(10, stats.dataFileCnt);
-    Assert.assertEquals(1024, stats.totalFileSize);
+    Assertions.assertEquals(5, stats.deleteFileCnt);
+    Assertions.assertEquals(10, stats.dataFileCnt);
+    Assertions.assertEquals(1024, stats.totalFileSize);
     // Create second summary map to test accumulation
     Map<String, String> summary2 = new HashMap<>();
     summary2.put("total-delete-files", "3");
@@ -484,13 +496,16 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
     summary2.put("total-files-size", "2048");
     stats.accept(summary2);
     // Values should be accumulated
-    Assert.assertEquals(8, stats.deleteFileCnt); // 5 + 3
-    Assert.assertEquals(17, stats.dataFileCnt); // 10 + 7
-    Assert.assertEquals(3072, stats.totalFileSize); // 1024 + 2048
+    Assertions.assertEquals(8, stats.deleteFileCnt); // 5 + 3
+    Assertions.assertEquals(17, stats.dataFileCnt); // 10 + 7
+    Assertions.assertEquals(3072, stats.totalFileSize); // 1024 + 2048
   }
 
-  @Test
-  public void testBasicTableStatsAcceptWithMissingProperties() {
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testBasicTableStatsAcceptWithMissingProperties(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws IOException {
+    setupTable(catalogTestHelper, tableTestHelper);
     MixedAndIcebergTableStatsProvider.BasicFileStats stats =
         new MixedAndIcebergTableStatsProvider.BasicFileStats();
     // Summary map with missing properties should use default values
@@ -498,13 +513,16 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
     // Only provide one property, others should default to 0
     summary.put("total-data-files", "15");
     stats.accept(summary);
-    Assert.assertEquals(0, stats.deleteFileCnt); // default value
-    Assert.assertEquals(15, stats.dataFileCnt);
-    Assert.assertEquals(0, stats.totalFileSize); // default value
+    Assertions.assertEquals(0, stats.deleteFileCnt); // default value
+    Assertions.assertEquals(15, stats.dataFileCnt);
+    Assertions.assertEquals(0, stats.totalFileSize); // default value
   }
 
-  @Test
-  public void testBasicTableStatsAcceptWithInvalidValues() {
+  @ParameterizedTest(name = "{0}, {1}")
+  @MethodSource("parameters")
+  public void testBasicTableStatsAcceptWithInvalidValues(
+      CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) throws IOException {
+    setupTable(catalogTestHelper, tableTestHelper);
     MixedAndIcebergTableStatsProvider.BasicFileStats stats =
         new MixedAndIcebergTableStatsProvider.BasicFileStats();
     // Summary map with invalid numeric values should use default values
@@ -514,7 +532,7 @@ public class TestMetadataBasedEvaluationEvent extends TableTestBase {
     summary.put("total-files-size", "not-a-number");
 
     // Invalid values should throw NumberFormatException
-    Assert.assertThrows(NumberFormatException.class, () -> stats.accept(summary));
+    Assertions.assertThrows(NumberFormatException.class, () -> stats.accept(summary));
   }
 
   OptimizingConfig getDefaultOptimizingConfig() {
