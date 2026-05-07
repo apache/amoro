@@ -22,8 +22,8 @@ import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -43,8 +43,8 @@ public class TestOptimizerToucher extends OptimizerTestBase {
     optimizerToucher.withRegisterProperty("test_k", "test_v");
     new Thread(optimizerToucher::start).start();
     tokenChangeListener.waitForTokenChange();
-    Assert.assertEquals(1, tokenChangeListener.tokenList().size());
-    Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
+    Assertions.assertEquals(1, tokenChangeListener.tokenList().size());
+    Assertions.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
     Map<String, String> optimizerProperties = Maps.newHashMap();
     optimizerProperties.put("test_k", "test_v");
     optimizerProperties.put(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL, "1000");
@@ -54,8 +54,8 @@ public class TestOptimizerToucher extends OptimizerTestBase {
     // clear all optimizer, toucher will register again
     TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().clear();
     tokenChangeListener.waitForTokenChange();
-    Assert.assertEquals(2, tokenChangeListener.tokenList().size());
-    Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
+    Assertions.assertEquals(2, tokenChangeListener.tokenList().size());
+    Assertions.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
     validateRegisteredOptimizer(
         tokenChangeListener.tokenList().get(1), optimizerConfig, optimizerProperties);
 
@@ -66,14 +66,14 @@ public class TestOptimizerToucher extends OptimizerTestBase {
       String token, OptimizerConfig registerConfig, Map<String, String> optimizerProperties) {
     Map<String, OptimizerRegisterInfo> registeredOptimizerMap =
         TEST_AMS.getOptimizerHandler().getRegisteredOptimizers();
-    Assert.assertTrue(registeredOptimizerMap.containsKey(token));
+    Assertions.assertTrue(registeredOptimizerMap.containsKey(token));
 
     OptimizerRegisterInfo registerInfo = registeredOptimizerMap.get(token);
-    Assert.assertEquals(registerConfig.getResourceId(), registerInfo.getResourceId());
-    Assert.assertEquals(registerConfig.getGroupName(), registerInfo.getGroupName());
-    Assert.assertEquals(registerConfig.getMemorySize(), registerInfo.getMemoryMb());
-    Assert.assertEquals(registerConfig.getExecutionParallel(), registerInfo.getThreadCount());
-    Assert.assertEquals(optimizerProperties, registerInfo.getProperties());
+    Assertions.assertEquals(registerConfig.getResourceId(), registerInfo.getResourceId());
+    Assertions.assertEquals(registerConfig.getGroupName(), registerInfo.getGroupName());
+    Assertions.assertEquals(registerConfig.getMemorySize(), registerInfo.getMemoryMb());
+    Assertions.assertEquals(registerConfig.getExecutionParallel(), registerInfo.getThreadCount());
+    Assertions.assertEquals(optimizerProperties, registerInfo.getProperties());
   }
 
   static class TestTokenChangeListener implements OptimizerToucher.TokenChangeListener {
