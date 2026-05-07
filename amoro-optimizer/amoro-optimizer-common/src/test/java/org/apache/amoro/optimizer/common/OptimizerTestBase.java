@@ -19,19 +19,25 @@
 package org.apache.amoro.optimizer.common;
 
 import org.apache.amoro.TestAms;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 public abstract class OptimizerTestBase {
-  @ClassRule public static TestAms TEST_AMS = new TestAms();
+  protected static final TestAms TEST_AMS = new TestAms();
 
-  @BeforeClass
-  public static void reduceCallAmsInterval() {
+  @BeforeAll
+  public static void startTestAms() throws Exception {
+    TEST_AMS.before();
     OptimizerTestHelpers.setCallAmsIntervalForTest();
   }
 
-  @Before
+  @AfterAll
+  public static void stopTestAms() {
+    TEST_AMS.after();
+  }
+
+  @BeforeEach
   public void clearTasks() {
     TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().clear();
     TEST_AMS.getOptimizerHandler().getPendingTasks().clear();

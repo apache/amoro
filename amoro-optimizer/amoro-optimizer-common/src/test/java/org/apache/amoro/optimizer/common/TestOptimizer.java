@@ -19,19 +19,13 @@
 package org.apache.amoro.optimizer.common;
 
 import org.apache.amoro.api.OptimizingTaskResult;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class TestOptimizer extends OptimizerTestBase {
-
-  @BeforeClass
-  public static void reduceCallAmsInterval() {
-    OptimizerTestHelpers.setCallAmsIntervalForTest();
-  }
 
   @Test
   public void testStartOptimizer() throws InterruptedException {
@@ -40,7 +34,7 @@ public class TestOptimizer extends OptimizerTestBase {
     Optimizer optimizer = new Optimizer(optimizerConfig);
     new Thread(optimizer::startOptimizing).start();
     TimeUnit.SECONDS.sleep(1);
-    Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
+    Assertions.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
     TEST_AMS
         .getOptimizerHandler()
         .offerTask(TestOptimizerExecutor.TestOptimizingInput.successInput(1).toTask(0, 0));
@@ -51,7 +45,7 @@ public class TestOptimizer extends OptimizerTestBase {
     String token = optimizer.getToucher().getToken();
     List<OptimizingTaskResult> taskResults =
         TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token);
-    Assert.assertEquals(2, taskResults.size());
+    Assertions.assertEquals(2, taskResults.size());
     optimizer.stopOptimizing();
   }
 }
