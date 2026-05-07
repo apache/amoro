@@ -149,7 +149,6 @@ public abstract class PeriodicTableScheduler extends RuntimeHandlerChain {
         cleanupProcessMeta = createCleanupProcessInfo(tableRuntime, cleanupOperation);
 
         execute(tableRuntime);
-
         // Different tables take different amounts of time to execute the end of execute(),
         // so you need to perform the update operation separately for each table.
         cleanupEndTime = System.currentTimeMillis();
