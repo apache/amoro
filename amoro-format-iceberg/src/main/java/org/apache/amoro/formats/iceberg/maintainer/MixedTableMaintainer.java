@@ -115,6 +115,14 @@ public class MixedTableMaintainer implements TableMaintainer {
   public void expireSnapshots() {
     if (changeMaintainer != null) {
       changeMaintainer.expireSnapshots();
+      // For Mixed-Iceberg tables managed by AMS internal REST catalog, the base store and the
+      // change store share the same server-side TableMetadata record (and thus the same
+      // meta_version). After the change store commits its snapshot expiration the shared
+      // meta_version has been bumped, while the base store's Iceberg Table instance still
+      // holds the stale metadata reference captured at construction time. Refresh it before
+      // base expiration to avoid CommitFailedException from the optimistic-lock check.
+      // See https://github.com/apache/amoro/issues/4006
+      refreshBaseTable();
     }
     baseMaintainer.expireSnapshots();
   }
@@ -123,8 +131,22 @@ public class MixedTableMaintainer implements TableMaintainer {
   protected void expireSnapshots(long mustOlderThan, int minCount) {
     if (changeMaintainer != null) {
       changeMaintainer.expireSnapshots(mustOlderThan, minCount);
+      // See the comment in expireSnapshots() above and issue #4006.
+      refreshBaseTable();
     }
     baseMaintainer.expireSnapshots(mustOlderThan, minCount);
+  }
+
+  private void refreshBaseTable() {
+    try {
+      baseMaintainer.table.refresh();
+    } catch (Throwable t) {
+      LOG.warn(
+          "Failed to refresh base table metadata for {} before base snapshot expiration, "
+              + "base commit may fail with a stale meta_version conflict",
+          mixedTable.id(),
+          t);
+    }
   }
 
   @Override
