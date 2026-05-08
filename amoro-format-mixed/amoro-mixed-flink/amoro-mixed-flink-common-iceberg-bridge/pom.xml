@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-mixed-flink</artifactId>
-        <version>0.9-incubating</version>
+        <version>0.9.0-incubating</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

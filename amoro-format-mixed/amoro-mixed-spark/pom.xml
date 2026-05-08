@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-format-mixed</artifactId>
-        <version>0.9-incubating</version>
+        <version>0.9.0-incubating</version>
     </parent>
 
     <artifactId>amoro-mixed-spark_${scala.binary.version}</artifactId>
