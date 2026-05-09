@@ -274,6 +274,8 @@ process-factories:
       expire-snapshots.interval: "1h"        # interval for expiring snapshots
       clean-orphan-files.enabled: "true"     # enable orphan files cleaning
       clean-orphan-files.interval: "1d"      # interval for cleaning orphan files
+      clean-dangling-delete-files.enabled: "true"     # enable dangling delete files cleaning
+      clean-dangling-delete-files.interval: "1d"      # interval for cleaning dangling delete files
 ```
 
 {{< hint info >}}
@@ -304,6 +306,7 @@ execute-engines:
       pool.default.thread-count: 10                   # default thread pool size
       pool.snapshots-expiring.thread-count: 10        # thread pool for snapshot expiration
       pool.orphan-files-cleaning.thread-count: 10     # thread pool for orphan file cleaning
+      pool.dangling-delete-files-cleaning.thread-count: 10     # thread pool for dangling delete files cleaning
       process.status.ttl: 4h                          # TTL for process status cache
 ```
 

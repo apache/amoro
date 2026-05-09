@@ -65,6 +65,14 @@ public class IcebergProcessFactory implements ProcessFactory {
           .durationType()
           .defaultValue(Duration.ofDays(1));
 
+  public static final ConfigOption<Boolean> DANGLING_DELETE_FILES_CLEANING_ENABLED =
+      ConfigOptions.key("clean-dangling-delete-files.enabled").booleanType().defaultValue(true);
+
+  public static final ConfigOption<Duration> DANGLING_DELETE_FILES_CLEANING_INTERVAL =
+      ConfigOptions.key("clean-dangling-delete-files.interval")
+          .durationType()
+          .defaultValue(Duration.ofDays(1));
+
   private ExecuteEngine localEngine;
   private final Map<Action, ProcessTriggerStrategy> actions = Maps.newHashMap();
   private final List<TableFormat> formats =
@@ -101,6 +109,8 @@ public class IcebergProcessFactory implements ProcessFactory {
       return triggerExpireSnapshot(tableRuntime);
     } else if (IcebergActions.DELETE_ORPHANS.equals(action)) {
       return triggerCleanOrphans(tableRuntime);
+    } else if (IcebergActions.CLEAN_DANGLING_DELETE.equals(action)) {
+      return triggerCleanDanglingDelete(tableRuntime);
     }
 
     return Optional.empty();
@@ -129,6 +139,12 @@ public class IcebergProcessFactory implements ProcessFactory {
       Duration interval = configs.getDuration(ORPHAN_FILES_CLEANING_INTERVAL);
       this.actions.put(
           IcebergActions.DELETE_ORPHANS, ProcessTriggerStrategy.triggerAtFixRate(interval));
+    }
+
+    if (configs.getBoolean(DANGLING_DELETE_FILES_CLEANING_ENABLED)) {
+      Duration interval = configs.getDuration(DANGLING_DELETE_FILES_CLEANING_INTERVAL);
+      this.actions.put(
+          IcebergActions.CLEAN_DANGLING_DELETE, ProcessTriggerStrategy.triggerAtFixRate(interval));
     }
   }
 
@@ -160,6 +176,24 @@ public class IcebergProcessFactory implements ProcessFactory {
     }
 
     return Optional.of(new OrphanFilesCleaningProcess(tableRuntime, localEngine));
+  }
+
+  private Optional<TableProcess> triggerCleanDanglingDelete(TableRuntime tableRuntime) {
+    if (localEngine == null
+        || !tableRuntime.getTableConfiguration().isDeleteDanglingDeleteFilesEnabled()) {
+      return Optional.empty();
+    }
+
+    long lastExecuteTime =
+        tableRuntime
+            .getState(DefaultTableRuntime.CLEANUP_STATE_KEY)
+            .getLastDanglingDeleteFilesCleanTime();
+    ProcessTriggerStrategy strategy = actions.get(IcebergActions.CLEAN_DANGLING_DELETE);
+    if (System.currentTimeMillis() - lastExecuteTime < strategy.getTriggerInterval().toMillis()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(new DanglingDeleteFilesCleaningProcess(tableRuntime, localEngine));
   }
 
   @Override
