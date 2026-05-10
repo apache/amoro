@@ -19,13 +19,12 @@
 package org.apache.amoro.utils;
 
 import static org.apache.amoro.utils.MemorySize.MemoryUnit.MEGA_BYTES;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -68,9 +67,9 @@ public class MemorySizeTest {
     assertEquals(expectedTebiBytes, memorySize.getTebiBytes());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testInvalid() {
-    new MemorySize(-1);
+    assertThrows(IllegalArgumentException.class, () -> new MemorySize(-1));
   }
 
   @ParameterizedTest
@@ -204,14 +203,16 @@ public class MemorySizeTest {
     }
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testParseNumberOverflow() {
-    MemorySize.parseBytes("100000000000000000000000000000000 bytes");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> MemorySize.parseBytes("100000000000000000000000000000000 bytes"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testParseNumberTimeUnitOverflow() {
-    MemorySize.parseBytes("100000000000000 tb");
+    assertThrows(IllegalArgumentException.class, () -> MemorySize.parseBytes("100000000000000 tb"));
   }
 
   @Test
@@ -231,13 +232,13 @@ public class MemorySizeTest {
   @Test
   public void testDivideByLong() {
     final MemorySize memory = new MemorySize(100L);
-    assertThat(memory.divide(23), is(new MemorySize(4L)));
+    assertEquals(new MemorySize(4L), memory.divide(23));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testDivideByNegativeLong() {
     final MemorySize memory = new MemorySize(100L);
-    memory.divide(-23L);
+    assertThrows(IllegalArgumentException.class, () -> memory.divide(-23L));
   }
 
   static Stream<Arguments> testToHumanReadableStringProvider() {
@@ -256,6 +257,6 @@ public class MemorySizeTest {
   @ParameterizedTest
   @MethodSource("testToHumanReadableStringProvider")
   public void testToHumanReadableString(long bytes, String expected) {
-    assertThat(new MemorySize(bytes).toHumanReadableString(), is(expected));
+    assertEquals(expected, new MemorySize(bytes).toHumanReadableString());
   }
 }

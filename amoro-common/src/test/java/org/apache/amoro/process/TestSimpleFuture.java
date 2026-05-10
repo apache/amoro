@@ -23,9 +23,9 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import org.apache.amoro.exception.AmoroRuntimeException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,7 +43,7 @@ public class TestSimpleFuture {
     calledFlag = new boolean[] {false, false, false, false, false};
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     resetCallbackData();
     simpleFuture = new SimpleFuture();
@@ -53,18 +53,18 @@ public class TestSimpleFuture {
       simpleFuture.whenCompleted(
           () -> {
             for (int j = num; j < calledFlag.length; j++) {
-              Assert.assertFalse(
-                  "callback " + j + " should not be called before " + num, calledFlag[j]);
+              Assertions.assertFalse(
+                  calledFlag[j], "callback " + j + " should not be called before " + num);
             }
             // Trigger error if callbackNum[num] == 0
             if (callbackNum[num] == 0) {
               throw new RuntimeException("Callback error");
             }
             callbackNum[num] = num;
-            Assert.assertEquals(
-                "Callback should be run in the same thread",
+            Assertions.assertEquals(
                 threadId,
-                Thread.currentThread().getId());
+                Thread.currentThread().getId(),
+                "Callback should be run in the same thread");
           });
     }
   }
@@ -74,9 +74,10 @@ public class TestSimpleFuture {
     simpleFuture.complete();
 
     for (int i = 0; i < 5; i++) {
-      Assert.assertEquals("Current callback num: " + i, i, callbackNum[i]);
+      Assertions.assertEquals(i, callbackNum[i], "Current callback num: " + i);
     }
-    Assert.assertTrue("SimpleFuture should complete if callback no error", simpleFuture.isDone());
+    Assertions.assertTrue(
+        simpleFuture.isDone(), "SimpleFuture should complete if callback no error");
   }
 
   @Test
@@ -88,9 +89,10 @@ public class TestSimpleFuture {
     }
     simpleFuture.complete();
     for (int i = 0; i < 5; i++) {
-      Assert.assertEquals("Current callback num: " + i, -1, callbackNum[i]);
+      Assertions.assertEquals(-1, callbackNum[i], "Current callback num: " + i);
     }
-    Assert.assertTrue("SimpleFuture should not complete if callback error", simpleFuture.isDone());
+    Assertions.assertTrue(
+        simpleFuture.isDone(), "SimpleFuture should not complete if callback error");
   }
 
   // Additional tests for edge cases and error conditions
@@ -101,21 +103,23 @@ public class TestSimpleFuture {
     try {
       simpleFuture.complete();
     } catch (Throwable throwable) {
-      Assert.assertTrue("Should catch the error", throwable instanceof AmoroRuntimeException);
-      Assert.assertTrue("Should catch the error", throwable.getCause() instanceof RuntimeException);
-      Assert.assertEquals(
-          "Should catch the error", "Callback error", throwable.getCause().getMessage());
+      Assertions.assertTrue(throwable instanceof AmoroRuntimeException, "Should catch the error");
+      Assertions.assertTrue(
+          throwable.getCause() instanceof RuntimeException, "Should catch the error");
+      Assertions.assertEquals(
+          "Callback error", throwable.getCause().getMessage(), "Should catch the error");
     }
     for (int i = 0; i < 5; i++) {
       if (i < 2) {
-        Assert.assertEquals("Current callback num: " + i, i, callbackNum[i]);
+        Assertions.assertEquals(i, callbackNum[i], "Current callback num: " + i);
       } else if (i == 2) {
-        Assert.assertEquals("Current callback num: " + i, 0, callbackNum[i]);
+        Assertions.assertEquals(0, callbackNum[i], "Current callback num: " + i);
       } else {
-        Assert.assertEquals("Current callback num: " + i, -1, callbackNum[i]);
+        Assertions.assertEquals(-1, callbackNum[i], "Current callback num: " + i);
       }
     }
-    Assert.assertFalse("SimpleFuture should not complete if callback error", simpleFuture.isDone());
+    Assertions.assertFalse(
+        simpleFuture.isDone(), "SimpleFuture should not complete if callback error");
   }
 
   @Test
@@ -124,40 +128,42 @@ public class TestSimpleFuture {
     try {
       simpleFuture.complete();
     } catch (Throwable throwable) {
-      Assert.assertTrue("Should catch the error", throwable instanceof AmoroRuntimeException);
+      Assertions.assertTrue(throwable instanceof AmoroRuntimeException, "Should catch the error");
     }
-    Assert.assertFalse("SimpleFuture should not complete if callback error", simpleFuture.isDone());
+    Assertions.assertFalse(
+        simpleFuture.isDone(), "SimpleFuture should not complete if callback error");
 
     resetCallbackData(); // Trigger normal callback
     simpleFuture.reset();
     simpleFuture.complete();
     for (int i = 0; i < 5; i++) {
-      Assert.assertEquals("Current callback num: " + i, i, callbackNum[i]);
+      Assertions.assertEquals(i, callbackNum[i], "Current callback num: " + i);
     }
-    Assert.assertTrue("SimpleFuture should not complete if callback error", simpleFuture.isDone());
+    Assertions.assertTrue(
+        simpleFuture.isDone(), "SimpleFuture should not complete if callback error");
   }
 
   @Test
   public void testIsDone() {
     simpleFuture.complete();
-    Assert.assertTrue("Future should be completed", simpleFuture.isDone());
+    Assertions.assertTrue(simpleFuture.isDone(), "Future should be completed");
   }
 
-  @Test(expected = AmoroRuntimeException.class)
+  @Test
   public void testCompleteException() throws ExecutionException, InterruptedException {
     CompletableFuture<?> future = mock(CompletableFuture.class);
     doReturn(true).when(future).complete(null);
     doThrow(new RuntimeException()).when(future).get();
     SimpleFuture simpleFuture = new SimpleFuture(future);
 
-    simpleFuture.complete();
+    Assertions.assertThrows(AmoroRuntimeException.class, simpleFuture::complete);
   }
 
   @Test
   public void testJoin() {
     simpleFuture.complete();
     simpleFuture.join();
-    Assert.assertTrue("Future should be completed", simpleFuture.isDone());
+    Assertions.assertTrue(simpleFuture.isDone(), "Future should be completed");
   }
 
   @Test
@@ -168,7 +174,7 @@ public class TestSimpleFuture {
     simpleFuture.reset();
     simpleFuture.complete();
     simpleFuture.join();
-    Assert.assertTrue("Future should be completed", simpleFuture.isDone());
+    Assertions.assertTrue(simpleFuture.isDone(), "Future should be completed");
   }
 
   @Test
@@ -177,9 +183,9 @@ public class TestSimpleFuture {
     SimpleFuture combinedFuture = simpleFuture.or(anotherFuture);
 
     simpleFuture.complete();
-    Assert.assertTrue(
-        "Combined future should be completed when either future completes",
-        combinedFuture.isDone());
+    Assertions.assertTrue(
+        combinedFuture.isDone(),
+        "Combined future should be completed when either future completes");
   }
 
   @Test
@@ -189,8 +195,8 @@ public class TestSimpleFuture {
 
     simpleFuture.complete();
     anotherFuture.complete();
-    Assert.assertTrue(
-        "Combined future should be completed when both futures complete", combinedFuture.isDone());
+    Assertions.assertTrue(
+        combinedFuture.isDone(), "Combined future should be completed when both futures complete");
   }
 
   @Test
@@ -200,8 +206,8 @@ public class TestSimpleFuture {
     SimpleFuture combinedFuture = SimpleFuture.allOf(futures);
 
     futures.forEach(SimpleFuture::complete);
-    Assert.assertTrue(
-        "Combined future should be completed when all futures complete", combinedFuture.isDone());
+    Assertions.assertTrue(
+        combinedFuture.isDone(), "Combined future should be completed when all futures complete");
   }
 
   @Test
@@ -210,8 +216,8 @@ public class TestSimpleFuture {
     SimpleFuture combinedFuture = SimpleFuture.anyOf(futures);
 
     futures.get(0).complete();
-    Assert.assertTrue(
-        "Combined future should be completed when any future completes", combinedFuture.isDone());
+    Assertions.assertTrue(
+        combinedFuture.isDone(), "Combined future should be completed when any future completes");
   }
 
   // Test for when the future is already completed before calling complete()
@@ -221,7 +227,7 @@ public class TestSimpleFuture {
     try {
       simpleFuture.complete();
     } catch (Throwable throwable) {
-      Assert.fail(throwable.getMessage());
+      Assertions.fail(throwable.getMessage());
     }
   }
 
@@ -232,7 +238,7 @@ public class TestSimpleFuture {
     try {
       simpleFuture.join();
     } catch (Throwable throwable) {
-      Assert.fail(throwable.getMessage());
+      Assertions.fail(throwable.getMessage());
     }
   }
 }
