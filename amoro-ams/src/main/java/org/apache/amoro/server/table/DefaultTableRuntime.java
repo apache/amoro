@@ -342,8 +342,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
   public long getLastCleanTime(CleanupOperation operation) {
     TableRuntimeCleanupState state = store().getState(CLEANUP_STATE_KEY);
     switch (operation) {
-      case DATA_EXPIRING:
-        return state.getLastDataExpiringTime();
       case SNAPSHOTS_EXPIRING:
         return state.getLastSnapshotsExpiringTime();
       default:
@@ -358,9 +356,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
             CLEANUP_STATE_KEY,
             state -> {
               switch (operation) {
-                case DATA_EXPIRING:
-                  state.setLastDataExpiringTime(time);
-                  break;
                 case SNAPSHOTS_EXPIRING:
                   state.setLastSnapshotsExpiringTime(time);
                   break;

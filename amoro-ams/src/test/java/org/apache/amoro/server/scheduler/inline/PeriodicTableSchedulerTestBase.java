@@ -31,7 +31,6 @@ class PeriodicTableSchedulerTestBase extends PeriodicTableScheduler {
   private final CleanupOperation cleanupOperation;
   private final boolean enabled;
   private static final long SNAPSHOTS_EXPIRING_INTERVAL = 60 * 60 * 1000L; // 1 hour
-  private static final long DATA_EXPIRING_INTERVAL = 60 * 60 * 1000L; // 1 hour
 
   public PeriodicTableSchedulerTestBase(
       TableService tableService, CleanupOperation cleanupOperation, boolean enabled) {
@@ -71,8 +70,6 @@ class PeriodicTableSchedulerTestBase extends PeriodicTableScheduler {
     switch (cleanupOperation) {
       case SNAPSHOTS_EXPIRING:
         return currentTime - lastCleanupEndTime >= SNAPSHOTS_EXPIRING_INTERVAL;
-      case DATA_EXPIRING:
-        return currentTime - lastCleanupEndTime >= DATA_EXPIRING_INTERVAL;
       default:
         return true;
     }
