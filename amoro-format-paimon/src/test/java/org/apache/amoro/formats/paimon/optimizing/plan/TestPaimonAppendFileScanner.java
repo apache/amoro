@@ -27,11 +27,14 @@ import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.formats.paimon.PaimonCatalogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.paimon.CoreOptions;
+import org.apache.paimon.append.AppendCompactTask;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.data.BinaryRow;
 import org.apache.paimon.data.BinaryString;
 import org.apache.paimon.data.GenericRow;
+import org.apache.paimon.io.DataFileMeta;
+import org.apache.paimon.operation.BaseAppendFileStoreWrite;
 import org.apache.paimon.options.CatalogOptions;
 import org.apache.paimon.predicate.Predicate;
 import org.apache.paimon.predicate.PredicateBuilder;
@@ -42,6 +45,7 @@ import org.apache.paimon.table.sink.BatchTableCommit;
 import org.apache.paimon.table.sink.BatchTableWrite;
 import org.apache.paimon.table.sink.BatchWriteBuilder;
 import org.apache.paimon.table.sink.CommitMessage;
+import org.apache.paimon.table.sink.TableCommitImpl;
 import org.apache.paimon.types.DataTypes;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -52,6 +56,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @DisplayName("PaimonAppendFileScanner")
 class TestPaimonAppendFileScanner {
@@ -163,6 +169,35 @@ class TestPaimonAppendFileScanner {
         result.files().values().stream()
             .flatMap(List::stream)
             .anyMatch(candidate -> !candidate.isProblemFile()));
+  }
+
+  @Test
+  void scanModeAllDoesNotReturnFilesDeletedByPreviousCompact(@TempDir Path warehouse)
+      throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Table table = createAppendOnlyTable(catalog, "t_compacted_scan", new HashMap<>(), false);
+    for (int i = 0; i < 5; i++) {
+      writeRecords(
+          table, Collections.singletonList(GenericRow.of(i, BinaryString.fromString("name-" + i))));
+    }
+
+    Identifier id = Identifier.create("db1", "t_compacted_scan");
+    AppendOnlyFileStoreTable appendTable = (AppendOnlyFileStoreTable) catalog.getTable(id);
+    PaimonAppendFileScanner.ScanResult beforeCompact =
+        new PaimonAppendFileScanner(appendTable, context(appendTable, 100_000), null).scan();
+    Set<String> compactedFileNames = fileNames(beforeCompact);
+    assertTrue(compactedFileNames.size() > 1);
+
+    compactFirstPartition(appendTable, beforeCompact);
+
+    AppendOnlyFileStoreTable afterCompact = (AppendOnlyFileStoreTable) catalog.getTable(id);
+    PaimonAppendFileScanner.ScanResult afterCompactScan =
+        new PaimonAppendFileScanner(afterCompact, context(afterCompact, 100_000), null).scan();
+    Set<String> scannedFileNames = fileNames(afterCompactScan);
+
+    assertTrue(
+        Collections.disjoint(compactedFileNames, scannedFileNames),
+        "ScanMode.ALL must merge compact DELETE entries before Amoro filters ADD candidates");
   }
 
   @Test
@@ -278,6 +313,36 @@ class TestPaimonAppendFileScanner {
         commit.commit(messages);
       }
     }
+  }
+
+  private static void compactFirstPartition(
+      AppendOnlyFileStoreTable table, PaimonAppendFileScanner.ScanResult scanResult)
+      throws Exception {
+    Map.Entry<BinaryRow, List<PaimonFileCandidate>> partitionFiles =
+        scanResult.files().entrySet().iterator().next();
+    List<DataFileMeta> compactBefore =
+        partitionFiles.getValue().stream()
+            .map(PaimonFileCandidate::file)
+            .collect(Collectors.toList());
+    AppendCompactTask task = new AppendCompactTask(partitionFiles.getKey(), compactBefore);
+    String commitUser = "test-compact-scan";
+    BaseAppendFileStoreWrite write = table.store().newWrite(commitUser);
+    CommitMessage message;
+    try {
+      message = task.doCompact(table, write);
+    } finally {
+      write.close();
+    }
+    try (TableCommitImpl commit = table.newCommit(commitUser)) {
+      commit.commit(Collections.singletonList(message));
+    }
+  }
+
+  private static Set<String> fileNames(PaimonAppendFileScanner.ScanResult scanResult) {
+    return scanResult.files().values().stream()
+        .flatMap(List::stream)
+        .map(PaimonFileCandidate::fileName)
+        .collect(Collectors.toSet());
   }
 
   private static int countFiles(Map<BinaryRow, List<PaimonFileCandidate>> files) {

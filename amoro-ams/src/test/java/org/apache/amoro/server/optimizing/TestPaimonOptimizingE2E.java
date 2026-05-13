@@ -50,11 +50,14 @@ import org.apache.amoro.utils.SerializationUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.paimon.Snapshot;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.data.BinaryString;
 import org.apache.paimon.data.GenericRow;
+import org.apache.paimon.data.InternalRow;
 import org.apache.paimon.options.CatalogOptions;
+import org.apache.paimon.reader.RecordReader;
 import org.apache.paimon.schema.Schema;
 import org.apache.paimon.table.AppendOnlyFileStoreTable;
 import org.apache.paimon.table.Table;
@@ -63,6 +66,7 @@ import org.apache.paimon.table.sink.BatchTableWrite;
 import org.apache.paimon.table.sink.BatchWriteBuilder;
 import org.apache.paimon.table.sink.CommitMessage;
 import org.apache.paimon.table.source.DataSplit;
+import org.apache.paimon.table.source.ReadBuilder;
 import org.apache.paimon.types.DataTypes;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -188,12 +192,15 @@ public class TestPaimonOptimizingE2E {
     long filesAfter = countDataFiles(reload);
     long rowsAfter = countRows(reload);
     long snapshotAfter = reload.snapshotManager().latestSnapshot().id();
+    Snapshot latestSnapshot = reload.snapshotManager().latestSnapshot();
 
     assertTrue(
         filesAfter < filesBefore,
         "Compaction must drop file count (was " + filesBefore + " → " + filesAfter + ")");
     assertEquals(rowsBefore, rowsAfter, "Compaction must preserve row count");
-    assertTrue(snapshotAfter > snapshotBefore, "Compaction must produce a new snapshot");
+    assertEquals(snapshotBefore + 1, snapshotAfter, "Compaction must produce one COMPACT snapshot");
+    assertEquals(Snapshot.CommitKind.COMPACT, latestSnapshot.commitKind());
+    assertEquals(1L, latestSnapshot.commitIdentifier());
 
     // MetricsSummary aggregates to non-zero input/output — the shape the dashboard consumes.
     List<TaskMetricsSummary> adapters = new ArrayList<>();
@@ -309,6 +316,7 @@ public class TestPaimonOptimizingE2E {
       PaimonCompactionInput in = t.getInput();
       assertNotNull(in);
       assertNotNull(in.getCommitUser(), "Restored input must retain commitUser for commit dedupe");
+      assertEquals(42L, in.getCommitIdentifier(), "Restored input must retain plan processId");
       PaimonCompactionOutput out = new PaimonCompactionExecutor(in).execute();
       ByteBuffer bb = SerializationUtil.simpleSerialize(out);
       byte[] bytes = new byte[bb.remaining()];
@@ -326,8 +334,8 @@ public class TestPaimonOptimizingE2E {
     allSuccess.add(firstTask);
     allSuccess.addAll(resumedTasks);
 
-    // targetSnapshotId passed through AMS would be the planner's — we recover it from the first
-    // task's input since the planner is gone.
+    // targetSnapshotId remains the planner's scan baseline; commit identity is carried by each
+    // PaimonCompactionInput and validated inside PaimonProcessFactory.createCommitter.
     long targetSnapshotId = firstTask.getInput().getTargetSnapshotId();
     TableOptimizingCommitter committer =
         factory.createCommitter(
@@ -347,6 +355,100 @@ public class TestPaimonOptimizingE2E {
             + ", after="
             + filesAfter
             + ")");
+  }
+
+  @Test
+  @DisplayName(
+      "Recovered replay of the same Paimon success output does not create a duplicate snapshot")
+  void testRecoveredReplayDoesNotDuplicateSnapshot(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    createBucketUnawareAppendTable(catalog, "t_recovery_replay", /* commits= */ 8);
+    Identifier id = Identifier.create("db1", "t_recovery_replay");
+    List<String> rowsBefore = readRowStrings(catalog.getTable(id));
+    long snapshotBefore =
+        ((AppendOnlyFileStoreTable) catalog.getTable(id)).snapshotManager().latestSnapshot().id();
+
+    PaimonTable wrapped =
+        new PaimonTable(
+            TableIdentifier.of("test_catalog", "db1", "t_recovery_replay"), catalog.getTable(id));
+    PaimonOptimizingPlanner planner =
+        new PaimonOptimizingPlanner(
+            wrapped, /* tableId= */ 7L, /* processId= */ 9009L, 1.0, 128L * 1024L * 1024L);
+    OptimizingPlanResult<PaimonCompactionTask> plan = planner.plan();
+    List<PaimonCompactionTask> plannedTasks = executeAll(plan.getTasks());
+    assertFalse(plannedTasks.isEmpty());
+
+    // Simulate the two persisted AMS recovery surfaces: TaskFilesPersistence stores inputs by
+    // task id, while task_runtime.rewrite_output stores the already successful task output.
+    Map<Integer, BaseOptimizingInput> persistedInputs = new HashMap<>();
+    Map<Integer, byte[]> persistedOutputs = new HashMap<>();
+    for (int i = 0; i < plannedTasks.size(); i++) {
+      int taskId = i + 1;
+      PaimonCompactionTask task = plannedTasks.get(i);
+      persistedInputs.put(taskId, task.getInput());
+      persistedOutputs.put(taskId, serializeOutput(task.getOutput()));
+    }
+    ByteBuffer inputBuffer = SerializationUtil.simpleSerialize(persistedInputs);
+    byte[] inputBytes = new byte[inputBuffer.remaining()];
+    inputBuffer.get(inputBytes);
+
+    @SuppressWarnings("unchecked")
+    Map<Integer, BaseOptimizingInput> reloadedInputs =
+        (Map<Integer, BaseOptimizingInput>) SerializationUtil.simpleDeserialize(inputBytes);
+    List<PaimonCompactionTask> recoveredSuccessTasks = new ArrayList<>();
+    for (int i = 0; i < plannedTasks.size(); i++) {
+      int taskId = i + 1;
+      PaimonCompactionTask original = plannedTasks.get(i);
+      BaseOptimizingInput reloadedInput = reloadedInputs.get(taskId);
+      assertTrue(reloadedInput instanceof PaimonCompactionInput);
+      PaimonCompactionInput input = (PaimonCompactionInput) reloadedInput;
+      assertEquals(original.getInput().getCommitUser(), input.getCommitUser());
+      assertEquals(9009L, input.getCommitIdentifier());
+      PaimonCompactionTask recovered =
+          new PaimonCompactionTask(
+              original.getTableId(),
+              original.getPartition(),
+              input,
+              new HashMap<>(original.getProperties()));
+      recovered.setOutputBytes(persistedOutputs.get(taskId));
+      recoveredSuccessTasks.add(recovered);
+    }
+
+    PaimonProcessFactory factory = enabledPaimonFactory();
+    factory
+        .createCommitter(
+            wrapped,
+            plan.getTargetSnapshotId(),
+            -1L,
+            asDescriptors(recoveredSuccessTasks),
+            Collections.emptyMap(),
+            Collections.emptyMap())
+        .commit();
+
+    AppendOnlyFileStoreTable afterFirstCommit = (AppendOnlyFileStoreTable) catalog.getTable(id);
+    long snapshotAfterFirst = afterFirstCommit.snapshotManager().latestSnapshot().id();
+    Snapshot firstSnapshot = afterFirstCommit.snapshotManager().latestSnapshot();
+    assertEquals(snapshotBefore + 1, snapshotAfterFirst);
+    assertEquals(Snapshot.CommitKind.COMPACT, firstSnapshot.commitKind());
+    assertEquals(9009L, firstSnapshot.commitIdentifier());
+    assertEquals(rowsBefore, readRowStrings(afterFirstCommit));
+
+    factory
+        .createCommitter(
+            wrapped,
+            plan.getTargetSnapshotId(),
+            -1L,
+            asDescriptors(recoveredSuccessTasks),
+            Collections.emptyMap(),
+            Collections.emptyMap())
+        .commit();
+
+    AppendOnlyFileStoreTable afterReplay = (AppendOnlyFileStoreTable) catalog.getTable(id);
+    assertEquals(
+        snapshotAfterFirst,
+        afterReplay.snapshotManager().latestSnapshot().id(),
+        "Recovered replay must reuse the same commitUser + commitIdentifier and create no snapshot");
+    assertEquals(rowsBefore, readRowStrings(afterReplay));
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -458,6 +560,46 @@ public class TestPaimonOptimizingE2E {
       }
     }
     return rows;
+  }
+
+  private static List<String> readRowStrings(Table table) throws Exception {
+    ReadBuilder readBuilder = table.newReadBuilder();
+    List<String> rows = new ArrayList<>();
+    RecordReader<InternalRow> reader =
+        readBuilder.newRead().createReader(readBuilder.newScan().plan());
+    reader.forEachRemaining(row -> rows.add(row.getInt(0) + "|" + row.getString(1).toString()));
+    Collections.sort(rows);
+    return rows;
+  }
+
+  private static List<PaimonCompactionTask> executeAll(Collection<PaimonCompactionTask> tasks)
+      throws Exception {
+    List<PaimonCompactionTask> executed = new ArrayList<>(tasks);
+    for (PaimonCompactionTask task : executed) {
+      PaimonCompactionOutput output = new PaimonCompactionExecutor(task.getInput()).execute();
+      task.setOutputBytes(serializeOutput(output));
+    }
+    return executed;
+  }
+
+  private static byte[] serializeOutput(PaimonCompactionOutput output) {
+    ByteBuffer buffer = SerializationUtil.simpleSerialize(output);
+    byte[] bytes = new byte[buffer.remaining()];
+    buffer.get(bytes);
+    return bytes;
+  }
+
+  private static PaimonProcessFactory enabledPaimonFactory() {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    Map<String, String> props = new HashMap<>();
+    props.put(PaimonProcessFactory.OPTIMIZER_ENABLED.key(), "true");
+    factory.open(props);
+    return factory;
+  }
+
+  private static List<StagedTaskDescriptor<?, ?, ?>> asDescriptors(
+      Collection<PaimonCompactionTask> tasks) {
+    return new ArrayList<StagedTaskDescriptor<?, ?, ?>>(tasks);
   }
 
   private static RewriteStageTask icebergTask() {

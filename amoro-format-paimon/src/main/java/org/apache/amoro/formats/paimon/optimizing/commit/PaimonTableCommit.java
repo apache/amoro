@@ -26,32 +26,31 @@ import org.apache.paimon.table.AppendOnlyFileStoreTable;
 import org.apache.paimon.table.sink.CommitMessage;
 import org.apache.paimon.table.sink.CommitMessageSerializer;
 import org.apache.paimon.table.sink.StreamTableCommit;
-import org.apache.paimon.table.sink.StreamWriteBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * AMS-side committer for Paimon BUCKET_UNAWARE compaction.
  *
  * <p>Deserialises every {@link CommitMessage} carried by {@link PaimonCompactionTask#getOutput()},
- * then performs a single atomic commit via Paimon's {@link StreamTableCommit} — {@code
- * commit(commitIdentifier, messages)} provides one snapshot per plan plus built-in idempotent
- * deduplication when the same {@code (commitUser, commitIdentifier)} is replayed (e.g. on retry).
+ * then performs a single atomic commit via Paimon's {@link
+ * AppendOnlyFileStoreTable#newCommit(String)} and {@link StreamTableCommit#filterAndCommit} so
+ * replaying the same {@code (commitUser, commitIdentifier)} is filtered before touching files.
  *
- * <p>The caller is expected to pass the target snapshot id of the plan as the {@code
- * commitIdentifier} — Paimon's {@code FileStoreCommitImpl.filterCommitted} requires the value to be
- * strictly monotonic with respect to the already-committed snapshots, and the planner's target
- * snapshot id is already monotonic.
+ * <p>The caller is expected to pass the persisted plan commit identifier from {@link
+ * org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput#getCommitIdentifier()}.
  *
  * <p>Behaviour:
  *
  * <ul>
  *   <li>Empty task collection → no-op, no snapshot created.
- *   <li>Tasks whose {@link PaimonCompactionOutput#getCommitMessageBytes()} is null are skipped.
+ *   <li>Every success task must carry a {@link PaimonCompactionOutput} with non-null commit message
+ *       bytes; missing bytes indicate corrupted task state and fail the commit.
  *   <li>Any runtime exception from Paimon's commit path (conflict, IO, schema drift, …) is wrapped
  *       in {@link OptimizingCommitException} so the AMS optimizer queue marks this process as
  *       failed and re-plans on the next tick.
@@ -67,7 +66,8 @@ public class PaimonTableCommit implements TableOptimizingCommitter {
   /**
    * Paimon commit identifier; must be monotonic per {@code commitUser} so that {@code
    * FileStoreCommitImpl.filterCommitted} can dedupe replayed commits. The caller (see {@code
-   * PaimonProcessFactory.createCommitter}) passes the plan's {@code targetSnapshotId}.
+   * PaimonProcessFactory.createCommitter}) validates that all success tasks carry the same
+   * persisted value.
    */
   private final long commitIdentifier;
 
@@ -97,10 +97,11 @@ public class PaimonTableCommit implements TableOptimizingCommitter {
     for (PaimonCompactionTask task : successTasks) {
       PaimonCompactionOutput output = task.getOutput();
       if (output == null || output.getCommitMessageBytes() == null) {
-        LOG.warn(
-            "PaimonTableCommit: task for partition={} has no CommitMessage, skipping.",
-            task.getPartition());
-        continue;
+        throw new OptimizingCommitException(
+            "Paimon success task for partition "
+                + task.getPartition()
+                + " has no Paimon CommitMessage",
+            /* causedByVersionMismatch */ false);
       }
       try {
         messages.add(
@@ -117,19 +118,25 @@ public class PaimonTableCommit implements TableOptimizingCommitter {
       return;
     }
 
-    if (commitIdentifier < 0L) {
+    if (commitUser == null || commitUser.isEmpty()) {
       throw new OptimizingCommitException(
-          "Paimon commit identifier must be >= 0, got "
+          "Paimon commit user must not be empty for table=" + table.name(),
+          /* causedByVersionMismatch */ false);
+    }
+    if (commitIdentifier <= 0L) {
+      throw new OptimizingCommitException(
+          "Paimon commit identifier must be > 0, got "
               + commitIdentifier
               + " for table="
               + table.name(),
           /* causedByVersionMismatch */ false);
     }
-    StreamWriteBuilder builder = table.newStreamWriteBuilder().withCommitUser(commitUser);
-    try (StreamTableCommit commit = builder.newCommit()) {
-      commit.commit(commitIdentifier, messages);
+    try (StreamTableCommit commit = table.newCommit(commitUser)) {
+      int committed = commit.filterAndCommit(Collections.singletonMap(commitIdentifier, messages));
       LOG.info(
-          "PaimonTableCommit: committed {} messages for table={} commitUser={} identifier={}",
+          "PaimonTableCommit: committed {} identifier(s), {} messages for table={} "
+              + "commitUser={} identifier={}",
+          committed,
           messages.size(),
           table.name(),
           commitUser,

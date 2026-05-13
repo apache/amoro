@@ -22,8 +22,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.amoro.process.ProcessFactory;
+import org.apache.amoro.server.manager.PluginConfiguration;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.amoro.utils.JacksonUtil;
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,6 +61,24 @@ import java.util.stream.StreamSupport;
  * startup would blow up.
  */
 public class TestPaimonPluginLoading {
+
+  @Test
+  public void yamlInstallsPaimonOptimizerFactoryDisabledByDefault() throws Exception {
+    List<PluginConfiguration> configs = loadProcessFactoryConfigurationsForTest();
+    PluginConfiguration paimon =
+        configs.stream()
+            .filter(c -> "paimon".equals(c.getName()))
+            .findFirst()
+            .orElseThrow(
+                () -> new AssertionError("process-factories.yaml must contain name: paimon"));
+
+    assertTrue(
+        paimon.isEnabled(), "paimon plugin should be installed so the flag can control routing");
+    assertEquals(
+        "false",
+        paimon.getProperties().get("paimon-optimizer.enabled"),
+        "default config must not enable Paimon optimizing");
+  }
 
   @Test
   public void distinctPluginNames() {
@@ -89,6 +115,35 @@ public class TestPaimonPluginLoading {
     return StreamSupport.stream(loader.spliterator(), false)
         .filter(factory -> factory.getClass().getSimpleName().contains("Paimon"))
         .collect(Collectors.toList());
+  }
+
+  @SuppressWarnings("unchecked")
+  private static List<PluginConfiguration> loadProcessFactoryConfigurationsForTest()
+      throws Exception {
+    Path yamlPath =
+        findProjectRoot().resolve("dist/src/main/amoro-bin/conf/plugins/process-factories.yaml");
+    Map<String, Object> yamlObj;
+    try (InputStream input = Files.newInputStream(yamlPath)) {
+      yamlObj = new Yaml().loadAs(input, Map.class);
+    }
+    JsonNode pluginList = JacksonUtil.fromObjects(yamlObj).get("process-factories");
+
+    List<PluginConfiguration> configs = new ArrayList<>();
+    for (int i = 0; i < pluginList.size(); i++) {
+      configs.add(PluginConfiguration.fromJSONObject(pluginList.get(i)));
+    }
+    return configs;
+  }
+
+  private static Path findProjectRoot() {
+    Path current = Paths.get("").toAbsolutePath();
+    while (current != null && !Files.exists(current.resolve("dist/src/main/amoro-bin"))) {
+      current = current.getParent();
+    }
+    if (current == null) {
+      throw new IllegalStateException("Cannot locate Amoro project root");
+    }
+    return current;
   }
 
   private static Map<String, List<String>> findDuplicateNames(List<ProcessFactory> factories) {

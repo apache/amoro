@@ -123,13 +123,7 @@ final class PaimonAppendFileScanner {
 
   private Iterator<ManifestEntry> addFileIterator(
       Snapshot snapshot, @Nullable List<BinaryRow> partitions) {
-    FileStoreScan scan =
-        table
-            .store()
-            .newScan()
-            .withSnapshot(snapshot)
-            .withKind(ScanMode.ALL)
-            .withManifestEntryFilter(entry -> entry.kind() == FileKind.ADD);
+    FileStoreScan scan = table.store().newScan().withSnapshot(snapshot).withKind(ScanMode.ALL);
     if (partitions != null) {
       scan.withPartitionFilter(partitions);
     } else if (partitionFilter != null) {

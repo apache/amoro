@@ -20,6 +20,7 @@ package org.apache.amoro.formats.paimon.optimizing.plan;
 
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.paimon.append.AppendCompactTask;
+import org.apache.paimon.utils.BinPacking;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,10 +123,16 @@ final class PaimonAppendTaskPacker {
       Map<String, List<PaimonFileCandidate>> dvGroups,
       List<PaimonFileCandidate> regularFiles) {
     List<AtomicUnit> units = majorOrFullUnits(dvGroups, regularFiles);
+    long limit = context.effectiveTaskInputLimit();
+    List<AppendCompactTask> binPacked =
+        packLegalUnitsWithPaimonBinPacking(evaluation, units, limit);
+    if (binPacked != null) {
+      return binPacked;
+    }
+    MajorFullLookahead lookahead = new MajorFullLookahead(units, limit);
     List<AppendCompactTask> tasks = new ArrayList<>();
     List<AtomicUnit> bin = new ArrayList<>();
     long total = 0L;
-    long limit = context.effectiveTaskInputLimit();
     for (int i = 0; i < units.size(); i++) {
       AtomicUnit unit = units.get(i);
       if (shouldSkipOversizedUnit(unit, limit)) {
@@ -140,11 +147,11 @@ final class PaimonAppendTaskPacker {
       }
       if (isOversizedRegular(unit, limit) && !bin.isEmpty()) {
         PackResult oversizedRegularPack =
-            packOversizedRegular(evaluation, bin, unit, units, i, limit);
+            packOversizedRegular(evaluation, bin, total, unit, lookahead, i, limit);
         if (oversizedRegularPack.packed) {
           tasks.addAll(oversizedRegularPack.tasks);
           bin = oversizedRegularPack.remainingBin;
-          total = totalSizeOfUnits(bin);
+          total = oversizedRegularPack.remainingTotal;
           continue;
         }
       }
@@ -155,7 +162,7 @@ final class PaimonAppendTaskPacker {
       if (!bin.isEmpty()
           && total + unit.totalSize() > limit
           && legal(bin)
-          && canStartNewBin(bin, units, i, limit)) {
+          && canStartNewBin(bin, units, i, lookahead, limit)) {
         tasks.add(taskFromUnits(evaluation, bin));
         bin = new ArrayList<>();
         total = 0L;
@@ -170,6 +177,39 @@ final class PaimonAppendTaskPacker {
           "Skip illegal Paimon compact bin for partition {} with {} file(s).",
           evaluation.partition(),
           fileCount(bin));
+    }
+    return tasks;
+  }
+
+  /**
+   * Use Paimon's ordered bin-packing only for the semantics-equivalent case where every packable
+   * atomic unit is already legal by itself (currently deletion-vector units). Regular single-file
+   * units still need Amoro's partner-reservation rules below, so returning {@code null}
+   * deliberately falls back to the custom planner.
+   */
+  private List<AppendCompactTask> packLegalUnitsWithPaimonBinPacking(
+      PaimonPartitionEvaluation evaluation, List<AtomicUnit> units, long limit) {
+    List<AtomicUnit> packable = new ArrayList<>();
+    for (AtomicUnit unit : units) {
+      if (!unit.hasDeletionVector()) {
+        return null;
+      }
+      if (shouldSkipOversizedUnit(unit, limit)) {
+        LOG.warn(
+            "Skip oversized Paimon compact atomic unit for partition {} with {} file(s), "
+                + "size={} bytes, limit={} bytes.",
+            evaluation.partition(),
+            unit.files().size(),
+            unit.totalSize(),
+            limit);
+        continue;
+      }
+      packable.add(unit);
+    }
+
+    List<AppendCompactTask> tasks = new ArrayList<>();
+    for (List<AtomicUnit> bin : BinPacking.packForOrdered(packable, AtomicUnit::totalSize, limit)) {
+      tasks.add(taskFromUnits(evaluation, bin));
     }
     return tasks;
   }
@@ -189,50 +229,57 @@ final class PaimonAppendTaskPacker {
   private PackResult packOversizedRegular(
       PaimonPartitionEvaluation evaluation,
       List<AtomicUnit> bin,
+      long binTotal,
       AtomicUnit unit,
-      List<AtomicUnit> units,
+      MajorFullLookahead lookahead,
       int index,
       long limit) {
-    int futureOversizedRegular = countOversizedRegular(units, index + 1, limit);
+    int futureOversizedRegular = lookahead.oversizedRegularAfter(index);
     int reservedPartners = Math.min(futureOversizedRegular, Math.max(0, bin.size() - 1));
     int prefixSize = bin.size() - reservedPartners - 1;
     List<AppendCompactTask> tasks = new ArrayList<>();
-    List<AtomicUnit> workingBin = new ArrayList<>(bin);
+    long workingTotal = binTotal;
     if (prefixSize > 0) {
-      List<AtomicUnit> prefix = new ArrayList<>(workingBin.subList(0, prefixSize));
+      List<AtomicUnit> prefix = new ArrayList<>(bin.subList(0, prefixSize));
       if (legal(prefix)) {
         tasks.add(taskFromUnits(evaluation, prefix));
-        workingBin = new ArrayList<>(workingBin.subList(prefixSize, workingBin.size()));
+        workingTotal -= totalSizeOfUnits(prefix);
+        bin.subList(0, prefixSize).clear();
       }
     }
 
-    int currentTaskSize = workingBin.size() - reservedPartners;
+    int currentTaskSize = bin.size() - reservedPartners;
     if (currentTaskSize <= 0) {
       return PackResult.notPacked();
     }
-    List<AtomicUnit> currentTask = new ArrayList<>(workingBin.subList(0, currentTaskSize));
+    List<AtomicUnit> currentTask = new ArrayList<>(bin.subList(0, currentTaskSize));
     currentTask.add(unit);
     if (!legal(currentTask) || !hasNonOversizedUnit(currentTask, limit)) {
       logSkipOversizedRegular(evaluation, unit, limit);
-      return PackResult.packed(tasks, workingBin);
+      return PackResult.packed(tasks, bin, workingTotal);
     }
     tasks.add(taskFromUnits(evaluation, currentTask));
-    return PackResult.packed(
-        tasks, new ArrayList<>(workingBin.subList(currentTaskSize, workingBin.size())));
+    long remainingTotal = workingTotal - totalSizeOfUnits(bin, 0, currentTaskSize);
+    bin.subList(0, currentTaskSize).clear();
+    return PackResult.packed(tasks, bin, remainingTotal);
   }
 
   private boolean canStartNewBin(
-      List<AtomicUnit> bin, List<AtomicUnit> units, int index, long limit) {
+      List<AtomicUnit> bin,
+      List<AtomicUnit> units,
+      int index,
+      MajorFullLookahead lookahead,
+      long limit) {
     AtomicUnit unit = units.get(index);
     if (unit.hasDeletionVector()) {
       return true;
     }
-    if (!hasPackableFutureUnit(units, index, limit)) {
+    if (!lookahead.hasPackableAfter(index)) {
       return false;
     }
     if (isRegularPartner(unit, limit)) {
-      int availablePartners = 1 + countRegularPartners(units, index + 1, limit);
-      int futureOversizedRegular = countOversizedRegular(units, index + 1, limit);
+      int availablePartners = 1 + lookahead.regularPartnersAfter(index);
+      int futureOversizedRegular = lookahead.oversizedRegularAfter(index);
       if (availablePartners < futureOversizedRegular && !bin.isEmpty()) {
         return false;
       }
@@ -255,37 +302,16 @@ final class PaimonAppendTaskPacker {
         limit);
   }
 
-  private int countOversizedRegular(List<AtomicUnit> units, int start, long limit) {
-    int count = 0;
-    for (int i = start; i < units.size(); i++) {
-      if (isOversizedRegular(units.get(i), limit)) {
-        count++;
-      }
-    }
-    return count;
-  }
-
-  private int countRegularPartners(List<AtomicUnit> units, int start, long limit) {
-    int count = 0;
-    for (int i = start; i < units.size(); i++) {
-      if (isRegularPartner(units.get(i), limit)) {
-        count++;
-      }
-    }
-    return count;
-  }
-
   private long totalSizeOfUnits(List<AtomicUnit> units) {
-    return units.stream().mapToLong(AtomicUnit::totalSize).sum();
+    return totalSizeOfUnits(units, 0, units.size());
   }
 
-  private boolean hasPackableFutureUnit(List<AtomicUnit> units, int index, long limit) {
-    for (int i = index + 1; i < units.size(); i++) {
-      if (!shouldSkipOversizedUnit(units.get(i), limit)) {
-        return true;
-      }
+  private long totalSizeOfUnits(List<AtomicUnit> units, int fromInclusive, int toExclusive) {
+    long total = 0L;
+    for (int i = fromInclusive; i < toExclusive; i++) {
+      total += units.get(i).totalSize();
     }
-    return false;
+    return total;
   }
 
   private List<AtomicUnit> majorOrFullUnits(
@@ -339,20 +365,59 @@ final class PaimonAppendTaskPacker {
     private final boolean packed;
     private final List<AppendCompactTask> tasks;
     private final List<AtomicUnit> remainingBin;
+    private final long remainingTotal;
 
     private PackResult(
-        boolean packed, List<AppendCompactTask> tasks, List<AtomicUnit> remainingBin) {
+        boolean packed,
+        List<AppendCompactTask> tasks,
+        List<AtomicUnit> remainingBin,
+        long remainingTotal) {
       this.packed = packed;
       this.tasks = tasks;
       this.remainingBin = remainingBin;
+      this.remainingTotal = remainingTotal;
     }
 
-    private static PackResult packed(List<AppendCompactTask> tasks, List<AtomicUnit> remainingBin) {
-      return new PackResult(true, tasks, remainingBin);
+    private static PackResult packed(
+        List<AppendCompactTask> tasks, List<AtomicUnit> remainingBin, long remainingTotal) {
+      return new PackResult(true, tasks, remainingBin, remainingTotal);
     }
 
     private static PackResult notPacked() {
-      return new PackResult(false, new ArrayList<>(), new ArrayList<>());
+      return new PackResult(false, new ArrayList<>(), new ArrayList<>(), 0L);
+    }
+  }
+
+  private class MajorFullLookahead {
+    private final int[] oversizedRegularFrom;
+    private final int[] regularPartnersFrom;
+    private final boolean[] packableFrom;
+
+    private MajorFullLookahead(List<AtomicUnit> units, long limit) {
+      int size = units.size();
+      this.oversizedRegularFrom = new int[size + 1];
+      this.regularPartnersFrom = new int[size + 1];
+      this.packableFrom = new boolean[size + 1];
+      for (int i = size - 1; i >= 0; i--) {
+        AtomicUnit unit = units.get(i);
+        oversizedRegularFrom[i] =
+            oversizedRegularFrom[i + 1] + (isOversizedRegular(unit, limit) ? 1 : 0);
+        regularPartnersFrom[i] =
+            regularPartnersFrom[i + 1] + (isRegularPartner(unit, limit) ? 1 : 0);
+        packableFrom[i] = packableFrom[i + 1] || !shouldSkipOversizedUnit(unit, limit);
+      }
+    }
+
+    private int oversizedRegularAfter(int index) {
+      return oversizedRegularFrom[index + 1];
+    }
+
+    private int regularPartnersAfter(int index) {
+      return regularPartnersFrom[index + 1];
+    }
+
+    private boolean hasPackableAfter(int index) {
+      return packableFrom[index + 1];
     }
   }
 

@@ -81,6 +81,7 @@ public class TestPaimonCompactionInputSerialization {
     assertNull(out.getPartitionPath());
     assertEquals(0, out.getSerializerVersion());
     assertEquals(0L, out.getTargetSnapshotId());
+    assertEquals(0L, out.getCommitIdentifier());
     assertEquals("v1", out.getOptions().get("k1"));
   }
 
@@ -90,7 +91,7 @@ public class TestPaimonCompactionInputSerialization {
     PaimonTable table = buildPaimonTable(warehouse);
     byte[] taskBytes = new byte[] {1, 2, 3, 4, 5};
     PaimonCompactionInput input =
-        new PaimonCompactionInput(table, taskBytes, 2, "user-uuid-abc", "age=10", 42L);
+        new PaimonCompactionInput(table, taskBytes, 2, "user-uuid-abc", "age=10", 42L, 99L);
     input.option("opt-key", "opt-val");
 
     ByteBuffer buffer = SerializationUtil.simpleSerialize(input);
@@ -107,6 +108,7 @@ public class TestPaimonCompactionInputSerialization {
     assertEquals("user-uuid-abc", out.getCommitUser());
     assertEquals("age=10", out.getPartitionPath());
     assertEquals(42L, out.getTargetSnapshotId());
+    assertEquals(99L, out.getCommitIdentifier());
     assertEquals("opt-val", out.getOptions().get("opt-key"));
   }
 }

@@ -106,6 +106,7 @@ class TestPaimonPartitionEvaluator {
     assertTrue(
         evaluation.selectedFiles().stream().anyMatch(PaimonFileCandidate::isHighDeleteRatio));
     assertEquals(1, evaluation.highDeleteFileCount());
+    assertTrue(evaluation.necessary());
   }
 
   @Test

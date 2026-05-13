@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paimon BUCKET_UNAWARE APPEND 表优化流程动画</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f6f7;
+      --panel: #ffffff;
+      --text: #18202a;
+      --muted: #637083;
+      --line: #d8dde5;
+      --ams: #b86b00;
+      --ams-bg: #fff5e6;
+      --spark: #007c89;
+      --spark-bg: #e8fbfd;
+      --paimon: #27814d;
+      --paimon-bg: #ecf8f0;
+      --danger: #b42318;
+      --danger-bg: #fff0ed;
+      --dark: #263241;
+      --focus: #1c64f2;
+      --shadow: 0 16px 42px rgba(22, 31, 45, 0.11);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .shell {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .topbar {
+      grid-column: 1 / -1;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      line-height: 1.25;
+      font-weight: 750;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .control-button {
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: 6px;
+      border: 1px solid #bbc4d1;
+      background: #fff;
+      color: var(--dark);
+      cursor: pointer;
+      transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+    }
+
+    .control-button.primary {
+      border-color: var(--dark);
+      background: var(--dark);
+      color: #fff;
+    }
+
+    .control-button:hover,
+    .control-button:focus-visible {
+      border-color: var(--focus);
+      outline: none;
+    }
+
+    .speed-control {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .speed-control input {
+      width: 92px;
+      accent-color: var(--focus);
+    }
+
+    .stage-card,
+    .side-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .stage-card {
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .status-strip {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 160px;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .current-title {
+      font-size: 17px;
+      line-height: 1.35;
+      font-weight: 750;
+    }
+
+    .current-subtitle {
+      color: var(--muted);
+      margin-top: 5px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .progress-shell {
+      height: 8px;
+      background: #e9edf2;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress {
+      height: 100%;
+      width: 0;
+      background: var(--focus);
+      transition: width 120ms linear;
+    }
+
+    .flow-stage {
+      position: relative;
+      padding: 22px 18px 18px;
+      min-height: 650px;
+      overflow: hidden;
+    }
+
+    .lane-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr 0.95fr;
+      gap: 14px;
+      height: 100%;
+      min-height: 610px;
+    }
+
+    .lane {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      position: relative;
+      background: #fbfcfe;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .lane.ams {
+      background: linear-gradient(#fffaf2, #fff);
+      border-color: #f1cc94;
+    }
+
+    .lane.spark {
+      background: linear-gradient(#effdff, #fff);
+      border-color: #a9dfe5;
+    }
+
+    .lane.paimon {
+      background: linear-gradient(#f2fbf4, #fff);
+      border-color: #b9dfc4;
+    }
+
+    .lane-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 750;
+      color: var(--dark);
+      text-transform: uppercase;
+    }
+
+    .lane-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--dark);
+      flex: 0 0 auto;
+    }
+
+    .lane.ams .lane-dot {
+      background: var(--ams);
+    }
+
+    .lane.spark .lane-dot {
+      background: var(--spark);
+    }
+
+    .lane.paimon .lane-dot {
+      background: var(--paimon);
+    }
+
+    .node {
+      position: relative;
+      border: 1px solid #d2d8e2;
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 84px;
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+      z-index: 2;
+    }
+
+    .node-title {
+      font-weight: 740;
+      font-size: 14px;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+
+    .node-body {
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 12px;
+    }
+
+    .node.active {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(28, 100, 242, 0.16);
+      border-color: var(--focus);
+    }
+
+    .node.done {
+      border-color: #82c99d;
+    }
+
+    .node.disabled {
+      background: var(--danger-bg);
+      border-color: #f3b5ac;
+    }
+
+    .node.disabled .node-title {
+      color: var(--danger);
+    }
+
+    .stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .queue {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .queue-item {
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px;
+      border: 1px solid #d9dee8;
+      border-radius: 6px;
+      background: #fff;
+      font-size: 12px;
+    }
+
+    .queue-item .state {
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: #eef2f7;
+      color: #4a5568;
+      font-weight: 700;
+      text-align: center;
+      min-width: 76px;
+    }
+
+    .queue-item.running .state {
+      background: var(--spark-bg);
+      color: var(--spark);
+    }
+
+    .queue-item.success .state {
+      background: var(--paimon-bg);
+      color: var(--paimon);
+    }
+
+    .queue-item.pending .state {
+      background: var(--ams-bg);
+      color: var(--ams);
+    }
+
+    .mini-label {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .task-file {
+      margin-top: 8px;
+      display: grid;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef2f7;
+      color: #364152;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill.ams {
+      background: var(--ams-bg);
+      color: var(--ams);
+    }
+
+    .pill.spark {
+      background: var(--spark-bg);
+      color: var(--spark);
+    }
+
+    .pill.paimon {
+      background: var(--paimon-bg);
+      color: var(--paimon);
+    }
+
+    .flow-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .flow-line {
+      stroke: #aeb7c4;
+      stroke-width: 2;
+      stroke-dasharray: 7 7;
+      opacity: 0.5;
+      fill: none;
+    }
+
+    .flow-line.active {
+      stroke: var(--focus);
+      opacity: 0.9;
+      stroke-dasharray: 10 5;
+    }
+
+    .token {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--focus);
+      box-shadow: 0 0 0 6px rgba(28, 100, 242, 0.16);
+      z-index: 3;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+    }
+
+    .token-label {
+      position: absolute;
+      min-width: 126px;
+      transform: translate(12px, -26px);
+      color: var(--dark);
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 5px 7px;
+      font-size: 12px;
+      box-shadow: 0 8px 22px rgba(22, 31, 45, 0.1);
+    }
+
+    .side {
+      display: grid;
+      gap: 14px;
+    }
+
+    .side-card {
+      padding: 16px;
+    }
+
+    .side-card h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
+    .detail-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--text);
+      line-height: 1.55;
+      font-size: 13px;
+    }
+
+    .detail-list li + li {
+      margin-top: 7px;
+    }
+
+    .boundary-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .boundary-row {
+      display: grid;
+      grid-template-columns: 88px 1fr;
+      gap: 10px;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .boundary-row strong {
+      color: var(--dark);
+    }
+
+    .timeline {
+      display: grid;
+      gap: 8px;
+    }
+
+    .timeline button {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 6px;
+      padding: 9px 10px;
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 8px;
+      align-items: start;
+      transition: border-color 160ms ease, background 160ms ease;
+    }
+
+    .timeline button:hover,
+    .timeline button:focus-visible {
+      border-color: var(--focus);
+      outline: none;
+    }
+
+    .timeline button.active {
+      border-color: var(--focus);
+      background: #f3f7ff;
+    }
+
+    .step-index {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #eef2f7;
+      color: var(--dark);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 750;
+      font-size: 12px;
+    }
+
+    .timeline button.active .step-index {
+      background: var(--focus);
+      color: #fff;
+    }
+
+    .timeline-title {
+      font-weight: 740;
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+
+    .timeline-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.95em;
+    }
+
+    @media (max-width: 1160px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .side {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .side .side-card:first-child {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .page {
+        padding: 12px;
+      }
+
+      .topbar,
+      .status-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        justify-content: flex-start;
+      }
+
+      .lane-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-stage {
+        min-height: 1320px;
+      }
+
+      .side {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="shell" aria-label="Paimon BUCKET_UNAWARE APPEND 表优化流程动画">
+      <header class="topbar">
+        <div>
+          <h1>Paimon BUCKET_UNAWARE APPEND 表优化流程</h1>
+          <p class="subtitle">
+            该动画按规划后的职责拆分展示：AMS 负责扫描发现、规划、任务调度和最终提交；Spark 优化器只接收已规划的
+            <span class="code">AppendCompactTask</span> 执行文件合并，并返回 <span class="code">CommitMessage</span>。
+          </p>
+          <div class="legend" aria-label="组件图例">
+            <span class="pill ams">AMS: 规划 + 调度 + 提交</span>
+            <span class="pill spark">Spark: 只执行合并</span>
+            <span class="pill paimon">Paimon: 快照 + 文件存储</span>
+          </div>
+        </div>
+        <div class="controls" aria-label="动画控制">
+          <button id="playPause" class="control-button primary" type="button">暂停</button>
+          <button id="restart" class="control-button" type="button">重播</button>
+          <label class="speed-control">
+            速度
+            <input id="speed" type="range" min="0.5" max="2" step="0.25" value="1">
+            <span id="speedText">1x</span>
+          </label>
+        </div>
+      </header>
+
+      <section class="stage-card">
+        <div class="status-strip">
+          <div>
+            <div id="currentTitle" class="current-title">初始化</div>
+            <div id="currentSubtitle" class="current-subtitle">准备加载调度链路。</div>
+          </div>
+          <div class="progress-shell" aria-label="当前阶段进度">
+            <div id="progress" class="progress"></div>
+          </div>
+        </div>
+
+        <div id="stage" class="flow-stage">
+          <svg id="flowSvg" class="flow-svg" aria-hidden="true"></svg>
+          <div id="token" class="token">
+            <span id="tokenLabel" class="token-label">扫描事件</span>
+          </div>
+
+          <div class="lane-grid">
+            <section class="lane ams" aria-label="AMS 调度侧">
+              <div class="lane-title"><span class="lane-dot"></span>AMS 规划与提交侧</div>
+              <div id="queue" class="node">
+                <div class="node-title">OptimizingQueue / TableRuntime</div>
+                <div class="node-body">周期调度表运行时，读取待优化分区与资源配额，决定是否进入 Paimon 优化流程。</div>
+              </div>
+              <div id="router" class="node">
+                <div class="node-title">ProcessFactoryRouter</div>
+                <div class="node-body">只有配置启用 Paimon process factory 后才路由到 Paimon；默认关闭避免误接管。</div>
+              </div>
+              <div id="scanner" class="node">
+                <div class="node-title">PaimonAppendFileScanner</div>
+                <div class="node-body">以 snapshot 作为扫描基线，读取 APPEND 表文件元数据，按 partition 收集 ADD 文件。</div>
+              </div>
+              <div id="planner" class="node">
+                <div class="node-title">PaimonOptimizingPlanner</div>
+                <div class="node-body">评估分区健康度，生成 MINOR / MAJOR / FULL 计划，并固定 commitUser 与 commitIdentifier。</div>
+              </div>
+              <div id="persist" class="node">
+                <div class="node-title">TaskFilesPersistence</div>
+                <div class="node-body">把 <span class="code">PaimonCompactionInput</span> 持久化，内容包含已序列化的 <span class="code">AppendCompactTask</span>。</div>
+              </div>
+              <div id="dispatch" class="node">
+                <div class="node-title">OptimizingService 调度</div>
+                <div class="node-body">按可用 core 下发任务，任务状态从 PENDING 进入 RUNNING，失败可重试或触发重规划。</div>
+              </div>
+              <div id="commit" class="node">
+                <div class="node-title">PaimonTableCommit</div>
+                <div class="node-body">AMS 聚合 <span class="code">CommitMessage</span>，使用 <span class="code">table.newCommit(commitUser).filterAndCommit(...)</span> 提交。</div>
+              </div>
+            </section>
+
+            <section class="lane spark" aria-label="Spark 优化器侧">
+              <div class="lane-title"><span class="lane-dot"></span>Spark 优化执行侧</div>
+              <div id="sparkReceive" class="node">
+                <div class="node-title">SparkOptimizingTaskFunction</div>
+                <div class="node-body">从 AMS 拉取任务输入，反序列化后交给 executor factory；不重新扫描 Paimon 表。</div>
+              </div>
+              <div id="executor" class="node">
+                <div class="node-title">PaimonCompactionExecutor</div>
+                <div class="node-body">只调用 <span class="code">AppendCompactTask#doCompact</span> 合并文件，禁止本地规划和本地提交。</div>
+              </div>
+              <div id="result" class="node">
+                <div class="node-title">PaimonCompactionOutput</div>
+                <div class="node-body">返回序列化 <span class="code">CommitMessage</span>、输入/输出文件数量和资源耗时指标。</div>
+              </div>
+              <div id="sparkBoundary" class="node disabled">
+                <div class="node-title">执行边界</div>
+                <div class="node-body">Spark 不调用 scan/plan/commit；不处理 clusterIncrementalEnabled、dataEvolution、aware-bucket 或 PK 表。</div>
+              </div>
+            </section>
+
+            <section class="lane paimon" aria-label="Paimon 表存储侧">
+              <div class="lane-title"><span class="lane-dot"></span>Paimon 表与快照</div>
+              <div id="snapshot" class="node">
+                <div class="node-title">APPEND 快照与 Manifest</div>
+                <div class="node-body">扫描阶段读取当前 snapshot 的 file metas，targetSnapshotId 只用于漂移判断。</div>
+              </div>
+              <div id="files" class="node">
+                <div class="node-title">小文件集合</div>
+                <div class="node-body">BUCKET_UNAWARE 表没有固定 bucket 约束，规划以 partition 文件集合为主。</div>
+                <div class="task-file">
+                  <span class="pill">p=20260513 / 18 files</span>
+                  <span class="pill">p=20260514 / 11 files</span>
+                  <span class="pill">p=20260515 / 7 files</span>
+                </div>
+              </div>
+              <div id="newFiles" class="node">
+                <div class="node-title">合并后的数据文件</div>
+                <div class="node-body">Spark 输出较大的 compacted data files，但先不改变表快照。</div>
+              </div>
+              <div id="newSnapshot" class="node">
+                <div class="node-title">COMPACT Snapshot</div>
+                <div class="node-body">AMS commit 成功后才生成新快照；同一 commitIdentifier 避免重复提交。</div>
+              </div>
+              <div id="unsupported" class="node disabled">
+                <div class="node-title">固定排除范围</div>
+                <div class="node-body">仅支持 Paimon 1.3.1 的 APPEND + BUCKET_UNAWARE + OrderType.NONE。</div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side" aria-label="流程说明">
+        <section class="side-card">
+          <h2>当前阶段说明</h2>
+          <ol id="details" class="detail-list"></ol>
+        </section>
+
+        <section class="side-card">
+          <h2>任务调度队列</h2>
+          <div class="mini-label">AMS 按资源配额下发任务，Spark 完成后只回传结果，最终提交仍由 AMS 串行聚合。</div>
+          <div class="queue" aria-label="任务队列状态">
+            <div id="task1" class="queue-item pending">
+              <strong>T-1</strong><span>partition=20260513</span><span class="state">PENDING</span>
+            </div>
+            <div id="task2" class="queue-item pending">
+              <strong>T-2</strong><span>partition=20260514</span><span class="state">PENDING</span>
+            </div>
+            <div id="task3" class="queue-item pending">
+              <strong>T-3</strong><span>partition=20260515</span><span class="state">PENDING</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="side-card">
+          <h2>职责边界</h2>
+          <div class="boundary-grid">
+            <div class="boundary-row"><strong>AMS</strong><span>扫描 snapshot、评估分区、生成任务、持久化输入、调度资源、聚合输出、提交快照。</span></div>
+            <div class="boundary-row"><strong>Spark</strong><span>执行已规划的 <span class="code">AppendCompactTask</span>，产生 <span class="code">CommitMessage</span>，不做计划和提交。</span></div>
+            <div class="boundary-row"><strong>Paimon</strong><span>提供 1.3.1 内核 API、文件元数据和 commit 语义，最终由 AMS 驱动提交。</span></div>
+          </div>
+        </section>
+
+        <section class="side-card">
+          <h2>阶段时间线</h2>
+          <div id="timeline" class="timeline"></div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const steps = [
+      {
+        title: "1. 触发与路由",
+        subtitle: "AMS 表运行时发现 APPEND 表有小文件压力，路由到 Paimon process factory。",
+        duration: 4200,
+        active: ["queue", "router"],
+        flow: ["queue", "router"],
+        label: "路由 Paimon factory",
+        tasks: ["pending", "pending", "pending"],
+        details: [
+          "OptimizingQueue 根据表运行时、配额和自优化开关决定是否尝试生成优化进程。",
+          "ProcessFactoryRouter 只在 Paimon optimizer 明确启用时使用 PaimonProcessFactory，避免默认接管已有流程。",
+          "入口阶段先校验表类型，非 APPEND、非 BUCKET_UNAWARE、排序表、PK 表和演进/增量分支直接排除。"
+        ]
+      },
+      {
+        title: "2. 扫描发现",
+        subtitle: "AMS 以 snapshot 为基线读取 manifest/file metas，定位可合并的小文件集合。",
+        duration: 5200,
+        active: ["scanner", "snapshot", "files"],
+        flow: ["snapshot", "scanner"],
+        label: "读取 file metas",
+        tasks: ["pending", "pending", "pending"],
+        details: [
+          "PaimonAppendFileScanner 读取当前 APPEND 表 snapshot 下的 ADD 文件，按 partition 聚合文件数量与大小。",
+          "targetSnapshotId 在这里作为扫描基线和漂移检查依据，不再被误用为 commitIdentifier。",
+          "扫描输出只描述发现结果，不在 Spark 优化器侧重新扫描，避免执行端和 AMS 看到不同的计划输入。"
+        ]
+      },
+      {
+        title: "3. 规划计划",
+        subtitle: "AMS 把发现结果转成可执行的 AppendCompactTask，并绑定 commitIdentifier。",
+        duration: 5600,
+        active: ["planner", "files"],
+        flow: ["scanner", "planner"],
+        label: "生成优化计划",
+        tasks: ["pending", "pending", "pending"],
+        details: [
+          "PaimonPartitionEvaluator 按小文件数量、大小和分区健康度判断是否需要 MINOR、MAJOR 或 FULL 优化。",
+          "PaimonAppendTaskPacker 将同一分区内的文件打包成 AppendCompactTask，后续 Spark 只执行这个已规划任务。",
+          "PaimonOptimizingPlanner 将 processId 写入 commitIdentifier，并统一 commitUser，作为后续幂等提交的身份。"
+        ]
+      },
+      {
+        title: "4. 持久化与下发",
+        subtitle: "AMS 持久化 PaimonCompactionInput，再按可用 core 将任务下发给 Spark。",
+        duration: 5400,
+        active: ["persist", "dispatch", "sparkReceive"],
+        flow: ["persist", "sparkReceive"],
+        label: "下发 task input",
+        tasks: ["running", "running", "pending"],
+        details: [
+          "TaskFilesPersistence 保存 PaimonCompactionInput，里面包含 commitUser、commitIdentifier 和序列化 AppendCompactTask。",
+          "OptimizingService 按 optimizer 可用 core 和任务 cost 选择可运行任务，PENDING 任务进入 RUNNING。",
+          "调度只决定任务释放顺序，不改变计划内容；计划内容来自 AMS planner 的持久化输入。"
+        ]
+      },
+      {
+        title: "5. Spark 执行合并",
+        subtitle: "Spark 优化器只执行 AppendCompactTask#doCompact，产出新文件和 CommitMessage。",
+        duration: 6200,
+        active: ["sparkReceive", "executor", "newFiles"],
+        flow: ["sparkReceive", "executor"],
+        label: "doCompact",
+        tasks: ["running", "running", "pending"],
+        details: [
+          "SparkOptimizingTaskFunction 反序列化 task input 后交给 PaimonCompactionExecutorFactory。",
+          "PaimonCompactionExecutor 只调用 AppendCompactTask#doCompact，不扫描、不规划、不提交。",
+          "执行结果包含待提交的 CommitMessage 和统计信息，表快照此时还没有变化。"
+        ]
+      },
+      {
+        title: "6. 回传结果",
+        subtitle: "Spark 把 PaimonCompactionOutput 回传 AMS，AMS 汇总成功任务和失败任务。",
+        duration: 5000,
+        active: ["result", "dispatch"],
+        flow: ["result", "dispatch"],
+        label: "CommitMessage",
+        tasks: ["success", "success", "running"],
+        details: [
+          "每个成功任务回传 PaimonCompactionOutput，其中包含序列化 CommitMessage、输入/输出文件计数和耗时。",
+          "失败任务不会在 Spark 侧提交，AMS 可以重试同一任务，或在 snapshot 漂移后废弃本轮计划并重规划。",
+          "AMS 只有在满足提交条件时才进入 commit 阶段，避免部分 executor 直接修改表状态。"
+        ]
+      },
+      {
+        title: "7. AMS 聚合提交",
+        subtitle: "AMS 校验 commitUser 和 commitIdentifier 一致后，使用 Paimon commit API 提交。",
+        duration: 5600,
+        active: ["commit", "newFiles", "newSnapshot"],
+        flow: ["result", "commit"],
+        label: "filterAndCommit",
+        tasks: ["success", "success", "success"],
+        details: [
+          "PaimonProcessFactory#createCommitter 先校验同一进程内所有输出使用同一 commitUser 和 commitIdentifier。",
+          "PaimonTableCommit 通过 table.newCommit(commitUser).filterAndCommit(...) 提交聚合后的 CommitMessage。",
+          "提交职责保留在 AMS，保证任务重试、进程恢复和最终快照提交都由同一个控制面管理。"
+        ]
+      },
+      {
+        title: "8. 完成与重规划边界",
+        subtitle: "提交成功后形成 COMPACT snapshot；若快照漂移或幂等冲突，则进入失败处理和重规划。",
+        duration: 5200,
+        active: ["newSnapshot", "unsupported", "sparkBoundary"],
+        flow: ["commit", "newSnapshot"],
+        label: "生成 COMPACT snapshot",
+        tasks: ["success", "success", "success"],
+        details: [
+          "提交成功后 Paimon 表生成新的 COMPACT snapshot，小文件集合被较大的 compacted data files 替代。",
+          "commitIdentifier 让 AMS 能区分同一优化进程的提交，避免 targetSnapshotId 语义混用导致恢复不确定。",
+          "固定边界仍然有效：本流程不处理 clusterIncrementalEnabled、dataEvolution、aware-bucket、排序表或主键表。"
+        ]
+      }
+    ];
+
+    const nodes = Array.from(document.querySelectorAll(".node"));
+    const stage = document.getElementById("stage");
+    const token = document.getElementById("token");
+    const tokenLabel = document.getElementById("tokenLabel");
+    const flowSvg = document.getElementById("flowSvg");
+    const playPause = document.getElementById("playPause");
+    const restart = document.getElementById("restart");
+    const progress = document.getElementById("progress");
+    const title = document.getElementById("currentTitle");
+    const subtitle = document.getElementById("currentSubtitle");
+    const details = document.getElementById("details");
+    const timeline = document.getElementById("timeline");
+    const speed = document.getElementById("speed");
+    const speedText = document.getElementById("speedText");
+    const taskIds = ["task1", "task2", "task3"];
+
+    let stepIndex = 0;
+    let elapsed = 0;
+    let lastTime = performance.now();
+    let playing = true;
+    let speedMultiplier = 1;
+
+    function nodeCenter(id) {
+      const node = document.getElementById(id);
+      const stageRect = stage.getBoundingClientRect();
+      const rect = node.getBoundingClientRect();
+      return {
+        x: rect.left - stageRect.left + rect.width / 2,
+        y: rect.top - stageRect.top + rect.height / 2
+      };
+    }
+
+    function drawLines(step) {
+      const rect = stage.getBoundingClientRect();
+      flowSvg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+      flowSvg.innerHTML = "";
+
+      const pairs = [
+        ["queue", "router"], ["router", "scanner"], ["snapshot", "scanner"], ["scanner", "planner"],
+        ["planner", "persist"], ["persist", "sparkReceive"], ["sparkReceive", "executor"], ["executor", "newFiles"],
+        ["executor", "result"], ["result", "dispatch"], ["result", "commit"], ["commit", "newSnapshot"]
+      ];
+      const activePair = step.flow ? step.flow.join(":") : "";
+
+      pairs.forEach(([from, to]) => {
+        const a = nodeCenter(from);
+        const b = nodeCenter(to);
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        const dx = Math.max(70, Math.abs(b.x - a.x) * 0.45);
+        path.setAttribute("d", `M ${a.x} ${a.y} C ${a.x + dx} ${a.y}, ${b.x - dx} ${b.y}, ${b.x} ${b.y}`);
+        path.setAttribute("class", `flow-line ${activePair === `${from}:${to}` ? "active" : ""}`);
+        flowSvg.appendChild(path);
+      });
+    }
+
+    function setTaskState(id, state) {
+      const item = document.getElementById(id);
+      const label = item.querySelector(".state");
+      item.classList.remove("pending", "running", "success");
+      item.classList.add(state);
+      label.textContent = state === "running" ? "RUNNING" : state === "success" ? "SUCCESS" : "PENDING";
+    }
+
+    function renderTimeline() {
+      timeline.innerHTML = "";
+      steps.forEach((step, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = index === stepIndex ? "active" : "";
+        button.innerHTML = `
+          <span class="step-index">${index + 1}</span>
+          <span>
+            <span class="timeline-title">${step.title}</span>
+            <span class="timeline-note">${step.subtitle}</span>
+          </span>
+        `;
+        button.addEventListener("click", () => {
+          stepIndex = index;
+          elapsed = 0;
+          render();
+        });
+        timeline.appendChild(button);
+      });
+    }
+
+    function render() {
+      const step = steps[stepIndex];
+      const ratio = Math.min(1, elapsed / step.duration);
+
+      title.textContent = step.title;
+      subtitle.textContent = step.subtitle;
+      progress.style.width = `${Math.round(ratio * 100)}%`;
+      tokenLabel.textContent = step.label;
+
+      nodes.forEach((node) => {
+        node.classList.remove("active", "done");
+        if (step.active.includes(node.id)) {
+          node.classList.add("active");
+        }
+      });
+
+      for (let i = 0; i < stepIndex; i += 1) {
+        steps[i].active.forEach((id) => {
+          const node = document.getElementById(id);
+          if (node) {
+            node.classList.add("done");
+          }
+        });
+      }
+
+      details.innerHTML = step.details.map((item) => `<li>${item}</li>`).join("");
+      step.tasks.forEach((state, index) => setTaskState(taskIds[index], state));
+      renderTimeline();
+      drawLines(step);
+      moveToken(step, ratio);
+    }
+
+    function moveToken(step, ratio) {
+      if (!step.flow || step.flow.length !== 2) {
+        token.style.opacity = "0";
+        return;
+      }
+      token.style.opacity = "1";
+      const from = nodeCenter(step.flow[0]);
+      const to = nodeCenter(step.flow[1]);
+      const eased = 0.5 - Math.cos(ratio * Math.PI) / 2;
+      const x = from.x + (to.x - from.x) * eased;
+      const y = from.y + (to.y - from.y) * eased;
+      token.style.left = `${x}px`;
+      token.style.top = `${y}px`;
+    }
+
+    function tick(now) {
+      const delta = now - lastTime;
+      lastTime = now;
+      if (playing) {
+        elapsed += delta * speedMultiplier;
+        if (elapsed >= steps[stepIndex].duration) {
+          stepIndex = (stepIndex + 1) % steps.length;
+          elapsed = 0;
+        }
+        render();
+      }
+      requestAnimationFrame(tick);
+    }
+
+    playPause.addEventListener("click", () => {
+      playing = !playing;
+      playPause.textContent = playing ? "暂停" : "播放";
+      playPause.classList.toggle("primary", playing);
+    });
+
+    restart.addEventListener("click", () => {
+      stepIndex = 0;
+      elapsed = 0;
+      playing = true;
+      playPause.textContent = "暂停";
+      playPause.classList.add("primary");
+      render();
+    });
+
+    speed.addEventListener("input", () => {
+      speedMultiplier = Number(speed.value);
+      speedText.textContent = `${speedMultiplier}x`;
+    });
+
+    window.addEventListener("resize", () => render());
+
+    render();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

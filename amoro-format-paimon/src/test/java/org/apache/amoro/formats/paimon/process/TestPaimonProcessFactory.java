@@ -64,9 +64,11 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -128,6 +130,17 @@ public class TestPaimonProcessFactory {
     assertTrue(factory.supportedFormats().isEmpty());
     assertTrue(factory.supportedActions().isEmpty());
     assertEquals(PaimonProcessFactory.PLUGIN_NAME, factory.name());
+  }
+
+  @Test
+  @DisplayName("When paimon-optimizer.enabled=false → does not claim PAIMON format")
+  void testExplicitDisabledDoesNotReturnPaimon() {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    Map<String, String> props = new HashMap<>();
+    props.put(PaimonProcessFactory.OPTIMIZER_ENABLED.key(), "false");
+    factory.open(props);
+    assertFalse(factory.supportedFormats().contains(TableFormat.PAIMON));
+    assertTrue(factory.supportedActions().isEmpty());
   }
 
   @Test
@@ -261,13 +274,13 @@ public class TestPaimonProcessFactory {
   }
 
   @Test
-  @DisplayName("createCommitter picks commitUser from a task input and returns PaimonTableCommit")
+  @DisplayName("createCommitter uses persisted commit identity from task inputs")
   void testCreateCommitter(@TempDir Path warehouse) throws Exception {
     PaimonProcessFactory factory = new PaimonProcessFactory();
     factory.open(enabledProps());
     PaimonTable table = buildAppendTable(warehouse, "t_commit");
     PaimonCompactionInput input =
-        new PaimonCompactionInput(table, new byte[] {1}, 2, "user-abc", "p", 0L);
+        new PaimonCompactionInput(table, new byte[] {1}, 2, "user-abc", "p", 3L, 101L);
     PaimonCompactionTask task = new PaimonCompactionTask(1L, "p", input, new HashMap<>());
 
     TableOptimizingCommitter committer =
@@ -280,11 +293,13 @@ public class TestPaimonProcessFactory {
             Collections.emptyMap());
     assertNotNull(committer);
     assertTrue(committer instanceof PaimonTableCommit);
+    assertEquals("user-abc", commitUser(committer));
+    assertEquals(101L, commitIdentifier(committer));
   }
 
   @Test
-  @DisplayName("createCommitter fails fast when no success task carries a commitUser")
-  void testCreateCommitterRejectsEmptyCommitUser(@TempDir Path warehouse) throws Exception {
+  @DisplayName("createCommitter fails fast when success task list is empty")
+  void testCreateCommitterRejectsEmptySuccessTasks(@TempDir Path warehouse) throws Exception {
     PaimonProcessFactory factory = new PaimonProcessFactory();
     factory.open(enabledProps());
     PaimonTable table = buildAppendTable(warehouse, "t_nouser");
@@ -296,6 +311,115 @@ public class TestPaimonProcessFactory {
                 1L,
                 -1L,
                 Collections.emptyList(),
+                Collections.emptyMap(),
+                Collections.emptyMap()));
+  }
+
+  @Test
+  @DisplayName("createCommitter fails fast when a success task has no commitUser")
+  void testCreateCommitterRejectsMissingCommitUser(@TempDir Path warehouse) throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    PaimonTable table = buildAppendTable(warehouse, "t_missing_user");
+    PaimonCompactionInput input =
+        new PaimonCompactionInput(table, new byte[] {1}, 2, "", "p", 3L, 101L);
+    PaimonCompactionTask task = new PaimonCompactionTask(1L, "p", input, new HashMap<>());
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            factory.createCommitter(
+                table,
+                7L,
+                -1L,
+                Collections.singletonList((StagedTaskDescriptor<?, ?, ?>) task),
+                Collections.emptyMap(),
+                Collections.emptyMap()));
+  }
+
+  @Test
+  @DisplayName("createCommitter rejects inconsistent commit identities across success tasks")
+  void testCreateCommitterRejectsInconsistentCommitIdentity(@TempDir Path warehouse)
+      throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    PaimonTable table = buildAppendTable(warehouse, "t_bad_identity");
+    PaimonCompactionTask task1 =
+        new PaimonCompactionTask(
+            1L,
+            "p1",
+            new PaimonCompactionInput(table, new byte[] {1}, 2, "user-abc", "p1", 3L, 101L),
+            new HashMap<>());
+    PaimonCompactionTask task2 =
+        new PaimonCompactionTask(
+            1L,
+            "p2",
+            new PaimonCompactionInput(table, new byte[] {2}, 2, "user-abc", "p2", 3L, 102L),
+            new HashMap<>());
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            factory.createCommitter(
+                table,
+                7L,
+                -1L,
+                Arrays.asList(
+                    (StagedTaskDescriptor<?, ?, ?>) task1, (StagedTaskDescriptor<?, ?, ?>) task2),
+                Collections.emptyMap(),
+                Collections.emptyMap()));
+  }
+
+  @Test
+  @DisplayName("createCommitter rejects inconsistent commit users across success tasks")
+  void testCreateCommitterRejectsInconsistentCommitUser(@TempDir Path warehouse) throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    PaimonTable table = buildAppendTable(warehouse, "t_bad_user");
+    PaimonCompactionTask task1 =
+        new PaimonCompactionTask(
+            1L,
+            "p1",
+            new PaimonCompactionInput(table, new byte[] {1}, 2, "user-a", "p1", 3L, 101L),
+            new HashMap<>());
+    PaimonCompactionTask task2 =
+        new PaimonCompactionTask(
+            1L,
+            "p2",
+            new PaimonCompactionInput(table, new byte[] {2}, 2, "user-b", "p2", 3L, 101L),
+            new HashMap<>());
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            factory.createCommitter(
+                table,
+                7L,
+                -1L,
+                Arrays.asList(
+                    (StagedTaskDescriptor<?, ?, ?>) task1, (StagedTaskDescriptor<?, ?, ?>) task2),
+                Collections.emptyMap(),
+                Collections.emptyMap()));
+  }
+
+  @Test
+  @DisplayName("createCommitter rejects missing persisted commitIdentifier")
+  void testCreateCommitterRejectsMissingCommitIdentifier(@TempDir Path warehouse) throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    PaimonTable table = buildAppendTable(warehouse, "t_missing_identifier");
+    PaimonCompactionInput input =
+        new PaimonCompactionInput(table, new byte[] {1}, 2, "user-abc", "p", 3L, 0L);
+    PaimonCompactionTask task = new PaimonCompactionTask(1L, "p", input, new HashMap<>());
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            factory.createCommitter(
+                table,
+                7L,
+                -1L,
+                Collections.singletonList((StagedTaskDescriptor<?, ?, ?>) task),
                 Collections.emptyMap(),
                 Collections.emptyMap()));
   }
@@ -408,6 +532,18 @@ public class TestPaimonProcessFactory {
     Map<String, String> props = new HashMap<>();
     props.put(PaimonProcessFactory.OPTIMIZER_ENABLED.key(), "true");
     return props;
+  }
+
+  private static String commitUser(TableOptimizingCommitter committer) throws Exception {
+    Field field = PaimonTableCommit.class.getDeclaredField("commitUser");
+    field.setAccessible(true);
+    return (String) field.get(committer);
+  }
+
+  private static long commitIdentifier(TableOptimizingCommitter committer) throws Exception {
+    Field field = PaimonTableCommit.class.getDeclaredField("commitIdentifier");
+    field.setAccessible(true);
+    return field.getLong(committer);
   }
 
   private static TableRuntime runtimeWithConfig(

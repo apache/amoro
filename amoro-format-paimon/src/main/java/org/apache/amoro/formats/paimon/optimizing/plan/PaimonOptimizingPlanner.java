@@ -281,7 +281,8 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
               serializerVersion,
               commitUser,
               task.partition() == null ? "" : task.partition().toString(),
-              targetSnapshotId);
+              targetSnapshotId,
+              processId);
       Map<String, String> props = Maps.newHashMap();
       props.put(
           TaskProperties.TASK_EXECUTOR_FACTORY_IMPL,

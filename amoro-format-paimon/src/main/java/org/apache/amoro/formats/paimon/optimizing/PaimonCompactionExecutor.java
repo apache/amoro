@@ -19,10 +19,12 @@
 package org.apache.amoro.formats.paimon.optimizing;
 
 import org.apache.amoro.optimizing.OptimizingExecutor;
+import org.apache.paimon.CoreOptions;
 import org.apache.paimon.append.AppendCompactTask;
 import org.apache.paimon.io.DataFileMeta;
 import org.apache.paimon.operation.BaseAppendFileStoreWrite;
 import org.apache.paimon.table.AppendOnlyFileStoreTable;
+import org.apache.paimon.table.SpecialFields;
 import org.apache.paimon.table.sink.AppendCompactTaskSerializer;
 import org.apache.paimon.table.sink.CommitMessage;
 import org.apache.paimon.table.sink.CommitMessageSerializer;
@@ -59,6 +61,15 @@ public class PaimonCompactionExecutor implements OptimizingExecutor<PaimonCompac
       throw new IllegalStateException(
           "PaimonCompactionInput is missing required fields (table / taskBytes).");
     }
+    if (input.getCommitUser() == null || input.getCommitUser().isEmpty()) {
+      throw new IllegalStateException("PaimonCompactionInput is missing commitUser.");
+    }
+    if (input.getCommitIdentifier() <= 0L) {
+      throw new IllegalStateException(
+          "PaimonCompactionInput has invalid commitIdentifier "
+              + input.getCommitIdentifier()
+              + ".");
+    }
 
     AppendCompactTask task;
     try {
@@ -80,6 +91,10 @@ public class PaimonCompactionExecutor implements OptimizingExecutor<PaimonCompac
     AppendOnlyFileStoreTable table = (AppendOnlyFileStoreTable) raw;
 
     BaseAppendFileStoreWrite write = table.store().newWrite(input.getCommitUser());
+    CoreOptions coreOptions = table.coreOptions();
+    if (coreOptions.rowTrackingEnabled()) {
+      write.withWriteType(SpecialFields.rowTypeWithRowTracking(table.rowType()));
+    }
     CommitMessage message;
     try {
       message = task.doCompact(table, write);

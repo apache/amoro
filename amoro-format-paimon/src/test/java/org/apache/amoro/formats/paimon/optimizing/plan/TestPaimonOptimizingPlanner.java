@@ -41,6 +41,7 @@ import org.apache.paimon.data.BinaryRow;
 import org.apache.paimon.data.BinaryString;
 import org.apache.paimon.data.GenericRow;
 import org.apache.paimon.io.DataFileMeta;
+import org.apache.paimon.operation.BaseAppendFileStoreWrite;
 import org.apache.paimon.options.CatalogOptions;
 import org.apache.paimon.schema.Schema;
 import org.apache.paimon.table.AppendOnlyFileStoreTable;
@@ -50,7 +51,11 @@ import org.apache.paimon.table.sink.BatchTableCommit;
 import org.apache.paimon.table.sink.BatchTableWrite;
 import org.apache.paimon.table.sink.BatchWriteBuilder;
 import org.apache.paimon.table.sink.CommitMessage;
+import org.apache.paimon.table.sink.TableCommitImpl;
 import org.apache.paimon.types.DataTypes;
+import org.apache.paimon.types.RowType;
+import org.apache.paimon.utils.PartitionPathUtils;
+import org.apache.paimon.utils.RowDataToObjectArrayConverter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -59,9 +64,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.ToLongFunction;
 
 @DisplayName("PaimonOptimizingPlanner")
@@ -163,6 +171,39 @@ public class TestPaimonOptimizingPlanner {
   }
 
   @Test
+  @DisplayName("Planner keeps the Paimon 1.3.1 AppendCompactTask execution primitive")
+  void testPlannerProducesOnlyPaimonAppendCompactTasks(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> opts = new HashMap<>();
+    opts.put("target-file-size", "1 kb");
+    opts.put("compaction.min.file-num", "2");
+    Table table = createAppendOnlyTable(catalog, "t_append_task_primitive", opts);
+    for (int i = 0; i < 3; i++) {
+      writeRecords(
+          table, Collections.singletonList(GenericRow.of(i, BinaryString.fromString("r-" + i))));
+    }
+    PaimonTable paimonTable =
+        wrap(
+            catalog.getTable(Identifier.create("db1", "t_append_task_primitive")),
+            "t_append_task_primitive");
+
+    PaimonOptimizingPlanner planner =
+        new PaimonOptimizingPlanner(paimonTable, 1L, 1L, 4.0, 64L * 1024 * 1024);
+    OptimizingPlanResult<PaimonCompactionTask> result = planner.plan();
+
+    assertFalse(result.getTasks().isEmpty());
+    // Paimon 1.3.1 compactUnAwareBucketTable plans AppendCompactTask via
+    // AppendCompactCoordinator; Amoro may scan and quota tasks in AMS, but the executor primitive
+    // must stay the same.
+    for (AppendCompactTask appendTask : appendTasks(result)) {
+      assertNotNull(appendTask);
+      assertTrue(
+          appendTask.compactBefore().size() > 1,
+          "Paimon 1.3.1 append compact tasks must keep Paimon's compact-before primitive");
+    }
+  }
+
+  @Test
   @DisplayName("Planner returns MAJOR when table has undersized files")
   void testMajorForUndersizedFiles(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
@@ -251,6 +292,9 @@ public class TestPaimonOptimizingPlanner {
 
     assertEquals(1, result.getTasks().size());
     assertEquals(OptimizingType.MINOR, result.getOptimizingType());
+    AppendOnlyFileStoreTable appendTable =
+        (AppendOnlyFileStoreTable) catalog.getTable(Identifier.create("db1", "t_quota_type"));
+    assertEquals(Collections.singleton("dt=p1/"), partitionPaths(result, appendTable));
   }
 
   @Test
@@ -285,6 +329,62 @@ public class TestPaimonOptimizingPlanner {
 
     assertEquals(OptimizingType.FULL, result.getOptimizingType());
     assertFalse(result.getTasks().isEmpty());
+  }
+
+  @Test
+  @DisplayName("FULL rewrite-all plans only partitions with problem files")
+  void testFullRewriteAllFilesOnlyPlansProblemPartitions(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> opts = new HashMap<>();
+    opts.put("target-file-size", "1 kb");
+    opts.put("compaction.small-file-ratio", "0.7");
+    opts.put("compaction.min.file-num", "2");
+    Table table = createPartitionedAppendOnlyTable(catalog, "t_full_partitions", opts);
+    writeRecords(
+        table,
+        Collections.singletonList(
+            GenericRow.of(
+                1, BinaryString.fromString("small-1"), BinaryString.fromString("problem"))));
+    writeRecords(
+        table,
+        Collections.singletonList(
+            GenericRow.of(
+                2, BinaryString.fromString("small-2"), BinaryString.fromString("problem"))));
+    writeRecords(
+        table,
+        Collections.singletonList(
+            GenericRow.of(
+                3,
+                BinaryString.fromString(valueWithLength(128 * 1024)),
+                BinaryString.fromString("healthy"))));
+    writeRecords(
+        table,
+        Collections.singletonList(
+            GenericRow.of(
+                4,
+                BinaryString.fromString(valueWithLength(128 * 1024)),
+                BinaryString.fromString("healthy"))));
+    Identifier id = Identifier.create("db1", "t_full_partitions");
+    PaimonTable paimonTable = wrap(catalog.getTable(id), "t_full_partitions");
+
+    PaimonOptimizingPlanner planner =
+        new PaimonOptimizingPlanner(
+            paimonTable,
+            1L,
+            1L,
+            4.0,
+            64L * 1024 * 1024,
+            defaultOptimizingConfig().setFullTriggerInterval(1).setFullRewriteAllFiles(true),
+            0L,
+            0L,
+            0L,
+            null);
+
+    OptimizingPlanResult<PaimonCompactionTask> result = planner.plan();
+
+    assertEquals(OptimizingType.FULL, result.getOptimizingType());
+    AppendOnlyFileStoreTable appendTable = (AppendOnlyFileStoreTable) catalog.getTable(id);
+    assertEquals(Collections.singleton("dt=problem/"), partitionPaths(result, appendTable));
   }
 
   @Test
@@ -328,6 +428,50 @@ public class TestPaimonOptimizingPlanner {
     assertTrue(
         compactBefore.stream().anyMatch(file -> file.fileSize() >= 1024L),
         "rewrite-all-files=true must keep the healthy large file after task packing");
+  }
+
+  @Test
+  @DisplayName("Planner does not replan compact-before files deleted by previous compact")
+  void testPlannerDoesNotReplanFilesDeletedByPreviousCompact(@TempDir Path warehouse)
+      throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> opts = new HashMap<>();
+    opts.put("target-file-size", "1 kb");
+    opts.put("compaction.min.file-num", "2");
+    Table table = createAppendOnlyTable(catalog, "t_replan_compacted", opts);
+    for (int i = 0; i < 5; i++) {
+      writeRecords(
+          table, Collections.singletonList(GenericRow.of(i, BinaryString.fromString("r-" + i))));
+    }
+    Identifier id = Identifier.create("db1", "t_replan_compacted");
+
+    OptimizingPlanResult<PaimonCompactionTask> firstPlan =
+        new PaimonOptimizingPlanner(
+                wrap(catalog.getTable(id), "t_replan_compacted"), 1L, 1L, 4.0, 64L * 1024 * 1024)
+            .plan();
+    List<AppendCompactTask> firstTasks = appendTasks(firstPlan);
+    Set<String> firstCompactBeforeNames = fileNames(compactBeforeFiles(firstPlan));
+    assertTrue(firstCompactBeforeNames.size() > 1);
+
+    compactAppendTasks(
+        (AppendOnlyFileStoreTable) catalog.getTable(id), firstTasks, "test-planner-compact");
+    writeRecords(
+        catalog.getTable(id),
+        Collections.singletonList(GenericRow.of(100, BinaryString.fromString("new-1"))));
+    writeRecords(
+        catalog.getTable(id),
+        Collections.singletonList(GenericRow.of(101, BinaryString.fromString("new-2"))));
+
+    OptimizingPlanResult<PaimonCompactionTask> secondPlan =
+        new PaimonOptimizingPlanner(
+                wrap(catalog.getTable(id), "t_replan_compacted"), 1L, 2L, 4.0, 64L * 1024 * 1024)
+            .plan();
+    Set<String> secondCompactBeforeNames = fileNames(compactBeforeFiles(secondPlan));
+
+    assertFalse(secondCompactBeforeNames.isEmpty());
+    assertTrue(
+        Collections.disjoint(firstCompactBeforeNames, secondCompactBeforeNames),
+        "Planner must not serialize compact-before files deleted by an earlier COMPACT snapshot");
   }
 
   @Test
@@ -388,6 +532,32 @@ public class TestPaimonOptimizingPlanner {
   }
 
   @Test
+  @DisplayName("Fixed-bucket append-only table is skipped without throwing")
+  void testFixedBucketAppendOnlyTableSkipped(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    catalog.createDatabase("db1", true);
+    Schema schema =
+        Schema.newBuilder()
+            .column("id", DataTypes.INT())
+            .column("name", DataTypes.STRING())
+            .option("bucket", "2")
+            .option("bucket-key", "id")
+            .build();
+    Identifier id = Identifier.create("db1", "t_fixed_bucket");
+    catalog.createTable(id, schema, true);
+    PaimonTable paimonTable = wrap(catalog.getTable(id), "t_fixed_bucket");
+
+    PaimonOptimizingPlanner planner =
+        new PaimonOptimizingPlanner(paimonTable, 1L, 1L, 1.0, 64L * 1024 * 1024);
+    assertFalse(planner.isNecessary());
+    OptimizingPlanResult<PaimonCompactionTask> result = planner.plan();
+    assertNotNull(result);
+    assertTrue(result.getTasks().isEmpty());
+    assertEquals(OptimizingType.MINOR, result.getOptimizingType());
+    assertNull(planner.getCommitUser());
+  }
+
+  @Test
   @DisplayName("Empty append table (no snapshot) is skipped")
   void testEmptyTableSkipped(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
@@ -428,6 +598,11 @@ public class TestPaimonOptimizingPlanner {
     assertEquals(-1L, result.getTargetChangeSnapshotId());
     assertNotNull(planner.getCommitUser());
     assertFalse(planner.getCommitUser().isEmpty());
+    assertFalse(result.getTasks().isEmpty());
+    for (PaimonCompactionTask task : result.getTasks()) {
+      assertEquals(9L, task.getInput().getCommitIdentifier());
+      assertEquals(result.getTargetSnapshotId(), task.getInput().getTargetSnapshotId());
+    }
   }
 
   @Test
@@ -480,15 +655,76 @@ public class TestPaimonOptimizingPlanner {
 
   private static List<DataFileMeta> compactBeforeFiles(
       OptimizingPlanResult<PaimonCompactionTask> result) throws Exception {
-    AppendCompactTaskSerializer serializer = new AppendCompactTaskSerializer();
     List<DataFileMeta> files = new ArrayList<>();
-    for (PaimonCompactionTask task : result.getTasks()) {
-      AppendCompactTask appendTask =
-          serializer.deserialize(
-              task.getInput().getSerializerVersion(), task.getInput().getTaskBytes());
+    for (AppendCompactTask appendTask : appendTasks(result)) {
       files.addAll(appendTask.compactBefore());
     }
     return files;
+  }
+
+  private static Set<String> fileNames(List<DataFileMeta> files) {
+    Set<String> names = new HashSet<>();
+    for (DataFileMeta file : files) {
+      names.add(file.fileName());
+    }
+    return names;
+  }
+
+  private static void compactAppendTasks(
+      AppendOnlyFileStoreTable table, List<AppendCompactTask> tasks, String commitUser)
+      throws Exception {
+    List<CommitMessage> messages = new ArrayList<>();
+    for (AppendCompactTask task : tasks) {
+      BaseAppendFileStoreWrite write = table.store().newWrite(commitUser);
+      try {
+        messages.add(task.doCompact(table, write));
+      } finally {
+        write.close();
+      }
+    }
+    try (TableCommitImpl commit = table.newCommit(commitUser)) {
+      commit.commit(messages);
+    }
+  }
+
+  private static List<AppendCompactTask> appendTasks(
+      OptimizingPlanResult<PaimonCompactionTask> result) throws Exception {
+    AppendCompactTaskSerializer serializer = new AppendCompactTaskSerializer();
+    List<AppendCompactTask> appendTasks = new ArrayList<>();
+    for (PaimonCompactionTask task : result.getTasks()) {
+      appendTasks.add(
+          serializer.deserialize(
+              task.getInput().getSerializerVersion(), task.getInput().getTaskBytes()));
+    }
+    return appendTasks;
+  }
+
+  private static Set<String> partitionPaths(
+      OptimizingPlanResult<PaimonCompactionTask> result, AppendOnlyFileStoreTable table)
+      throws Exception {
+    Set<String> paths = new HashSet<>();
+    for (AppendCompactTask appendTask : appendTasks(result)) {
+      paths.add(partitionPath(appendTask, table));
+    }
+    return paths;
+  }
+
+  private static String partitionPath(
+      AppendCompactTask appendTask, AppendOnlyFileStoreTable table) {
+    RowType partitionType = table.schema().logicalPartitionType();
+    if (partitionType.getFieldCount() == 0) {
+      return "";
+    }
+    Object[] values =
+        new RowDataToObjectArrayConverter(partitionType).convert(appendTask.partition());
+    Map<String, String> partitionSpec = new LinkedHashMap<>();
+    List<String> fieldNames = partitionType.getFieldNames();
+    for (int i = 0; i < fieldNames.size(); i++) {
+      if (values[i] != null) {
+        partitionSpec.put(fieldNames.get(i), values[i].toString());
+      }
+    }
+    return PartitionPathUtils.generatePartitionPath(partitionSpec, partitionType);
   }
 
   @Test

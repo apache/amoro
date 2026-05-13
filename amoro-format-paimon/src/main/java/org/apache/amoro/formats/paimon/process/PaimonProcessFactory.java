@@ -29,6 +29,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.formats.paimon.PaimonTable;
+import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionTask;
 import org.apache.amoro.formats.paimon.optimizing.commit.PaimonTableCommit;
 import org.apache.amoro.formats.paimon.optimizing.plan.PaimonOptimizingPlanner;
@@ -171,23 +172,13 @@ public class PaimonProcessFactory implements ProcessFactory {
     }
     AppendOnlyFileStoreTable fileStoreTable = (AppendOnlyFileStoreTable) raw;
     Collection<PaimonCompactionTask> paimonTasks =
-        new ArrayList<>((Collection<PaimonCompactionTask>) successTasks);
+        successTasks == null
+            ? Collections.emptyList()
+            : new ArrayList<>((Collection<PaimonCompactionTask>) successTasks);
+    CommitIdentity identity = extractCommitIdentity(paimonTasks);
 
-    String commitUser =
-        paimonTasks.stream()
-            .filter(t -> t.getInput() != null && t.getInput().getCommitUser() != null)
-            .map(t -> t.getInput().getCommitUser())
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Cannot create PaimonTableCommit: no commitUser found on any success task."));
-
-    // targetSnapshotId is the Paimon commit identifier — Paimon requires a strictly monotonic
-    // value per commitUser so that FileStoreCommitImpl.filterCommitted() can dedupe replays.
-    // The planner's target snapshot id is already monotonic across plans.
     return new PaimonTableCommit(
-        fileStoreTable, paimonTasks, commitUser, /* commitIdentifier= */ targetSnapshotId);
+        fileStoreTable, paimonTasks, identity.commitUser, identity.commitIdentifier);
   }
 
   @Override
@@ -216,6 +207,57 @@ public class PaimonProcessFactory implements ProcessFactory {
   private static long extractTableId(TableRuntime runtime) {
     ServerTableIdentifier id = runtime == null ? null : runtime.getTableIdentifier();
     return id == null || id.getId() == null ? 0L : id.getId();
+  }
+
+  private static CommitIdentity extractCommitIdentity(Collection<PaimonCompactionTask> tasks) {
+    if (tasks == null || tasks.isEmpty()) {
+      throw new IllegalStateException(
+          "Cannot create PaimonTableCommit: no success task carries Paimon commit identity.");
+    }
+    String commitUser = null;
+    Long commitIdentifier = null;
+    for (PaimonCompactionTask task : tasks) {
+      PaimonCompactionInput input = task == null ? null : task.getInput();
+      if (input == null) {
+        throw new IllegalStateException(
+            "Cannot create PaimonTableCommit: success task has no PaimonCompactionInput.");
+      }
+      String taskCommitUser = input.getCommitUser();
+      if (taskCommitUser == null || taskCommitUser.isEmpty()) {
+        throw new IllegalStateException(
+            "Cannot create PaimonTableCommit: success task has no commitUser.");
+      }
+      long taskCommitIdentifier = input.getCommitIdentifier();
+      if (taskCommitIdentifier <= 0L) {
+        throw new IllegalStateException(
+            "Cannot create PaimonTableCommit: success task has invalid commitIdentifier "
+                + taskCommitIdentifier
+                + ".");
+      }
+      if (commitUser == null) {
+        commitUser = taskCommitUser;
+      } else if (!commitUser.equals(taskCommitUser)) {
+        throw new IllegalStateException(
+            "Cannot create PaimonTableCommit: inconsistent commitUser across success tasks.");
+      }
+      if (commitIdentifier == null) {
+        commitIdentifier = taskCommitIdentifier;
+      } else if (commitIdentifier.longValue() != taskCommitIdentifier) {
+        throw new IllegalStateException(
+            "Cannot create PaimonTableCommit: inconsistent commitIdentifier across success tasks.");
+      }
+    }
+    return new CommitIdentity(commitUser, commitIdentifier);
+  }
+
+  private static class CommitIdentity {
+    private final String commitUser;
+    private final long commitIdentifier;
+
+    private CommitIdentity(String commitUser, long commitIdentifier) {
+      this.commitUser = commitUser;
+      this.commitIdentifier = commitIdentifier;
+    }
   }
 
   private static OptimizingConfig optimizingConfig(TableRuntime runtime) {

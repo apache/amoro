@@ -25,12 +25,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.amoro.formats.paimon.PaimonCatalogFactory;
 import org.apache.amoro.formats.paimon.PaimonTable;
+import org.apache.amoro.formats.paimon.optimizing.commit.PaimonTableCommit;
 import org.apache.amoro.formats.paimon.optimizing.plan.PaimonOptimizingPlanner;
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingPlanResult;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.SerializationUtil;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.paimon.Snapshot;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.data.BinaryString;
@@ -43,7 +45,6 @@ import org.apache.paimon.table.sink.BatchTableCommit;
 import org.apache.paimon.table.sink.BatchTableWrite;
 import org.apache.paimon.table.sink.BatchWriteBuilder;
 import org.apache.paimon.table.sink.CommitMessage;
-import org.apache.paimon.table.sink.CommitMessageSerializer;
 import org.apache.paimon.types.DataTypes;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +78,46 @@ public class TestPaimonCompactionExecutor {
     PaimonCompactionExecutor executor = new PaimonCompactionExecutor(input);
     IllegalStateException ex = assertThrows(IllegalStateException.class, executor::execute);
     assertTrue(ex.getMessage().contains("missing required fields"));
+  }
+
+  @Test
+  @DisplayName("execute() rejects missing commit identity before compact files are written")
+  void testExecuteRejectsMissingCommitIdentity(@TempDir Path warehouse) throws Exception {
+    Map<String, String> props = new HashMap<>();
+    props.put(CatalogOptions.WAREHOUSE.key(), warehouse.toUri().toString());
+    Catalog catalog = PaimonCatalogFactory.paimonCatalog(props, new Configuration());
+    Identifier id = Identifier.create("db1", "t_invalid_identity");
+    createAppendTable(catalog, id, 5, new HashMap<>());
+    PaimonCompactionInput valid = planTasks(catalog, id, 1L, 3L).get(0).getInput();
+
+    PaimonCompactionInput missingUser =
+        new PaimonCompactionInput(
+            valid.getTable(),
+            valid.getTaskBytes(),
+            valid.getSerializerVersion(),
+            "",
+            valid.getPartitionPath(),
+            valid.getTargetSnapshotId(),
+            valid.getCommitIdentifier());
+    IllegalStateException missingUserEx =
+        assertThrows(
+            IllegalStateException.class, () -> new PaimonCompactionExecutor(missingUser).execute());
+    assertTrue(missingUserEx.getMessage().contains("missing commitUser"));
+
+    PaimonCompactionInput missingIdentifier =
+        new PaimonCompactionInput(
+            valid.getTable(),
+            valid.getTaskBytes(),
+            valid.getSerializerVersion(),
+            valid.getCommitUser(),
+            valid.getPartitionPath(),
+            valid.getTargetSnapshotId(),
+            0L);
+    IllegalStateException missingIdentifierEx =
+        assertThrows(
+            IllegalStateException.class,
+            () -> new PaimonCompactionExecutor(missingIdentifier).execute());
+    assertTrue(missingIdentifierEx.getMessage().contains("invalid commitIdentifier"));
   }
 
   @Test
@@ -128,31 +170,123 @@ public class TestPaimonCompactionExecutor {
     Map<String, String> props = new HashMap<>();
     props.put(CatalogOptions.WAREHOUSE.key(), warehouse.toUri().toString());
     Catalog catalog = PaimonCatalogFactory.paimonCatalog(props, new Configuration());
-    catalog.createDatabase("db1", true);
-    Schema schema =
+    Identifier id = Identifier.create("db1", "t_e2e");
+    createAppendTable(catalog, id, 5, new HashMap<>());
+    long filesBefore = countDataFiles((AppendOnlyFileStoreTable) catalog.getTable(id));
+
+    // 2) Planner produces tasks.
+    List<PaimonCompactionTask> tasks = planTasks(catalog, id, 1L, 1L);
+    assertTrue(tasks.size() >= 1);
+
+    long snapshotBeforeExecute =
+        ((AppendOnlyFileStoreTable) catalog.getTable(id)).snapshotManager().latestSnapshot().id();
+
+    // 3) Executor runs each task and returns CommitMessage bytes without committing a snapshot.
+    for (PaimonCompactionTask t : tasks) {
+      PaimonCompactionOutput output = new PaimonCompactionExecutor(t.getInput()).execute();
+      assertNotNull(output.getCommitMessageBytes());
+      assertTrue(output.getCompactedFileCount() >= 1);
+      ByteBuffer outputBytes = SerializationUtil.simpleSerialize(output);
+      byte[] bytes = new byte[outputBytes.remaining()];
+      outputBytes.get(bytes);
+      t.setOutputBytes(bytes);
+    }
+    AppendOnlyFileStoreTable afterExecute = (AppendOnlyFileStoreTable) catalog.getTable(id);
+    assertEquals(
+        snapshotBeforeExecute,
+        afterExecute.snapshotManager().latestSnapshot().id(),
+        "Paimon optimizer executor must return CommitMessage bytes without committing snapshots");
+
+    // 4) AMS-side committer is the only component that advances the Paimon snapshot.
+    PaimonCompactionTask firstTask = tasks.get(0);
+    new PaimonTableCommit(
+            (AppendOnlyFileStoreTable) catalog.getTable(id),
+            tasks,
+            firstTask.getInput().getCommitUser(),
+            firstTask.getInput().getCommitIdentifier())
+        .commit();
+    Snapshot latestSnapshot =
+        ((AppendOnlyFileStoreTable) catalog.getTable(id)).snapshotManager().latestSnapshot();
+    assertEquals(snapshotBeforeExecute + 1, latestSnapshot.id());
+    assertEquals(Snapshot.CommitKind.COMPACT, latestSnapshot.commitKind());
+
+    long filesAfter = countDataFiles((AppendOnlyFileStoreTable) catalog.getTable(id));
+    assertTrue(filesAfter < filesBefore, "After compaction file count must drop");
+  }
+
+  @Test
+  @DisplayName("execute() configures write type when Paimon row tracking is enabled")
+  void testExecutorUsesRowTrackingWriteType(@TempDir Path warehouse) throws Exception {
+    Map<String, String> props = new HashMap<>();
+    props.put(CatalogOptions.WAREHOUSE.key(), warehouse.toUri().toString());
+    Catalog catalog = PaimonCatalogFactory.paimonCatalog(props, new Configuration());
+    Identifier id = Identifier.create("db1", "t_row_tracking");
+    Map<String, String> tableOptions = new HashMap<>();
+    tableOptions.put("row-tracking.enabled", "true");
+    createAppendTable(catalog, id, 5, tableOptions);
+    AppendOnlyFileStoreTable table = (AppendOnlyFileStoreTable) catalog.getTable(id);
+    assertTrue(table.coreOptions().rowTrackingEnabled());
+    long filesBefore = countDataFiles(table);
+
+    List<PaimonCompactionTask> tasks = planTasks(catalog, id, 1L, 2L);
+    assertTrue(tasks.size() >= 1);
+
+    for (PaimonCompactionTask task : tasks) {
+      PaimonCompactionOutput output = new PaimonCompactionExecutor(task.getInput()).execute();
+      assertNotNull(output.getCommitMessageBytes());
+      assertTrue(output.getCommitMessageBytes().length > 0);
+      ByteBuffer outputBytes = SerializationUtil.simpleSerialize(output);
+      byte[] bytes = new byte[outputBytes.remaining()];
+      outputBytes.get(bytes);
+      task.setOutputBytes(bytes);
+    }
+
+    PaimonCompactionTask firstTask = tasks.get(0);
+    new PaimonTableCommit(
+            (AppendOnlyFileStoreTable) catalog.getTable(id),
+            tasks,
+            firstTask.getInput().getCommitUser(),
+            firstTask.getInput().getCommitIdentifier())
+        .commit();
+
+    AppendOnlyFileStoreTable afterCommit = (AppendOnlyFileStoreTable) catalog.getTable(id);
+    assertEquals(
+        Snapshot.CommitKind.COMPACT, afterCommit.snapshotManager().latestSnapshot().commitKind());
+    assertTrue(
+        countDataFiles(afterCommit) < filesBefore,
+        "Row-tracking compaction must commit produced files and reduce file count");
+  }
+
+  private static Table createAppendTable(
+      Catalog catalog, Identifier id, int rows, Map<String, String> tableOptions) throws Exception {
+    catalog.createDatabase(id.getDatabaseName(), true);
+    Schema.Builder builder =
         Schema.newBuilder()
             .column("id", DataTypes.INT())
             .column("name", DataTypes.STRING())
             .option("bucket", "-1")
             .option("target-file-size", "1 kb")
-            .option("compaction.min.file-num", "2")
-            .build();
-    Identifier id = Identifier.create("db1", "t_e2e");
-    catalog.createTable(id, schema, true);
+            .option("compaction.min.file-num", "2");
+    tableOptions.forEach(builder::option);
+    catalog.createTable(id, builder.build(), true);
     Table table = catalog.getTable(id);
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < rows; i++) {
       writeOne(table, i, "r-" + i);
     }
-    long filesBefore = countDataFiles((AppendOnlyFileStoreTable) catalog.getTable(id));
+    return catalog.getTable(id);
+  }
 
-    // 2) Planner produces tasks.
+  private static List<PaimonCompactionTask> planTasks(
+      Catalog catalog, Identifier id, long tableId, long processId) throws Exception {
     PaimonTable paimonTable =
-        new PaimonTable(TableIdentifier.of("test_catalog", "db1", "t_e2e"), catalog.getTable(id));
+        new PaimonTable(
+            TableIdentifier.of("test_catalog", id.getDatabaseName(), id.getObjectName()),
+            catalog.getTable(id));
     PaimonOptimizingPlanner planner =
         new PaimonOptimizingPlanner(
             paimonTable,
-            1L,
-            1L,
+            tableId,
+            processId,
             1.0,
             64L * 1024 * 1024,
             new org.apache.amoro.config.OptimizingConfig()
@@ -166,28 +300,7 @@ public class TestPaimonCompactionExecutor {
             0L,
             null);
     OptimizingPlanResult<PaimonCompactionTask> plan = planner.plan();
-    assertTrue(plan.getTasks().size() >= 1);
-
-    // 3) Executor runs each task and collects CommitMessage.
-    CommitMessageSerializer msgSer = new CommitMessageSerializer();
-    java.util.List<CommitMessage> messages = new java.util.ArrayList<>();
-    for (PaimonCompactionTask t : plan.getTasks()) {
-      PaimonCompactionOutput output = new PaimonCompactionExecutor(t.getInput()).execute();
-      assertNotNull(output.getCommitMessageBytes());
-      assertTrue(output.getCompactedFileCount() >= 1);
-      messages.add(
-          msgSer.deserialize(output.getCommitMessageVersion(), output.getCommitMessageBytes()));
-    }
-
-    // 4) Commit via Paimon native API.
-    Table fresh = catalog.getTable(id);
-    BatchWriteBuilder builder = fresh.newBatchWriteBuilder();
-    try (BatchTableCommit commit = builder.newCommit()) {
-      commit.commit(messages);
-    }
-
-    long filesAfter = countDataFiles((AppendOnlyFileStoreTable) catalog.getTable(id));
-    assertTrue(filesAfter < filesBefore, "After compaction file count must drop");
+    return new ArrayList<>(plan.getTasks());
   }
 
   private static void writeOne(Table table, int id, String name) throws Exception {

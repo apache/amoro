@@ -19,6 +19,8 @@
 package org.apache.amoro.formats.paimon.optimizing.plan;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.amoro.config.OptimizingConfig;
@@ -32,6 +34,8 @@ import org.apache.paimon.table.source.DeletionFile;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -248,6 +252,7 @@ class TestPaimonAppendTaskPacker {
 
     assertEquals(1, tasks.size());
     assertEquals(2, tasks.get(0).compactBefore().size());
+    assertEquals(new HashSet<>(Arrays.asList("dv-left", "dv-right")), fileNames(tasks));
   }
 
   @Test
@@ -316,6 +321,29 @@ class TestPaimonAppendTaskPacker {
 
     assertEquals(1, tasks.size());
     assertEquals(2, tasks.get(0).compactBefore().size());
+  }
+
+  @Test
+  void majorPackingKeepsLargePartnerReservationLinearForManyUnits() {
+    PaimonPlanContext context = context(900L);
+    List<PaimonFileCandidate> files = new ArrayList<>();
+    for (int i = 0; i < 30_000; i++) {
+      files.addAll(candidates(context, file("small-" + i, 100, 100)));
+    }
+    for (int i = 0; i < 30_000; i++) {
+      files.addAll(candidates(context, file("large-" + i, 10_000, 100)));
+    }
+    PaimonPartitionEvaluation evaluation = evaluation(OptimizingType.MAJOR, files);
+
+    List<AppendCompactTask> tasks =
+        assertTimeoutPreemptively(
+            Duration.ofSeconds(5), () -> new PaimonAppendTaskPacker(context).pack(evaluation));
+
+    assertFalse(tasks.isEmpty());
+    for (AppendCompactTask task : tasks) {
+      assertTrue(task.compactBefore().size() > 1);
+      assertTrue(task.compactBefore().stream().filter(file -> file.fileSize() > 900L).count() <= 1);
+    }
   }
 
   private static PaimonPlanContext context(long taskLimit) {

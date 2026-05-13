@@ -60,7 +60,7 @@ import java.util.Map;
  *   <li><b>Iceberg</b>: guard that the existing Iceberg path is untouched.
  *   <li><b>Paimon</b>: guard that {@code PaimonCompactionInput} survives round-trip with every
  *       non-transient field (commitUser, taskBytes, serializerVersion, targetSnapshotId,
- *       partitionPath).
+ *       commitIdentifier, partitionPath).
  *   <li><b>Mixed</b>: two different {@code processId}s, one Iceberg and one Paimon, asserted to
  *       round-trip independently — which demonstrates that the storage shape does not tag the blob
  *       by format.
@@ -139,11 +139,18 @@ class TestTaskFilesPersistenceMultiFormat {
     String commitUser = "paimon-commit-user-uuid";
     int serializerVersion = 3;
     long targetSnapshotId = 9876543210L;
+    long commitIdentifier = 22334455L;
     String partitionPath = "dt=2026-04-18/region=us";
 
     PaimonCompactionInput paimon =
         new PaimonCompactionInput(
-            null, taskBytes, serializerVersion, commitUser, partitionPath, targetSnapshotId);
+            null,
+            taskBytes,
+            serializerVersion,
+            commitUser,
+            partitionPath,
+            targetSnapshotId,
+            commitIdentifier);
 
     Map<Integer, BaseOptimizingInput> toPersist = new HashMap<>();
     toPersist.put(7, paimon);
@@ -165,6 +172,7 @@ class TestTaskFilesPersistenceMultiFormat {
     assertEquals(serializerVersion, restored.getSerializerVersion());
     assertEquals(commitUser, restored.getCommitUser());
     assertEquals(targetSnapshotId, restored.getTargetSnapshotId());
+    assertEquals(commitIdentifier, restored.getCommitIdentifier());
     assertEquals(partitionPath, restored.getPartitionPath());
   }
 
@@ -177,9 +185,16 @@ class TestTaskFilesPersistenceMultiFormat {
     insertProcessStateRow(paimonProcessId);
 
     RewriteFilesInput iceberg = newIcebergInput();
+    long commitIdentifier = 55667788L;
     PaimonCompactionInput paimon =
         new PaimonCompactionInput(
-            null, new byte[] {9, 8, 7}, 1, "other-commit-user", "dt=2026-04-18", 1234567890L);
+            null,
+            new byte[] {9, 8, 7},
+            1,
+            "other-commit-user",
+            "dt=2026-04-18",
+            1234567890L,
+            commitIdentifier);
 
     TestHelper.persistDirect(icebergProcessId, Collections.singletonMap(0, iceberg));
     TestHelper.persistDirect(paimonProcessId, Collections.singletonMap(5, paimon));
@@ -203,6 +218,7 @@ class TestTaskFilesPersistenceMultiFormat {
     PaimonCompactionInput restoredPaimon = (PaimonCompactionInput) paimonLoaded.get(5);
     assertArrayEquals(new byte[] {9, 8, 7}, restoredPaimon.getTaskBytes());
     assertEquals("other-commit-user", restoredPaimon.getCommitUser());
+    assertEquals(commitIdentifier, restoredPaimon.getCommitIdentifier());
   }
 
   @Test
