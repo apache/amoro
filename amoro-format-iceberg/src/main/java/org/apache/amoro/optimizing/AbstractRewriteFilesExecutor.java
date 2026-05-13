@@ -84,8 +84,23 @@ public abstract class AbstractRewriteFilesExecutor
     this.table = table;
     this.io = table.io();
     this.properties = properties;
-    this.structLikeCollections = TaskProperties.getStructLikeCollections(properties);
+    this.structLikeCollections = getStructLikeCollections(properties);
     dataReader = dataReader();
+  }
+
+  protected static StructLikeCollections getStructLikeCollections(Map<String, String> properties) {
+    boolean enableSpillMap =
+        PropertyUtil.propertyAsBoolean(
+            properties,
+            TaskProperties.EXTEND_DISK_STORAGE,
+            TaskProperties.EXTEND_DISK_STORAGE_DEFAULT);
+    long maxInMemory =
+        PropertyUtil.propertyAsLong(
+            properties,
+            TaskProperties.MEMORY_STORAGE_SIZE,
+            TaskProperties.MEMORY_STORAGE_SIZE_DEFAULT);
+    String spillMapPath = properties.get(TaskProperties.DISK_STORAGE_PATH);
+    return new StructLikeCollections(enableSpillMap, maxInMemory, spillMapPath);
   }
 
   protected abstract OptimizingDataReader dataReader();

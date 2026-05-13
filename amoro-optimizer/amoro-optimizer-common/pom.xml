@@ -38,6 +38,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-format-paimon</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>args4j</groupId>
             <artifactId>args4j</artifactId>
         </dependency>

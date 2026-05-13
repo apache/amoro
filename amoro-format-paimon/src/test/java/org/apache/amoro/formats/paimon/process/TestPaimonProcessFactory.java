@@ -1,0 +1,198 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.amoro.formats.paimon.process;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.apache.amoro.TableFormat;
+import org.apache.amoro.formats.paimon.PaimonCatalogFactory;
+import org.apache.amoro.formats.paimon.PaimonTable;
+import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput;
+import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionTask;
+import org.apache.amoro.formats.paimon.optimizing.commit.PaimonTableCommit;
+import org.apache.amoro.formats.paimon.optimizing.plan.PaimonOptimizingPlanner;
+import org.apache.amoro.optimizing.TableOptimizingCommitter;
+import org.apache.amoro.optimizing.TableOptimizingPlanner;
+import org.apache.amoro.process.ProcessFactory;
+import org.apache.amoro.process.StagedTaskDescriptor;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.paimon.catalog.Catalog;
+import org.apache.paimon.catalog.Identifier;
+import org.apache.paimon.options.CatalogOptions;
+import org.apache.paimon.schema.Schema;
+import org.apache.paimon.table.Table;
+import org.apache.paimon.types.DataTypes;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ServiceLoader;
+
+@DisplayName("PaimonProcessFactory")
+public class TestPaimonProcessFactory {
+
+  private static PaimonTable buildAppendTable(Path warehouse, String tableName) throws Exception {
+    Map<String, String> props = new HashMap<>();
+    props.put(CatalogOptions.WAREHOUSE.key(), warehouse.toUri().toString());
+    Catalog catalog = PaimonCatalogFactory.paimonCatalog(props, new Configuration());
+    catalog.createDatabase("db1", true);
+    Schema schema =
+        Schema.newBuilder()
+            .column("id", DataTypes.INT())
+            .column("name", DataTypes.STRING())
+            .option("bucket", "-1")
+            .build();
+    Identifier id = Identifier.create("db1", tableName);
+    catalog.createTable(id, schema, true);
+    Table table = catalog.getTable(id);
+    return new PaimonTable(TableIdentifier.of("test_catalog", "db1", tableName), table);
+  }
+
+  @Test
+  @DisplayName("Default (no properties) → optimizer disabled → empty supportedFormats/Actions")
+  void testDisabledByDefault() {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(null);
+    assertTrue(factory.supportedFormats().isEmpty());
+    assertTrue(factory.supportedActions().isEmpty());
+    assertEquals(PaimonProcessFactory.PLUGIN_NAME, factory.name());
+  }
+
+  @Test
+  @DisplayName("When paimon-optimizer.enabled=true → supports PAIMON format")
+  void testEnabledReturnsPaimon() {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    Map<String, String> props = new HashMap<>();
+    props.put(PaimonProcessFactory.OPTIMIZER_ENABLED.key(), "true");
+    factory.open(props);
+    assertEquals(Collections.singleton(TableFormat.PAIMON), factory.supportedFormats());
+    assertTrue(factory.supportedActions().containsKey(TableFormat.PAIMON));
+  }
+
+  @Test
+  @DisplayName("createPlanner rejects non-PaimonTable and accepts PaimonTable")
+  void testCreatePlanner(@TempDir Path warehouse) throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    assertThrows(IllegalStateException.class, () -> factory.createPlanner(null, null, 1.0, 1024L));
+    PaimonTable table = buildAppendTable(warehouse, "t_plan");
+    TableOptimizingPlanner planner = factory.createPlanner(null, table, 1.0, 1024L);
+    assertNotNull(planner);
+    assertTrue(planner instanceof PaimonOptimizingPlanner);
+  }
+
+  @Test
+  @DisplayName("createCommitter picks commitUser from a task input and returns PaimonTableCommit")
+  void testCreateCommitter(@TempDir Path warehouse) throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    PaimonTable table = buildAppendTable(warehouse, "t_commit");
+    PaimonCompactionInput input =
+        new PaimonCompactionInput(table, new byte[] {1}, 2, "user-abc", "p", 0L);
+    PaimonCompactionTask task = new PaimonCompactionTask(1L, "p", input, new HashMap<>());
+
+    TableOptimizingCommitter committer =
+        factory.createCommitter(
+            table,
+            /* targetSnapshotId */ 7L,
+            /* targetChangeSnapshotId */ -1L,
+            Collections.singletonList((StagedTaskDescriptor<?, ?, ?>) task),
+            Collections.emptyMap(),
+            Collections.emptyMap());
+    assertNotNull(committer);
+    assertTrue(committer instanceof PaimonTableCommit);
+  }
+
+  @Test
+  @DisplayName("createCommitter fails fast when no success task carries a commitUser")
+  void testCreateCommitterRejectsEmptyCommitUser(@TempDir Path warehouse) throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    PaimonTable table = buildAppendTable(warehouse, "t_nouser");
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            factory.createCommitter(
+                table,
+                1L,
+                -1L,
+                Collections.emptyList(),
+                Collections.emptyMap(),
+                Collections.emptyMap()));
+  }
+
+  @Test
+  @DisplayName("SPI registration: PaimonProcessFactory is discoverable via ServiceLoader")
+  void testSpiDiscovery() throws Exception {
+    // Confirm the META-INF/services/org.apache.amoro.process.ProcessFactory file is on the
+    // classpath and names this class.
+    boolean foundInFile = false;
+    Enumeration<URL> urls =
+        Thread.currentThread()
+            .getContextClassLoader()
+            .getResources("META-INF/services/" + ProcessFactory.class.getName());
+    while (urls.hasMoreElements()) {
+      URL url = urls.nextElement();
+      try (BufferedReader r =
+          new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+        String line;
+        while ((line = r.readLine()) != null) {
+          if (line.trim().equals(PaimonProcessFactory.class.getName())) {
+            foundInFile = true;
+          }
+        }
+      }
+    }
+    assertTrue(foundInFile, "SPI file must list PaimonProcessFactory");
+
+    boolean foundByLoader = false;
+    for (ProcessFactory f : ServiceLoader.load(ProcessFactory.class)) {
+      if (f instanceof PaimonProcessFactory) {
+        foundByLoader = true;
+      }
+    }
+    assertTrue(foundByLoader, "ServiceLoader must load PaimonProcessFactory");
+    assertFalse(
+        Thread.currentThread()
+                .getContextClassLoader()
+                .getResources("META-INF/services/" + ProcessFactory.class.getName())
+                .hasMoreElements()
+            && !foundInFile);
+  }
+
+  private static Map<String, String> enabledProps() {
+    Map<String, String> props = new HashMap<>();
+    props.put(PaimonProcessFactory.OPTIMIZER_ENABLED.key(), "true");
+    return props;
+  }
+}

@@ -19,8 +19,6 @@
 package org.apache.amoro.optimizing;
 
 import org.apache.amoro.OptimizerProperties;
-import org.apache.amoro.utils.PropertyUtil;
-import org.apache.amoro.utils.map.StructLikeCollections;
 
 import java.util.Map;
 
@@ -44,17 +42,6 @@ public class TaskProperties {
   public static final String OUTPUT_DIR = "output_location";
 
   public static final String MOVE_FILE_TO_HIVE_LOCATION = "move-files-to-hive-location";
-
-  public static StructLikeCollections getStructLikeCollections(Map<String, String> properties) {
-    boolean enableSpillMap =
-        PropertyUtil.propertyAsBoolean(
-            properties, EXTEND_DISK_STORAGE, EXTEND_DISK_STORAGE_DEFAULT);
-    long maxInMemory =
-        PropertyUtil.propertyAsLong(properties, MEMORY_STORAGE_SIZE, MEMORY_STORAGE_SIZE_DEFAULT);
-    String spillMapPath = properties.get(DISK_STORAGE_PATH);
-
-    return new StructLikeCollections(enableSpillMap, maxInMemory, spillMapPath);
-  }
 
   public static String getProcessId(Map<String, String> properties) {
     String processId = properties.get(PROCESS_ID);

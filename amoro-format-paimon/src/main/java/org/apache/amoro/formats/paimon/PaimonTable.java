@@ -26,9 +26,12 @@ import org.apache.paimon.Snapshot;
 import org.apache.paimon.table.DataTable;
 import org.apache.paimon.table.Table;
 
+import java.io.Serializable;
 import java.util.Map;
 
-public class PaimonTable implements AmoroTable<Table> {
+public class PaimonTable implements AmoroTable<Table>, Serializable {
+
+  private static final long serialVersionUID = 1L;
 
   private final TableIdentifier tableIdentifier;
 
