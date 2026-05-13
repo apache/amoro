@@ -746,8 +746,8 @@ public class DefaultTableService extends PersistentBase implements TableService 
               }
             });
     // Handle tables that exist in table_identifier but don't have TableRuntime in memory.
-    // This ensures tables that were synced before TableRuntime support was added (e.g., Paimon
-    // tables synced before PaimonTableRuntimeFactory was registered) get their runtime created.
+    // This ensures tables that were synced before TableRuntime support was added get their runtime
+    // created.
     Set<ServerTableIdentifier> tablesWithoutRuntime =
         serverTableIdentifiers.values().stream()
             .filter(id -> !tableRuntimeMap.containsKey(id.getId()))

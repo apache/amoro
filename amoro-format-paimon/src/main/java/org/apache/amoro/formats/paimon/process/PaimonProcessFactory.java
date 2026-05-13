@@ -68,7 +68,7 @@ public class PaimonProcessFactory implements ProcessFactory {
   public static final ConfigOption<Boolean> OPTIMIZER_ENABLED =
       ConfigOptions.key("paimon-optimizer.enabled")
           .booleanType()
-          .defaultValue(false)
+          .defaultValue(true)
           .withDescription(
               "Enable Paimon optimizing (BUCKET_UNAWARE small-file compaction). Default off.");
 

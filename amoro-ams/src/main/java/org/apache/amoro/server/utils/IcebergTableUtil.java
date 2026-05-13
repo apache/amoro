@@ -275,10 +275,14 @@ public class IcebergTableUtil {
       MixedTable table,
       double availableCore,
       long maxInputSizePerThread) {
+    AbstractOptimizingEvaluator.PendingInput pendingInput =
+        tableRuntime.getPendingInput() instanceof AbstractOptimizingEvaluator.PendingInput
+            ? (AbstractOptimizingEvaluator.PendingInput) tableRuntime.getPendingInput()
+            : null;
     Expression partitionFilter =
-        tableRuntime.getPendingInput() == null
+        pendingInput == null
             ? Expressions.alwaysTrue()
-            : tableRuntime.getPendingInput().getPartitions().entrySet().stream()
+            : pendingInput.getPartitions().entrySet().stream()
                 .map(
                     entry ->
                         ExpressionUtil.convertPartitionDataToDataFilter(

@@ -18,13 +18,19 @@
 
 package org.apache.amoro.optimizing;
 
-import org.apache.amoro.iceberg.Constants;
-
+/**
+ * Optimizing state tracked per table runtime. Moved to amoro-common so that format-agnostic
+ * interfaces (e.g., AmoroTable.refreshOptimizingState) can reference it without depending on
+ * amoro-format-iceberg.
+ */
 public class TableRuntimeOptimizingState {
-  private long currentSnapshotId = Constants.INVALID_SNAPSHOT_ID;
-  private long currentChangeSnapshotId = Constants.INVALID_SNAPSHOT_ID;
-  private long lastOptimizedSnapshotId = Constants.INVALID_SNAPSHOT_ID;
-  private long lastOptimizedChangeSnapshotId = Constants.INVALID_SNAPSHOT_ID;
+
+  public static final long INVALID_SNAPSHOT_ID = -1L;
+
+  private long currentSnapshotId = INVALID_SNAPSHOT_ID;
+  private long currentChangeSnapshotId = INVALID_SNAPSHOT_ID;
+  private long lastOptimizedSnapshotId = INVALID_SNAPSHOT_ID;
+  private long lastOptimizedChangeSnapshotId = INVALID_SNAPSHOT_ID;
   private long lastMajorOptimizingTime;
   private long lastFullOptimizingTime;
   private long lastMinorOptimizingTime;

@@ -90,14 +90,18 @@ public class KeyedTableCommit extends UnKeyedTableCommit implements TableOptimiz
 
   private static StructLikeMap<Long> convertPartitionSequence(
       MixedTable table, Map<String, Long> partitionSequence) {
-    PartitionSpec spec = table.spec();
-    StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
+    PartitionSpec spec = table == null ? null : table.spec();
+    PartitionSpec safeSpec = spec == null ? PartitionSpec.unpartitioned() : spec;
+    StructLikeMap<Long> results = StructLikeMap.create(safeSpec.partitionType());
+    if (partitionSequence == null || partitionSequence.isEmpty()) {
+      return results;
+    }
     partitionSequence.forEach(
         (partition, sequence) -> {
-          if (spec.isUnpartitioned()) {
+          if (safeSpec.isUnpartitioned()) {
             results.put(TablePropertyUtil.EMPTY_STRUCT, sequence);
           } else {
-            StructLike partitionData = MixedDataFiles.data(spec, partition);
+            StructLike partitionData = MixedDataFiles.data(safeSpec, partition);
             results.put(partitionData, sequence);
           }
         });

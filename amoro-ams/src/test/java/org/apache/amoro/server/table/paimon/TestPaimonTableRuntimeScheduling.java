@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.formats.paimon.optimizing.PaimonPendingInput;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.table.StateKey;
 import org.apache.amoro.table.TableRuntimeStore;
@@ -34,12 +35,17 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 /**
- * C1 guard: proves that {@link PaimonTableRuntime} is a {@link DefaultTableRuntime} so {@code
- * DefaultOptimizingService.initHandler}'s {@code instanceof DefaultTableRuntime} filter lets Paimon
- * tables enter the optimizing queue — and that {@link DefaultTableRuntime#REQUIRED_STATES} is the
- * single source of required state keys (no duplicate-key conflict between Paimon and Default).
+ * C1 guard: proves that Paimon tables now use {@link DefaultTableRuntime} directly (no subclass) so
+ * {@code DefaultOptimizingService.initHandler}'s {@code instanceof DefaultTableRuntime} filter
+ * accepts Paimon tables — and that the factory provides all required state keys including
+ * Paimon-specific pending_input.
  */
 public class TestPaimonTableRuntimeScheduling {
+
+  private static final StateKey<PaimonPendingInput> PAIMON_PENDING_INPUT_KEY =
+      StateKey.stateKey("pending_input")
+          .jsonType(PaimonPendingInput.class)
+          .defaultValue(new PaimonPendingInput());
 
   @Test
   public void paimonRuntimeIsDefaultRuntime() {
@@ -49,12 +55,13 @@ public class TestPaimonTableRuntimeScheduling {
     when(store.getTableIdentifier()).thenReturn(id);
     when(store.getGroupName()).thenReturn("default");
 
-    PaimonTableRuntime runtime = new PaimonTableRuntime(store, () -> mock(AmoroTable.class));
+    DefaultTableRuntime runtime =
+        new DefaultTableRuntime(store, () -> mock(AmoroTable.class), PAIMON_PENDING_INPUT_KEY);
 
     assertTrue(
         runtime instanceof DefaultTableRuntime,
-        "PaimonTableRuntime must extend DefaultTableRuntime so DefaultOptimizingService"
-            + " `instanceof DefaultTableRuntime` filter accepts Paimon tables.");
+        "Paimon tables must use DefaultTableRuntime so DefaultOptimizingService"
+            + " `instanceof DefaultTableRuntime` filter accepts them.");
   }
 
   @Test
@@ -64,23 +71,31 @@ public class TestPaimonTableRuntimeScheduling {
         .thenReturn(ServerTableIdentifier.of("c", "d", "t", TableFormat.PAIMON));
     when(store.getGroupName()).thenReturn("default");
 
-    Object runtime = new PaimonTableRuntime(store, () -> mock(AmoroTable.class));
+    Object runtime =
+        new DefaultTableRuntime(store, () -> mock(AmoroTable.class), PAIMON_PENDING_INPUT_KEY);
 
     // Mirrors DefaultOptimizingService.initHandler L517's filter predicate.
     assertTrue(runtime instanceof DefaultTableRuntime);
   }
 
   @Test
-  public void requiredStatesComeFromDefaultRuntime() {
-    // After C1, Paimon reuses DefaultTableRuntime.REQUIRED_STATES — no Paimon-local dup.
+  public void requiredStatesAreComplete() {
     List<StateKey<?>> defaults = DefaultTableRuntime.REQUIRED_STATES;
     assertNotNull(defaults);
-    assertTrue(defaults.size() >= 4, "DefaultTableRuntime must supply at least 4 required states");
+    assertTrue(
+        defaults.size() >= 3, "DefaultTableRuntime must supply at least 3 base required states");
 
-    // The 4 Paimon would previously have declared locally — they all come from the parent now.
+    // Base states from DefaultTableRuntime.REQUIRED_STATES
     assertTrue(defaults.stream().anyMatch(k -> "optimizing_state".equals(k.getKey())));
-    assertTrue(defaults.stream().anyMatch(k -> "pending_input".equals(k.getKey())));
     assertTrue(defaults.stream().anyMatch(k -> "cleanup_state".equals(k.getKey())));
     assertTrue(defaults.stream().anyMatch(k -> "process_id".equals(k.getKey())));
+
+    // Paimon-specific pending_input key is provided by the factory, not REQUIRED_STATES
+    assertNotNull(PAIMON_PENDING_INPUT_KEY);
+    assertEquals("pending_input", PAIMON_PENDING_INPUT_KEY.getKey());
+  }
+
+  private static void assertEquals(String expected, String actual) {
+    org.junit.jupiter.api.Assertions.assertEquals(expected, actual);
   }
 }
