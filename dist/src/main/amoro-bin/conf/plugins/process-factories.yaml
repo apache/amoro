@@ -16,7 +16,7 @@
 #
 
 process-factories:
-  - name: paimon
+  - name: paimon-maintain
     enabled: true
     priority: 100
     properties:

@@ -152,10 +152,10 @@ public class MetricsSummary implements TaskMetricsSummary {
     // Plain Paimon-compat keys — deliberately distinct from the Iceberg {@code
     // "input-data-files(rewrite)"} naming because the Paimon path has no rewrite/read-only split.
     Map<String, String> map = s.summaryAsMap(false);
-    long inputFiles = parseLongOr(map.get("input-data-files"), 0L);
-    long inputBytes = parseLongOr(map.get("input-data-size"), 0L);
-    long outputFiles = parseLongOr(map.get("output-data-files"), 0L);
-    long outputBytes = parseLongOr(map.get("output-data-size"), 0L);
+    long inputFiles = parseLongOr(map.get(TaskMetricsSummary.AGG_INPUT_DATA_FILES), 0L);
+    long inputBytes = parseLongOr(map.get(TaskMetricsSummary.AGG_INPUT_DATA_SIZE), 0L);
+    long outputFiles = parseLongOr(map.get(TaskMetricsSummary.AGG_OUTPUT_DATA_FILES), 0L);
+    long outputBytes = parseLongOr(map.get(TaskMetricsSummary.AGG_OUTPUT_DATA_SIZE), 0L);
     return fromPaimonStats(inputFiles, inputBytes, outputFiles, outputBytes);
   }
 

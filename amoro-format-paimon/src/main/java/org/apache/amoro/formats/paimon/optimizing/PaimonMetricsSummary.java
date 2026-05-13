@@ -38,10 +38,11 @@ public class PaimonMetricsSummary {
   public static final String PRODUCED_BYTES = "produced-bytes";
 
   // Iceberg-compatible keys — used when adapting to the shared TaskMetricsSummary view.
-  static final String ICEBERG_INPUT_DATA_FILES = "input-data-files";
-  static final String ICEBERG_INPUT_DATA_SIZE = "input-data-size";
-  static final String ICEBERG_OUTPUT_DATA_FILES = "output-data-files";
-  static final String ICEBERG_OUTPUT_DATA_SIZE = "output-data-size";
+  // These are now centralized as AGG_* constants in TaskMetricsSummary.
+  static final String ICEBERG_INPUT_DATA_FILES = TaskMetricsSummary.AGG_INPUT_DATA_FILES;
+  static final String ICEBERG_INPUT_DATA_SIZE = TaskMetricsSummary.AGG_INPUT_DATA_SIZE;
+  static final String ICEBERG_OUTPUT_DATA_FILES = TaskMetricsSummary.AGG_OUTPUT_DATA_FILES;
+  static final String ICEBERG_OUTPUT_DATA_SIZE = TaskMetricsSummary.AGG_OUTPUT_DATA_SIZE;
 
   private long compactedFileCount;
   private long compactedFileSize;

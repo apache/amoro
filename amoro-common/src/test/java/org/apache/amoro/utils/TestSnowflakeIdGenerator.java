@@ -16,9 +16,8 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.util;
+package org.apache.amoro.utils;
 
-import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

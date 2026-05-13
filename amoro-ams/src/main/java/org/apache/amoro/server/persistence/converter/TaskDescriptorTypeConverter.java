@@ -95,9 +95,9 @@ public class TaskDescriptorTypeConverter implements TypeHandler<StagedTaskDescri
   @Override
   public StagedTaskDescriptor<?, ?, ?> getResult(CallableStatement cs, int columnIndex)
       throws SQLException {
-    // CallableStatement path is not used by current MyBatis mappings; fall back to the default
-    // Iceberg descriptor to preserve the previous behaviour.
-    return new RewriteStageTask();
+    throw new UnsupportedOperationException(
+        "TaskDescriptorTypeConverter.getResult(CallableStatement) is not supported. "
+            + "ResultSet-based mapping should be used instead.");
   }
 
   /**

@@ -58,7 +58,7 @@ public class PaimonMaintainProcessFactory implements ProcessFactory {
 
   private static final Logger LOG = LoggerFactory.getLogger(PaimonMaintainProcessFactory.class);
 
-  public static final String PLUGIN_NAME = "paimon";
+  public static final String PLUGIN_NAME = "paimon-maintain";
 
   public static final ConfigOption<Boolean> SYNC_TABLE_META_ENABLED =
       ConfigOptions.key("sync-table-meta.enabled").booleanType().defaultValue(true);

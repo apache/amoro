@@ -32,6 +32,13 @@ import java.util.Map;
  */
 public interface TaskMetricsSummary {
 
+  // Aggregate-path keys (no format suffix). New formats' summaryAsMap() should use these keys
+  // so that MetricsSummary.normalize() can read them via the same constants.
+  String AGG_INPUT_DATA_FILES = "input-data-files";
+  String AGG_INPUT_DATA_SIZE = "input-data-size";
+  String AGG_OUTPUT_DATA_FILES = "output-data-files";
+  String AGG_OUTPUT_DATA_SIZE = "output-data-size";
+
   /**
    * Serialize the summary as a flat {@code key -> stringified value} map, the canonical shape
    * persisted in process tables and rendered by the dashboard.

@@ -19,7 +19,6 @@
 package org.apache.amoro.server.persistence.mapper;
 
 import org.apache.amoro.optimizing.BaseOptimizingInput;
-import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
@@ -114,7 +113,10 @@ public interface OptimizingProcessMapper {
     "</foreach>",
     "</script>"
   })
-  void insertTaskRuntimes(@Param("taskRuntimes") List<TaskRuntime<RewriteStageTask>> taskRuntimes);
+  void insertTaskRuntimes(
+      @Param("taskRuntimes")
+          List<TaskRuntime<? extends StagedTaskDescriptor<? extends BaseOptimizingInput, ?, ?>>>
+              taskRuntimes);
 
   /**
    * Load task_runtime rows for a given process, hydrating each row's descriptor via {@link

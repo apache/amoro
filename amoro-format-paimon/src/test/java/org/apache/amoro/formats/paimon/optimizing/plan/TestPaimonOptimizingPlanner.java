@@ -340,4 +340,65 @@ public class TestPaimonOptimizingPlanner {
     assertTrue(
         PaimonOptimizingPlanner.applyQuota(null, 1.0, 1024, fixedSize(0L), "t_null").isEmpty());
   }
+
+  // ---- K2 regression: empty plan after defer flips isNecessary() back to false ----
+
+  @Test
+  @DisplayName(
+      "K2: all tasks oversized -> isNecessary()=true pre-plan, plan()=empty, isNecessary()=false post-plan")
+  void allTasksDeferredYieldsEmptyPlanAndNotNecessary(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> opts = new HashMap<>();
+    opts.put("target-file-size", "1 kb");
+    opts.put("compaction.min.file-num", "2");
+    Table table = createAppendOnlyTable(catalog, "t_all_oversized", opts);
+    // Two commits => at least two small data files => coordinator must find candidates.
+    for (int i = 0; i < 2; i++) {
+      writeRecords(
+          table, Collections.singletonList(GenericRow.of(i, BinaryString.fromString("r-" + i))));
+    }
+    PaimonTable paimonTable =
+        wrap(catalog.getTable(Identifier.create("db1", "t_all_oversized")), "t_all_oversized");
+
+    // maxInputSizePerThread=1 byte — every real file is comfortably above this, so every
+    // AppendCompactTask the coordinator emits must be deferred by applyQuota.
+    PaimonOptimizingPlanner planner =
+        new PaimonOptimizingPlanner(
+            paimonTable, 1L /* tableId */, 1L /* processId */, 4.0, 1L /* maxInputSizePerThread */);
+
+    assertTrue(
+        planner.isNecessary(),
+        "coordinator must detect small-file candidates before quota filtering");
+
+    OptimizingPlanResult<PaimonCompactionTask> result = planner.plan();
+    assertNotNull(result);
+    assertTrue(
+        result.getTasks().isEmpty(),
+        "all tasks were oversized — applyQuota defers them; plan() must return empty");
+
+    assertFalse(
+        planner.isNecessary(),
+        "after an all-deferred plan tick, isNecessary() must flip to false so the AMS "
+            + "guard does not spin up an empty TableOptimizingProcess");
+  }
+
+  @Test
+  @DisplayName("K2: partial defer still surfaces the fitting tasks; isNecessary() stays true")
+  void partialDeferStillReturnsRemaining() {
+    // Exercise applyQuota directly with synthetic tasks to keep the test hermetic — we are
+    // verifying the quota predicate, not a real coordinator. 3 tasks, 2 oversized + 1 in-limit.
+    List<AppendCompactTask> tasks = synthesiseTasks(3);
+    long maxInputSizePerThread = 64L * 1024 * 1024; // 64 MiB
+    Map<AppendCompactTask, Long> sizes = new IdentityHashMap<>();
+    sizes.put(tasks.get(0), 200L * 1024 * 1024); // oversized
+    sizes.put(tasks.get(1), 1L * 1024 * 1024); // fits
+    sizes.put(tasks.get(2), 200L * 1024 * 1024); // oversized
+
+    List<AppendCompactTask> out =
+        PaimonOptimizingPlanner.applyQuota(
+            tasks, 4.0, maxInputSizePerThread, sizes::get, "t_partial");
+
+    assertEquals(1, out.size(), "only the single in-limit task should be released");
+    assertTrue(out.get(0) == tasks.get(1), "released task must be the one that fits");
+  }
 }

@@ -31,9 +31,11 @@ import org.apache.amoro.optimizing.MixedIcebergRewriteExecutorFactory;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.process.StagedTaskDescriptor;
+import org.apache.amoro.server.optimizing.LegacyExecutorFactoryDefaults;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -203,6 +205,38 @@ public class TestTaskDescriptorTypeConverter {
     ResultSet rs = mock(ResultSet.class);
     when(rs.getString("properties")).thenReturn(GSON.toJson(props));
     return rs;
+  }
+
+  @Test
+  public void factoryImplClassNamesConsistentAcrossConverters() {
+    Map<String, Class<? extends StagedTaskDescriptor<?, ?, ?>>> mapping =
+        TaskDescriptorTypeConverter.FACTORY_IMPL_TO_TASK_CLASS;
+
+    Assertions.assertEquals(
+        RewriteStageTask.class, mapping.get(IcebergRewriteExecutorFactory.class.getName()));
+    Assertions.assertEquals(
+        RewriteStageTask.class, mapping.get(MixedIcebergRewriteExecutorFactory.class.getName()));
+    Assertions.assertEquals(
+        RewriteStageTask.class, mapping.get(MixedHiveRewriteExecutorFactory.class.getName()));
+    Assertions.assertEquals(
+        PaimonCompactionTask.class, mapping.get(PaimonCompactionExecutorFactory.class.getName()));
+
+    Assertions.assertEquals(
+        IcebergRewriteExecutorFactory.class.getName(),
+        LegacyExecutorFactoryDefaults.ICEBERG_FACTORY_IMPL);
+    Assertions.assertEquals(
+        MixedIcebergRewriteExecutorFactory.class.getName(),
+        LegacyExecutorFactoryDefaults.MIXED_ICEBERG_FACTORY_IMPL);
+    Assertions.assertEquals(
+        MixedHiveRewriteExecutorFactory.class.getName(),
+        LegacyExecutorFactoryDefaults.MIXED_HIVE_FACTORY_IMPL);
+  }
+
+  @Test
+  public void callableStatementPathThrowsUnsupported() throws SQLException {
+    CallableStatement mockCs = mock(CallableStatement.class);
+    Assertions.assertThrows(
+        UnsupportedOperationException.class, () -> converter.getResult(mockCs, 1));
   }
 
   @Test

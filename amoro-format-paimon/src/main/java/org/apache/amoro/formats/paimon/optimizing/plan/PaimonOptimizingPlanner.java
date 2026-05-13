@@ -194,6 +194,20 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
             PaimonOptimizingPlanner::totalCompactBeforeSize,
             paimonTable.id().getTableName());
 
+    // K2 self-honesty: if every coordinator task was deferred this tick, flip the cached
+    // necessary flag back to false so a subsequent isNecessary() call (e.g. the AMS generic
+    // guard or a re-entrant check) reports "nothing to do" and does not spin up an empty
+    // TableOptimizingProcess. The next plan tick re-enters isNecessary() with a fresh
+    // coordinator probe and will pick the task up again when it fits.
+    if (eligible.isEmpty()) {
+      LOG.info(
+          "Paimon table [{}] plan tick produced 0 eligible tasks (all deferred) — "
+              + "reset isNecessary() to false for this planner instance.",
+          paimonTable.id().getTableName());
+      necessary = false;
+      return emptyResult();
+    }
+
     List<PaimonCompactionTask> wrapped = new ArrayList<>(eligible.size());
     for (AppendCompactTask task : eligible) {
       byte[] bytes;
@@ -286,18 +300,30 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
       }
       long totalSize = sizeFn.applyAsLong(task);
       if (totalSize > maxInputSizePerThread) {
-        LOG.info(
-            "Paimon table [{}] deferring oversized AppendCompactTask (partition={}, "
-                + "totalInputSize={} bytes > maxInputSizePerThread={} bytes) — raise "
-                + "max-input-size-per-thread or wait for smaller tasks on next tick.",
-            tableNameForLog,
-            task.partition(),
-            totalSize,
-            maxInputSizePerThread);
         skippedOversized++;
         continue;
       }
       out.add(task);
+    }
+    if (skippedOversized > 0) {
+      boolean allDeferred = out.isEmpty() && skippedOversized == tasks.size();
+      if (allDeferred) {
+        LOG.warn(
+            "Paimon table [{}] ALL {} tasks deferred as oversized — "
+                + "every AppendCompactTask exceeds maxInputSizePerThread={} bytes. "
+                + "Compaction is stalled; consider raising max-input-size-per-thread.",
+            tableNameForLog,
+            tasks.size(),
+            maxInputSizePerThread);
+      } else {
+        LOG.info(
+            "Paimon table [{}] deferred {}/{} tasks as oversized "
+                + "(maxInputSizePerThread={} bytes).",
+            tableNameForLog,
+            skippedOversized,
+            tasks.size(),
+            maxInputSizePerThread);
+      }
     }
     int deferredByCap = Math.max(0, tasks.size() - out.size() - skippedOversized);
     if (deferredByCap > 0) {

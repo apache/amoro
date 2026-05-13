@@ -44,6 +44,7 @@ import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableSnapshot;
 import org.apache.amoro.utils.ExpressionUtil;
+import org.apache.amoro.utils.SnowflakeIdGenerator;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataOperations;

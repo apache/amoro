@@ -455,7 +455,7 @@ public class AmsEnvironment {
 
   private String getProcessFactoriesConfig() {
     return "process-factories:\n"
-        + "  - name: paimon\n"
+        + "  - name: paimon-maintain\n"
         + "    enabled: true\n"
         + "    priority: 100\n"
         + "    properties:\n"

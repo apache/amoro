@@ -32,10 +32,10 @@ import org.apache.amoro.optimizing.BaseOptimizingInput;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingPlanResult;
 import org.apache.amoro.optimizing.OptimizingType;
-import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.TableOptimizingCommitter;
 import org.apache.amoro.optimizing.TableOptimizingPlanner;
 import org.apache.amoro.optimizing.TaskMetricsSummary;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.resource.ResourceGroup;
@@ -414,6 +414,14 @@ public class OptimizingQueue extends PersistentBase {
               .createPlanner(tableRuntime, table, getAvailableCore(), maxInputSizePerThread());
       if (planner.isNecessary()) {
         OptimizingPlanResult planResult = planner.plan();
+        if (planResult.getTasks() == null || planResult.getTasks().isEmpty()) {
+          LOG.info(
+              "Planner {} returned empty tasks despite isNecessary=true; skip creating empty process for {}",
+              planner.getClass().getSimpleName(),
+              tableRuntime.getTableIdentifier());
+          tableRuntime.completeEmptyProcess();
+          return null;
+        }
         return new TableOptimizingProcess(planResult, tableRuntime);
       } else {
         tableRuntime.completeEmptyProcess();
@@ -955,8 +963,8 @@ public class OptimizingQueue extends PersistentBase {
           () ->
               doAs(
                   OptimizingProcessMapper.class,
-                  mapper -> mapper.insertTaskRuntimes(legacyRewriteStageTaskList())),
-          () -> TaskFilesPersistence.persistTaskInputs(processId, legacyRewriteStageTaskList()),
+                  mapper -> mapper.insertTaskRuntimes(typedTaskRuntimes())),
+          () -> TaskFilesPersistence.persistTaskInputs(processId, typedTaskRuntimes()),
           () -> tableRuntime.beginProcess(this));
     }
 
@@ -991,15 +999,14 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     /**
-     * Narrow the widened taskMap view back to the Iceberg-typed shape required by {@code
-     * OptimizingProcessMapper.insertTaskRuntimes}. The mapper annotation is declared in terms of
-     * {@code RewriteStageTask} and only reads fields that every {@code StagedTaskDescriptor}
-     * exposes (taskId, tableId, partition, output blob, summary, properties), so the cast is safe
-     * for Paimon rows too — but the compile-time hint has to match until {@code insertTaskRuntimes}
-     * is widened in a follow-up commit.
+     * Narrow the task-map values to the bound expected by {@code insertTaskRuntimes} and {@code
+     * TaskFilesPersistence}. Every descriptor that enters {@code taskMap} extends {@code
+     * StagedTaskDescriptor<I,?,?>} where {@code I extends BaseOptimizingInput}, so the unchecked
+     * cast is safe.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private List<TaskRuntime<RewriteStageTask>> legacyRewriteStageTaskList() {
+    private List<TaskRuntime<? extends StagedTaskDescriptor<? extends BaseOptimizingInput, ?, ?>>>
+        typedTaskRuntimes() {
       return (List) Lists.newArrayList(taskMap.values());
     }
 
@@ -1021,6 +1028,49 @@ public class OptimizingQueue extends PersistentBase {
       descriptor.setInput(typedInput);
     }
 
+    /**
+     * Back-fill {@link TaskProperties#TASK_EXECUTOR_FACTORY_IMPL} on descriptors restored from
+     * pre-0.9 Iceberg rows whose {@code properties} column predates the multi-format refactor.
+     *
+     * <p>The injection is format-driven via {@link LegacyExecutorFactoryDefaults}: Iceberg /
+     * Mixed-Iceberg / Mixed-Hive get their canonical executor factory class name; Paimon and
+     * unknown formats are logged and skipped (Paimon planners always emit the key, so a missing
+     * entry for Paimon indicates a corrupted row the optimizer cannot safely resume).
+     *
+     * <p>Idempotent: rows that already carry the key are untouched, so new-format rows co-located
+     * with legacy Iceberg rows in the same process still work.
+     */
+    private void injectLegacyExecutorFactoryDefaults(
+        List<TaskRuntime<? extends StagedTaskDescriptor<? extends BaseOptimizingInput, ?, ?>>>
+            taskRuntimes) {
+      for (TaskRuntime<? extends StagedTaskDescriptor<? extends BaseOptimizingInput, ?, ?>>
+          taskRuntime : taskRuntimes) {
+        StagedTaskDescriptor<? extends BaseOptimizingInput, ?, ?> descriptor =
+            taskRuntime.getTaskDescriptor();
+        if (descriptor == null) {
+          continue;
+        }
+        Map<String, String> props = descriptor.getProperties();
+        if (props != null && props.containsKey(TaskProperties.TASK_EXECUTOR_FACTORY_IMPL)) {
+          continue;
+        }
+        String defaultImpl =
+            LegacyExecutorFactoryDefaults.resolveDefaultExecutorFactoryImpl(
+                tableRuntime.getFormat());
+        if (defaultImpl == null) {
+          continue;
+        }
+        if (descriptor.ensureExecutorFactoryImpl(defaultImpl)) {
+          LOG.info(
+              "Restored legacy task {} with default {}={} (format={})",
+              taskRuntime.getTaskId(),
+              TaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
+              defaultImpl,
+              tableRuntime.getFormat());
+        }
+      }
+    }
+
     private void loadTaskRuntimes(OptimizingProcess optimizingProcess) {
       try {
         // Recovery is format-agnostic after C3/C4: TaskDescriptorTypeConverter resolves the
@@ -1036,6 +1086,13 @@ public class OptimizingQueue extends PersistentBase {
                         mapper.selectTaskRuntimes(
                             tableRuntime.getTableIdentifier().getId(), processId));
         Map<Integer, BaseOptimizingInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
+        // Compensation for pre-0.9 Iceberg rows: TaskDescriptorTypeConverter correctly routes rows
+        // with a missing TASK_EXECUTOR_FACTORY_IMPL to RewriteStageTask, but the key itself is
+        // still absent from the descriptor's properties map on restore. OptimizerExecutor later
+        // reads that key via reflection to build the executor factory — without this injection it
+        // would NPE. Idempotent: we never overwrite an existing key (e.g. for Paimon rows where
+        // the Paimon planner already populated it).
+        injectLegacyExecutorFactoryDefaults(taskRuntimes);
         taskRuntimes.forEach(
             taskRuntime -> {
               taskRuntime.getCompletedFuture().whenCompleted(() -> acceptResult(taskRuntime));

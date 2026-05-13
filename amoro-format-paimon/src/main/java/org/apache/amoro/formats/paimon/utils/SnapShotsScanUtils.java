@@ -202,14 +202,21 @@ public class SnapShotsScanUtils {
             ? limit + Math.min(offset, 5) // Small buffer for cursor-based
             : limit + Math.min(offset, limit); // Conservative for first page
 
+    // In cursor mode the scan origin is already anchored to lastSnapshotId, so the
+    // incoming (page-1)*pageSize offset from the UI would double-skip a page's worth
+    // of snapshots. Ignore offset whenever a cursor is supplied; offset-based
+    // pagination (first page, no cursor) keeps the original skip semantics.
+    int effectiveOffset = (lastSnapshotId != null) ? 0 : offset;
+
     LOG.info(
-        "Starting {} pagination - lastSnapshotId:{}, currentStart:{}, targetRange:{}, limit:{}, offset:{}",
+        "Starting {} pagination - lastSnapshotId:{}, currentStart:{}, targetRange:{}, limit:{}, offset:{}, effectiveOffset:{}",
         logPrefix,
         lastSnapshotId,
         currentStart,
         targetRange,
         limit,
-        offset);
+        offset,
+        effectiveOffset);
 
     // Create pagination context and scan
     PaginationContext context =
@@ -217,7 +224,7 @@ public class SnapShotsScanUtils {
             limit,
             earliestSnapshotId,
             lastSnapshotId != null,
-            offset,
+            effectiveOffset,
             currentStart,
             targetRange,
             latestSnapshotId);

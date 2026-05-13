@@ -16,9 +16,17 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.utils;
+package org.apache.amoro.utils;
 
-/** SnowflakeId generator */
+/**
+ * SnowflakeId generator producing 54-bit IDs (JS-safe).
+ *
+ * <p>Layout: [1 bit fixed 0 | 40 bits timestamp (10ms granularity) | 5 bits machineId | 8 bits
+ * sequence].
+ *
+ * <p>Shared by AMS (Iceberg, Mixed) and format modules (Paimon) so that all process IDs share the
+ * same bit layout and {@link #extractTimestamp(long)} is universally decodable.
+ */
 public class SnowflakeIdGenerator {
   // Base timestamp (e.g., the start time of the service)
   private static final long EPOCH_SECONDS = 0L;

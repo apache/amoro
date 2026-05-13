@@ -21,8 +21,10 @@ package org.apache.amoro.process;
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.optimizing.TaskMetricsSummary;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.utils.SerializationUtil;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -84,6 +86,35 @@ public abstract class StagedTaskDescriptor<I, O, S> {
 
   public Map<String, String> getProperties() {
     return properties;
+  }
+
+  /**
+   * Ensure {@link TaskProperties#TASK_EXECUTOR_FACTORY_IMPL} is populated on this descriptor,
+   * setting it to {@code defaultFactoryImpl} when (and only when) the key is currently absent.
+   *
+   * <p>This is the back-fill hook for pre-0.9 Iceberg task rows restored from the DB: the key did
+   * not exist before the multi-format refactor, so the row's deserialized {@code properties} map
+   * either lacks the entry or is {@code null} entirely. A {@code null} properties map is replaced
+   * with a fresh mutable {@link HashMap} before writing the entry.
+   *
+   * <p>Callers must pass a non-null factory class name — see {@code
+   * LegacyExecutorFactoryDefaults#resolveDefaultExecutorFactoryImpl} for the routing table.
+   *
+   * @return {@code true} iff this call wrote the key (i.e. it was missing), {@code false} if the
+   *     key was already present.
+   */
+  public boolean ensureExecutorFactoryImpl(String defaultFactoryImpl) {
+    if (defaultFactoryImpl == null) {
+      throw new IllegalArgumentException("defaultFactoryImpl must not be null");
+    }
+    if (properties == null) {
+      properties = new HashMap<>();
+    }
+    if (properties.containsKey(TaskProperties.TASK_EXECUTOR_FACTORY_IMPL)) {
+      return false;
+    }
+    properties.put(TaskProperties.TASK_EXECUTOR_FACTORY_IMPL, defaultFactoryImpl);
+    return true;
   }
 
   public S getSummary() {
