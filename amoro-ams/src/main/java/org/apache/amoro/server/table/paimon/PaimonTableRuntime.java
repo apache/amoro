@@ -20,289 +20,55 @@ package org.apache.amoro.server.table.paimon;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableSnapshot;
-import org.apache.amoro.api.BlockableOperation;
-import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.metrics.MetricRegistry;
-import org.apache.amoro.optimizing.OptimizingType;
-import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
-import org.apache.amoro.process.ProcessStatus;
-import org.apache.amoro.server.AmoroServiceConstants;
-import org.apache.amoro.server.optimizing.OptimizingProcess;
-import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.optimizing.TaskRuntime;
-import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
-import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
-import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
-import org.apache.amoro.server.resource.OptimizerInstance;
-import org.apache.amoro.server.table.AbstractTableRuntime;
+import org.apache.amoro.iceberg.Constants;
+import org.apache.amoro.optimizing.TableRuntimeOptimizingState;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableConfigurations;
-import org.apache.amoro.server.table.TableOptimizingMetrics;
-import org.apache.amoro.server.table.TableOrphanFilesCleaningMetrics;
-import org.apache.amoro.server.table.TableSummaryMetrics;
-import org.apache.amoro.server.table.blocker.TableBlocker;
-import org.apache.amoro.server.table.cleanup.CleanupOperation;
-import org.apache.amoro.server.table.cleanup.TableRuntimeCleanupState;
-import org.apache.amoro.server.utils.SnowflakeIdGenerator;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
-import org.apache.amoro.table.StateKey;
 import org.apache.amoro.table.TableRuntimeStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 /**
  * Paimon-specific table runtime implementation.
  *
- * <p>This class extends AbstractTableRuntime to provide Paimon-specific functionality for table
- * optimization and maintenance operations. It manages the lifecycle of Paimon tables including
- * snapshot refresh, optimization processes, and cleanup operations.
+ * <p>Inherits the full optimizing/cleanup state machine from {@link DefaultTableRuntime}; only
+ * overrides {@link #refresh(AmoroTable)} so snapshot refresh goes through {@link
+ * AmoroTable#currentSnapshot()} (Paimon semantics) instead of the Iceberg-specific {@code
+ * MixedTable} cast in the parent.
  *
- * <p>Key differences from {@code DefaultTableRuntime}:
- *
- * <ul>
- *   <li>Uses {@link PaimonTableRuntimeOptimizingState} without change snapshot tracking
- *   <li>Refreshes snapshots via {@link PaimonTable#currentSnapshot()} instead of Iceberg APIs
- *   <li>No dependency on Iceberg-specific types (MixedTable, UnkeyedTable, etc.)
- * </ul>
+ * <p>Paimon does not have a separate change-snapshot concept; the inherited {@link
+ * TableRuntimeOptimizingState}'s {@code currentChangeSnapshotId} / {@code
+ * lastOptimizedChangeSnapshotId} fields stay at their default (invalid) values — harmless for
+ * Paimon because all Paimon-facing code paths read only {@code currentSnapshotId}.
  */
-public class PaimonTableRuntime extends AbstractTableRuntime {
+public class PaimonTableRuntime extends DefaultTableRuntime {
 
   private static final Logger LOG = LoggerFactory.getLogger(PaimonTableRuntime.class);
 
-  private static final StateKey<PaimonTableRuntimeOptimizingState> OPTIMIZING_STATE_KEY =
-      StateKey.stateKey("optimizing_state")
-          .jsonType(PaimonTableRuntimeOptimizingState.class)
-          .defaultValue(new PaimonTableRuntimeOptimizingState());
-
-  private static final StateKey<AbstractOptimizingEvaluator.PendingInput> PENDING_INPUT_KEY =
-      StateKey.stateKey("pending_input")
-          .jsonType(AbstractOptimizingEvaluator.PendingInput.class)
-          .defaultValue(new AbstractOptimizingEvaluator.PendingInput());
-
-  private static final StateKey<TableRuntimeCleanupState> CLEANUP_STATE_KEY =
-      StateKey.stateKey("cleanup_state")
-          .jsonType(TableRuntimeCleanupState.class)
-          .defaultValue(new TableRuntimeCleanupState());
-
-  private static final StateKey<Long> PROCESS_ID_KEY =
-      StateKey.stateKey("process_id").longType().defaultValue(0L);
-
-  public static final List<StateKey<?>> REQUIRED_STATES =
-      Lists.newArrayList(
-          OPTIMIZING_STATE_KEY, PENDING_INPUT_KEY, PROCESS_ID_KEY, CLEANUP_STATE_KEY);
-
-  private final TableOptimizingMetrics optimizingMetrics;
-  private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
-  private final TableSummaryMetrics tableSummaryMetrics;
-  private volatile long lastPlanTime;
-  private volatile long latestRefreshInterval = AmoroServiceConstants.INVALID_TIME;
-  private volatile boolean latestEvaluatedNeedOptimizing = true;
-  private volatile OptimizingProcess optimizingProcess;
-  private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
-
-  private final Supplier<AmoroTable<?>> loader;
-
   public PaimonTableRuntime(TableRuntimeStore store, Supplier<AmoroTable<?>> loader) {
-    super(store);
-    this.optimizingMetrics =
-        new TableOptimizingMetrics(store.getTableIdentifier(), store.getGroupName());
-    this.orphanFilesCleaningMetrics =
-        new TableOrphanFilesCleaningMetrics(store.getTableIdentifier());
-    this.tableSummaryMetrics = new TableSummaryMetrics(store.getTableIdentifier());
-    this.loader = loader;
-  }
-
-  public void recover(OptimizingProcess optimizingProcess) {
-    if (!Objects.equals(optimizingProcess.getProcessId(), getProcessId())) {
-      throw new IllegalStateException("Table runtime and processing are not matched!");
-    }
-    this.optimizingProcess = optimizingProcess;
-    if (this.optimizingProcess.getStatus() == ProcessStatus.SUCCESS) {
-      completeProcess(true);
-    }
-  }
-
-  @Override
-  public void registerMetric(MetricRegistry metricRegistry) {
-    this.optimizingMetrics.register(metricRegistry);
-    this.orphanFilesCleaningMetrics.register(metricRegistry);
-    this.tableSummaryMetrics.register(metricRegistry);
-  }
-
-  public TableOrphanFilesCleaningMetrics getOrphanFilesCleaningMetrics() {
-    return orphanFilesCleaningMetrics;
-  }
-
-  public long getCurrentSnapshotId() {
-    return store().getState(OPTIMIZING_STATE_KEY).getCurrentSnapshotId();
-  }
-
-  public long getLastPlanTime() {
-    return lastPlanTime;
-  }
-
-  public void setLastPlanTime(long lastPlanTime) {
-    this.lastPlanTime = lastPlanTime;
-  }
-
-  public long getLatestRefreshInterval() {
-    return latestRefreshInterval;
-  }
-
-  public void setLatestRefreshInterval(long latestRefreshInterval) {
-    this.latestRefreshInterval = latestRefreshInterval;
-  }
-
-  public boolean getLatestEvaluatedNeedOptimizing() {
-    return this.latestEvaluatedNeedOptimizing;
-  }
-
-  public void setLatestEvaluatedNeedOptimizing(boolean latestEvaluatedNeedOptimizing) {
-    this.latestEvaluatedNeedOptimizing = latestEvaluatedNeedOptimizing;
-  }
-
-  public OptimizingStatus getOptimizingStatus() {
-    return OptimizingStatus.ofCode(getStatusCode());
-  }
-
-  public long getLastMajorOptimizingTime() {
-    return store().getState(OPTIMIZING_STATE_KEY).getLastMajorOptimizingTime();
-  }
-
-  public long getLastFullOptimizingTime() {
-    return store().getState(OPTIMIZING_STATE_KEY).getLastFullOptimizingTime();
-  }
-
-  public long getLastMinorOptimizingTime() {
-    return store().getState(OPTIMIZING_STATE_KEY).getLastMinorOptimizingTime();
-  }
-
-  public long getLastOptimizedSnapshotId() {
-    return store().getState(OPTIMIZING_STATE_KEY).getLastOptimizedSnapshotId();
-  }
-
-  public OptimizingConfig getOptimizingConfig() {
-    return getTableConfiguration().getOptimizingConfig();
-  }
-
-  public AbstractOptimizingEvaluator.PendingInput getPendingInput() {
-    return store().getState(PENDING_INPUT_KEY);
-  }
-
-  public long getProcessId() {
-    return store().getState(PROCESS_ID_KEY);
-  }
-
-  public OptimizingProcess getOptimizingProcess() {
-    return optimizingProcess;
-  }
-
-  public void addTaskQuota(TaskRuntime.TaskQuota taskQuota) {
-    doAsIgnoreError(OptimizingProcessMapper.class, mapper -> mapper.insertTaskQuota(taskQuota));
-    taskQuotas.add(taskQuota);
-    long validTime = System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
-    this.taskQuotas.removeIf(task -> task.checkExpired(validTime));
-  }
-
-  public void resetTaskQuotas(long startTimeMills) {
-    store()
-        .synchronizedInvoke(
-            () -> {
-              long minProcessId = SnowflakeIdGenerator.getMinSnowflakeId(startTimeMills);
-              taskQuotas.clear();
-              taskQuotas.addAll(
-                  getAs(
-                      OptimizingProcessMapper.class,
-                      mapper ->
-                          mapper.selectTaskQuotasByTime(
-                              getTableIdentifier().getId(), minProcessId)));
-            });
-  }
-
-  public double calculateQuotaOccupy() {
-    double targetQuota = getOptimizingConfig().getTargetQuota();
-    int targetQuotaLimit =
-        targetQuota > 1 ? (int) targetQuota : (int) Math.ceil(targetQuota * getThreadCount());
-    return (double) getQuotaTime() / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME / targetQuotaLimit;
-  }
-
-  public boolean isAllowPartialCommit() {
-    return getOptimizingConfig().isAllowPartialCommit();
-  }
-
-  public void setPendingInput(AbstractOptimizingEvaluator.PendingInput pendingInput) {
-    long pendingFileSize =
-        pendingInput.getDataFileSize()
-            + pendingInput.getEqualityDeleteBytes()
-            + pendingInput.getPositionalDeleteBytes();
-    int pendingFileCount =
-        pendingInput.getDataFileCount()
-            + pendingInput.getEqualityDeleteFileCount()
-            + pendingInput.getPositionalDeleteFileCount();
-    store()
-        .begin()
-        .updateState(PENDING_INPUT_KEY, i -> pendingInput)
-        .updateStatusCode(
-            code -> {
-              if (code == OptimizingStatus.IDLE.getCode()) {
-                LOG.info(
-                    "{} status changed from idle to pending with pendingInput {}",
-                    getTableIdentifier(),
-                    pendingInput);
-                return OptimizingStatus.PENDING.getCode();
-              }
-              return code;
-            })
-        .updateTableSummary(
-            summary -> {
-              summary.setTotalFileSize(pendingFileSize);
-              summary.setTotalFileCount(pendingFileCount);
-            })
-        .commit();
-  }
-
-  public void setTableSummary(AbstractOptimizingEvaluator.PendingInput tableSummary) {
-    store()
-        .begin()
-        .updateTableSummary(
-            summary -> {
-              summary.setHealthScore(tableSummary.getHealthScore());
-              summary.setSmallFileScore(tableSummary.getSmallFileScore());
-              summary.setEqualityDeleteScore(tableSummary.getEqualityDeleteScore());
-              summary.setPositionalDeleteScore(tableSummary.getPositionalDeleteScore());
-              summary.setTotalFileCount(tableSummary.getTotalFileCount());
-              summary.setTotalFileSize(tableSummary.getTotalFileSize());
-            })
-        .commit();
-    tableSummaryMetrics.refresh(tableSummary);
+    super(store, loader);
   }
 
   /**
-   * Refresh the table runtime with the latest table metadata.
+   * Refresh the table runtime with the latest Paimon table metadata.
    *
-   * <p>This method refreshes Paimon table snapshots directly via {@link
-   * PaimonTable#currentSnapshot()}.
-   *
-   * @param table the Amoro table
-   * @return this table runtime
+   * <p>This override avoids the Iceberg-specific {@code MixedTable} cast in {@link
+   * DefaultTableRuntime#refresh(AmoroTable)}; snapshot is read via {@link
+   * AmoroTable#currentSnapshot()}.
    */
+  @Override
   public PaimonTableRuntime refresh(AmoroTable<?> table) {
     Map<String, String> tableConfig = table.properties();
     TableConfiguration newConfiguration = TableConfigurations.parseTableConfig(tableConfig);
     String newGroupName = newConfiguration.getOptimizingConfig().getOptimizerGroup();
 
-    if (!Objects.equals(getGroupName(), newGroupName)) {
-      if (optimizingProcess != null) {
-        optimizingProcess.close(false);
-      }
-      this.optimizingMetrics.optimizerGroupChanged(getGroupName());
+    if (!Objects.equals(getGroupName(), newGroupName) && getOptimizingProcess() != null) {
+      getOptimizingProcess().close(false);
     }
 
     store()
@@ -316,237 +82,39 @@ public class PaimonTableRuntime extends AbstractTableRuntime {
         .updateState(
             OPTIMIZING_STATE_KEY,
             s -> {
-              refreshSnapshots(table, s);
+              refreshPaimonSnapshot(table, s);
               return s;
             })
         .commit();
     return this;
   }
 
-  public void beginPlanning() {
-    store().begin().updateStatusCode(code -> OptimizingStatus.PLANNING.getCode()).commit();
-  }
-
-  public void planFailed() {
-    store().begin().updateStatusCode(code -> OptimizingStatus.PENDING.getCode()).commit();
-  }
-
-  public void beginProcess(OptimizingProcess optimizingProcess) {
-    this.optimizingProcess = optimizingProcess;
-
-    store()
-        .begin()
-        .updateState(PROCESS_ID_KEY, any -> optimizingProcess.getProcessId())
-        .updateStatusCode(
-            code ->
-                OptimizingStatus.ofOptimizingType(optimizingProcess.getOptimizingType()).getCode())
-        .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
-        .commit();
-  }
-
-  public long getLastCleanTime(CleanupOperation operation) {
-    TableRuntimeCleanupState state = store().getState(CLEANUP_STATE_KEY);
-    switch (operation) {
-      case ORPHAN_FILES_CLEANING:
-        return state.getLastOrphanFilesCleanTime();
-      case DANGLING_DELETE_FILES_CLEANING:
-        return state.getLastDanglingDeleteFilesCleanTime();
-      case DATA_EXPIRING:
-        return state.getLastDataExpiringTime();
-      case SNAPSHOTS_EXPIRING:
-        return state.getLastSnapshotsExpiringTime();
-      default:
-        return 0L;
-    }
-  }
-
-  public void updateLastCleanTime(CleanupOperation operation, long time) {
-    store()
-        .begin()
-        .updateState(
-            CLEANUP_STATE_KEY,
-            state -> {
-              switch (operation) {
-                case ORPHAN_FILES_CLEANING:
-                  state.setLastOrphanFilesCleanTime(time);
-                  break;
-                case DANGLING_DELETE_FILES_CLEANING:
-                  state.setLastDanglingDeleteFilesCleanTime(time);
-                  break;
-                case DATA_EXPIRING:
-                  state.setLastDataExpiringTime(time);
-                  break;
-                case SNAPSHOTS_EXPIRING:
-                  state.setLastSnapshotsExpiringTime(time);
-                  break;
-              }
-              return state;
-            })
-        .commit();
-  }
-
-  public void completeProcess(boolean success) {
-    OptimizingType processType = optimizingProcess.getOptimizingType();
-
-    store()
-        .begin()
-        .updateState(
-            OPTIMIZING_STATE_KEY,
-            state -> {
-              if (success) {
-                state.setLastOptimizedSnapshotId(optimizingProcess.getTargetSnapshotId());
-              }
-              if (processType == OptimizingType.MINOR) {
-                state.setLastMinorOptimizingTime(optimizingProcess.getPlanTime());
-              } else if (processType == OptimizingType.MAJOR) {
-                state.setLastMajorOptimizingTime(optimizingProcess.getPlanTime());
-              } else if (processType == OptimizingType.FULL) {
-                state.setLastFullOptimizingTime(optimizingProcess.getPlanTime());
-              }
-              return state;
-            })
-        .updateStatusCode(code -> OptimizingStatus.IDLE.getCode())
-        .commit();
-
-    optimizingMetrics.processComplete(processType, success, optimizingProcess.getPlanTime());
-    optimizingProcess = null;
-  }
-
-  public void completeEmptyProcess() {
-    OptimizingStatus originalStatus = getOptimizingStatus();
-    if (originalStatus == OptimizingStatus.IDLE) {
-      return;
-    }
-    store()
-        .begin()
-        .updateStatusCode(code -> OptimizingStatus.IDLE.getCode())
-        .updateState(
-            OPTIMIZING_STATE_KEY,
-            state -> {
-              state.setLastOptimizedSnapshotId(state.getCurrentSnapshotId());
-              return state;
-            })
-        .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
-        .commit();
-    optimizingProcess = null;
-  }
-
-  public void optimizingNotNecessary() {
-    if (getOptimizingStatus() == OptimizingStatus.IDLE) {
-      store()
-          .begin()
-          .updateState(
-              OPTIMIZING_STATE_KEY,
-              state -> {
-                state.setLastOptimizedSnapshotId(state.getCurrentSnapshotId());
-                return state;
-              })
-          .commit();
-    }
-  }
-
-  public void beginCommitting() {
-    store().begin().updateStatusCode(code -> OptimizingStatus.COMMITTING.getCode()).commit();
-  }
-
-  @Override
-  public void unregisterMetric() {
-    tableSummaryMetrics.unregister();
-    orphanFilesCleaningMetrics.unregister();
-    optimizingMetrics.unregister();
-  }
-
-  @Override
-  public void dispose() {
-    unregisterMetric();
-    store()
-        .synchronizedInvoke(
-            () -> {
-              Optional.ofNullable(optimizingProcess).ifPresent(process -> process.close(false));
-            });
-    super.dispose();
-  }
-
-  @Override
-  public AmoroTable<?> loadTable() {
-    return loader.get();
-  }
-
   /**
-   * Check if operation is blocked now.
-   *
-   * @param operation - operation to check
-   * @return true if blocked
+   * Refresh the Paimon table snapshot id into state. Paimon has a single snapshot (no separate
+   * change snapshot), so only {@code currentSnapshotId} is updated.
    */
-  public boolean isBlocked(BlockableOperation operation) {
-    List<TableBlocker> tableBlockers =
-        getAs(
-            TableBlockerMapper.class,
-            mapper ->
-                mapper.selectBlockers(
-                    getTableIdentifier().getCatalog(),
-                    getTableIdentifier().getDatabase(),
-                    getTableIdentifier().getTableName(),
-                    System.currentTimeMillis()));
-    return TableBlocker.conflict(operation, tableBlockers);
-  }
-
-  private long getQuotaTime() {
-    long calculatingEndTime = System.currentTimeMillis();
-    long calculatingStartTime = calculatingEndTime - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
-    taskQuotas.removeIf(task -> task.checkExpired(calculatingStartTime));
-    long finishedTaskQuotaTime =
-        taskQuotas.stream()
-            .mapToLong(taskQuota -> taskQuota.getQuotaTime(calculatingStartTime))
-            .sum();
-    return optimizingProcess == null
-        ? finishedTaskQuotaTime
-        : finishedTaskQuotaTime
-            + optimizingProcess.getRunningQuotaTime(calculatingStartTime, calculatingEndTime);
-  }
-
-  private int getThreadCount() {
-    List<OptimizerInstance> instances = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
-    if (instances == null || instances.isEmpty()) {
-      return 1;
-    }
-    String groupName = getGroupName();
-    return Math.max(
-        instances.stream()
-            .filter(instance -> Objects.equals(groupName, instance.getGroupName()))
-            .mapToInt(OptimizerInstance::getThreadCount)
-            .sum(),
-        1);
-  }
-
-  /**
-   * Refresh Paimon table snapshots.
-   *
-   * <p>Unlike Iceberg tables which may have both base and change snapshots, Paimon tables only have
-   * a single snapshot ID.
-   */
-  private boolean refreshSnapshots(
-      AmoroTable<?> amoroTable, PaimonTableRuntimeOptimizingState state) {
+  private void refreshPaimonSnapshot(AmoroTable<?> amoroTable, TableRuntimeOptimizingState state) {
     long lastSnapshotId = state.getCurrentSnapshotId();
-    long currentSnapshotId = getCurrentSnapshotFromTable(amoroTable);
+    long currentSnapshotId = resolveSnapshotId(amoroTable);
 
     if (currentSnapshotId != lastSnapshotId) {
-      LOG.debug("Refreshing table {} with snapshot id {}", getTableIdentifier(), currentSnapshotId);
+      LOG.debug(
+          "Refreshing Paimon table {} with snapshot id {}",
+          getTableIdentifier(),
+          currentSnapshotId);
       state.setCurrentSnapshotId(currentSnapshotId);
-      return true;
     }
-    return false;
   }
 
-  private long getCurrentSnapshotFromTable(AmoroTable<?> amoroTable) {
+  private long resolveSnapshotId(AmoroTable<?> amoroTable) {
     try {
       TableSnapshot snapshot = amoroTable.currentSnapshot();
       if (snapshot != null) {
         return Long.parseLong(snapshot.id());
       }
     } catch (Exception e) {
-      LOG.error("Failed to get snapshot ID from Paimon table {}", getTableIdentifier(), e);
+      LOG.error("Failed to get snapshot id from Paimon table {}", getTableIdentifier(), e);
     }
-    return PaimonTableRuntimeOptimizingState.INVALID_SNAPSHOT_ID;
+    return Constants.INVALID_SNAPSHOT_ID;
   }
 }

@@ -121,8 +121,7 @@ public class IcebergProcessFactory implements ProcessFactory {
       Map<String, Long> fromSequence,
       Map<String, Long> toSequence) {
     MixedTable mixedTable = (MixedTable) table.originalTable();
-    List<RewriteStageTask> tasks =
-            new ArrayList<>(((Collection<RewriteStageTask>) successTasks));
+    List<RewriteStageTask> tasks = new ArrayList<>(((Collection<RewriteStageTask>) successTasks));
     if (mixedTable.isUnkeyedTable()) {
       return new UnKeyedTableCommit(targetSnapshotId, mixedTable, tasks);
     } else {

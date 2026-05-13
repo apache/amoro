@@ -55,6 +55,15 @@ public interface TableOptimizing<
 
     /** Get properties. */
     Map<String, String> getOptions();
+
+    /**
+     * Human-readable summary of this input for logging / Spark UI jobDescription. Default impl
+     * returns the simple class name; format-specific inputs should override to include table id,
+     * partition, etc. Implementations MUST NOT leak sensitive data.
+     */
+    default String describe() {
+      return getClass().getSimpleName();
+    }
   }
 
   /** Produced by {@link OptimizingExecutor} represent compaction result. */

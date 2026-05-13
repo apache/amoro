@@ -95,6 +95,14 @@ public class PaimonCompactionInput extends BaseOptimizingInput {
   }
 
   @Override
+  public String describe() {
+    String tableId = table == null ? "<unknown>" : String.valueOf(table.id());
+    String partition = partitionPath == null || partitionPath.isEmpty() ? "<none>" : partitionPath;
+    return String.format(
+        "Amoro paimon compaction task, table:%s, partition:%s", tableId, partition);
+  }
+
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("table", table == null ? null : table.id())

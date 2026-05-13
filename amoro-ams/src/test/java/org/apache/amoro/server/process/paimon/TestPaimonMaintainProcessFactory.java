@@ -34,11 +34,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class TestPaimonProcessFactory {
+public class TestPaimonMaintainProcessFactory {
 
   @Test
   public void testSupportedActionAndTriggerStrategy() {
-    PaimonProcessFactory factory = new PaimonProcessFactory();
+    PaimonMaintainProcessFactory factory = new PaimonMaintainProcessFactory();
     Map<String, String> properties = new HashMap<>();
     properties.put("sync-table-meta.enabled", "true");
     properties.put("sync-table-meta.interval", "2 h");
@@ -57,7 +57,7 @@ public class TestPaimonProcessFactory {
 
   @Test
   public void testTriggerAndRecoverUseLocalEngine() throws Exception {
-    PaimonProcessFactory factory = new PaimonProcessFactory();
+    PaimonMaintainProcessFactory factory = new PaimonMaintainProcessFactory();
     factory.open(Collections.singletonMap("sync-table-meta.enabled", "true"));
 
     DefaultTableRuntime runtime = Mockito.mock(DefaultTableRuntime.class);
@@ -70,13 +70,12 @@ public class TestPaimonProcessFactory {
 
   @Test
   public void testOpenWithEmptyPropertiesUseDefaults() {
-    PaimonProcessFactory factory = new PaimonProcessFactory();
+    PaimonMaintainProcessFactory factory = new PaimonMaintainProcessFactory();
     factory.open(Collections.emptyMap());
 
     Set<org.apache.amoro.Action> actions =
         factory.supportedActions().getOrDefault(TableFormat.PAIMON, Collections.emptySet());
     Assert.assertTrue(actions.contains(PaimonActions.SYNC_TABLE_META));
-    Assert.assertTrue(actions.contains(PaimonActions.EXPIRE_SNAPSHOTS));
 
     ProcessTriggerStrategy syncStrategy =
         factory.triggerStrategy(TableFormat.PAIMON, PaimonActions.SYNC_TABLE_META);
@@ -86,23 +85,21 @@ public class TestPaimonProcessFactory {
 
   @Test
   public void testOpenShouldResetPreviousActions() {
-    PaimonProcessFactory factory = new PaimonProcessFactory();
+    PaimonMaintainProcessFactory factory = new PaimonMaintainProcessFactory();
     factory.open(Collections.emptyMap());
 
     Map<String, String> disabled = new HashMap<>();
     disabled.put("sync-table-meta.enabled", "false");
-    disabled.put("expire-snapshots.enabled", "false");
     factory.open(disabled);
 
     Set<org.apache.amoro.Action> actions =
         factory.supportedActions().getOrDefault(TableFormat.PAIMON, Collections.emptySet());
     Assert.assertFalse(actions.contains(PaimonActions.SYNC_TABLE_META));
-    Assert.assertFalse(actions.contains(PaimonActions.EXPIRE_SNAPSHOTS));
   }
 
   @Test
   public void testCloseShouldClearActions() {
-    PaimonProcessFactory factory = new PaimonProcessFactory();
+    PaimonMaintainProcessFactory factory = new PaimonMaintainProcessFactory();
     factory.open(Collections.emptyMap());
     factory.close();
 

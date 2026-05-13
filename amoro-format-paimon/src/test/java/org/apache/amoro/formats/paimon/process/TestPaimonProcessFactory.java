@@ -55,8 +55,16 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @DisplayName("PaimonProcessFactory")
 public class TestPaimonProcessFactory {
@@ -188,6 +196,71 @@ public class TestPaimonProcessFactory {
                 .getResources("META-INF/services/" + ProcessFactory.class.getName())
                 .hasMoreElements()
             && !foundInFile);
+  }
+
+  @Test
+  @DisplayName(
+      "generateProcessId is strictly positive and monotonically non-decreasing over 1k calls")
+  void testProcessIdMonotonic() {
+    long prev = 0L;
+    for (int i = 0; i < 1000; i++) {
+      long id = PaimonProcessFactory.generateProcessId();
+      assertTrue(id > 0L, "processId must be strictly positive, got " + id);
+      assertTrue(
+          id > prev,
+          "processId must be strictly increasing across single-threaded calls: prev="
+              + prev
+              + " curr="
+              + id);
+      prev = id;
+    }
+  }
+
+  @Test
+  @DisplayName("generateProcessId has no collisions under 2 threads x 1k calls")
+  void testProcessIdNoCollision() throws Exception {
+    int threads = 2;
+    int perThread = 1000;
+    CountDownLatch start = new CountDownLatch(1);
+    CountDownLatch done = new CountDownLatch(threads);
+    List<Long> all = new CopyOnWriteArrayList<>();
+    ExecutorService pool = Executors.newFixedThreadPool(threads);
+    try {
+      for (int t = 0; t < threads; t++) {
+        pool.submit(
+            () -> {
+              try {
+                start.await();
+                for (int i = 0; i < perThread; i++) {
+                  all.add(PaimonProcessFactory.generateProcessId());
+                }
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+              } finally {
+                done.countDown();
+              }
+            });
+      }
+      start.countDown();
+      assertTrue(done.await(30, TimeUnit.SECONDS), "Threads did not finish in time");
+    } finally {
+      pool.shutdownNow();
+    }
+    assertEquals(threads * perThread, all.size(), "Unexpected number of generated ids");
+    Set<Long> unique = new HashSet<>(all);
+    assertEquals(
+        all.size(),
+        unique.size(),
+        "Expected no collisions across "
+            + threads
+            + " threads x "
+            + perThread
+            + " calls, but saw "
+            + (all.size() - unique.size())
+            + " duplicates");
+    for (Long id : all) {
+      assertTrue(id > 0L, "all ids must stay strictly positive, got " + id);
+    }
   }
 
   private static Map<String, String> enabledProps() {

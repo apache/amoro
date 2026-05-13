@@ -94,13 +94,16 @@ public class TestPaimonCompactionExecutor {
   }
 
   @Test
-  @DisplayName("PaimonCompactionOutput summary exposes four zero-valued keys by default")
+  @DisplayName("PaimonCompactionOutput summary exposes Paimon + dashboard keys (zeros by default)")
   void testCompactionOutputSummary() {
     PaimonCompactionOutput output = new PaimonCompactionOutput();
     assertNotNull(output.summary());
-    assertEquals(4, output.summary().size());
+    // 4 Paimon-native + 4 dashboard-compat keys.
+    assertEquals(8, output.summary().size());
     assertEquals("0", output.summary().get(PaimonCompactionOutput.COMPACTED_FILES));
     assertEquals("0", output.summary().get(PaimonCompactionOutput.PRODUCED_FILES));
+    assertEquals("0", output.summary().get(PaimonCompactionOutput.DASHBOARD_INPUT_DATA_FILES));
+    assertEquals("0", output.summary().get(PaimonCompactionOutput.DASHBOARD_OUTPUT_DATA_FILES));
   }
 
   @Test

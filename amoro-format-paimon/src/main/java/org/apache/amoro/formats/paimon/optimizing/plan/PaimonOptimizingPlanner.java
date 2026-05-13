@@ -31,7 +31,9 @@ import org.apache.paimon.CoreOptions;
 import org.apache.paimon.Snapshot;
 import org.apache.paimon.append.AppendCompactCoordinator;
 import org.apache.paimon.append.AppendCompactTask;
+import org.apache.paimon.io.DataFileMeta;
 import org.apache.paimon.options.Options;
+import org.apache.paimon.partition.PartitionPredicate;
 import org.apache.paimon.predicate.Predicate;
 import org.apache.paimon.table.AppendOnlyFileStoreTable;
 import org.apache.paimon.table.sink.AppendCompactTaskSerializer;
@@ -43,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.ToLongFunction;
 
 /**
  * {@link TableOptimizingPlanner} for Paimon BUCKET_UNAWARE (AppendOnly, bucket=-1) tables.
@@ -67,9 +70,11 @@ import java.util.Map;
  * implementation class name under {@link TaskProperties#TASK_EXECUTOR_FACTORY_IMPL} so the
  * Optimizer side can reflectively load {@link PaimonCompactionExecutorFactory}.
  *
- * <p>The {@code commitUser} returned via {@link #getCommitUser()} must be persisted by the caller
- * to {@code TableProcessStore.properties} (key {@code "paimon.commit.user"}) so that retries /
- * replays reuse the same value and benefit from Paimon's built-in idempotent commit deduplication.
+ * <p>The {@code commitUser} returned via {@link #getCommitUser()} is generated once per {@link
+ * #plan()} call and is carried end-to-end inside each {@link
+ * org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput} (flushed through {@code
+ * TaskFilesPersistence}). Retries and AMS restarts therefore re-use the same value automatically —
+ * callers do not need to persist it separately to {@code TableProcessStore.properties}.
  */
 public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
 
@@ -81,13 +86,8 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
   private final long tableId;
   private final long processId;
   private final long planTime;
-
-  @SuppressWarnings("unused")
   private final double availableCore;
-
-  @SuppressWarnings("unused")
   private final long maxInputSizePerThread;
-
   private final Predicate partitionFilter;
 
   // Memoised state built the first time isNecessary() / plan() runs.
@@ -140,10 +140,14 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
       return false;
     }
 
-    AppendCompactCoordinator coordinator =
-        partitionFilter == null
-            ? new AppendCompactCoordinator(table, /* streamingMode */ false)
-            : new AppendCompactCoordinator(table, false, partitionFilter);
+    AppendCompactCoordinator coordinator;
+    if (partitionFilter == null) {
+      coordinator = new AppendCompactCoordinator(table, /* streamingMode */ false);
+    } else {
+      PartitionPredicate partitionPredicate =
+          PartitionPredicate.fromPredicate(table.schema().logicalPartitionType(), partitionFilter);
+      coordinator = new AppendCompactCoordinator(table, false, partitionPredicate);
+    }
     List<AppendCompactTask> tasks = coordinator.run();
     cachedTasks = tasks;
     necessary = !tasks.isEmpty();
@@ -176,8 +180,22 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
     Snapshot snapshot = table.snapshotManager().latestSnapshot();
     targetSnapshotId = snapshot == null ? -1L : snapshot.id();
 
-    List<PaimonCompactionTask> wrapped = new ArrayList<>(cachedTasks.size());
-    for (AppendCompactTask task : cachedTasks) {
+    // Apply plan-tick quota: cap count to ceil(availableCore) and defer oversized tasks.
+    // NOTE (§3.4 split contract): this does NOT re-split, merge, or otherwise mutate Paimon's
+    // native AppendCompactTask — we only decide how many of the coordinator's tasks get
+    // released this tick, and defer any single task whose total input size would violate
+    // maxInputSizePerThread. The remainder will be re-produced by the next plan tick because
+    // each Planner instance re-invokes AppendCompactCoordinator.run() in isNecessary().
+    List<AppendCompactTask> eligible =
+        applyQuota(
+            cachedTasks,
+            availableCore,
+            maxInputSizePerThread,
+            PaimonOptimizingPlanner::totalCompactBeforeSize,
+            paimonTable.id().getTableName());
+
+    List<PaimonCompactionTask> wrapped = new ArrayList<>(eligible.size());
+    for (AppendCompactTask task : eligible) {
       byte[] bytes;
       try {
         bytes = serializer.serialize(task);
@@ -213,12 +231,99 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
 
   /**
    * Return the {@code commitUser} generated for this plan, or {@code null} if {@link #plan()} has
-   * not yet been invoked or if no compaction was necessary. Callers should persist this to {@code
-   * TableProcessStore.properties} under {@link #COMMIT_USER_PROPERTY} and pass the same value to
-   * the Committer on retries.
+   * not yet been invoked or if no compaction was necessary.
+   *
+   * <p>The value is authoritative only <em>after</em> {@link #plan()} runs: it is propagated into
+   * every task via {@link
+   * org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput#getCommitUser()} and survives
+   * AMS restarts through {@code TaskFilesPersistence}. External callers do not need to persist it
+   * separately — {@link #COMMIT_USER_PROPERTY} is retained as a property-key constant for future
+   * integrations that might want to expose the value on {@code TableProcessStore.properties}.
    */
   public String getCommitUser() {
     return commitUser;
+  }
+
+  /**
+   * Apply the plan-tick quota to a list of {@link AppendCompactTask}s produced by {@link
+   * AppendCompactCoordinator#run()}.
+   *
+   * <p>Two independent filters are applied:
+   *
+   * <ul>
+   *   <li><b>Oversized-task deferral:</b> any task whose {@code compactBefore()} total size is
+   *       strictly greater than {@code maxInputSizePerThread} is skipped (deferred) on this tick
+   *       and an INFO log line is emitted. Re-planning on the next tick will re-evaluate.
+   *   <li><b>Count cap:</b> at most {@code ceil(availableCore)} eligible tasks are released per
+   *       tick; remaining tasks will be re-produced by the next {@code AppendCompactCoordinator
+   *       .run()} invocation in the following plan tick.
+   * </ul>
+   *
+   * <p>Critically, this method NEVER mutates a task's internal {@code compactBefore()} list —
+   * Paimon's atomic commit unit is preserved. Merging or splitting is explicitly disallowed per the
+   * plan-document §3.4 task-splitting contract.
+   *
+   * <p>Visible for testing so unit tests can inject a synthetic {@code sizeFn} without standing up
+   * a real Paimon file system.
+   */
+  static List<AppendCompactTask> applyQuota(
+      List<AppendCompactTask> tasks,
+      double availableCore,
+      long maxInputSizePerThread,
+      ToLongFunction<AppendCompactTask> sizeFn,
+      String tableNameForLog) {
+    if (tasks == null || tasks.isEmpty()) {
+      return Collections.emptyList();
+    }
+    // ceil(availableCore), but guarded against non-positive core values — in those degenerate
+    // cases we still allow at most one task through so progress is not completely stalled.
+    int cap = Math.max(1, (int) Math.ceil(availableCore));
+    List<AppendCompactTask> out = new ArrayList<>(Math.min(cap, tasks.size()));
+    int skippedOversized = 0;
+    for (AppendCompactTask task : tasks) {
+      if (out.size() >= cap) {
+        break;
+      }
+      long totalSize = sizeFn.applyAsLong(task);
+      if (totalSize > maxInputSizePerThread) {
+        LOG.info(
+            "Paimon table [{}] deferring oversized AppendCompactTask (partition={}, "
+                + "totalInputSize={} bytes > maxInputSizePerThread={} bytes) — raise "
+                + "max-input-size-per-thread or wait for smaller tasks on next tick.",
+            tableNameForLog,
+            task.partition(),
+            totalSize,
+            maxInputSizePerThread);
+        skippedOversized++;
+        continue;
+      }
+      out.add(task);
+    }
+    int deferredByCap = Math.max(0, tasks.size() - out.size() - skippedOversized);
+    if (deferredByCap > 0) {
+      LOG.info(
+          "Paimon table [{}] plan-tick quota: released {} task(s), deferred {} to next tick "
+              + "(cap={}, availableCore={}).",
+          tableNameForLog,
+          out.size(),
+          deferredByCap,
+          cap,
+          availableCore);
+    }
+    return out;
+  }
+
+  /** Sum the file sizes of the {@code compactBefore} list of an {@link AppendCompactTask}. */
+  static long totalCompactBeforeSize(AppendCompactTask task) {
+    List<DataFileMeta> before = task.compactBefore();
+    if (before == null || before.isEmpty()) {
+      return 0L;
+    }
+    long sum = 0L;
+    for (DataFileMeta meta : before) {
+      sum += meta.fileSize();
+    }
+    return sum;
   }
 
   @Override

@@ -47,10 +47,10 @@ import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.process.ProcessStatus;
-import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.process.ProcessFactoryRouter;
 import org.apache.amoro.server.process.iceberg.IcebergProcessFactory;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerThread;
@@ -88,7 +88,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   private final Executor planExecutor = Executors.newSingleThreadExecutor();
   private final QuotaProvider quotaProvider = resourceGroup -> 1;
-  private final ProcessFactory optimizingFactory = new IcebergProcessFactory();
+  private final ProcessFactoryRouter router =
+      new ProcessFactoryRouter(java.util.List.of(new IcebergProcessFactory()));
   private final long MAX_POLLING_TIME = 5000;
 
   private final OptimizerThread optimizerThread =
@@ -150,7 +151,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         planExecutor,
         Collections.singletonList(tableRuntime),
         1,
-        optimizingFactory);
+        router);
   }
 
   private OptimizingQueue buildOptimizingGroupService() {
@@ -161,7 +162,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         planExecutor,
         Collections.emptyList(),
         1,
-        optimizingFactory);
+        router);
   }
 
   @Test
@@ -217,7 +218,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             planExecutor,
             Collections.singletonList(tableRuntime),
             1,
-            optimizingFactory);
+            router);
 
     TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME, false);
     Assert.assertNotNull(task);
@@ -253,7 +254,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             planExecutor,
             Collections.singletonList(tableRuntime),
             1,
-            optimizingFactory);
+            router);
 
     TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task);
@@ -290,7 +291,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             planExecutor,
             Collections.singletonList(tableRuntime),
             1,
-            optimizingFactory);
+            router);
     TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     queue.ackTask(task.getTaskId(), optimizerThread);
     Assert.assertEquals(
@@ -724,7 +725,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             planExecutor,
             Collections.emptyList(),
             1,
-            optimizingFactory);
+            router);
 
     Method planInternal =
         OptimizingQueue.class.getDeclaredMethod("planInternal", DefaultTableRuntime.class);
@@ -736,6 +737,28 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Mockito.verify(tableRuntime).refresh(paimonTable);
     Mockito.verify(tableRuntime).completeEmptyProcess();
     Mockito.verify(tableRuntime, Mockito.never()).planFailed();
+
+    queue.dispose();
+  }
+
+  @Test
+  public void testProcessCachesFormatAtConstruction() throws ReflectiveOperationException {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+
+    // Drive a task through planning to create a TableOptimizingProcess.
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    Assert.assertNotNull(process);
+
+    // TableOptimizingProcess is a private inner class; reach the cached format
+    // via reflection. Only the plan-time constructor is exercised here; the
+    // recovery constructor sets this.format the same way from tableRuntime.getFormat().
+    Method getFormat = process.getClass().getDeclaredMethod("getFormat");
+    getFormat.setAccessible(true);
+    Assert.assertEquals(tableRuntime.getFormat(), getFormat.invoke(process));
 
     queue.dispose();
   }

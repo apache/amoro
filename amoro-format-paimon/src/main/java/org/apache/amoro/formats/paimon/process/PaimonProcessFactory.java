@@ -48,7 +48,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * {@link ProcessFactory} for Paimon BUCKET_UNAWARE (AppendOnly) compaction. Discovered via
@@ -175,6 +174,15 @@ public class PaimonProcessFactory implements ProcessFactory {
     return Optional.empty();
   }
 
+  /**
+   * Paimon optimizing does not use the generic {@link ProcessFactory#recover} entry point. AMS
+   * re-hydrates in-flight work via {@code TableOptimizingProcess(runtime, meta, state)} directly
+   * from persistent storage (see {@code DefaultOptimizingService}); any un-completed plan is simply
+   * re-planned on the next scheduler tick. This method is therefore dead code in the happy path and
+   * is kept only to satisfy the interface contract. If AMS ever routes a Paimon action through the
+   * generic {@code recover} path the failure is fatal and we want a loud exception rather than a
+   * silent no-op that masks a routing bug.
+   */
   @Override
   public TableProcess recover(TableRuntime tableRuntime, TableProcessStore store)
       throws RecoverProcessFailedException {
@@ -187,8 +195,50 @@ public class PaimonProcessFactory implements ProcessFactory {
     return id == null || id.getId() == null ? 0L : id.getId();
   }
 
-  private static long generateProcessId() {
-    // Non-negative long to stay compatible with Paimon's long identifier contract.
-    return ThreadLocalRandom.current().nextLong(1L, Long.MAX_VALUE);
+  // --- processId generator ---------------------------------------------------
+  // Aligned with AMS convention (cf. amoro-ams SnowflakeIdGenerator used by
+  // IcebergTableUtil#createOptimizingPlanner): monotonically non-decreasing,
+  // strictly positive longs so that Paimon's commit identifier contract (>= 0)
+  // and DB-key conventions stay consistent with the Iceberg path. We cannot
+  // depend on amoro-ams from amoro-format-paimon (reverse direction), so we
+  // inline an equivalent single-process generator here per plan §C6 fallback.
+  //
+  // Layout: [ 42 bits timestamp (ms) | 22 bits sequence ]. 22 bits yields ~4M
+  // IDs per ms before we must wait for the next ms — far above any realistic
+  // planner call rate. The high bit stays 0 → result is always positive.
+  private static final long SEQUENCE_BITS = 22L;
+  private static final long SEQUENCE_MASK = ~(-1L << SEQUENCE_BITS);
+  private static final long TIMESTAMP_SHIFT = SEQUENCE_BITS;
+
+  private static final Object ID_LOCK = new Object();
+  private static long lastTimestamp = -1L;
+  private static long sequence = 0L;
+
+  static long generateProcessId() {
+    synchronized (ID_LOCK) {
+      long ts = System.currentTimeMillis();
+      if (ts < lastTimestamp) {
+        // Clock skew: do not go backwards. Reuse lastTimestamp so monotonicity
+        // holds; sequence keeps incrementing until clock catches up.
+        ts = lastTimestamp;
+      }
+      if (ts == lastTimestamp) {
+        sequence = (sequence + 1) & SEQUENCE_MASK;
+        if (sequence == 0L) {
+          // Sequence exhausted in this ms; spin to next ms.
+          do {
+            ts = System.currentTimeMillis();
+          } while (ts <= lastTimestamp);
+        }
+      } else {
+        sequence = 0L;
+      }
+      lastTimestamp = ts;
+      long id = (ts << TIMESTAMP_SHIFT) | sequence;
+      // Guard the contract: must be strictly positive. A zero id could only
+      // happen if both timestamp and sequence were zero (epoch) which cannot
+      // occur on any real system, but keep the defensive guard anyway.
+      return id > 0L ? id : 1L;
+    }
   }
 }

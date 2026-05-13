@@ -29,10 +29,12 @@ import org.apache.iceberg.FileContent;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class MetricsSummary {
+public class MetricsSummary implements TaskMetricsSummary {
   public static final String INPUT_DATA_FILES = "input-data-files(rewrite)";
   public static final String INPUT_DATA_SIZE = "input-data-size(rewrite)";
   public static final String INPUT_DATA_RECORDS = "input-data-records(rewrite)";
@@ -111,6 +113,70 @@ public class MetricsSummary {
     return metricsSummary;
   }
 
+  /**
+   * Build a Paimon-flavored {@link MetricsSummary} from raw file/byte counters. Iceberg "input" /
+   * "output" slots are reused so the downstream dashboard renders without special-casing.
+   *
+   * <p>Records are intentionally left at zero: Paimon's BUCKET_UNAWARE {@code AppendCompactTask}
+   * does not expose per-row counts up to the Amoro scheduling layer (the record count lives in
+   * {@code DataFileMeta#rowCount()} but is not threaded through). Emitting zero here is less
+   * misleading than fabricating a number.
+   */
+  public static MetricsSummary fromPaimonStats(
+      long inputFiles, long inputBytes, long outputFiles, long outputBytes) {
+    MetricsSummary summary = new MetricsSummary();
+    summary.rewriteDataFileCnt = clampPositiveInt(inputFiles);
+    summary.rewriteDataSize = Math.max(0L, inputBytes);
+    summary.newDataFileCnt = clampPositiveInt(outputFiles);
+    summary.newDataSize = Math.max(0L, outputBytes);
+    return summary;
+  }
+
+  /**
+   * Aggregate a mixed list of {@link TaskMetricsSummary} into a single {@link MetricsSummary}.
+   * Entries that are already {@code MetricsSummary} are summed directly (preserving every detailed
+   * field like equality-deletes etc.); non-Iceberg entries (today: the Paimon adapter from {@code
+   * PaimonMetricsSummary#toMetricsSummary()}) are normalized via {@link #fromPaimonStats} reading
+   * the plain {@code input-data-*} / {@code output-data-*} keys they expose.
+   */
+  public static MetricsSummary aggregate(List<? extends TaskMetricsSummary> taskSummaries) {
+    List<MetricsSummary> normalized =
+        taskSummaries.stream().map(MetricsSummary::normalize).collect(Collectors.toList());
+    return new MetricsSummary(normalized);
+  }
+
+  private static MetricsSummary normalize(TaskMetricsSummary s) {
+    if (s instanceof MetricsSummary) {
+      return (MetricsSummary) s;
+    }
+    // Plain Paimon-compat keys — deliberately distinct from the Iceberg {@code
+    // "input-data-files(rewrite)"} naming because the Paimon path has no rewrite/read-only split.
+    Map<String, String> map = s.summaryAsMap(false);
+    long inputFiles = parseLongOr(map.get("input-data-files"), 0L);
+    long inputBytes = parseLongOr(map.get("input-data-size"), 0L);
+    long outputFiles = parseLongOr(map.get("output-data-files"), 0L);
+    long outputBytes = parseLongOr(map.get("output-data-size"), 0L);
+    return fromPaimonStats(inputFiles, inputBytes, outputFiles, outputBytes);
+  }
+
+  private static long parseLongOr(String value, long fallback) {
+    if (value == null || value.isEmpty()) {
+      return fallback;
+    }
+    try {
+      return Long.parseLong(value);
+    } catch (NumberFormatException e) {
+      return fallback;
+    }
+  }
+
+  private static int clampPositiveInt(long value) {
+    if (value <= 0) {
+      return 0;
+    }
+    return value > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) value;
+  }
+
   public MetricsSummary() {}
 
   protected MetricsSummary(RewriteFilesInput input) {
@@ -161,6 +227,7 @@ public class MetricsSummary {
         });
   }
 
+  @Override
   public Map<String, String> summaryAsMap(boolean humanReadable) {
     Map<String, String> summary = new LinkedHashMap<>();
     put(summary, INPUT_DATA_FILES, rewriteDataFileCnt);

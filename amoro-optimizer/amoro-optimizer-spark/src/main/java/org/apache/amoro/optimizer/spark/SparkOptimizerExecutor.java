@@ -22,7 +22,6 @@ import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.apache.amoro.optimizer.common.OptimizerExecutor;
-import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableList;
 import org.apache.amoro.utils.ExceptionUtil;
@@ -80,17 +79,22 @@ public class SparkOptimizerExecutor extends OptimizerExecutor {
   }
 
   private String jobDescription(OptimizingTask task) {
-    String description;
-    TableOptimizing.OptimizingInput input =
-        SerializationUtil.simpleDeserialize(task.getTaskInput());
-    if (input instanceof RewriteFilesInput) {
-      description =
-          String.format(
-              "Amoro rewrite files task, table name:%s, task id:%s",
-              ((RewriteFilesInput) input).getTable().name(), task.getTaskId());
-    } else {
-      description = String.format("Amoro optimizing task, task id:%s", task.getTaskId());
+    // Delegate to OptimizingInput#describe() so format-specific modules (Iceberg, Paimon, ...) own
+    // the phrasing and amoro-optimizer-spark stays free of direct format imports. If the input
+    // cannot be deserialized for any reason we still return a usable, task-id-scoped label so the
+    // Spark UI never shows a blank job description.
+    String describe;
+    try {
+      TableOptimizing.OptimizingInput input =
+          SerializationUtil.simpleDeserialize(task.getTaskInput());
+      describe = input == null ? "unknown-input" : input.describe();
+    } catch (Throwable t) {
+      LOG.warn(
+          "Failed to deserialize task[{}] input for jobDescription, falling back to generic label",
+          task.getTaskId(),
+          t);
+      describe = "undeserializable-input";
     }
-    return description;
+    return String.format("Amoro optimizing task, %s, task id:%s", describe, task.getTaskId());
   }
 }

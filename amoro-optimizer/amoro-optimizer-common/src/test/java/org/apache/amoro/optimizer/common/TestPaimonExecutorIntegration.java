@@ -76,4 +76,38 @@ public class TestPaimonExecutorIntegration {
         result.getErrorMessage().contains("missing required fields")
             || result.getErrorMessage().contains("IllegalStateException"));
   }
+
+  @Test
+  @DisplayName(
+      "executeTask with missing/malformed TASK_EXECUTOR_FACTORY_IMPL should return error (not throw)")
+  void testPaimonExecuteTaskFactoryMissingReturnsError() {
+    PaimonCompactionInput input = new PaimonCompactionInput();
+    OptimizingTask task = new OptimizingTask(new OptimizingTaskId(2L, 1));
+    task.setTaskInput(SerializationUtil.simpleSerialize(input));
+
+    // Case 1: missing TASK_EXECUTOR_FACTORY_IMPL
+    task.setProperties(Maps.newHashMap());
+    OptimizerConfig config = OptimizerTestHelpers.buildOptimizerConfig("thrift://localhost:1261");
+    OptimizingTaskResult missingResult =
+        OptimizerExecutor.executeTask(
+            config, 0, task, LoggerFactory.getLogger(TestPaimonExecutorIntegration.class));
+    assertNotNull(missingResult);
+    assertNotNull(
+        missingResult.getErrorMessage(),
+        "Missing TASK_EXECUTOR_FACTORY_IMPL should surface as errorMessage, not throw");
+
+    // Case 2: malformed / non-existent class
+    Map<String, String> malformedProps = Maps.newHashMap();
+    malformedProps.put(
+        TaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
+        "org.apache.amoro.formats.paimon.optimizing.NoSuchFactory");
+    task.setProperties(malformedProps);
+    OptimizingTaskResult malformedResult =
+        OptimizerExecutor.executeTask(
+            config, 0, task, LoggerFactory.getLogger(TestPaimonExecutorIntegration.class));
+    assertNotNull(malformedResult);
+    assertNotNull(
+        malformedResult.getErrorMessage(),
+        "Malformed TASK_EXECUTOR_FACTORY_IMPL should surface as errorMessage, not throw");
+  }
 }

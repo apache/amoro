@@ -67,15 +67,20 @@ public class TestPaimonCompactionOutputSerialization {
   }
 
   @Test
-  @DisplayName("summary() keys must cover all four standard entries and values must be numeric")
+  @DisplayName("summary() keys cover Paimon-native + dashboard-compat entries, all numeric")
   void testSummaryKeys() {
     PaimonCompactionOutput output = new PaimonCompactionOutput(null, 2, 5L, 500L, 1L, 450L);
     Map<String, String> summary = output.summary();
-    assertEquals(4, summary.size());
+    // 4 Paimon-native + 4 dashboard-compat (see PaimonCompactionOutput.summary javadoc for why).
+    assertEquals(8, summary.size());
     assertTrue(summary.containsKey(PaimonCompactionOutput.COMPACTED_FILES));
     assertTrue(summary.containsKey(PaimonCompactionOutput.COMPACTED_BYTES));
     assertTrue(summary.containsKey(PaimonCompactionOutput.PRODUCED_FILES));
     assertTrue(summary.containsKey(PaimonCompactionOutput.PRODUCED_BYTES));
+    assertTrue(summary.containsKey(PaimonCompactionOutput.DASHBOARD_INPUT_DATA_FILES));
+    assertTrue(summary.containsKey(PaimonCompactionOutput.DASHBOARD_INPUT_DATA_SIZE));
+    assertTrue(summary.containsKey(PaimonCompactionOutput.DASHBOARD_OUTPUT_DATA_FILES));
+    assertTrue(summary.containsKey(PaimonCompactionOutput.DASHBOARD_OUTPUT_DATA_SIZE));
     // Ensure numeric values (parseable as long).
     for (String v : summary.values()) {
       Long.parseLong(v);

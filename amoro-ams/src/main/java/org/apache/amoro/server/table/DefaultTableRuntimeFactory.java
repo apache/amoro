@@ -173,12 +173,18 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
     }
   }
 
-  /** Creator for Paimon format tables, producing {@link PaimonTableRuntime} instances. */
+  /**
+   * Creator for Paimon format tables, producing {@link PaimonTableRuntime} instances.
+   *
+   * <p>Since {@link PaimonTableRuntime} extends {@link DefaultTableRuntime}, it reuses the parent's
+   * {@link DefaultTableRuntime#REQUIRED_STATES} — no duplicate StateKey declarations, no conflict
+   * when the factory merges required state keys.
+   */
   private class PaimonTableRuntimeCreatorImpl implements TableRuntimeFactory.TableRuntimeCreator {
 
     @Override
     public List<StateKey<?>> requiredStateKeys() {
-      return PaimonTableRuntime.REQUIRED_STATES;
+      return DefaultTableRuntime.REQUIRED_STATES;
     }
 
     @Override

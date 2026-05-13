@@ -64,7 +64,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultTableRuntime.class);
 
-  private static final StateKey<TableRuntimeOptimizingState> OPTIMIZING_STATE_KEY =
+  protected static final StateKey<TableRuntimeOptimizingState> OPTIMIZING_STATE_KEY =
       StateKey.stateKey("optimizing_state")
           .jsonType(TableRuntimeOptimizingState.class)
           .defaultValue(new TableRuntimeOptimizingState());

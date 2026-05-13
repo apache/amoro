@@ -18,6 +18,7 @@
 
 package org.apache.amoro.formats.paimon.optimizing;
 
+import org.apache.amoro.optimizing.TaskMetricsSummary;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 
 import java.util.LinkedHashMap;
@@ -35,6 +36,12 @@ public class PaimonMetricsSummary {
   public static final String COMPACTED_BYTES = "compacted-bytes";
   public static final String PRODUCED_FILES = "produced-files";
   public static final String PRODUCED_BYTES = "produced-bytes";
+
+  // Iceberg-compatible keys — used when adapting to the shared TaskMetricsSummary view.
+  static final String ICEBERG_INPUT_DATA_FILES = "input-data-files";
+  static final String ICEBERG_INPUT_DATA_SIZE = "input-data-size";
+  static final String ICEBERG_OUTPUT_DATA_FILES = "output-data-files";
+  static final String ICEBERG_OUTPUT_DATA_SIZE = "output-data-size";
 
   private long compactedFileCount;
   private long compactedFileSize;
@@ -93,6 +100,28 @@ public class PaimonMetricsSummary {
     summary.put(PRODUCED_FILES, Long.toString(producedFileCount));
     summary.put(PRODUCED_BYTES, Long.toString(producedFileSize));
     return summary;
+  }
+
+  /**
+   * Adapt this Paimon summary to the shared {@link TaskMetricsSummary} view consumed by {@code
+   * OptimizingQueue.getSummary()}. Emits only the Iceberg-compatible {@code input-data-*} / {@code
+   * output-data-*} keys — record counts are not surfaced by Paimon's {@code AppendCompactTask}, so
+   * we intentionally omit those fields rather than lie with zero.
+   */
+  public TaskMetricsSummary toMetricsSummary() {
+    // Snapshot values at call-time to keep the returned adapter independent of later mutations.
+    final long compactedFiles = compactedFileCount;
+    final long compactedBytes = compactedFileSize;
+    final long producedFiles = producedFileCount;
+    final long producedBytes = producedFileSize;
+    return humanReadable -> {
+      Map<String, String> out = new LinkedHashMap<>();
+      out.put(ICEBERG_INPUT_DATA_FILES, Long.toString(compactedFiles));
+      out.put(ICEBERG_INPUT_DATA_SIZE, Long.toString(compactedBytes));
+      out.put(ICEBERG_OUTPUT_DATA_FILES, Long.toString(producedFiles));
+      out.put(ICEBERG_OUTPUT_DATA_SIZE, Long.toString(producedBytes));
+      return out;
+    };
   }
 
   @Override

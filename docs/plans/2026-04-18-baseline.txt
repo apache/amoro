@@ -1,0 +1,39 @@
+# Baseline Test Pass List (pre-refactor, C0)
+#
+# Branch: dev-paimon-compact
+# HEAD: 02a6acff6 [AMORO-4200] design spec for OptimizingQueue multi-format router
+# Date: 2026-04-18
+# JDK: 17.0.12 (Oracle)
+# Maven: 3.9.11
+
+## Command
+./mvnw -pl amoro-format-iceberg -am test -fae
+./mvnw -pl amoro-ams -am test -fae   # blocked by pre-existing compile bug — see Notes
+
+## Baseline Results — PASSED (no regression reference)
+amoro-common                      : Tests run=101  Failures=0  Errors=0  Skipped=0
+amoro-format-iceberg              : Tests run=496  Failures=0  Errors=0  Skipped=1
+amoro-mixed-hive                  : Tests run=172  Failures=0  Errors=0  Skipped=0
+
+## Baseline Results — BLOCKED (pre-existing compile bug)
+amoro-format-paimon               : COMPILE FAILURE
+   PaimonOptimizingPlanner.java:146 — `org.apache.paimon.predicate.Predicate`
+   cannot be converted to `org.apache.paimon.partition.PartitionPredicate`.
+   Paimon 1.3.1's `AppendCompactCoordinator(FileStoreTable, boolean, PartitionPredicate)`
+   signature changed from taking `Predicate` to `PartitionPredicate`. The bug
+   was committed in 27264e5156 but tests were only run against the paimon module
+   in isolation (with cached classes) and never validated on the full dep graph.
+   Fix: convert `Predicate` → `PartitionPredicate` via
+   `PartitionPredicate.fromPredicate(partitionType, predicate)` before calling
+   the 3-arg constructor.
+
+amoro-ams (+ downstream)          : NOT BUILT (blocked by amoro-format-paimon)
+
+## Iceberg/Mixed acceptance anchor
+Total (Iceberg + Mixed track): 769 tests, 0 failures, 0 errors, 1 skipped.
+After full refactor (C10 end), this number must be equal or higher.
+Any net reduction = regression.
+
+## Next step
+C1 is blocked until the pre-existing `PartitionPredicate` conversion is fixed.
+That fix is small (~5 lines) and will land as a separate commit before C1.

@@ -18,7 +18,15 @@
 
 package org.apache.amoro.server.persistence.converter;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionExecutorFactory;
+import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionTask;
+import org.apache.amoro.hive.optimizing.MixedHiveRewriteExecutorFactory;
+import org.apache.amoro.optimizing.IcebergRewriteExecutorFactory;
+import org.apache.amoro.optimizing.MixedIcebergRewriteExecutorFactory;
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
@@ -27,9 +35,45 @@ import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-// TODO : support more types of stage
+/**
+ * Routes {@code task_runtime} rows to the correct {@link StagedTaskDescriptor} subclass based on
+ * the task's {@link TaskProperties#TASK_EXECUTOR_FACTORY_IMPL} property.
+ *
+ * <p>The routing table is explicit and fail-fast: an unknown factory class name raises {@link
+ * IllegalStateException} rather than silently downgrading to {@link RewriteStageTask}. Rows whose
+ * {@code properties} column is null or missing the key default to {@link RewriteStageTask} for
+ * backwards compatibility with legacy Iceberg rows produced before the multi-format refactor.
+ *
+ * <p>New formats register themselves by appending one entry to {@link #FACTORY_IMPL_TO_TASK_CLASS}.
+ * We deliberately avoid {@code ServiceLoader}: the mapping is small, bounded, and benefits from
+ * compile-time class references so that renames in downstream modules break this file's build
+ * rather than surface as NullPointer at runtime.
+ */
 public class TaskDescriptorTypeConverter implements TypeHandler<StagedTaskDescriptor<?, ?, ?>> {
+
+  /**
+   * Factory-impl class name → descriptor class.
+   *
+   * <p>Mixed (Iceberg/Hive) tables share {@link RewriteStageTask} with pure Iceberg — only the
+   * executor differs, the descriptor/input/output types are identical.
+   */
+  static final Map<String, Class<? extends StagedTaskDescriptor<?, ?, ?>>>
+      FACTORY_IMPL_TO_TASK_CLASS;
+
+  static {
+    Map<String, Class<? extends StagedTaskDescriptor<?, ?, ?>>> m = new HashMap<>();
+    m.put(IcebergRewriteExecutorFactory.class.getName(), RewriteStageTask.class);
+    m.put(MixedIcebergRewriteExecutorFactory.class.getName(), RewriteStageTask.class);
+    m.put(MixedHiveRewriteExecutorFactory.class.getName(), RewriteStageTask.class);
+    m.put(PaimonCompactionExecutorFactory.class.getName(), PaimonCompactionTask.class);
+    FACTORY_IMPL_TO_TASK_CLASS = Collections.unmodifiableMap(m);
+  }
+
+  private static final Gson GSON = new Gson();
 
   @Override
   public void setParameter(
@@ -39,18 +83,73 @@ public class TaskDescriptorTypeConverter implements TypeHandler<StagedTaskDescri
   @Override
   public StagedTaskDescriptor<?, ?, ?> getResult(ResultSet rs, String columnName)
       throws SQLException {
-    return new RewriteStageTask();
+    return instantiate(readFactoryImpl(rs));
   }
 
   @Override
   public StagedTaskDescriptor<?, ?, ?> getResult(ResultSet rs, int columnIndex)
       throws SQLException {
-    return new RewriteStageTask();
+    return instantiate(readFactoryImpl(rs));
   }
 
   @Override
   public StagedTaskDescriptor<?, ?, ?> getResult(CallableStatement cs, int columnIndex)
       throws SQLException {
+    // CallableStatement path is not used by current MyBatis mappings; fall back to the default
+    // Iceberg descriptor to preserve the previous behaviour.
     return new RewriteStageTask();
+  }
+
+  /**
+   * Read the {@code properties} column (serialized as a JSON string by {@link Map2StringConverter})
+   * from the current row and extract the factory-impl entry. Returns {@code null} when the column
+   * is missing, null, empty, or does not carry the key — which callers treat as "legacy Iceberg
+   * row".
+   */
+  private static String readFactoryImpl(ResultSet rs) throws SQLException {
+    String raw;
+    try {
+      raw = rs.getString("properties");
+    } catch (SQLException e) {
+      // Column not present in the current ResultSet — treat as legacy row.
+      return null;
+    }
+    if (raw == null || raw.isEmpty()) {
+      return null;
+    }
+    Map<String, String> props;
+    try {
+      props = GSON.fromJson(raw, new TypeToken<Map<String, String>>() {}.getType());
+    } catch (RuntimeException e) {
+      // Malformed JSON — treat as legacy row rather than aborting the whole task recovery.
+      return null;
+    }
+    if (props == null) {
+      return null;
+    }
+    return props.get(TaskProperties.TASK_EXECUTOR_FACTORY_IMPL);
+  }
+
+  private static StagedTaskDescriptor<?, ?, ?> instantiate(String factoryImpl) {
+    if (factoryImpl == null || factoryImpl.isEmpty()) {
+      // Backwards-compat with pre-refactor rows: default to Iceberg's RewriteStageTask.
+      return new RewriteStageTask();
+    }
+    Class<? extends StagedTaskDescriptor<?, ?, ?>> clazz =
+        FACTORY_IMPL_TO_TASK_CLASS.get(factoryImpl);
+    if (clazz == null) {
+      throw new IllegalStateException(
+          "Unknown "
+              + TaskProperties.TASK_EXECUTOR_FACTORY_IMPL
+              + " = "
+              + factoryImpl
+              + "; register it in TaskDescriptorTypeConverter.FACTORY_IMPL_TO_TASK_CLASS");
+    }
+    try {
+      return clazz.getDeclaredConstructor().newInstance();
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException(
+          "Failed to instantiate task descriptor " + clazz.getName() + " for " + factoryImpl, e);
+    }
   }
 }

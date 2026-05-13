@@ -18,6 +18,7 @@
 
 package org.apache.amoro.formats.paimon.optimizing;
 
+import org.apache.amoro.optimizing.TaskMetricsSummary;
 import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.utils.SerializationUtil;
@@ -45,6 +46,15 @@ public class PaimonCompactionTask
 
   public String getPartition() {
     return partition;
+  }
+
+  @Override
+  public TaskMetricsSummary toMetricsSummary() {
+    // Delegate to PaimonMetricsSummary so the adapter lives next to the field definitions. Guard
+    // against null in the legacy path where summary is built lazily by calculateSummary().
+    return summary == null
+        ? new PaimonMetricsSummary().toMetricsSummary()
+        : summary.toMetricsSummary();
   }
 
   @Override

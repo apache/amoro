@@ -20,6 +20,7 @@ package org.apache.amoro.process;
 
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
+import org.apache.amoro.optimizing.TaskMetricsSummary;
 import org.apache.amoro.utils.SerializationUtil;
 
 import java.util.Map;
@@ -88,6 +89,14 @@ public abstract class StagedTaskDescriptor<I, O, S> {
   public S getSummary() {
     return summary;
   }
+
+  /**
+   * Return a format-agnostic, aggregation-friendly view of this task's summary. Each subclass
+   * adapts its typed {@code S} summary to a {@link TaskMetricsSummary}; there is deliberately no
+   * default implementation so a new descriptor cannot silently drop metrics by forgetting to
+   * override.
+   */
+  public abstract TaskMetricsSummary toMetricsSummary();
 
   public OptimizingTask extractProtocolTask(OptimizingTaskId taskId) {
     OptimizingTask optimizingTask = new OptimizingTask(taskId);
