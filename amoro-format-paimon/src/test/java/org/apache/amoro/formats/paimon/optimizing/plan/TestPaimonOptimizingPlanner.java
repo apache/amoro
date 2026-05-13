@@ -724,7 +724,7 @@ public class TestPaimonOptimizingPlanner {
         partitionSpec.put(fieldNames.get(i), values[i].toString());
       }
     }
-    return PartitionPathUtils.generatePartitionPath(partitionSpec, partitionType);
+    return PartitionPathUtils.generatePartitionPath(partitionSpec, partitionType, false);
   }
 
   @Test
