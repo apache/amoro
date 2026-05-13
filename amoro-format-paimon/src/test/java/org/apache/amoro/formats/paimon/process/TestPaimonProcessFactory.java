@@ -23,14 +23,23 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableRuntime;
+import org.apache.amoro.config.OptimizingConfig;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.formats.paimon.PaimonCatalogFactory;
 import org.apache.amoro.formats.paimon.PaimonTable;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionTask;
 import org.apache.amoro.formats.paimon.optimizing.commit.PaimonTableCommit;
 import org.apache.amoro.formats.paimon.optimizing.plan.PaimonOptimizingPlanner;
+import org.apache.amoro.optimizing.OptimizationContext;
+import org.apache.amoro.optimizing.OptimizingPlanResult;
+import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.TableOptimizingCommitter;
 import org.apache.amoro.optimizing.TableOptimizingPlanner;
 import org.apache.amoro.process.ProcessFactory;
@@ -39,9 +48,15 @@ import org.apache.amoro.table.TableIdentifier;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
+import org.apache.paimon.data.BinaryString;
+import org.apache.paimon.data.GenericRow;
 import org.apache.paimon.options.CatalogOptions;
 import org.apache.paimon.schema.Schema;
 import org.apache.paimon.table.Table;
+import org.apache.paimon.table.sink.BatchTableCommit;
+import org.apache.paimon.table.sink.BatchTableWrite;
+import org.apache.paimon.table.sink.BatchWriteBuilder;
+import org.apache.paimon.table.sink.CommitMessage;
 import org.apache.paimon.types.DataTypes;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -70,6 +85,11 @@ import java.util.concurrent.TimeUnit;
 public class TestPaimonProcessFactory {
 
   private static PaimonTable buildAppendTable(Path warehouse, String tableName) throws Exception {
+    return buildAppendTable(warehouse, tableName, Collections.emptyMap());
+  }
+
+  private static PaimonTable buildAppendTable(
+      Path warehouse, String tableName, Map<String, String> options) throws Exception {
     Map<String, String> props = new HashMap<>();
     props.put(CatalogOptions.WAREHOUSE.key(), warehouse.toUri().toString());
     Catalog catalog = PaimonCatalogFactory.paimonCatalog(props, new Configuration());
@@ -79,11 +99,25 @@ public class TestPaimonProcessFactory {
             .column("id", DataTypes.INT())
             .column("name", DataTypes.STRING())
             .option("bucket", "-1")
+            .options(options)
             .build();
     Identifier id = Identifier.create("db1", tableName);
     catalog.createTable(id, schema, true);
     Table table = catalog.getTable(id);
     return new PaimonTable(TableIdentifier.of("test_catalog", "db1", tableName), table);
+  }
+
+  private static void writeRecords(Table table, List<GenericRow> rowsInOneCommit) throws Exception {
+    BatchWriteBuilder builder = table.newBatchWriteBuilder();
+    try (BatchTableWrite write = builder.newWrite()) {
+      for (GenericRow row : rowsInOneCommit) {
+        write.write(row);
+      }
+      List<CommitMessage> messages = write.prepareCommit();
+      try (BatchTableCommit commit = builder.newCommit()) {
+        commit.commit(messages);
+      }
+    }
   }
 
   @Test
@@ -117,6 +151,113 @@ public class TestPaimonProcessFactory {
     TableOptimizingPlanner planner = factory.createPlanner(null, table, 1.0, 1024L);
     assertNotNull(planner);
     assertTrue(planner instanceof PaimonOptimizingPlanner);
+  }
+
+  @Test
+  @DisplayName("createPlanner propagates table optimizing config to Paimon planner")
+  void testCreatePlannerPropagatesOptimizingConfig(@TempDir Path warehouse) throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    Map<String, String> options = new HashMap<>();
+    options.put("target-file-size", "1 kb");
+    options.put("compaction.min.file-num", "2");
+    PaimonTable table = buildAppendTable(warehouse, "t_full_config", options);
+    writeRecords(
+        table.originalTable(),
+        Collections.singletonList(GenericRow.of(1, BinaryString.fromString("a"))));
+    writeRecords(
+        table.originalTable(),
+        Collections.singletonList(GenericRow.of(2, BinaryString.fromString("b"))));
+
+    TableRuntime runtime =
+        runtimeWithConfig(
+            new OptimizingConfig()
+                .setEnabled(true)
+                .setMinorLeastInterval(3600000)
+                .setFullTriggerInterval(1)
+                .setFullRewriteAllFiles(true)
+                .setMaxTaskSize(64L * 1024 * 1024),
+            0L,
+            0L,
+            0L);
+
+    OptimizingPlanResult<?> result =
+        factory.createPlanner(runtime, table, 1.0, 64L * 1024 * 1024).plan();
+
+    assertEquals(OptimizingType.FULL, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+  }
+
+  @Test
+  @DisplayName("createPlanner falls back to OptimizationContext optimizing config")
+  void testCreatePlannerUsesOptimizationContextConfigFallback(@TempDir Path warehouse)
+      throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    Map<String, String> options = new HashMap<>();
+    options.put("target-file-size", "1 kb");
+    options.put("compaction.min.file-num", "2");
+    PaimonTable table = buildAppendTable(warehouse, "t_context_config", options);
+    writeRecords(
+        table.originalTable(),
+        Collections.singletonList(GenericRow.of(1, BinaryString.fromString("a"))));
+    writeRecords(
+        table.originalTable(),
+        Collections.singletonList(GenericRow.of(2, BinaryString.fromString("b"))));
+
+    TableRuntime runtime =
+        runtimeWithOptimizationContextConfig(
+            new OptimizingConfig()
+                .setEnabled(true)
+                .setMinorLeastInterval(3600000)
+                .setFullTriggerInterval(1)
+                .setFullRewriteAllFiles(true)
+                .setMaxTaskSize(64L * 1024 * 1024),
+            0L,
+            0L,
+            0L);
+
+    OptimizingPlanResult<?> result =
+        factory.createPlanner(runtime, table, 1.0, 64L * 1024 * 1024).plan();
+
+    assertEquals(OptimizingType.FULL, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+  }
+
+  @Test
+  @DisplayName("createPlanner propagates last optimizing times from OptimizationContext")
+  void testCreatePlannerPropagatesLastOptimizingTimes(@TempDir Path warehouse) throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    Map<String, String> options = new HashMap<>();
+    options.put("target-file-size", "64 kb");
+    options.put("compaction.small-file-ratio", "1.0");
+    options.put("compaction.min.file-num", "3");
+    options.put("source.split.open-file-cost", "1 b");
+    PaimonTable table = buildAppendTable(warehouse, "t_last_times", options);
+    writeRecords(
+        table.originalTable(),
+        Collections.singletonList(GenericRow.of(1, BinaryString.fromString("a"))));
+    writeRecords(
+        table.originalTable(),
+        Collections.singletonList(GenericRow.of(2, BinaryString.fromString("b"))));
+
+    TableRuntime runtime =
+        runtimeWithConfig(
+            new OptimizingConfig()
+                .setEnabled(true)
+                .setMinorLeastInterval(1_000_000)
+                .setFullTriggerInterval(-1)
+                .setFullRewriteAllFiles(false)
+                .setMaxTaskSize(64L * 1024 * 1024),
+            System.currentTimeMillis(),
+            0L,
+            0L);
+
+    OptimizingPlanResult<?> result =
+        factory.createPlanner(runtime, table, 1.0, 64L * 1024 * 1024).plan();
+
+    assertTrue(result.getTasks().isEmpty());
   }
 
   @Test
@@ -267,5 +408,31 @@ public class TestPaimonProcessFactory {
     Map<String, String> props = new HashMap<>();
     props.put(PaimonProcessFactory.OPTIMIZER_ENABLED.key(), "true");
     return props;
+  }
+
+  private static TableRuntime runtimeWithConfig(
+      OptimizingConfig optimizingConfig, long lastMinor, long lastMajor, long lastFull) {
+    TableRuntime runtime =
+        mock(TableRuntime.class, withSettings().extraInterfaces(OptimizationContext.class));
+    when(runtime.getTableConfiguration())
+        .thenReturn(new TableConfiguration().setOptimizingConfig(optimizingConfig));
+    OptimizationContext context = (OptimizationContext) runtime;
+    when(context.getLastMinorOptimizingTime()).thenReturn(lastMinor);
+    when(context.getLastMajorOptimizingTime()).thenReturn(lastMajor);
+    when(context.getLastFullOptimizingTime()).thenReturn(lastFull);
+    return runtime;
+  }
+
+  private static TableRuntime runtimeWithOptimizationContextConfig(
+      OptimizingConfig optimizingConfig, long lastMinor, long lastMajor, long lastFull) {
+    TableRuntime runtime =
+        mock(TableRuntime.class, withSettings().extraInterfaces(OptimizationContext.class));
+    when(runtime.getTableConfiguration()).thenReturn(null);
+    OptimizationContext context = (OptimizationContext) runtime;
+    when(context.getOptimizingConfig()).thenReturn(optimizingConfig);
+    when(context.getLastMinorOptimizingTime()).thenReturn(lastMinor);
+    when(context.getLastMajorOptimizingTime()).thenReturn(lastMajor);
+    when(context.getLastFullOptimizingTime()).thenReturn(lastFull);
+    return runtime;
   }
 }

@@ -99,7 +99,22 @@ public class TestPaimonTableCommit {
             TableIdentifier.of("test_catalog", id.getDatabaseName(), id.getObjectName()),
             catalog.getTable(id));
     PaimonOptimizingPlanner planner =
-        new PaimonOptimizingPlanner(wrapped, tableId, processId, 1.0, 1024);
+        new PaimonOptimizingPlanner(
+            wrapped,
+            tableId,
+            processId,
+            1.0,
+            64L * 1024 * 1024,
+            new org.apache.amoro.config.OptimizingConfig()
+                .setEnabled(true)
+                .setMinorLeastInterval(1)
+                .setFullTriggerInterval(-1)
+                .setFullRewriteAllFiles(false)
+                .setMaxTaskSize(64L * 1024 * 1024),
+            0L,
+            0L,
+            0L,
+            null);
     OptimizingPlanResult<PaimonCompactionTask> result = planner.plan();
     List<PaimonCompactionTask> tasks = new ArrayList<>(result.getTasks());
     for (PaimonCompactionTask task : tasks) {

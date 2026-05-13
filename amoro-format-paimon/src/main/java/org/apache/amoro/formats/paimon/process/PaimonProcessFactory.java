@@ -26,10 +26,13 @@ import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.ConfigOption;
 import org.apache.amoro.config.ConfigOptions;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.config.OptimizingConfig;
+import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.formats.paimon.PaimonTable;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionTask;
 import org.apache.amoro.formats.paimon.optimizing.commit.PaimonTableCommit;
 import org.apache.amoro.formats.paimon.optimizing.plan.PaimonOptimizingPlanner;
+import org.apache.amoro.optimizing.OptimizationContext;
 import org.apache.amoro.optimizing.TableOptimizingCommitter;
 import org.apache.amoro.optimizing.TableOptimizingPlanner;
 import org.apache.amoro.process.ProcessFactory;
@@ -68,7 +71,7 @@ public class PaimonProcessFactory implements ProcessFactory {
   public static final ConfigOption<Boolean> OPTIMIZER_ENABLED =
       ConfigOptions.key("paimon-optimizer.enabled")
           .booleanType()
-          .defaultValue(true)
+          .defaultValue(false)
           .withDescription(
               "Enable Paimon optimizing (BUCKET_UNAWARE small-file compaction). Default off.");
 
@@ -122,8 +125,27 @@ public class PaimonProcessFactory implements ProcessFactory {
     long tableId = extractTableId(tableRuntime);
     // processId: uniquely identifies this plan attempt; used as Paimon commit identifier.
     long processId = generateProcessId();
+    OptimizingConfig optimizingConfig = optimizingConfig(tableRuntime);
+    long lastMinor = 0L;
+    long lastMajor = 0L;
+    long lastFull = 0L;
+    if (tableRuntime instanceof OptimizationContext) {
+      OptimizationContext context = (OptimizationContext) tableRuntime;
+      lastMinor = context.getLastMinorOptimizingTime();
+      lastMajor = context.getLastMajorOptimizingTime();
+      lastFull = context.getLastFullOptimizingTime();
+    }
     return new PaimonOptimizingPlanner(
-        paimonTable, tableId, processId, availableCore, maxInputSizePerThread);
+        paimonTable,
+        tableId,
+        processId,
+        availableCore,
+        maxInputSizePerThread,
+        optimizingConfig,
+        lastMinor,
+        lastMajor,
+        lastFull,
+        null);
   }
 
   @Override
@@ -194,6 +216,17 @@ public class PaimonProcessFactory implements ProcessFactory {
   private static long extractTableId(TableRuntime runtime) {
     ServerTableIdentifier id = runtime == null ? null : runtime.getTableIdentifier();
     return id == null || id.getId() == null ? 0L : id.getId();
+  }
+
+  private static OptimizingConfig optimizingConfig(TableRuntime runtime) {
+    TableConfiguration tableConfiguration =
+        runtime == null ? null : runtime.getTableConfiguration();
+    OptimizingConfig config =
+        tableConfiguration == null ? null : tableConfiguration.getOptimizingConfig();
+    if (config == null && runtime instanceof OptimizationContext) {
+      return ((OptimizationContext) runtime).getOptimizingConfig();
+    }
+    return config;
   }
 
   // --- processId generator ---------------------------------------------------

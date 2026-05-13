@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.formats.paimon.PaimonCatalogFactory;
 import org.apache.amoro.formats.paimon.PaimonTable;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionExecutorFactory;
@@ -39,9 +40,12 @@ import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.data.BinaryRow;
 import org.apache.paimon.data.BinaryString;
 import org.apache.paimon.data.GenericRow;
+import org.apache.paimon.io.DataFileMeta;
 import org.apache.paimon.options.CatalogOptions;
 import org.apache.paimon.schema.Schema;
+import org.apache.paimon.table.AppendOnlyFileStoreTable;
 import org.apache.paimon.table.Table;
+import org.apache.paimon.table.sink.AppendCompactTaskSerializer;
 import org.apache.paimon.table.sink.BatchTableCommit;
 import org.apache.paimon.table.sink.BatchTableWrite;
 import org.apache.paimon.table.sink.BatchWriteBuilder;
@@ -102,6 +106,24 @@ public class TestPaimonOptimizingPlanner {
     return catalog.getTable(id);
   }
 
+  private static Table createPartitionedAppendOnlyTable(
+      Catalog catalog, String tableName, Map<String, String> extraOptions) throws Exception {
+    catalog.createDatabase("db1", true);
+    Schema.Builder builder =
+        Schema.newBuilder()
+            .column("id", DataTypes.INT())
+            .column("name", DataTypes.STRING())
+            .column("dt", DataTypes.STRING())
+            .partitionKeys("dt")
+            .option("bucket", "-1");
+    for (Map.Entry<String, String> e : extraOptions.entrySet()) {
+      builder.option(e.getKey(), e.getValue());
+    }
+    Identifier id = Identifier.create("db1", tableName);
+    catalog.createTable(id, builder.build(), true);
+    return catalog.getTable(id);
+  }
+
   @Test
   @DisplayName("Append-only BUCKET_UNAWARE table with many small commits is picked up")
   void testUnawareTablePicksUpSmallFiles(@TempDir Path warehouse) throws Exception {
@@ -138,6 +160,205 @@ public class TestPaimonOptimizingPlanner {
           PaimonCompactionExecutorFactory.class.getName(),
           t.getProperties().get(TaskProperties.TASK_EXECUTOR_FACTORY_IMPL));
     }
+  }
+
+  @Test
+  @DisplayName("Planner returns MAJOR when table has undersized files")
+  void testMajorForUndersizedFiles(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> opts = new HashMap<>();
+    opts.put("target-file-size", "1 mb");
+    opts.put("compaction.small-file-ratio", "0.001");
+    opts.put("compaction.min.file-num", "2");
+    Table table = createAppendOnlyTable(catalog, "t_major_under", opts);
+    for (int i = 0; i < 4; i++) {
+      writeRecords(
+          table,
+          Collections.singletonList(
+              GenericRow.of(i, BinaryString.fromString(valueWithLength(64 * 1024)))));
+    }
+    PaimonTable paimonTable =
+        wrap(catalog.getTable(Identifier.create("db1", "t_major_under")), "t_major_under");
+
+    PaimonOptimizingPlanner planner =
+        new PaimonOptimizingPlanner(
+            paimonTable,
+            1L,
+            1L,
+            4.0,
+            64L * 1024 * 1024,
+            defaultOptimizingConfig().setFullTriggerInterval(-1),
+            0L,
+            0L,
+            0L,
+            null);
+
+    OptimizingPlanResult<PaimonCompactionTask> result = planner.plan();
+
+    assertEquals(OptimizingType.MAJOR, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+  }
+
+  @Test
+  @DisplayName("Plan result type follows tasks released after quota")
+  void testPlanTypeFollowsQuotaReleasedTasks(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> opts = new HashMap<>();
+    opts.put("target-file-size", "1 mb");
+    opts.put("compaction.small-file-ratio", "0.001");
+    opts.put("compaction.min.file-num", "2");
+    Table table = createPartitionedAppendOnlyTable(catalog, "t_quota_type", opts);
+
+    writeRecords(
+        table,
+        Collections.singletonList(
+            GenericRow.of(1, BinaryString.fromString("small-1"), BinaryString.fromString("p1"))));
+    writeRecords(
+        table,
+        Collections.singletonList(
+            GenericRow.of(2, BinaryString.fromString("small-2"), BinaryString.fromString("p1"))));
+    writeRecords(
+        table,
+        Collections.singletonList(
+            GenericRow.of(
+                3,
+                BinaryString.fromString(valueWithLength(64 * 1024)),
+                BinaryString.fromString("p2"))));
+    writeRecords(
+        table,
+        Collections.singletonList(
+            GenericRow.of(
+                4,
+                BinaryString.fromString(valueWithLength(64 * 1024)),
+                BinaryString.fromString("p2"))));
+    PaimonTable paimonTable =
+        wrap(catalog.getTable(Identifier.create("db1", "t_quota_type")), "t_quota_type");
+
+    PaimonOptimizingPlanner planner =
+        new PaimonOptimizingPlanner(
+            paimonTable,
+            1L,
+            1L,
+            1.0,
+            64L * 1024 * 1024,
+            defaultOptimizingConfig().setFullTriggerInterval(-1),
+            0L,
+            0L,
+            0L,
+            null);
+
+    OptimizingPlanResult<PaimonCompactionTask> result = planner.plan();
+
+    assertEquals(1, result.getTasks().size());
+    assertEquals(OptimizingType.MINOR, result.getOptimizingType());
+  }
+
+  @Test
+  @DisplayName("Planner returns FULL when full interval is reached")
+  void testFullRewriteAllFiles(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> opts = new HashMap<>();
+    opts.put("target-file-size", "2 kb");
+    opts.put("compaction.small-file-ratio", "0.7");
+    opts.put("compaction.min.file-num", "2");
+    Table table = createAppendOnlyTable(catalog, "t_full", opts);
+    for (int i = 0; i < 3; i++) {
+      writeRecords(
+          table, Collections.singletonList(GenericRow.of(i, BinaryString.fromString("r-" + i))));
+    }
+    PaimonTable paimonTable = wrap(catalog.getTable(Identifier.create("db1", "t_full")), "t_full");
+
+    PaimonOptimizingPlanner planner =
+        new PaimonOptimizingPlanner(
+            paimonTable,
+            1L,
+            1L,
+            4.0,
+            64L * 1024 * 1024,
+            defaultOptimizingConfig().setFullTriggerInterval(1).setFullRewriteAllFiles(true),
+            0L,
+            0L,
+            0L,
+            null);
+
+    OptimizingPlanResult<PaimonCompactionTask> result = planner.plan();
+
+    assertEquals(OptimizingType.FULL, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+  }
+
+  @Test
+  @DisplayName("FULL rewrite-all keeps healthy large files in final packed task")
+  void testFullRewriteAllFilesSurvivesTaskPacking(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> opts = new HashMap<>();
+    opts.put("target-file-size", "1 kb");
+    opts.put("compaction.small-file-ratio", "0.7");
+    opts.put("compaction.min.file-num", "2");
+    Table table = createAppendOnlyTable(catalog, "t_full_large", opts);
+    writeRecords(table, Collections.singletonList(GenericRow.of(1, BinaryString.fromString("s"))));
+    writeRecords(
+        table,
+        Collections.singletonList(
+            GenericRow.of(2, BinaryString.fromString(valueWithLength(128 * 1024)))));
+    PaimonTable paimonTable =
+        wrap(catalog.getTable(Identifier.create("db1", "t_full_large")), "t_full_large");
+
+    PaimonOptimizingPlanner planner =
+        new PaimonOptimizingPlanner(
+            paimonTable,
+            1L,
+            1L,
+            4.0,
+            512L,
+            defaultOptimizingConfig()
+                .setFullTriggerInterval(1)
+                .setFullRewriteAllFiles(true)
+                .setMaxTaskSize(512L),
+            0L,
+            0L,
+            0L,
+            null);
+
+    OptimizingPlanResult<PaimonCompactionTask> result = planner.plan();
+
+    assertEquals(OptimizingType.FULL, result.getOptimizingType());
+    List<DataFileMeta> compactBefore = compactBeforeFiles(result);
+    assertEquals(2, compactBefore.size());
+    assertTrue(
+        compactBefore.stream().anyMatch(file -> file.fileSize() >= 1024L),
+        "rewrite-all-files=true must keep the healthy large file after task packing");
+  }
+
+  @Test
+  @DisplayName("Planner target snapshot is bound to the scan used by isNecessary")
+  void testTargetSnapshotBoundToNecessaryScan(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> opts = new HashMap<>();
+    opts.put("target-file-size", "1 kb");
+    opts.put("compaction.min.file-num", "2");
+    Table table = createAppendOnlyTable(catalog, "t_snapshot", opts);
+    for (int i = 0; i < 3; i++) {
+      writeRecords(
+          table, Collections.singletonList(GenericRow.of(i, BinaryString.fromString("r-" + i))));
+    }
+    Identifier id = Identifier.create("db1", "t_snapshot");
+    PaimonTable paimonTable = wrap(catalog.getTable(id), "t_snapshot");
+    PaimonOptimizingPlanner planner =
+        new PaimonOptimizingPlanner(paimonTable, 1L, 1L, 4.0, 64L * 1024 * 1024);
+
+    assertTrue(planner.isNecessary());
+    long scannedSnapshotId =
+        ((AppendOnlyFileStoreTable) catalog.getTable(id)).snapshotManager().latestSnapshot().id();
+    writeRecords(
+        table, Collections.singletonList(GenericRow.of(99, BinaryString.fromString("new-row"))));
+    long latestSnapshotId =
+        ((AppendOnlyFileStoreTable) catalog.getTable(id)).snapshotManager().latestSnapshot().id();
+
+    OptimizingPlanResult<PaimonCompactionTask> result = planner.plan();
+
+    assertTrue(latestSnapshotId > scannedSnapshotId);
+    assertEquals(scannedSnapshotId, result.getTargetSnapshotId());
   }
 
   @Test
@@ -238,11 +459,9 @@ public class TestPaimonOptimizingPlanner {
     }
   }
 
-  // ---- C7 applyQuota unit tests (synthetic AppendCompactTasks, stub size function) ----
-  // These tests intentionally avoid spinning up a real Paimon filesystem / coordinator: they
-  // exercise the quota predicate in isolation, which is all C7 is responsible for. The split
-  // contract (§3.4) is: Amoro does NOT mutate / merge / split AppendCompactTask — only caps
-  // count and defers oversized tasks.
+  // ---- applyQuota unit tests (synthetic AppendCompactTasks, stub size function) ----
+  // Packer owns best-effort input-size splitting. applyQuota only caps how many already-packed
+  // atomic Paimon tasks are released in one planning tick.
 
   private static List<AppendCompactTask> synthesiseTasks(int n) {
     List<AppendCompactTask> list = new ArrayList<>(n);
@@ -257,6 +476,19 @@ public class TestPaimonOptimizingPlanner {
 
   private static ToLongFunction<AppendCompactTask> fixedSize(long size) {
     return task -> size;
+  }
+
+  private static List<DataFileMeta> compactBeforeFiles(
+      OptimizingPlanResult<PaimonCompactionTask> result) throws Exception {
+    AppendCompactTaskSerializer serializer = new AppendCompactTaskSerializer();
+    List<DataFileMeta> files = new ArrayList<>();
+    for (PaimonCompactionTask task : result.getTasks()) {
+      AppendCompactTask appendTask =
+          serializer.deserialize(
+              task.getInput().getSerializerVersion(), task.getInput().getTaskBytes());
+      files.addAll(appendTask.compactBefore());
+    }
+    return files;
   }
 
   @Test
@@ -276,8 +508,8 @@ public class TestPaimonOptimizingPlanner {
   }
 
   @Test
-  @DisplayName("C7: oversized task is deferred (skipped), plan returns empty under-tight quota")
-  void testApplyQuotaDefersOversizedTask() {
+  @DisplayName("applyQuota releases oversized atomic tasks after packer best effort")
+  void testApplyQuotaDoesNotDropOversizedAtomicTask() {
     List<AppendCompactTask> tasks = synthesiseTasks(1);
     long maxInputSizePerThread = 64L * 1024 * 1024; // 64 MiB
     ToLongFunction<AppendCompactTask> sizeFn = fixedSize(200L * 1024 * 1024); // 200 MiB — oversized
@@ -286,7 +518,8 @@ public class TestPaimonOptimizingPlanner {
         PaimonOptimizingPlanner.applyQuota(
             tasks, 4.0, maxInputSizePerThread, sizeFn, "t_oversized");
 
-    assertTrue(out.isEmpty(), "the only task exceeds maxInputSizePerThread and must be deferred");
+    assertEquals(1, out.size());
+    assertTrue(out.get(0) == tasks.get(0));
   }
 
   @Test
@@ -307,8 +540,8 @@ public class TestPaimonOptimizingPlanner {
   }
 
   @Test
-  @DisplayName("C7: mixed sizes — oversized ones skipped, eligible ones fill up to cap")
-  void testApplyQuotaMixedSizesRespectsBothFilters() {
+  @DisplayName("applyQuota preserves order and does not skip oversized tasks")
+  void testApplyQuotaPreservesOrderWithMixedSizes() {
     List<AppendCompactTask> tasks = synthesiseTasks(5);
     long maxInputSizePerThread = 100L;
     // task0: ok, task1: oversized, task2: ok, task3: ok, task4: oversized
@@ -323,11 +556,9 @@ public class TestPaimonOptimizingPlanner {
         PaimonOptimizingPlanner.applyQuota(
             tasks, 2.0, maxInputSizePerThread, sizes::get, "t_mixed");
 
-    // cap=ceil(2.0)=2; oversized task1 skipped; task0 + task2 fill the cap; task3/task4 never
-    // reached this tick (task3 would be released next tick; task4 deferred for size).
     assertEquals(2, out.size());
     assertTrue(out.get(0) == tasks.get(0));
-    assertTrue(out.get(1) == tasks.get(2));
+    assertTrue(out.get(1) == tasks.get(1));
   }
 
   @Test
@@ -341,64 +572,21 @@ public class TestPaimonOptimizingPlanner {
         PaimonOptimizingPlanner.applyQuota(null, 1.0, 1024, fixedSize(0L), "t_null").isEmpty());
   }
 
-  // ---- K2 regression: empty plan after defer flips isNecessary() back to false ----
-
-  @Test
-  @DisplayName(
-      "K2: all tasks oversized -> isNecessary()=true pre-plan, plan()=empty, isNecessary()=false post-plan")
-  void allTasksDeferredYieldsEmptyPlanAndNotNecessary(@TempDir Path warehouse) throws Exception {
-    Catalog catalog = fsCatalog(warehouse);
-    Map<String, String> opts = new HashMap<>();
-    opts.put("target-file-size", "1 kb");
-    opts.put("compaction.min.file-num", "2");
-    Table table = createAppendOnlyTable(catalog, "t_all_oversized", opts);
-    // Two commits => at least two small data files => coordinator must find candidates.
-    for (int i = 0; i < 2; i++) {
-      writeRecords(
-          table, Collections.singletonList(GenericRow.of(i, BinaryString.fromString("r-" + i))));
-    }
-    PaimonTable paimonTable =
-        wrap(catalog.getTable(Identifier.create("db1", "t_all_oversized")), "t_all_oversized");
-
-    // maxInputSizePerThread=1 byte — every real file is comfortably above this, so every
-    // AppendCompactTask the coordinator emits must be deferred by applyQuota.
-    PaimonOptimizingPlanner planner =
-        new PaimonOptimizingPlanner(
-            paimonTable, 1L /* tableId */, 1L /* processId */, 4.0, 1L /* maxInputSizePerThread */);
-
-    assertTrue(
-        planner.isNecessary(),
-        "coordinator must detect small-file candidates before quota filtering");
-
-    OptimizingPlanResult<PaimonCompactionTask> result = planner.plan();
-    assertNotNull(result);
-    assertTrue(
-        result.getTasks().isEmpty(),
-        "all tasks were oversized — applyQuota defers them; plan() must return empty");
-
-    assertFalse(
-        planner.isNecessary(),
-        "after an all-deferred plan tick, isNecessary() must flip to false so the AMS "
-            + "guard does not spin up an empty TableOptimizingProcess");
+  private static OptimizingConfig defaultOptimizingConfig() {
+    return new OptimizingConfig()
+        .setEnabled(true)
+        .setMinorLeastInterval(3600000)
+        .setFullTriggerInterval(-1)
+        .setFullRewriteAllFiles(false)
+        .setMaxTaskSize(64L * 1024 * 1024);
   }
 
-  @Test
-  @DisplayName("K2: partial defer still surfaces the fitting tasks; isNecessary() stays true")
-  void partialDeferStillReturnsRemaining() {
-    // Exercise applyQuota directly with synthetic tasks to keep the test hermetic — we are
-    // verifying the quota predicate, not a real coordinator. 3 tasks, 2 oversized + 1 in-limit.
-    List<AppendCompactTask> tasks = synthesiseTasks(3);
-    long maxInputSizePerThread = 64L * 1024 * 1024; // 64 MiB
-    Map<AppendCompactTask, Long> sizes = new IdentityHashMap<>();
-    sizes.put(tasks.get(0), 200L * 1024 * 1024); // oversized
-    sizes.put(tasks.get(1), 1L * 1024 * 1024); // fits
-    sizes.put(tasks.get(2), 200L * 1024 * 1024); // oversized
-
-    List<AppendCompactTask> out =
-        PaimonOptimizingPlanner.applyQuota(
-            tasks, 4.0, maxInputSizePerThread, sizes::get, "t_partial");
-
-    assertEquals(1, out.size(), "only the single in-limit task should be released");
-    assertTrue(out.get(0) == tasks.get(1), "released task must be the one that fits");
+  private static String valueWithLength(int length) {
+    StringBuilder builder = new StringBuilder(length);
+    for (int i = 0; i < length; i++) {
+      int value = i * 1103515245 + 12345;
+      builder.append((char) (33 + Math.floorMod(value >>> 16, 94)));
+    }
+    return builder.toString();
   }
 }

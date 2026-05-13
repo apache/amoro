@@ -18,6 +18,7 @@
 
 package org.apache.amoro.formats.paimon.optimizing.plan;
 
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.formats.paimon.PaimonTable;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionExecutorFactory;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput;
@@ -28,12 +29,10 @@ import org.apache.amoro.optimizing.TableOptimizingPlanner;
 import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.paimon.CoreOptions;
-import org.apache.paimon.Snapshot;
-import org.apache.paimon.append.AppendCompactCoordinator;
 import org.apache.paimon.append.AppendCompactTask;
+import org.apache.paimon.data.BinaryRow;
 import org.apache.paimon.io.DataFileMeta;
 import org.apache.paimon.options.Options;
-import org.apache.paimon.partition.PartitionPredicate;
 import org.apache.paimon.predicate.Predicate;
 import org.apache.paimon.table.AppendOnlyFileStoreTable;
 import org.apache.paimon.table.sink.AppendCompactTaskSerializer;
@@ -57,13 +56,12 @@ import java.util.function.ToLongFunction;
  * <p>Planning flow:
  *
  * <ol>
- *   <li>{@link #isNecessary()} guards the BUCKET_UNAWARE / AppendOnly shape and probes for
- *       candidate small files by executing {@link AppendCompactCoordinator#run()} once; the probe
- *       result is cached and reused by {@link #plan()}.
+ *   <li>{@link #isNecessary()} guards the BUCKET_UNAWARE / AppendOnly shape, scans active ADD files
+ *       through {@link PaimonAppendFileScanner}, evaluates partitions, and builds Amoro-built
+ *       {@link AppendCompactTask}s via {@link PaimonAppendTaskPacker}.
  *   <li>{@link #plan()} wraps each {@link AppendCompactTask} into a {@link PaimonCompactionTask}
- *       carrying the serialized task bytes, the stable {@code commitUser} for this plan (a UUID
- *       generated via {@link CoreOptions#createCommitUser(org.apache.paimon.options.Options)}), the
- *       serializer version, and the target snapshot id.
+ *       carrying serialized task bytes, a stable commit user, serializer version, and target
+ *       snapshot id.
  * </ol>
  *
  * <p>The generated {@link PaimonCompactionTask}'s {@code properties} carry the executor-factory
@@ -88,13 +86,18 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
   private final long planTime;
   private final double availableCore;
   private final long maxInputSizePerThread;
+  private final OptimizingConfig optimizingConfig;
+  private final long lastMinorOptimizingTime;
+  private final long lastMajorOptimizingTime;
+  private final long lastFullOptimizingTime;
   private final Predicate partitionFilter;
 
   // Memoised state built the first time isNecessary() / plan() runs.
   private Boolean necessary;
-  private List<AppendCompactTask> cachedTasks;
+  private List<PlannedAppendTask> cachedTasks;
   private String commitUser;
   private long targetSnapshotId = -1L;
+  private OptimizingType optimizingType = OptimizingType.MINOR;
 
   public PaimonOptimizingPlanner(
       PaimonTable paimonTable,
@@ -102,7 +105,17 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
       long processId,
       double availableCore,
       long maxInputSizePerThread) {
-    this(paimonTable, tableId, processId, availableCore, maxInputSizePerThread, null);
+    this(
+        paimonTable,
+        tableId,
+        processId,
+        availableCore,
+        maxInputSizePerThread,
+        defaultOptimizingConfig(),
+        0L,
+        0L,
+        0L,
+        null);
   }
 
   public PaimonOptimizingPlanner(
@@ -112,13 +125,50 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
       double availableCore,
       long maxInputSizePerThread,
       Predicate partitionFilter) {
+    this(
+        paimonTable,
+        tableId,
+        processId,
+        availableCore,
+        maxInputSizePerThread,
+        defaultOptimizingConfig(),
+        0L,
+        0L,
+        0L,
+        partitionFilter);
+  }
+
+  public PaimonOptimizingPlanner(
+      PaimonTable paimonTable,
+      long tableId,
+      long processId,
+      double availableCore,
+      long maxInputSizePerThread,
+      OptimizingConfig optimizingConfig,
+      long lastMinorOptimizingTime,
+      long lastMajorOptimizingTime,
+      long lastFullOptimizingTime,
+      Predicate partitionFilter) {
     this.paimonTable = paimonTable;
     this.tableId = tableId;
     this.processId = processId;
     this.planTime = System.currentTimeMillis();
     this.availableCore = availableCore;
     this.maxInputSizePerThread = maxInputSizePerThread;
+    this.optimizingConfig = optimizingConfig == null ? defaultOptimizingConfig() : optimizingConfig;
+    this.lastMinorOptimizingTime = lastMinorOptimizingTime;
+    this.lastMajorOptimizingTime = lastMajorOptimizingTime;
+    this.lastFullOptimizingTime = lastFullOptimizingTime;
     this.partitionFilter = partitionFilter;
+  }
+
+  private static OptimizingConfig defaultOptimizingConfig() {
+    return new OptimizingConfig()
+        .setEnabled(true)
+        .setMinorLeastInterval(3600000)
+        .setFullTriggerInterval(-1)
+        .setFullRewriteAllFiles(false)
+        .setMaxTaskSize(Long.MAX_VALUE);
   }
 
   @Override
@@ -131,29 +181,43 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
       necessary = false;
       return false;
     }
-    // AppendCompactCoordinator.run() throws when no snapshot exists; short-circuit here.
-    if (table.snapshotManager().latestSnapshot() == null) {
-      LOG.info(
-          "Paimon table [{}] has no snapshot yet — skip optimizing.",
-          paimonTable.id().getTableName());
-      necessary = false;
-      return false;
-    }
 
-    AppendCompactCoordinator coordinator;
-    if (partitionFilter == null) {
-      coordinator = new AppendCompactCoordinator(table, /* streamingMode */ false);
-    } else {
-      PartitionPredicate partitionPredicate =
-          PartitionPredicate.fromPredicate(table.schema().logicalPartitionType(), partitionFilter);
-      coordinator = new AppendCompactCoordinator(table, false, partitionPredicate);
+    PaimonPlanContext context =
+        PaimonPlanContext.forOptions(
+            CoreOptions.fromMap(table.options()),
+            optimizingConfig,
+            lastMinorOptimizingTime,
+            lastMajorOptimizingTime,
+            lastFullOptimizingTime,
+            availableCore,
+            maxInputSizePerThread,
+            planTime);
+    PaimonAppendFileScanner.ScanResult scanResult =
+        new PaimonAppendFileScanner(table, context, partitionFilter).scan();
+    targetSnapshotId = scanResult.snapshotId();
+    Map<BinaryRow, List<PaimonFileCandidate>> filesByPartition = scanResult.files();
+    List<PlannedAppendTask> tasks = new ArrayList<>();
+    PaimonPartitionEvaluator evaluator = new PaimonPartitionEvaluator(context);
+    PaimonAppendTaskPacker packer = new PaimonAppendTaskPacker(context);
+    for (Map.Entry<BinaryRow, List<PaimonFileCandidate>> entry : filesByPartition.entrySet()) {
+      PaimonPartitionEvaluation evaluation = evaluator.evaluate(entry.getKey(), entry.getValue());
+      if (!evaluation.necessary()) {
+        continue;
+      }
+      List<AppendCompactTask> packed = packer.pack(evaluation);
+      if (packed.isEmpty()) {
+        continue;
+      }
+      for (AppendCompactTask task : packed) {
+        tasks.add(new PlannedAppendTask(task, evaluation.optimizingType()));
+      }
     }
-    List<AppendCompactTask> tasks = coordinator.run();
     cachedTasks = tasks;
-    necessary = !tasks.isEmpty();
+    optimizingType = highestType(cachedTasks);
+    necessary = !cachedTasks.isEmpty();
     if (!necessary) {
       LOG.info(
-          "Paimon table [{}] has no candidate small files — skip optimizing.",
+          "Paimon table [{}] has no eligible optimizing tasks — skip optimizing.",
           paimonTable.id().getTableName());
     }
     return necessary;
@@ -177,39 +241,32 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
     if (commitUser == null) {
       commitUser = CoreOptions.createCommitUser(Options.fromMap(table.options()));
     }
-    Snapshot snapshot = table.snapshotManager().latestSnapshot();
-    targetSnapshotId = snapshot == null ? -1L : snapshot.id();
 
-    // Apply plan-tick quota: cap count to ceil(availableCore) and defer oversized tasks.
-    // NOTE (§3.4 split contract): this does NOT re-split, merge, or otherwise mutate Paimon's
-    // native AppendCompactTask — we only decide how many of the coordinator's tasks get
-    // released this tick, and defer any single task whose total input size would violate
-    // maxInputSizePerThread. The remainder will be re-produced by the next plan tick because
-    // each Planner instance re-invokes AppendCompactCoordinator.run() in isNecessary().
-    List<AppendCompactTask> eligible =
-        applyQuota(
+    // Apply plan-tick quota: cap count to ceil(availableCore). Input-size splitting is handled by
+    // PaimonAppendTaskPacker before this point.
+    // NOTE (§3.4 split contract): this does NOT re-split, merge, or otherwise mutate the
+    // Amoro-built AppendCompactTask — we only decide how many tasks get released this tick.
+    List<PlannedAppendTask> eligible =
+        applyQuotaInternal(
             cachedTasks,
             availableCore,
             maxInputSizePerThread,
-            PaimonOptimizingPlanner::totalCompactBeforeSize,
+            plannedTask -> totalCompactBeforeSize(plannedTask.task()),
             paimonTable.id().getTableName());
 
-    // K2 self-honesty: if every coordinator task was deferred this tick, flip the cached
-    // necessary flag back to false so a subsequent isNecessary() call (e.g. the AMS generic
-    // guard or a re-entrant check) reports "nothing to do" and does not spin up an empty
-    // TableOptimizingProcess. The next plan tick re-enters isNecessary() with a fresh
-    // coordinator probe and will pick the task up again when it fits.
     if (eligible.isEmpty()) {
       LOG.info(
-          "Paimon table [{}] plan tick produced 0 eligible tasks (all deferred) — "
+          "Paimon table [{}] plan tick produced 0 eligible tasks — "
               + "reset isNecessary() to false for this planner instance.",
           paimonTable.id().getTableName());
       necessary = false;
       return emptyResult();
     }
+    optimizingType = highestType(eligible);
 
     List<PaimonCompactionTask> wrapped = new ArrayList<>(eligible.size());
-    for (AppendCompactTask task : eligible) {
+    for (PlannedAppendTask plannedTask : eligible) {
+      AppendCompactTask task = plannedTask.task();
       byte[] bytes;
       try {
         bytes = serializer.serialize(task);
@@ -259,19 +316,14 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
   }
 
   /**
-   * Apply the plan-tick quota to a list of {@link AppendCompactTask}s produced by {@link
-   * AppendCompactCoordinator#run()}.
+   * Apply the plan-tick quota to a list of {@link AppendCompactTask}s built by the Amoro Paimon
+   * planner.
    *
    * <p>Two independent filters are applied:
    *
-   * <ul>
-   *   <li><b>Oversized-task deferral:</b> any task whose {@code compactBefore()} total size is
-   *       strictly greater than {@code maxInputSizePerThread} is skipped (deferred) on this tick
-   *       and an INFO log line is emitted. Re-planning on the next tick will re-evaluate.
-   *   <li><b>Count cap:</b> at most {@code ceil(availableCore)} eligible tasks are released per
-   *       tick; remaining tasks will be re-produced by the next {@code AppendCompactCoordinator
-   *       .run()} invocation in the following plan tick.
-   * </ul>
+   * <p>At most {@code ceil(availableCore)} eligible tasks are released per tick. Remaining tasks
+   * are not persisted. The next planning tick scans the latest snapshot again and rebuilds eligible
+   * tasks from current metadata.
    *
    * <p>Critically, this method NEVER mutates a task's internal {@code compactBefore()} list —
    * Paimon's atomic commit unit is preserved. Merging or splitting is explicitly disallowed per the
@@ -286,46 +338,43 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
       long maxInputSizePerThread,
       ToLongFunction<AppendCompactTask> sizeFn,
       String tableNameForLog) {
+    return applyQuotaInternal(tasks, availableCore, maxInputSizePerThread, sizeFn, tableNameForLog);
+  }
+
+  private static <T> List<T> applyQuotaInternal(
+      List<T> tasks,
+      double availableCore,
+      long maxInputSizePerThread,
+      ToLongFunction<T> sizeFn,
+      String tableNameForLog) {
     if (tasks == null || tasks.isEmpty()) {
       return Collections.emptyList();
     }
     // ceil(availableCore), but guarded against non-positive core values — in those degenerate
     // cases we still allow at most one task through so progress is not completely stalled.
     int cap = Math.max(1, (int) Math.ceil(availableCore));
-    List<AppendCompactTask> out = new ArrayList<>(Math.min(cap, tasks.size()));
-    int skippedOversized = 0;
-    for (AppendCompactTask task : tasks) {
+    List<T> out = new ArrayList<>(Math.min(cap, tasks.size()));
+    int observedOversized = 0;
+    for (T task : tasks) {
       if (out.size() >= cap) {
         break;
       }
       long totalSize = sizeFn.applyAsLong(task);
-      if (totalSize > maxInputSizePerThread) {
-        skippedOversized++;
-        continue;
+      if (maxInputSizePerThread > 0 && totalSize > maxInputSizePerThread) {
+        observedOversized++;
       }
       out.add(task);
     }
-    if (skippedOversized > 0) {
-      boolean allDeferred = out.isEmpty() && skippedOversized == tasks.size();
-      if (allDeferred) {
-        LOG.warn(
-            "Paimon table [{}] ALL {} tasks deferred as oversized — "
-                + "every AppendCompactTask exceeds maxInputSizePerThread={} bytes. "
-                + "Compaction is stalled; consider raising max-input-size-per-thread.",
-            tableNameForLog,
-            tasks.size(),
-            maxInputSizePerThread);
-      } else {
-        LOG.info(
-            "Paimon table [{}] deferred {}/{} tasks as oversized "
-                + "(maxInputSizePerThread={} bytes).",
-            tableNameForLog,
-            skippedOversized,
-            tasks.size(),
-            maxInputSizePerThread);
-      }
+    if (observedOversized > 0) {
+      LOG.warn(
+          "Paimon table [{}] releases {} task(s) above maxInputSizePerThread={} bytes. "
+              + "The packer already applied best-effort splitting; remaining oversized tasks are "
+              + "treated as atomic Paimon compact units.",
+          tableNameForLog,
+          observedOversized,
+          maxInputSizePerThread);
     }
-    int deferredByCap = Math.max(0, tasks.size() - out.size() - skippedOversized);
+    int deferredByCap = Math.max(0, tasks.size() - out.size());
     if (deferredByCap > 0) {
       LOG.info(
           "Paimon table [{}] plan-tick quota: released {} task(s), deferred {} to next tick "
@@ -354,7 +403,7 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
 
   @Override
   public OptimizingType getOptimizingType() {
-    return OptimizingType.MINOR;
+    return optimizingType;
   }
 
   @Override
@@ -418,5 +467,44 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
         Collections.emptyList(),
         Collections.emptyMap(),
         Collections.emptyMap());
+  }
+
+  private static OptimizingType higherType(OptimizingType current, OptimizingType candidate) {
+    if (candidate == null) {
+      return current;
+    }
+    if (current == null || candidate == OptimizingType.FULL) {
+      return candidate;
+    }
+    if (current == OptimizingType.MINOR && candidate == OptimizingType.MAJOR) {
+      return candidate;
+    }
+    return current;
+  }
+
+  private static OptimizingType highestType(List<PlannedAppendTask> tasks) {
+    OptimizingType type = null;
+    for (PlannedAppendTask task : tasks) {
+      type = higherType(type, task.optimizingType());
+    }
+    return type == null ? OptimizingType.MINOR : type;
+  }
+
+  private static final class PlannedAppendTask {
+    private final AppendCompactTask task;
+    private final OptimizingType optimizingType;
+
+    private PlannedAppendTask(AppendCompactTask task, OptimizingType optimizingType) {
+      this.task = task;
+      this.optimizingType = optimizingType;
+    }
+
+    private AppendCompactTask task() {
+      return task;
+    }
+
+    private OptimizingType optimizingType() {
+      return optimizingType;
+    }
   }
 }

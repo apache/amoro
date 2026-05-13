@@ -148,7 +148,23 @@ public class TestPaimonCompactionExecutor {
     // 2) Planner produces tasks.
     PaimonTable paimonTable =
         new PaimonTable(TableIdentifier.of("test_catalog", "db1", "t_e2e"), catalog.getTable(id));
-    PaimonOptimizingPlanner planner = new PaimonOptimizingPlanner(paimonTable, 1L, 1L, 1.0, 1024);
+    PaimonOptimizingPlanner planner =
+        new PaimonOptimizingPlanner(
+            paimonTable,
+            1L,
+            1L,
+            1.0,
+            64L * 1024 * 1024,
+            new org.apache.amoro.config.OptimizingConfig()
+                .setEnabled(true)
+                .setMinorLeastInterval(1)
+                .setFullTriggerInterval(-1)
+                .setFullRewriteAllFiles(false)
+                .setMaxTaskSize(64L * 1024 * 1024),
+            0L,
+            0L,
+            0L,
+            null);
     OptimizingPlanResult<PaimonCompactionTask> plan = planner.plan();
     assertTrue(plan.getTasks().size() >= 1);
 
