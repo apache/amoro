@@ -31,7 +31,6 @@ class PeriodicTableSchedulerTestBase extends PeriodicTableScheduler {
   private final CleanupOperation cleanupOperation;
   private final boolean enabled;
   private static final long SNAPSHOTS_EXPIRING_INTERVAL = 60 * 60 * 1000L; // 1 hour
-  private static final long ORPHAN_FILES_CLEANING_INTERVAL = 24 * 60 * 60 * 1000L; // 1 day
   private static final long DANGLING_DELETE_FILES_CLEANING_INTERVAL = 24 * 60 * 60 * 1000L;
   private static final long DATA_EXPIRING_INTERVAL = 60 * 60 * 1000L; // 1 hour
 
@@ -73,8 +72,6 @@ class PeriodicTableSchedulerTestBase extends PeriodicTableScheduler {
     switch (cleanupOperation) {
       case SNAPSHOTS_EXPIRING:
         return currentTime - lastCleanupEndTime >= SNAPSHOTS_EXPIRING_INTERVAL;
-      case ORPHAN_FILES_CLEANING:
-        return currentTime - lastCleanupEndTime >= ORPHAN_FILES_CLEANING_INTERVAL;
       case DANGLING_DELETE_FILES_CLEANING:
         return currentTime - lastCleanupEndTime >= DANGLING_DELETE_FILES_CLEANING_INTERVAL;
       case DATA_EXPIRING:

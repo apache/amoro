@@ -369,7 +369,6 @@ public class AmsEnvironment {
         + "  refresh-table-thread-count: 10\n"
         + "  refresh-table-interval: 60000 #1min\n"
         + "  expire-table-thread-count: 10\n"
-        + "  clean-orphan-file-thread-count: 10\n"
         + "  sync-hive-tables-thread-count: 10\n"
         + "\n"
         + "  thrift-server:\n"

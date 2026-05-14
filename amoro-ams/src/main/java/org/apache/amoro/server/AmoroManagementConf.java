@@ -174,24 +174,6 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofHours(1))
           .withDescription("Interval for expiring snapshots.");
 
-  public static final ConfigOption<Boolean> CLEAN_ORPHAN_FILES_ENABLED =
-      ConfigOptions.key("clean-orphan-files.enabled")
-          .booleanType()
-          .defaultValue(true)
-          .withDescription("Enable orphan files cleaning.");
-
-  public static final ConfigOption<Integer> CLEAN_ORPHAN_FILES_THREAD_COUNT =
-      ConfigOptions.key("clean-orphan-files.thread-count")
-          .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used for orphan files cleaning.");
-
-  public static final ConfigOption<Duration> CLEAN_ORPHAN_FILES_INTERVAL =
-      ConfigOptions.key("clean-orphan-files.interval")
-          .durationType()
-          .defaultValue(Duration.ofDays(1))
-          .withDescription("Interval for cleaning orphan files.");
-
   public static final ConfigOption<Boolean> CLEAN_DANGLING_DELETE_FILES_ENABLED =
       ConfigOptions.key("clean-dangling-delete-files.enabled")
           .booleanType()

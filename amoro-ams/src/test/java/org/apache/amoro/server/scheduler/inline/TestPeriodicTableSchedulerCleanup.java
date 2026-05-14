@@ -167,7 +167,6 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
   public void testShouldExecuteTaskWithNoPreviousCleanup() {
     List<CleanupOperation> operations =
         Arrays.asList(
-            CleanupOperation.ORPHAN_FILES_CLEANING,
             CleanupOperation.DANGLING_DELETE_FILES_CLEANING,
             CleanupOperation.DATA_EXPIRING,
             CleanupOperation.SNAPSHOTS_EXPIRING);
@@ -192,7 +191,6 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
   public void testShouldNotExecuteTaskWithRecentCleanup() {
     List<CleanupOperation> operations =
         Arrays.asList(
-            CleanupOperation.ORPHAN_FILES_CLEANING,
             CleanupOperation.DANGLING_DELETE_FILES_CLEANING,
             CleanupOperation.DATA_EXPIRING,
             CleanupOperation.SNAPSHOTS_EXPIRING);
@@ -222,7 +220,6 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
   public void testShouldExecuteTaskWithOldCleanup() {
     List<CleanupOperation> operations =
         Arrays.asList(
-            CleanupOperation.ORPHAN_FILES_CLEANING,
             CleanupOperation.DANGLING_DELETE_FILES_CLEANING,
             CleanupOperation.DATA_EXPIRING,
             CleanupOperation.SNAPSHOTS_EXPIRING);

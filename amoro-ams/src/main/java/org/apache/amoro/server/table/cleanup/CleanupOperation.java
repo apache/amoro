@@ -21,7 +21,6 @@ package org.apache.amoro.server.table.cleanup;
 /** Table cleanup operation enum. Defines different operation types for table cleanup tasks. */
 public enum CleanupOperation {
   DANGLING_DELETE_FILES_CLEANING,
-  ORPHAN_FILES_CLEANING,
   DATA_EXPIRING,
   SNAPSHOTS_EXPIRING,
   //  NONE indicates operation types where no cleanup process records are
