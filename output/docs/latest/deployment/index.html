@@ -872,7 +872,50 @@ The configuration for kyuubi mode can refer to: <a href="../using-kyuubi/">Using
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">scrape_interval</span>: <span style="color:#ae81ff">15s</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">static_configs</span>:
 </span></span><span style="display:flex;"><span>      - <span style="color:#f92672">targets</span>: [<span style="color:#e6db74">&#39;localhost:9090&#39;</span>]  <span style="color:#75715e"># The host and port that you configured in Amoro plugins configs file.</span>
-</span></span></code></pre></div><h3 id="configure-encrypted-configuration-items">Configure encrypted configuration items</h3>
+</span></span></code></pre></div><h3 id="configure-process-factories">Configure process factories</h3>
+<p>Process factories manage table maintenance actions like snapshot expiration and orphan file cleaning.
+They are configured in <code>$AMORO_CONF_DIR/plugins/process-factories.yaml</code>.</p>
+<p>The configuration format is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">process-factories</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>:                 <span style="color:#75715e"># the unified plugin name.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>:              <span style="color:#75715e"># if this plugin is enabled, default is true.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">priority</span>:             <span style="color:#75715e"># plugin priority for loading order.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:           <span style="color:#75715e"># a map defines properties of plugin.</span>
+</span></span></code></pre></div><p>Currently, the <code>iceberg</code> process factory is available for Iceberg, Mixed-Iceberg, and Mixed-Hive formats:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">process-factories</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">iceberg</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">priority</span>: <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">expire-snapshots.enabled</span>: <span style="color:#e6db74">&#34;true&#34;</span>       <span style="color:#75715e"># enable snapshots expiring</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">expire-snapshots.interval</span>: <span style="color:#e6db74">&#34;1h&#34;</span>        <span style="color:#75715e"># interval for expiring snapshots</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">clean-orphan-files.enabled</span>: <span style="color:#e6db74">&#34;true&#34;</span>     <span style="color:#75715e"># enable orphan files cleaning</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">clean-orphan-files.interval</span>: <span style="color:#e6db74">&#34;1d&#34;</span>      <span style="color:#75715e"># interval for cleaning orphan files</span>
+</span></span></code></pre></div><div class="info">
+    Process-level properties control whether an action is registered. Table-level properties (see <a href="../../user-guides/configurations/">Table Configurations</a>) control whether a specific table executes the action.
+</div>
+<h3 id="configure-execute-engines">Configure execute engines</h3>
+<p>Execute engines define how maintenance processes are executed. The <code>local</code> engine runs processes in AMS thread pools.
+They are configured in <code>$AMORO_CONF_DIR/plugins/execute-engines.yaml</code>.</p>
+<p>The configuration format is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">execute-engines</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>:                 <span style="color:#75715e"># the unified plugin name.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>:              <span style="color:#75715e"># if this engine is enabled, default is true.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">priority</span>:             <span style="color:#75715e"># engine priority for loading order.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:           <span style="color:#75715e"># a map defines properties of engine.</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">execute-engines</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">local</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">priority</span>: <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">properties</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">pool.default.thread-count</span>: <span style="color:#ae81ff">10</span>                   <span style="color:#75715e"># default thread pool size</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">pool.snapshots-expiring.thread-count</span>: <span style="color:#ae81ff">10</span>        <span style="color:#75715e"># thread pool for snapshot expiration</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">pool.orphan-files-cleaning.thread-count</span>: <span style="color:#ae81ff">10</span>     <span style="color:#75715e"># thread pool for orphan file cleaning</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">process.status.ttl</span>: <span style="color:#ae81ff">4h                         </span> <span style="color:#75715e"># TTL for process status cache</span>
+</span></span></code></pre></div><div class="info">
+    Custom pools use the pattern <code>pool.&lt;name&gt;.thread-count</code>. Processes select pools via their <code>tag()</code> method, falling back to the default pool if no match.
+</div>
+<h3 id="configure-encrypted-configuration-items">Configure encrypted configuration items</h3>
 <p>For enhanced security, AMS supports encrypted values for sensitive configuration items such as passwords within <code>config.yaml</code>. This prevents plaintext passwords and other critical information from being directly exposed in the configuration file.
 Currently, AMS provides built-in support for base64 decryption, and users can also implement custom decryption algorithms if needed (see <a href="../using-customized-encryption-method/">Using Customized Encryption Method for Configurations</a>).</p>
 <p>To enable encrypted sensitive configuration items, add the following configurations under <code>config.yaml</code> of AMS:</p>
@@ -1011,6 +1054,8 @@ Replace all contents in the original <code>{AMORO_HOME}/plugin</code> directory 
         <li><a href="#configure-optimizer-containers">Configure optimizer containers</a></li>
         <li><a href="#configure-terminal">Configure terminal</a></li>
         <li><a href="#configure-metric-reporter">Configure metric reporter</a></li>
+        <li><a href="#configure-process-factories">Configure process factories</a></li>
+        <li><a href="#configure-execute-engines">Configure execute engines</a></li>
         <li><a href="#configure-encrypted-configuration-items">Configure encrypted configuration items</a></li>
         <li><a href="#environments-variables">Environments variables</a></li>
         <li><a href="#configure-ams-jvm">Configure AMS JVM</a></li>
