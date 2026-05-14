@@ -86,9 +86,6 @@ public class AmoroManagementConfValidator {
       validateThreadCount(configurations, AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT);
     }
 
-    if (configurations.getBoolean(AmoroManagementConf.CLEAN_ORPHAN_FILES_ENABLED)) {
-      validateThreadCount(configurations, AmoroManagementConf.CLEAN_ORPHAN_FILES_THREAD_COUNT);
-    }
     if (configurations.getBoolean(AmoroManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
       validateThreadCount(configurations, AmoroManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT);
     }
