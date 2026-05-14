@@ -57,6 +57,14 @@ public class IcebergProcessFactory implements ProcessFactory {
           .durationType()
           .defaultValue(Duration.ofHours(1));
 
+  public static final ConfigOption<Boolean> ORPHAN_FILES_CLEANING_ENABLED =
+      ConfigOptions.key("clean-orphan-files.enabled").booleanType().defaultValue(true);
+
+  public static final ConfigOption<Duration> ORPHAN_FILES_CLEANING_INTERVAL =
+      ConfigOptions.key("clean-orphan-files.interval")
+          .durationType()
+          .defaultValue(Duration.ofDays(1));
+
   private ExecuteEngine localEngine;
   private final Map<Action, ProcessTriggerStrategy> actions = Maps.newHashMap();
   private final List<TableFormat> formats =
@@ -91,7 +99,10 @@ public class IcebergProcessFactory implements ProcessFactory {
 
     if (IcebergActions.EXPIRE_SNAPSHOTS.equals(action)) {
       return triggerExpireSnapshot(tableRuntime);
+    } else if (IcebergActions.DELETE_ORPHANS.equals(action)) {
+      return triggerCleanOrphans(tableRuntime);
     }
+
     return Optional.empty();
   }
 
@@ -113,6 +124,12 @@ public class IcebergProcessFactory implements ProcessFactory {
       this.actions.put(
           IcebergActions.EXPIRE_SNAPSHOTS, ProcessTriggerStrategy.triggerAtFixRate(interval));
     }
+
+    if (configs.getBoolean(ORPHAN_FILES_CLEANING_ENABLED)) {
+      Duration interval = configs.getDuration(ORPHAN_FILES_CLEANING_INTERVAL);
+      this.actions.put(
+          IcebergActions.DELETE_ORPHANS, ProcessTriggerStrategy.triggerAtFixRate(interval));
+    }
   }
 
   private Optional<TableProcess> triggerExpireSnapshot(TableRuntime tableRuntime) {
@@ -128,6 +145,21 @@ public class IcebergProcessFactory implements ProcessFactory {
     }
 
     return Optional.of(new SnapshotsExpiringProcess(tableRuntime, localEngine));
+  }
+
+  private Optional<TableProcess> triggerCleanOrphans(TableRuntime tableRuntime) {
+    if (localEngine == null || !tableRuntime.getTableConfiguration().isCleanOrphanEnabled()) {
+      return Optional.empty();
+    }
+
+    long lastExecuteTime =
+        tableRuntime.getState(DefaultTableRuntime.CLEANUP_STATE_KEY).getLastOrphanFilesCleanTime();
+    ProcessTriggerStrategy strategy = actions.get(IcebergActions.DELETE_ORPHANS);
+    if (System.currentTimeMillis() - lastExecuteTime < strategy.getTriggerInterval().toMillis()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(new OrphanFilesCleaningProcess(tableRuntime, localEngine));
   }
 
   @Override

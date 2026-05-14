@@ -28,8 +28,9 @@ public class TableRuntimeCleanupState {
     return lastOrphanFilesCleanTime;
   }
 
-  public void setLastOrphanFilesCleanTime(long lastOrphanFilesCleanTime) {
+  public TableRuntimeCleanupState setLastOrphanFilesCleanTime(long lastOrphanFilesCleanTime) {
     this.lastOrphanFilesCleanTime = lastOrphanFilesCleanTime;
+    return this;
   }
 
   public long getLastDanglingDeleteFilesCleanTime() {

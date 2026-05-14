@@ -43,104 +43,128 @@ public class TestIcebergProcessFactory {
 
   @Test
   public void testOpenAndSupportedActions() {
+    assertSupportedAction("expire-snapshots", IcebergActions.EXPIRE_SNAPSHOTS, Duration.ofHours(1));
+    assertSupportedAction(
+        "clean-orphan-files", IcebergActions.DELETE_ORPHANS, Duration.ofHours(24));
+  }
+
+  @Test
+  public void testTriggerActionWhenDue() {
+    assertTriggerWhenDue(
+        "expire-snapshots", IcebergActions.EXPIRE_SNAPSHOTS, SnapshotsExpiringProcess.class, 0);
+    assertTriggerWhenDue(
+        "clean-orphan-files", IcebergActions.DELETE_ORPHANS, OrphanFilesCleaningProcess.class, 0);
+  }
+
+  @Test
+  public void testTriggerActionNotDue() {
+    assertTriggerNotDue(
+        "expire-snapshots", IcebergActions.EXPIRE_SNAPSHOTS, System.currentTimeMillis());
+    assertTriggerNotDue(
+        "clean-orphan-files", IcebergActions.DELETE_ORPHANS, System.currentTimeMillis());
+  }
+
+  @Test
+  public void testTriggerActionDisabled() {
+    assertTriggerDisabled("expire-snapshots", IcebergActions.EXPIRE_SNAPSHOTS, false, 0);
+    assertTriggerDisabled("clean-orphan-files", IcebergActions.DELETE_ORPHANS, false, 0);
+  }
+
+  private void assertSupportedAction(
+      String configKey, org.apache.amoro.Action action, Duration interval) {
     IcebergProcessFactory factory = new IcebergProcessFactory();
 
     Map<String, String> properties = new HashMap<>();
-    properties.put("expire-snapshots.enabled", "true");
-    properties.put("expire-snapshots.interval", "1h");
+    properties.put(configKey + ".enabled", "true");
+    properties.put(configKey + ".interval", interval.toHours() + "h");
 
     factory.open(properties);
 
     Map<TableFormat, Set<org.apache.amoro.Action>> supported = factory.supportedActions();
-    Assert.assertTrue(supported.get(TableFormat.ICEBERG).contains(IcebergActions.EXPIRE_SNAPSHOTS));
-    Assert.assertTrue(
-        supported.get(TableFormat.MIXED_ICEBERG).contains(IcebergActions.EXPIRE_SNAPSHOTS));
-    Assert.assertTrue(
-        supported.get(TableFormat.MIXED_HIVE).contains(IcebergActions.EXPIRE_SNAPSHOTS));
+    Assert.assertTrue(supported.get(TableFormat.ICEBERG).contains(action));
+    Assert.assertTrue(supported.get(TableFormat.MIXED_ICEBERG).contains(action));
+    Assert.assertTrue(supported.get(TableFormat.MIXED_HIVE).contains(action));
 
-    ProcessTriggerStrategy strategy =
-        factory.triggerStrategy(TableFormat.ICEBERG, IcebergActions.EXPIRE_SNAPSHOTS);
-    Assert.assertEquals(Duration.ofHours(1), strategy.getTriggerInterval());
+    ProcessTriggerStrategy strategy = factory.triggerStrategy(TableFormat.ICEBERG, action);
+    Assert.assertEquals(interval, strategy.getTriggerInterval());
   }
 
-  @Test
-  public void testTriggerExpireSnapshotWhenDue() {
+  private void assertTriggerWhenDue(
+      String configKey, org.apache.amoro.Action action, Class<?> processClass, long lastTime) {
     IcebergProcessFactory factory = new IcebergProcessFactory();
 
     Map<String, String> properties = new HashMap<>();
-    properties.put("expire-snapshots.enabled", "true");
-    properties.put("expire-snapshots.interval", "1h");
+    properties.put(configKey + ".enabled", "true");
+    properties.put(configKey + ".interval", "1h");
     factory.open(properties);
 
     LocalExecutionEngine localEngine = mock(LocalExecutionEngine.class);
     doReturn(LocalExecutionEngine.ENGINE_NAME).when(localEngine).name();
     factory.availableExecuteEngines(Arrays.asList(localEngine));
 
-    TableConfiguration tableConfiguration = new TableConfiguration().setExpireSnapshotEnabled(true);
-    TableRuntimeCleanupState cleanupState =
-        new TableRuntimeCleanupState().setLastSnapshotsExpiringTime(0);
+    TableRuntime runtime = createRuntime(configKey, true, lastTime);
 
-    TableRuntime runtime = mock(TableRuntime.class);
-    doReturn(tableConfiguration).when(runtime).getTableConfiguration();
-    doReturn(cleanupState).when(runtime).getState(DefaultTableRuntime.CLEANUP_STATE_KEY);
-
-    Optional<org.apache.amoro.process.TableProcess> process =
-        factory.trigger(runtime, IcebergActions.EXPIRE_SNAPSHOTS);
+    Optional<org.apache.amoro.process.TableProcess> process = factory.trigger(runtime, action);
 
     Assert.assertTrue(process.isPresent());
-    Assert.assertTrue(process.get() instanceof SnapshotsExpiringProcess);
+    Assert.assertTrue(processClass.isInstance(process.get()));
     Assert.assertEquals(LocalExecutionEngine.ENGINE_NAME, process.get().getExecutionEngine());
   }
 
-  @Test
-  public void testTriggerExpireSnapshotNotDue() {
+  private void assertTriggerNotDue(
+      String configKey, org.apache.amoro.Action action, long lastTime) {
     IcebergProcessFactory factory = new IcebergProcessFactory();
 
     Map<String, String> properties = new HashMap<>();
-    properties.put("expire-snapshots.enabled", "true");
-    properties.put("expire-snapshots.interval", "1h");
+    properties.put(configKey + ".enabled", "true");
+    properties.put(configKey + ".interval", "1h");
     factory.open(properties);
 
     factory.availableExecuteEngines(Arrays.asList(mock(LocalExecutionEngine.class)));
 
-    TableConfiguration tableConfiguration = new TableConfiguration().setExpireSnapshotEnabled(true);
-    long now = System.currentTimeMillis();
-    TableRuntimeCleanupState cleanupState =
-        new TableRuntimeCleanupState().setLastSnapshotsExpiringTime(now);
+    TableRuntime runtime = createRuntime(configKey, true, lastTime);
 
-    TableRuntime runtime = mock(TableRuntime.class);
-    doReturn(tableConfiguration).when(runtime).getTableConfiguration();
-    doReturn(cleanupState).when(runtime).getState(DefaultTableRuntime.CLEANUP_STATE_KEY);
-
-    Optional<org.apache.amoro.process.TableProcess> process =
-        factory.trigger(runtime, IcebergActions.EXPIRE_SNAPSHOTS);
+    Optional<org.apache.amoro.process.TableProcess> process = factory.trigger(runtime, action);
 
     Assert.assertFalse(process.isPresent());
   }
 
-  @Test
-  public void testTriggerExpireSnapshotDisabled() {
+  private void assertTriggerDisabled(
+      String configKey, org.apache.amoro.Action action, boolean enabled, long lastTime) {
     IcebergProcessFactory factory = new IcebergProcessFactory();
 
     Map<String, String> properties = new HashMap<>();
-    properties.put("expire-snapshots.enabled", "true");
-    properties.put("expire-snapshots.interval", "1h");
+    properties.put(configKey + ".enabled", "true");
+    properties.put(configKey + ".interval", "1h");
     factory.open(properties);
 
     factory.availableExecuteEngines(Arrays.asList(mock(LocalExecutionEngine.class)));
 
-    TableConfiguration tableConfiguration =
-        new TableConfiguration().setExpireSnapshotEnabled(false);
-    TableRuntimeCleanupState cleanupState =
-        new TableRuntimeCleanupState().setLastSnapshotsExpiringTime(0);
+    TableRuntime runtime = createRuntime(configKey, enabled, lastTime);
+
+    Optional<org.apache.amoro.process.TableProcess> process = factory.trigger(runtime, action);
+
+    Assert.assertFalse(process.isPresent());
+  }
+
+  private TableRuntime createRuntime(String configKey, boolean enabled, long lastTime) {
+    TableConfiguration tableConfiguration = new TableConfiguration();
+    if ("expire-snapshots".equals(configKey)) {
+      tableConfiguration.setExpireSnapshotEnabled(enabled);
+    } else if ("clean-orphan-files".equals(configKey)) {
+      tableConfiguration.setCleanOrphanEnabled(enabled);
+    }
+
+    TableRuntimeCleanupState cleanupState = new TableRuntimeCleanupState();
+    if ("expire-snapshots".equals(configKey)) {
+      cleanupState.setLastSnapshotsExpiringTime(lastTime);
+    } else if ("clean-orphan-files".equals(configKey)) {
+      cleanupState.setLastOrphanFilesCleanTime(lastTime);
+    }
 
     TableRuntime runtime = mock(TableRuntime.class);
     doReturn(tableConfiguration).when(runtime).getTableConfiguration();
     doReturn(cleanupState).when(runtime).getState(DefaultTableRuntime.CLEANUP_STATE_KEY);
-
-    Optional<org.apache.amoro.process.TableProcess> process =
-        factory.trigger(runtime, IcebergActions.EXPIRE_SNAPSHOTS);
-
-    Assert.assertFalse(process.isPresent());
+    return runtime;
   }
 }

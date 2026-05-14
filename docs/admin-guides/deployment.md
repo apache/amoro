@@ -247,6 +247,70 @@ scrape_configs:
       - targets: ['localhost:9090']  # The host and port that you configured in Amoro plugins configs file.
 ```
 
+### Configure process factories
+
+Process factories manage table maintenance actions like snapshot expiration and orphan file cleaning.
+They are configured in `$AMORO_CONF_DIR/plugins/process-factories.yaml`.
+
+The configuration format is:
+
+```yaml
+process-factories:
+  - name:                 # the unified plugin name.
+    enabled:              # if this plugin is enabled, default is true.
+    priority:             # plugin priority for loading order.
+    properties:           # a map defines properties of plugin.
+```
+
+Currently, the `iceberg` process factory is available for Iceberg, Mixed-Iceberg, and Mixed-Hive formats:
+
+```yaml
+process-factories:
+  - name: iceberg
+    enabled: true
+    priority: 100
+    properties:
+      expire-snapshots.enabled: "true"       # enable snapshots expiring
+      expire-snapshots.interval: "1h"        # interval for expiring snapshots
+      clean-orphan-files.enabled: "true"     # enable orphan files cleaning
+      clean-orphan-files.interval: "1d"      # interval for cleaning orphan files
+```
+
+{{< hint info >}}
+Process-level properties control whether an action is registered. Table-level properties (see [Table Configurations](../../user-guides/configurations/)) control whether a specific table executes the action.
+{{< /hint >}}
+
+### Configure execute engines
+
+Execute engines define how maintenance processes are executed. The `local` engine runs processes in AMS thread pools.
+They are configured in `$AMORO_CONF_DIR/plugins/execute-engines.yaml`.
+
+The configuration format is:
+
+```yaml
+execute-engines:
+  - name:                 # the unified plugin name.
+    enabled:              # if this engine is enabled, default is true.
+    priority:             # engine priority for loading order.
+    properties:           # a map defines properties of engine.
+```
+
+```yaml
+execute-engines:
+  - name: local
+    enabled: true
+    priority: 100
+    properties:
+      pool.default.thread-count: 10                   # default thread pool size
+      pool.snapshots-expiring.thread-count: 10        # thread pool for snapshot expiration
+      pool.orphan-files-cleaning.thread-count: 10     # thread pool for orphan file cleaning
+      process.status.ttl: 4h                          # TTL for process status cache
+```
+
+{{< hint info >}}
+Custom pools use the pattern `pool.<name>.thread-count`. Processes select pools via their `tag()` method, falling back to the default pool if no match.
+{{< /hint >}}
+
 ### Configure encrypted configuration items
 For enhanced security, AMS supports encrypted values for sensitive configuration items such as passwords within `config.yaml`. This prevents plaintext passwords and other critical information from being directly exposed in the configuration file. 
 Currently, AMS provides built-in support for base64 decryption, and users can also implement custom decryption algorithms if needed (see [Using Customized Encryption Method for Configurations](../using-customized-encryption-method/)).

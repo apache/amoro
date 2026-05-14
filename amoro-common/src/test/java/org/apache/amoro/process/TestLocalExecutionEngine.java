@@ -45,6 +45,11 @@ public class TestLocalExecutionEngine {
 
   @Test
   public void testSubmitUsesCustomPoolByTag() throws Exception {
+    assertCustomPoolByTag("snapshots-expiring");
+    assertCustomPoolByTag("orphan-files-cleaning");
+  }
+
+  private void assertCustomPoolByTag(String tag) throws Exception {
     engine = createEngineWithTtl("1h");
 
     CountDownLatch started = new CountDownLatch(1);
@@ -54,7 +59,7 @@ public class TestLocalExecutionEngine {
         new LocalProcessTableProcess(
             mock(TableRuntime.class),
             engine,
-            "snapshots-expiring",
+            tag,
             () -> {
               threadName.set(Thread.currentThread().getName());
               started.countDown();
@@ -64,7 +69,7 @@ public class TestLocalExecutionEngine {
 
     Assertions.assertTrue(started.await(5, TimeUnit.SECONDS), "process should start");
     Assertions.assertTrue(
-        threadName.get() != null && threadName.get().startsWith("local-snapshots-expiring-"),
+        threadName.get() != null && threadName.get().startsWith("local-" + tag + "-"),
         "should run in custom pool");
 
     waitForStatus(identifier, ProcessStatus.SUCCESS, 5000);
@@ -148,6 +153,7 @@ public class TestLocalExecutionEngine {
     Map<String, String> properties = new HashMap<>();
     properties.put("pool.default.thread-count", "1");
     properties.put("pool.snapshots-expiring.thread-count", "1");
+    properties.put("pool.orphan-files-cleaning.thread-count", "1");
     properties.put("process.status.ttl", ttl);
     localEngine.open(properties);
     return localEngine;

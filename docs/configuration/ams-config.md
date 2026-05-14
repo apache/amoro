@@ -52,9 +52,6 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | clean-dangling-delete-files.enabled | true | Enable dangling delete files cleaning. |
 | clean-dangling-delete-files.interval | 1 d | Interval for cleaning dangling delete files. |
 | clean-dangling-delete-files.thread-count | 10 | The number of threads used for dangling delete files cleaning. |
-| clean-orphan-files.enabled | true | Enable orphan files cleaning. |
-| clean-orphan-files.interval | 1 d | Interval for cleaning orphan files. |
-| clean-orphan-files.thread-count | 10 | The number of threads used for orphan files cleaning. |
 | data-expiration.enabled | true | Enable data expiration |
 | data-expiration.interval | 1 d | Execute interval for data expiration |
 | data-expiration.thread-count | 10 | The number of threads used for data expiring |
