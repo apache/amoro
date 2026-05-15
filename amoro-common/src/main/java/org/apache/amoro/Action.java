@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class Action {
 
-  private static final int MAX_NAME_LENGTH = 16;
+  private static final int MAX_NAME_LENGTH = 32;
   private static final Map<String, Action> registeredActions = new ConcurrentHashMap<>();
 
   private final String name;
