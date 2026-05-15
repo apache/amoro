@@ -19,6 +19,7 @@
 package org.apache.amoro.formats.paimon.optimizing.commit;
 
 import org.apache.amoro.exception.OptimizingCommitException;
+import org.apache.amoro.formats.paimon.PaimonTable;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionOutput;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionTask;
 import org.apache.amoro.optimizing.TableOptimizingCommitter;
@@ -60,6 +61,7 @@ public class PaimonTableCommit implements TableOptimizingCommitter {
 
   private static final Logger LOG = LoggerFactory.getLogger(PaimonTableCommit.class);
 
+  private final PaimonTable paimonTable;
   private final AppendOnlyFileStoreTable table;
   private final Collection<PaimonCompactionTask> successTasks;
   private final String commitUser;
@@ -76,6 +78,16 @@ public class PaimonTableCommit implements TableOptimizingCommitter {
       Collection<PaimonCompactionTask> successTasks,
       String commitUser,
       long commitIdentifier) {
+    this(null, table, successTasks, commitUser, commitIdentifier);
+  }
+
+  public PaimonTableCommit(
+      PaimonTable paimonTable,
+      AppendOnlyFileStoreTable table,
+      Collection<PaimonCompactionTask> successTasks,
+      String commitUser,
+      long commitIdentifier) {
+    this.paimonTable = paimonTable;
     this.table = table;
     this.successTasks = successTasks;
     this.commitUser = commitUser;
@@ -131,6 +143,25 @@ public class PaimonTableCommit implements TableOptimizingCommitter {
               + table.name(),
           /* causedByVersionMismatch */ false);
     }
+    try {
+      if (paimonTable == null) {
+        commitMessages(messages);
+      } else {
+        paimonTable.doAs(
+            () -> {
+              commitMessages(messages);
+              return null;
+            });
+      }
+    } catch (RuntimeException e) {
+      if (e.getCause() instanceof OptimizingCommitException) {
+        throw (OptimizingCommitException) e.getCause();
+      }
+      throw e;
+    }
+  }
+
+  private void commitMessages(List<CommitMessage> messages) throws OptimizingCommitException {
     try (StreamTableCommit commit = table.newCommit(commitUser)) {
       int committed = commit.filterAndCommit(Collections.singletonMap(commitIdentifier, messages));
       LOG.info(

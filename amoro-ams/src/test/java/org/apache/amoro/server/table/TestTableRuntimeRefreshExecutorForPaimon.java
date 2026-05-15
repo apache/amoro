@@ -119,6 +119,7 @@ public class TestTableRuntimeRefreshExecutorForPaimon extends AMSServiceTestBase
     when(t.originalTable())
         .thenReturn(mock(org.apache.paimon.table.AppendOnlyFileStoreTable.class));
     when(t.currentSnapshot()).thenReturn(snapshot);
+    when(t.refreshOptimizingState(any())).thenCallRealMethod();
     when(t.properties()).thenReturn(new java.util.HashMap<>());
     // Mock evaluatePendingInput to return PaimonPendingInput when called
     PaimonPendingInput pendingInput = new PaimonPendingInput();
