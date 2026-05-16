@@ -482,7 +482,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
         getOptionalQueueByGroup(originalGroup).ifPresent(q -> q.releaseTable(tableRuntime));
         // If the new group doesn't exist, close the process to avoid the table in limbo(PENDING)
         // status.
-        if (newQueue.isEmpty()) {
+        if (!newQueue.isPresent()) {
           LOG.warn(
               "Cannot find the resource group: {}, try to release optimizing process of table {} directly",
               tableRuntime.getGroupName(),

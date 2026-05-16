@@ -89,7 +89,7 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   private final Executor planExecutor = Executors.newSingleThreadExecutor();
   private final QuotaProvider quotaProvider = resourceGroup -> 1;
   private final ProcessFactoryRouter router =
-      new ProcessFactoryRouter(java.util.List.of(new IcebergProcessFactory()));
+      new ProcessFactoryRouter(Collections.singletonList(new IcebergProcessFactory()));
   private final long MAX_POLLING_TIME = 5000;
 
   private final OptimizerThread optimizerThread =

@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -108,6 +109,9 @@ public class RoleResolverTest {
   }
 
   private static Map<String, String> group(String groupDn, String role) {
-    return Map.of("group-dn", groupDn, "role", role);
+    Map<String, String> group = new HashMap<>();
+    group.put("group-dn", groupDn);
+    group.put("role", role);
+    return group;
   }
 }

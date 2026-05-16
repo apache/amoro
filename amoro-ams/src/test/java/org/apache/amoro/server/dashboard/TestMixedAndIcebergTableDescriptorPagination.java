@@ -26,6 +26,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -67,7 +68,7 @@ class TestMixedAndIcebergTableDescriptorPagination {
 
     assertEquals(10L, page.getRight(), "total should reflect full filtered list");
     assertEquals(3, page.getLeft().size(), "slice should honour limit");
-    assertEquals(List.of("0", "1", "2"), idsOf(page.getLeft()));
+    assertEquals(Arrays.asList("0", "1", "2"), idsOf(page.getLeft()));
   }
 
   @Test
@@ -89,7 +90,7 @@ class TestMixedAndIcebergTableDescriptorPagination {
         MixedAndIcebergTableDescriptor.paginate(all, 3, 0, "5");
 
     assertEquals(10L, page.getRight());
-    assertEquals(List.of("6", "7", "8"), idsOf(page.getLeft()));
+    assertEquals(Arrays.asList("6", "7", "8"), idsOf(page.getLeft()));
   }
 
   @Test
@@ -101,7 +102,7 @@ class TestMixedAndIcebergTableDescriptorPagination {
 
     assertEquals(10L, page.getRight());
     assertEquals(
-        List.of("2", "3", "4"),
+        Arrays.asList("2", "3", "4"),
         idsOf(page.getLeft()),
         "missing cursor must fall back to the supplied offset");
   }
@@ -123,7 +124,7 @@ class TestMixedAndIcebergTableDescriptorPagination {
         MixedAndIcebergTableDescriptor.paginate(all, 5, 0, null);
 
     assertEquals(10L, page.getRight());
-    assertEquals(List.of("0", "1", "2", "3", "4"), idsOf(page.getLeft()));
+    assertEquals(Arrays.asList("0", "1", "2", "3", "4"), idsOf(page.getLeft()));
   }
 
   @Test
@@ -145,6 +146,6 @@ class TestMixedAndIcebergTableDescriptorPagination {
         MixedAndIcebergTableDescriptor.paginate(all, 3, 4, "");
 
     assertEquals(10L, page.getRight());
-    assertEquals(List.of("4", "5", "6"), idsOf(page.getLeft()));
+    assertEquals(Arrays.asList("4", "5", "6"), idsOf(page.getLeft()));
   }
 }
