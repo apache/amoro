@@ -65,7 +65,7 @@ public class TestOptimizingUtil extends AMSTableTestBase {
   private final Executor planExecutor = Executors.newSingleThreadExecutor();
   private final QuotaProvider quotaProvider = resourceGroup -> 1;
   private final ProcessFactoryRouter router =
-      new ProcessFactoryRouter(java.util.List.of(new IcebergProcessFactory()));
+      new ProcessFactoryRouter(Collections.singletonList(new IcebergProcessFactory()));
 
   private final OptimizerThread optimizerThread =
       new OptimizerThread(1, null) {

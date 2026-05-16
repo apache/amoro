@@ -38,7 +38,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -308,8 +310,7 @@ public class TestHttpRemoteSparkStandAloneSubmit {
         "/spark/job/submit",
         exchange -> {
           // Read and verify the request body contains expected fields
-          String body =
-              new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+          String body = readBody(exchange.getRequestBody());
           Assert.assertTrue("Request should contain hql", body.contains("\"hql\":\"SELECT 1\""));
           Assert.assertTrue(
               "Request should contain curUser",
@@ -463,6 +464,16 @@ public class TestHttpRemoteSparkStandAloneSubmit {
 
   private TableProcess createTestProcess(Map<String, String> params) {
     return new TestingTableProcess(params);
+  }
+
+  private static String readBody(InputStream inputStream) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    byte[] data = new byte[1024];
+    int read;
+    while ((read = inputStream.read(data)) != -1) {
+      buffer.write(data, 0, read);
+    }
+    return new String(buffer.toByteArray(), StandardCharsets.UTF_8);
   }
 
   private static class TestingTableProcess extends TableProcess {

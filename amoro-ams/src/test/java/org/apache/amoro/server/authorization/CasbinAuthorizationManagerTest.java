@@ -25,6 +25,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.Set;
 
 public class CasbinAuthorizationManagerTest {
@@ -36,11 +37,12 @@ public class CasbinAuthorizationManagerTest {
 
     CasbinAuthorizationManager manager = new CasbinAuthorizationManager(conf);
 
-    Set<String> viewerPrivileges = manager.resolvePrivileges(Set.of(Role.VIEWER));
+    Set<String> viewerPrivileges = manager.resolvePrivileges(Collections.singleton(Role.VIEWER));
     assertTrue(viewerPrivileges.contains(Privilege.VIEW_TABLE.name()));
     assertFalse(viewerPrivileges.contains(Privilege.VIEW_SYSTEM.name()));
 
-    Set<String> adminPrivileges = manager.resolvePrivileges(Set.of(Role.SERVICE_ADMIN));
+    Set<String> adminPrivileges =
+        manager.resolvePrivileges(Collections.singleton(Role.SERVICE_ADMIN));
     assertTrue(adminPrivileges.contains(Privilege.VIEW_SYSTEM.name()));
     assertTrue(adminPrivileges.contains(Privilege.EXECUTE_SQL.name()));
   }

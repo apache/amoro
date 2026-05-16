@@ -23,7 +23,6 @@ import org.apache.amoro.PaimonActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.ExecuteEngine;
-import org.apache.amoro.process.HttpRemoteSparkStandAloneSubmit;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.server.table.DefaultTableRuntime;

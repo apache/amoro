@@ -246,7 +246,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime implements Optimiz
     }
 
     Optional<PendingInputResult> result = table.evaluatePendingInput(this, maxPendingPartitions);
-    if (result.isEmpty()) {
+    if (!result.isPresent()) {
       optimizingNotNecessary();
       return false;
     }

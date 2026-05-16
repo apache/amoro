@@ -27,11 +27,14 @@ import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.node.Objec
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,22 +44,12 @@ import java.util.Map;
 /**
  * HTTP-based execution engine that submits Spark SQL jobs to a remote Spark StandAlone cluster via
  * REST APIs provided by dremel-httpserver.
- *
- * <p>Supported APIs:
- *
- * <ul>
- *   <li>POST /spark/job/submit — submit a SQL job
- *   <li>GET /spark/job/state?qid={qid} — query job status
- *   <li>POST /spark/job/kill — kill a running job
- * </ul>
  */
 public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
 
   private static final Logger LOG = LoggerFactory.getLogger(HttpRemoteSparkStandAloneSubmit.class);
 
   public static final String ENGINE_NAME = "sl-spark-http";
-
-  /** Summary key for tracking historical qids across retries. */
   public static final String SUMMARY_KEY_QIDS = "qids";
 
   private static final String PROP_BASE_URL = "base-url";
@@ -90,12 +83,10 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
   private static final String PARAM_CONF = "conf";
   private static final String PARAM_CLIENT_IP = "clientIp";
 
-  private static final String HQL_EXTENSION = "set spark.syntax.extension=true;";
-
   private final ObjectMapper objectMapper = new ObjectMapper();
 
-  private HttpClient httpClient;
   private String baseUrl;
+  private int connectTimeoutMs;
   private int readTimeoutMs;
   private int defaultSparkVersion;
   private String sourceTag;
@@ -118,21 +109,17 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
     if (baseUrl == null || baseUrl.isEmpty()) {
       baseUrl = DEFAULT_BASE_URL;
     }
-    // Remove trailing slash
     if (baseUrl.endsWith("/")) {
       baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
     }
 
-    int connectTimeoutMs =
+    this.connectTimeoutMs =
         parseInt(engineProperties.get(PROP_CONNECT_TIMEOUT), DEFAULT_CONNECT_TIMEOUT_MS);
     this.readTimeoutMs = parseInt(engineProperties.get(PROP_READ_TIMEOUT), DEFAULT_READ_TIMEOUT_MS);
     this.defaultSparkVersion =
         parseInt(engineProperties.get(PROP_DEFAULT_SPARK_VERSION), DEFAULT_SPARK_VERSION);
     this.sourceTag = engineProperties.getOrDefault(PROP_SOURCE_TAG, DEFAULT_SOURCE_TAG);
     this.curUser = engineProperties.getOrDefault(PROP_CUR_USER, DEFAULT_CUR_USER);
-
-    this.httpClient =
-        HttpClient.newBuilder().connectTimeout(Duration.ofMillis(connectTimeoutMs)).build();
 
     LOG.info(
         "HttpRemoteSparkStandAloneSubmit engine opened with baseUrl={}, connectTimeout={}ms, readTimeout={}ms",
@@ -265,12 +252,6 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
     return result;
   }
 
-  /**
-   * Map remote Spark job status to Amoro ProcessStatus.
-   *
-   * <p>Remote JobStatus enum values: WAITING, SUBMITTING, PENDING, RUNNING, SUBMIT_TIMEOUT, KILLED,
-   * FAILED, SUCCEEDED
-   */
   @VisibleForTesting
   public ProcessStatus mapRemoteState(String remoteState) {
     if (remoteState == null || remoteState.isEmpty()) {
@@ -307,7 +288,7 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
 
     ObjectNode requestNode = objectMapper.createObjectNode();
     requestNode.put(PARAM_JOB_TYPE, "sql");
-    requestNode.put(PARAM_HQL, HQL_EXTENSION + hql);
+    requestNode.put(PARAM_HQL, hql);
     requestNode.put(PARAM_CUR_USER, params.getOrDefault(PARAM_CUR_USER, curUser));
     requestNode.put(PARAM_SOURCE_TAG, params.getOrDefault(PARAM_SOURCE_TAG, sourceTag));
     requestNode.put(
@@ -332,56 +313,76 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
   }
 
   private String doPost(String path, String jsonBody) {
+    HttpURLConnection connection = null;
     try {
-      HttpRequest request =
-          HttpRequest.newBuilder()
-              .uri(URI.create(baseUrl + path))
-              .timeout(Duration.ofMillis(readTimeoutMs))
-              .header("Content-Type", "application/json")
-              .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-              .build();
-
-      HttpResponse<String> response =
-          httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-      if (response.statusCode() != 200) {
-        throw new RuntimeException(
-            String.format(
-                "HTTP POST %s returned status %d: %s",
-                path, response.statusCode(), response.body()));
+      connection = openConnection(path, "POST");
+      connection.setRequestProperty("Content-Type", "application/json");
+      connection.setDoOutput(true);
+      byte[] body = jsonBody.getBytes(StandardCharsets.UTF_8);
+      connection.setFixedLengthStreamingMode(body.length);
+      try (OutputStream output = connection.getOutputStream()) {
+        output.write(body);
       }
-      return response.body();
+      return readResponse(path, connection);
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
       throw new RuntimeException("HTTP POST " + path + " failed", e);
+    } finally {
+      if (connection != null) {
+        connection.disconnect();
+      }
     }
   }
 
   private String doGet(String path) {
+    HttpURLConnection connection = null;
     try {
-      HttpRequest request =
-          HttpRequest.newBuilder()
-              .uri(URI.create(baseUrl + path))
-              .timeout(Duration.ofMillis(readTimeoutMs))
-              .GET()
-              .build();
-
-      HttpResponse<String> response =
-          httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-      if (response.statusCode() != 200) {
-        throw new RuntimeException(
-            String.format(
-                "HTTP GET %s returned status %d: %s",
-                path, response.statusCode(), response.body()));
-      }
-      return response.body();
+      connection = openConnection(path, "GET");
+      return readResponse(path, connection);
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
       throw new RuntimeException("HTTP GET " + path + " failed", e);
+    } finally {
+      if (connection != null) {
+        connection.disconnect();
+      }
     }
+  }
+
+  private HttpURLConnection openConnection(String path, String method) throws IOException {
+    HttpURLConnection connection = (HttpURLConnection) new URL(baseUrl + path).openConnection();
+    connection.setRequestMethod(method);
+    connection.setConnectTimeout(connectTimeoutMs);
+    connection.setReadTimeout(readTimeoutMs);
+    return connection;
+  }
+
+  private String readResponse(String path, HttpURLConnection connection) throws IOException {
+    int statusCode = connection.getResponseCode();
+    String body =
+        readBody(statusCode >= 400 ? connection.getErrorStream() : connection.getInputStream());
+    if (statusCode != HttpURLConnection.HTTP_OK) {
+      throw new RuntimeException(
+          String.format("HTTP %s returned status %d: %s", path, statusCode, body));
+    }
+    return body;
+  }
+
+  private String readBody(InputStream inputStream) throws IOException {
+    if (inputStream == null) {
+      return "";
+    }
+    StringBuilder builder = new StringBuilder();
+    try (BufferedReader reader =
+        new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        builder.append(line);
+      }
+    }
+    return builder.toString();
   }
 
   private JsonNode parseResponse(String responseBody) {

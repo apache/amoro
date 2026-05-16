@@ -36,6 +36,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,7 @@ public class TestTableProcessExecutor {
 
   @Test
   public void testBuildFailureMessageDoesNotTruncateThrowable() {
-    String longMessage = "x".repeat(6000);
+    String longMessage = repeat("x", 6000);
     Throwable throwable = new RuntimeException(longMessage);
 
     String failureMessage = TableProcessExecutor.buildFailureMessage(throwable);
@@ -84,7 +85,7 @@ public class TestTableProcessExecutor {
     Assert.assertEquals("qid-1", store.getExternalProcessIdentifier());
     Assert.assertTrue(store.getFinishTime() > 0);
     Assert.assertEquals(
-        List.of(ProcessEvent.SUBMIT_REQUESTED.name(), ProcessEvent.COMPLETE_FAILED.name()),
+        Arrays.asList(ProcessEvent.SUBMIT_REQUESTED.name(), ProcessEvent.COMPLETE_FAILED.name()),
         store.getEvents());
   }
 
@@ -103,7 +104,7 @@ public class TestTableProcessExecutor {
     Assert.assertTrue(store.getFailMessage().contains("first poll failed"));
     Assert.assertEquals("qid-1", store.getExternalProcessIdentifier());
     Assert.assertEquals(
-        List.of(ProcessEvent.SUBMIT_REQUESTED.name(), ProcessEvent.COMPLETE_FAILED.name()),
+        Arrays.asList(ProcessEvent.SUBMIT_REQUESTED.name(), ProcessEvent.COMPLETE_FAILED.name()),
         store.getEvents());
   }
 
@@ -114,7 +115,7 @@ public class TestTableProcessExecutor {
     SequencedExecuteEngine engine =
         new SequencedExecuteEngine(
             ProcessStatusInfo.of(ProcessStatus.RUNNING, ""),
-            List.of(ProcessStatusInfo.of(ProcessStatus.SUCCESS, "")),
+            Collections.singletonList(ProcessStatusInfo.of(ProcessStatus.SUCCESS, "")),
             sequence);
 
     TableProcessExecutor executor =
@@ -142,7 +143,7 @@ public class TestTableProcessExecutor {
     Assert.assertEquals(ProcessStatus.CANCELED, store.getStatus());
     Assert.assertEquals("qid-1", store.getExternalProcessIdentifier());
     Assert.assertEquals(
-        List.of(ProcessEvent.SUBMIT_REQUESTED.name(), ProcessEvent.CANCEL_REQUESTED.name()),
+        Arrays.asList(ProcessEvent.SUBMIT_REQUESTED.name(), ProcessEvent.CANCEL_REQUESTED.name()),
         store.getEvents());
   }
 
@@ -152,7 +153,7 @@ public class TestTableProcessExecutor {
     SequencedExecuteEngine engine =
         new SequencedExecuteEngine(
             ProcessStatusInfo.of(ProcessStatus.PENDING, ""),
-            List.of(
+            Arrays.asList(
                 ProcessStatusInfo.of(ProcessStatus.RUNNING, ""),
                 ProcessStatusInfo.of(ProcessStatus.SUCCESS, "")));
 
@@ -166,7 +167,7 @@ public class TestTableProcessExecutor {
     Assert.assertEquals("qid-1", store.getExternalProcessIdentifier());
     Assert.assertTrue(store.getFinishTime() > 0);
     Assert.assertEquals(
-        List.of(ProcessEvent.SUBMIT_REQUESTED.name(), ProcessEvent.COMPLETE_SUCCESS.name()),
+        Arrays.asList(ProcessEvent.SUBMIT_REQUESTED.name(), ProcessEvent.COMPLETE_SUCCESS.name()),
         store.getEvents());
     Assert.assertEquals(3, engine.getPollCount());
   }
@@ -248,6 +249,14 @@ public class TestTableProcessExecutor {
     public int getFirstPollOrder() {
       return firstPollOrder;
     }
+  }
+
+  private static String repeat(String value, int count) {
+    StringBuilder builder = new StringBuilder(value.length() * count);
+    for (int i = 0; i < count; i++) {
+      builder.append(value);
+    }
+    return builder.toString();
   }
 
   private static class ThrowingFirstPollExecuteEngine implements ExecuteEngine {

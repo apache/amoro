@@ -29,6 +29,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.process.ProcessFactory;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -53,10 +54,10 @@ public class TestProcessFactoryRouter {
   @Test
   public void forFormat_hit() {
     ProcessFactory iceberg =
-        mockFactory("iceberg", Set.of(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
-    ProcessFactory paimon = mockFactory("paimon", Set.of(TableFormat.PAIMON));
+        mockFactory("iceberg", setOf(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
+    ProcessFactory paimon = mockFactory("paimon", Collections.singleton(TableFormat.PAIMON));
 
-    ProcessFactoryRouter router = new ProcessFactoryRouter(List.of(iceberg, paimon));
+    ProcessFactoryRouter router = new ProcessFactoryRouter(Arrays.asList(iceberg, paimon));
 
     assertSame(iceberg, router.forFormat(TableFormat.ICEBERG));
     assertSame(iceberg, router.forFormat(TableFormat.MIXED_ICEBERG));
@@ -65,8 +66,8 @@ public class TestProcessFactoryRouter {
 
   @Test
   public void forFormat_miss() {
-    ProcessFactory iceberg = mockFactory("iceberg", Set.of(TableFormat.ICEBERG));
-    ProcessFactoryRouter router = new ProcessFactoryRouter(List.of(iceberg));
+    ProcessFactory iceberg = mockFactory("iceberg", Collections.singleton(TableFormat.ICEBERG));
+    ProcessFactoryRouter router = new ProcessFactoryRouter(Collections.singletonList(iceberg));
 
     UnsupportedOperationException ex =
         assertThrows(
@@ -77,13 +78,13 @@ public class TestProcessFactoryRouter {
   @Test
   public void conflict_detection() {
     ProcessFactory factoryA =
-        mockFactory("a", new HashSet<>(Set.of(TableFormat.ICEBERG, TableFormat.PAIMON)));
-    ProcessFactory factoryB = mockFactory("b", Set.of(TableFormat.PAIMON));
+        mockFactory("a", new HashSet<>(setOf(TableFormat.ICEBERG, TableFormat.PAIMON)));
+    ProcessFactory factoryB = mockFactory("b", Collections.singleton(TableFormat.PAIMON));
 
     IllegalArgumentException ex =
         assertThrows(
             IllegalArgumentException.class,
-            () -> new ProcessFactoryRouter(List.of(factoryA, factoryB)));
+            () -> new ProcessFactoryRouter(Arrays.asList(factoryA, factoryB)));
     assertTrue(ex.getMessage().contains("PAIMON"));
     assertTrue(ex.getMessage().contains("'a'"));
     assertTrue(ex.getMessage().contains("'b'"));
@@ -103,10 +104,10 @@ public class TestProcessFactoryRouter {
     ProcessFactory iceberg =
         mockFactory(
             "iceberg",
-            Set.of(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE));
-    ProcessFactory paimon = mockFactory("paimon", Set.of(TableFormat.PAIMON));
+            setOf(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE));
+    ProcessFactory paimon = mockFactory("paimon", Collections.singleton(TableFormat.PAIMON));
 
-    ProcessFactoryRouter router = new ProcessFactoryRouter(List.of(iceberg, paimon));
+    ProcessFactoryRouter router = new ProcessFactoryRouter(Arrays.asList(iceberg, paimon));
 
     Set<TableFormat> formats = router.supportedFormats();
     assertEquals(4, formats.size());
@@ -120,15 +121,19 @@ public class TestProcessFactoryRouter {
 
   @Test
   public void delegates_exposure() {
-    ProcessFactory a = mockFactory("a", Set.of(TableFormat.ICEBERG));
-    ProcessFactory b = mockFactory("b", Set.of(TableFormat.PAIMON));
+    ProcessFactory a = mockFactory("a", Collections.singleton(TableFormat.ICEBERG));
+    ProcessFactory b = mockFactory("b", Collections.singleton(TableFormat.PAIMON));
 
-    ProcessFactoryRouter router = new ProcessFactoryRouter(List.of(a, b));
+    ProcessFactoryRouter router = new ProcessFactoryRouter(Arrays.asList(a, b));
 
     List<ProcessFactory> delegates = router.delegates();
     assertEquals(2, delegates.size());
     assertSame(a, delegates.get(0));
     assertSame(b, delegates.get(1));
     assertThrows(UnsupportedOperationException.class, () -> delegates.add(a));
+  }
+
+  private static Set<TableFormat> setOf(TableFormat... formats) {
+    return new HashSet<>(Arrays.asList(formats));
   }
 }

@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -109,13 +110,12 @@ public class CasbinAuthorizationManager {
   }
 
   private static List<List<String>> readPolicies(String resource) {
-    return readResource(resource)
-        .lines()
+    return Arrays.stream(readResource(resource).split("\\R"))
         .map(String::trim)
         .filter(line -> !line.isEmpty() && !line.startsWith("#"))
         .map(
             line ->
-                List.of(line.split("\\s*,\\s*")).stream()
+                Arrays.stream(line.split("\\s*,\\s*"))
                     .map(String::trim)
                     .collect(Collectors.toList()))
         .collect(Collectors.toList());
