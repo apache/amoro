@@ -103,10 +103,6 @@ data:
         enabled: true
         thread-count: 10
 
-      clean-orphan-files:
-        enabled: true
-        thread-count: 10
-
       clean-dangling-delete-files:
         enabled: true
         thread-count: 10
