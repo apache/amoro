@@ -25,6 +25,7 @@ import net.sf.jsqlparser.expression.NotExpression;
 import net.sf.jsqlparser.expression.StringValue;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
+import net.sf.jsqlparser.expression.operators.relational.Between;
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
 import net.sf.jsqlparser.expression.operators.relational.GreaterThan;
@@ -142,29 +143,38 @@ public class ExpressionUtil {
           : Expressions.isNull(column.name());
     } else if (whereExpr instanceof EqualsTo) {
       EqualsTo eq = (EqualsTo) whereExpr;
-      Types.NestedField column = getColumn(eq.getLeftExpression(), tableColumns);
-      return Expressions.equal(column.name(), getValue(eq.getRightExpression(), column));
+      return convertComparisonExpression(
+          eq.getLeftExpression(), eq.getRightExpression(), tableColumns, ComparisonOperator.EQ);
     } else if (whereExpr instanceof NotEqualsTo) {
       NotEqualsTo ne = (NotEqualsTo) whereExpr;
-      Types.NestedField column = getColumn(ne.getLeftExpression(), tableColumns);
-      return Expressions.notEqual(column.name(), getValue(ne.getRightExpression(), column));
+      return convertComparisonExpression(
+          ne.getLeftExpression(), ne.getRightExpression(), tableColumns, ComparisonOperator.NE);
     } else if (whereExpr instanceof GreaterThan) {
       GreaterThan gt = (GreaterThan) whereExpr;
-      Types.NestedField column = getColumn(gt.getLeftExpression(), tableColumns);
-      return Expressions.greaterThan(column.name(), getValue(gt.getRightExpression(), column));
+      return convertComparisonExpression(
+          gt.getLeftExpression(), gt.getRightExpression(), tableColumns, ComparisonOperator.GT);
     } else if (whereExpr instanceof GreaterThanEquals) {
       GreaterThanEquals ge = (GreaterThanEquals) whereExpr;
-      Types.NestedField column = getColumn(ge.getLeftExpression(), tableColumns);
-      return Expressions.greaterThanOrEqual(
-          column.name(), getValue(ge.getRightExpression(), column));
+      return convertComparisonExpression(
+          ge.getLeftExpression(), ge.getRightExpression(), tableColumns, ComparisonOperator.GE);
     } else if (whereExpr instanceof MinorThan) {
       MinorThan lt = (MinorThan) whereExpr;
-      Types.NestedField column = getColumn(lt.getLeftExpression(), tableColumns);
-      return Expressions.lessThan(column.name(), getValue(lt.getRightExpression(), column));
+      return convertComparisonExpression(
+          lt.getLeftExpression(), lt.getRightExpression(), tableColumns, ComparisonOperator.LT);
     } else if (whereExpr instanceof MinorThanEquals) {
       MinorThanEquals le = (MinorThanEquals) whereExpr;
-      Types.NestedField column = getColumn(le.getLeftExpression(), tableColumns);
-      return Expressions.lessThanOrEqual(column.name(), getValue(le.getRightExpression(), column));
+      return convertComparisonExpression(
+          le.getLeftExpression(), le.getRightExpression(), tableColumns, ComparisonOperator.LE);
+    } else if (whereExpr instanceof Between) {
+      Between between = (Between) whereExpr;
+      Types.NestedField column = getColumn(between.getLeftExpression(), tableColumns);
+      Expression betweenExpression =
+          Expressions.and(
+              Expressions.greaterThanOrEqual(
+                  column.name(), getValue(between.getBetweenExpressionStart(), column)),
+              Expressions.lessThanOrEqual(
+                  column.name(), getValue(between.getBetweenExpressionEnd(), column)));
+      return between.isNot() ? Expressions.not(betweenExpression) : betweenExpression;
     } else if (whereExpr instanceof InExpression) {
       InExpression in = (InExpression) whereExpr;
       Types.NestedField column = getColumn(in.getLeftExpression(), tableColumns);
@@ -195,6 +205,42 @@ public class ExpressionUtil {
           convertSparkExpressionToIceberg(or.getRightExpression(), tableColumns));
     }
     throw new UnsupportedOperationException("Unsupported expression: " + whereExpr);
+  }
+
+  private static Expression convertComparisonExpression(
+      net.sf.jsqlparser.expression.Expression leftExpr,
+      net.sf.jsqlparser.expression.Expression rightExpr,
+      List<Types.NestedField> tableColumns,
+      ComparisonOperator operator) {
+    if (leftExpr instanceof Column) {
+      Types.NestedField column = getColumn(leftExpr, tableColumns);
+      return convertColumnComparison(column, getValue(rightExpr, column), operator);
+    } else if (rightExpr instanceof Column) {
+      Types.NestedField column = getColumn(rightExpr, tableColumns);
+      return convertColumnComparison(column, getValue(leftExpr, column), operator.reverse());
+    }
+
+    throw new IllegalArgumentException(
+        "Expected at least one column reference, got: " + leftExpr + " and " + rightExpr);
+  }
+
+  private static Expression convertColumnComparison(
+      Types.NestedField column, Object value, ComparisonOperator operator) {
+    switch (operator) {
+      case EQ:
+        return Expressions.equal(column.name(), value);
+      case NE:
+        return Expressions.notEqual(column.name(), value);
+      case GT:
+        return Expressions.greaterThan(column.name(), value);
+      case GE:
+        return Expressions.greaterThanOrEqual(column.name(), value);
+      case LT:
+        return Expressions.lessThan(column.name(), value);
+      case LE:
+        return Expressions.lessThanOrEqual(column.name(), value);
+    }
+    throw new UnsupportedOperationException("Unsupported comparison operator: " + operator);
   }
 
   private static Types.NestedField getColumn(
@@ -273,5 +319,31 @@ public class ExpressionUtil {
       timestampStr = ((DateTimeLiteralExpression) expr).getValue().replaceAll("^'(.*)'$", "$1");
     }
     return timestampStr;
+  }
+
+  private enum ComparisonOperator {
+    EQ,
+    NE,
+    GT,
+    GE,
+    LT,
+    LE;
+
+    private ComparisonOperator reverse() {
+      switch (this) {
+        case GT:
+          return LT;
+        case GE:
+          return LE;
+        case LT:
+          return GT;
+        case LE:
+          return GE;
+        case EQ:
+        case NE:
+          return this;
+      }
+      throw new UnsupportedOperationException("Unsupported comparison operator: " + this);
+    }
   }
 }
