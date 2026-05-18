@@ -23,10 +23,9 @@ import org.apache.iceberg.io.OutputFile;
 
 /**
  * Bridge for reusing Iceberg's package-scoped {@link ParquetIO} conversions from parquet row-group
- * merge path.
- * This class lives in the same package as {@link ParquetIO} on purpose to convert Iceberg {@link
- * org.apache.iceberg.io.InputFile}/{@link org.apache.iceberg.io.OutputFile} instances into Parquet
- * file abstractions without re-implementing Iceberg's adapter logic.
+ * merge path. This class lives in the same package as {@link ParquetIO} on purpose to convert
+ * Iceberg {@link org.apache.iceberg.io.InputFile}/{@link org.apache.iceberg.io.OutputFile}
+ * instances into Parquet file abstractions without re-implementing Iceberg's adapter logic.
  */
 public final class ParquetIOBridge {
   private ParquetIOBridge() {}
