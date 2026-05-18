@@ -60,7 +60,7 @@ public class DanglingDeleteFilesCleaningProcess extends TableProcess implements 
           cleanUp -> cleanUp.setLastDanglingDeleteFilesCleanTime(System.currentTimeMillis()));
     } catch (Throwable t) {
       LOG.error(
-          "unexpected dangling delete files cleaning error of table {} ",
+          "unexpected dangling delete files cleaning error of table {}",
           tableRuntime.getTableIdentifier(),
           t);
       throw new RuntimeException(t);
