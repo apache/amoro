@@ -109,8 +109,25 @@ public class IcebergProcessFactory implements ProcessFactory {
   @Override
   public TableProcess recover(TableRuntime tableRuntime, TableProcessStore store)
       throws RecoverProcessFailedException {
+    Action action = store.getAction();
+    if (localEngine == null) {
+      throw new RecoverProcessFailedException(
+          "Local execution engine is not available for IcebergProcessFactory, "
+              + "cannot recover action: "
+              + action);
+    }
+
+    // SnapshotsExpiringProcess and OrphanFilesCleaningProcess are stateless, idempotent
+    // one-shot local maintenance tasks (no checkpoint), so recovery simply rebuilds the
+    // process so it can run again. The store/processId/tracking is owned by ProcessService.
+    if (IcebergActions.EXPIRE_SNAPSHOTS.equals(action)) {
+      return new SnapshotsExpiringProcess(tableRuntime, localEngine);
+    } else if (IcebergActions.DELETE_ORPHANS.equals(action)) {
+      return new OrphanFilesCleaningProcess(tableRuntime, localEngine);
+    }
+
     throw new RecoverProcessFailedException(
-        "Unsupported action for IcebergProcessFactory: " + store.getAction());
+        "Unsupported action for IcebergProcessFactory: " + action);
   }
 
   @Override
