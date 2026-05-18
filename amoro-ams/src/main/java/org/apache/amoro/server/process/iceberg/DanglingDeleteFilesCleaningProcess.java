@@ -63,6 +63,7 @@ public class DanglingDeleteFilesCleaningProcess extends TableProcess implements 
           "unexpected dangling delete files cleaning error of table {} ",
           tableRuntime.getTableIdentifier(),
           t);
+      throw new RuntimeException(t);
     }
   }
 

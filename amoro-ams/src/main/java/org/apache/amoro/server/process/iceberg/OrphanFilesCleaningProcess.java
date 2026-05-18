@@ -59,6 +59,7 @@ public class OrphanFilesCleaningProcess extends TableProcess implements LocalPro
           cleanUp -> cleanUp.setLastOrphanFilesCleanTime(System.currentTimeMillis()));
     } catch (Throwable t) {
       LOG.error("Failed to clean orphan files for table {}", tableRuntime.getTableIdentifier(), t);
+      throw new RuntimeException(t);
     }
   }
 
