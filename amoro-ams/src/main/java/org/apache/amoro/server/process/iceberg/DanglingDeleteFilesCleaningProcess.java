@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-/** Local table process for expiring Iceberg dangling delete files.  */
+/** Local table process for expiring Iceberg dangling delete files. */
 public class DanglingDeleteFilesCleaningProcess extends TableProcess implements LocalProcess {
 
   private static final Logger LOG =
