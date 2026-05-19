@@ -49,8 +49,7 @@ public class TestIcebergProcessFactory {
   @Test
   public void testOpenAndSupportedActions() {
     assertSupportedAction("expire-snapshots", IcebergActions.EXPIRE_SNAPSHOTS, Duration.ofHours(1));
-    assertSupportedAction(
-        "clean-orphan-files", IcebergActions.DELETE_ORPHANS, Duration.ofHours(24));
+    assertSupportedAction("clean-orphan-files", IcebergActions.CLEAN_ORPHAN, Duration.ofHours(24));
     assertSupportedAction(
         "clean-dangling-delete-files", IcebergActions.CLEAN_DANGLING_DELETE, Duration.ofHours(24));
     assertSupportedAction("expire-data", IcebergActions.EXPIRE_DATA, Duration.ofHours(24));
@@ -61,7 +60,7 @@ public class TestIcebergProcessFactory {
     assertTriggerWhenDue(
         "expire-snapshots", IcebergActions.EXPIRE_SNAPSHOTS, SnapshotsExpiringProcess.class, 0);
     assertTriggerWhenDue(
-        "clean-orphan-files", IcebergActions.DELETE_ORPHANS, OrphanFilesCleaningProcess.class, 0);
+        "clean-orphan-files", IcebergActions.CLEAN_ORPHAN, OrphanFilesCleaningProcess.class, 0);
     assertTriggerWhenDue(
         "clean-dangling-delete-files",
         IcebergActions.CLEAN_DANGLING_DELETE,
@@ -75,7 +74,7 @@ public class TestIcebergProcessFactory {
     assertTriggerNotDue(
         "expire-snapshots", IcebergActions.EXPIRE_SNAPSHOTS, System.currentTimeMillis());
     assertTriggerNotDue(
-        "clean-orphan-files", IcebergActions.DELETE_ORPHANS, System.currentTimeMillis());
+        "clean-orphan-files", IcebergActions.CLEAN_ORPHAN, System.currentTimeMillis());
     assertTriggerNotDue(
         "clean-dangling-delete-files",
         IcebergActions.CLEAN_DANGLING_DELETE,
@@ -86,7 +85,7 @@ public class TestIcebergProcessFactory {
   @Test
   public void testTriggerActionDisabled() {
     assertTriggerDisabled("expire-snapshots", IcebergActions.EXPIRE_SNAPSHOTS, false, 0);
-    assertTriggerDisabled("clean-orphan-files", IcebergActions.DELETE_ORPHANS, false, 0);
+    assertTriggerDisabled("clean-orphan-files", IcebergActions.CLEAN_ORPHAN, false, 0);
     assertTriggerDisabled(
         "clean-dangling-delete-files", IcebergActions.CLEAN_DANGLING_DELETE, false, 0);
     assertTriggerDisabled("expire-data", IcebergActions.EXPIRE_DATA, false, 0);
@@ -101,7 +100,7 @@ public class TestIcebergProcessFactory {
   @Test
   public void testRecoverOrphanFilesCleaningProcess() {
     assertRecover(
-        "clean-orphan-files", IcebergActions.DELETE_ORPHANS, OrphanFilesCleaningProcess.class);
+        "clean-orphan-files", IcebergActions.CLEAN_ORPHAN, OrphanFilesCleaningProcess.class);
   }
 
   @Test

@@ -65,7 +65,7 @@ public class OrphanFilesCleaningProcess extends TableProcess implements LocalPro
 
   @Override
   public Action getAction() {
-    return IcebergActions.DELETE_ORPHANS;
+    return IcebergActions.CLEAN_ORPHAN;
   }
 
   @Override
