@@ -23,3 +23,4 @@ execute-engines:
       pool.default.thread-count: 10
       pool.snapshots-expiring.thread-count: 10
       pool.orphan-files-cleaning.thread-count: 10
+      pool.clean-dangling-delete-files.thread-count: 10

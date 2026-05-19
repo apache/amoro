@@ -28,7 +28,6 @@ public class InlineTableExecutors {
 
   private static final InlineTableExecutors instance = new InlineTableExecutors();
   private TableRuntimeRefreshExecutor tableRefreshingExecutor;
-  private DanglingDeleteFilesCleaningExecutor danglingDeleteFilesCleaningExecutor;
   private BlockerExpiringExecutor blockerExpiringExecutor;
   private OptimizingCommitExecutor optimizingCommitExecutor;
   private ProcessDataExpiringExecutor processDataExpiringExecutor;
@@ -41,13 +40,6 @@ public class InlineTableExecutors {
   }
 
   public void setup(TableService tableService, Configurations conf) {
-    if (conf.getBoolean(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_ENABLED)) {
-      this.danglingDeleteFilesCleaningExecutor =
-          new DanglingDeleteFilesCleaningExecutor(
-              tableService,
-              conf.getInteger(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT),
-              conf.get(AmoroManagementConf.CLEAN_DANGLING_DELETE_FILES_INTERVAL));
-    }
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
             tableService, conf.getInteger(AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
@@ -98,10 +90,6 @@ public class InlineTableExecutors {
 
   public TableRuntimeRefreshExecutor getTableRefreshingExecutor() {
     return tableRefreshingExecutor;
-  }
-
-  public DanglingDeleteFilesCleaningExecutor getDanglingDeleteFilesCleaningExecutor() {
-    return danglingDeleteFilesCleaningExecutor;
   }
 
   public BlockerExpiringExecutor getBlockerExpiringExecutor() {

@@ -174,24 +174,6 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofHours(1))
           .withDescription("Interval for expiring snapshots.");
 
-  public static final ConfigOption<Boolean> CLEAN_DANGLING_DELETE_FILES_ENABLED =
-      ConfigOptions.key("clean-dangling-delete-files.enabled")
-          .booleanType()
-          .defaultValue(true)
-          .withDescription("Enable dangling delete files cleaning.");
-
-  public static final ConfigOption<Integer> CLEAN_DANGLING_DELETE_FILES_THREAD_COUNT =
-      ConfigOptions.key("clean-dangling-delete-files.thread-count")
-          .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used for dangling delete files cleaning.");
-
-  public static final ConfigOption<Duration> CLEAN_DANGLING_DELETE_FILES_INTERVAL =
-      ConfigOptions.key("clean-dangling-delete-files.interval")
-          .durationType()
-          .defaultValue(Duration.ofDays(1))
-          .withDescription("Interval for cleaning dangling delete files.");
-
   public static final ConfigOption<Boolean> SYNC_HIVE_TABLES_ENABLED =
       ConfigOptions.key("sync-hive-tables.enabled")
           .booleanType()
