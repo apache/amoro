@@ -58,7 +58,7 @@ public class DataExpiringProcess extends TableProcess implements LocalProcess {
           DefaultTableRuntime.CLEANUP_STATE_KEY,
           cleanUp -> cleanUp.setLastDataExpiringTime(System.currentTimeMillis()));
     } catch (Throwable t) {
-      LOG.error("unexpected expire data error of table {} ", tableRuntime.getTableIdentifier(), t);
+      LOG.error("unexpected expire data error of table {}", tableRuntime.getTableIdentifier(), t);
       throw new RuntimeException(t);
     }
   }
