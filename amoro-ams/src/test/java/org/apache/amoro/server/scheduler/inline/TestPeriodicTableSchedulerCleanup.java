@@ -165,8 +165,7 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
    */
   @Test
   public void testShouldExecuteTaskWithNoPreviousCleanup() {
-    List<CleanupOperation> operations =
-        Arrays.asList(CleanupOperation.DATA_EXPIRING, CleanupOperation.SNAPSHOTS_EXPIRING);
+    List<CleanupOperation> operations = Arrays.asList(CleanupOperation.SNAPSHOTS_EXPIRING);
 
     for (CleanupOperation operation : operations) {
       List<Long> testTableIds = Collections.singletonList(1L);
@@ -186,8 +185,7 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
   /** Test should not execute task with recent cleanup */
   @Test
   public void testShouldNotExecuteTaskWithRecentCleanup() {
-    List<CleanupOperation> operations =
-        Arrays.asList(CleanupOperation.DATA_EXPIRING, CleanupOperation.SNAPSHOTS_EXPIRING);
+    List<CleanupOperation> operations = Arrays.asList(CleanupOperation.SNAPSHOTS_EXPIRING);
 
     for (CleanupOperation operation : operations) {
       List<Long> testTableIds = Collections.singletonList(1L);
@@ -212,8 +210,7 @@ public class TestPeriodicTableSchedulerCleanup extends PersistentBase {
   /** Test should execute task with old cleanup */
   @Test
   public void testShouldExecuteTaskWithOldCleanup() {
-    List<CleanupOperation> operations =
-        Arrays.asList(CleanupOperation.DATA_EXPIRING, CleanupOperation.SNAPSHOTS_EXPIRING);
+    List<CleanupOperation> operations = Arrays.asList(CleanupOperation.SNAPSHOTS_EXPIRING);
 
     for (CleanupOperation operation : operations) {
       List<Long> testTableIds = Collections.singletonList(1L);

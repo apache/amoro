@@ -47,8 +47,9 @@ public class TableRuntimeCleanupState {
     return lastDataExpiringTime;
   }
 
-  public void setLastDataExpiringTime(long lastDataExpiringTime) {
+  public TableRuntimeCleanupState setLastDataExpiringTime(long lastDataExpiringTime) {
     this.lastDataExpiringTime = lastDataExpiringTime;
+    return this;
   }
 
   public long getLastSnapshotsExpiringTime() {

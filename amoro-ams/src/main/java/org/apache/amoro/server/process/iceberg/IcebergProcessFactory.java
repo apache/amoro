@@ -73,6 +73,12 @@ public class IcebergProcessFactory implements ProcessFactory {
           .durationType()
           .defaultValue(Duration.ofDays(1));
 
+  public static final ConfigOption<Boolean> DATA_EXPIRE_ENABLED =
+      ConfigOptions.key("expire-data.enabled").booleanType().defaultValue(true);
+
+  public static final ConfigOption<Duration> DATA_EXPIRE_INTERVAL =
+      ConfigOptions.key("expire-data.interval").durationType().defaultValue(Duration.ofDays(1));
+
   private ExecuteEngine localEngine;
   private final Map<Action, ProcessTriggerStrategy> actions = Maps.newHashMap();
   private final List<TableFormat> formats =
@@ -111,6 +117,8 @@ public class IcebergProcessFactory implements ProcessFactory {
       return triggerCleanOrphans(tableRuntime);
     } else if (IcebergActions.CLEAN_DANGLING_DELETE.equals(action)) {
       return triggerCleanDanglingDelete(tableRuntime);
+    } else if (IcebergActions.EXPIRE_DATA.equals(action)) {
+      return triggerDataExpiring(tableRuntime);
     }
 
     return Optional.empty();
@@ -127,13 +135,18 @@ public class IcebergProcessFactory implements ProcessFactory {
               + action);
     }
 
-    // SnapshotsExpiringProcess and OrphanFilesCleaningProcess are stateless, idempotent
-    // one-shot local maintenance tasks (no checkpoint), so recovery simply rebuilds the
-    // process so it can run again. The store/processId/tracking is owned by ProcessService.
+    // SnapshotsExpiringProcess, OrphanFilesCleaningProcess, DanglingDeleteFilesCleaningProcess
+    // and DataExpiringProcess are stateless, idempotent one-shot local maintenance tasks
+    // (no checkpoint), so recovery simply rebuilds the process so it can run again.
+    // The store/processId/tracking is owned by ProcessService.
     if (IcebergActions.EXPIRE_SNAPSHOTS.equals(action)) {
       return new SnapshotsExpiringProcess(tableRuntime, localEngine);
     } else if (IcebergActions.DELETE_ORPHANS.equals(action)) {
       return new OrphanFilesCleaningProcess(tableRuntime, localEngine);
+    } else if (IcebergActions.CLEAN_DANGLING_DELETE.equals(action)) {
+      return new DanglingDeleteFilesCleaningProcess(tableRuntime, localEngine);
+    } else if (IcebergActions.EXPIRE_DATA.equals(action)) {
+      return new DataExpiringProcess(tableRuntime, localEngine);
     }
 
     throw new RecoverProcessFailedException(
@@ -162,6 +175,12 @@ public class IcebergProcessFactory implements ProcessFactory {
       Duration interval = configs.getDuration(DANGLING_DELETE_FILES_CLEANING_INTERVAL);
       this.actions.put(
           IcebergActions.CLEAN_DANGLING_DELETE, ProcessTriggerStrategy.triggerAtFixRate(interval));
+    }
+
+    if (configs.getBoolean(DATA_EXPIRE_ENABLED)) {
+      Duration interval = configs.getDuration(DATA_EXPIRE_INTERVAL);
+      this.actions.put(
+          IcebergActions.EXPIRE_DATA, ProcessTriggerStrategy.triggerAtFixRate(interval));
     }
   }
 
@@ -211,6 +230,22 @@ public class IcebergProcessFactory implements ProcessFactory {
     }
 
     return Optional.of(new DanglingDeleteFilesCleaningProcess(tableRuntime, localEngine));
+  }
+
+  private Optional<TableProcess> triggerDataExpiring(TableRuntime tableRuntime) {
+    if (localEngine == null
+        || !tableRuntime.getTableConfiguration().getExpiringDataConfig().isEnabled()) {
+      return Optional.empty();
+    }
+
+    long lastExecuteTime =
+        tableRuntime.getState(DefaultTableRuntime.CLEANUP_STATE_KEY).getLastDataExpiringTime();
+    ProcessTriggerStrategy strategy = actions.get(IcebergActions.EXPIRE_DATA);
+    if (System.currentTimeMillis() - lastExecuteTime < strategy.getTriggerInterval().toMillis()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(new DataExpiringProcess(tableRuntime, localEngine));
   }
 
   @Override

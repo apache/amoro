@@ -116,11 +116,6 @@ ams:
     enabled: false
     thread-count: 10
 
-  data-expiration:
-    enabled: true
-    thread-count: 10
-    interval: 1d
-
   auto-create-tags:
     enabled: true
     thread-count: 3
