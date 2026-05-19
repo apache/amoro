@@ -105,6 +105,19 @@ public class TestIcebergProcessFactory {
   }
 
   @Test
+  public void testRecoverCleanDanglingDeleteProcess() {
+    assertRecover(
+        "clean-dangling-delete-files",
+        IcebergActions.CLEAN_DANGLING_DELETE,
+        DanglingDeleteFilesCleaningProcess.class);
+  }
+
+  @Test
+  public void testRecoverDataExpiringProcess() {
+    assertRecover("expire-data", IcebergActions.EXPIRE_DATA, DataExpiringProcess.class);
+  }
+
+  @Test
   public void testRecoverUnsupportedActionThrows() {
     IcebergProcessFactory factory = openedFactory("expire-snapshots");
 

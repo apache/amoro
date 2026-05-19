@@ -135,13 +135,18 @@ public class IcebergProcessFactory implements ProcessFactory {
               + action);
     }
 
-    // SnapshotsExpiringProcess and OrphanFilesCleaningProcess are stateless, idempotent
-    // one-shot local maintenance tasks (no checkpoint), so recovery simply rebuilds the
-    // process so it can run again. The store/processId/tracking is owned by ProcessService.
+    // SnapshotsExpiringProcess, OrphanFilesCleaningProcess, DanglingDeleteFilesCleaningProcess
+    // and DataExpiringProcess are stateless, idempotent one-shot local maintenance tasks
+    // (no checkpoint), so recovery simply rebuilds the process so it can run again.
+    // The store/processId/tracking is owned by ProcessService.
     if (IcebergActions.EXPIRE_SNAPSHOTS.equals(action)) {
       return new SnapshotsExpiringProcess(tableRuntime, localEngine);
     } else if (IcebergActions.DELETE_ORPHANS.equals(action)) {
       return new OrphanFilesCleaningProcess(tableRuntime, localEngine);
+    } else if (IcebergActions.CLEAN_DANGLING_DELETE.equals(action)) {
+      return new DanglingDeleteFilesCleaningProcess(tableRuntime, localEngine);
+    } else if (IcebergActions.EXPIRE_DATA.equals(action)) {
+      return new DataExpiringProcess(tableRuntime, localEngine);
     }
 
     throw new RecoverProcessFailedException(
