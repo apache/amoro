@@ -107,7 +107,7 @@ public class IcebergProcessFactory implements ProcessFactory {
 
     if (IcebergActions.EXPIRE_SNAPSHOTS.equals(action)) {
       return triggerExpireSnapshot(tableRuntime);
-    } else if (IcebergActions.DELETE_ORPHANS.equals(action)) {
+    } else if (IcebergActions.CLEAN_ORPHAN.equals(action)) {
       return triggerCleanOrphans(tableRuntime);
     } else if (IcebergActions.CLEAN_DANGLING_DELETE.equals(action)) {
       return triggerCleanDanglingDelete(tableRuntime);
@@ -132,7 +132,7 @@ public class IcebergProcessFactory implements ProcessFactory {
     // process so it can run again. The store/processId/tracking is owned by ProcessService.
     if (IcebergActions.EXPIRE_SNAPSHOTS.equals(action)) {
       return new SnapshotsExpiringProcess(tableRuntime, localEngine);
-    } else if (IcebergActions.DELETE_ORPHANS.equals(action)) {
+    } else if (IcebergActions.CLEAN_ORPHAN.equals(action)) {
       return new OrphanFilesCleaningProcess(tableRuntime, localEngine);
     }
 
@@ -155,7 +155,7 @@ public class IcebergProcessFactory implements ProcessFactory {
     if (configs.getBoolean(ORPHAN_FILES_CLEANING_ENABLED)) {
       Duration interval = configs.getDuration(ORPHAN_FILES_CLEANING_INTERVAL);
       this.actions.put(
-          IcebergActions.DELETE_ORPHANS, ProcessTriggerStrategy.triggerAtFixRate(interval));
+          IcebergActions.CLEAN_ORPHAN, ProcessTriggerStrategy.triggerAtFixRate(interval));
     }
 
     if (configs.getBoolean(DANGLING_DELETE_FILES_CLEANING_ENABLED)) {
@@ -187,7 +187,7 @@ public class IcebergProcessFactory implements ProcessFactory {
 
     long lastExecuteTime =
         tableRuntime.getState(DefaultTableRuntime.CLEANUP_STATE_KEY).getLastOrphanFilesCleanTime();
-    ProcessTriggerStrategy strategy = actions.get(IcebergActions.DELETE_ORPHANS);
+    ProcessTriggerStrategy strategy = actions.get(IcebergActions.CLEAN_ORPHAN);
     if (System.currentTimeMillis() - lastExecuteTime < strategy.getTriggerInterval().toMillis()) {
       return Optional.empty();
     }

@@ -45,8 +45,8 @@ public class TestLocalExecutionEngine {
 
   @Test
   public void testSubmitUsesCustomPoolByTag() throws Exception {
-    assertCustomPoolByTag("snapshots-expiring");
-    assertCustomPoolByTag("orphan-files-cleaning");
+    assertCustomPoolByTag("expire-snapshots");
+    assertCustomPoolByTag("clean-orphan-files");
     assertCustomPoolByTag("clean-dangling-delete-files");
   }
 
@@ -153,8 +153,8 @@ public class TestLocalExecutionEngine {
     LocalExecutionEngine localEngine = new LocalExecutionEngine();
     Map<String, String> properties = new HashMap<>();
     properties.put("pool.default.thread-count", "1");
-    properties.put("pool.snapshots-expiring.thread-count", "1");
-    properties.put("pool.orphan-files-cleaning.thread-count", "1");
+    properties.put("pool.expire-snapshots.thread-count", "1");
+    properties.put("pool.clean-orphan-files.thread-count", "1");
     properties.put("pool.clean-dangling-delete-files.thread-count", "1");
     properties.put("process.status.ttl", ttl);
     localEngine.open(properties);

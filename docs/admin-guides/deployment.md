@@ -304,8 +304,8 @@ execute-engines:
     priority: 100
     properties:
       pool.default.thread-count: 10                   # default thread pool size
-      pool.snapshots-expiring.thread-count: 10        # thread pool for snapshot expiration
-      pool.orphan-files-cleaning.thread-count: 10     # thread pool for orphan file cleaning
+      pool.expire-snapshots.thread-count: 10        # thread pool for snapshot expiration
+      pool.clean-orphan-files.thread-count: 10     # thread pool for orphan file cleaning
       pool.clean-dangling-delete-files.thread-count: 10     # thread pool for dangling delete files cleaning
       process.status.ttl: 4h                          # TTL for process status cache
 ```
