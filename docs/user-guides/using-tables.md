@@ -160,7 +160,7 @@ ALTER TABLE test_db.test_log_store set tblproperties (
 ## Configure data expiration
 
 Amoro can periodically clean data based on the table's expiration policy, which includes properties such as whether to enable expiration, retention duration, expiration level, and the selection of the field for expiration. 
-it's also necessary for AMS to have the data expiration process enabled. You can enable the 'data-expiration' property in the process-factories plugin configuration file
+it's also necessary for AMS to have the data expiration process enabled. You can enable the 'expire-data' property in the process-factories plugin configuration file
 
 ### Enable or disable data expiration
 
