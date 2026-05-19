@@ -58,7 +58,8 @@ public class SnapshotsExpiringProcess extends TableProcess implements LocalProce
           DefaultTableRuntime.CLEANUP_STATE_KEY,
           cleanUp -> cleanUp.setLastSnapshotsExpiringTime(System.currentTimeMillis()));
     } catch (Throwable t) {
-      LOG.error("unexpected expire error of table {} ", tableRuntime.getTableIdentifier(), t);
+      LOG.error("unexpected expire error of table {}", tableRuntime.getTableIdentifier(), t);
+      throw new RuntimeException(t);
     }
   }
 

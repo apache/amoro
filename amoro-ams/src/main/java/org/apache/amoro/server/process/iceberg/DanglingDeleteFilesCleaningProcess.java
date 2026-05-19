@@ -34,12 +34,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-/** Local table process for cleaning Iceberg orphan files. */
-public class OrphanFilesCleaningProcess extends TableProcess implements LocalProcess {
+/** Local table process for expiring Iceberg dangling delete files. */
+public class DanglingDeleteFilesCleaningProcess extends TableProcess implements LocalProcess {
 
-  private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleaningProcess.class);
+  private static final Logger LOG =
+      LoggerFactory.getLogger(DanglingDeleteFilesCleaningProcess.class);
 
-  public OrphanFilesCleaningProcess(TableRuntime tableRuntime, ExecuteEngine engine) {
+  public DanglingDeleteFilesCleaningProcess(TableRuntime tableRuntime, ExecuteEngine engine) {
     super(tableRuntime, engine);
   }
 
@@ -53,19 +54,22 @@ public class OrphanFilesCleaningProcess extends TableProcess implements LocalPro
     try {
       AmoroTable<?> amoroTable = tableRuntime.loadTable();
       TableMaintainer tableMaintainer = TableMaintainerFactory.create(amoroTable, tableRuntime);
-      tableMaintainer.cleanOrphanFiles();
+      tableMaintainer.cleanDanglingDeleteFiles();
       tableRuntime.updateState(
           DefaultTableRuntime.CLEANUP_STATE_KEY,
-          cleanUp -> cleanUp.setLastOrphanFilesCleanTime(System.currentTimeMillis()));
+          cleanUp -> cleanUp.setLastDanglingDeleteFilesCleanTime(System.currentTimeMillis()));
     } catch (Throwable t) {
-      LOG.error("Failed to clean orphan files for table {}", tableRuntime.getTableIdentifier(), t);
+      LOG.error(
+          "unexpected dangling delete files cleaning error of table {}",
+          tableRuntime.getTableIdentifier(),
+          t);
       throw new RuntimeException(t);
     }
   }
 
   @Override
   public Action getAction() {
-    return IcebergActions.DELETE_ORPHANS;
+    return IcebergActions.CLEAN_DANGLING_DELETE;
   }
 
   @Override

@@ -29,4 +29,5 @@ public class IcebergActions {
   public static final Action SYNC_HIVE = Action.register("sync-hive");
   public static final Action EXPIRE_DATA = Action.register("expire-data");
   public static final Action EXPIRE_SNAPSHOTS = Action.register("expire-snapshots");
+  public static final Action CLEAN_DANGLING_DELETE = Action.register("clean-dangling-delete-files");
 }
