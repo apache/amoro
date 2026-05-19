@@ -33,7 +33,6 @@ public class InlineTableExecutors {
   private ProcessDataExpiringExecutor processDataExpiringExecutor;
   private HiveCommitSyncExecutor hiveCommitSyncExecutor;
   private TagsAutoCreatingExecutor tagsAutoCreatingExecutor;
-  private DataExpiringExecutor dataExpiringExecutor;
 
   public static InlineTableExecutors getInstance() {
     return instance;
@@ -79,13 +78,6 @@ public class InlineTableExecutors {
               conf.getInteger(AmoroManagementConf.AUTO_CREATE_TAGS_THREAD_COUNT),
               conf.get(AmoroManagementConf.AUTO_CREATE_TAGS_INTERVAL).toMillis());
     }
-    if (conf.getBoolean(AmoroManagementConf.DATA_EXPIRATION_ENABLED)) {
-      this.dataExpiringExecutor =
-          new DataExpiringExecutor(
-              tableService,
-              conf.getInteger(AmoroManagementConf.DATA_EXPIRATION_THREAD_COUNT),
-              conf.get(AmoroManagementConf.DATA_EXPIRATION_INTERVAL));
-    }
   }
 
   public TableRuntimeRefreshExecutor getTableRefreshingExecutor() {
@@ -110,9 +102,5 @@ public class InlineTableExecutors {
 
   public TagsAutoCreatingExecutor getTagsAutoCreatingExecutor() {
     return tagsAutoCreatingExecutor;
-  }
-
-  public DataExpiringExecutor getDataExpiringExecutor() {
-    return dataExpiringExecutor;
   }
 }

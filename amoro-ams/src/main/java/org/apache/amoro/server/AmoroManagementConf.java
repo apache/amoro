@@ -663,24 +663,6 @@ public class AmoroManagementConf {
           .withDescription(
               "Comma-separated list of sensitive conf keys used to desensitize related value.");
 
-  /** configs of data expiration */
-  public static final ConfigOption<Boolean> DATA_EXPIRATION_ENABLED =
-      ConfigOptions.key("data-expiration.enabled")
-          .booleanType()
-          .defaultValue(true)
-          .withDescription("Enable data expiration");
-
-  public static final ConfigOption<Integer> DATA_EXPIRATION_THREAD_COUNT =
-      ConfigOptions.key("data-expiration.thread-count")
-          .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used for data expiring");
-  public static final ConfigOption<Duration> DATA_EXPIRATION_INTERVAL =
-      ConfigOptions.key("data-expiration.interval")
-          .durationType()
-          .defaultValue(Duration.ofDays(1))
-          .withDescription("Execute interval for data expiration");
-
   public static final String SYSTEM_CONFIG = "ams";
 
   public static final String CATALOG_CORE_SITE = "core-site";
