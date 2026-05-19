@@ -29,6 +29,7 @@ import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.process.MockActionCoordinator;
 import org.apache.amoro.server.process.MockExecuteEngine;
 import org.apache.amoro.server.process.ProcessService;
+import org.apache.amoro.server.process.ThrowingRecoverActionCoordinator;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.junit.After;
 import org.junit.Assert;
@@ -213,6 +214,52 @@ public class TestDefaultProcessService extends AMSTableTestBase {
                   || executeEngine.getCancelingInstances().isEmpty(),
           WAIT_TIMEOUT_MS,
           POLL_INTERVAL_MS);
+    } catch (Throwable t) {
+      throw new RuntimeException(t);
+    }
+  }
+
+  /**
+   * Verify that a single un-recoverable process record does not abort AMS startup: {@code
+   * recoverProcesses} must not propagate the failure, the bad record is skipped and persisted as
+   * FAILED so a later restart neither throws nor re-picks it. Regression test for AMORO-4223.
+   */
+  @Test(timeout = 60_000)
+  public void testRecoverProcessFailSafe() {
+    MockExecuteEngine executeEngine = getExecuteEngine();
+    try {
+      createTable();
+
+      awaitActiveInstances(executeEngine);
+
+      ProcessService.TableProcessHolder holder = getAnyActiveTableProcessHolder();
+      TableProcessStore store = holder.getStore();
+      org.apache.amoro.TableRuntime tableRuntime = holder.getProcess().getTableRuntime();
+
+      awaitEngineStatus(executeEngine, store.getExternalProcessIdentifier(), ProcessStatus.RUNNING);
+      Assert.assertEquals(ProcessStatus.RUNNING, store.getStatus());
+
+      // Simulate an AMS restart where the process can no longer be recovered (the exact
+      // condition that bricked AMS in AMORO-4223): stop tracking the live instance, then
+      // swap in a coordinator whose recover() always fails.
+      processServiceService()
+          .untrackTableProcessInstance(tableRuntime.getTableIdentifier(), store.getProcessId());
+      processServiceService().unInstallAllActionCoordinators();
+      processServiceService()
+          .installActionCoordinator(new ThrowingRecoverActionCoordinator(executeEngine));
+
+      // Must NOT throw: the un-recoverable record is contained and AMS keeps starting up.
+      processServiceService()
+          .recoverProcesses(new ArrayList<>(Collections.singletonList(tableRuntime)));
+      Assert.assertTrue(processServiceService().getActiveTableProcess().isEmpty());
+
+      // The bad record is now persisted as FAILED, so it is no longer "active": a subsequent
+      // restart neither throws nor re-picks it.
+      processServiceService()
+          .recoverProcesses(new ArrayList<>(Collections.singletonList(tableRuntime)));
+      Assert.assertTrue(processServiceService().getActiveTableProcess().isEmpty());
+
+      dropTable();
     } catch (Throwable t) {
       throw new RuntimeException(t);
     }
