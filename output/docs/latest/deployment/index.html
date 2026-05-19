@@ -893,6 +893,8 @@ They are configured in <code>$AMORO_CONF_DIR/plugins/process-factories.yaml</cod
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">clean-orphan-files.interval</span>: <span style="color:#e6db74">&#34;1d&#34;</span>      <span style="color:#75715e"># interval for cleaning orphan files</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">clean-dangling-delete-files.enabled</span>: <span style="color:#e6db74">&#34;true&#34;</span>     <span style="color:#75715e"># enable dangling delete files cleaning</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">clean-dangling-delete-files.interval</span>: <span style="color:#e6db74">&#34;1d&#34;</span>      <span style="color:#75715e"># interval for cleaning dangling delete files</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">expire-data.enabled</span>: <span style="color:#e6db74">&#34;true&#34;</span>            <span style="color:#75715e"># enable data expiration</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">expire-data.interval</span>: <span style="color:#e6db74">&#34;1d&#34;</span>             <span style="color:#75715e"># interval for data expiration</span>
 </span></span></code></pre></div><div class="info">
     Process-level properties control whether an action is registered. Table-level properties (see <a href="../../user-guides/configurations/">Table Configurations</a>) control whether a specific table executes the action.
 </div>
@@ -914,6 +916,7 @@ They are configured in <code>$AMORO_CONF_DIR/plugins/execute-engines.yaml</code>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">pool.snapshots-expiring.thread-count</span>: <span style="color:#ae81ff">10</span>        <span style="color:#75715e"># thread pool for snapshot expiration</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">pool.orphan-files-cleaning.thread-count</span>: <span style="color:#ae81ff">10</span>     <span style="color:#75715e"># thread pool for orphan file cleaning</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">pool.clean-dangling-delete-files.thread-count</span>: <span style="color:#ae81ff">10</span>     <span style="color:#75715e"># thread pool for dangling delete files cleaning</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">pool.expire-data.thread-count</span>: <span style="color:#ae81ff">10</span>               <span style="color:#75715e"># thread pool for data expiration</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">process.status.ttl</span>: <span style="color:#ae81ff">4h                         </span> <span style="color:#75715e"># TTL for process status cache</span>
 </span></span></code></pre></div><div class="info">
     Custom pools use the pattern <code>pool.&lt;name&gt;.thread-count</code>. Processes select pools via their <code>tag()</code> method, falling back to the default pool if no match.

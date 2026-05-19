@@ -759,7 +759,7 @@ Conversely, you can re-enable it:</p>
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;self-optimizing.enabled&#39;</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;false&#39;</span>);
 </span></span></code></pre></div><h2 id="configure-data-expiration">Configure data expiration</h2>
 <p>Amoro can periodically clean data based on the table&rsquo;s expiration policy, which includes properties such as whether to enable expiration, retention duration, expiration level, and the selection of the field for expiration.
-it&rsquo;s also necessary for AMS to have the data expiration thread enabled. You can enable the &lsquo;data-expiration&rsquo; property in the configuration file</p>
+it&rsquo;s also necessary for AMS to have the data expiration process enabled. You can enable the &rsquo;expire-data&rsquo; property in the process-factories plugin configuration file</p>
 <h3 id="enable-or-disable-data-expiration">Enable or disable data expiration</h3>
 <p>By default, Amoro has data expiration disabled. If you want to enable data expiration, please execute the following command.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> test_db.test_log_store <span style="color:#66d9ef">set</span> tblproperties (
