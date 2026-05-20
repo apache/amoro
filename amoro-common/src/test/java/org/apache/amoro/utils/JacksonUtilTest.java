@@ -37,7 +37,6 @@ public class JacksonUtilTest {
 
   @Test
   public void jacksonTest() {
-
     JsonTestBean testObject = new JsonTestBean();
     testObject.setBoolValue(true);
     testObject.setIntValue(3);
