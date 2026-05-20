@@ -99,10 +99,6 @@ data:
         timeout: 1min # 60000
 
       # optional features
-      expire-snapshots:
-        enabled: true
-        thread-count: 10
-
       sync-hive-tables:
         enabled: false
         thread-count: 10

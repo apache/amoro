@@ -156,24 +156,6 @@ public class AmoroManagementConf {
           .defaultValue(1000000)
           .withDescription("The queue size of the executors of the external catalog explorer.");
 
-  public static final ConfigOption<Boolean> EXPIRE_SNAPSHOTS_ENABLED =
-      ConfigOptions.key("expire-snapshots.enabled")
-          .booleanType()
-          .defaultValue(true)
-          .withDescription("Enable snapshots expiring.");
-
-  public static final ConfigOption<Integer> EXPIRE_SNAPSHOTS_THREAD_COUNT =
-      ConfigOptions.key("expire-snapshots.thread-count")
-          .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used for snapshots expiring.");
-
-  public static final ConfigOption<Duration> EXPIRE_SNAPSHOTS_INTERVAL =
-      ConfigOptions.key("expire-snapshots.interval")
-          .durationType()
-          .defaultValue(Duration.ofHours(1))
-          .withDescription("Interval for expiring snapshots.");
-
   public static final ConfigOption<Boolean> SYNC_HIVE_TABLES_ENABLED =
       ConfigOptions.key("sync-hive-tables.enabled")
           .booleanType()
