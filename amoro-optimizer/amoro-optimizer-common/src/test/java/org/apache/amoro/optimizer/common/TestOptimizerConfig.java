@@ -18,8 +18,8 @@
 
 package org.apache.amoro.optimizer.common;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.kohsuke.args4j.CmdLineException;
 
 import java.util.UUID;
@@ -31,13 +31,13 @@ public class TestOptimizerConfig {
     String cmd = "-a thrift://127.0.0.1:1260 -p 11 -g g1 -hb 2000 -eds -dsp /tmp/amoro -msz 512";
     String[] args = cmd.split(" ");
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
-    Assert.assertEquals("thrift://127.0.0.1:1260", optimizerConfig.getAmsUrl());
-    Assert.assertEquals(11, optimizerConfig.getExecutionParallel());
-    Assert.assertEquals("g1", optimizerConfig.getGroupName());
-    Assert.assertEquals(2000, optimizerConfig.getHeartBeat());
-    Assert.assertTrue(optimizerConfig.isExtendDiskStorage());
-    Assert.assertEquals("/tmp/amoro", optimizerConfig.getDiskStoragePath());
-    Assert.assertEquals(512, optimizerConfig.getMemoryStorageSize());
+    Assertions.assertEquals("thrift://127.0.0.1:1260", optimizerConfig.getAmsUrl());
+    Assertions.assertEquals(11, optimizerConfig.getExecutionParallel());
+    Assertions.assertEquals("g1", optimizerConfig.getGroupName());
+    Assertions.assertEquals(2000, optimizerConfig.getHeartBeat());
+    Assertions.assertTrue(optimizerConfig.isExtendDiskStorage());
+    Assertions.assertEquals("/tmp/amoro", optimizerConfig.getDiskStoragePath());
+    Assertions.assertEquals(512, optimizerConfig.getMemoryStorageSize());
   }
 
   @Test
@@ -60,31 +60,31 @@ public class TestOptimizerConfig {
     config.setMemoryStorageSize(memoryStorageSize);
     config.setResourceId(resourceId);
 
-    Assert.assertEquals(amsUrl, config.getAmsUrl());
-    Assert.assertEquals(executionParallel, config.getExecutionParallel());
-    Assert.assertEquals(groupName, config.getGroupName());
-    Assert.assertEquals(heartBeat, config.getHeartBeat());
-    Assert.assertTrue(config.isExtendDiskStorage());
-    Assert.assertEquals(diskStoragePath, config.getDiskStoragePath());
-    Assert.assertEquals(memoryStorageSize, config.getMemoryStorageSize());
-    Assert.assertEquals(resourceId, config.getResourceId());
+    Assertions.assertEquals(amsUrl, config.getAmsUrl());
+    Assertions.assertEquals(executionParallel, config.getExecutionParallel());
+    Assertions.assertEquals(groupName, config.getGroupName());
+    Assertions.assertEquals(heartBeat, config.getHeartBeat());
+    Assertions.assertTrue(config.isExtendDiskStorage());
+    Assertions.assertEquals(diskStoragePath, config.getDiskStoragePath());
+    Assertions.assertEquals(memoryStorageSize, config.getMemoryStorageSize());
+    Assertions.assertEquals(resourceId, config.getResourceId());
   }
 
-  @Test(expected = CmdLineException.class)
-  public void testMissingRequiredArgs() throws CmdLineException {
+  @Test
+  public void testMissingRequiredArgs() {
     String[] args = {"-a", "thrift://127.0.0.1:1260", "-p", "4"};
-    new OptimizerConfig(args);
+    Assertions.assertThrows(CmdLineException.class, () -> new OptimizerConfig(args));
   }
 
-  @Test(expected = CmdLineException.class)
-  public void testInvalidArgs() throws CmdLineException {
+  @Test
+  public void testInvalidArgs() {
     String[] args = {"-a", "thrift://127.0.0.1:1260", "-p", "invalid", "-g", "testGroup"};
-    new OptimizerConfig(args);
+    Assertions.assertThrows(CmdLineException.class, () -> new OptimizerConfig(args));
   }
 
-  @Test(expected = CmdLineException.class)
-  public void testMissingValueArgs() throws CmdLineException {
+  @Test
+  public void testMissingValueArgs() {
     String[] args = {"-a", "thrift://127.0.0.1:1260", "-p", "-g", "testGroup"};
-    new OptimizerConfig(args);
+    Assertions.assertThrows(CmdLineException.class, () -> new OptimizerConfig(args));
   }
 }

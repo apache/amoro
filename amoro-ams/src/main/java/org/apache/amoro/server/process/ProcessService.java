@@ -156,18 +156,71 @@ public class ProcessService extends PersistentBase {
           ActionCoordinatorScheduler scheduler =
               actionCoordinators.get(processMeta.getProcessType());
           if (tableRuntime != null && scheduler != null) {
-            DefaultTableProcessStore store =
-                new DefaultTableProcessStore(
-                    processMeta.getProcessId(),
-                    tableRuntime,
-                    processMeta,
-                    scheduler.getAction(),
-                    processMeta.getRetryNumber());
-            TableProcess process = scheduler.recover(tableRuntime, store);
-            trackTableProcess(tableRuntime.getTableIdentifier(), store, process);
-            executeOrTraceProcess(store, process);
+            recoverProcess(tableRuntime, scheduler, processMeta);
           }
         });
+  }
+
+  /**
+   * Recover a single persisted process record. Any failure is contained here: the offending record
+   * is marked {@link ProcessStatus#FAILED} and skipped, so that one un-recoverable process record
+   * cannot abort the whole AMS startup (see AMORO-4223). The affected maintenance action will be
+   * re-scheduled by its periodic scheduler.
+   *
+   * @param tableRuntime table runtime
+   * @param scheduler coordinator scheduler for the process type
+   * @param processMeta persisted process metadata
+   */
+  private void recoverProcess(
+      TableRuntime tableRuntime,
+      ActionCoordinatorScheduler scheduler,
+      TableProcessMeta processMeta) {
+    DefaultTableProcessStore store =
+        new DefaultTableProcessStore(
+            processMeta.getProcessId(),
+            tableRuntime,
+            processMeta,
+            scheduler.getAction(),
+            processMeta.getRetryNumber());
+    try {
+      TableProcess process = scheduler.recover(tableRuntime, store);
+      trackTableProcess(tableRuntime.getTableIdentifier(), store, process);
+      executeOrTraceProcess(store, process);
+    } catch (Throwable t) {
+      LOG.error(
+          "Failed to recover table process {} (action {}) for table {}, marking it FAILED "
+              + "and skipping so AMS can continue to start up.",
+          processMeta.getProcessId(),
+          scheduler.getAction(),
+          tableRuntime.getTableIdentifier(),
+          t);
+      markRecoverFailed(store, t);
+    }
+  }
+
+  /**
+   * Best-effort mark an un-recoverable process as {@link ProcessStatus#FAILED} so it is not picked
+   * up again on the next AMS restart. Never throws.
+   *
+   * @param store process store
+   * @param cause the recovery failure
+   */
+  private void markRecoverFailed(DefaultTableProcessStore store, Throwable cause) {
+    try {
+      store.tryTransitState(
+          ProcessStatus.FAILED,
+          ProcessEvent.COMPLETE_FAILED,
+          store.getExternalProcessIdentifier(),
+          "Failed to recover process on AMS startup: " + cause.getMessage(),
+          store.getProcessParameters(),
+          store.getSummary());
+    } catch (Throwable t) {
+      LOG.error(
+          "Failed to mark un-recoverable table process {} as FAILED; it may be retried on the "
+              + "next AMS restart.",
+          store.getProcessId(),
+          t);
+    }
   }
 
   /**

@@ -22,9 +22,9 @@ import static org.mockito.Mockito.mock;
 
 import org.apache.amoro.Action;
 import org.apache.amoro.TableRuntime;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +36,7 @@ public class TestLocalExecutionEngine {
 
   private LocalExecutionEngine engine;
 
-  @After
+  @AfterEach
   public void tearDown() {
     if (engine != null) {
       engine.close();
@@ -45,6 +45,13 @@ public class TestLocalExecutionEngine {
 
   @Test
   public void testSubmitUsesCustomPoolByTag() throws Exception {
+    assertCustomPoolByTag("expire-snapshots");
+    assertCustomPoolByTag("clean-orphan-files");
+    assertCustomPoolByTag("clean-dangling-delete-files");
+    assertCustomPoolByTag("expire-data");
+  }
+
+  private void assertCustomPoolByTag(String tag) throws Exception {
     engine = createEngineWithTtl("1h");
 
     CountDownLatch started = new CountDownLatch(1);
@@ -54,7 +61,7 @@ public class TestLocalExecutionEngine {
         new LocalProcessTableProcess(
             mock(TableRuntime.class),
             engine,
-            "snapshots-expiring",
+            tag,
             () -> {
               threadName.set(Thread.currentThread().getName());
               started.countDown();
@@ -62,10 +69,10 @@ public class TestLocalExecutionEngine {
 
     String identifier = engine.submitTableProcess(process);
 
-    Assert.assertTrue("process should start", started.await(5, TimeUnit.SECONDS));
-    Assert.assertTrue(
-        "should run in custom pool",
-        threadName.get() != null && threadName.get().startsWith("local-snapshots-expiring-"));
+    Assertions.assertTrue(started.await(5, TimeUnit.SECONDS), "process should start");
+    Assertions.assertTrue(
+        threadName.get() != null && threadName.get().startsWith("local-" + tag + "-"),
+        "should run in custom pool");
 
     waitForStatus(identifier, ProcessStatus.SUCCESS, 5000);
   }
@@ -91,7 +98,7 @@ public class TestLocalExecutionEngine {
     String identifier = engine.submitTableProcess(process);
 
     // Process may not be scheduled yet, but holder is already created.
-    Assert.assertEquals(ProcessStatus.RUNNING, engine.getStatus(identifier));
+    Assertions.assertEquals(ProcessStatus.RUNNING, engine.getStatus(identifier));
 
     engine.tryCancelTableProcess(process, identifier);
 
@@ -113,7 +120,7 @@ public class TestLocalExecutionEngine {
     // Wait until process info should be expired.
     Thread.sleep(200);
 
-    Assert.assertEquals(ProcessStatus.UNKNOWN, engine.getStatus(identifier));
+    Assertions.assertEquals(ProcessStatus.UNKNOWN, engine.getStatus(identifier));
   }
 
   @Test
@@ -138,16 +145,19 @@ public class TestLocalExecutionEngine {
   public void testGetStatusForInvalidIdentifier() {
     engine = createEngineWithTtl("1h");
 
-    Assert.assertEquals(ProcessStatus.UNKNOWN, engine.getStatus(null));
-    Assert.assertEquals(ProcessStatus.UNKNOWN, engine.getStatus(""));
-    Assert.assertEquals(ProcessStatus.UNKNOWN, engine.getStatus("not-exist"));
+    Assertions.assertEquals(ProcessStatus.UNKNOWN, engine.getStatus(null));
+    Assertions.assertEquals(ProcessStatus.UNKNOWN, engine.getStatus(""));
+    Assertions.assertEquals(ProcessStatus.UNKNOWN, engine.getStatus("not-exist"));
   }
 
   private LocalExecutionEngine createEngineWithTtl(String ttl) {
     LocalExecutionEngine localEngine = new LocalExecutionEngine();
     Map<String, String> properties = new HashMap<>();
     properties.put("pool.default.thread-count", "1");
-    properties.put("pool.snapshots-expiring.thread-count", "1");
+    properties.put("pool.expire-snapshots.thread-count", "1");
+    properties.put("pool.clean-orphan-files.thread-count", "1");
+    properties.put("pool.clean-dangling-delete-files.thread-count", "1");
+    properties.put("pool.expire-data.thread-count", "1");
     properties.put("process.status.ttl", ttl);
     localEngine.open(properties);
     return localEngine;
@@ -163,7 +173,7 @@ public class TestLocalExecutionEngine {
       }
       Thread.sleep(10);
     }
-    Assert.fail(
+    Assertions.fail(
         "Timeout waiting for status " + expected + ", current=" + engine.getStatus(identifier));
   }
 

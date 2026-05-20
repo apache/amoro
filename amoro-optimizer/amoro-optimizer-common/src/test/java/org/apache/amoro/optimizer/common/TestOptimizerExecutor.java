@@ -30,10 +30,10 @@ import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.utils.SerializationUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +44,7 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
 
   private OptimizerExecutor optimizerExecutor;
 
-  @Before
+  @BeforeEach
   public void startOptimizer() {
     OptimizerConfig optimizerConfig =
         OptimizerTestHelpers.buildOptimizerConfig(TEST_AMS.getServerUrl());
@@ -52,7 +52,7 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
     new Thread(optimizerExecutor::start).start();
   }
 
-  @After
+  @AfterEach
   public void stopOptimizer() {
     optimizerExecutor.stop();
   }
@@ -61,7 +61,7 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
   public void testWaitForToken() throws InterruptedException {
     TEST_AMS.getOptimizerHandler().offerTask(TestOptimizingInput.successInput(1).toTask(0, 0));
     TimeUnit.MILLISECONDS.sleep(OptimizerTestHelpers.CALL_AMS_INTERVAL * 2);
-    Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
+    Assertions.assertEquals(1, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
   }
 
   @Test
@@ -70,18 +70,19 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
     String token =
         TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().keySet().iterator().next();
     TEST_AMS.getOptimizerHandler().offerTask(TestOptimizingInput.successInput(1).toTask(0, 0));
-    Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
+    Assertions.assertEquals(1, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
     optimizerExecutor.setToken(token);
     TimeUnit.MILLISECONDS.sleep(OptimizerTestHelpers.CALL_AMS_INTERVAL * 2);
-    Assert.assertEquals(0, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
-    Assert.assertTrue(TEST_AMS.getOptimizerHandler().getCompletedTasks().containsKey(token));
-    Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).size());
+    Assertions.assertEquals(0, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
+    Assertions.assertTrue(TEST_AMS.getOptimizerHandler().getCompletedTasks().containsKey(token));
+    Assertions.assertEquals(
+        1, TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).size());
     OptimizingTaskResult taskResult =
         TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).get(0);
-    Assert.assertEquals(new OptimizingTaskId(0, 0), taskResult.getTaskId());
-    Assert.assertNull(taskResult.getErrorMessage());
+    Assertions.assertEquals(new OptimizingTaskId(0, 0), taskResult.getTaskId());
+    Assertions.assertNull(taskResult.getErrorMessage());
     TestOptimizingOutput output = SerializationUtil.simpleDeserialize(taskResult.getTaskOutput());
-    Assert.assertEquals(1, output.inputId());
+    Assertions.assertEquals(1, output.inputId());
   }
 
   @Test
@@ -90,17 +91,18 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
     String token =
         TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().keySet().iterator().next();
     TEST_AMS.getOptimizerHandler().offerTask(TestOptimizingInput.failedInput(1).toTask(0, 0));
-    Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
+    Assertions.assertEquals(1, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
     optimizerExecutor.setToken(token);
     TimeUnit.MILLISECONDS.sleep(OptimizerTestHelpers.CALL_AMS_INTERVAL * 2);
-    Assert.assertEquals(0, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
-    Assert.assertTrue(TEST_AMS.getOptimizerHandler().getCompletedTasks().containsKey(token));
-    Assert.assertEquals(1, TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).size());
+    Assertions.assertEquals(0, TEST_AMS.getOptimizerHandler().getPendingTasks().size());
+    Assertions.assertTrue(TEST_AMS.getOptimizerHandler().getCompletedTasks().containsKey(token));
+    Assertions.assertEquals(
+        1, TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).size());
     OptimizingTaskResult taskResult =
         TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).get(0);
-    Assert.assertEquals(new OptimizingTaskId(0, 0), taskResult.getTaskId());
-    Assert.assertNull(taskResult.getTaskOutput());
-    Assert.assertTrue(taskResult.getErrorMessage().contains(FAILED_TASK_MESSAGE));
+    Assertions.assertEquals(new OptimizingTaskId(0, 0), taskResult.getTaskId());
+    Assertions.assertNull(taskResult.getTaskOutput());
+    Assertions.assertTrue(taskResult.getErrorMessage().contains(FAILED_TASK_MESSAGE));
   }
 
   public static class TestOptimizingInput extends BaseOptimizingInput {

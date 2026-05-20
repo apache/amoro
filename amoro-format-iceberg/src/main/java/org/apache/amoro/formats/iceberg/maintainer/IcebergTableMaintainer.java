@@ -1046,7 +1046,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
                   .latestExpiredSeq;
           // only expire delete files with sequence-number less or equal to expired data file
           // there may be some dangling delete files, they will be cleaned by
-          // OrphanFileCleaningExecutor
+          // OrphanFilesCleaningProcess
           return fileEntry.getFile().dataSequenceNumber() <= seqUpperBound;
         } else {
           return true;

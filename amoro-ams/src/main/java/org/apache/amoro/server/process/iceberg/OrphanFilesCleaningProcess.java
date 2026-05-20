@@ -26,7 +26,7 @@ import org.apache.amoro.maintainer.TableMaintainer;
 import org.apache.amoro.process.ExecuteEngine;
 import org.apache.amoro.process.LocalProcess;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
+import org.apache.amoro.server.optimizing.maintainer.TableMaintainerFactory;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -34,12 +34,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-/** Local table process for expiring Iceberg snapshots. */
-public class SnapshotsExpiringProcess extends TableProcess implements LocalProcess {
+/** Local table process for cleaning Iceberg orphan files. */
+public class OrphanFilesCleaningProcess extends TableProcess implements LocalProcess {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SnapshotsExpiringProcess.class);
+  private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleaningProcess.class);
 
-  public SnapshotsExpiringProcess(TableRuntime tableRuntime, ExecuteEngine engine) {
+  public OrphanFilesCleaningProcess(TableRuntime tableRuntime, ExecuteEngine engine) {
     super(tableRuntime, engine);
   }
 
@@ -52,20 +52,20 @@ public class SnapshotsExpiringProcess extends TableProcess implements LocalProce
   public void run() {
     try {
       AmoroTable<?> amoroTable = tableRuntime.loadTable();
-      TableMaintainer tableMaintainer = TableMaintainers.create(amoroTable, tableRuntime);
-      tableMaintainer.expireSnapshots();
+      TableMaintainer tableMaintainer = TableMaintainerFactory.create(amoroTable, tableRuntime);
+      tableMaintainer.cleanOrphanFiles();
       tableRuntime.updateState(
           DefaultTableRuntime.CLEANUP_STATE_KEY,
-          cleanUp -> cleanUp.setLastSnapshotsExpiringTime(System.currentTimeMillis()));
+          cleanUp -> cleanUp.setLastOrphanFilesCleanTime(System.currentTimeMillis()));
     } catch (Throwable t) {
-      LOG.error("unexpected expire error of table {}", tableRuntime.getTableIdentifier(), t);
+      LOG.error("Failed to clean orphan files for table {}", tableRuntime.getTableIdentifier(), t);
       throw new RuntimeException(t);
     }
   }
 
   @Override
   public Action getAction() {
-    return IcebergActions.EXPIRE_SNAPSHOTS;
+    return IcebergActions.CLEAN_ORPHAN;
   }
 
   @Override
