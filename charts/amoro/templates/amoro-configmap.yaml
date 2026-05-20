@@ -103,11 +103,6 @@ data:
         enabled: false
         thread-count: 10
 
-      auto-create-tags:
-        enabled: true
-        thread-count: 3
-        interval: 1min # 60000
-          
       table-manifest-io:
         thread-count: 20
 

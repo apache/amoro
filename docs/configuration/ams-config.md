@@ -44,9 +44,6 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | ---  | ------- | ----------- |
 | admin-password | admin | The administrator password |
 | admin-username | admin | The administrator account name. |
-| auto-create-tags.enabled | true | Enable creating tags. |
-| auto-create-tags.interval | 1 min | Interval for creating tags. |
-| auto-create-tags.thread-count | 3 | The number of threads used for creating tags. |
 | blocker.timeout | 1 min | Session timeout. Default unit is milliseconds if not specified. |
 | catalog-meta-cache.expiration-interval | 1 min | TTL for catalog metadata. |
 | database.auto-create-tables | true | Auto init table schema when started |

@@ -27,6 +27,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.DataExpirationConfig;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.config.TagConfiguration;
 import org.apache.amoro.process.LocalExecutionEngine;
 import org.apache.amoro.process.ProcessTriggerStrategy;
 import org.apache.amoro.process.RecoverProcessFailedException;
@@ -67,6 +68,8 @@ public class TestIcebergProcessFactory {
         DanglingDeleteFilesCleaningProcess.class,
         0);
     assertTriggerWhenDue("expire-data", IcebergActions.EXPIRE_DATA, DataExpiringProcess.class, 0);
+    assertTriggerWhenDue(
+        "auto-create-tags", IcebergActions.AUTO_CREATE_TAGS, TagsAutoCreatingProcess.class, 0);
   }
 
   @Test
@@ -89,6 +92,7 @@ public class TestIcebergProcessFactory {
     assertTriggerDisabled(
         "clean-dangling-delete-files", IcebergActions.CLEAN_DANGLING_DELETE, false, 0);
     assertTriggerDisabled("expire-data", IcebergActions.EXPIRE_DATA, false, 0);
+    assertTriggerDisabled("auto-create-tags", IcebergActions.AUTO_CREATE_TAGS, false, 0);
   }
 
   @Test
@@ -114,6 +118,12 @@ public class TestIcebergProcessFactory {
   @Test
   public void testRecoverDataExpiringProcess() {
     assertRecover("expire-data", IcebergActions.EXPIRE_DATA, DataExpiringProcess.class);
+  }
+
+  @Test
+  public void testRecoverAutoCreateTagProcess() {
+    assertRecover(
+        "auto-create-tags", IcebergActions.AUTO_CREATE_TAGS, TagsAutoCreatingProcess.class);
   }
 
   @Test
@@ -258,6 +268,10 @@ public class TestIcebergProcessFactory {
       tableConfiguration.setDeleteDanglingDeleteFilesEnabled(enabled);
     } else if ("expire-data".equals(configKey)) {
       tableConfiguration.setExpiringDataConfig(new DataExpirationConfig().setEnabled(enabled));
+    } else if ("auto-create-tags".equals(configKey)) {
+      TagConfiguration tagConfiguration = new TagConfiguration();
+      tagConfiguration.setAutoCreateTag(enabled);
+      tableConfiguration.setTagConfiguration(tagConfiguration);
     }
 
     TableRuntimeCleanupState cleanupState = new TableRuntimeCleanupState();
@@ -274,7 +288,9 @@ public class TestIcebergProcessFactory {
     TableRuntime runtime = mock(TableRuntime.class);
     doReturn(tableConfiguration).when(runtime).getTableConfiguration();
     doReturn(cleanupState).when(runtime).getState(DefaultTableRuntime.CLEANUP_STATE_KEY);
-
+    if ("auto-create-tags".equals(configKey)) {
+      doReturn(TableFormat.ICEBERG).when(runtime).getFormat();
+    }
     return runtime;
   }
 }
