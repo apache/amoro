@@ -797,9 +797,19 @@ modified through <a href="../using-tables/#modify-table">Alter Table</a> operati
           <td>30000(30s)</td>
           <td>The time interval increase step in milliseconds to refresh table metadata</td>
       </tr>
+      <tr>
+          <td>self-optimizing.rewrite.use-parquet-row-group-merge.enabled</td>
+          <td>false</td>
+          <td>Whether to enable parquet row-group merge for eligible Iceberg V2 table rewrites of Parquet files without delete files, bloom filters, sort order, schema incompatibilities, or spec mismatches; otherwise falls back to row-based rewrite.</td>
+      </tr>
+      <tr>
+          <td>self-optimizing.rewrite.use-parquet-row-group-merge.min-avg-row-group-size-bytes</td>
+          <td>8388608(8MB)</td>
+          <td>The minimum average row-group size (in bytes) of input files for parquet row-group merge. If the average row-group size across all input files is below this threshold, it will fall back to row-level rewrite.</td>
+      </tr>
   </tbody>
 </table>
-<h2 id="data-cleaning-configurations">Data-cleaning configurations</h2>
+<h2 id="data-cleaning-configuratio">Data-cleaning configuratio</h2>
 <p>Data-cleaning configurations are applicable to both Iceberg Format and Mixed streaming Format.</p>
 <table>
   <thead>
@@ -1151,7 +1161,7 @@ soon.</p>
   <ul>
     <li><a href="#multi-level-configuration-management">Multi-level configuration management</a></li>
     <li><a href="#self-optimizing-configurations">Self-optimizing configurations</a></li>
-    <li><a href="#data-cleaning-configurations">Data-cleaning configurations</a></li>
+    <li><a href="#data-cleaning-configuratio">Data-cleaning configuratio</a></li>
     <li><a href="#tags-configurations">Tags configurations</a></li>
     <li><a href="#mixed-format-configurations">Mixed Format configurations</a>
       <ul>
