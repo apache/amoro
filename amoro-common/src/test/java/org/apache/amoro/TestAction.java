@@ -18,16 +18,21 @@
 
 package org.apache.amoro;
 
-public class IcebergActions {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-  private static final TableFormat[] DEFAULT_FORMATS =
-      new TableFormat[] {TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE};
+import org.junit.jupiter.api.Test;
 
-  public static final Action SYSTEM = Action.register("system");
-  public static final Action REWRITE = Action.register("rewrite");
-  public static final Action CLEAN_ORPHAN = Action.register("clean-orphan-files");
-  public static final Action SYNC_HIVE = Action.register("sync-hive");
-  public static final Action EXPIRE_DATA = Action.register("expire-data");
-  public static final Action EXPIRE_SNAPSHOTS = Action.register("expire-snapshots");
-  public static final Action CLEAN_DANGLING_DELETE = Action.register("clean-dangling-delete-files");
+public class TestAction {
+
+  /**
+   * {@link Action#toString()} must return the action name so that diagnostic logs print a readable
+   * name instead of {@code org.apache.amoro.Action@hash} (see AMORO-4223).
+   */
+  @Test
+  public void testToStringReturnsName() {
+    Action action = Action.register("expire-snapshots");
+    assertEquals("EXPIRE-SNAPSHOTS", action.toString());
+    assertEquals(action.getName(), action.toString());
+    assertEquals("recover action: EXPIRE-SNAPSHOTS", "recover action: " + action);
+  }
 }

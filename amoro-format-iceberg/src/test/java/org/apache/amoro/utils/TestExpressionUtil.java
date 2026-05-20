@@ -77,6 +77,49 @@ public class TestExpressionUtil {
         epochMicroSecond, "'2022-01-01T12:12:12'", Types.TimestampType.withoutZone());
   }
 
+  @Test
+  public void testConvertSqlToIcebergExpressionWithBetween() {
+    List<Types.NestedField> fields = new ArrayList<>();
+    fields.add(Types.NestedField.optional(1, "column_a", Types.IntegerType.get()));
+
+    assertEqualExpressions(
+        Expressions.and(
+            Expressions.greaterThanOrEqual("column_a", 1),
+            Expressions.lessThanOrEqual("column_a", 10)),
+        convertSqlFilterToIcebergExpression("column_a BETWEEN 1 AND 10", fields));
+    assertEqualExpressions(
+        Expressions.not(
+            Expressions.and(
+                Expressions.greaterThanOrEqual("column_a", 1),
+                Expressions.lessThanOrEqual("column_a", 10))),
+        convertSqlFilterToIcebergExpression("column_a NOT BETWEEN 1 AND 10", fields));
+  }
+
+  @Test
+  public void testConvertSqlToIcebergExpressionWithLiteralOnLeftComparison() {
+    List<Types.NestedField> fields = new ArrayList<>();
+    fields.add(Types.NestedField.optional(1, "column_a", Types.IntegerType.get()));
+
+    assertEqualExpressions(
+        Expressions.lessThan("column_a", 1),
+        convertSqlFilterToIcebergExpression("1 > column_a", fields));
+    assertEqualExpressions(
+        Expressions.lessThanOrEqual("column_a", 1),
+        convertSqlFilterToIcebergExpression("1 >= column_a", fields));
+    assertEqualExpressions(
+        Expressions.greaterThan("column_a", 1),
+        convertSqlFilterToIcebergExpression("1 < column_a", fields));
+    assertEqualExpressions(
+        Expressions.greaterThanOrEqual("column_a", 1),
+        convertSqlFilterToIcebergExpression("1 <= column_a", fields));
+    assertEqualExpressions(
+        Expressions.equal("column_a", 1),
+        convertSqlFilterToIcebergExpression("1 = column_a", fields));
+    assertEqualExpressions(
+        Expressions.notEqual("column_a", 1),
+        convertSqlFilterToIcebergExpression("1 != column_a", fields));
+  }
+
   public <T> void testConvertSqlToIcebergExpressionByType(T exprValue, String sqlValue, Type type) {
     List<Types.NestedField> fields = new ArrayList<>();
     fields.add(Types.NestedField.optional(1, "column_a", type));

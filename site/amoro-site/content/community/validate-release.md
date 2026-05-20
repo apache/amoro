@@ -101,10 +101,10 @@ Compile from source:
 
 ```shell
 # Compile from source
-$ mvn clean package
+$ ./mvnw clean package
 
 # Or skip the unit test
-$ mvn clean package -DskipTests
+$ ./mvnw clean package -DskipTests
 ```
 
 ## vote for the release

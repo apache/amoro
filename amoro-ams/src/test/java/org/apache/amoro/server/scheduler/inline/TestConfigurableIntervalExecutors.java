@@ -25,45 +25,8 @@ import org.mockito.Mockito;
 
 import java.time.Duration;
 
-/**
- * Tests for configurable interval in DanglingDeleteFilesCleaningExecutor and
- * SnapshotsExpiringExecutor.
- */
+/** Tests for configurable interval in SnapshotsExpiringExecutor and ProcessDataExpiringExecutor. */
 public class TestConfigurableIntervalExecutors {
-
-  @Test
-  public void testDanglingDeleteFilesDefaultInterval() {
-    Duration interval = Duration.ofDays(1);
-    DanglingDeleteFilesCleaningExecutor executor =
-        new DanglingDeleteFilesCleaningExecutor(null, 1, interval);
-
-    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
-    Assert.assertEquals(Duration.ofDays(1).toMillis(), executor.getNextExecutingTime(tableRuntime));
-  }
-
-  @Test
-  public void testDanglingDeleteFilesCustomInterval() {
-    Duration interval = Duration.ofHours(12);
-    DanglingDeleteFilesCleaningExecutor executor =
-        new DanglingDeleteFilesCleaningExecutor(null, 1, interval);
-
-    TableRuntime tableRuntime = Mockito.mock(TableRuntime.class);
-    Assert.assertEquals(
-        Duration.ofHours(12).toMillis(), executor.getNextExecutingTime(tableRuntime));
-  }
-
-  @Test
-  public void testDanglingDeleteFilesShouldExecuteAfterInterval() {
-    Duration interval = Duration.ofHours(6);
-    DanglingDeleteFilesCleaningExecutor executor =
-        new DanglingDeleteFilesCleaningExecutor(null, 1, interval);
-
-    long now = System.currentTimeMillis();
-    // 7 hours ago - should execute
-    Assert.assertTrue(executor.shouldExecute(now - Duration.ofHours(7).toMillis()));
-    // 5 hours ago - should not execute
-    Assert.assertFalse(executor.shouldExecute(now - Duration.ofHours(5).toMillis()));
-  }
 
   @Test
   public void testSnapshotsExpiringDefaultInterval() {
