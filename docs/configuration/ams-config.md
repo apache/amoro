@@ -116,8 +116,6 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | self-optimizing.runtime-data-keep-time | 30 d | Duration that self-optimizing runtime data is retained. |
 | server-bind-host | 0.0.0.0 | The host bound to the server. |
 | server-expose-host |  | The exposed host of the server. |
-| sync-hive-tables.enabled | false | Enable synchronizing Hive tables. |
-| sync-hive-tables.thread-count | 10 | The number of threads used for synchronizing Hive tables. |
 | table-manifest-io.thread-count | 20 | Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent planning or commit operations. |
 | terminal.backend | local | Terminal backend implementation. local, kyuubi and custom are valid values. |
 | terminal.factory | &lt;undefined&gt; | Session factory implement of terminal, `terminal.backend` must be `custom` if this is set. |

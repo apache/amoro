@@ -280,6 +280,8 @@ process-factories:
       expire-data.interval: "1d"             # interval for data expiration
       auto-create-tags.enabled: "true"       # enable auto creating tags
       auto-create-tags.interval: "1m"        # interval for auto creating tags
+      sync-hive-tables.enabled: "false"             # enable synchronizing Hive tables
+      sync-hive-tables.interval: "10min"            # interval for synchronizing Hive tables
 ```
 
 {{< hint info >}}
@@ -308,11 +310,12 @@ execute-engines:
     priority: 100
     properties:
       pool.default.thread-count: 10                   # default thread pool size
-      pool.expire-snapshots.thread-count: 10        # thread pool for snapshot expiration
-      pool.clean-orphan-files.thread-count: 10     # thread pool for orphan file cleaning
+      pool.expire-snapshots.thread-count: 10          # thread pool for snapshot expiration
+      pool.clean-orphan-files.thread-count: 10        # thread pool for orphan file cleaning
       pool.clean-dangling-delete-files.thread-count: 10     # thread pool for dangling delete files cleaning
       pool.expire-data.thread-count: 10               # thread pool for data expiration
-      pool.auto-create-tags.thread-count: 3          # thread pool for auto creating tags
+      pool.auto-create-tags.thread-count: 3           # thread pool for auto creating tags
+      pool.sync-hive-tables.thread-count: 10          # thread pool for synchronizing Hive tables
       process.status.ttl: 4h                          # TTL for process status cache
 ```
 
