@@ -115,7 +115,6 @@ public class JacksonUtilTest {
     JsonNode expiredSnapshots = yamlNode.get("expire-snapshots");
     assertTrue(JacksonUtil.getBoolean(expiredSnapshots, "enabled"));
     assertEquals("1h", JacksonUtil.getString(expiredSnapshots, "interval"));
-    
     JsonNode containersNode = yamlNode.get("containers");
     assertEquals(2, containersNode.size());
     JsonNode secondNode = containersNode.get(1);
