@@ -46,10 +46,12 @@ import org.apache.iceberg.ContentScanTask;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.DeleteFiles;
+import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.ReachableFileCleanupBridge;
 import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.Schema;
@@ -70,6 +72,7 @@ import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.DateTimeUtil;
 import org.apache.iceberg.util.SerializableFunction;
+import org.apache.iceberg.util.SnapshotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -201,14 +204,24 @@ public class IcebergTableMaintainer implements TableMaintainer {
         minCount,
         exclude);
     RollingFileCleaner expiredFileCleaner = new RollingFileCleaner(fileIO(), exclude);
-    table
-        .expireSnapshots()
-        .retainLast(Math.max(minCount, 1))
-        .expireOlderThan(olderThan)
-        .deleteWith(expiredFileCleaner::addFile)
-        .cleanExpiredFiles(
-            true) /* enable clean only for collecting the expired files, will delete them later */
-        .commit();
+    ExpireSnapshots expireSnapshots =
+        table
+            .expireSnapshots()
+            .retainLast(Math.max(minCount, 1))
+            .expireOlderThan(olderThan)
+            .deleteWith(expiredFileCleaner::addFile)
+            .cleanExpiredFiles(
+                true) /* enable clean only for collecting the expired files, will delete them later */;
+    // iceberg auto-selects IncrementalFileCleanup for single-ref tables. That strategy walks the
+    // current snapshot's ancestor chain and can terminate silently at a missing parent, then revert
+    // the ADDED entries of superseded-but-still-referenced manifests below the break - physically
+    // deleting data files the current snapshot still references (observed as partition data-file
+    // loss in production). The walk only truncates when a snapshot sits outside the current main
+    // ancestry, so force the safe ReachableFileCleanup then.
+    if (hasSnapshotsOutsideMainAncestry()) {
+      ReachableFileCleanupBridge.forceReachable(expireSnapshots);
+    }
+    expireSnapshots.commit();
 
     int collectedFiles = expiredFileCleaner.fileCount();
     expiredFileCleaner.clear();
@@ -225,6 +238,28 @@ public class IcebergTableMaintainer implements TableMaintainer {
           table.name(),
           DateTimeUtil.formatTimestampMillis(olderThan));
     }
+  }
+
+  /**
+   * Whether the table holds any snapshot that is not reachable from the current snapshot's ancestor
+   * chain. Such a snapshot makes {@code IncrementalFileCleanup}'s ancestor walk truncate, which can
+   * lead it to delete data files still referenced by the current snapshot. The walk used here is
+   * the same {@link SnapshotUtil#ancestorIds} used by the cleanup, so it detects exactly the states
+   * the incremental strategy would mishandle.
+   */
+  private boolean hasSnapshotsOutsideMainAncestry() {
+    Snapshot currentSnapshot = table.currentSnapshot();
+    if (currentSnapshot == null) {
+      return false;
+    }
+    Set<Long> mainAncestors =
+        Sets.newHashSet(SnapshotUtil.ancestorIds(currentSnapshot, table::snapshot));
+    for (Snapshot snapshot : table.snapshots()) {
+      if (!mainAncestors.contains(snapshot.snapshotId())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
