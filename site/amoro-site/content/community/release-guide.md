@@ -240,12 +240,12 @@ Cut a branch for the `minor` version if it is not created in the Apache remote r
 $ cd ${AMORO_SOURCE_HOME}
 
 # Cut the release branch if it is not created, then push to the remote 
-$ git checkout -b 0.8.x
-$ git push apache 0.8.x
+$ git checkout -b 0.9.X
+$ git push apache 0.9.X
 
 # Or check it out and pull the latest changes if it is created
-$ git checkout 0.8.x
-$ git pull apache 0.8.x
+$ git checkout 0.9.X
+$ git pull apache 0.9.X
 ```
 
 Checkout a `patch` branch using the following command
@@ -255,8 +255,8 @@ $ git checkout -b 0.8.0-branch
 
 Update the version in the new branch using the tool `tools/change-version.sh`:
 ```bash
-OLD="0.8-SNAPSHOT"
-NEW="0.8.0-incubating"
+OLD="0.9-SNAPSHOT"
+NEW="1.0.0"
 
 HERE=` basename "$PWD"`
 if [[ "$HERE" != "tools" ]]; then
@@ -275,7 +275,7 @@ $ cd tools
 $ bash change-version.sh
 $ cd ..
 $ git add *
-$ git commit -m "Change project version to 0.8.0-incubating"
+$ git commit -m "Change project version to 1.0.0"
 $ git push apache 0.8.0-branch
 ```
 
@@ -284,8 +284,8 @@ $ git push apache 0.8.0-branch
 Create the release tag and push it to the Apache repo:
 
 ```shell
-$ git tag -a v0.8.0-rc1 -m "Release Apache Amoro 0.8.0 rc1"
-$ git push apache v0.8.0-rc1
+$ git tag -a v1.0.0-rc1 -m "Release Apache Amoro 0.8.0 rc1"
+$ git push apache v1.0.0-rc1
 ```
 
 ### Build binary and source release
@@ -294,14 +294,14 @@ Build Amoro binary release with scripts:
 
 ```shell
 $ cd ${AMORO_SOURCE_HOME}/tools
-$ RELEASE_VERSION=0.8.0-incubating bash ./releasing/create_binary_release.sh
+$ RELEASE_VERSION=1.0.0 bash ./releasing/create_binary_release.sh
 ```
 
 Then build source release with scripts:
 
 ```shell
 $ cd ${AMORO_SOURCE_HOME}/tools
-$ RELEASE_VERSION=0.8.0-incubating bash ./releasing/create_source_release.sh
+$ RELEASE_VERSION=1.0.0 bash ./releasing/create_source_release.sh
 ```
 
 Validate the source and binary packages according to the [How to validate a new release](../validate-release/) guides.
@@ -309,9 +309,9 @@ After that, publish the dev directory of the Apache SVN warehouse of the materia
 
 ```shell
 $ cd ~/amoro_svn/dev/amoro
-$ mkdir 0.8.0-incubating-RC1
-$ cp ${AMORO_SOURCE_HOME}/tools/releasing/release/* 0.8.0-incubating-RC1
-$ svn add 0.8.0-incubating-RC1
+$ mkdir 1.0.0-RC1
+$ cp ${AMORO_SOURCE_HOME}/tools/releasing/release/* 1.0.0-RC1
+$ svn add 1.0.0-RC1
 $ svn commit -m "Release Apache Amoro 0.8.0 rc1"
 
 ```
@@ -322,7 +322,7 @@ Next, we will publish the required JAR files to the ​Apache Nexus​ repositor
 
 ```shell
 $ cd ${$AMORO_SOURCE_HOME}/tools
-$ RELEASE_VERSION=0.8.0-incubating bash ./releasing/deploy_staging_jars.sh
+$ RELEASE_VERSION=1.0.0 bash ./releasing/deploy_staging_jars.sh
 ```
 
 You can visit https://repository.apache.org/ and log in to check the publishment status. You can find the publishment process in the `Staging Repositories` section. You need to close the process when all jars are publised.
@@ -333,19 +333,19 @@ Next, vote for the new release via email. First complete the vote within the Amo
 
 ### Vote in the Amoro community
 
-Send a vote email to `dev@amoro.apache.org` to start the vote process in Apache Amoro community, you can take [[VOTE] Release Apache Amoro(incubating) 0.8.0-incubating rc3](https://lists.apache.org/thread/22rrpzwtzkby8vnhfvcwzmpfxxz8qhns) as an example.
+Send a vote email to `dev@amoro.apache.org` to start the vote process in Apache Amoro community, you can take [[VOTE] Release Apache Amoro(incubating) 1.0.0 rc3](https://lists.apache.org/thread/22rrpzwtzkby8vnhfvcwzmpfxxz8qhns) as an example.
 
 You can validate the source and binary packages according to the [How to validate a new release](../validate-release/) guides and give your vote resulut. If other developers identify critical issues, you need to cancel the current vote, wait for the fixes to be implemented, and then restart the release process with a new release candidate.
 
-After 72 hours, if there are at least 3 binding votes from Amoro PPMC members and no votes against, send the result email to celebrate the release of the version like [[RESULT][VOTE] Release Apache Amoro(incubating) 0.8.0-incubating rc3](https://lists.apache.org/thread/gokj30ldgh3p5866tw40h41mhdw90whs).
+After 72 hours, if there are at least 3 binding votes from Amoro PPMC members and no votes against, send the result email to celebrate the release of the version like [[RESULT][VOTE] Release Apache Amoro(incubating) 1.0.0 rc3](https://lists.apache.org/thread/gokj30ldgh3p5866tw40h41mhdw90whs).
 
 ### Vote in the Incubator community
 
 > We recommend to use gmail when sending the email.
 
-Send a vote email to `general@incubator.apache.org` to start the vote process in Apache Incubator community, you can take [[VOTE] Release Apache Amoro(incubating) 0.8.0-incubating rc3](https://lists.apache.org/thread/bqj7gohrjwxp5gwycdgh78xmpymfm6jr) as an example.
+Send a vote email to `general@incubator.apache.org` to start the vote process in Apache Incubator community, you can take [[VOTE] Release Apache Amoro(incubating) 1.0.0 rc3](https://lists.apache.org/thread/bqj7gohrjwxp5gwycdgh78xmpymfm6jr) as an example.
 
-After 72 hours, if there are at least 3 binding votes from IPMC members and no votes against, send the result email to celebrate the release of the version like [[RESULT][VOTE] Release Apache Amoro(incubating) 0.8.0-incubating rc3](https://lists.apache.org/thread/qmvg3tcds0p0pbn05w0mzchm85o581rv).
+After 72 hours, if there are at least 3 binding votes from IPMC members and no votes against, send the result email to celebrate the release of the version like [[RESULT][VOTE] Release Apache Amoro(incubating) 1.0.0 rc3](https://lists.apache.org/thread/qmvg3tcds0p0pbn05w0mzchm85o581rv).
 
 ## Complete the final publishing steps
 
@@ -354,7 +354,7 @@ After 72 hours, if there are at least 3 binding votes from IPMC members and no v
 Migrate the source and binary packages to the release directory of the Apache SVN warehouse:
 
 ```shell
-$ svn mv https://dist.apache.org/repos/dist/dev/incubator/amoro/0.8.0-incubating-RC1 https://dist.apache.org/repos/dist/release/incubator/amoro/0.8.0-incubating  -m "Release Apache Amoro 0.8.0-incubating"
+$ svn mv https://dist.apache.org/repos/dist/dev/incubator/amoro/0.9.0-incubating-RC1 https://dist.apache.org/repos/dist/release/incubator/amoro/0.9.0-incubating-RC1  -m "Release Apache Amoro 0.9.0-incubating-RC1"
 ```
 
 ### Publish releases in the Apache Staging repository
@@ -376,6 +376,6 @@ $ svn mv https://dist.apache.org/repos/dist/dev/incubator/amoro/0.8.0-incubating
 
 ### Send announcement email
 
-Finally, we need to send the announcement email to these mailing lists: `dev@amoro.apache.org`, `general@incubator.apache.org`. Here is an example of an announcement email:  [[ANNOUNCE] Apache Amoro (Incubating) 0.8.0-incubating available](https://lists.apache.org/thread/h3cy8f2mfmp4zms4cs3tq4hdlq64qyw0).
+Finally, we need to send the announcement email to these mailing lists: `dev@amoro.apache.org`, `general@incubator.apache.org`. Here is an example of an announcement email:  [[ANNOUNCE] Apache Amoro (Incubating) 1.0.0 available](https://lists.apache.org/thread/h3cy8f2mfmp4zms4cs3tq4hdlq64qyw0).
 
 Congratulations! You have successfully completed all steps of the Apache Amoro release process. Thank you for your contributions!
