@@ -164,10 +164,7 @@ class TestPaimonTableDescriptorOptimizingProcesses {
     when(file.rowCount()).thenReturn(1L);
     when(file.deleteRowCount()).thenReturn(Optional.of(0L));
     when(file.fileSize()).thenReturn(10L);
-    // creationTime() is consulted via getFileCreationTimeMillis; the helper asks for
-    // file().creationTime().getMillisecond(). Timestamp is a final class and Mockito 4.11
-    // cannot mock it without inline-mocks, so use a real zero-valued Timestamp instead.
-    when(file.creationTime()).thenReturn(org.apache.paimon.data.Timestamp.fromEpochMillis(0L));
+    when(file.creationTimeEpochMillis()).thenReturn(0L);
 
     ManifestEntry entry = mock(ManifestEntry.class);
     when(entry.file()).thenReturn(file);
@@ -408,5 +405,56 @@ class TestPaimonTableDescriptorOptimizingProcesses {
     assertEquals(5, result.getLeft().size(), "only the 5 COMPACT snapshots must surface");
     assertEquals(5, result.getRight(), "bounded window reaches earliest, so no sentinel is needed");
     verify(manager, never()).snapshots();
+  }
+
+  @Test
+  void optimizingStartTimeUsesEpochMillisFromFileMeta() throws Exception {
+    // Paimon's Timestamp stores a local timestamp value. In UTC+8 environments, using
+    // creationTime().getMillisecond() as if it were epoch millis makes the dashboard display the
+    // time eight hours ahead after the browser applies the local timezone again. The descriptor
+    // must use DataFileMeta.creationTimeEpochMillis(), which converts the local timestamp to a real
+    // epoch millis value.
+    long actualEpochMillis = 1_700_000_000_000L;
+    long rawLocalTimestampMillis = actualEpochMillis + 8L * 60 * 60 * 1000;
+
+    Snapshot snapshot = mockSnapshot(1L, Snapshot.CommitKind.COMPACT);
+    when(snapshot.timeMillis()).thenReturn(actualEpochMillis + 1_000L);
+
+    ManifestList manifestList = mock(ManifestList.class);
+    ManifestFile manifestFile = mock(ManifestFile.class);
+    ManifestFileMeta meta = mock(ManifestFileMeta.class);
+    when(meta.fileName()).thenReturn("m1");
+    when(manifestList.readDeltaManifests(snapshot)).thenReturn(Collections.singletonList(meta));
+
+    DataFileMeta file = mock(DataFileMeta.class);
+    when(file.level()).thenReturn(0);
+    when(file.rowCount()).thenReturn(1L);
+    when(file.deleteRowCount()).thenReturn(Optional.of(0L));
+    when(file.fileSize()).thenReturn(10L);
+    when(file.creationTime())
+        .thenReturn(org.apache.paimon.data.Timestamp.fromEpochMillis(rawLocalTimestampMillis));
+    when(file.creationTimeEpochMillis()).thenReturn(actualEpochMillis);
+
+    ManifestEntry entry = mock(ManifestEntry.class);
+    when(entry.file()).thenReturn(file);
+    when(entry.bucket()).thenReturn(0);
+    when(entry.kind()).thenReturn(FileKind.ADD);
+    when(manifestFile.read("m1")).thenReturn(Collections.singletonList(entry));
+
+    SnapshotManager manager = mock(SnapshotManager.class);
+    when(manager.latestSnapshotId()).thenReturn(1L);
+    when(manager.earliestSnapshotId()).thenReturn(1L);
+    when(manager.snapshotsWithinRange(any(), any()))
+        .thenReturn(Collections.singletonList(snapshot).iterator());
+
+    AmoroTable<?> amoroTable = wireAmoroTable(manager, manifestList, manifestFile);
+    PaimonTableDescriptor descriptor = new PaimonTableDescriptor();
+
+    Pair<List<OptimizingProcessInfo>, Integer> result =
+        descriptor.getOptimizingProcessesInfo(amoroTable, null, null, 10, 0, null);
+
+    assertEquals(1, result.getLeft().size());
+    assertEquals(actualEpochMillis, result.getLeft().get(0).getStartTime());
+    assertEquals(1_000L, result.getLeft().get(0).getDuration());
   }
 }

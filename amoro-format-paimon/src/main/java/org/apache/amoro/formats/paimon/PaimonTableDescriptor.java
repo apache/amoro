@@ -981,8 +981,6 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   private long getFileCreationTimeMillis(ManifestEntry manifestEntry) {
-    // DataFileMeta.creationTimeEpochMillis() may mislead user about the creation time
-    // See: https://github.com/apache/paimon/issues/7151
-    return manifestEntry.file().creationTime().getMillisecond();
+    return manifestEntry.file().creationTimeEpochMillis();
   }
 }
