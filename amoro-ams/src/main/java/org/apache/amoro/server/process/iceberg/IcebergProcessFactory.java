@@ -79,6 +79,14 @@ public class IcebergProcessFactory implements ProcessFactory {
   public static final ConfigOption<Duration> DATA_EXPIRE_INTERVAL =
       ConfigOptions.key("expire-data.interval").durationType().defaultValue(Duration.ofDays(1));
 
+  public static final ConfigOption<Boolean> AUTO_CREATE_TAGS_ENABLED =
+      ConfigOptions.key("auto-create-tags.enabled").booleanType().defaultValue(true);
+
+  public static final ConfigOption<Duration> AUTO_CREATE_TAGS_INTERVAL =
+      ConfigOptions.key("auto-create-tags.interval")
+          .durationType()
+          .defaultValue(Duration.ofMinutes(1));
+
   private ExecuteEngine localEngine;
   private final Map<Action, ProcessTriggerStrategy> actions = Maps.newHashMap();
   private final List<TableFormat> formats =
@@ -119,6 +127,8 @@ public class IcebergProcessFactory implements ProcessFactory {
       return triggerCleanDanglingDelete(tableRuntime);
     } else if (IcebergActions.EXPIRE_DATA.equals(action)) {
       return triggerDataExpiring(tableRuntime);
+    } else if (IcebergActions.AUTO_CREATE_TAGS.equals(action)) {
+      return triggerAutoCreateTag(tableRuntime);
     }
 
     return Optional.empty();
@@ -135,8 +145,7 @@ public class IcebergProcessFactory implements ProcessFactory {
               + action);
     }
 
-    // SnapshotsExpiringProcess, OrphanFilesCleaningProcess, DanglingDeleteFilesCleaningProcess
-    // and DataExpiringProcess are stateless, idempotent one-shot local maintenance tasks
+    // The following processes are stateless, idempotent one-shot local maintenance tasks
     // (no checkpoint), so recovery simply rebuilds the process so it can run again.
     // The store/processId/tracking is owned by ProcessService.
     if (IcebergActions.EXPIRE_SNAPSHOTS.equals(action)) {
@@ -147,6 +156,8 @@ public class IcebergProcessFactory implements ProcessFactory {
       return new DanglingDeleteFilesCleaningProcess(tableRuntime, localEngine);
     } else if (IcebergActions.EXPIRE_DATA.equals(action)) {
       return new DataExpiringProcess(tableRuntime, localEngine);
+    } else if (IcebergActions.AUTO_CREATE_TAGS.equals(action)) {
+      return new TagsAutoCreatingProcess(tableRuntime, localEngine);
     }
 
     throw new RecoverProcessFailedException(
@@ -181,6 +192,12 @@ public class IcebergProcessFactory implements ProcessFactory {
       Duration interval = configs.getDuration(DATA_EXPIRE_INTERVAL);
       this.actions.put(
           IcebergActions.EXPIRE_DATA, ProcessTriggerStrategy.triggerAtFixRate(interval));
+    }
+
+    if (configs.getBoolean(AUTO_CREATE_TAGS_ENABLED)) {
+      Duration interval = configs.getDuration(AUTO_CREATE_TAGS_INTERVAL);
+      this.actions.put(
+          IcebergActions.AUTO_CREATE_TAGS, ProcessTriggerStrategy.triggerAtFixRate(interval));
     }
   }
 
@@ -246,6 +263,16 @@ public class IcebergProcessFactory implements ProcessFactory {
     }
 
     return Optional.of(new DataExpiringProcess(tableRuntime, localEngine));
+  }
+
+  private Optional<TableProcess> triggerAutoCreateTag(TableRuntime tableRuntime) {
+    if (localEngine == null
+        || tableRuntime.getFormat() != TableFormat.ICEBERG
+        || !tableRuntime.getTableConfiguration().getTagConfiguration().isAutoCreateTag()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(new TagsAutoCreatingProcess(tableRuntime, localEngine));
   }
 
   @Override

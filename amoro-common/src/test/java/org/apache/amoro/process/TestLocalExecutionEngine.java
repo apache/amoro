@@ -49,6 +49,7 @@ public class TestLocalExecutionEngine {
     assertCustomPoolByTag("clean-orphan-files");
     assertCustomPoolByTag("clean-dangling-delete-files");
     assertCustomPoolByTag("expire-data");
+    assertCustomPoolByTag("auto-create-tags");
   }
 
   private void assertCustomPoolByTag(String tag) throws Exception {
@@ -158,6 +159,7 @@ public class TestLocalExecutionEngine {
     properties.put("pool.clean-orphan-files.thread-count", "1");
     properties.put("pool.clean-dangling-delete-files.thread-count", "1");
     properties.put("pool.expire-data.thread-count", "1");
+    properties.put("pool.auto-create-tags.thread-count", "1");
     properties.put("process.status.ttl", ttl);
     localEngine.open(properties);
     return localEngine;
