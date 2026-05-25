@@ -40,6 +40,7 @@ import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.metrics.Gauge;
 import org.apache.amoro.metrics.MetricKey;
@@ -714,6 +715,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     tableIdentifier.setId(9999L);
 
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(tableIdentifier);
+    Mockito.when(tableRuntime.getFormat()).thenReturn(TableFormat.PAIMON);
+    Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.PENDING);
     Mockito.doReturn(paimonTable).when(catalogManager).loadTable(tableIdentifier.getIdentifier());
     Mockito.when(paimonTable.format()).thenReturn(TableFormat.PAIMON);
 
@@ -738,6 +741,36 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Mockito.verify(tableRuntime).completeEmptyProcess();
     Mockito.verify(tableRuntime, Mockito.never()).planFailed();
 
+    queue.dispose();
+  }
+
+  @Test
+  public void testRefreshTableSkipsSelfOptimizingDisabledRuntime() {
+    DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
+    ServerTableIdentifier tableIdentifier =
+        ServerTableIdentifier.of(
+            org.apache.amoro.table.TableIdentifier.of("mock", "db", "disabled_table"),
+            TableFormat.ICEBERG);
+    tableIdentifier.setId(10000L);
+
+    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(tableIdentifier);
+    Mockito.when(tableRuntime.getFormat()).thenReturn(TableFormat.ICEBERG);
+    Mockito.when(tableRuntime.getOptimizingConfig())
+        .thenReturn(new OptimizingConfig().setEnabled(false));
+
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            Mockito.mock(CatalogManager.class),
+            testResourceGroup(),
+            quotaProvider,
+            planExecutor,
+            Collections.emptyList(),
+            1,
+            router);
+
+    queue.refreshTable(tableRuntime);
+
+    Mockito.verify(tableRuntime, Mockito.never()).resetTaskQuotas(Mockito.anyLong());
     queue.dispose();
   }
 
