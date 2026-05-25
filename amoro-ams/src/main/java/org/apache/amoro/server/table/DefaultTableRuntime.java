@@ -22,9 +22,10 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.metrics.MetricRegistry;
+import org.apache.amoro.optimizing.OptimizationContext;
 import org.apache.amoro.optimizing.OptimizingType;
+import org.apache.amoro.optimizing.PendingInputResult;
 import org.apache.amoro.optimizing.TableRuntimeOptimizingState;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
@@ -39,16 +40,11 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
 import org.apache.amoro.server.table.cleanup.TableRuntimeCleanupState;
-import org.apache.amoro.server.utils.IcebergTableUtil;
-import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
-import org.apache.amoro.table.BaseTable;
-import org.apache.amoro.table.ChangeTable;
-import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.FormatPendingInput;
 import org.apache.amoro.table.StateKey;
 import org.apache.amoro.table.TableRuntimeStore;
-import org.apache.amoro.table.UnkeyedTable;
-import org.apache.iceberg.Snapshot;
+import org.apache.amoro.utils.SnowflakeIdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,50 +56,62 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 /** Default table runtime implementation. */
-public class DefaultTableRuntime extends AbstractTableRuntime {
+public class DefaultTableRuntime extends AbstractTableRuntime implements OptimizationContext {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultTableRuntime.class);
 
-  private static final StateKey<TableRuntimeOptimizingState> OPTIMIZING_STATE_KEY =
+  protected static final StateKey<TableRuntimeOptimizingState> OPTIMIZING_STATE_KEY =
       StateKey.stateKey("optimizing_state")
           .jsonType(TableRuntimeOptimizingState.class)
           .defaultValue(new TableRuntimeOptimizingState());
 
-  private static final StateKey<AbstractOptimizingEvaluator.PendingInput> PENDING_INPUT_KEY =
+  /** Default pending-input key for Iceberg-based formats. */
+  public static final StateKey<AbstractOptimizingEvaluator.PendingInput> DEFAULT_PENDING_INPUT_KEY =
       StateKey.stateKey("pending_input")
           .jsonType(AbstractOptimizingEvaluator.PendingInput.class)
           .defaultValue(new AbstractOptimizingEvaluator.PendingInput());
+
+  @SuppressWarnings("unchecked")
+  private final StateKey<FormatPendingInput> pendingInputKey;
 
   public static final StateKey<TableRuntimeCleanupState> CLEANUP_STATE_KEY =
       StateKey.stateKey("cleanup_state")
           .jsonType(TableRuntimeCleanupState.class)
           .defaultValue(new TableRuntimeCleanupState());
 
-  private static final StateKey<Long> PROCESS_ID_KEY =
+  protected static final StateKey<Long> PROCESS_ID_KEY =
       StateKey.stateKey("process_id").longType().defaultValue(0L);
 
   public static final List<StateKey<?>> REQUIRED_STATES =
-      Lists.newArrayList(
-          OPTIMIZING_STATE_KEY, PENDING_INPUT_KEY, PROCESS_ID_KEY, CLEANUP_STATE_KEY);
+      Lists.newArrayList(OPTIMIZING_STATE_KEY, PROCESS_ID_KEY, CLEANUP_STATE_KEY);
   private final TableOptimizingMetrics optimizingMetrics;
   private final TableOrphanFilesCleaningMetrics orphanFilesCleaningMetrics;
-  private final TableSummaryMetrics tableSummaryMetrics;
+  protected final TableSummaryMetrics tableSummaryMetrics;
   private volatile long lastPlanTime;
   private volatile long latestRefreshInterval = AmoroServiceConstants.INVALID_TIME;
   private volatile boolean latestEvaluatedNeedOptimizing = true;
-  private volatile OptimizingProcess optimizingProcess;
+  protected volatile OptimizingProcess optimizingProcess;
   private final List<TaskRuntime.TaskQuota> taskQuotas = new CopyOnWriteArrayList<>();
 
   private final Supplier<AmoroTable<?>> loader;
 
-  public DefaultTableRuntime(TableRuntimeStore store, Supplier<AmoroTable<?>> loader) {
+  public DefaultTableRuntime(
+      TableRuntimeStore store,
+      Supplier<AmoroTable<?>> loader,
+      StateKey<? extends FormatPendingInput> pendingInputKey) {
     super(store);
+    this.pendingInputKey = (StateKey<FormatPendingInput>) pendingInputKey;
     this.optimizingMetrics =
         new TableOptimizingMetrics(store.getTableIdentifier(), store.getGroupName());
     this.orphanFilesCleaningMetrics =
         new TableOrphanFilesCleaningMetrics(store.getTableIdentifier());
     this.tableSummaryMetrics = new TableSummaryMetrics(store.getTableIdentifier());
     this.loader = loader;
+  }
+
+  /** Convenience constructor using the default Iceberg pending-input key. */
+  public DefaultTableRuntime(TableRuntimeStore store, Supplier<AmoroTable<?>> loader) {
+    this(store, loader, DEFAULT_PENDING_INPUT_KEY);
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -118,7 +126,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
 
   @Override
   public void registerMetric(MetricRegistry metricRegistry) {
-    // TODO: extract method to interface.
     this.optimizingMetrics.register(metricRegistry);
     this.orphanFilesCleaningMetrics.register(metricRegistry);
     this.tableSummaryMetrics.register(metricRegistry);
@@ -188,8 +195,73 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
     return getTableConfiguration().getOptimizingConfig();
   }
 
-  public AbstractOptimizingEvaluator.PendingInput getPendingInput() {
-    return store().getState(PENDING_INPUT_KEY);
+  public FormatPendingInput getPendingInput() {
+    return store().getState(pendingInputKey);
+  }
+
+  // ---- OptimizationContext implementation ----
+
+  @Override
+  public boolean isIdle() {
+    return getOptimizingStatus() == OptimizingStatus.IDLE;
+  }
+
+  @Override
+  public void updateNonMaintainedSnapshotTime(long timestampMillis) {
+    optimizingMetrics.nonMaintainedSnapshotTime(timestampMillis);
+  }
+
+  @Override
+  public void updateLastOptimizingSnapshotTime(long timestampMillis) {
+    optimizingMetrics.lastOptimizingSnapshotTime(timestampMillis);
+  }
+
+  /**
+   * Evaluate pending input and transition state if necessary.
+   *
+   * <p>Called by {@code TableRuntimeRefreshExecutor} when a snapshot change is detected. Uses
+   * {@link AmoroTable#evaluatePendingInput} for format-specific evaluation. Each format's
+   * AmoroTable implementation provides its own evaluation logic.
+   *
+   * @param table the current AmoroTable for evaluation
+   * @param maxPendingPartitions max partitions to scan when evaluating pending input
+   * @return true if optimizing demand exists, false otherwise
+   */
+  public boolean evaluatePendingInputAndTransition(AmoroTable<?> table, int maxPendingPartitions) {
+    OptimizingConfig config = getOptimizingConfig();
+
+    if (!config.isEnabled()) {
+      if (config.isTableSummaryEnabled()) {
+        table
+            .evaluatePendingInput(this, maxPendingPartitions)
+            .map(PendingInputResult::pendingInput)
+            .ifPresent(this::setTableSummary);
+      }
+      clearPendingSummary();
+      return false;
+    }
+
+    if (!isIdle()) {
+      return true;
+    }
+
+    Optional<PendingInputResult> result = table.evaluatePendingInput(this, maxPendingPartitions);
+    if (result.isEmpty()) {
+      optimizingNotNecessary();
+      return false;
+    }
+
+    PendingInputResult evalResult = result.get();
+    if (evalResult.optimizingNecessary()) {
+      // Keep master semantics: set pending info first, then refresh summary from full input.
+      setPendingInput(evalResult.optimizingPendingInput());
+      setTableSummary(evalResult.pendingInput());
+      return true;
+    } else {
+      setTableSummary(evalResult.pendingInput());
+      optimizingNotNecessary();
+      return false;
+    }
   }
 
   public long getProcessId() {
@@ -238,18 +310,10 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
     return getOptimizingConfig().isAllowPartialCommit();
   }
 
-  public void setPendingInput(AbstractOptimizingEvaluator.PendingInput pendingInput) {
-    long pendingFileSize =
-        pendingInput.getDataFileSize()
-            + pendingInput.getEqualityDeleteBytes()
-            + pendingInput.getPositionalDeleteBytes();
-    int pendingFileCount =
-        pendingInput.getDataFileCount()
-            + pendingInput.getEqualityDeleteFileCount()
-            + pendingInput.getPositionalDeleteFileCount();
+  public void setPendingInput(FormatPendingInput pendingInput) {
     store()
         .begin()
-        .updateState(PENDING_INPUT_KEY, i -> pendingInput)
+        .updateState(pendingInputKey, i -> pendingInput)
         .updateStatusCode(
             code -> {
               if (code == OptimizingStatus.IDLE.getCode()) {
@@ -263,23 +327,29 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
             })
         .updateTableSummary(
             summary -> {
-              summary.setTotalFileSize(pendingFileSize);
-              summary.setTotalFileCount(pendingFileCount);
+              summary.setTotalFileSize(pendingInput.getTotalFileSize());
+              summary.setTotalFileCount(pendingInput.getTotalFileCount());
+              summary.setPendingFileSize(pendingInput.getTotalFileSize());
+              summary.setPendingFileCount(pendingInput.getTotalFileCount());
             })
         .commit();
   }
 
-  public void setTableSummary(AbstractOptimizingEvaluator.PendingInput tableSummary) {
+  public void setTableSummary(FormatPendingInput tableSummary) {
     store()
         .begin()
         .updateTableSummary(
             summary -> {
               summary.setHealthScore(tableSummary.getHealthScore());
-              summary.setSmallFileScore(tableSummary.getSmallFileScore());
-              summary.setEqualityDeleteScore(tableSummary.getEqualityDeleteScore());
-              summary.setPositionalDeleteScore(tableSummary.getPositionalDeleteScore());
               summary.setTotalFileCount(tableSummary.getTotalFileCount());
               summary.setTotalFileSize(tableSummary.getTotalFileSize());
+              if (tableSummary instanceof AbstractOptimizingEvaluator.PendingInput) {
+                AbstractOptimizingEvaluator.PendingInput iceInput =
+                    (AbstractOptimizingEvaluator.PendingInput) tableSummary;
+                summary.setSmallFileScore(iceInput.getSmallFileScore());
+                summary.setEqualityDeleteScore(iceInput.getEqualityDeleteScore());
+                summary.setPositionalDeleteScore(iceInput.getPositionalDeleteScore());
+              }
             })
         .commit();
     tableSummaryMetrics.refresh(tableSummary);
@@ -335,7 +405,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
         .updateStatusCode(
             code ->
                 OptimizingStatus.ofOptimizingType(optimizingProcess.getOptimizingType()).getCode())
-        .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
+        .updateState(pendingInputKey, any -> pendingInputKey.getDefaultValue())
         .commit();
   }
 
@@ -403,6 +473,11 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
               }
               return state;
             })
+        .updateTableSummary(
+            summary -> {
+              summary.setPendingFileSize(0L);
+              summary.setPendingFileCount(0);
+            })
         .updateStatusCode(code -> OptimizingStatus.IDLE.getCode())
         .commit();
 
@@ -430,7 +505,12 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
               state.setLastOptimizedChangeSnapshotId(state.getCurrentChangeSnapshotId());
               return state;
             })
-        .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
+        .updateTableSummary(
+            summary -> {
+              summary.setPendingFileSize(0L);
+              summary.setPendingFileCount(0);
+            })
+        .updateState(pendingInputKey, any -> pendingInputKey.getDefaultValue())
         .commit();
     optimizingProcess = null;
   }
@@ -446,8 +526,24 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
                 state.setLastOptimizedChangeSnapshotId(state.getCurrentChangeSnapshotId());
                 return state;
               })
+          .updateTableSummary(
+              summary -> {
+                summary.setPendingFileSize(0L);
+                summary.setPendingFileCount(0);
+              })
           .commit();
     }
+  }
+
+  private void clearPendingSummary() {
+    store()
+        .begin()
+        .updateTableSummary(
+            summary -> {
+              summary.setPendingFileSize(0L);
+              summary.setPendingFileCount(0);
+            })
+        .commit();
   }
 
   public void beginCommitting() {
@@ -526,52 +622,8 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
   }
 
   private boolean refreshSnapshots(AmoroTable<?> amoroTable, TableRuntimeOptimizingState state) {
-    MixedTable table = (MixedTable) amoroTable.originalTable();
-    tableSummaryMetrics.refreshSnapshots(table);
-    long lastSnapshotId = state.getCurrentSnapshotId();
-    if (table.isKeyedTable()) {
-      long changeSnapshotId = state.getCurrentChangeSnapshotId();
-      ChangeTable changeTable = table.asKeyedTable().changeTable();
-      BaseTable baseTable = table.asKeyedTable().baseTable();
-
-      long currentChangeSnapshotId = doRefreshSnapshots(changeTable);
-      long currentSnapshotId = doRefreshSnapshots(baseTable);
-
-      if (currentSnapshotId != lastSnapshotId || currentChangeSnapshotId != changeSnapshotId) {
-        LOG.debug(
-            "Refreshing table {} with base snapshot id {} and change snapshot id {}",
-            getTableIdentifier(),
-            currentSnapshotId,
-            currentChangeSnapshotId);
-        state.setCurrentChangeSnapshotId(currentChangeSnapshotId);
-        state.setCurrentSnapshotId(currentSnapshotId);
-        return true;
-      }
-    } else {
-      long currentSnapshotId = doRefreshSnapshots((UnkeyedTable) table);
-      if (currentSnapshotId != lastSnapshotId) {
-        LOG.debug(
-            "Refreshing table {} with base snapshot id {}",
-            getTableIdentifier(),
-            currentSnapshotId);
-        state.setCurrentSnapshotId(currentSnapshotId);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private long doRefreshSnapshots(UnkeyedTable table) {
-    long currentSnapshotId = Constants.INVALID_SNAPSHOT_ID;
-    Snapshot currentSnapshot = IcebergTableUtil.getSnapshot(table, false);
-    if (currentSnapshot != null) {
-      currentSnapshotId = currentSnapshot.snapshotId();
-    }
-
-    optimizingMetrics.nonMaintainedSnapshotTime(currentSnapshot);
-    optimizingMetrics.lastOptimizingSnapshotTime(
-        IcebergTableUtil.findLatestOptimizingSnapshot(table).orElse(null));
-
-    return currentSnapshotId;
+    tableSummaryMetrics.refreshSnapshots(amoroTable);
+    amoroTable.refreshOptimizingMetrics(this);
+    return amoroTable.refreshOptimizingState(state);
   }
 }

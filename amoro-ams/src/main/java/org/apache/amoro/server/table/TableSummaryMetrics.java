@@ -25,9 +25,7 @@ import org.apache.amoro.metrics.Gauge;
 import org.apache.amoro.metrics.MetricDefine;
 import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
-import org.apache.amoro.table.MixedTable;
-import org.apache.amoro.table.UnkeyedTable;
+import org.apache.amoro.table.FormatPendingInput;
 
 /** Table Summary metrics. */
 public class TableSummaryMetrics extends AbstractTableMetrics {
@@ -210,16 +208,16 @@ public class TableSummaryMetrics extends AbstractTableMetrics {
     }
   }
 
-  public void refresh(AbstractOptimizingEvaluator.PendingInput tableSummary) {
+  public void refresh(FormatPendingInput tableSummary) {
     if (tableSummary == null) {
       return;
     }
-    this.tableSummary = tableSummary;
+    if (tableSummary instanceof AbstractOptimizingEvaluator.PendingInput) {
+      this.tableSummary = (AbstractOptimizingEvaluator.PendingInput) tableSummary;
+    }
   }
 
-  public void refreshSnapshots(MixedTable table) {
-    UnkeyedTable unkeyedTable =
-        table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
-    snapshots = Lists.newArrayList(unkeyedTable.snapshots().iterator()).size();
+  public void refreshSnapshots(org.apache.amoro.AmoroTable<?> table) {
+    snapshots = table.snapshotCount();
   }
 }

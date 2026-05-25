@@ -19,26 +19,37 @@
 package org.apache.amoro.server.process.iceberg;
 
 import org.apache.amoro.Action;
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.IcebergActions;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.ConfigOption;
 import org.apache.amoro.config.ConfigOptions;
 import org.apache.amoro.config.Configurations;
+import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.TableOptimizingCommitter;
+import org.apache.amoro.optimizing.TableOptimizingPlanner;
 import org.apache.amoro.process.ExecuteEngine;
 import org.apache.amoro.process.LocalExecutionEngine;
 import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.process.ProcessTriggerStrategy;
 import org.apache.amoro.process.RecoverProcessFailedException;
+import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.server.optimizing.KeyedTableCommit;
+import org.apache.amoro.server.optimizing.UnKeyedTableCommit;
 import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.table.MixedTable;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,6 +92,41 @@ public class IcebergProcessFactory implements ProcessFactory {
   @Override
   public ProcessTriggerStrategy triggerStrategy(TableFormat format, Action action) {
     return actions.getOrDefault(action, ProcessTriggerStrategy.METADATA_TRIGGER);
+  }
+
+  @Override
+  public Set<TableFormat> supportedFormats() {
+    return new HashSet<>(formats);
+  }
+
+  @Override
+  public TableOptimizingPlanner createPlanner(
+      TableRuntime tableRuntime,
+      AmoroTable<?> table,
+      double availableCore,
+      long maxInputSizePerThread) {
+    DefaultTableRuntime defaultRuntime = (DefaultTableRuntime) tableRuntime;
+    MixedTable mixedTable = (MixedTable) table.originalTable();
+    return IcebergTableUtil.createOptimizingPlanner(
+        defaultRuntime, mixedTable, availableCore, maxInputSizePerThread);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public TableOptimizingCommitter createCommitter(
+      AmoroTable<?> table,
+      long targetSnapshotId,
+      long targetChangeSnapshotId,
+      Collection<? extends StagedTaskDescriptor<?, ?, ?>> successTasks,
+      Map<String, Long> fromSequence,
+      Map<String, Long> toSequence) {
+    MixedTable mixedTable = (MixedTable) table.originalTable();
+    List<RewriteStageTask> tasks = new ArrayList<>(((Collection<RewriteStageTask>) successTasks));
+    if (mixedTable.isUnkeyedTable()) {
+      return new UnKeyedTableCommit(targetSnapshotId, mixedTable, tasks);
+    } else {
+      return new KeyedTableCommit(mixedTable, tasks, targetSnapshotId, fromSequence, toSequence);
+    }
   }
 
   @Override

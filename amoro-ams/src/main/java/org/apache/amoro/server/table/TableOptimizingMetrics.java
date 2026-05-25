@@ -33,8 +33,6 @@ import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.primitives.Longs;
-import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.SnapshotSummary;
 
 /** Table self optimizing metrics */
 public class TableOptimizingMetrics extends AbstractTableMetrics {
@@ -343,33 +341,18 @@ public class TableOptimizingMetrics extends AbstractTableMetrics {
     }
   }
 
-  public void nonMaintainedSnapshotTime(Snapshot snapshot) {
-    if (snapshot == null) {
+  public void nonMaintainedSnapshotTime(long timestampMillis) {
+    if (timestampMillis < 0) {
       return;
     }
-    // ignore snapshot which is created by amoro maintain commits or no files added
-    if (snapshot.summary().values().stream()
-            .anyMatch(
-                org.apache.amoro.formats.iceberg.maintainer.IcebergTableMaintainer
-                        .AMORO_MAINTAIN_COMMITS
-                    ::contains)
-        || Long.parseLong(snapshot.summary().getOrDefault(SnapshotSummary.ADDED_FILES_PROP, "0"))
-            == 0) {
-      return;
-    }
-
-    this.lastNonMaintainedTime = Longs.max(lastNonMaintainedTime, snapshot.timestampMillis());
+    this.lastNonMaintainedTime = Longs.max(lastNonMaintainedTime, timestampMillis);
   }
 
-  public void lastOptimizingSnapshotTime(Snapshot snapshot) {
-    if (snapshot == null) {
-      return;
-    }
-
+  public void lastOptimizingSnapshotTime(long timestampMillis) {
     this.lastOptimizingTime =
         Longs.max(
             lastOptimizingTime,
-            snapshot.timestampMillis(),
+            timestampMillis,
             Longs.max(lastMinorTime, lastMajorTime, lastFullTime));
   }
 

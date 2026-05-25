@@ -179,7 +179,7 @@ public abstract class AbstractOptimizingEvaluator {
     return new PendingInput(needOptimizingPlanMap.values());
   }
 
-  public static class PendingInput {
+  public static class PendingInput implements org.apache.amoro.table.FormatPendingInput {
 
     @JsonIgnore private final Map<Integer, Set<StructLike>> partitions = Maps.newHashMap();
 

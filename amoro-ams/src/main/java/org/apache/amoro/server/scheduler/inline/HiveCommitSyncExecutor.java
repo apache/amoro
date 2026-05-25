@@ -19,6 +19,7 @@
 package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
@@ -49,6 +50,11 @@ public class HiveCommitSyncExecutor extends PeriodicTableScheduler {
   @Override
   protected boolean enabled(TableRuntime tableRuntime) {
     return true;
+  }
+
+  @Override
+  protected boolean formatSupported(TableFormat format) {
+    return format.in(TableFormat.MIXED_HIVE);
   }
 
   @Override

@@ -24,11 +24,13 @@ import org.apache.amoro.DatabaseNotEmptyException;
 import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.NoSuchTableException;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 
 import java.util.List;
+import java.util.Map;
 
 public class PaimonCatalog implements FormatCatalog {
 
@@ -36,9 +38,17 @@ public class PaimonCatalog implements FormatCatalog {
 
   private final String name;
 
+  private final Map<String, String> catalogProperties;
+
   public PaimonCatalog(Catalog catalog, String name) {
+    this(catalog, name, ImmutableMap.of());
+  }
+
+  public PaimonCatalog(Catalog catalog, String name, Map<String, String> catalogProperties) {
     this.catalog = catalog;
     this.name = name;
+    this.catalogProperties =
+        catalogProperties == null ? ImmutableMap.of() : ImmutableMap.copyOf(catalogProperties);
   }
 
   @Override
@@ -91,7 +101,8 @@ public class PaimonCatalog implements FormatCatalog {
     try {
       return new PaimonTable(
           TableIdentifier.of(name, database, table),
-          catalog.getTable(Identifier.create(database, table)));
+          catalog.getTable(Identifier.create(database, table)),
+          catalogProperties);
     } catch (Catalog.TableNotExistException e) {
       throw new NoSuchTableException(e);
     }
