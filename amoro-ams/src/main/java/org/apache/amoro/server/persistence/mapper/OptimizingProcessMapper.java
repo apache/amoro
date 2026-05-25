@@ -28,6 +28,7 @@ import org.apache.amoro.server.persistence.converter.Long2TsConverter;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
 import org.apache.amoro.server.persistence.converter.MapLong2StringConverter;
 import org.apache.amoro.server.persistence.converter.Object2ByteArrayConvert;
+import org.apache.amoro.server.persistence.converter.TaskDescriptorSummaryConverter;
 import org.apache.amoro.server.persistence.converter.TaskDescriptorTypeConverter;
 import org.apache.amoro.server.persistence.extension.InListExtendedLanguageDriver;
 import org.apache.ibatis.annotations.Delete;
@@ -108,7 +109,7 @@ public interface OptimizingProcessMapper {
         + " #{taskRuntime.token, jdbcType=VARCHAR}, #{taskRuntime.threadId, "
         + "jdbcType=INTEGER}, #{taskRuntime.taskDescriptor.output, jdbcType=BLOB, "
         + " typeHandler=org.apache.amoro.server.persistence.converter.Object2ByteArrayConvert},"
-        + " #{taskRuntime.taskDescriptor.summary, typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
+        + " #{taskRuntime.taskDescriptor.summary, typeHandler=org.apache.amoro.server.persistence.converter.TaskDescriptorSummaryConverter},"
         + "#{taskRuntime.taskDescriptor.properties, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter})",
     "</foreach>",
     "</script>"
@@ -155,7 +156,7 @@ public interface OptimizingProcessMapper {
     @Result(
         property = "taskDescriptor.summary",
         column = "metrics_summary",
-        typeHandler = JsonObjectConverter.class),
+        typeHandler = TaskDescriptorSummaryConverter.class),
     @Result(
         property = "taskDescriptor.properties",
         column = "properties",
@@ -208,7 +209,7 @@ public interface OptimizingProcessMapper {
           + " rewrite_output = #{taskRuntime.taskDescriptor.output, jdbcType=BLOB,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.Object2ByteArrayConvert},"
           + " metrics_summary = #{taskRuntime.taskDescriptor.summary,"
-          + " typeHandler=org.apache.amoro.server.persistence.converter.JsonObjectConverter},"
+          + " typeHandler=org.apache.amoro.server.persistence.converter.TaskDescriptorSummaryConverter},"
           + " properties = #{taskRuntime.taskDescriptor.properties,"
           + " typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}"
           + " WHERE process_id = #{taskRuntime.taskId.processId} AND "

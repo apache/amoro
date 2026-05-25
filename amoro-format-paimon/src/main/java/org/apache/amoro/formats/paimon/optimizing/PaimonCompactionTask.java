@@ -50,24 +50,25 @@ public class PaimonCompactionTask
 
   @Override
   public TaskMetricsSummary toMetricsSummary() {
-    // Delegate to PaimonMetricsSummary so the adapter lives next to the field definitions. Guard
-    // against null in the legacy path where summary is built lazily by calculateSummary().
-    return summary == null
-        ? new PaimonMetricsSummary().toMetricsSummary()
-        : summary.toMetricsSummary();
+    return ensureTypedSummary().toMetricsSummary();
   }
 
   @Override
   protected void calculateSummary() {
-    if (summary == null) {
+    PaimonMetricsSummary metricsSummary = ensureTypedSummary();
+    if (output != null) {
+      metricsSummary.setCompactedFileCount(output.getCompactedFileCount());
+      metricsSummary.setCompactedFileSize(output.getCompactedFileSize());
+      metricsSummary.setProducedFileCount(output.getProducedFileCount());
+      metricsSummary.setProducedFileSize(output.getProducedFileSize());
+    }
+  }
+
+  private PaimonMetricsSummary ensureTypedSummary() {
+    if (!(summary instanceof PaimonMetricsSummary)) {
       summary = new PaimonMetricsSummary();
     }
-    if (output != null) {
-      summary.setCompactedFileCount(output.getCompactedFileCount());
-      summary.setCompactedFileSize(output.getCompactedFileSize());
-      summary.setProducedFileCount(output.getProducedFileCount());
-      summary.setProducedFileSize(output.getProducedFileSize());
-    }
+    return summary;
   }
 
   @Override

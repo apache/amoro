@@ -119,6 +119,12 @@
             <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}"/>
         </logger>
 
+        <logger name="org.apache.paimon" level="warn" additivity="false">
+            <AppenderRef ref="infoFileAppender"/>
+            <AppenderRef ref="errorFileAppender" level="error"/>
+            <AppenderRef ref="consoleAppender" level="${CONSOLE_LEVEL}"/>
+        </logger>
+
         <logger name="org.apache.iceberg.BaseMetastoreCatalog" level="debug"/>
 
         <logger name="org.apache.iceberg.BaseMetastoreTableOperations" level="debug"/>

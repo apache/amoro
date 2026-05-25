@@ -23,11 +23,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.gson.Gson;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionExecutorFactory;
+import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput;
+import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionOutput;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionTask;
+import org.apache.amoro.formats.paimon.optimizing.PaimonMetricsSummary;
 import org.apache.amoro.hive.optimizing.MixedHiveRewriteExecutorFactory;
 import org.apache.amoro.optimizing.IcebergRewriteExecutorFactory;
+import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.MixedIcebergRewriteExecutorFactory;
+import org.apache.amoro.optimizing.RewriteFilesInput;
+import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.process.StagedTaskDescriptor;
@@ -164,15 +171,15 @@ public class TestTaskDescriptorTypeConverter {
   }
 
   @Test
-  public void unknownFactoryImplThrowsIllegalStateException() throws SQLException {
+  public void unknownFactoryImplThrowsIllegalArgumentException() throws SQLException {
     ResultSet rs =
         mockResultSetWithProperties(
             TaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
             "com.example.totally.UnregisteredExecutorFactory");
 
-    IllegalStateException ex =
+    IllegalArgumentException ex =
         Assertions.assertThrows(
-            IllegalStateException.class, () -> converter.getResult(rs, "stage"));
+            IllegalArgumentException.class, () -> converter.getResult(rs, "stage"));
     Assertions.assertTrue(
         ex.getMessage().contains(TaskProperties.TASK_EXECUTOR_FACTORY_IMPL),
         "error message should name the property key");
@@ -230,6 +237,71 @@ public class TestTaskDescriptorTypeConverter {
     Assertions.assertEquals(
         MixedHiveRewriteExecutorFactory.class.getName(),
         LegacyExecutorFactoryDefaults.MIXED_HIVE_FACTORY_IMPL);
+  }
+
+  @Test
+  public void recoveryTypesCoverDescriptorInputOutputAndSummaryForAllKnownFactories() {
+    assertRecoveryTypes(
+        IcebergRewriteExecutorFactory.class.getName(),
+        RewriteStageTask.class,
+        RewriteFilesInput.class,
+        RewriteFilesOutput.class,
+        MetricsSummary.class);
+    assertRecoveryTypes(
+        MixedIcebergRewriteExecutorFactory.class.getName(),
+        RewriteStageTask.class,
+        RewriteFilesInput.class,
+        RewriteFilesOutput.class,
+        MetricsSummary.class);
+    assertRecoveryTypes(
+        MixedHiveRewriteExecutorFactory.class.getName(),
+        RewriteStageTask.class,
+        RewriteFilesInput.class,
+        RewriteFilesOutput.class,
+        MetricsSummary.class);
+    assertRecoveryTypes(
+        PaimonCompactionExecutorFactory.class.getName(),
+        PaimonCompactionTask.class,
+        PaimonCompactionInput.class,
+        PaimonCompactionOutput.class,
+        PaimonMetricsSummary.class);
+  }
+
+  @Test
+  public void recoveryValidationRejectsDescriptorInputMismatch() {
+    RewriteStageTask descriptor = new RewriteStageTask();
+    descriptor.ensureExecutorFactoryImpl(IcebergRewriteExecutorFactory.class.getName());
+    PaimonCompactionInput input =
+        new PaimonCompactionInput(null, new byte[] {1}, 2, "u", "p", 9L, 10L);
+
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> TaskDescriptorRecoveryTypes.validateRecoveredTask(descriptor, input));
+  }
+
+  @Test
+  public void recoveryValidationRejectsMissingFactoryImplForPaimonEvenWithoutInput() {
+    RewriteStageTask descriptor = new RewriteStageTask();
+
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            TaskDescriptorRecoveryTypes.validateRecoveredTask(
+                descriptor, null, TableFormat.PAIMON));
+  }
+
+  private static void assertRecoveryTypes(
+      String factoryImpl,
+      Class<?> descriptorClass,
+      Class<?> inputClass,
+      Class<?> outputClass,
+      Class<?> summaryClass) {
+    TaskDescriptorRecoveryTypes.RecoveryTypes types =
+        TaskDescriptorRecoveryTypes.resolve(factoryImpl);
+    Assertions.assertEquals(descriptorClass, types.descriptorClass());
+    Assertions.assertEquals(inputClass, types.inputClass());
+    Assertions.assertEquals(outputClass, types.outputClass());
+    Assertions.assertEquals(summaryClass, types.summaryClass());
   }
 
   @Test

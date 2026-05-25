@@ -45,6 +45,9 @@
         <Logger name="org.apache.spark" additivity="false">
             <AppenderRef ref="consoleAppender" level="warn"/>
         </Logger>
+        <Logger name="org.apache.paimon" level="warn" additivity="false">
+            <AppenderRef ref="consoleAppender"/>
+        </Logger>
         <Logger name="iceberg.metric"  level="info" additivity="false">
             <AppenderRef ref="icebergRestMetricReporter"/>
         </Logger>

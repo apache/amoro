@@ -46,6 +46,7 @@ import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.persistence.OptimizingProcessState;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
+import org.apache.amoro.server.persistence.converter.TaskDescriptorRecoveryTypes;
 import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
@@ -232,7 +233,7 @@ public class OptimizingQueue extends PersistentBase {
     }
     if (tableRuntime.getOptimizingConfig().isEnabled()
         && !tableRuntime.getOptimizingStatus().isProcessing()) {
-      LOG.info(
+      LOG.debug(
           "Bind queue {} success with table {}",
           optimizerGroup.getName(),
           tableRuntime.getTableIdentifier());
@@ -1096,8 +1097,10 @@ public class OptimizingQueue extends PersistentBase {
         taskRuntimes.forEach(
             taskRuntime -> {
               taskRuntime.getCompletedFuture().whenCompleted(() -> acceptResult(taskRuntime));
-              bindLoadedInput(
-                  taskRuntime.getTaskDescriptor(), inputs.get(taskRuntime.getTaskId().getTaskId()));
+              BaseOptimizingInput input = inputs.get(taskRuntime.getTaskId().getTaskId());
+              TaskDescriptorRecoveryTypes.validateRecoveredTask(
+                  taskRuntime.getTaskDescriptor(), input, tableRuntime.getFormat());
+              bindLoadedInput(taskRuntime.getTaskDescriptor(), input);
               taskMap.put(taskRuntime.getTaskId(), taskRuntime);
               if (taskRuntime.getStatus() == TaskRuntime.Status.PLANNED) {
                 taskQueue.offer(taskRuntime);
@@ -1114,7 +1117,7 @@ public class OptimizingQueue extends PersistentBase {
                 retryTask(taskRuntime);
               }
             });
-      } catch (IllegalArgumentException e) {
+      } catch (IllegalArgumentException | ClassCastException e) {
         LOG.warn(
             "Load task inputs failed, close the optimizing process : {}",
             optimizingProcess.getProcessId(),
