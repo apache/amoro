@@ -299,6 +299,11 @@ public class TestIcebergProcessFactory {
     if ("auto-create-tags".equals(configKey)) {
       doReturn(TableFormat.ICEBERG).when(runtime).getFormat();
     }
+
+    if ("sync-hive-tables".equals(configKey)) {
+      doReturn(TableFormat.MIXED_HIVE).when(runtime).getFormat();
+    }
+
     return runtime;
   }
 }

@@ -294,7 +294,7 @@ public class IcebergProcessFactory implements ProcessFactory {
   }
 
   private Optional<TableProcess> triggerHiveCommitSync(TableRuntime tableRuntime) {
-    if (localEngine == null) {
+    if (localEngine == null || tableRuntime.getFormat() != TableFormat.MIXED_HIVE) {
       return Optional.empty();
     }
 
