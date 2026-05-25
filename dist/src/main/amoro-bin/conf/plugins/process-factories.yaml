@@ -30,3 +30,5 @@ process-factories:
       expire-data.interval: "1d"
       auto-create-tags.enabled: "true"
       auto-create-tags.interval: "1min"
+      sync-hive-tables.enabled: "false"
+      sync-hive-tables.interval: "10min"

@@ -31,7 +31,6 @@ public class InlineTableExecutors {
   private BlockerExpiringExecutor blockerExpiringExecutor;
   private OptimizingCommitExecutor optimizingCommitExecutor;
   private ProcessDataExpiringExecutor processDataExpiringExecutor;
-  private HiveCommitSyncExecutor hiveCommitSyncExecutor;
 
   public static InlineTableExecutors getInstance() {
     return instance;
@@ -59,11 +58,6 @@ public class InlineTableExecutors {
         new ProcessDataExpiringExecutor(
             tableService, optimizingKeepTime, expireInterval, processKeepTime);
     this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableService);
-    if (conf.getBoolean(AmoroManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
-      this.hiveCommitSyncExecutor =
-          new HiveCommitSyncExecutor(
-              tableService, conf.getInteger(AmoroManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT));
-    }
     this.tableRefreshingExecutor =
         new TableRuntimeRefreshExecutor(
             tableService,
@@ -86,9 +80,5 @@ public class InlineTableExecutors {
 
   public ProcessDataExpiringExecutor getProcessDataExpiringExecutor() {
     return processDataExpiringExecutor;
-  }
-
-  public HiveCommitSyncExecutor getHiveCommitSyncExecutor() {
-    return hiveCommitSyncExecutor;
   }
 }

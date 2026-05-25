@@ -292,7 +292,6 @@ public class AmoroServiceContainer {
     addHandlerChain(InlineTableExecutors.getInstance().getOptimizingCommitExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getProcessDataExpiringExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getBlockerExpiringExecutor());
-    addHandlerChain(InlineTableExecutors.getInstance().getHiveCommitSyncExecutor());
     addHandlerChain(InlineTableExecutors.getInstance().getTableRefreshingExecutor());
     tableService.initialize();
     LOG.info("AMS table service have been initialized");

@@ -156,18 +156,6 @@ public class AmoroManagementConf {
           .defaultValue(1000000)
           .withDescription("The queue size of the executors of the external catalog explorer.");
 
-  public static final ConfigOption<Boolean> SYNC_HIVE_TABLES_ENABLED =
-      ConfigOptions.key("sync-hive-tables.enabled")
-          .booleanType()
-          .defaultValue(false)
-          .withDescription("Enable synchronizing Hive tables.");
-
-  public static final ConfigOption<Integer> SYNC_HIVE_TABLES_THREAD_COUNT =
-      ConfigOptions.key("sync-hive-tables.thread-count")
-          .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used for synchronizing Hive tables.");
-
   public static final ConfigOption<Integer> REFRESH_TABLES_THREAD_COUNT =
       ConfigOptions.key("refresh-tables.thread-count")
           .intType()

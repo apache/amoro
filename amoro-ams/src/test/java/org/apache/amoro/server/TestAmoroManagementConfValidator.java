@@ -126,13 +126,5 @@ public class TestAmoroManagementConfValidator {
         () -> AmoroManagementConfValidator.validateConfig(configurations));
     configurations.setInteger(AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT, 10);
     AmoroManagementConfValidator.validateConfig(configurations);
-
-    configurations.setBoolean(AmoroManagementConf.SYNC_HIVE_TABLES_ENABLED, true);
-    configurations.setInteger(AmoroManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT, -1);
-    Assert.assertThrows(
-        IllegalArgumentException.class,
-        () -> AmoroManagementConfValidator.validateConfig(configurations));
-    configurations.setInteger(AmoroManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT, 10);
-    AmoroManagementConfValidator.validateConfig(configurations);
   }
 }

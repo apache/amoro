@@ -54,6 +54,7 @@ public class TestIcebergProcessFactory {
     assertSupportedAction(
         "clean-dangling-delete-files", IcebergActions.CLEAN_DANGLING_DELETE, Duration.ofHours(24));
     assertSupportedAction("expire-data", IcebergActions.EXPIRE_DATA, Duration.ofHours(24));
+    assertSupportedAction("sync-hive-tables", IcebergActions.SYNC_HIVE_TABLES, Duration.ofHours(1));
   }
 
   @Test
@@ -70,6 +71,8 @@ public class TestIcebergProcessFactory {
     assertTriggerWhenDue("expire-data", IcebergActions.EXPIRE_DATA, DataExpiringProcess.class, 0);
     assertTriggerWhenDue(
         "auto-create-tags", IcebergActions.AUTO_CREATE_TAGS, TagsAutoCreatingProcess.class, 0);
+    assertTriggerWhenDue(
+        "sync-hive-tables", IcebergActions.SYNC_HIVE_TABLES, HiveCommitSyncProcess.class, 0);
   }
 
   @Test
@@ -124,6 +127,11 @@ public class TestIcebergProcessFactory {
   public void testRecoverAutoCreateTagProcess() {
     assertRecover(
         "auto-create-tags", IcebergActions.AUTO_CREATE_TAGS, TagsAutoCreatingProcess.class);
+  }
+
+  @Test
+  public void testRecoverSyncHiveProcess() {
+    assertRecover("sync-hive-tables", IcebergActions.SYNC_HIVE_TABLES, HiveCommitSyncProcess.class);
   }
 
   @Test
@@ -291,6 +299,11 @@ public class TestIcebergProcessFactory {
     if ("auto-create-tags".equals(configKey)) {
       doReturn(TableFormat.ICEBERG).when(runtime).getFormat();
     }
+
+    if ("sync-hive-tables".equals(configKey)) {
+      doReturn(TableFormat.MIXED_HIVE).when(runtime).getFormat();
+    }
+
     return runtime;
   }
 }
