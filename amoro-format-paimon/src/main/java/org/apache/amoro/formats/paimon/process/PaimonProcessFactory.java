@@ -178,7 +178,7 @@ public class PaimonProcessFactory implements ProcessFactory {
     CommitIdentity identity = extractCommitIdentity(paimonTasks);
 
     return new PaimonTableCommit(
-        fileStoreTable, paimonTasks, identity.commitUser, identity.commitIdentifier);
+        paimonTable, fileStoreTable, paimonTasks, identity.commitUser, identity.commitIdentifier);
   }
 
   @Override

@@ -80,6 +80,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -111,6 +112,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public ServerTableMeta getTableDetail(AmoroTable<?> amoroTable) {
+    return doAs(amoroTable, () -> getTableDetailInternal(amoroTable));
+  }
+
+  private ServerTableMeta getTableDetailInternal(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
     FileStore<?> store = table.store();
 
@@ -195,6 +200,18 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
       int limit,
       int offset,
       String lastSnapshot) {
+    return doAs(
+        amoroTable,
+        () -> getSnapshotsInternal(amoroTable, ref, operationType, limit, offset, lastSnapshot));
+  }
+
+  private Pair<List<AmoroSnapshotsOfTable>, Long> getSnapshotsInternal(
+      AmoroTable<?> amoroTable,
+      String ref,
+      OperationType operationType,
+      int limit,
+      int offset,
+      String lastSnapshot) {
     FileStoreTable table = getTable(amoroTable);
     long total = 0;
     if (table.branchManager().branchExists(ref) || BranchManager.isMainBranch(ref)) {
@@ -256,7 +273,8 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
       for (Snapshot snapshot : snapshots) {
         futures.add(
-            CompletableFuture.supplyAsync(() -> getSnapshotsOfTable(store, snapshot), executor));
+            CompletableFuture.supplyAsync(
+                () -> doAs(amoroTable, () -> getSnapshotsOfTable(store, snapshot)), executor));
       }
 
       // Collect results and maintain order with better error handling
@@ -317,6 +335,11 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<PartitionFileBaseInfo> getSnapshotDetail(
       AmoroTable<?> amoroTable, String snapshotId, String ref) {
+    return doAs(amoroTable, () -> getSnapshotDetailInternal(amoroTable, snapshotId, ref));
+  }
+
+  private List<PartitionFileBaseInfo> getSnapshotDetailInternal(
+      AmoroTable<?> amoroTable, String snapshotId, String ref) {
     FileStoreTable table = getTable(amoroTable);
     List<PartitionFileBaseInfo> amsDataFileInfos = new ArrayList<>();
     long commitId = Long.parseLong(snapshotId);
@@ -353,6 +376,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<DDLInfo> getTableOperations(AmoroTable<?> amoroTable) {
+    return doAs(amoroTable, () -> getTableOperationsInternal(amoroTable));
+  }
+
+  private List<DDLInfo> getTableOperationsInternal(AmoroTable<?> amoroTable) {
     DataTable table = getTable(amoroTable);
     PaimonTableMetaExtract extract = new PaimonTableMetaExtract();
     DDLReverser<DataTable> ddlReverser = new DDLReverser<>(extract);
@@ -361,6 +388,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<PartitionBaseInfo> getTablePartitions(AmoroTable<?> amoroTable) {
+    return doAs(amoroTable, () -> getTablePartitionsInternal(amoroTable));
+  }
+
+  private List<PartitionBaseInfo> getTablePartitionsInternal(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
     FileStore<?> store = table.store();
     FileStorePathFactory fileStorePathFactory = store.pathFactory();
@@ -393,6 +424,11 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<PartitionFileBaseInfo> getTableFiles(
       AmoroTable<?> amoroTable, String partition, Integer specId) {
+    return doAs(amoroTable, () -> getTableFilesInternal(amoroTable, partition, specId));
+  }
+
+  private List<PartitionFileBaseInfo> getTableFilesInternal(
+      AmoroTable<?> amoroTable, String partition, Integer specId) {
     FileStoreTable table = getTable(amoroTable);
     FileStore<?> store = table.store();
 
@@ -412,16 +448,21 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
       Snapshot snapshot = snapshots.next();
       futures.add(
           CompletableFuture.runAsync(
-              () -> {
-                List<ManifestFileMeta> deltaManifests = manifestList.readDeltaManifests(snapshot);
-                for (ManifestFileMeta manifestFileMeta : deltaManifests) {
-                  List<ManifestEntry> manifestEntries =
-                      manifestFile.read(manifestFileMeta.fileName());
-                  for (ManifestEntry manifestEntry : manifestEntries) {
-                    fileSnapshotIdMap.put(manifestEntry.file(), snapshot.id());
-                  }
-                }
-              },
+              () ->
+                  doAs(
+                      amoroTable,
+                      () -> {
+                        List<ManifestFileMeta> deltaManifests =
+                            manifestList.readDeltaManifests(snapshot);
+                        for (ManifestFileMeta manifestFileMeta : deltaManifests) {
+                          List<ManifestEntry> manifestEntries =
+                              manifestFile.read(manifestFileMeta.fileName());
+                          for (ManifestEntry manifestEntry : manifestEntries) {
+                            fileSnapshotIdMap.put(manifestEntry.file(), snapshot.id());
+                          }
+                        }
+                        return null;
+                      }),
               executor));
     }
 
@@ -468,6 +509,20 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
    */
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
+      AmoroTable<?> amoroTable,
+      String type,
+      ProcessStatus status,
+      int limit,
+      int offset,
+      String lastSnapshot) {
+    return doAs(
+        amoroTable,
+        () ->
+            getOptimizingProcessesInfoInternal(
+                amoroTable, type, status, limit, offset, lastSnapshot));
+  }
+
+  private Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfoInternal(
       AmoroTable<?> amoroTable,
       String type,
       ProcessStatus status,
@@ -634,6 +689,11 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public List<OptimizingTaskInfo> getOptimizingTaskInfos(
       AmoroTable<?> amoroTable, String processId) {
+    return doAs(amoroTable, () -> getOptimizingTaskInfosInternal(amoroTable, processId));
+  }
+
+  private List<OptimizingTaskInfo> getOptimizingTaskInfosInternal(
+      AmoroTable<?> amoroTable, String processId) {
     long id = Long.parseLong(processId);
     FileStoreTable table = getTable(amoroTable);
     FileStore<?> store = table.store();
@@ -785,6 +845,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<TagOrBranchInfo> getTableTags(AmoroTable<?> amoroTable) {
+    return doAs(amoroTable, () -> getTableTagsInternal(amoroTable));
+  }
+
+  private List<TagOrBranchInfo> getTableTagsInternal(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
     SortedMap<Snapshot, List<String>> tags = table.tagManager().tags();
     List<TagOrBranchInfo> tagOrBranchInfos = new ArrayList<>();
@@ -800,6 +864,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<TagOrBranchInfo> getTableBranches(AmoroTable<?> amoroTable) {
+    return doAs(amoroTable, () -> getTableBranchesInternal(amoroTable));
+  }
+
+  private List<TagOrBranchInfo> getTableBranchesInternal(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
     List<String> branches = table.branchManager().branches();
     List<TagOrBranchInfo> branchInfos =
@@ -812,6 +880,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public List<ConsumerInfo> getTableConsumerInfos(AmoroTable<?> amoroTable) {
+    return doAs(amoroTable, () -> getTableConsumerInfosInternal(amoroTable));
+  }
+
+  private List<ConsumerInfo> getTableConsumerInfosInternal(AmoroTable<?> amoroTable) {
     FileStoreTable table = getTable(amoroTable);
     FileStore<?> store = table.store();
     ConsumerManager consumerManager = new ConsumerManager(table.fileIO(), table.location());
@@ -888,6 +960,24 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   private FileStoreTable getTable(AmoroTable<?> amoroTable) {
     return (FileStoreTable) amoroTable.originalTable();
+  }
+
+  private <T> T doAs(AmoroTable<?> amoroTable, Callable<T> callable) {
+    if (amoroTable instanceof PaimonTable) {
+      return ((PaimonTable) amoroTable).doAs(callable);
+    }
+    return call(callable);
+  }
+
+  private <T> T call(Callable<T> callable) {
+    try {
+      return callable.call();
+    } catch (RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new RuntimeException(
+          "Run with Paimon table descriptor authentication context failed.", e);
+    }
   }
 
   private long getFileCreationTimeMillis(ManifestEntry manifestEntry) {

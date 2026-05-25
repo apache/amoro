@@ -155,7 +155,7 @@ public class TestPaimonServerTableDescriptor extends TestServerTableDescriptor {
 
     FileStore<?> store = ((FileStoreTable) table).store();
     Snapshot snapshot = store.snapshotManager().latestSnapshot();
-    long expectedRecords = snapshot.totalRecordCount() == null ? 0L : snapshot.totalRecordCount();
+    long expectedRecords = snapshot != null ? snapshot.totalRecordCount() : 0;
     List<ManifestFileMeta> manifestFileMetas =
         store.manifestListFactory().create().readDataManifests(snapshot);
     long expectedFileCount =

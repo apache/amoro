@@ -69,16 +69,16 @@ public class PaimonCatalogFactory implements FormatCatalogFactory {
         catalogProperties.put(PAIMON_S3_ACCESS_KEY, metaStore.getAccessKey());
         catalogProperties.put(PAIMON_S3_SECRET_KEY, metaStore.getSecretKey());
         Catalog catalog = paimonCatalog(catalogProperties, new Configuration());
-        return new PaimonCatalog(catalog, name, properties);
+        return new PaimonCatalog(catalog, name, properties, metaStore);
       } else {
         catalogProperties.put(PAIMON_OSS_ACCESS_KEY, metaStore.getAccessKey());
         catalogProperties.put(PAIMON_OSS_SECRET_KEY, metaStore.getSecretKey());
         Catalog catalog = paimonCatalog(catalogProperties, new Configuration());
-        return new PaimonCatalog(catalog, name, properties);
+        return new PaimonCatalog(catalog, name, properties, metaStore);
       }
     } else {
       Catalog catalog = paimonCatalog(catalogProperties, metaStore.getConfiguration());
-      return new PaimonCatalog(catalog, name, properties);
+      return new PaimonCatalog(catalog, name, properties, metaStore);
     }
   }
 
