@@ -21,7 +21,7 @@ package org.apache.amoro.server.process;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
-import org.apache.amoro.server.utils.SnowflakeIdGenerator;
+import org.apache.amoro.utils.SnowflakeIdGenerator;
 
 import java.util.HashMap;
 import java.util.Map;

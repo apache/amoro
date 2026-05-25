@@ -153,6 +153,12 @@ public class RewriteFilesInput extends BaseOptimizingInput {
   }
 
   @Override
+  public String describe() {
+    return String.format(
+        "Amoro rewrite files task, table name:%s", table == null ? "<unknown>" : table.name());
+  }
+
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("rewrittenDataFilesSize", rewrittenDataFiles.length)

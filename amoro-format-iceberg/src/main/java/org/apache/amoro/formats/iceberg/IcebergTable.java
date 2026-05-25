@@ -21,17 +21,29 @@ package org.apache.amoro.formats.iceberg;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableSnapshot;
+import org.apache.amoro.formats.iceberg.maintainer.IcebergTableMaintainer;
+import org.apache.amoro.formats.iceberg.utils.IcebergTableUtil;
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.AuthenticatedFileIOs;
+import org.apache.amoro.optimizing.OptimizationContext;
+import org.apache.amoro.optimizing.PendingInputResult;
+import org.apache.amoro.optimizing.TableRuntimeOptimizingState;
+import org.apache.amoro.optimizing.evaluation.MetadataBasedEvaluationEvent;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
+import org.apache.amoro.optimizing.plan.IcebergOptimizingEvaluatorFactory;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.table.BasicTableSnapshot;
 import org.apache.amoro.table.BasicUnkeyedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.MixedFormatCatalogUtil;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 
 import java.util.Map;
+import java.util.Optional;
 
 public class IcebergTable implements AmoroTable<UnkeyedTable> {
 
@@ -98,6 +110,70 @@ public class IcebergTable implements AmoroTable<UnkeyedTable> {
   @Override
   public TableSnapshot currentSnapshot() {
     Snapshot snapshot = table.currentSnapshot();
+    if (snapshot == null) {
+      return null;
+    }
     return new IcebergSnapshot(snapshot);
+  }
+
+  @Override
+  public long snapshotCount() {
+    return Lists.newArrayList(table.snapshots().iterator()).size();
+  }
+
+  @Override
+  public Optional<PendingInputResult> evaluatePendingInput(
+      OptimizationContext context, int maxPendingPartitions) {
+    if (context.getOptimizingConfig().isEnabled()
+        && context.isIdle()
+        && context.getOptimizingConfig().isMetadataBasedTriggerEnabled()
+        && !MetadataBasedEvaluationEvent.isEvaluatingNecessary(
+            context.getOptimizingConfig(), table, context.getLastPlanTime())) {
+      return Optional.empty();
+    }
+
+    Snapshot current = table.currentSnapshot();
+    long snapshotId =
+        current != null ? current.snapshotId() : TableRuntimeOptimizingState.INVALID_SNAPSHOT_ID;
+    AbstractOptimizingEvaluator evaluator =
+        IcebergOptimizingEvaluatorFactory.create(
+            context.getTableIdentifier(),
+            context.getOptimizingConfig(),
+            table,
+            new BasicTableSnapshot(snapshotId),
+            maxPendingPartitions,
+            context.getLastMinorOptimizingTime(),
+            context.getLastFullOptimizingTime(),
+            context.getLastMajorOptimizingTime());
+
+    boolean necessary = evaluator.isNecessary();
+    return Optional.of(
+        new PendingInputResult(
+            evaluator.getPendingInput(), evaluator.getOptimizingPendingInput(), necessary));
+  }
+
+  @Override
+  public void refreshOptimizingMetrics(OptimizationContext context) {
+    Snapshot currentSnapshot = table.currentSnapshot();
+    if (currentSnapshot != null) {
+      context.updateNonMaintainedSnapshotTime(computeNonMaintainedTime(currentSnapshot));
+    }
+
+    Snapshot optimizingSnapshot = IcebergTableUtil.findLatestOptimizingSnapshot(table).orElse(null);
+    if (optimizingSnapshot != null) {
+      context.updateLastOptimizingSnapshotTime(optimizingSnapshot.timestampMillis());
+    }
+  }
+
+  private long computeNonMaintainedTime(Snapshot snapshot) {
+    if (snapshot.summary().values().stream()
+        .anyMatch(IcebergTableMaintainer.AMORO_MAINTAIN_COMMITS::contains)) {
+      return -1;
+    }
+    if (Long.parseLong(snapshot.summary().getOrDefault(SnapshotSummary.ADDED_FILES_PROP, "0"))
+        == 0) {
+      return -1;
+    }
+    return snapshot.timestampMillis();
   }
 }

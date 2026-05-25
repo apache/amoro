@@ -283,7 +283,8 @@ public class AmoroServiceContainer {
             optimizerManager,
             tableService,
             bucketAssignStore,
-            haContainer);
+            haContainer,
+            processFactories);
 
     LOG.info("Setting up AMS table executors...");
     InlineTableExecutors.getInstance().setup(tableService, serviceConfig);

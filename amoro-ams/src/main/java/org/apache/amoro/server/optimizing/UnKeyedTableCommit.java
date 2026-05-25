@@ -33,10 +33,9 @@ import org.apache.amoro.iceberg.Constants;
 import org.apache.amoro.op.SnapshotSummary;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.TableOptimizingCommitter;
 import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.properties.HiveTableProperties;
-import org.apache.amoro.server.optimizing.TaskRuntime.Status;
-import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.UnkeyedTable;
@@ -74,26 +73,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class UnKeyedTableCommit {
+public class UnKeyedTableCommit implements TableOptimizingCommitter {
   private static final Logger LOG = LoggerFactory.getLogger(UnKeyedTableCommit.class);
 
   private final Long targetSnapshotId;
   private final MixedTable table;
-  private final Collection<TaskRuntime<RewriteStageTask>> tasks;
+  private final Collection<RewriteStageTask> tasks;
 
   public UnKeyedTableCommit(
-      Long targetSnapshotId, MixedTable table, Collection<TaskRuntime<RewriteStageTask>> tasks) {
+      Long targetSnapshotId, MixedTable table, Collection<RewriteStageTask> tasks) {
     this.targetSnapshotId = targetSnapshotId;
     this.table = table;
     this.tasks = tasks;
   }
 
-  private Set<ContentFile<?>> getExcludedDeleteFiles(
-      List<TaskRuntime<RewriteStageTask>> successTasks) {
+  private Set<ContentFile<?>> getExcludedDeleteFiles(List<RewriteStageTask> successTasks) {
     Set<ContentFile<?>> excludedDeleteFiles = new HashSet<>();
     tasks.stream()
         .filter(task -> !successTasks.contains(task))
-        .map(TaskRuntime::getTaskDescriptor)
         .filter(task -> task.getInput().rewrittenDeleteFiles() != null)
         .forEach(
             task ->
@@ -120,8 +117,11 @@ public class UnKeyedTableCommit {
             : table.asKeyedTable().baseTable().spec().partitionType();
 
     List<DataFile> newTargetFiles = new ArrayList<>();
-    for (TaskRuntime<RewriteStageTask> taskRuntime : tasks) {
-      RewriteFilesOutput output = taskRuntime.getTaskDescriptor().getOutput();
+    for (RewriteStageTask task : tasks) {
+      if (task.getOutput() == null) {
+        continue;
+      }
+      RewriteFilesOutput output = task.getOutput();
       DataFile[] dataFiles = output.getDataFiles();
       if (dataFiles == null) {
         continue;
@@ -139,7 +139,7 @@ public class UnKeyedTableCommit {
       for (DataFile targetFile : targetFiles) {
         String partitionPath =
             partitionPathMap.computeIfAbsent(
-                taskRuntime.getTaskDescriptor().getPartition(),
+                task.getPartition(),
                 key -> getPartitionPath(hiveClient, maxTransactionId, targetFile, partitionSchema));
 
         DataFile finalDataFile = moveTargetFiles(targetFile, partitionPath);
@@ -207,10 +207,8 @@ public class UnKeyedTableCommit {
   }
 
   public void commit() throws OptimizingCommitException {
-    List<TaskRuntime<RewriteStageTask>> successTasks =
-        tasks.stream()
-            .filter(task -> task.getStatus() == Status.SUCCESS)
-            .collect(Collectors.toList());
+    List<RewriteStageTask> successTasks =
+        tasks.stream().filter(task -> task.getOutput() != null).collect(Collectors.toList());
     if (successTasks.isEmpty()) {
       LOG.info("No tasks to commit for table {}", table.id());
       return;
@@ -226,29 +224,27 @@ public class UnKeyedTableCommit {
     Set<DataFile> removedDataFiles = Sets.newHashSet();
     Set<DeleteFile> addedDeleteFiles = Sets.newHashSet();
     Set<DeleteFile> removedDeleteFiles = Sets.newHashSet();
-    successTasks.stream()
-        .map(TaskRuntime::getTaskDescriptor)
-        .forEach(
-            task -> {
-              if (CollectionUtils.isNotEmpty(hiveNewDataFiles)) {
-                addedDataFiles.addAll(hiveNewDataFiles);
-              } else if (task.getOutput().getDataFiles() != null) {
-                addedDataFiles.addAll(Arrays.asList(task.getOutput().getDataFiles()));
-              }
-              if (task.getOutput().getDeleteFiles() != null) {
-                addedDeleteFiles.addAll(Arrays.asList(task.getOutput().getDeleteFiles()));
-              }
-              if (task.getInput().rewrittenDataFiles() != null) {
-                removedDataFiles.addAll(Arrays.asList(task.getInput().rewrittenDataFiles()));
-              }
-              if (task.getInput().rewrittenDeleteFiles() != null) {
-                removedDeleteFiles.addAll(
-                    Arrays.stream(task.getInput().rewrittenDeleteFiles())
-                        .filter(deleteFile -> needRemove(excludedDeleteFiles, deleteFile))
-                        .map(ContentFiles::asDeleteFile)
-                        .collect(Collectors.toSet()));
-              }
-            });
+    successTasks.forEach(
+        task -> {
+          if (CollectionUtils.isNotEmpty(hiveNewDataFiles)) {
+            addedDataFiles.addAll(hiveNewDataFiles);
+          } else if (task.getOutput().getDataFiles() != null) {
+            addedDataFiles.addAll(Arrays.asList(task.getOutput().getDataFiles()));
+          }
+          if (task.getOutput().getDeleteFiles() != null) {
+            addedDeleteFiles.addAll(Arrays.asList(task.getOutput().getDeleteFiles()));
+          }
+          if (task.getInput().rewrittenDataFiles() != null) {
+            removedDataFiles.addAll(Arrays.asList(task.getInput().rewrittenDataFiles()));
+          }
+          if (task.getInput().rewrittenDeleteFiles() != null) {
+            removedDeleteFiles.addAll(
+                Arrays.stream(task.getInput().rewrittenDeleteFiles())
+                    .filter(deleteFile -> needRemove(excludedDeleteFiles, deleteFile))
+                    .map(ContentFiles::asDeleteFile)
+                    .collect(Collectors.toSet()));
+          }
+        });
     try {
       Transaction transaction = table.asUnkeyedTable().newTransaction();
       if (removedDeleteFiles.isEmpty() && !addedDeleteFiles.isEmpty()) {
@@ -394,7 +390,8 @@ public class UnKeyedTableCommit {
 
   private static Set<String> getCommittedDataFilesFromSnapshotId(
       UnkeyedTable table, Long snapshotId) {
-    long currentSnapshotId = IcebergTableUtil.getSnapshotId(table, true);
+    Snapshot current = table.currentSnapshot();
+    long currentSnapshotId = current != null ? current.snapshotId() : Constants.INVALID_SNAPSHOT_ID;
     if (currentSnapshotId == Constants.INVALID_SNAPSHOT_ID) {
       return Collections.emptySet();
     }

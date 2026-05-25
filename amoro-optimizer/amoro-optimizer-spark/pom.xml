@@ -42,7 +42,7 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
-            <scope>provided</scope>
+            <!--            <scope>provided</scope>-->
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -50,12 +50,20 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
-            <scope>provided</scope>
+            <!--            <scope>provided</scope>-->
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.parquet</groupId>
@@ -136,6 +144,13 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>${argLine} --add-exports=java.base/sun.nio.ch=ALL-UNNAMED</argLine>
+                </configuration>
             </plugin>
         </plugins>
     </build>

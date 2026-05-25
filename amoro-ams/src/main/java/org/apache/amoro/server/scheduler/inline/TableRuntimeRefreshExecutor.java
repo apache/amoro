@@ -22,18 +22,13 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.optimizing.evaluation.MetadataBasedEvaluationEvent;
-import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
-import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
-import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
-import org.apache.amoro.table.MixedTable;
 
 /** Executor that refreshes table runtimes and evaluates optimizing status periodically. */
 public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
@@ -69,63 +64,6 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
         defaultTableRuntime.getOptimizingConfig().getMinorLeastInterval() * 4L / 5, interval);
   }
 
-  private boolean tryEvaluatingPendingInput(DefaultTableRuntime tableRuntime, MixedTable table) {
-    OptimizingConfig optimizingConfig = tableRuntime.getOptimizingConfig();
-    boolean optimizingEnabled = optimizingConfig.isEnabled();
-    if (optimizingEnabled && tableRuntime.getOptimizingStatus().equals(OptimizingStatus.IDLE)) {
-      // Evaluate pending input and collect table summary when optimizing is enabled and idle
-      if (optimizingConfig.isMetadataBasedTriggerEnabled()
-          && !MetadataBasedEvaluationEvent.isEvaluatingNecessary(
-              optimizingConfig, table, tableRuntime.getLastPlanTime())) {
-        logger.debug(
-            "{} optimizing is not necessary due to metadata based trigger",
-            tableRuntime.getTableIdentifier());
-        // indicates no optimization demand now
-        return false;
-      }
-
-      AbstractOptimizingEvaluator evaluator =
-          IcebergTableUtil.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
-      boolean evaluatorIsNecessary = evaluator.isNecessary();
-      if (evaluatorIsNecessary) {
-        AbstractOptimizingEvaluator.PendingInput pendingInput =
-            evaluator.getOptimizingPendingInput();
-        logger.debug(
-            "{} optimizing is necessary and get pending input {}",
-            tableRuntime.getTableIdentifier(),
-            pendingInput);
-        tableRuntime.setPendingInput(pendingInput);
-      } else {
-        tableRuntime.optimizingNotNecessary();
-      }
-
-      tableRuntime.setTableSummary(evaluator.getPendingInput());
-      return evaluatorIsNecessary;
-    } else if (!optimizingEnabled && optimizingConfig.isTableSummaryEnabled()) {
-      // Collect table summary metrics even when optimizing is disabled
-      logger.debug(
-          "{} collecting table summary (optimizing disabled, tableSummary enabled)",
-          tableRuntime.getTableIdentifier());
-      AbstractOptimizingEvaluator evaluator =
-          IcebergTableUtil.createOptimizingEvaluator(tableRuntime, table, maxPendingPartitions);
-      AbstractOptimizingEvaluator.PendingInput summary = evaluator.getPendingInput();
-      logger.debug("{} table summary collected: {}", tableRuntime.getTableIdentifier(), summary);
-      tableRuntime.setTableSummary(summary);
-      return false;
-    } else if (!optimizingEnabled) {
-      logger.debug(
-          "{} optimizing is not enabled, skip evaluating pending input",
-          tableRuntime.getTableIdentifier());
-      return false;
-    } else {
-      logger.debug(
-          "{} optimizing is processing or is in preparation", tableRuntime.getTableIdentifier());
-      // indicates optimization demand exists (preparation or processing),
-      // even though we don't trigger a new evaluation in this loop.
-      return true;
-    }
-  }
-
   @Override
   public void handleConfigChanged(TableRuntime tableRuntime, TableConfiguration originalConfig) {
     Preconditions.checkArgument(tableRuntime instanceof DefaultTableRuntime);
@@ -155,20 +93,19 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
       long lastOptimizedChangeSnapshotId = defaultTableRuntime.getLastOptimizedChangeSnapshotId();
       AmoroTable<?> table = loadTable(tableRuntime);
       defaultTableRuntime.refresh(table);
-      MixedTable mixedTable = (MixedTable) table.originalTable();
-      boolean snapshotChanged =
-          (mixedTable.isKeyedTable()
-                  && (lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId()
-                      || lastOptimizedChangeSnapshotId
-                          != defaultTableRuntime.getCurrentChangeSnapshotId()))
-              || (mixedTable.isUnkeyedTable()
-                  && lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId());
+
       OptimizingConfig optimizingConfig = defaultTableRuntime.getOptimizingConfig();
       boolean tableSummaryOnly =
           !optimizingConfig.isEnabled() && optimizingConfig.isTableSummaryEnabled();
+
+      boolean snapshotChanged =
+          lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId()
+              || lastOptimizedChangeSnapshotId != defaultTableRuntime.getCurrentChangeSnapshotId();
+
       boolean hasOptimizingDemand = false;
       if (snapshotChanged) {
-        hasOptimizingDemand = tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
+        hasOptimizingDemand =
+            defaultTableRuntime.evaluatePendingInputAndTransition(table, maxPendingPartitions);
       } else {
         logger.debug("{} optimizing is not necessary", defaultTableRuntime.getTableIdentifier());
       }

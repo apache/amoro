@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory;
 public class SparkOptimizer extends Optimizer {
   private static final Logger LOG = LoggerFactory.getLogger(SparkOptimizer.class);
   private static final String APP_NAME_FORMAT = "amoro-spark-optimizer-%s";
+  private static final String HADOOP_USER_NAME = "HADOOP_USER_NAME";
+  private static final String DEFAULT_HADOOP_USER = "hdfs";
 
   public SparkOptimizer(OptimizerConfig config, JavaSparkContext jsc) {
     super(
@@ -41,6 +43,7 @@ public class SparkOptimizer extends Optimizer {
   }
 
   public static void main(String[] args) throws Exception {
+    System.setProperty(HADOOP_USER_NAME, System.getProperty(HADOOP_USER_NAME, DEFAULT_HADOOP_USER));
     OptimizerConfig config = new OptimizerConfig(args);
     SparkSession spark =
         SparkSession.builder()

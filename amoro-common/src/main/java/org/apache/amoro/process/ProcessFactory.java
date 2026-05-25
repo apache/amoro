@@ -20,12 +20,16 @@ package org.apache.amoro.process;
 
 import org.apache.amoro.Action;
 import org.apache.amoro.ActivePlugin;
+import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.optimizing.TableOptimizingCommitter;
+import org.apache.amoro.optimizing.TableOptimizingPlanner;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.StateKey;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,6 +52,39 @@ public interface ProcessFactory extends ActivePlugin {
   /** How to trigger a process for the action. */
   default ProcessTriggerStrategy triggerStrategy(TableFormat format, Action action) {
     return ProcessTriggerStrategy.METADATA_TRIGGER;
+  }
+
+  /** Declare which table formats this factory supports for optimizing planning/commit. */
+  default Set<TableFormat> supportedFormats() {
+    return Collections.emptySet();
+  }
+
+  /**
+   * Create a planner for the given table optimizing process.
+   *
+   * <p>Only called when {@link #supportedFormats()} contains {@code tableRuntime.getFormat()}.
+   */
+  default TableOptimizingPlanner createPlanner(
+      TableRuntime tableRuntime,
+      AmoroTable<?> table,
+      double availableCore,
+      long maxInputSizePerThread) {
+    throw new UnsupportedOperationException("Optimizing planner is not supported by " + name());
+  }
+
+  /**
+   * Create a committer for the given table with completed optimizing task results.
+   *
+   * <p>Only called when {@link #supportedFormats()} contains target table format.
+   */
+  default TableOptimizingCommitter createCommitter(
+      AmoroTable<?> table,
+      long targetSnapshotId,
+      long targetChangeSnapshotId,
+      Collection<? extends StagedTaskDescriptor<?, ?, ?>> successTasks,
+      Map<String, Long> fromSequence,
+      Map<String, Long> toSequence) {
+    throw new UnsupportedOperationException("Optimizing committer is not supported by " + name());
   }
 
   /**

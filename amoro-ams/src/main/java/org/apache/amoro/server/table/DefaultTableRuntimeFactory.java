@@ -23,10 +23,12 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.formats.paimon.optimizing.PaimonPendingInput;
+import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.process.ProcessFactory;
-import org.apache.amoro.server.table.paimon.PaimonTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.table.FormatPendingInput;
 import org.apache.amoro.table.StateKey;
 import org.apache.amoro.table.TableRuntimeFactory;
 import org.apache.amoro.table.TableRuntimeStore;
@@ -43,9 +45,9 @@ import java.util.function.Function;
 /**
  * Default {@link TableRuntimeFactory} implementation used by AMS.
  *
- * <p>Besides creating {@link DefaultTableRuntime} instances for mixed/iceberg formats, this factory
- * also aggregates {@link ProcessFactory} declarations to expose {@link ActionCoordinator} plugins
- * for different {@link TableFormat}/{@link Action} combinations.
+ * <p>Creates {@link DefaultTableRuntime} instances for all supported formats, with format-specific
+ * pending-input state keys. Also aggregates {@link ProcessFactory} declarations to expose {@link
+ * ActionCoordinator} plugins for different {@link TableFormat}/{@link Action} combinations.
  */
 public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
 
@@ -103,11 +105,6 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
       ServerTableIdentifier tableIdentifier, Map<String, String> tableProperties) {
     TableFormat format = tableIdentifier.getFormat();
 
-    // Paimon format uses its own runtime implementation
-    if (format == TableFormat.PAIMON) {
-      return Optional.of(new PaimonTableRuntimeCreatorImpl());
-    }
-
     boolean defaultSupported =
         format.in(
             TableFormat.MIXED_ICEBERG,
@@ -134,12 +131,14 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
     @Override
     public List<StateKey<?>> requiredStateKeys() {
       Map<String, StateKey<?>> merged = new LinkedHashMap<>();
-      // 1) DefaultTableRuntime required states
-      for (StateKey<?> stateKey : DefaultTableRuntime.REQUIRED_STATES) {
-        merged.put(stateKey.getKey(), stateKey);
-      }
+      merged.put(
+          DefaultTableRuntime.OPTIMIZING_STATE_KEY.getKey(),
+          DefaultTableRuntime.OPTIMIZING_STATE_KEY);
+      merged.put("pending_input", createPendingInputKey(format));
+      merged.put(DefaultTableRuntime.PROCESS_ID_KEY.getKey(), DefaultTableRuntime.PROCESS_ID_KEY);
+      merged.put(
+          DefaultTableRuntime.CLEANUP_STATE_KEY.getKey(), DefaultTableRuntime.CLEANUP_STATE_KEY);
 
-      // 2) Extra states from all process factories for this format (if any)
       Map<Action, ProcessFactory> byAction = factoriesByFormat.get(format);
       if (byAction != null) {
         Map<String, ProcessFactory> deFactories = new HashMap<>();
@@ -169,21 +168,19 @@ public class DefaultTableRuntimeFactory implements TableRuntimeFactory {
 
     @Override
     public TableRuntime create(TableRuntimeStore store) {
-      return new DefaultTableRuntime(store, () -> loader.apply(store.getTableIdentifier()));
+      return new DefaultTableRuntime(
+          store, () -> loader.apply(store.getTableIdentifier()), createPendingInputKey(format));
     }
   }
 
-  /** Creator for Paimon format tables, producing {@link PaimonTableRuntime} instances. */
-  private class PaimonTableRuntimeCreatorImpl implements TableRuntimeFactory.TableRuntimeCreator {
-
-    @Override
-    public List<StateKey<?>> requiredStateKeys() {
-      return PaimonTableRuntime.REQUIRED_STATES;
+  private static StateKey<? extends FormatPendingInput> createPendingInputKey(TableFormat format) {
+    if (format == TableFormat.PAIMON) {
+      return StateKey.stateKey("pending_input")
+          .jsonType(PaimonPendingInput.class)
+          .defaultValue(new PaimonPendingInput());
     }
-
-    @Override
-    public TableRuntime create(TableRuntimeStore store) {
-      return new PaimonTableRuntime(store, () -> loader.apply(store.getTableIdentifier()));
-    }
+    return StateKey.stateKey("pending_input")
+        .jsonType(AbstractOptimizingEvaluator.PendingInput.class)
+        .defaultValue(new AbstractOptimizingEvaluator.PendingInput());
   }
 }

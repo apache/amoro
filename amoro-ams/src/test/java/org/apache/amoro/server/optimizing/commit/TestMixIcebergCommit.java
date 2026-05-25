@@ -33,7 +33,6 @@ import org.apache.amoro.scan.CombinedScanTask;
 import org.apache.amoro.scan.KeyedTableScanTask;
 import org.apache.amoro.scan.MixedFileScanTask;
 import org.apache.amoro.server.optimizing.KeyedTableCommit;
-import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.utils.ContentFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -43,8 +42,9 @@ import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.util.StructLikeMap;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
@@ -118,6 +118,114 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
     addFile((DataFile) contentFile);
   }
 
+  private DataFile newChangeDataFile() {
+    return DataFiles.builder(spec)
+        .withPath(String.format("1-I-0-00000-0-00-%s.parquet", fileSeq++))
+        .withFileSizeInBytes(10)
+        .withPartitionPath(partitionPath)
+        .withRecordCount(1)
+        .withFormat(FileFormat.PARQUET)
+        .build();
+  }
+
+  private DataFile newBaseDataFile() {
+    return DataFiles.builder(spec)
+        .withPath(String.format("1-B-0-00000-0-00-%s.parquet", fileSeq++))
+        .withFileSizeInBytes(10)
+        .withPartitionPath(partitionPath)
+        .withRecordCount(1)
+        .withFormat(FileFormat.PARQUET)
+        .build();
+  }
+
+  @Test
+  public void testNullOutputTaskDoesNotDeleteInputFiles() throws OptimizingCommitException {
+    DataFile failedTaskSourceFile = newChangeDataFile();
+    addFile(failedTaskSourceFile);
+
+    RewriteFilesInput failedInput =
+        getRewriteInput(new DataFile[] {failedTaskSourceFile}, null, null);
+    RewriteStageTask failedTask = Mockito.mock(RewriteStageTask.class);
+    Mockito.when(failedTask.getPartition()).thenReturn(partitionPath);
+    Mockito.when(failedTask.getInput()).thenReturn(failedInput);
+    Mockito.when(failedTask.getOutput()).thenReturn(null);
+
+    KeyedTableCommit commit =
+        new KeyedTableCommit(
+            getMixedTable(),
+            Collections.singletonList(failedTask),
+            Optional.ofNullable(mixedTable.asKeyedTable().baseTable().currentSnapshot())
+                .map(Snapshot::snapshotId)
+                .orElse(null),
+            getFromSequenceOfPartitions(failedInput),
+            getToSequenceOfPartitions(failedInput));
+
+    commit.commit();
+
+    Map<String, ContentFile<?>> allFiles = getAllFiles();
+    Assert.assertTrue(allFiles.containsKey(failedTaskSourceFile.path().toString()));
+  }
+
+  @Test
+  public void testPartialCommitOnlyUsesSuccessfulTasks() throws OptimizingCommitException {
+    DataFile successTaskSourceFile = newChangeDataFile();
+    DataFile failedTaskSourceFile = newChangeDataFile();
+    addFile(successTaskSourceFile);
+    addFile(failedTaskSourceFile);
+
+    DataFile successTaskOutputFile = newBaseDataFile();
+    RewriteFilesInput successInput =
+        getRewriteInput(new DataFile[] {successTaskSourceFile}, null, null);
+    RewriteFilesOutput successOutput =
+        new RewriteFilesOutput(new DataFile[] {successTaskOutputFile}, null, null);
+
+    RewriteFilesInput failedInput =
+        getRewriteInput(new DataFile[] {failedTaskSourceFile}, null, null);
+
+    RewriteStageTask successTask = Mockito.mock(RewriteStageTask.class);
+    Mockito.when(successTask.getPartition()).thenReturn(partitionPath);
+    Mockito.when(successTask.getInput()).thenReturn(successInput);
+    Mockito.when(successTask.getOutput()).thenReturn(successOutput);
+
+    RewriteStageTask failedTask = Mockito.mock(RewriteStageTask.class);
+    Mockito.when(failedTask.getPartition()).thenReturn(partitionPath);
+    Mockito.when(failedTask.getInput()).thenReturn(failedInput);
+    Mockito.when(failedTask.getOutput()).thenReturn(null);
+
+    Map<String, Long> fromSequence = getFromSequenceOfPartitions(successInput);
+    fromSequence.compute(
+        partitionPath,
+        (k, v) ->
+            Math.min(
+                v == null ? Long.MAX_VALUE : v,
+                getFromSequenceOfPartitions(failedInput)
+                    .getOrDefault(partitionPath, Long.MAX_VALUE)));
+    Map<String, Long> toSequence = getToSequenceOfPartitions(successInput);
+    toSequence.compute(
+        partitionPath,
+        (k, v) ->
+            Math.max(
+                v == null ? -1L : v,
+                getToSequenceOfPartitions(failedInput).getOrDefault(partitionPath, -1L)));
+
+    KeyedTableCommit commit =
+        new KeyedTableCommit(
+            getMixedTable(),
+            Arrays.asList(successTask, failedTask),
+            Optional.ofNullable(mixedTable.asKeyedTable().baseTable().currentSnapshot())
+                .map(Snapshot::snapshotId)
+                .orElse(null),
+            fromSequence,
+            toSequence);
+
+    commit.commit();
+
+    Map<String, ContentFile<?>> allFiles = getAllFiles();
+    Assert.assertFalse(allFiles.containsKey(successTaskSourceFile.path().toString()));
+    Assert.assertTrue(allFiles.containsKey(successTaskOutputFile.path().toString()));
+    Assert.assertTrue(allFiles.containsKey(failedTaskSourceFile.path().toString()));
+  }
+
   protected void execute(
       DataFile[] rewriteData,
       DataFile[] rewritePos,
@@ -127,18 +235,16 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
       throws OptimizingCommitException {
     RewriteFilesInput input = getRewriteInput(rewriteData, rewritePos, deletes);
     RewriteFilesOutput output = new RewriteFilesOutput(dataOutput, deleteOutput, null);
-    StructLikeMap<Long> fromSequence = getFromSequenceOfPartitions(input);
-    StructLikeMap<Long> toSequence = getToSequenceOfPartitions(input);
-    TaskRuntime<RewriteStageTask> taskRuntime = Mockito.mock(TaskRuntime.class);
+    Map<String, Long> fromSequence = getFromSequenceOfPartitions(input);
+    Map<String, Long> toSequence = getToSequenceOfPartitions(input);
     RewriteStageTask task = Mockito.mock(RewriteStageTask.class);
-    Mockito.when(taskRuntime.getTaskDescriptor()).thenReturn(task);
     Mockito.when(task.getPartition()).thenReturn(partitionPath);
     Mockito.when(task.getInput()).thenReturn(input);
     Mockito.when(task.getOutput()).thenReturn(output);
     KeyedTableCommit commit =
         new KeyedTableCommit(
             getMixedTable(),
-            Collections.singletonList(taskRuntime),
+            Collections.singletonList(task),
             Optional.ofNullable(mixedTable.asKeyedTable().baseTable().currentSnapshot())
                 .map(Snapshot::snapshotId)
                 .orElse(null),
@@ -147,7 +253,7 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
     commit.commit();
   }
 
-  private StructLikeMap<Long> getFromSequenceOfPartitions(RewriteFilesInput input) {
+  private Map<String, Long> getFromSequenceOfPartitions(RewriteFilesInput input) {
     long minSequence = Long.MAX_VALUE;
     for (ContentFile<?> contentFile : input.allFiles()) {
       if (ContentFiles.isDeleteFile(contentFile)) {
@@ -158,14 +264,14 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
         minSequence = Math.min(minSequence, contentFile.dataSequenceNumber());
       }
     }
-    StructLikeMap<Long> structLikeMap = StructLikeMap.create(spec.partitionType());
+    Map<String, Long> sequenceMap = new HashMap<>();
     if (minSequence != Long.MAX_VALUE) {
-      structLikeMap.put(partitionData, minSequence);
+      sequenceMap.put(partitionPath, minSequence);
     }
-    return structLikeMap;
+    return sequenceMap;
   }
 
-  private StructLikeMap<Long> getToSequenceOfPartitions(RewriteFilesInput input) {
+  private Map<String, Long> getToSequenceOfPartitions(RewriteFilesInput input) {
     long minSequence = -1;
     for (ContentFile<?> contentFile : input.allFiles()) {
       if (ContentFiles.isDeleteFile(contentFile)) {
@@ -176,11 +282,11 @@ public class TestMixIcebergCommit extends TestUnKeyedTableCommit {
         minSequence = Math.max(minSequence, contentFile.dataSequenceNumber());
       }
     }
-    StructLikeMap<Long> structLikeMap = StructLikeMap.create(spec.partitionType());
+    Map<String, Long> sequenceMap = new HashMap<>();
     if (minSequence != -1) {
-      structLikeMap.put(partitionData, minSequence);
+      sequenceMap.put(partitionPath, minSequence);
     }
-    return structLikeMap;
+    return sequenceMap;
   }
 
   private RewriteFilesInput getRewriteInput(

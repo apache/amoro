@@ -44,6 +44,14 @@ public class RewriteStageTask
   }
 
   @Override
+  public MetricsSummary toMetricsSummary() {
+    // The generic summary field (S) is already a MetricsSummary on the Iceberg side, so no
+    // adaptation is needed. Covariant return keeps the declared type tight for callers that still
+    // expect MetricsSummary.
+    return summary;
+  }
+
+  @Override
   protected void calculateSummary() {
     if (input != null) {
       summary = new MetricsSummary(input);

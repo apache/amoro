@@ -20,7 +20,6 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
-import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.OptimizingService;
@@ -34,6 +33,7 @@ import org.apache.amoro.exception.ForbiddenException;
 import org.apache.amoro.exception.IllegalTaskStateException;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.exception.PluginRetryAuthException;
+import org.apache.amoro.process.ProcessFactory;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceContainer;
 import org.apache.amoro.resource.ResourceGroup;
@@ -50,6 +50,7 @@ import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.ResourceMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.ProcessFactoryRouter;
 import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.OptimizerInstance;
@@ -125,6 +126,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final BucketAssignStore bucketAssignStore;
   private final HighAvailabilityContainer haContainer;
   private final boolean isMasterSlaveMode;
+  private final ProcessFactoryRouter router;
 
   public DefaultOptimizingService(
       Configurations serviceConfig,
@@ -132,7 +134,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
       OptimizerManager optimizerManager,
       TableService tableService,
       BucketAssignStore bucketAssignStore,
-      HighAvailabilityContainer haContainer) {
+      HighAvailabilityContainer haContainer,
+      List<ProcessFactory> processFactories) {
     this.optimizerTouchTimeout =
         serviceConfig.getDurationInMillis(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT);
     this.taskAckTimeout =
@@ -160,6 +163,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
     this.isMasterSlaveMode =
         haContainer != null
             && serviceConfig.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE);
+    this.router =
+        new ProcessFactoryRouter(
+            Optional.ofNullable(processFactories).orElseGet(Collections::emptyList));
     this.tableHandlerChain = new TableRuntimeHandlerImpl();
     this.planExecutor =
         Executors.newCachedThreadPool(
@@ -167,6 +173,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
                 .setNameFormat("plan-executor-thread-%d")
                 .setDaemon(true)
                 .build());
+    LOG.info(
+        "Optimizing router initialised: delegates={} formats={}",
+        router.delegates().stream().map(ProcessFactory::name).collect(Collectors.toList()),
+        router.supportedFormats());
   }
 
   public RuntimeHandlerChain getTableRuntimeHandler() {
@@ -190,7 +200,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   this,
                   planExecutor,
                   Optional.ofNullable(tableRuntimes).orElseGet(ArrayList::new),
-                  maxPlanningParallelism);
+                  maxPlanningParallelism,
+                  router);
           optimizingQueueByGroup.put(groupName, optimizingQueue);
           optimizerGroupKeeper.keepInTouch(groupName, 1);
         });
@@ -326,12 +337,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
       return false;
     }
     long tableId = processMeta.getTableId();
-    TableRuntime runtime = tableService.getRuntime(tableId);
-    if (!(runtime instanceof DefaultTableRuntime)
-        || !supportsOptimizingFormat(runtime.getFormat())) {
+    DefaultTableRuntime tableRuntime = (DefaultTableRuntime) tableService.getRuntime(tableId);
+    if (tableRuntime == null) {
       return false;
     }
-    DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
     OptimizingProcess process = tableRuntime.getOptimizingProcess();
     if (process == null || process.getProcessId() != processId) {
       return false;
@@ -403,7 +412,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   this,
                   planExecutor,
                   new ArrayList<>(),
-                  maxPlanningParallelism);
+                  maxPlanningParallelism,
+                  router);
           String groupName = resourceGroup.getName();
           optimizingQueueByGroup.put(groupName, optimizingQueue);
           optimizerGroupKeeper.keepInTouch(groupName, 1);
@@ -426,6 +436,16 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizingConfigWatcher.dispose();
     // dispose all queues
     optimizingQueueByGroup.values().forEach(OptimizingQueue::dispose);
+    router
+        .delegates()
+        .forEach(
+            factory -> {
+              try {
+                factory.close();
+              } catch (Exception e) {
+                LOG.warn("Error closing ProcessFactory '{}': {}", factory.name(), e.getMessage());
+              }
+            });
     optimizerKeeper.dispose();
     optimizerGroupKeeper.dispose();
     tableHandlerChain.dispose();
@@ -446,9 +466,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-      if (!supportsOptimizingFormat(tableRuntime.getFormat())) {
-        return;
-      }
       DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
       if (!defaultTableRuntime.getOptimizingStatus().isProcessing()) {
         getOptionalQueueByGroup(defaultTableRuntime.getGroupName())
@@ -458,9 +475,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void handleConfigChanged(TableRuntime runtime, TableConfiguration originalConfig) {
-      if (!supportsOptimizingFormat(runtime.getFormat())) {
-        return;
-      }
       DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       String originalGroup = originalConfig.getOptimizingConfig().getOptimizerGroup();
       Optional<OptimizingQueue> newQueue = getOptionalQueueByGroup(tableRuntime.getGroupName());
@@ -483,9 +497,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void handleTableAdded(AmoroTable<?> table, TableRuntime runtime) {
-      if (!supportsOptimizingFormat(runtime.getFormat())) {
-        return;
-      }
       DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       getOptionalQueueByGroup(tableRuntime.getGroupName())
           .ifPresent(q -> q.refreshTable(tableRuntime));
@@ -493,9 +504,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
     @Override
     public void handleTableRemoved(TableRuntime runtime) {
-      if (!supportsOptimizingFormat(runtime.getFormat())) {
-        return;
-      }
       DefaultTableRuntime tableRuntime = (DefaultTableRuntime) runtime;
       getOptionalQueueByGroup(tableRuntime.getGroupName())
           .ifPresent(queue -> queue.releaseTable(tableRuntime));
@@ -971,9 +979,5 @@ public class DefaultOptimizingService extends StatedPersistentBase
           resourceGroup.getName(),
           requiredCores);
     }
-  }
-
-  private boolean supportsOptimizingFormat(TableFormat format) {
-    return format.in(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE);
   }
 }

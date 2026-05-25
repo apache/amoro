@@ -44,6 +44,7 @@ import org.apache.amoro.table.KeyedTableSnapshot;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableSnapshot;
 import org.apache.amoro.utils.ExpressionUtil;
+import org.apache.amoro.utils.SnowflakeIdGenerator;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataOperations;
@@ -274,10 +275,14 @@ public class IcebergTableUtil {
       MixedTable table,
       double availableCore,
       long maxInputSizePerThread) {
+    AbstractOptimizingEvaluator.PendingInput pendingInput =
+        tableRuntime.getPendingInput() instanceof AbstractOptimizingEvaluator.PendingInput
+            ? (AbstractOptimizingEvaluator.PendingInput) tableRuntime.getPendingInput()
+            : null;
     Expression partitionFilter =
-        tableRuntime.getPendingInput() == null
+        pendingInput == null
             ? Expressions.alwaysTrue()
-            : tableRuntime.getPendingInput().getPartitions().entrySet().stream()
+            : pendingInput.getPartitions().entrySet().stream()
                 .map(
                     entry ->
                         ExpressionUtil.convertPartitionDataToDataFilter(

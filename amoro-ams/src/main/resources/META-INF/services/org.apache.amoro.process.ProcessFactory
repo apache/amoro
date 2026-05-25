@@ -17,4 +17,4 @@
 #
 
 org.apache.amoro.server.process.iceberg.IcebergProcessFactory
-org.apache.amoro.server.process.paimon.PaimonProcessFactory
+org.apache.amoro.server.process.paimon.PaimonMaintainProcessFactory

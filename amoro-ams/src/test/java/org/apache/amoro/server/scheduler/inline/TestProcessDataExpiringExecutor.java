@@ -27,7 +27,7 @@ import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.TableService;
-import org.apache.amoro.server.utils.SnowflakeIdGenerator;
+import org.apache.amoro.utils.SnowflakeIdGenerator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

@@ -18,9 +18,13 @@
 
 package org.apache.amoro;
 
+import org.apache.amoro.optimizing.OptimizationContext;
+import org.apache.amoro.optimizing.PendingInputResult;
+import org.apache.amoro.optimizing.TableRuntimeOptimizingState;
 import org.apache.amoro.table.TableIdentifier;
 
 import java.util.Map;
+import java.util.Optional;
 
 public interface AmoroTable<T> {
 
@@ -43,4 +47,52 @@ public interface AmoroTable<T> {
 
   /** Returns the current snapshot of this table */
   TableSnapshot currentSnapshot();
+
+  /**
+   * Refresh optimizing-related snapshot IDs into the given state. Returns true if any snapshot ID
+   * changed.
+   *
+   * <p>Default implementation reads a single snapshot via {@link #currentSnapshot()} and parses its
+   * ID as a long. Formats with dual snapshots (e.g., keyed MixedTable) must override this method.
+   */
+  default boolean refreshOptimizingState(TableRuntimeOptimizingState state) {
+    TableSnapshot snapshot = currentSnapshot();
+    long currentId = TableRuntimeOptimizingState.INVALID_SNAPSHOT_ID;
+    if (snapshot != null) {
+      try {
+        currentId = Long.parseLong(snapshot.id());
+      } catch (NumberFormatException e) {
+        return false;
+      }
+    }
+    if (currentId != state.getCurrentSnapshotId()) {
+      state.setCurrentSnapshotId(currentId);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Evaluate whether optimizing is needed for this table.
+   *
+   * <p>Default returns empty (no evaluation). Format-specific implementations override to provide
+   * file scanning and evaluator logic.
+   */
+  default Optional<PendingInputResult> evaluatePendingInput(
+      OptimizationContext context, int maxPendingPartitions) {
+    return Optional.empty();
+  }
+
+  /** Returns the number of snapshots for metrics. Default returns 0. */
+  default long snapshotCount() {
+    return 0;
+  }
+
+  /**
+   * Refresh format-specific optimizing metrics after snapshot state is updated.
+   *
+   * <p>Default is no-op. Iceberg-based formats override to compute non-maintained and optimizing
+   * snapshot timestamps from Iceberg Snapshot objects.
+   */
+  default void refreshOptimizingMetrics(OptimizationContext context) {}
 }

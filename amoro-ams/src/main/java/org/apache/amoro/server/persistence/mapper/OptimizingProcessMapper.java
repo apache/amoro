@@ -18,8 +18,7 @@
 
 package org.apache.amoro.server.persistence.mapper;
 
-import org.apache.amoro.optimizing.RewriteFilesInput;
-import org.apache.amoro.optimizing.RewriteStageTask;
+import org.apache.amoro.optimizing.BaseOptimizingInput;
 import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.server.optimizing.OptimizingTaskMeta;
 import org.apache.amoro.server.optimizing.TaskRuntime;
@@ -75,7 +74,7 @@ public interface OptimizingProcessMapper {
           + " typeHandler=org.apache.amoro.server.persistence.converter.Object2ByteArrayConvert}"
           + " WHERE process_id = #{processId}")
   void updateProcessInputFiles(
-      @Param("processId") long processId, @Param("input") Map<Integer, RewriteFilesInput> input);
+      @Param("processId") long processId, @Param("input") Map<Integer, BaseOptimizingInput> input);
 
   @Select(
       "SELECT target_snapshot_id, target_change_snapshot_id, from_sequence, to_sequence "
@@ -114,8 +113,21 @@ public interface OptimizingProcessMapper {
     "</foreach>",
     "</script>"
   })
-  void insertTaskRuntimes(@Param("taskRuntimes") List<TaskRuntime<RewriteStageTask>> taskRuntimes);
+  void insertTaskRuntimes(
+      @Param("taskRuntimes")
+          List<TaskRuntime<? extends StagedTaskDescriptor<? extends BaseOptimizingInput, ?, ?>>>
+              taskRuntimes);
 
+  /**
+   * Load task_runtime rows for a given process, hydrating each row's descriptor via {@link
+   * TaskDescriptorTypeConverter} (which routes by {@code TASK_EXECUTOR_FACTORY_IMPL} — see C3).
+   *
+   * <p>Return type is wildcarded at {@link BaseOptimizingInput} so that both Iceberg {@code
+   * RewriteStageTask} and Paimon {@code PaimonCompactionTask} rows can be recovered through the
+   * same call. Callers that need to push a loaded {@link BaseOptimizingInput} back into the
+   * descriptor via {@link StagedTaskDescriptor#setInput} can do so without a format-specific
+   * downcast because erasure of {@code setInput(I)} is {@code setInput(Object)}.
+   */
   @Select(
       "SELECT process_id, task_id, 'executing' as stage, retry_num, table_id, partition_data,  create_time, start_time, end_time,"
           + " status, fail_reason, optimizer_token, thread_id, rewrite_output, metrics_summary, properties FROM "
@@ -149,8 +161,8 @@ public interface OptimizingProcessMapper {
         column = "properties",
         typeHandler = Map2StringConverter.class)
   })
-  List<TaskRuntime<RewriteStageTask>> selectTaskRuntimes(
-      @Param("table_id") long tableId, @Param("process_id") long processId);
+  List<TaskRuntime<? extends StagedTaskDescriptor<? extends BaseOptimizingInput, ?, ?>>>
+      selectTaskRuntimes(@Param("table_id") long tableId, @Param("process_id") long processId);
 
   @Select(
       "<script>"

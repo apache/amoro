@@ -21,18 +21,23 @@ package org.apache.amoro.server.optimizing;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.exception.OptimizingClosedException;
 import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.exception.TaskNotFoundException;
+import org.apache.amoro.optimizing.BaseOptimizingInput;
 import org.apache.amoro.optimizing.MetricsSummary;
+import org.apache.amoro.optimizing.OptimizingPlanResult;
 import org.apache.amoro.optimizing.OptimizingType;
-import org.apache.amoro.optimizing.RewriteFilesInput;
-import org.apache.amoro.optimizing.RewriteStageTask;
-import org.apache.amoro.optimizing.plan.AbstractOptimizingPlanner;
+import org.apache.amoro.optimizing.TableOptimizingCommitter;
+import org.apache.amoro.optimizing.TableOptimizingPlanner;
+import org.apache.amoro.optimizing.TaskMetricsSummary;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.catalog.CatalogManager;
@@ -44,26 +49,20 @@ import org.apache.amoro.server.persistence.TaskFilesPersistence;
 import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.ProcessFactoryRouter;
 import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.blocker.TableBlocker;
-import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ExceptionUtil;
-import org.apache.amoro.utils.MixedDataFiles;
-import org.apache.amoro.utils.TablePropertyUtil;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.StructLike;
-import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,6 +103,7 @@ public class OptimizingQueue extends PersistentBase {
   private final int maxPlanningParallelism;
   private final OptimizerGroupMetrics metrics;
   private ResourceGroup optimizerGroup;
+  private final ProcessFactoryRouter router;
   private final Map<ServerTableIdentifier, AtomicInteger> optimizingTasksMap =
       new ConcurrentHashMap<>();
 
@@ -113,7 +113,8 @@ public class OptimizingQueue extends PersistentBase {
       QuotaProvider quotaProvider,
       Executor planExecutor,
       List<DefaultTableRuntime> tableRuntimeList,
-      int maxPlanningParallelism) {
+      int maxPlanningParallelism,
+      ProcessFactoryRouter router) {
     Preconditions.checkNotNull(optimizerGroup, "Optimizer group can not be null");
     this.planExecutor = planExecutor;
     this.optimizerGroup = optimizerGroup;
@@ -121,6 +122,7 @@ public class OptimizingQueue extends PersistentBase {
     this.scheduler = new SchedulingPolicy(optimizerGroup);
     this.catalogManager = catalogManager;
     this.maxPlanningParallelism = maxPlanningParallelism;
+    this.router = router;
     this.metrics =
         new OptimizerGroupMetrics(
             optimizerGroup.getName(), MetricManager.getInstance().getGlobalRegistry(), this);
@@ -133,6 +135,11 @@ public class OptimizingQueue extends PersistentBase {
       TableOptimizingProcess process = loadProcess(tableRuntime);
 
       if (!tableRuntime.getOptimizingConfig().isEnabled()) {
+        closeProcessIfRunning(process);
+        return;
+      }
+
+      if (!isFormatSupported(tableRuntime)) {
         closeProcessIfRunning(process);
         return;
       }
@@ -220,6 +227,9 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   public void refreshTable(DefaultTableRuntime tableRuntime) {
+    if (!isFormatSupported(tableRuntime)) {
+      return;
+    }
     if (tableRuntime.getOptimizingConfig().isEnabled()
         && !tableRuntime.getOptimizingStatus().isProcessing()) {
       LOG.info(
@@ -230,6 +240,19 @@ public class OptimizingQueue extends PersistentBase {
           System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
       scheduler.addTable(tableRuntime);
     }
+  }
+
+  private boolean isFormatSupported(DefaultTableRuntime tableRuntime) {
+    TableFormat format = tableRuntime.getFormat();
+    if (!router.supportedFormats().contains(format)) {
+      LOG.debug(
+          "Skip table {} with unsupported format {} for queue {}",
+          tableRuntime.getTableIdentifier(),
+          format,
+          optimizerGroup.getName());
+      return false;
+    }
+    return true;
   }
 
   public void releaseTable(DefaultTableRuntime tableRuntime) {
@@ -378,14 +401,28 @@ public class OptimizingQueue extends PersistentBase {
     try {
       ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
       AmoroTable<?> table = catalogManager.loadTable(identifier.getIdentifier());
-      AbstractOptimizingPlanner planner =
-          IcebergTableUtil.createOptimizingPlanner(
-              tableRuntime.refresh(table),
-              (MixedTable) table.originalTable(),
-              getAvailableCore(),
-              maxInputSizePerThread());
+      tableRuntime.refresh(table);
+
+      if (!isFormatSupported(tableRuntime)) {
+        tableRuntime.completeEmptyProcess();
+        return null;
+      }
+
+      TableOptimizingPlanner planner =
+          router
+              .forFormat(tableRuntime.getFormat())
+              .createPlanner(tableRuntime, table, getAvailableCore(), maxInputSizePerThread());
       if (planner.isNecessary()) {
-        return new TableOptimizingProcess(planner, tableRuntime);
+        OptimizingPlanResult planResult = planner.plan();
+        if (planResult.getTasks() == null || planResult.getTasks().isEmpty()) {
+          LOG.info(
+              "Planner {} returned empty tasks despite isNecessary=true; skip creating empty process for {}",
+              planner.getClass().getSimpleName(),
+              tableRuntime.getTableIdentifier());
+          tableRuntime.completeEmptyProcess();
+          return null;
+        }
+        return new TableOptimizingProcess(planResult, tableRuntime);
       } else {
         tableRuntime.completeEmptyProcess();
         return null;
@@ -419,7 +456,7 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   public void retryTask(TaskRuntime<?> taskRuntime) {
-    findProcess(taskRuntime.getTaskId()).resetTask((TaskRuntime<RewriteStageTask>) taskRuntime);
+    findProcess(taskRuntime.getTaskId()).resetTask(taskRuntime);
   }
 
   private void resetStaleTasksForThread(OptimizerThread thread) {
@@ -494,13 +531,18 @@ public class OptimizingQueue extends PersistentBase {
 
     private final Lock lock = new ReentrantLock();
     private final long processId;
+    private final TableFormat format;
     private final OptimizingType optimizingType;
     private final DefaultTableRuntime tableRuntime;
     private final long planTime;
     private final long targetSnapshotId;
     private final long targetChangeSnapshotId;
-    private final Map<OptimizingTaskId, TaskRuntime<RewriteStageTask>> taskMap = Maps.newHashMap();
-    private final Queue<TaskRuntime<RewriteStageTask>> taskQueue = new LinkedList<>();
+    // Widened to StagedTaskDescriptor<?,?,?> so non-Iceberg formats (Paimon today, Mixed-Hive
+    // tomorrow) share the same process/queue machinery without unchecked downcasts.
+    private final Map<OptimizingTaskId, TaskRuntime<? extends StagedTaskDescriptor<?, ?, ?>>>
+        taskMap = Maps.newHashMap();
+    private final Queue<TaskRuntime<? extends StagedTaskDescriptor<?, ?, ?>>> taskQueue =
+        new LinkedList<>();
     private volatile ProcessStatus status = ProcessStatus.RUNNING;
     private volatile String failedReason;
     private long endTime = AmoroServiceConstants.INVALID_TIME;
@@ -539,16 +581,17 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     public TableOptimizingProcess(
-        AbstractOptimizingPlanner planner, DefaultTableRuntime tableRuntime) {
-      processId = planner.getProcessId();
+        OptimizingPlanResult planResult, DefaultTableRuntime tableRuntime) {
+      processId = planResult.getProcessId();
       this.tableRuntime = tableRuntime;
-      optimizingType = planner.getOptimizingType();
-      planTime = planner.getPlanTime();
-      targetSnapshotId = planner.getTargetSnapshotId();
-      targetChangeSnapshotId = planner.getTargetChangeSnapshotId();
-      loadTaskRuntimes(planner.planTasks());
-      fromSequence = planner.getFromSequence();
-      toSequence = planner.getToSequence();
+      this.format = tableRuntime.getFormat();
+      optimizingType = planResult.getOptimizingType();
+      planTime = planResult.getPlanTime();
+      targetSnapshotId = planResult.getTargetSnapshotId();
+      targetChangeSnapshotId = planResult.getTargetChangeSnapshotId();
+      loadTaskRuntimes(planResult.getTasks());
+      fromSequence = planResult.getFromSequence();
+      toSequence = planResult.getToSequence();
       beginAndPersistProcess();
     }
 
@@ -557,6 +600,7 @@ public class OptimizingQueue extends PersistentBase {
         TableProcessMeta processMeta,
         OptimizingProcessState processState) {
       this.tableRuntime = tableRuntime;
+      this.format = tableRuntime.getFormat();
       processId = tableRuntime.getProcessId();
       optimizingType = OptimizingType.valueOf(processMeta.getProcessType());
       targetSnapshotId = processState.getTargetSnapshotId();
@@ -588,6 +632,10 @@ public class OptimizingQueue extends PersistentBase {
     @Override
     public long getProcessId() {
       return processId;
+    }
+
+    TableFormat getFormat() {
+      return format;
     }
 
     @Override
@@ -716,11 +764,17 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
-    private void resetTask(TaskRuntime<RewriteStageTask> taskRuntime) {
+    private void resetTask(TaskRuntime<?> taskRuntime) {
       lock.lock();
       try {
         taskRuntime.reset();
-        taskQueue.add(taskRuntime);
+        // Cast is safe: only descriptors that already entered the widened taskMap end up here; the
+        // public retryTask(TaskRuntime<?>) entry point forwards whatever pollTask previously
+        // returned, and pollTask only hands out entries sourced from taskMap itself.
+        @SuppressWarnings("unchecked")
+        TaskRuntime<? extends StagedTaskDescriptor<?, ?, ?>> widened =
+            (TaskRuntime<? extends StagedTaskDescriptor<?, ?, ?>>) taskRuntime;
+        taskQueue.add(widened);
       } finally {
         lock.unlock();
       }
@@ -759,7 +813,8 @@ public class OptimizingQueue extends PersistentBase {
       return failedReason;
     }
 
-    private Map<OptimizingTaskId, TaskRuntime<RewriteStageTask>> getTaskMap() {
+    private Map<OptimizingTaskId, TaskRuntime<? extends StagedTaskDescriptor<?, ?, ?>>>
+        getTaskMap() {
       return taskMap;
     }
 
@@ -796,18 +851,12 @@ public class OptimizingQueue extends PersistentBase {
 
     @Override
     public void commit() {
-      List<TaskRuntime<RewriteStageTask>> successTasks =
+      List<TaskRuntime<? extends StagedTaskDescriptor<?, ?, ?>>> successTasks =
           taskMap.values().stream()
               .filter(task -> task.getStatus() == Status.SUCCESS)
               .collect(Collectors.toList());
       LOG.debug(
-          "{} get {} tasks of {} partitions to commit",
-          tableRuntime.getTableIdentifier(),
-          successTasks.size(),
-          successTasks.stream()
-              .map(task -> task.getTaskDescriptor().getPartition())
-              .distinct()
-              .count());
+          "{} get {} tasks to commit", tableRuntime.getTableIdentifier(), successTasks.size());
 
       lock.lock();
       try {
@@ -851,47 +900,35 @@ public class OptimizingQueue extends PersistentBase {
 
     @Override
     public MetricsSummary getSummary() {
-      List<MetricsSummary> taskSummaries =
+      // Route through StagedTaskDescriptor.toMetricsSummary() so non-Iceberg descriptors (e.g.
+      // PaimonCompactionTask) contribute to the aggregate without OptimizingQueue needing to know
+      // their concrete type. MetricsSummary#aggregate handles the mixed list.
+      List<TaskMetricsSummary> taskSummaries =
           taskMap.values().stream()
               .map(TaskRuntime::getTaskDescriptor)
-              .map(RewriteStageTask::getSummary)
+              .map(StagedTaskDescriptor::toMetricsSummary)
               .collect(Collectors.toList());
 
-      return new MetricsSummary(taskSummaries);
+      return MetricsSummary.aggregate(taskSummaries);
     }
 
-    private UnKeyedTableCommit buildCommit() {
-      MixedTable table =
-          (MixedTable)
-              catalogManager
-                  .loadTable(tableRuntime.getTableIdentifier().getIdentifier())
-                  .originalTable();
-      if (table.isUnkeyedTable()) {
-        return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
-      } else {
-        return new KeyedTableCommit(
-            table,
-            taskMap.values(),
-            targetSnapshotId,
-            convertPartitionSequence(table, fromSequence),
-            convertPartitionSequence(table, toSequence));
-      }
-    }
-
-    private StructLikeMap<Long> convertPartitionSequence(
-        MixedTable table, Map<String, Long> partitionSequence) {
-      PartitionSpec spec = table.spec();
-      StructLikeMap<Long> results = StructLikeMap.create(spec.partitionType());
-      partitionSequence.forEach(
-          (partition, sequence) -> {
-            if (spec.isUnpartitioned()) {
-              results.put(TablePropertyUtil.EMPTY_STRUCT, sequence);
-            } else {
-              StructLike partitionData = MixedDataFiles.data(spec, partition);
-              results.put(partitionData, sequence);
-            }
-          });
-      return results;
+    private TableOptimizingCommitter buildCommit() {
+      AmoroTable<?> table =
+          catalogManager.loadTable(tableRuntime.getTableIdentifier().getIdentifier());
+      List<? extends StagedTaskDescriptor<?, ?, ?>> taskDescriptors =
+          taskMap.values().stream()
+              .filter(task -> task.getStatus() == Status.SUCCESS)
+              .map(TaskRuntime::getTaskDescriptor)
+              .collect(Collectors.toList());
+      return router
+          .forFormat(format)
+          .createCommitter(
+              table,
+              targetSnapshotId,
+              targetChangeSnapshotId,
+              taskDescriptors,
+              fromSequence,
+              toSequence);
     }
 
     private void beginAndPersistProcess() {
@@ -926,8 +963,8 @@ public class OptimizingQueue extends PersistentBase {
           () ->
               doAs(
                   OptimizingProcessMapper.class,
-                  mapper -> mapper.insertTaskRuntimes(Lists.newArrayList(taskMap.values()))),
-          () -> TaskFilesPersistence.persistTaskInputs(processId, taskMap.values()),
+                  mapper -> mapper.insertTaskRuntimes(typedTaskRuntimes())),
+          () -> TaskFilesPersistence.persistTaskInputs(processId, typedTaskRuntimes()),
           () -> tableRuntime.beginProcess(this));
     }
 
@@ -961,21 +998,106 @@ public class OptimizingQueue extends PersistentBase {
       taskMap.values().forEach(TaskRuntime::tryCanceling);
     }
 
+    /**
+     * Narrow the task-map values to the bound expected by {@code insertTaskRuntimes} and {@code
+     * TaskFilesPersistence}. Every descriptor that enters {@code taskMap} extends {@code
+     * StagedTaskDescriptor<I,?,?>} where {@code I extends BaseOptimizingInput}, so the unchecked
+     * cast is safe.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private List<TaskRuntime<? extends StagedTaskDescriptor<? extends BaseOptimizingInput, ?, ?>>>
+        typedTaskRuntimes() {
+      return (List) Lists.newArrayList(taskMap.values());
+    }
+
+    /**
+     * Bind a loaded {@link BaseOptimizingInput} back into its descriptor. The helper exists solely
+     * to "capture" the descriptor's {@code I} type parameter so we can pass the polymorphic input
+     * through {@link StagedTaskDescriptor#setInput} without the caller knowing the concrete
+     * subclass. Type safety is guaranteed by {@code TaskDescriptorTypeConverter} pairing the
+     * descriptor class with the input written by {@code TaskFilesPersistence#persistTaskInputs}.
+     *
+     * <p>A null {@code input} is passed through unchanged (preserving the pre-C4 behaviour where a
+     * missing entry in the loaded map would null out the descriptor's input — each {@code
+     * calculateSummary} override tolerates this).
+     */
+    private <I extends BaseOptimizingInput> void bindLoadedInput(
+        StagedTaskDescriptor<I, ?, ?> descriptor, BaseOptimizingInput input) {
+      @SuppressWarnings("unchecked")
+      I typedInput = (I) input;
+      descriptor.setInput(typedInput);
+    }
+
+    /**
+     * Back-fill {@link TaskProperties#TASK_EXECUTOR_FACTORY_IMPL} on descriptors restored from
+     * pre-0.9 Iceberg rows whose {@code properties} column predates the multi-format refactor.
+     *
+     * <p>The injection is format-driven via {@link LegacyExecutorFactoryDefaults}: Iceberg /
+     * Mixed-Iceberg / Mixed-Hive get their canonical executor factory class name; Paimon and
+     * unknown formats are logged and skipped (Paimon planners always emit the key, so a missing
+     * entry for Paimon indicates a corrupted row the optimizer cannot safely resume).
+     *
+     * <p>Idempotent: rows that already carry the key are untouched, so new-format rows co-located
+     * with legacy Iceberg rows in the same process still work.
+     */
+    private void injectLegacyExecutorFactoryDefaults(
+        List<TaskRuntime<? extends StagedTaskDescriptor<? extends BaseOptimizingInput, ?, ?>>>
+            taskRuntimes) {
+      for (TaskRuntime<? extends StagedTaskDescriptor<? extends BaseOptimizingInput, ?, ?>>
+          taskRuntime : taskRuntimes) {
+        StagedTaskDescriptor<? extends BaseOptimizingInput, ?, ?> descriptor =
+            taskRuntime.getTaskDescriptor();
+        if (descriptor == null) {
+          continue;
+        }
+        Map<String, String> props = descriptor.getProperties();
+        if (props != null && props.containsKey(TaskProperties.TASK_EXECUTOR_FACTORY_IMPL)) {
+          continue;
+        }
+        String defaultImpl =
+            LegacyExecutorFactoryDefaults.resolveDefaultExecutorFactoryImpl(
+                tableRuntime.getFormat());
+        if (defaultImpl == null) {
+          continue;
+        }
+        if (descriptor.ensureExecutorFactoryImpl(defaultImpl)) {
+          LOG.info(
+              "Restored legacy task {} with default {}={} (format={})",
+              taskRuntime.getTaskId(),
+              TaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
+              defaultImpl,
+              tableRuntime.getFormat());
+        }
+      }
+    }
+
     private void loadTaskRuntimes(OptimizingProcess optimizingProcess) {
       try {
-        List<TaskRuntime<RewriteStageTask>> taskRuntimes =
-            getAs(
-                OptimizingProcessMapper.class,
-                mapper ->
-                    mapper.selectTaskRuntimes(
-                        tableRuntime.getTableIdentifier().getId(), processId));
-        Map<Integer, RewriteFilesInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
+        // Recovery is format-agnostic after C3/C4: TaskDescriptorTypeConverter resolves the
+        // descriptor subclass from TASK_EXECUTOR_FACTORY_IMPL, and TaskFilesPersistence returns
+        // a Map<Integer, BaseOptimizingInput> whose concrete values carry their own runtime
+        // class. We widen the compile-time view to StagedTaskDescriptor<? extends
+        // BaseOptimizingInput, ?, ?> so the same call recovers both Iceberg and Paimon rows.
+        List<TaskRuntime<? extends StagedTaskDescriptor<? extends BaseOptimizingInput, ?, ?>>>
+            taskRuntimes =
+                getAs(
+                    OptimizingProcessMapper.class,
+                    mapper ->
+                        mapper.selectTaskRuntimes(
+                            tableRuntime.getTableIdentifier().getId(), processId));
+        Map<Integer, BaseOptimizingInput> inputs = TaskFilesPersistence.loadTaskInputs(processId);
+        // Compensation for pre-0.9 Iceberg rows: TaskDescriptorTypeConverter correctly routes rows
+        // with a missing TASK_EXECUTOR_FACTORY_IMPL to RewriteStageTask, but the key itself is
+        // still absent from the descriptor's properties map on restore. OptimizerExecutor later
+        // reads that key via reflection to build the executor factory — without this injection it
+        // would NPE. Idempotent: we never overwrite an existing key (e.g. for Paimon rows where
+        // the Paimon planner already populated it).
+        injectLegacyExecutorFactoryDefaults(taskRuntimes);
         taskRuntimes.forEach(
             taskRuntime -> {
               taskRuntime.getCompletedFuture().whenCompleted(() -> acceptResult(taskRuntime));
-              taskRuntime
-                  .getTaskDescriptor()
-                  .setInput(inputs.get(taskRuntime.getTaskId().getTaskId()));
+              bindLoadedInput(
+                  taskRuntime.getTaskDescriptor(), inputs.get(taskRuntime.getTaskId().getTaskId()));
               taskMap.put(taskRuntime.getTaskId(), taskRuntime);
               if (taskRuntime.getStatus() == TaskRuntime.Status.PLANNED) {
                 taskQueue.offer(taskRuntime);
@@ -1001,10 +1123,11 @@ public class OptimizingQueue extends PersistentBase {
       }
     }
 
-    private void loadTaskRuntimes(List<RewriteStageTask> taskDescriptors) {
+    private <T extends StagedTaskDescriptor<?, ?, ?>> void loadTaskRuntimes(
+        List<T> taskDescriptors) {
       int taskId = 1;
-      for (RewriteStageTask taskDescriptor : taskDescriptors) {
-        TaskRuntime<RewriteStageTask> taskRuntime =
+      for (T taskDescriptor : taskDescriptors) {
+        TaskRuntime<T> taskRuntime =
             new TaskRuntime<>(new OptimizingTaskId(processId, taskId++), taskDescriptor);
         LOG.info(
             "{} plan new task {}, summary {}",
