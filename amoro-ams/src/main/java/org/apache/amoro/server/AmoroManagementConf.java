@@ -156,41 +156,11 @@ public class AmoroManagementConf {
           .defaultValue(1000000)
           .withDescription("The queue size of the executors of the external catalog explorer.");
 
-  public static final ConfigOption<Boolean> SYNC_HIVE_TABLES_ENABLED =
-      ConfigOptions.key("sync-hive-tables.enabled")
-          .booleanType()
-          .defaultValue(false)
-          .withDescription("Enable synchronizing Hive tables.");
-
-  public static final ConfigOption<Integer> SYNC_HIVE_TABLES_THREAD_COUNT =
-      ConfigOptions.key("sync-hive-tables.thread-count")
-          .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads used for synchronizing Hive tables.");
-
   public static final ConfigOption<Integer> REFRESH_TABLES_THREAD_COUNT =
       ConfigOptions.key("refresh-tables.thread-count")
           .intType()
           .defaultValue(10)
           .withDescription("The number of threads used for refreshing tables.");
-
-  public static final ConfigOption<Boolean> AUTO_CREATE_TAGS_ENABLED =
-      ConfigOptions.key("auto-create-tags.enabled")
-          .booleanType()
-          .defaultValue(true)
-          .withDescription("Enable creating tags.");
-
-  public static final ConfigOption<Integer> AUTO_CREATE_TAGS_THREAD_COUNT =
-      ConfigOptions.key("auto-create-tags.thread-count")
-          .intType()
-          .defaultValue(3)
-          .withDescription("The number of threads used for creating tags.");
-
-  public static final ConfigOption<Duration> AUTO_CREATE_TAGS_INTERVAL =
-      ConfigOptions.key("auto-create-tags.interval")
-          .durationType()
-          .defaultValue(Duration.ofMinutes(1))
-          .withDescription("Interval for creating tags.");
 
   public static final ConfigOption<Duration> REFRESH_TABLES_INTERVAL =
       ConfigOptions.key("refresh-tables.interval")

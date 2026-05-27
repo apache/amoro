@@ -31,8 +31,6 @@ public class InlineTableExecutors {
   private BlockerExpiringExecutor blockerExpiringExecutor;
   private OptimizingCommitExecutor optimizingCommitExecutor;
   private ProcessDataExpiringExecutor processDataExpiringExecutor;
-  private HiveCommitSyncExecutor hiveCommitSyncExecutor;
-  private TagsAutoCreatingExecutor tagsAutoCreatingExecutor;
 
   public static InlineTableExecutors getInstance() {
     return instance;
@@ -60,24 +58,12 @@ public class InlineTableExecutors {
         new ProcessDataExpiringExecutor(
             tableService, optimizingKeepTime, expireInterval, processKeepTime);
     this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableService);
-    if (conf.getBoolean(AmoroManagementConf.SYNC_HIVE_TABLES_ENABLED)) {
-      this.hiveCommitSyncExecutor =
-          new HiveCommitSyncExecutor(
-              tableService, conf.getInteger(AmoroManagementConf.SYNC_HIVE_TABLES_THREAD_COUNT));
-    }
     this.tableRefreshingExecutor =
         new TableRuntimeRefreshExecutor(
             tableService,
             conf.getInteger(AmoroManagementConf.REFRESH_TABLES_THREAD_COUNT),
             conf.get(AmoroManagementConf.REFRESH_TABLES_INTERVAL).toMillis(),
             conf.getInteger(AmoroManagementConf.REFRESH_MAX_PENDING_PARTITIONS));
-    if (conf.getBoolean(AmoroManagementConf.AUTO_CREATE_TAGS_ENABLED)) {
-      this.tagsAutoCreatingExecutor =
-          new TagsAutoCreatingExecutor(
-              tableService,
-              conf.getInteger(AmoroManagementConf.AUTO_CREATE_TAGS_THREAD_COUNT),
-              conf.get(AmoroManagementConf.AUTO_CREATE_TAGS_INTERVAL).toMillis());
-    }
   }
 
   public TableRuntimeRefreshExecutor getTableRefreshingExecutor() {
@@ -94,13 +80,5 @@ public class InlineTableExecutors {
 
   public ProcessDataExpiringExecutor getProcessDataExpiringExecutor() {
     return processDataExpiringExecutor;
-  }
-
-  public HiveCommitSyncExecutor getHiveCommitSyncExecutor() {
-    return hiveCommitSyncExecutor;
-  }
-
-  public TagsAutoCreatingExecutor getTagsAutoCreatingExecutor() {
-    return tagsAutoCreatingExecutor;
   }
 }

@@ -25,3 +25,5 @@ execute-engines:
       pool.clean-orphan-files.thread-count: 10
       pool.clean-dangling-delete-files.thread-count: 10
       pool.expire-data.thread-count: 10
+      pool.auto-create-tags.thread-count: 3
+      pool.sync-hive-tables.thread-count: 10
