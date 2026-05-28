@@ -173,6 +173,10 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
 
   @Override
   public boolean isNecessary() {
+    return paimonTable.doAs(this::isNecessaryInternal);
+  }
+
+  private boolean isNecessaryInternal() {
     if (necessary != null) {
       return necessary;
     }

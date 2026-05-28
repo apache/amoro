@@ -87,8 +87,8 @@
     </distributionManagement>
 
     <properties>
-        <java.source.version>11</java.source.version>
-        <java.target.version>11</java.target.version>
+        <java.source.version>8</java.source.version>
+        <java.target.version>8</java.target.version>
         <maven.compiler.source>${java.source.version}</maven.compiler.source>
         <maven.compiler.target>${java.target.version}</maven.compiler.target>
         <maven.version>3.9.11</maven.version>
@@ -119,8 +119,8 @@
         <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 
-        <iceberg.version>1.7.2</iceberg.version>
-        <paimon.version>1.3.1</paimon.version>
+        <iceberg.version>1.6.1</iceberg.version>
+        <paimon.version>1.4.1</paimon.version>
         <hive.version>3.1.3</hive.version>
         <hadoop.version>3.4.2</hadoop.version>
         <hadoop-client-api.artifact>hadoop-client-api</hadoop-client-api.artifact>
@@ -168,7 +168,7 @@
         <prometheus.version>0.16.0</prometheus.version>
         <flink.version>1.20.3</flink.version>
         <flink.scala.binary.version>2.12</flink.scala.binary.version>
-        <fabric8-kubernetes-client.version.version>7.4.0</fabric8-kubernetes-client.version.version>
+        <fabric8-kubernetes-client.version.version>6.13.5</fabric8-kubernetes-client.version.version>
         <amoro-shade.version>0.7.0-incubating</amoro-shade.version>
         <amoro-shade-guava.version>32.1.1-jre</amoro-shade-guava.version>
         <amoro-shade-jackson.version>2.14.2</amoro-shade-jackson.version>
@@ -1823,6 +1823,13 @@
             </properties>
         </profile>
         <profile>
+            <id>java8</id>
+            <properties>
+                <java.source.version>8</java.source.version>
+                <java.target.version>8</java.target.version>
+            </properties>
+        </profile>
+        <profile>
             <id>spark-3.5</id>
             <properties>
                 <spark.version>3.5.8</spark.version>
@@ -1842,7 +1849,7 @@
                 <scala.version>2.13.8</scala.version>
                 <scala.binary.version>2.13</scala.binary.version>
                 <!-- paimon-1.2.0 does not support scala-2.13 and datasource lookup will cause UT failre -->
-                <paimon.version>1.3.1</paimon.version>
+                <paimon.version>1.4.1</paimon.version>
             </properties>
         </profile>
         <profile>

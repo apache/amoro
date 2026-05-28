@@ -23,11 +23,10 @@ import org.apache.amoro.PaimonActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.ExecuteEngine;
-import org.apache.amoro.process.HttpRemoteSparkStandAloneSubmit;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
+import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
-import org.apache.amoro.server.table.paimon.PaimonTableRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,8 +59,8 @@ public class PaimonExpireSnapshotProcess extends TableProcess {
 
   public static Optional<PaimonExpireSnapshotProcess> trigger(
       TableRuntime tableRuntime, ExecuteEngine engine, int sparkVersion, Duration interval) {
-    if (tableRuntime instanceof PaimonTableRuntime) {
-      PaimonTableRuntime prt = (PaimonTableRuntime) tableRuntime;
+    if (tableRuntime instanceof DefaultTableRuntime) {
+      DefaultTableRuntime prt = (DefaultTableRuntime) tableRuntime;
       long lastExecuteTime = prt.getLastCleanTime(CleanupOperation.SNAPSHOTS_EXPIRING);
       if (System.currentTimeMillis() - lastExecuteTime < interval.toMillis()) {
         LOG.debug(
@@ -103,8 +102,8 @@ public class PaimonExpireSnapshotProcess extends TableProcess {
 
   @Override
   public void afterComplete(ProcessStatus status) {
-    if (status == ProcessStatus.SUCCESS && tableRuntime instanceof PaimonTableRuntime) {
-      ((PaimonTableRuntime) tableRuntime)
+    if (status == ProcessStatus.SUCCESS && tableRuntime instanceof DefaultTableRuntime) {
+      ((DefaultTableRuntime) tableRuntime)
           .updateLastCleanTime(CleanupOperation.SNAPSHOTS_EXPIRING, System.currentTimeMillis());
       LOG.info(
           "Updated lastSnapshotsExpiringTime for table {} after successful expire snapshots",

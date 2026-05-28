@@ -30,8 +30,8 @@ import javax.naming.NamingException;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class LdapGroupRoleResolverTest {
 
@@ -55,7 +55,7 @@ public class LdapGroupRoleResolverTest {
             baseConfig(),
             (groupDn, memberAttribute) ->
                 "cn=amoro-service-admins,ou=groups,dc=example,dc=com".equals(groupDn)
-                    ? Set.of("alice")
+                    ? Collections.singleton("alice")
                     : Collections.emptySet());
 
     assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
@@ -68,7 +68,7 @@ public class LdapGroupRoleResolverTest {
             baseConfig(),
             (groupDn, memberAttribute) ->
                 "cn=amoro-service-admins,ou=groups,dc=example,dc=com".equals(groupDn)
-                    ? Set.of("CN=alice,OU=Employees,OU=Cisco Users,DC=cisco,DC=com")
+                    ? Collections.singleton("CN=alice,OU=Employees,OU=Cisco Users,DC=cisco,DC=com")
                     : Collections.emptySet());
 
     assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
@@ -81,7 +81,7 @@ public class LdapGroupRoleResolverTest {
             baseConfig(),
             (groupDn, memberAttribute) ->
                 "cn=amoro-service-admins,ou=groups,dc=example,dc=com".equals(groupDn)
-                    ? Set.of("uid=alice")
+                    ? Collections.singleton("uid=alice")
                     : Collections.emptySet());
 
     assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
@@ -94,7 +94,7 @@ public class LdapGroupRoleResolverTest {
             baseConfig(),
             (groupDn, memberAttribute) ->
                 "cn=amoro-service-admins,ou=groups,dc=example,dc=com".equals(groupDn)
-                    ? Set.of("UID=Alice,OU=People,DC=Example,DC=Com")
+                    ? Collections.singleton("UID=Alice,OU=People,DC=Example,DC=Com")
                     : Collections.emptySet());
 
     assertEquals(Collections.singleton(Role.SERVICE_ADMIN), resolver.resolve("alice"));
@@ -107,7 +107,7 @@ public class LdapGroupRoleResolverTest {
             baseConfig(),
             (groupDn, memberAttribute) ->
                 "cn=amoro-viewers,ou=groups,dc=example,dc=com".equals(groupDn)
-                    ? Set.of("bob")
+                    ? Collections.singleton("bob")
                     : Collections.emptySet());
 
     assertEquals(Collections.singleton(Role.VIEWER), resolver.resolve("bob"));
@@ -153,6 +153,9 @@ public class LdapGroupRoleResolverTest {
   }
 
   private static Map<String, String> group(String groupDn, String role) {
-    return Map.of("group-dn", groupDn, "role", role);
+    Map<String, String> group = new HashMap<>();
+    group.put("group-dn", groupDn);
+    group.put("role", role);
+    return group;
   }
 }

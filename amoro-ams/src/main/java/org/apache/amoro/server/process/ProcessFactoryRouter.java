@@ -40,7 +40,7 @@ public final class ProcessFactoryRouter {
   private final Map<TableFormat, ProcessFactory> byFormat;
 
   public ProcessFactoryRouter(List<ProcessFactory> factories) {
-    this.delegates = List.copyOf(factories);
+    this.delegates = factories;
     this.byFormat = Collections.unmodifiableMap(buildRoutingTable(this.delegates));
   }
 

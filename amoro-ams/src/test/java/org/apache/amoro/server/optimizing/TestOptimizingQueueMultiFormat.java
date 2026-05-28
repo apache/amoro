@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +94,8 @@ class TestOptimizingQueueMultiFormat {
       "Iceberg-only aggregation still produces a MetricsSummary (no regression on the happy path)")
   void icebergOnlyAggregationReturnsMetricsSummary() {
     RewriteStageTask task = icebergTask();
-    MetricsSummary aggregated = MetricsSummary.aggregate(List.of(task.toMetricsSummary()));
+    MetricsSummary aggregated =
+        MetricsSummary.aggregate(Collections.singletonList(task.toMetricsSummary()));
 
     assertNotNull(aggregated);
     // The aggregate round-trips the zero counts — nothing exploded on the familiar Iceberg shape.
@@ -134,7 +136,7 @@ class TestOptimizingQueueMultiFormat {
     PaimonCompactionTask b = paimonTaskWithOutput(4, 2);
 
     MetricsSummary aggregated =
-        MetricsSummary.aggregate(List.of(a.toMetricsSummary(), b.toMetricsSummary()));
+        MetricsSummary.aggregate(Arrays.asList(a.toMetricsSummary(), b.toMetricsSummary()));
 
     assertNotNull(aggregated);
     // Paimon compacted counts funnel into the "input-data-files" slot of MetricsSummary (rewrite*
@@ -157,7 +159,8 @@ class TestOptimizingQueueMultiFormat {
     // RewriteStageTask-typed reference — the equivalent call now flows through
     // StagedTaskDescriptor::toMetricsSummary and must accept both.
     MetricsSummary aggregated =
-        MetricsSummary.aggregate(List.of(iceberg.toMetricsSummary(), paimon.toMetricsSummary()));
+        MetricsSummary.aggregate(
+            Arrays.asList(iceberg.toMetricsSummary(), paimon.toMetricsSummary()));
 
     assertNotNull(aggregated);
     // Paimon contributes 7 compacted files as "input-data-files" (rewriteDataFileCnt slot on

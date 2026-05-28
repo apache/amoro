@@ -26,6 +26,7 @@ import org.apache.amoro.optimizing.OptimizationContext;
 import org.apache.amoro.optimizing.PendingInputResult;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.CatalogUtil;
 import org.apache.paimon.CoreOptions;
 import org.apache.paimon.Snapshot;
@@ -46,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 
 public class PaimonTable implements AmoroTable<Table>, Serializable {
 
@@ -58,16 +60,27 @@ public class PaimonTable implements AmoroTable<Table>, Serializable {
 
   private final Map<String, String> catalogProperties;
 
+  private transient TableMetaStore tableMetaStore;
+
   public PaimonTable(TableIdentifier tableIdentifier, Table table) {
     this(tableIdentifier, table, ImmutableMap.of());
   }
 
   public PaimonTable(
       TableIdentifier tableIdentifier, Table table, Map<String, String> catalogProperties) {
+    this(tableIdentifier, table, catalogProperties, null);
+  }
+
+  public PaimonTable(
+      TableIdentifier tableIdentifier,
+      Table table,
+      Map<String, String> catalogProperties,
+      TableMetaStore tableMetaStore) {
     this.tableIdentifier = tableIdentifier;
     this.table = table;
     this.catalogProperties =
         catalogProperties == null ? ImmutableMap.of() : ImmutableMap.copyOf(catalogProperties);
+    this.tableMetaStore = tableMetaStore;
   }
 
   @Override
@@ -92,19 +105,42 @@ public class PaimonTable implements AmoroTable<Table>, Serializable {
 
   @Override
   public TableSnapshot currentSnapshot() {
-    if (!(table instanceof DataTable)) {
-      return null;
-    }
+    return doAs(
+        () -> {
+          if (!(table instanceof DataTable)) {
+            return null;
+          }
 
-    Snapshot snapshot = ((DataTable) table).snapshotManager().latestSnapshot();
-    return snapshot == null ? null : new PaimonSnapshot(snapshot);
+          Snapshot snapshot = ((DataTable) table).snapshotManager().latestSnapshot();
+          return snapshot == null ? null : new PaimonSnapshot(snapshot);
+        });
   }
 
   @Override
   public Optional<PendingInputResult> evaluatePendingInput(
       OptimizationContext context, int maxPendingPartitions) {
-    PaimonPendingInput pendingInput = collectPaimonPendingInput();
-    return Optional.of(new PendingInputResult(pendingInput, true));
+    return doAs(
+        () -> {
+          PaimonPendingInput pendingInput = collectPaimonPendingInput();
+          return Optional.of(new PendingInputResult(pendingInput, true));
+        });
+  }
+
+  public <T> T doAs(Callable<T> callable) {
+    if (tableMetaStore == null) {
+      return call(callable);
+    }
+    return tableMetaStore.doAs(callable);
+  }
+
+  private <T> T call(Callable<T> callable) {
+    try {
+      return callable.call();
+    } catch (RuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new RuntimeException("Run with Paimon table authentication context failed.", e);
+    }
   }
 
   private PaimonPendingInput collectPaimonPendingInput() {

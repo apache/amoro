@@ -48,7 +48,6 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collections;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.LinkedTransferQueue;
 
@@ -165,7 +164,7 @@ class TestOptimizingQueueEmptyPlanResult {
     when(factory.supportedFormats())
         .thenReturn(java.util.Collections.singleton(TableFormat.PAIMON));
     when(factory.createPlanner(any(), any(), anyDouble(), anyLong())).thenReturn(planner);
-    ProcessFactoryRouter router = new ProcessFactoryRouter(List.of(factory));
+    ProcessFactoryRouter router = new ProcessFactoryRouter(Collections.singletonList(factory));
 
     OptimizingQueue queue = buildQueue(catalogManager, router);
 
@@ -217,7 +216,7 @@ class TestOptimizingQueueEmptyPlanResult {
     when(factory.supportedFormats())
         .thenReturn(java.util.Collections.singleton(TableFormat.PAIMON));
     when(factory.createPlanner(any(), any(), anyDouble(), anyLong())).thenReturn(planner);
-    ProcessFactoryRouter router = new ProcessFactoryRouter(List.of(factory));
+    ProcessFactoryRouter router = new ProcessFactoryRouter(Collections.singletonList(factory));
 
     OptimizingQueue queue = buildQueue(catalogManager, router);
 
