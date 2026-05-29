@@ -26,6 +26,7 @@ import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Streams;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.descriptor.AMSColumnInfo;
@@ -89,6 +90,7 @@ import java.util.stream.Collectors;
 public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   public static final String PAIMON_MAIN_BRANCH_NAME = "main";
+  private static final Set<String> OPTIMIZING_TYPES = Sets.newHashSet("FULL", "MINOR");
 
   private ExecutorService executor;
 
@@ -372,7 +374,12 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
+      AmoroTable<?> amoroTable,
+      String type,
+      String processCategory,
+      ProcessStatus status,
+      int limit,
+      int offset) {
     // Temporary solution for Paimon. TODO: Get compaction info from Paimon compaction task
     List<OptimizingProcessInfo> processInfoList;
     TableIdentifier tableIdentifier = amoroTable.id();
@@ -449,6 +456,10 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
         processInfoList.stream()
             .filter(p -> StringUtils.isBlank(type) || type.equalsIgnoreCase(p.getOptimizingType()))
             .filter(p -> status == null || status == p.getStatus())
+            .filter(
+                p ->
+                    FormatTableDescriptor.matchProcessCategory(
+                        processCategory, OPTIMIZING_TYPES, p.getOptimizingType()))
             .collect(Collectors.toList());
     int total = processInfoList.size();
     processInfoList =

@@ -184,7 +184,9 @@ public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
     }
 
     public List<TableProcessMeta> listProcesses(long tableId) {
-      return getAs(TableProcessMapper.class, mapper -> mapper.listProcessMeta(tableId, null, null));
+      return getAs(
+          TableProcessMapper.class,
+          mapper -> mapper.listProcessMeta(tableId, null, null, null, null));
     }
 
     public void cleanAll(long tableId) {

@@ -97,6 +97,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
   private static final Logger LOG = LoggerFactory.getLogger(HudiTableDescriptor.class);
   private static final String COMPACTION = "compaction";
   private static final String CLUSTERING = "clustering";
+  private static final Set<String> OPTIMIZING_TYPES = Sets.newHashSet(COMPACTION, CLUSTERING);
   // table comment
   private static final String COMMENT = "comment";
 
@@ -340,7 +341,12 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
+      AmoroTable<?> amoroTable,
+      String type,
+      String processCategory,
+      ProcessStatus status,
+      int limit,
+      int offset) {
     HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
     HoodieDefaultTimeline timeline = new HoodieActiveTimeline(hoodieTable.getMetaClient(), false);
     List<HoodieInstant> instants = timeline.getInstants();
@@ -387,6 +393,10 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
                 i ->
                     StringUtils.isNullOrEmpty(type) || type.equalsIgnoreCase(i.getOptimizingType()))
             .filter(i -> status == null || status == i.getStatus())
+            .filter(
+                i ->
+                    FormatTableDescriptor.matchProcessCategory(
+                        processCategory, OPTIMIZING_TYPES, i.getOptimizingType()))
             .collect(Collectors.toList());
     int total = infos.size();
     infos = infos.stream().skip(offset).limit(limit).collect(Collectors.toList());

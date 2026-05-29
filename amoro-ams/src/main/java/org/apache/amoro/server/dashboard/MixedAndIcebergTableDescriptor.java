@@ -22,6 +22,7 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.IcebergActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
@@ -73,6 +74,7 @@ import org.apache.amoro.table.descriptor.TagOrBranchInfo;
 import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileScanTask;
@@ -117,6 +119,12 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     implements FormatTableDescriptor {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedAndIcebergTableDescriptor.class);
+
+  private static final List<String> OPTIMIZING_TYPE_LIST =
+      Arrays.stream(OptimizingType.values()).map(Enum::name).collect(Collectors.toList());
+
+  private static final String OPTIMIZING = "OPTIMIZING";
+  private static final String MAINTENANCE = "MAINTENANCE";
 
   private ExecutorService executorService;
 
@@ -655,7 +663,12 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
+      AmoroTable<?> amoroTable,
+      String type,
+      String processCategory,
+      ProcessStatus status,
+      int limit,
+      int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
     ServerTableIdentifier identifier =
         getAs(
@@ -671,12 +684,35 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     int total = 0;
     // page helper is 1-based
     int pageNumber = (offset / limit) + 1;
+
+    // Only apply category filtering when type is not specified
+    final List<String> includeTypes;
+    final List<String> excludeTypes;
+
+    if (StringUtils.isBlank(type)) {
+      if (OPTIMIZING.equalsIgnoreCase(processCategory)) {
+        includeTypes = OPTIMIZING_TYPE_LIST;
+        excludeTypes = null;
+      } else if (MAINTENANCE.equalsIgnoreCase(processCategory)) {
+        includeTypes = null;
+        excludeTypes = OPTIMIZING_TYPE_LIST;
+      } else {
+        includeTypes = null;
+        excludeTypes = null;
+      }
+    } else {
+      includeTypes = null;
+      excludeTypes = null;
+    }
+
     List<TableProcessMeta> processMetaList = Collections.emptyList();
     try (Page<?> ignored = PageHelper.startPage(pageNumber, limit, true)) {
       processMetaList =
           getAs(
               TableProcessMapper.class,
-              mapper -> mapper.listProcessMeta(identifier.getId(), type, status));
+              mapper ->
+                  mapper.listProcessMeta(
+                      identifier.getId(), type, includeTypes, excludeTypes, status));
       PageInfo<TableProcessMeta> pageInfo = new PageInfo<>(processMetaList);
       total = (int) pageInfo.getTotal();
       LOG.info(
@@ -713,6 +749,18 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     for (OptimizingType type : OptimizingType.values()) {
       types.put(type.name(), OptimizingStatus.ofOptimizingType(type).displayValue());
     }
+    return types;
+  }
+
+  @Override
+  public Map<String, String> getTableMaintenanceTypes(AmoroTable<?> amoroTable) {
+    Map<String, String> types = Maps.newHashMap();
+    types.put(IcebergActions.EXPIRE_SNAPSHOTS.getName(), "Expire Snapshots");
+    types.put(IcebergActions.CLEAN_ORPHAN.getName(), "Clean Orphan Files");
+    types.put(IcebergActions.CLEAN_DANGLING_DELETE.getName(), "Clean Dangling Delete Files");
+    types.put(IcebergActions.EXPIRE_DATA.getName(), "Expire Data");
+    types.put(IcebergActions.SYNC_HIVE_TABLES.getName(), "Sync Hive Tables");
+    types.put(IcebergActions.AUTO_CREATE_TAGS.getName(), "Auto Create Tags");
     return types;
   }
 

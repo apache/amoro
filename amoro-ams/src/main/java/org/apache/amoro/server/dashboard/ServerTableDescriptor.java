@@ -129,11 +129,16 @@ public class ServerTableDescriptor extends PersistentBase {
   }
 
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      TableIdentifier tableIdentifier, String type, ProcessStatus status, int limit, int offset) {
+      TableIdentifier tableIdentifier,
+      String type,
+      String processCategory,
+      ProcessStatus status,
+      int limit,
+      int offset) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getOptimizingProcessesInfo(
-        amoroTable, type, status, limit, offset);
+        amoroTable, type, processCategory, status, limit, offset);
   }
 
   public List<OptimizingTaskInfo> getOptimizingProcessTaskInfos(
@@ -147,6 +152,12 @@ public class ServerTableDescriptor extends PersistentBase {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
     return formatTableDescriptor.getTableOptimizingTypes(amoroTable);
+  }
+
+  public Map<String, String> getTableMaintenanceTypes(TableIdentifier tableIdentifier) {
+    AmoroTable<?> amoroTable = loadTable(tableIdentifier);
+    FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
+    return formatTableDescriptor.getTableMaintenanceTypes(amoroTable);
   }
 
   private AmoroTable<?> loadTable(TableIdentifier identifier) {

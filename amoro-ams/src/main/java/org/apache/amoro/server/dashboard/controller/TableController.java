@@ -332,6 +332,11 @@ public class TableController {
       type = null;
     }
 
+    String processCategory = ctx.queryParam("processCategory");
+    if (StringUtils.isBlank(processCategory)) {
+      processCategory = null;
+    }
+
     String status = ctx.queryParam("status");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
@@ -346,7 +351,12 @@ public class TableController {
         StringUtils.isBlank(status) ? null : ProcessStatus.valueOf(status);
     Pair<List<OptimizingProcessInfo>, Integer> optimizingProcessesInfo =
         tableDescriptor.getOptimizingProcessesInfo(
-            tableIdentifier.buildTableIdentifier(), type, processStatus, limit, offset);
+            tableIdentifier.buildTableIdentifier(),
+            type,
+            processCategory,
+            processStatus,
+            limit,
+            offset);
     List<OptimizingProcessInfo> result = optimizingProcessesInfo.getLeft();
     int total = optimizingProcessesInfo.getRight();
 
@@ -361,6 +371,17 @@ public class TableController {
 
     Map<String, String> values =
         tableDescriptor.getTableOptimizingTypes(tableIdentifier.buildTableIdentifier());
+    ctx.json(OkResponse.of(values));
+  }
+
+  public void getMaintenanceTypes(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
+
+    Map<String, String> values =
+        tableDescriptor.getTableMaintenanceTypes(tableIdentifier.buildTableIdentifier());
     ctx.json(OkResponse.of(values));
   }
 

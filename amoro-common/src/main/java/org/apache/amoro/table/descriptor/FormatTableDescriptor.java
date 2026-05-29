@@ -23,8 +23,10 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 /** API for obtaining metadata information of various formats. */
@@ -63,10 +65,36 @@ public interface FormatTableDescriptor {
 
   /** Get the paged optimizing process information of the {@link AmoroTable} and total size. */
   Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset);
+      AmoroTable<?> amoroTable,
+      String type,
+      String processCategory,
+      ProcessStatus status,
+      int limit,
+      int offset);
 
   /** Return the optimizing types of the {@link AmoroTable} is supported. */
   Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable);
+
+  /** Return the maintenance types of the {@link AmoroTable} is supported. */
+  default Map<String, String> getTableMaintenanceTypes(AmoroTable<?> amoroTable) {
+    return Collections.emptyMap();
+  }
+
+  static boolean matchProcessCategory(
+      String processCategory, Set<String> optimizingTypes, String type) {
+    if (processCategory == null) {
+      return true;
+    }
+    boolean isOptimizingType =
+        type != null && optimizingTypes.stream().anyMatch(t -> t.equalsIgnoreCase(type));
+    if ("OPTIMIZING".equalsIgnoreCase(processCategory)) {
+      return isOptimizingType;
+    }
+    if ("MAINTENANCE".equalsIgnoreCase(processCategory)) {
+      return !isOptimizingType;
+    }
+    return true;
+  }
 
   /** Get the paged optimizing process tasks information of the {@link AmoroTable}. */
   List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, String processId);
