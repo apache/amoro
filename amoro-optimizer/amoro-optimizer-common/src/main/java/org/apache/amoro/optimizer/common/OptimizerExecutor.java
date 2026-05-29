@@ -234,14 +234,28 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
           amsUrl);
       return true;
     } catch (TException exception) {
-      LOG.error(
-          "Optimizer executor[{}] acknowledged task[{}] to AMS {} failed",
-          threadId,
-          task.getTaskId(),
-          amsUrl,
-          exception);
+      if (isTaskResetOrNotScheduled(exception)) {
+        LOG.warn(
+            "Optimizer executor[{}] acknowledged task[{}] to AMS {} failed because "
+                + "task has been reset by OptimizerKeeper, this is expected and will be skipped",
+            threadId,
+            task.getTaskId(),
+            amsUrl);
+      } else {
+        LOG.error(
+            "Optimizer executor[{}] acknowledged task[{}] to AMS {} failed",
+            threadId,
+            task.getTaskId(),
+            amsUrl,
+            exception);
+      }
       return false;
     }
+  }
+
+  /** Check if the exception is caused by task reset by OptimizerKeeper. */
+  private static boolean isTaskResetOrNotScheduled(TException exception) {
+    return exception.getMessage() != null && exception.getMessage().contains("Task has been reset");
   }
 
   protected OptimizingTaskResult executeTask(OptimizingTask task) {
