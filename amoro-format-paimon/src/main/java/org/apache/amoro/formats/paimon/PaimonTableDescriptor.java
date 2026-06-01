@@ -90,7 +90,9 @@ import java.util.stream.Collectors;
 public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   public static final String PAIMON_MAIN_BRANCH_NAME = "main";
-  private static final Set<String> OPTIMIZING_TYPES = Sets.newHashSet("FULL", "MINOR");
+  private static final String FULL_TYPE = "FULL";
+  private static final String MINOR_TYPE = "MINOR";
+  private static final Set<String> OPTIMIZING_TYPES = Sets.newHashSet(FULL_TYPE, MINOR_TYPE);
 
   private ExecutorService executor;
 
@@ -435,9 +437,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                       }
                     }
                     if (isPrimaryTable && hasMaxLevels) {
-                      optimizingProcessInfo.setOptimizingType("FULL");
+                      optimizingProcessInfo.setOptimizingType(FULL_TYPE);
                     } else {
-                      optimizingProcessInfo.setOptimizingType("MINOR");
+                      optimizingProcessInfo.setOptimizingType(MINOR_TYPE);
                     }
                     optimizingProcessInfo.setSuccessTasks(buckets.size());
                     optimizingProcessInfo.setTotalTasks(buckets.size());
@@ -470,8 +472,8 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable) {
     Map<String, String> types = Maps.newHashMap();
-    types.put("FULL", "full");
-    types.put("MINOR", "MINOR");
+    types.put(FULL_TYPE, "full");
+    types.put(MINOR_TYPE, "MINOR");
     return types;
   }
 
