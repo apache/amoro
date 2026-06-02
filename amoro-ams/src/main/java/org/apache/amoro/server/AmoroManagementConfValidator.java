@@ -81,6 +81,7 @@ public class AmoroManagementConfValidator {
 
     validateThreadCount(configurations, AmoroManagementConf.REFRESH_TABLES_THREAD_COUNT);
     validateThreadCount(configurations, AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT);
+    validateThreadCount(configurations, AmoroManagementConf.OPTIMIZING_QUEUE_WARMUP_THREAD_COUNT);
 
     if (configurations.getBoolean(AmoroManagementConf.EXPIRE_SNAPSHOTS_ENABLED)) {
       validateThreadCount(configurations, AmoroManagementConf.EXPIRE_SNAPSHOTS_THREAD_COUNT);

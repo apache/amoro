@@ -37,8 +37,13 @@ public interface TableService extends TableRuntimeHandler {
 
   TableRuntime getRuntime(Long tableId);
 
+  /** @return whether table service initialization has finished. */
+  default boolean isStarted() {
+    return false;
+  }
+
   default boolean contains(Long tableId) {
-    return getRuntime(tableId) != null;
+    return isStarted() && getRuntime(tableId) != null;
   }
 
   /**

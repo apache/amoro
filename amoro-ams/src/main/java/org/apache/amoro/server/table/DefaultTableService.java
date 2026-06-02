@@ -208,6 +208,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public void initialize() {
     checkNotStarted();
 
+    long initializeStart = System.currentTimeMillis();
+    long dbLoadStart = initializeStart;
+
     List<TableRuntimeMeta> tableRuntimeMetaList;
     if (isMasterSlaveMode && haContainer != null && bucketAssignStore != null) {
       // In master-slave mode, load only tables assigned to this node
@@ -234,10 +237,12 @@ public class DefaultTableService extends PersistentBase implements TableService 
       // Non-master-slave mode: load all tables
       tableRuntimeMetaList = getAs(TableRuntimeMapper.class, TableRuntimeMapper::selectAllRuntimes);
     }
+    long runtimesLoadedEnd = System.currentTimeMillis();
 
     Map<Long, ServerTableIdentifier> identifierMap =
         getAs(TableMetaMapper.class, TableMetaMapper::selectAllTableIdentifiers).stream()
             .collect(Collectors.toMap(ServerTableIdentifier::getId, Function.identity()));
+    long identifiersLoadedEnd = System.currentTimeMillis();
 
     Map<Long, List<TableRuntimeState>> statesMap =
         getAs(TableRuntimeMapper.class, TableRuntimeMapper::selectAllStates).stream()
@@ -249,7 +254,19 @@ public class DefaultTableService extends PersistentBase implements TableService 
                       a.addAll(b);
                       return a;
                     }));
+    long statesLoadedEnd = System.currentTimeMillis();
+    LOG.warn(
+        "[startup-metrics] DB load phase done: selectAllRuntimes={}ms (runtimes={}), "
+            + "selectAllTableIdentifiers={}ms, selectAllStates={}ms, dbTotal={}ms",
+        runtimesLoadedEnd - dbLoadStart,
+        tableRuntimeMetaList.size(),
+        identifiersLoadedEnd - runtimesLoadedEnd,
+        statesLoadedEnd - identifiersLoadedEnd,
+        statesLoadedEnd - dbLoadStart);
 
+    long loopStart = System.currentTimeMillis();
+    long createRuntimeTotalMs = 0L;
+    long registerMetricTotalMs = 0L;
     List<TableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
 
     for (TableRuntimeMeta tableRuntimeMeta : tableRuntimeMetaList) {
@@ -264,23 +281,38 @@ public class DefaultTableService extends PersistentBase implements TableService 
       if (states == null) {
         states = Collections.emptyList();
       }
+      long createStart = System.currentTimeMillis();
       Optional<TableRuntime> tableRuntime =
           createTableRuntime(identifier, tableRuntimeMeta, states);
+      createRuntimeTotalMs += System.currentTimeMillis() - createStart;
       if (!tableRuntime.isPresent()) {
         LOG.warn("No available table runtime factory found for table {}", identifier);
         continue;
       }
-      tableRuntime.ifPresent(
-          t -> {
-            t.registerMetric(MetricManager.getInstance().getGlobalRegistry());
-            tableRuntimeMap.put(t.getTableIdentifier().getId(), t);
-            tableRuntimes.add(t);
-          });
+      TableRuntime restoredRuntime = tableRuntime.get();
+      long registerStart = System.currentTimeMillis();
+      restoredRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
+      registerMetricTotalMs += System.currentTimeMillis() - registerStart;
+      tableRuntimeMap.put(restoredRuntime.getTableIdentifier().getId(), restoredRuntime);
+      tableRuntimes.add(restoredRuntime);
     }
 
+    long loopEnd = System.currentTimeMillis();
+    LOG.warn(
+        "[startup-metrics] Runtime restore loop done: tables={}, createTableRuntime={}ms, "
+            + "registerMetric={}ms, loopTotal={}ms",
+        tableRuntimes.size(),
+        createRuntimeTotalMs,
+        registerMetricTotalMs,
+        loopEnd - loopStart);
+
+    long handlerChainStart = System.currentTimeMillis();
     if (headHandler != null) {
       headHandler.initialize(tableRuntimes);
     }
+    LOG.warn(
+        "[startup-metrics] Handler chain done: elapsed={}ms",
+        System.currentTimeMillis() - handlerChainStart);
     if (tableExplorerExecutors == null) {
       int threadCount =
           serverConfiguration.getInteger(
@@ -299,6 +331,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
                   .setDaemon(true)
                   .build());
     }
+    LOG.warn(
+        "[startup-metrics] DefaultTableService.initialize() done: total={}ms",
+        System.currentTimeMillis() - initializeStart);
     initialized.complete(true);
     tableExplorerScheduler.scheduleAtFixedRate(
         this::exploreTableRuntimes, 0, externalCatalogRefreshingInterval, TimeUnit.MILLISECONDS);
@@ -328,6 +363,11 @@ public class DefaultTableService extends PersistentBase implements TableService 
   public TableRuntime getRuntime(Long tableId) {
     checkStarted();
     return tableRuntimeMap.get(tableId);
+  }
+
+  @Override
+  public boolean isStarted() {
+    return initialized.isDone();
   }
 
   @VisibleForTesting

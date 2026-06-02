@@ -75,6 +75,7 @@ import org.junit.runners.Parameterized;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RunWith(Parameterized.class)
 public class TestDefaultOptimizingService extends AMSTableTestBase {
@@ -834,6 +835,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     disposeTableService();
     toucher.suspend();
     initTableService();
+    awaitQueueWarmup();
     toucher.goOn();
   }
 
@@ -842,7 +844,17 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     toucher.stop();
     toucher = null;
     initTableService();
+    awaitQueueWarmup();
     toucher = new Toucher();
+  }
+
+  private void awaitQueueWarmup() {
+    try {
+      Assertions.assertTrue(optimizingService().awaitQueueWarmupForTest(10, TimeUnit.SECONDS));
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
+    }
   }
 
   private class TableRuntimeRefresher extends TableRuntimeRefreshExecutor {

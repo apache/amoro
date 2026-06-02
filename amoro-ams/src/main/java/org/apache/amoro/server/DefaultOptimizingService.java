@@ -42,8 +42,11 @@ import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.manager.AbstractOptimizerContainer;
+import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
+import org.apache.amoro.server.optimizing.OptimizingQueueWarmupMetrics;
+import org.apache.amoro.server.optimizing.OptimizingQueueWarmupService;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
@@ -60,6 +63,7 @@ import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -85,6 +89,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -123,6 +128,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final TableService tableService;
   private final RuntimeHandlerChain tableHandlerChain;
   private final ExecutorService planExecutor;
+  private final OptimizingQueueWarmupService queueWarmupService;
   private final BucketAssignStore bucketAssignStore;
   private final HighAvailabilityContainer haContainer;
   private final boolean isMasterSlaveMode;
@@ -136,6 +142,27 @@ public class DefaultOptimizingService extends StatedPersistentBase
       BucketAssignStore bucketAssignStore,
       HighAvailabilityContainer haContainer,
       List<ProcessFactory> processFactories) {
+    this(
+        serviceConfig,
+        catalogManager,
+        optimizerManager,
+        tableService,
+        bucketAssignStore,
+        haContainer,
+        processFactories,
+        defaultWarmupServiceFactory(serviceConfig));
+  }
+
+  @VisibleForTesting
+  DefaultOptimizingService(
+      Configurations serviceConfig,
+      CatalogManager catalogManager,
+      OptimizerManager optimizerManager,
+      TableService tableService,
+      BucketAssignStore bucketAssignStore,
+      HighAvailabilityContainer haContainer,
+      List<ProcessFactory> processFactories,
+      WarmupServiceFactory warmupServiceFactory) {
     this.optimizerTouchTimeout =
         serviceConfig.getDurationInMillis(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT);
     this.taskAckTimeout =
@@ -173,14 +200,50 @@ public class DefaultOptimizingService extends StatedPersistentBase
                 .setNameFormat("plan-executor-thread-%d")
                 .setDaemon(true)
                 .build());
+    OptimizingQueueWarmupMetrics warmupMetrics =
+        new OptimizingQueueWarmupMetrics(MetricManager.getInstance().getGlobalRegistry());
+    warmupMetrics.register();
+    this.queueWarmupService =
+        warmupServiceFactory.create(
+            this::getOptionalQueueByGroup, this::runtimeStillActiveForWarmup, warmupMetrics);
     LOG.info(
         "Optimizing router initialised: delegates={} formats={}",
         router.delegates().stream().map(ProcessFactory::name).collect(Collectors.toList()),
         router.supportedFormats());
   }
 
+  @VisibleForTesting
+  interface WarmupServiceFactory {
+    OptimizingQueueWarmupService create(
+        Function<String, Optional<OptimizingQueue>> queueSupplier,
+        Predicate<DefaultTableRuntime> runtimeStillActive,
+        OptimizingQueueWarmupMetrics metrics);
+  }
+
+  private static WarmupServiceFactory defaultWarmupServiceFactory(Configurations serviceConfig) {
+    return (queueSupplier, runtimeStillActive, metrics) ->
+        new OptimizingQueueWarmupService(
+            serviceConfig.getInteger(AmoroManagementConf.OPTIMIZING_QUEUE_WARMUP_THREAD_COUNT),
+            queueSupplier,
+            runtimeStillActive,
+            metrics);
+  }
+
   public RuntimeHandlerChain getTableRuntimeHandler() {
     return tableHandlerChain;
+  }
+
+  private boolean runtimeStillActiveForWarmup(DefaultTableRuntime runtime) {
+    if (!tableService.isStarted()) {
+      return getOptionalQueueByGroup(runtime.getGroupName()).isPresent();
+    }
+    TableRuntime current = tableService.getRuntime(runtime.getTableIdentifier().getId());
+    return current == runtime && getOptionalQueueByGroup(runtime.getGroupName()).isPresent();
+  }
+
+  @VisibleForTesting
+  boolean awaitQueueWarmupForTest(long timeout, TimeUnit unit) throws InterruptedException {
+    return queueWarmupService.awaitCompletionForTest(timeout, unit);
   }
 
   private void loadOptimizingQueues(List<DefaultTableRuntime> tableRuntimeList) {
@@ -189,20 +252,23 @@ public class DefaultOptimizingService extends StatedPersistentBase
     List<OptimizerInstance> optimizers = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
     Map<String, List<DefaultTableRuntime>> groupToTableRuntimes =
         tableRuntimeList.stream().collect(Collectors.groupingBy(TableRuntime::getGroupName));
+    List<DefaultTableRuntime> warmupRuntimes = new ArrayList<>();
     optimizerGroups.forEach(
         group -> {
           String groupName = group.getName();
-          List<DefaultTableRuntime> tableRuntimes = groupToTableRuntimes.remove(groupName);
+          List<DefaultTableRuntime> tableRuntimes =
+              Optional.ofNullable(groupToTableRuntimes.remove(groupName)).orElseGet(ArrayList::new);
           OptimizingQueue optimizingQueue =
               new OptimizingQueue(
                   catalogManager,
                   group,
                   this,
                   planExecutor,
-                  Optional.ofNullable(tableRuntimes).orElseGet(ArrayList::new),
+                  Collections.emptyList(),
                   maxPlanningParallelism,
                   router);
           optimizingQueueByGroup.put(groupName, optimizingQueue);
+          warmupRuntimes.addAll(tableRuntimes);
           optimizerGroupKeeper.keepInTouch(groupName, 1);
         });
     optimizers.forEach(optimizer -> registerOptimizer(optimizer, false));
@@ -228,6 +294,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
                     tr.completeEmptyProcess();
                   });
         });
+    queueWarmupService.warmupTables(warmupRuntimes);
   }
 
   private void registerOptimizer(OptimizerInstance optimizer, boolean needPersistent) {
@@ -405,6 +472,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
   public void createResourceGroup(ResourceGroup resourceGroup) {
     doAsTransaction(
         () -> {
+          String groupName = resourceGroup.getName();
+          OptimizingQueue existingQueue = optimizingQueueByGroup.get(groupName);
+          if (existingQueue != null) {
+            existingQueue.updateOptimizerGroup(resourceGroup);
+            return;
+          }
           OptimizingQueue optimizingQueue =
               new OptimizingQueue(
                   catalogManager,
@@ -414,7 +487,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   new ArrayList<>(),
                   maxPlanningParallelism,
                   router);
-          String groupName = resourceGroup.getName();
           optimizingQueueByGroup.put(groupName, optimizingQueue);
           optimizerGroupKeeper.keepInTouch(groupName, 1);
         });
@@ -422,7 +494,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   public void deleteResourceGroup(String groupName) {
     OptimizingQueue optimizingQueue = optimizingQueueByGroup.remove(groupName);
-    optimizingQueue.dispose();
+    if (optimizingQueue != null) {
+      optimizingQueue.dispose();
+    }
   }
 
   public void updateResourceGroup(ResourceGroup resourceGroup) {
@@ -431,6 +505,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   }
 
   public void dispose() {
+    queueWarmupService.close();
     planExecutor.shutdown();
     // shutdown sync group first, stop syncing group
     optimizingConfigWatcher.dispose();
@@ -526,7 +601,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     @Override
-    protected void doDispose() {}
+    protected void doDispose() {
+      queueWarmupService.close();
+    }
   }
 
   private class OptimizerKeepingTask implements Delayed {

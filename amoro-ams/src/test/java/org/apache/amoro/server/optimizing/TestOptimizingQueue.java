@@ -155,14 +155,17 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   }
 
   protected OptimizingQueue buildOptimizingGroupService(DefaultTableRuntime tableRuntime) {
-    return new OptimizingQueue(
-        CATALOG_MANAGER,
-        testResourceGroup(),
-        quotaProvider,
-        planExecutor,
-        Collections.singletonList(tableRuntime),
-        1,
-        router);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            CATALOG_MANAGER,
+            testResourceGroup(),
+            quotaProvider,
+            planExecutor,
+            Collections.emptyList(),
+            1,
+            router);
+    Assert.assertEquals(OptimizingQueue.WarmupResult.WARMED, queue.warmupTable(tableRuntime));
+    return queue;
   }
 
   private OptimizingQueue buildOptimizingGroupService() {
@@ -178,14 +181,20 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
   private OptimizingQueue buildOptimizingGroupService(
       List<DefaultTableRuntime> tableRuntimes, Executor executor, int maxPlanningParallelism) {
-    return new OptimizingQueue(
-        CATALOG_MANAGER,
-        testResourceGroup(),
-        quotaProvider,
-        executor,
-        tableRuntimes,
-        maxPlanningParallelism,
-        router);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            CATALOG_MANAGER,
+            testResourceGroup(),
+            quotaProvider,
+            executor,
+            Collections.emptyList(),
+            maxPlanningParallelism,
+            router);
+    tableRuntimes.forEach(
+        tableRuntime ->
+            Assert.assertEquals(
+                OptimizingQueue.WarmupResult.WARMED, queue.warmupTable(tableRuntime)));
+    return queue;
   }
 
   private OptimizingQueue buildOptimizingGroupService(
@@ -193,14 +202,88 @@ public class TestOptimizingQueue extends AMSTableTestBase {
       List<DefaultTableRuntime> tableRuntimes,
       Executor executor,
       int maxPlanningParallelism) {
-    return new OptimizingQueue(
-        catalogManager,
-        testResourceGroup(),
-        quotaProvider,
-        executor,
-        tableRuntimes,
-        maxPlanningParallelism,
-        router);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            catalogManager,
+            testResourceGroup(),
+            quotaProvider,
+            executor,
+            Collections.emptyList(),
+            maxPlanningParallelism,
+            router);
+    tableRuntimes.forEach(
+        tableRuntime ->
+            Assert.assertEquals(
+                OptimizingQueue.WarmupResult.WARMED, queue.warmupTable(tableRuntime)));
+    return queue;
+  }
+
+  @Test
+  public void testWarmupTableAddsPendingRuntimeToScheduler() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService();
+
+    Assert.assertEquals(0, queue.getSchedulingPolicy().getTableRuntimeMap().size());
+
+    Assert.assertEquals(OptimizingQueue.WarmupResult.WARMED, queue.warmupTable(tableRuntime));
+
+    Assert.assertTrue(
+        queue.getSchedulingPolicy().getTableRuntimeMap().containsKey(serverTableIdentifier()));
+    queue.dispose();
+  }
+
+  @Test
+  public void testWarmupTableSkipsDuplicateRuntime() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService();
+
+    Assert.assertEquals(OptimizingQueue.WarmupResult.WARMED, queue.warmupTable(tableRuntime));
+    Assert.assertEquals(OptimizingQueue.WarmupResult.DUPLICATE, queue.warmupTable(tableRuntime));
+    Assert.assertEquals(1, queue.getSchedulingPolicy().getTableRuntimeMap().size());
+
+    queue.dispose();
+  }
+
+  @Test
+  public void testWarmupFailureDoesNotMarkTableWarmed() {
+    DefaultTableRuntime tableRuntime = Mockito.spy(initTableWithFiles());
+    Mockito.doThrow(new RuntimeException("quota reset failed"))
+        .when(tableRuntime)
+        .resetTaskQuotas(Mockito.anyLong());
+    OptimizingQueue queue = buildOptimizingGroupService();
+
+    Assert.assertEquals(OptimizingQueue.WarmupResult.FAILED, queue.warmupTable(tableRuntime));
+    Assert.assertFalse(queue.containsWarmupStateForTest(tableRuntime.getTableIdentifier()));
+
+    queue.dispose();
+  }
+
+  @Test
+  public void testReleaseTableClearsWarmupState() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService();
+
+    Assert.assertEquals(OptimizingQueue.WarmupResult.WARMED, queue.warmupTable(tableRuntime));
+    queue.releaseTable(tableRuntime);
+
+    Assert.assertFalse(queue.containsWarmupStateForTest(tableRuntime.getTableIdentifier()));
+
+    queue.dispose();
+  }
+
+  @Test
+  public void testWarmupDoesNotBlockRefreshTableAfterWarmed() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService();
+
+    Assert.assertEquals(OptimizingQueue.WarmupResult.WARMED, queue.warmupTable(tableRuntime));
+    queue.releaseTable(tableRuntime);
+    queue.refreshTable(tableRuntime);
+
+    Assert.assertTrue(
+        queue.getSchedulingPolicy().getTableRuntimeMap().containsKey(serverTableIdentifier()));
+
+    queue.dispose();
   }
 
   @Test
@@ -254,9 +337,10 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             testResourceGroup(),
             resourceGroup -> 2,
             planExecutor,
-            Collections.singletonList(tableRuntime),
+            Collections.emptyList(),
             1,
             router);
+    Assert.assertEquals(OptimizingQueue.WarmupResult.WARMED, queue.warmupTable(tableRuntime));
 
     TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME, false);
     Assert.assertNotNull(task);
@@ -290,9 +374,10 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             testResourceGroup(),
             resourceGroup -> 2,
             planExecutor,
-            Collections.singletonList(tableRuntime),
+            Collections.emptyList(),
             1,
             router);
+    Assert.assertEquals(OptimizingQueue.WarmupResult.WARMED, queue.warmupTable(tableRuntime));
 
     TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     Assert.assertNotNull(task);
@@ -327,9 +412,10 @@ public class TestOptimizingQueue extends AMSTableTestBase {
             testResourceGroup(),
             resourceGroup -> 2,
             planExecutor,
-            Collections.singletonList(tableRuntime),
+            Collections.emptyList(),
             1,
             router);
+    Assert.assertEquals(OptimizingQueue.WarmupResult.WARMED, queue.warmupTable(tableRuntime));
     TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
     queue.ackTask(task.getTaskId(), optimizerThread);
     Assert.assertEquals(

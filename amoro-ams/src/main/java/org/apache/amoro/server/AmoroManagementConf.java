@@ -518,6 +518,13 @@ public class AmoroManagementConf {
           .withDescription(
               "Allow the table to break the quota limit when the resource is sufficient.");
 
+  public static final ConfigOption<Integer> OPTIMIZING_QUEUE_WARMUP_THREAD_COUNT =
+      ConfigOptions.key("self-optimizing.queue-warmup.thread-count")
+          .intType()
+          .defaultValue(10)
+          .withDescription(
+              "The number of threads used to warm up optimizing queues during AMS startup.");
+
   /** @deprecated Use {@link #PROCESS_HISTORY_DATA_KEEP_TIME} instead. */
   @Deprecated
   public static final ConfigOption<Integer> PROCESS_HISTORY_DATA_KEEP_DAYS =

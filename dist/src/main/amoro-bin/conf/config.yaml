@@ -90,6 +90,8 @@ ams:
     runtime-data-expire-interval: 1h
     refresh-group-interval: 30s
     break-quota-limit-enabled: true
+    queue-warmup:
+      thread-count: 10
 
   optimizer:
     heart-beat-timeout: 1min # 60000

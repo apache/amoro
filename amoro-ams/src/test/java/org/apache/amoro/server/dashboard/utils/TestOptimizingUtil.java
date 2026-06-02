@@ -131,14 +131,17 @@ public class TestOptimizingUtil extends AMSTableTestBase {
   }
 
   protected OptimizingQueue buildOptimizingGroupService(DefaultTableRuntime tableRuntime) {
-    return new OptimizingQueue(
-        CATALOG_MANAGER,
-        testResourceGroup(),
-        quotaProvider,
-        planExecutor,
-        Collections.singletonList(tableRuntime),
-        1,
-        router);
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            CATALOG_MANAGER,
+            testResourceGroup(),
+            quotaProvider,
+            planExecutor,
+            Collections.emptyList(),
+            1,
+            router);
+    queue.warmupTable(tableRuntime);
+    return queue;
   }
 
   protected static ResourceGroup testResourceGroup() {

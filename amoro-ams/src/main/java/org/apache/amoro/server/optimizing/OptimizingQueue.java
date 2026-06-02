@@ -117,6 +117,15 @@ public class OptimizingQueue extends PersistentBase {
   private final ProcessFactoryRouter router;
   private final Map<ServerTableIdentifier, AtomicInteger> optimizingTasksMap =
       new ConcurrentHashMap<>();
+  private final Set<ServerTableIdentifier> warmingTables = ConcurrentHashMap.newKeySet();
+  private final Set<ServerTableIdentifier> warmedTables = ConcurrentHashMap.newKeySet();
+
+  public enum WarmupResult {
+    WARMED,
+    SKIPPED,
+    DUPLICATE,
+    FAILED
+  }
 
   public OptimizingQueue(
       CatalogManager catalogManager,
@@ -141,53 +150,68 @@ public class OptimizingQueue extends PersistentBase {
         new OptimizerGroupMetrics(
             optimizerGroup.getName(), MetricManager.getInstance().getGlobalRegistry(), this);
     this.metrics.register();
-    tableRuntimeList.forEach(this::initTableRuntime);
   }
 
-  private void initTableRuntime(DefaultTableRuntime tableRuntime) {
+  public WarmupResult warmupTable(DefaultTableRuntime tableRuntime) {
+    ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
+    if (warmedTables.contains(identifier)) {
+      return WarmupResult.DUPLICATE;
+    }
+    if (!warmingTables.add(identifier)) {
+      return WarmupResult.DUPLICATE;
+    }
     try {
-      TableOptimizingProcess process = loadProcess(tableRuntime);
-
-      if (!tableRuntime.getOptimizingConfig().isEnabled()) {
-        closeProcessIfRunning(process);
-        return;
+      WarmupResult result = doWarmupTable(tableRuntime);
+      if (result == WarmupResult.WARMED || result == WarmupResult.SKIPPED) {
+        warmedTables.add(identifier);
       }
+      return result;
+    } catch (Exception e) {
+      LOG.error("Failed to warm up table runtime for table {}, skipping", identifier, e);
+      return WarmupResult.FAILED;
+    } finally {
+      warmingTables.remove(identifier);
+    }
+  }
 
-      if (!isFormatSupported(tableRuntime)) {
-        closeProcessIfRunning(process);
-        return;
-      }
+  private WarmupResult doWarmupTable(DefaultTableRuntime tableRuntime) {
+    TableOptimizingProcess process = loadProcess(tableRuntime);
 
-      tableRuntime.resetTaskQuotas(
-          System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
+    if (!tableRuntime.getOptimizingConfig().isEnabled()) {
+      closeProcessIfRunning(process);
+      return WarmupResult.SKIPPED;
+    }
 
-      if (canReplayPaimonCommittingProcess(process, tableRuntime)) {
+    if (!isFormatSupported(tableRuntime)) {
+      closeProcessIfRunning(process);
+      return WarmupResult.SKIPPED;
+    }
+
+    tableRuntime.resetTaskQuotas(
+        System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
+
+    if (canReplayPaimonCommittingProcess(process, tableRuntime)) {
+      LOG.info(
+          "Paimon process {} on table {} is already COMMITTING with completed tasks during"
+              + " recovery, keeping it for commit replay",
+          process.getProcessId(),
+          tableRuntime.getTableIdentifier());
+    } else if (canResumeProcess(process, tableRuntime)) {
+      if (process.allTasksPrepared()) {
         LOG.info(
-            "Paimon process {} on table {} is already COMMITTING with completed tasks during"
-                + " recovery, keeping it for commit replay",
+            "All tasks already completed for process {} on table {} during recovery,"
+                + " triggering commit",
             process.getProcessId(),
             tableRuntime.getTableIdentifier());
-      } else if (canResumeProcess(process, tableRuntime)) {
-        if (process.allTasksPrepared()) {
-          LOG.info(
-              "All tasks already completed for process {} on table {} during recovery,"
-                  + " triggering commit",
-              process.getProcessId(),
-              tableRuntime.getTableIdentifier());
-          tableRuntime.beginCommitting();
-        } else {
-          tableQueue.offer(process);
-        }
+        tableRuntime.beginCommitting();
       } else {
-        resetTableForRecovery(process, tableRuntime);
-        scheduler.addTable(tableRuntime);
+        tableQueue.offer(process);
       }
-    } catch (Exception e) {
-      LOG.error(
-          "Failed to initialize table runtime for table {}, skipping",
-          tableRuntime.getTableIdentifier(),
-          e);
+    } else {
+      resetTableForRecovery(process, tableRuntime);
+      scheduler.addTable(tableRuntime);
     }
+    return WarmupResult.WARMED;
   }
 
   private TableOptimizingProcess loadProcess(DefaultTableRuntime tableRuntime) {
@@ -285,6 +309,7 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   public void releaseTable(DefaultTableRuntime tableRuntime) {
+    clearWarmupState(tableRuntime);
     scheduler.removeTable(tableRuntime);
     List<OptimizingProcess> processList =
         tableQueue.stream()
@@ -713,6 +738,8 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   public void dispose() {
+    warmingTables.clear();
+    warmedTables.clear();
     this.metrics.unregister();
   }
 
@@ -738,6 +765,17 @@ public class OptimizingQueue extends PersistentBase {
   @VisibleForTesting
   SchedulingPolicy getSchedulingPolicy() {
     return scheduler;
+  }
+
+  private void clearWarmupState(DefaultTableRuntime tableRuntime) {
+    ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
+    warmingTables.remove(identifier);
+    warmedTables.remove(identifier);
+  }
+
+  @VisibleForTesting
+  boolean containsWarmupStateForTest(ServerTableIdentifier identifier) {
+    return warmingTables.contains(identifier) || warmedTables.contains(identifier);
   }
 
   private class TableOptimizingProcess implements OptimizingProcess {

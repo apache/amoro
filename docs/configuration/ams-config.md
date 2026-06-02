@@ -124,6 +124,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | self-optimizing.commit-manifest-io-thread-count | 10 | Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent commit operations. |
 | self-optimizing.commit-thread-count | 10 | The number of threads that self-optimizing uses to submit results. |
 | self-optimizing.plan-manifest-io-thread-count | 10 | Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent planning operations. |
+| self-optimizing.queue-warmup.thread-count | 10 | The number of threads used to warm up optimizing queues during AMS startup. |
 | self-optimizing.refresh-group-interval | 30 s | Optimizer group refresh interval. |
 | self-optimizing.runtime-data-expire-interval | 1 h | Interval between self-optimizing runtime data expiration runs. |
 | self-optimizing.runtime-data-expire-interval-hours | 1 | Deprecated: use 'self-optimizing.runtime-data-expire-interval' instead. The number of hours that self-optimizing runtime data expire interval. |
