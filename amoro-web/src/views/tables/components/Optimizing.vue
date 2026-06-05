@@ -23,7 +23,7 @@ import { useRoute } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
 import { usePagination } from '@/hooks/usePagination'
 import type { BreadcrumbOptimizingItem, IColumns, ILableAndValue } from '@/types/common.type'
-import { cancelOptimizingProcess, getOptimizingProcesses, getTableOptimizingTypes, getTableMaintenanceTypes, getTasksByOptimizingProcessId } from '@/services/table.service'
+import { cancelOptimizingProcess, getOptimizingProcesses, getTableProcessTypes, getTasksByOptimizingProcessId } from '@/services/table.service'
 import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
 import { canManageTable } from '@/utils/permission'
 
@@ -107,9 +107,8 @@ async function getQueryDataDictList() {
   statusTypeList.value = status
 
   try {
-    const fetchFn = props.processCategory === 'MAINTENANCE' ? getTableMaintenanceTypes : getTableOptimizingTypes
-    const tableProcessTypes = await fetchFn({ ...sourceData })
-    actionTypeList.value = Object.entries(tableProcessTypes).map(([typeName, displayName]) => ({ label: displayName as string, value: typeName }))
+    const rawTypes = await getTableProcessTypes({ ...sourceData, processCategory: props.processCategory })
+    actionTypeList.value = Object.entries(rawTypes).map(([typeName, displayName]) => ({ label: displayName as string, value: typeName }))
   }
   catch (error) {
     console.error('Failed to load process types:', error)

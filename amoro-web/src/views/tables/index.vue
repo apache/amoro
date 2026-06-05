@@ -24,7 +24,8 @@ import UFiles from './components/Files.vue'
 import UOperations from './components/Operations.vue'
 import USnapshots from './components/Snapshots.vue'
 import UOptimizing from './components/Optimizing.vue'
-import UMaintenance from './components/Maintenance.vue'
+import UCleanup from './components/Cleanup.vue'
+import UProfiling from './components/Profiling.vue'
 import UHealthScore from './components/HealthScoreDetails.vue'
 import TableExplorer from './components/TableExplorer.vue'
 import useStore from '@/store/index'
@@ -39,7 +40,8 @@ export default defineComponent({
     UOperations,
     USnapshots,
     UOptimizing,
-    UMaintenance,
+    UCleanup,
+    UProfiling,
     UHealthScore,
     TableExplorer,
   },
@@ -108,7 +110,8 @@ export default defineComponent({
     const tabConfigs = shallowReactive([
       { key: 'Snapshots', label: 'snapshots' },
       { key: 'Optimizing', label: 'optimizing' },
-      { key: 'Maintenance', label: 'maintenance' },
+      { key: 'Cleanup', label: 'cleanup' },
+      { key: 'Profiling', label: 'profiling' },
       { key: 'Operations', label: 'operations' },
     ])
 

@@ -22,5 +22,5 @@ import Optimizing from './Optimizing.vue'
 </script>
 
 <template>
-  <Optimizing process-category="MAINTENANCE" cancel-modal-title-key="cancelMaintenanceProcessOptModalTitle" />
+  <Optimizing process-category="CLEANUP" cancel-modal-title-key="cancelCleanupProcessOptModalTitle" />
 </template>

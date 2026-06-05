@@ -26,7 +26,6 @@ import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Streams;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.descriptor.AMSColumnInfo;
@@ -92,7 +91,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   public static final String PAIMON_MAIN_BRANCH_NAME = "main";
   private static final String FULL_TYPE = "FULL";
   private static final String MINOR_TYPE = "MINOR";
-  private static final Set<String> OPTIMIZING_TYPES = Sets.newHashSet(FULL_TYPE, MINOR_TYPE);
+  private static final List<String> OPTIMIZING_TYPES = Arrays.asList(FULL_TYPE, MINOR_TYPE);
 
   private ExecutorService executor;
 
@@ -454,6 +453,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+    List<String> categoryTypes =
+        FormatTableDescriptor.resolveCategoryTypes(
+            processCategory, OPTIMIZING_TYPES, Collections.emptyList(), Collections.emptyList());
     processInfoList =
         processInfoList.stream()
             .filter(p -> StringUtils.isBlank(type) || type.equalsIgnoreCase(p.getOptimizingType()))
@@ -461,7 +463,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
             .filter(
                 p ->
                     FormatTableDescriptor.matchProcessCategory(
-                        processCategory, OPTIMIZING_TYPES, p.getOptimizingType()))
+                        processCategory, categoryTypes, p.getOptimizingType()))
             .collect(Collectors.toList());
     int total = processInfoList.size();
     processInfoList =

@@ -71,6 +71,7 @@ import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
 import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
 import org.apache.amoro.table.descriptor.PartitionBaseInfo;
 import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
+import org.apache.amoro.table.descriptor.ProcessCategory;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
@@ -363,25 +364,20 @@ public class TableController {
     ctx.json(OkResponse.of(PageResult.of(result, total)));
   }
 
-  public void getOptimizingTypes(Context ctx) {
+  public void getProcessTypes(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
+    String processCategory =
+        ctx.queryParamAsClass("processCategory", String.class).getOrDefault(null);
+    if (StringUtils.isBlank(processCategory)) {
+      processCategory = ProcessCategory.OPTIMIZING.getName();
+    }
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
 
     Map<String, String> values =
-        tableDescriptor.getTableOptimizingTypes(tableIdentifier.buildTableIdentifier());
-    ctx.json(OkResponse.of(values));
-  }
-
-  public void getMaintenanceTypes(Context ctx) {
-    String catalog = ctx.pathParam("catalog");
-    String db = ctx.pathParam("db");
-    String table = ctx.pathParam("table");
-    TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
-
-    Map<String, String> values =
-        tableDescriptor.getTableMaintenanceTypes(tableIdentifier.buildTableIdentifier());
+        tableDescriptor.getTableProcessTypes(
+            tableIdentifier.buildTableIdentifier(), processCategory);
     ctx.json(OkResponse.of(values));
   }
 
@@ -692,7 +688,7 @@ public class TableController {
   }
 
   /**
-   * cancel the running optimizing process of one certain table.
+   * Cancel the running process of one certain table.
    *
    * @param ctx - context for handling the request and response
    */

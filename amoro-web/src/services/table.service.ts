@@ -169,30 +169,18 @@ export function getOptimizingProcesses(
   return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-processes`, { params: { page, pageSize, token, type, processCategory, status } })
 }
 
-// get optimizing process types
-export function getTableOptimizingTypes(
+// get process types by category
+export function getTableProcessTypes(
   params: {
     catalog: string
     db: string
     table: string
+    processCategory: string
     token?: string
   },
 ) {
-  const { catalog, db, table, token } = params
-  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimizing-types`, { params: { token } })
-}
-
-// get maintenance process types
-export function getTableMaintenanceTypes(
-  params: {
-    catalog: string
-    db: string
-    table: string
-    token?: string
-  },
-) {
-  const { catalog, db, table, token } = params
-  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/maintenance-types`, { params: { token } })
+  const { catalog, db, table, processCategory, token } = params
+  return request.get(`api/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/process-types`, { params: { processCategory, token } })
 }
 
 // get optimizing tasks

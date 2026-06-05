@@ -132,7 +132,6 @@ public interface TableProcessMapper {
           + "FROM table_process WHERE table_id = #{tableId} "
           + " <if test='processType != null'> AND process_type = #{processType}</if>"
           + " <if test='processType == null and includeTypes != null and includeTypes.size() > 0'> AND process_type IN <foreach collection='includeTypes' item='type' open='(' separator=',' close=')'>#{type}</foreach></if>"
-          + " <if test='processType == null and excludeTypes != null and excludeTypes.size() > 0'> AND process_type NOT IN <foreach collection='excludeTypes' item='type' open='(' separator=',' close=')'>#{type}</foreach></if>"
           + " <if test='status != null'> AND status = #{status}</if>"
           + " ORDER BY process_id desc"
           + "</script>")
@@ -141,7 +140,6 @@ public interface TableProcessMapper {
       @Param("tableId") long tableId,
       @Param("processType") String processType,
       @Param("includeTypes") List<String> includeTypes,
-      @Param("excludeTypes") List<String> excludeTypes,
       @Param("status") ProcessStatus optimizingStatus);
 
   @Select(

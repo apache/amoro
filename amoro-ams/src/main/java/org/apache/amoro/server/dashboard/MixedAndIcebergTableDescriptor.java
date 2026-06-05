@@ -68,6 +68,7 @@ import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
 import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
 import org.apache.amoro.table.descriptor.PartitionBaseInfo;
 import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
+import org.apache.amoro.table.descriptor.ProcessCategory;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
@@ -123,8 +124,15 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   private static final List<String> OPTIMIZING_TYPE_LIST =
       Arrays.stream(OptimizingType.values()).map(Enum::name).collect(Collectors.toList());
 
-  private static final String OPTIMIZING = "OPTIMIZING";
-  private static final String MAINTENANCE = "MAINTENANCE";
+  private static final List<String> CLEANUP_TYPE_LIST =
+      ImmutableList.of(
+          IcebergActions.EXPIRE_SNAPSHOTS.getName(),
+          IcebergActions.CLEAN_ORPHAN.getName(),
+          IcebergActions.CLEAN_DANGLING_DELETE.getName(),
+          IcebergActions.EXPIRE_DATA.getName());
+
+  private static final List<String> PROFILING_TYPE_LIST =
+      ImmutableList.of(IcebergActions.AUTO_CREATE_TAGS.getName());
 
   private ExecutorService executorService;
 
@@ -687,22 +695,24 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
     // Only apply category filtering when type is not specified
     final List<String> includeTypes;
-    final List<String> excludeTypes;
 
     if (StringUtils.isBlank(type)) {
-      if (OPTIMIZING.equalsIgnoreCase(processCategory)) {
-        includeTypes = OPTIMIZING_TYPE_LIST;
-        excludeTypes = null;
-      } else if (MAINTENANCE.equalsIgnoreCase(processCategory)) {
-        includeTypes = null;
-        excludeTypes = OPTIMIZING_TYPE_LIST;
+      if (processCategory == null) {
+        // No category specified: return empty results
+        return Pair.of(Collections.emptyList(), 0);
       } else {
-        includeTypes = null;
-        excludeTypes = null;
+        List<String> categoryTypes =
+            FormatTableDescriptor.resolveCategoryTypes(
+                processCategory, OPTIMIZING_TYPE_LIST, CLEANUP_TYPE_LIST, PROFILING_TYPE_LIST);
+        if (categoryTypes.isEmpty()) {
+          // Unknown category: return empty results to avoid exposing all processes
+          return Pair.of(Collections.emptyList(), 0);
+        }
+
+        includeTypes = categoryTypes;
       }
     } else {
       includeTypes = null;
-      excludeTypes = null;
     }
 
     List<TableProcessMeta> processMetaList = Collections.emptyList();
@@ -710,9 +720,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       processMetaList =
           getAs(
               TableProcessMapper.class,
-              mapper ->
-                  mapper.listProcessMeta(
-                      identifier.getId(), type, includeTypes, excludeTypes, status));
+              mapper -> mapper.listProcessMeta(identifier.getId(), type, includeTypes, status));
       PageInfo<TableProcessMeta> pageInfo = new PageInfo<>(processMetaList);
       total = (int) pageInfo.getTotal();
       LOG.info(
@@ -753,15 +761,28 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
   }
 
   @Override
-  public Map<String, String> getTableMaintenanceTypes(AmoroTable<?> amoroTable) {
-    Map<String, String> types = Maps.newHashMap();
-    types.put(IcebergActions.EXPIRE_SNAPSHOTS.getName(), "Expire Snapshots");
-    types.put(IcebergActions.CLEAN_ORPHAN.getName(), "Clean Orphan Files");
-    types.put(IcebergActions.CLEAN_DANGLING_DELETE.getName(), "Clean Dangling Delete Files");
-    types.put(IcebergActions.EXPIRE_DATA.getName(), "Expire Data");
-    types.put(IcebergActions.SYNC_HIVE_TABLES.getName(), "Sync Hive Tables");
-    types.put(IcebergActions.AUTO_CREATE_TAGS.getName(), "Auto Create Tags");
-    return types;
+  public Map<String, String> getTableProcessTypes(
+      AmoroTable<?> amoroTable, String processCategory) {
+    if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
+      return getTableOptimizingTypes(amoroTable);
+    }
+
+    if (ProcessCategory.CLEANUP.getName().equalsIgnoreCase(processCategory)) {
+      Map<String, String> types = Maps.newHashMap();
+      types.put(IcebergActions.EXPIRE_SNAPSHOTS.getName(), "Expire Snapshots");
+      types.put(IcebergActions.CLEAN_ORPHAN.getName(), "Clean Orphan Files");
+      types.put(IcebergActions.CLEAN_DANGLING_DELETE.getName(), "Clean Dangling Delete Files");
+      types.put(IcebergActions.EXPIRE_DATA.getName(), "Expire Data");
+      return types;
+    }
+
+    if (ProcessCategory.PROFILING.getName().equalsIgnoreCase(processCategory)) {
+      Map<String, String> types = Maps.newHashMap();
+      types.put(IcebergActions.AUTO_CREATE_TAGS.getName(), "Auto Create Tags");
+      return types;
+    }
+
+    return Collections.emptyMap();
   }
 
   @Override

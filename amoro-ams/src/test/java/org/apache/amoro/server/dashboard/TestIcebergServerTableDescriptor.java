@@ -21,7 +21,9 @@ package org.apache.amoro.server.dashboard;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
+import org.apache.amoro.Action;
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.IcebergActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.formats.AmoroCatalogTestHelper;
@@ -301,14 +303,16 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
     doReturn(tableIdentifier).when(table).id();
 
     Pair<List<OptimizingProcessInfo>, Integer> res =
-        descriptor.getOptimizingProcessesInfo(table, null, null, null, 4, 4);
+        descriptor.getOptimizingProcessesInfo(table, null, "OPTIMIZING", null, 4, 4);
     Integer expectReturnItemSizeForNoTypeNoStatusOffset0Limit5 = 4;
     Integer expectTotalForNoTypeNoStatusOffset0Limit5 = 10;
     Assert.assertEquals(
         expectReturnItemSizeForNoTypeNoStatusOffset0Limit5, (Integer) res.getLeft().size());
     Assert.assertEquals(expectTotalForNoTypeNoStatusOffset0Limit5, res.getRight());
 
-    res = descriptor.getOptimizingProcessesInfo(table, null, null, ProcessStatus.SUCCESS, 5, 0);
+    res =
+        descriptor.getOptimizingProcessesInfo(
+            table, null, "OPTIMIZING", ProcessStatus.SUCCESS, 5, 0);
     Integer expectReturnItemSizeForOnlyStatusOffset0limit5 = 5;
     Integer expectedTotalForOnlyStatusOffset0Limit5 = 7;
     Assert.assertEquals(
@@ -316,7 +320,8 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
     Assert.assertEquals(expectedTotalForOnlyStatusOffset0Limit5, res.getRight());
 
     res =
-        descriptor.getOptimizingProcessesInfo(table, OptimizingType.MINOR.name(), null, null, 5, 0);
+        descriptor.getOptimizingProcessesInfo(
+            table, OptimizingType.MINOR.name(), "OPTIMIZING", null, 5, 0);
     Integer expectedRetItemsSizeForOnlyTypeOffset0Limit5 = 4;
     Integer expectedRetTotalForOnlyTypeOffset0Limit5 = 4;
     Assert.assertEquals(
@@ -325,12 +330,91 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
 
     res =
         descriptor.getOptimizingProcessesInfo(
-            table, OptimizingType.MINOR.name(), null, ProcessStatus.SUCCESS, 2, 2);
+            table, OptimizingType.MINOR.name(), "OPTIMIZING", ProcessStatus.SUCCESS, 2, 2);
     Integer expectedRetItemSizeForBothTypeAndStatusOffset2Limit2 = 2;
     Integer expectedRetTotalForBothTypeAndStatusOffset2Limit2 = 4;
     Assert.assertEquals(
         expectedRetItemSizeForBothTypeAndStatusOffset2Limit2, (Integer) res.getLeft().size());
     Assert.assertEquals(expectedRetTotalForBothTypeAndStatusOffset2Limit2, res.getRight());
+  }
+
+  @Test
+  public void testProcessCategoryFiltering() {
+    TestMixedAndIcebergTableDescriptor descriptor = new TestMixedAndIcebergTableDescriptor();
+
+    String catalogName = "catalog1";
+    String dbName = "db1";
+    String tableName = "table1";
+
+    ServerTableIdentifier identifier =
+        ServerTableIdentifier.of(1L, catalogName, dbName, tableName, TableFormat.ICEBERG);
+    descriptor.insertTable(identifier);
+    MetricsSummary dummySummary = new MetricsSummary();
+    dummySummary.setNewDeleteFileCnt(1);
+    dummySummary.setNewDataFileCnt(1);
+    dummySummary.setNewDataSize(1);
+    dummySummary.setNewDeleteSize(1);
+
+    // Insert OPTIMIZING processes: MAJOR, MINOR
+    descriptor.insertOptimizingProcess(
+        identifier,
+        1L,
+        1,
+        1,
+        ProcessStatus.SUCCESS,
+        OptimizingType.MAJOR,
+        1L,
+        dummySummary,
+        Collections.emptyMap(),
+        Collections.emptyMap());
+    descriptor.insertOptimizingProcess(
+        identifier,
+        2L,
+        2L,
+        2L,
+        ProcessStatus.SUCCESS,
+        OptimizingType.MINOR,
+        2L,
+        dummySummary,
+        Collections.emptyMap(),
+        Collections.emptyMap());
+
+    // Insert CLEANUP processes: EXPIRE_SNAPSHOTS, CLEAN_ORPHAN
+    descriptor.insertIcebergActionProcess(
+        identifier, 3L, ProcessStatus.SUCCESS, IcebergActions.EXPIRE_SNAPSHOTS, 3L, dummySummary);
+    descriptor.insertIcebergActionProcess(
+        identifier, 4L, ProcessStatus.SUCCESS, IcebergActions.CLEAN_ORPHAN, 4L, dummySummary);
+
+    // Insert PROFILING process: AUTO_CREATE_TAGS
+    descriptor.insertIcebergActionProcess(
+        identifier, 5L, ProcessStatus.SUCCESS, IcebergActions.AUTO_CREATE_TAGS, 5L, dummySummary);
+
+    AmoroTable<?> table = mock(IcebergTable.class);
+    TableIdentifier tableIdentifier =
+        TableIdentifier.of(
+            identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName());
+    doReturn(tableIdentifier).when(table).id();
+
+    // Test OPTIMIZING category: should return only MAJOR and MINOR
+    Pair<List<OptimizingProcessInfo>, Integer> res =
+        descriptor.getOptimizingProcessesInfo(table, null, "OPTIMIZING", null, 10, 0);
+    Assert.assertEquals(2, (int) res.getRight());
+    Assert.assertEquals(2, res.getLeft().size());
+
+    // Test CLEANUP category: should return EXPIRE_SNAPSHOTS and CLEAN_ORPHAN
+    res = descriptor.getOptimizingProcessesInfo(table, null, "CLEANUP", null, 10, 0);
+    Assert.assertEquals(2, (int) res.getRight());
+    Assert.assertEquals(2, res.getLeft().size());
+
+    // Test PROFILING category: should return only AUTO_CREATE_TAGS
+    res = descriptor.getOptimizingProcessesInfo(table, null, "PROFILING", null, 10, 0);
+    Assert.assertEquals(1, (int) res.getRight());
+    Assert.assertEquals(1, res.getLeft().size());
+
+    // Test null category: should return empty results
+    res = descriptor.getOptimizingProcessesInfo(table, null, null, null, 10, 0);
+    Assert.assertEquals(0, (int) res.getRight());
+    Assert.assertEquals(0, res.getLeft().size());
   }
 
   @Override
@@ -418,6 +502,30 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
                   targetChangeSnapshotId,
                   fromSequence,
                   toSequence));
+    }
+
+    public void insertIcebergActionProcess(
+        ServerTableIdentifier identifier,
+        long processId,
+        ProcessStatus status,
+        Action action,
+        long planTime,
+        MetricsSummary summary) {
+      doAs(
+          TableProcessMapper.class,
+          mapper ->
+              mapper.insertProcess(
+                  identifier.getId(),
+                  processId,
+                  "",
+                  status,
+                  action.getName(),
+                  action.getName(),
+                  "AMORO",
+                  0,
+                  planTime,
+                  new HashMap<>(),
+                  summary.summaryAsMap(false)));
     }
   }
 }

@@ -148,16 +148,11 @@ public class ServerTableDescriptor extends PersistentBase {
     return formatTableDescriptor.getOptimizingTaskInfos(amoroTable, processId);
   }
 
-  public Map<String, String> getTableOptimizingTypes(TableIdentifier tableIdentifier) {
+  public Map<String, String> getTableProcessTypes(
+      TableIdentifier tableIdentifier, String processCategory) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getTableOptimizingTypes(amoroTable);
-  }
-
-  public Map<String, String> getTableMaintenanceTypes(TableIdentifier tableIdentifier) {
-    AmoroTable<?> amoroTable = loadTable(tableIdentifier);
-    FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
-    return formatTableDescriptor.getTableMaintenanceTypes(amoroTable);
+    return formatTableDescriptor.getTableProcessTypes(amoroTable, processCategory);
   }
 
   private AmoroTable<?> loadTable(TableIdentifier identifier) {

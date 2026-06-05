@@ -79,6 +79,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -97,7 +98,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
   private static final Logger LOG = LoggerFactory.getLogger(HudiTableDescriptor.class);
   private static final String COMPACTION = "compaction";
   private static final String CLUSTERING = "clustering";
-  private static final Set<String> OPTIMIZING_TYPES = Sets.newHashSet(COMPACTION, CLUSTERING);
+  private static final List<String> OPTIMIZING_TYPES = Arrays.asList(COMPACTION, CLUSTERING);
   // table comment
   private static final String COMMENT = "comment";
 
@@ -387,6 +388,9 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
                 })
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
+    List<String> categoryTypes =
+        FormatTableDescriptor.resolveCategoryTypes(
+            processCategory, OPTIMIZING_TYPES, Collections.emptyList(), Collections.emptyList());
     infos =
         infos.stream()
             .filter(
@@ -396,7 +400,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
             .filter(
                 i ->
                     FormatTableDescriptor.matchProcessCategory(
-                        processCategory, OPTIMIZING_TYPES, i.getOptimizingType()))
+                        processCategory, categoryTypes, i.getOptimizingType()))
             .collect(Collectors.toList());
     int total = infos.size();
     infos = infos.stream().skip(offset).limit(limit).collect(Collectors.toList());

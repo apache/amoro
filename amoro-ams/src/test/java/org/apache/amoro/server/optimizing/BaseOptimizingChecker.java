@@ -124,8 +124,7 @@ public class BaseOptimizingChecker extends PersistentBase {
                 List<TableProcessMeta> tableOptimizingProcesses =
                     getAs(
                         TableProcessMapper.class,
-                        mapper ->
-                            mapper.listProcessMeta(identifier.getId(), null, null, null, null));
+                        mapper -> mapper.listProcessMeta(identifier.getId(), null, null, null));
                 if (tableOptimizingProcesses == null || tableOptimizingProcesses.isEmpty()) {
                   LOG.info("optimize history is empty");
                   return Status.RUNNING;
@@ -158,7 +157,7 @@ public class BaseOptimizingChecker extends PersistentBase {
       List<TableProcessMeta> result =
           getAs(
                   TableProcessMapper.class,
-                  mapper -> mapper.listProcessMeta(identifier.getId(), null, null, null, null))
+                  mapper -> mapper.listProcessMeta(identifier.getId(), null, null, null))
               .stream()
               .filter(p -> p.getProcessId() > lastProcessId)
               .filter(p -> p.getStatus().equals(ProcessStatus.SUCCESS))
@@ -191,7 +190,7 @@ public class BaseOptimizingChecker extends PersistentBase {
     List<TableProcessMeta> tableOptimizingProcesses =
         getAs(
                 TableProcessMapper.class,
-                mapper -> mapper.listProcessMeta(identifier.getId(), null, null, null, null))
+                mapper -> mapper.listProcessMeta(identifier.getId(), null, null, null))
             .stream()
             .filter(p -> p.getProcessId() > lastProcessId)
             .collect(Collectors.toList());

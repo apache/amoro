@@ -26,7 +26,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 /** API for obtaining metadata information of various formats. */
@@ -75,25 +74,49 @@ public interface FormatTableDescriptor {
   /** Return the optimizing types of the {@link AmoroTable} is supported. */
   Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable);
 
-  /** Return the maintenance types of the {@link AmoroTable} is supported. */
-  default Map<String, String> getTableMaintenanceTypes(AmoroTable<?> amoroTable) {
+  /** Return the process types for the given category of the {@link AmoroTable}. */
+  default Map<String, String> getTableProcessTypes(
+      AmoroTable<?> amoroTable, String processCategory) {
+    if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
+      return getTableOptimizingTypes(amoroTable);
+    }
+
     return Collections.emptyMap();
   }
 
   static boolean matchProcessCategory(
-      String processCategory, Set<String> optimizingTypes, String type) {
-    if (processCategory == null) {
-      return true;
+      String processCategory, List<String> categoryTypes, String type) {
+    // When no category is specified, no records should match
+    if (processCategory == null || categoryTypes.isEmpty()) {
+      return false;
     }
-    boolean isOptimizingType =
-        type != null && optimizingTypes.stream().anyMatch(t -> t.equalsIgnoreCase(type));
-    if ("OPTIMIZING".equalsIgnoreCase(processCategory)) {
-      return isOptimizingType;
+    return type != null && categoryTypes.stream().anyMatch(t -> t.equalsIgnoreCase(type));
+  }
+
+  /**
+   * Resolve the list of process types for a given process category.
+   *
+   * @param processCategory the process category string, must not be null
+   * @return the matching type list, or empty list for unknown category
+   */
+  static List<String> resolveCategoryTypes(
+      String processCategory,
+      List<String> optimizingTypes,
+      List<String> cleanupTypes,
+      List<String> profilingTypes) {
+    if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
+      return optimizingTypes;
     }
-    if ("MAINTENANCE".equalsIgnoreCase(processCategory)) {
-      return !isOptimizingType;
+
+    if (ProcessCategory.CLEANUP.getName().equalsIgnoreCase(processCategory)) {
+      return cleanupTypes;
     }
-    return true;
+
+    if (ProcessCategory.PROFILING.getName().equalsIgnoreCase(processCategory)) {
+      return profilingTypes;
+    }
+
+    return Collections.emptyList();
   }
 
   /** Get the paged optimizing process tasks information of the {@link AmoroTable}. */
