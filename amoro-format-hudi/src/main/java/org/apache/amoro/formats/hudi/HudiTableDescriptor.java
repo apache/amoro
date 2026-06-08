@@ -37,6 +37,7 @@ import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
 import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
 import org.apache.amoro.table.descriptor.PartitionBaseInfo;
 import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
+import org.apache.amoro.table.descriptor.ProcessCategory;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
@@ -388,9 +389,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
                 })
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
-    List<String> categoryTypes =
-        FormatTableDescriptor.resolveCategoryTypes(
-            processCategory, OPTIMIZING_TYPES, Collections.emptyList(), Collections.emptyList());
+    List<String> categoryTypes = getProcessTypesByCategory(processCategory);
     infos =
         infos.stream()
             .filter(
@@ -399,8 +398,9 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
             .filter(i -> status == null || status == i.getStatus())
             .filter(
                 i ->
-                    FormatTableDescriptor.matchProcessCategory(
-                        processCategory, categoryTypes, i.getOptimizingType()))
+                    i.getOptimizingType() != null
+                        && categoryTypes.stream()
+                            .anyMatch(t -> t.equalsIgnoreCase(i.getOptimizingType())))
             .collect(Collectors.toList());
     int total = infos.size();
     infos = infos.stream().skip(offset).limit(limit).collect(Collectors.toList());
@@ -413,6 +413,14 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     types.put(COMPACTION, COMPACTION);
     types.put(CLUSTERING, CLUSTERING);
     return types;
+  }
+
+  @Override
+  public List<String> getProcessTypesByCategory(String processCategory) {
+    if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
+      return OPTIMIZING_TYPES;
+    }
+    return Collections.emptyList();
   }
 
   protected OptimizingProcessInfo getOptimizingInfo(

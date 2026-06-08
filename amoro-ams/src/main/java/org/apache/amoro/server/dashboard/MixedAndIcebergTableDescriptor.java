@@ -701,9 +701,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
         // No category specified: return empty results
         return Pair.of(Collections.emptyList(), 0);
       } else {
-        List<String> categoryTypes =
-            FormatTableDescriptor.resolveCategoryTypes(
-                processCategory, OPTIMIZING_TYPE_LIST, CLEANUP_TYPE_LIST, PROFILING_TYPE_LIST);
+        List<String> categoryTypes = getProcessTypesByCategory(processCategory);
         if (categoryTypes.isEmpty()) {
           // Unknown category: return empty results to avoid exposing all processes
           return Pair.of(Collections.emptyList(), 0);
@@ -783,6 +781,20 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     }
 
     return Collections.emptyMap();
+  }
+
+  @Override
+  public List<String> getProcessTypesByCategory(String processCategory) {
+    if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
+      return OPTIMIZING_TYPE_LIST;
+    }
+    if (ProcessCategory.CLEANUP.getName().equalsIgnoreCase(processCategory)) {
+      return CLEANUP_TYPE_LIST;
+    }
+    if (ProcessCategory.PROFILING.getName().equalsIgnoreCase(processCategory)) {
+      return PROFILING_TYPE_LIST;
+    }
+    return Collections.emptyList();
   }
 
   @Override

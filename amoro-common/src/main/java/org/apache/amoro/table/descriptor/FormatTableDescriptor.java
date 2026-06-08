@@ -84,38 +84,11 @@ public interface FormatTableDescriptor {
     return Collections.emptyMap();
   }
 
-  static boolean matchProcessCategory(
-      String processCategory, List<String> categoryTypes, String type) {
-    // When no category is specified, no records should match
-    if (processCategory == null || categoryTypes.isEmpty()) {
-      return false;
-    }
-    return type != null && categoryTypes.stream().anyMatch(t -> t.equalsIgnoreCase(type));
-  }
-
   /**
-   * Resolve the list of process types for a given process category.
-   *
-   * @param processCategory the process category string, must not be null
-   * @return the matching type list, or empty list for unknown category
+   * Returns the list of process type names belonging to the given category. Used internally to
+   * filter processes by category.
    */
-  static List<String> resolveCategoryTypes(
-      String processCategory,
-      List<String> optimizingTypes,
-      List<String> cleanupTypes,
-      List<String> profilingTypes) {
-    if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
-      return optimizingTypes;
-    }
-
-    if (ProcessCategory.CLEANUP.getName().equalsIgnoreCase(processCategory)) {
-      return cleanupTypes;
-    }
-
-    if (ProcessCategory.PROFILING.getName().equalsIgnoreCase(processCategory)) {
-      return profilingTypes;
-    }
-
+  default List<String> getProcessTypesByCategory(String processCategory) {
     return Collections.emptyList();
   }
 

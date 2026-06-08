@@ -41,6 +41,7 @@ import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
 import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
 import org.apache.amoro.table.descriptor.PartitionBaseInfo;
 import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
+import org.apache.amoro.table.descriptor.ProcessCategory;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
@@ -453,17 +454,16 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    List<String> categoryTypes =
-        FormatTableDescriptor.resolveCategoryTypes(
-            processCategory, OPTIMIZING_TYPES, Collections.emptyList(), Collections.emptyList());
+    List<String> categoryTypes = getProcessTypesByCategory(processCategory);
     processInfoList =
         processInfoList.stream()
             .filter(p -> StringUtils.isBlank(type) || type.equalsIgnoreCase(p.getOptimizingType()))
             .filter(p -> status == null || status == p.getStatus())
             .filter(
                 p ->
-                    FormatTableDescriptor.matchProcessCategory(
-                        processCategory, categoryTypes, p.getOptimizingType()))
+                    p.getOptimizingType() != null
+                        && categoryTypes.stream()
+                            .anyMatch(t -> t.equalsIgnoreCase(p.getOptimizingType())))
             .collect(Collectors.toList());
     int total = processInfoList.size();
     processInfoList =
@@ -477,6 +477,14 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     types.put(FULL_TYPE, "full");
     types.put(MINOR_TYPE, "MINOR");
     return types;
+  }
+
+  @Override
+  public List<String> getProcessTypesByCategory(String processCategory) {
+    if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
+      return OPTIMIZING_TYPES;
+    }
+    return Collections.emptyList();
   }
 
   @Override
