@@ -484,6 +484,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
       return OPTIMIZING_TYPES;
     }
+
     return Collections.emptyList();
   }
 

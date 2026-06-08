@@ -84,13 +84,8 @@ public interface FormatTableDescriptor {
     return Collections.emptyMap();
   }
 
-  /**
-   * Returns the list of process type names belonging to the given category. Used internally to
-   * filter processes by category.
-   */
-  default List<String> getProcessTypesByCategory(String processCategory) {
-    return Collections.emptyList();
-  }
+  /** Returns the list of process type names belonging to the given category. */
+  List<String> getProcessTypesByCategory(String processCategory);
 
   /** Get the paged optimizing process tasks information of the {@link AmoroTable}. */
   List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, String processId);

@@ -788,12 +788,15 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
       return OPTIMIZING_TYPE_LIST;
     }
+
     if (ProcessCategory.CLEANUP.getName().equalsIgnoreCase(processCategory)) {
       return CLEANUP_TYPE_LIST;
     }
+
     if (ProcessCategory.PROFILING.getName().equalsIgnoreCase(processCategory)) {
       return PROFILING_TYPE_LIST;
     }
+
     return Collections.emptyList();
   }
 
