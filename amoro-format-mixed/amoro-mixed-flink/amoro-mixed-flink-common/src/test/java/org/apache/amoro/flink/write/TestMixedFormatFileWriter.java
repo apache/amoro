@@ -36,6 +36,7 @@ import org.apache.flink.types.RowKind;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.SerializableTable;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.flink.sink.FlinkWriteResult;
 import org.apache.iceberg.flink.sink.RowDataTaskWriterFactory;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
@@ -73,18 +74,18 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
     this.submitEmptySnapshots = submitEmptySnapshots;
   }
 
-  public static OneInputStreamOperatorTestHarness<RowData, WriteResult>
+  public static OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult>
       createMixedFormatStreamWriter(MixedFormatTableLoader tableLoader) throws Exception {
     return createMixedFormatStreamWriter(tableLoader, true, null);
   }
 
-  public static OneInputStreamOperatorTestHarness<RowData, WriteResult>
+  public static OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult>
       createMixedFormatStreamWriter(
           MixedFormatTableLoader tableLoader,
           boolean submitEmptySnapshots,
           Long restoredCheckpointId)
           throws Exception {
-    OneInputStreamOperatorTestHarness<RowData, WriteResult> harness =
+    OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult> harness =
         doCreateMixedFormatStreamWriter(tableLoader, submitEmptySnapshots, restoredCheckpointId);
 
     harness.setup();
@@ -93,7 +94,7 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
     return harness;
   }
 
-  public static OneInputStreamOperatorTestHarness<RowData, WriteResult>
+  public static OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult>
       doCreateMixedFormatStreamWriter(
           MixedFormatTableLoader tableLoader,
           boolean submitEmptySnapshots,
@@ -113,7 +114,7 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
             false,
             (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
             writerTableLoader);
-    TestOneInputStreamOperatorIntern<RowData, WriteResult> harness =
+    TestOneInputStreamOperatorIntern<RowData, FlinkWriteResult> harness =
         new TestOneInputStreamOperatorIntern<>(
             streamWriter, 1, 1, 0, restoredCheckpointId, new TestGlobalAggregateManager());
 
@@ -140,7 +141,7 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
     Assume.assumeTrue(isKeyedTable());
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
-    try (OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness =
+    try (OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult> testHarness =
         createMixedFormatStreamWriter(tableLoader)) {
       MixedFormatFileWriter fileWriter = (MixedFormatFileWriter) testHarness.getOneInputOperator();
       Assert.assertNotNull(fileWriter.getWriter());
@@ -152,7 +153,8 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       Assert.assertNull(fileWriter.getWriter());
       Assert.assertEquals(1, testHarness.extractOutputValues().size());
-      Assert.assertEquals(3, testHarness.extractOutputValues().get(0).dataFiles().length);
+      Assert.assertEquals(
+          3, testHarness.extractOutputValues().get(0).writeResult().dataFiles().length);
 
       checkpointId = checkpointId + 1;
 
@@ -164,9 +166,9 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       // testHarness.extractOutputValues() calculates the cumulative value
-      List<WriteResult> completedFiles = testHarness.extractOutputValues();
+      List<FlinkWriteResult> completedFiles = testHarness.extractOutputValues();
       Assert.assertEquals(2, completedFiles.size());
-      Assert.assertEquals(3, completedFiles.get(1).dataFiles().length);
+      Assert.assertEquals(3, completedFiles.get(1).writeResult().dataFiles().length);
     }
   }
 
@@ -176,7 +178,7 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
     long timestamp = 1;
 
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
-    try (OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness =
+    try (OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult> testHarness =
         createMixedFormatStreamWriter(tableLoader)) {
       testHarness.processElement(createRowData(1, "hello", "2020-10-11T10:10:11.0"), timestamp++);
       testHarness.processElement(createRowData(2, "hello", "2020-10-12T10:10:11.0"), timestamp);
@@ -184,7 +186,13 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
 
       testHarness.prepareSnapshotPreBarrier(checkpointId++);
       long expectedDataFiles = 3;
-      WriteResult result = WriteResult.builder().addAll(testHarness.extractOutputValues()).build();
+      WriteResult result =
+          WriteResult.builder()
+              .addAll(
+                  testHarness.extractOutputValues().stream()
+                      .map(FlinkWriteResult::writeResult)
+                      .collect(java.util.stream.Collectors.toList()))
+              .build();
       Assert.assertEquals(0, result.deleteFiles().length);
       Assert.assertEquals(expectedDataFiles, result.dataFiles().length);
 
@@ -192,7 +200,13 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
       for (int i = 0; i < 5; i++) {
         testHarness.prepareSnapshotPreBarrier(checkpointId++);
 
-        result = WriteResult.builder().addAll(testHarness.extractOutputValues()).build();
+        result =
+            WriteResult.builder()
+                .addAll(
+                    testHarness.extractOutputValues().stream()
+                        .map(FlinkWriteResult::writeResult)
+                        .collect(java.util.stream.Collectors.toList()))
+                .build();
         Assert.assertEquals(0, result.deleteFiles().length);
         Assert.assertEquals(expectedDataFiles, result.dataFiles().length);
       }
@@ -204,7 +218,7 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
     Assume.assumeFalse(isKeyedTable());
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
-    try (OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness =
+    try (OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult> testHarness =
         createMixedFormatStreamWriter(tableLoader)) {
       // The first checkpoint
       testHarness.processElement(createRowData(1, "hello", "2020-10-11T10:10:11.0"), 1);
@@ -213,7 +227,8 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       Assert.assertEquals(1, testHarness.extractOutputValues().size());
-      Assert.assertEquals(3, testHarness.extractOutputValues().get(0).dataFiles().length);
+      Assert.assertEquals(
+          3, testHarness.extractOutputValues().get(0).writeResult().dataFiles().length);
 
       checkpointId = checkpointId + 1;
 
@@ -224,9 +239,9 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       // testHarness.extractOutputValues() calculates the cumulative value
-      List<WriteResult> completedFiles = testHarness.extractOutputValues();
+      List<FlinkWriteResult> completedFiles = testHarness.extractOutputValues();
       Assert.assertEquals(2, completedFiles.size());
-      Assert.assertEquals(1, completedFiles.get(1).dataFiles().length);
+      Assert.assertEquals(1, completedFiles.get(1).writeResult().dataFiles().length);
     }
   }
 
@@ -235,7 +250,7 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
     Assume.assumeTrue(isKeyedTable());
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
-    try (OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness =
+    try (OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult> testHarness =
         createMixedFormatStreamWriter(tableLoader)) {
       // The first checkpoint
       testHarness.processElement(
@@ -249,7 +264,8 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       Assert.assertEquals(1, testHarness.extractOutputValues().size());
-      Assert.assertEquals(3, testHarness.extractOutputValues().get(0).dataFiles().length);
+      Assert.assertEquals(
+          3, testHarness.extractOutputValues().get(0).writeResult().dataFiles().length);
 
       checkpointId = checkpointId + 1;
 
@@ -264,7 +280,8 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       // testHarness.extractOutputValues() calculates the cumulative value
       Assert.assertEquals(2, testHarness.extractOutputValues().size());
-      Assert.assertEquals(3, testHarness.extractOutputValues().get(1).dataFiles().length);
+      Assert.assertEquals(
+          3, testHarness.extractOutputValues().get(1).writeResult().dataFiles().length);
     }
   }
 
@@ -273,7 +290,7 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
     Assume.assumeTrue(isKeyedTable());
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
-    try (OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness =
+    try (OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult> testHarness =
         createMixedFormatStreamWriter(tableLoader)) {
       // The first checkpoint
       testHarness.processElement(
@@ -287,7 +304,8 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       Assert.assertEquals(1, testHarness.extractOutputValues().size());
-      Assert.assertEquals(3, testHarness.extractOutputValues().get(0).dataFiles().length);
+      Assert.assertEquals(
+          3, testHarness.extractOutputValues().get(0).writeResult().dataFiles().length);
 
       checkpointId = checkpointId + 1;
 
@@ -303,7 +321,8 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
       testHarness.prepareSnapshotPreBarrier(checkpointId);
       // testHarness.extractOutputValues() calculates the cumulative value
       Assert.assertEquals(2, testHarness.extractOutputValues().size());
-      Assert.assertEquals(3, testHarness.extractOutputValues().get(1).dataFiles().length);
+      Assert.assertEquals(
+          3, testHarness.extractOutputValues().get(1).writeResult().dataFiles().length);
     }
   }
 
@@ -313,7 +332,7 @@ public class TestMixedFormatFileWriter extends FlinkTestBase {
     tableLoader = MixedFormatTableLoader.of(TableTestHelper.TEST_TABLE_ID, catalogBuilder);
     long checkpointId = 1L;
     long excepted = submitEmptySnapshots ? 1 : 0;
-    try (OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness =
+    try (OneInputStreamOperatorTestHarness<RowData, FlinkWriteResult> testHarness =
         createMixedFormatStreamWriter(tableLoader, submitEmptySnapshots, null)) {
       // The first checkpoint
 
