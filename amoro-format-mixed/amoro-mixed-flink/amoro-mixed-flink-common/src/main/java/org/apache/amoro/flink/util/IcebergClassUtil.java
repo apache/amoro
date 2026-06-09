@@ -34,11 +34,13 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.flink.FlinkConfigOptions;
 import org.apache.iceberg.flink.TableLoader;
 import org.apache.iceberg.flink.sink.FlinkWriteResult;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.flink.source.FlinkInputFormat;
 import org.apache.iceberg.flink.source.ScanContext;
+import org.apache.iceberg.hadoop.Util;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.util.ThreadPools;
 
@@ -160,6 +162,7 @@ public class IcebergClassUtil {
       Long startSnapshotId) {
     ScanContext.Builder contextBuilder =
         ScanContext.builder().resolveConfig(table, properties, flinkConf);
+    contextBuilder.exposeLocality(isLocalityEnabled(table, flinkConf));
     if (projectedSchema != null) {
       contextBuilder.project(projectedSchema);
     }
@@ -171,6 +174,15 @@ public class IcebergClassUtil {
       contextBuilder.startSnapshotId(startSnapshotId);
     }
     return contextBuilder.build();
+  }
+
+  private static boolean isLocalityEnabled(Table table, ReadableConfig flinkConf) {
+    Boolean localityEnabled =
+        flinkConf.get(FlinkConfigOptions.TABLE_EXEC_ICEBERG_EXPOSE_SPLIT_LOCALITY_INFO);
+    if (localityEnabled != null && !localityEnabled) {
+      return false;
+    }
+    return Util.mayHaveBlockLocations(table.io(), table.location());
   }
 
   private static Class<?> forName(String className) {
