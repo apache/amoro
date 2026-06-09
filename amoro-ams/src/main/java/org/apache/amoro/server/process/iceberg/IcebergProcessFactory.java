@@ -170,6 +170,8 @@ public class IcebergProcessFactory implements ProcessFactory {
       return triggerHiveCommitSync(tableRuntime);
     } else if (IcebergActions.EXPIRE_PROCESS_DATA.equals(action)) {
       return triggerProcessDataExpiring(tableRuntime);
+    } else if (IcebergActions.EXPIRE_BLOCKER.equals(action)) {
+      return triggerExpireBlocker(tableRuntime);
     }
 
     return Optional.empty();
@@ -207,6 +209,8 @@ public class IcebergProcessFactory implements ProcessFactory {
           localEngine,
           expireProcessDataRuntimeKeepTimeMs,
           expireProcessDataHistoryKeepTimeMs);
+    } else if (IcebergActions.EXPIRE_BLOCKER.equals(action)) {
+      return new BlockerExpiringProcess(tableRuntime, localEngine);
     }
 
     throw new RecoverProcessFailedException(
@@ -264,6 +268,10 @@ public class IcebergProcessFactory implements ProcessFactory {
         configs.getDuration(EXPIRE_PROCESS_DATA_RUNTIME_DATA_KEEP_TIME).toMillis();
     this.expireProcessDataHistoryKeepTimeMs =
         configs.getDuration(EXPIRE_PROCESS_DATA_HISTORY_DATA_KEEP_TIME).toMillis();
+
+    this.actions.put(
+        IcebergActions.EXPIRE_BLOCKER,
+        ProcessTriggerStrategy.triggerAtFixRate(Duration.ofHours(1)));
   }
 
   private Optional<TableProcess> triggerExpireSnapshot(TableRuntime tableRuntime) {
@@ -359,6 +367,14 @@ public class IcebergProcessFactory implements ProcessFactory {
             localEngine,
             expireProcessDataRuntimeKeepTimeMs,
             expireProcessDataHistoryKeepTimeMs));
+  }
+
+  private Optional<TableProcess> triggerExpireBlocker(TableRuntime tableRuntime) {
+    if (localEngine == null) {
+      return Optional.empty();
+    }
+
+    return Optional.of(new BlockerExpiringProcess(tableRuntime, localEngine));
   }
 
   @Override

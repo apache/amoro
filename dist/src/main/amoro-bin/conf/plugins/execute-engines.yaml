@@ -27,4 +27,5 @@ execute-engines:
       pool.expire-data.thread-count: 10
       pool.auto-create-tags.thread-count: 3
       pool.sync-hive-tables.thread-count: 10
+      pool.expire-blocker.thread-count: 1
       pool.expire-process-data.thread-count: 1

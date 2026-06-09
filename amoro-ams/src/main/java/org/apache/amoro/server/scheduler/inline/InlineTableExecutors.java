@@ -26,7 +26,6 @@ public class InlineTableExecutors {
 
   private static final InlineTableExecutors instance = new InlineTableExecutors();
   private TableRuntimeRefreshExecutor tableRefreshingExecutor;
-  private BlockerExpiringExecutor blockerExpiringExecutor;
   private OptimizingCommitExecutor optimizingCommitExecutor;
 
   public static InlineTableExecutors getInstance() {
@@ -37,8 +36,7 @@ public class InlineTableExecutors {
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
             tableService, conf.getInteger(AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
-    this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableService);
-    this.tableRefreshingExecutor =
+     this.tableRefreshingExecutor =
         new TableRuntimeRefreshExecutor(
             tableService,
             conf.getInteger(AmoroManagementConf.REFRESH_TABLES_THREAD_COUNT),
@@ -48,10 +46,6 @@ public class InlineTableExecutors {
 
   public TableRuntimeRefreshExecutor getTableRefreshingExecutor() {
     return tableRefreshingExecutor;
-  }
-
-  public BlockerExpiringExecutor getBlockerExpiringExecutor() {
-    return blockerExpiringExecutor;
   }
 
   public OptimizingCommitExecutor getOptimizingCommitExecutor() {

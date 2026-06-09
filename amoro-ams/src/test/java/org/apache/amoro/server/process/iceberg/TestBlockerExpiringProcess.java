@@ -16,16 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.scheduler.inline;
+package org.apache.amoro.server.process.iceberg;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.server.AMSServiceTestBase;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
-import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.server.process.MockExecuteEngine;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,25 +35,29 @@ import org.mockito.Mockito;
 import java.util.Collections;
 import java.util.List;
 
-public class TestBlockerExpiringExecutor extends AMSServiceTestBase {
+public class TestBlockerExpiringProcess extends AMSServiceTestBase {
+
   private final ServerTableIdentifier tableIdentifier =
       ServerTableIdentifier.of(
           0L, "test_catalog", "test_db", "test_table_blocker", TableFormat.MIXED_ICEBERG);
 
   private final Persistency persistency = new Persistency();
-  private DefaultTableRuntime tableRuntime;
-  private TableService tableService;
+  private TableRuntime tableRuntime;
+  private MockExecuteEngine executeEngine;
 
   @Before
   public void mock() {
-    tableRuntime = Mockito.mock(DefaultTableRuntime.class);
-    tableService = Mockito.mock(TableService.class);
+    tableRuntime = Mockito.mock(TableRuntime.class);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(tableIdentifier);
+    executeEngine = new MockExecuteEngine();
   }
 
   @Test
   public void testExpireBlocker() {
-    BlockerExpiringExecutor blockerExpiringExecutor = new BlockerExpiringExecutor(tableService);
+    BlockerExpiringProcess blockerExpiringProcess =
+        new BlockerExpiringProcess(tableRuntime, executeEngine);
+
+    // Insert an expired blocker (expiration time in the past)
     TableBlocker tableBlocker = new TableBlocker();
     tableBlocker.setTableIdentifier(tableIdentifier.getIdentifier().buildTableIdentifier());
     tableBlocker.setExpirationTime(System.currentTimeMillis() - 10);
@@ -62,6 +66,7 @@ public class TestBlockerExpiringExecutor extends AMSServiceTestBase {
     tableBlocker.setPrevBlockerId(-1L);
     persistency.insertTableBlocker(tableBlocker);
 
+    // Insert a non-expired blocker (expiration time in the future)
     TableBlocker tableBlocker2 = new TableBlocker();
     tableBlocker2.setTableIdentifier(tableIdentifier.getIdentifier().buildTableIdentifier());
     tableBlocker2.setExpirationTime(System.currentTimeMillis() + 100000);
@@ -70,22 +75,29 @@ public class TestBlockerExpiringExecutor extends AMSServiceTestBase {
     tableBlocker2.setPrevBlockerId(tableBlocker.getBlockerId());
     persistency.insertTableBlocker(tableBlocker2);
 
+    // Verify: unique constraint on prev_blocker_id prevents inserting a duplicate
     Assert.assertThrows(Exception.class, () -> persistency.insertTableBlocker(tableBlocker2));
 
+    // Verify: both blockers exist before expiring
     Assert.assertEquals(2, persistency.selectTableBlockers(tableIdentifier).size());
     Assert.assertNotNull(persistency.selectTableBlocker(tableBlocker.getBlockerId()));
     Assert.assertNotNull(persistency.selectTableBlocker(tableBlocker2.getBlockerId()));
 
-    blockerExpiringExecutor.execute(tableRuntime);
+    // Execute the process
+    blockerExpiringProcess.run();
+
+    // Verify: expired blocker is deleted, non-expired blocker remains
     Assert.assertEquals(1, persistency.selectTableBlockers(tableIdentifier).size());
     Assert.assertNull(persistency.selectTableBlocker(tableBlocker.getBlockerId()));
     Assert.assertNotNull(persistency.selectTableBlocker(tableBlocker2.getBlockerId()));
 
+    // Clean up
     persistency.deleteBlockers(tableIdentifier);
     Assert.assertEquals(0, persistency.selectTableBlockers(tableIdentifier).size());
   }
 
   private static class Persistency extends PersistentBase {
+
     public void insertTableBlocker(TableBlocker tableBlocker) {
       doAs(TableBlockerMapper.class, mapper -> mapper.insert(tableBlocker));
     }

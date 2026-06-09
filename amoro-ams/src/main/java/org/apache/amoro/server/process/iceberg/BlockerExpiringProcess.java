@@ -16,46 +16,61 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.scheduler.inline;
+package org.apache.amoro.server.process.iceberg;
 
+import org.apache.amoro.Action;
+import org.apache.amoro.IcebergActions;
 import org.apache.amoro.TableRuntime;
+import org.apache.amoro.process.ExecuteEngine;
+import org.apache.amoro.process.LocalProcess;
+import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
-import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
-import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class BlockerExpiringExecutor extends PeriodicTableScheduler {
+import java.util.Map;
+
+/** Local table process for expiring expired table blockers. */
+public class BlockerExpiringProcess extends TableProcess implements LocalProcess {
+
+  private static final Logger LOG = LoggerFactory.getLogger(BlockerExpiringProcess.class);
 
   private final Persistency persistency = new Persistency();
 
-  private static final long INTERVAL = 60 * 60 * 1000L; // 1 hour
-
-  public BlockerExpiringExecutor(TableService tableService) {
-    super(tableService, 1);
+  public BlockerExpiringProcess(TableRuntime tableRuntime, ExecuteEngine engine) {
+    super(tableRuntime, engine);
   }
 
   @Override
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return INTERVAL;
+  public String tag() {
+    return getAction().getName().toLowerCase();
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
-    return true;
-  }
-
-  @Override
-  protected long getExecutorDelay() {
-    return 0;
-  }
-
-  @Override
-  protected void execute(TableRuntime tableRuntime) {
+  public void run() {
     try {
       persistency.doExpiring(tableRuntime);
     } catch (Throwable t) {
-      logger.error("table {} expire blocker failed.", tableRuntime.getTableIdentifier(), t);
+      LOG.error("table {} expire blocker failed.", tableRuntime.getTableIdentifier(), t);
+      throw new RuntimeException(t);
     }
+  }
+
+  @Override
+  public Action getAction() {
+    return IcebergActions.EXPIRE_BLOCKER;
+  }
+
+  @Override
+  public Map<String, String> getProcessParameters() {
+    return Maps.newHashMap();
+  }
+
+  @Override
+  public Map<String, String> getSummary() {
+    return Maps.newHashMap();
   }
 
   private static class Persistency extends PersistentBase {

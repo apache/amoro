@@ -55,6 +55,7 @@ public class TestIcebergProcessFactory {
         "clean-dangling-delete-files", IcebergActions.CLEAN_DANGLING_DELETE, Duration.ofHours(24));
     assertSupportedAction("expire-data", IcebergActions.EXPIRE_DATA, Duration.ofHours(24));
     assertSupportedAction("sync-hive-tables", IcebergActions.SYNC_HIVE_TABLES, Duration.ofHours(1));
+    assertSupportedAction("expire-blocker", IcebergActions.EXPIRE_BLOCKER, Duration.ofHours(1));
     assertSupportedAction(
         "expire-process-data", IcebergActions.EXPIRE_PROCESS_DATA, Duration.ofHours(1));
   }
@@ -75,6 +76,8 @@ public class TestIcebergProcessFactory {
         "auto-create-tags", IcebergActions.AUTO_CREATE_TAGS, TagsAutoCreatingProcess.class, 0);
     assertTriggerWhenDue(
         "sync-hive-tables", IcebergActions.SYNC_HIVE_TABLES, HiveCommitSyncProcess.class, 0);
+    assertTriggerWhenDue(
+        "expire-blocker", IcebergActions.EXPIRE_BLOCKER, BlockerExpiringProcess.class, 0);
     assertTriggerWhenDue(
         "expire-process-data",
         IcebergActions.EXPIRE_PROCESS_DATA,
@@ -147,6 +150,11 @@ public class TestIcebergProcessFactory {
         "expire-process-data",
         IcebergActions.EXPIRE_PROCESS_DATA,
         ProcessDataExpiringProcess.class);
+  }
+
+  @Test
+  public void testRecoverExpireBlockerProcess() {
+    assertRecover("expire-blocker", IcebergActions.EXPIRE_BLOCKER, BlockerExpiringProcess.class);
   }
 
   @Test

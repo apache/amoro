@@ -164,6 +164,7 @@ public class TestLocalExecutionEngine {
     properties.put("pool.auto-create-tags.thread-count", "1");
     properties.put("pool.sync-hive-tables.thread-count", "1");
     properties.put("pool.expire-process-data.thread-count", "1");
+    properties.put("pool.expire-blocker.thread-count", "1");
     properties.put("process.status.ttl", ttl);
     localEngine.open(properties);
     return localEngine;

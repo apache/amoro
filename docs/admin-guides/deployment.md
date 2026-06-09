@@ -319,6 +319,7 @@ execute-engines:
       pool.expire-data.thread-count: 10               # thread pool for data expiration
       pool.auto-create-tags.thread-count: 3           # thread pool for auto creating tags
       pool.sync-hive-tables.thread-count: 10          # thread pool for synchronizing Hive tables
+      pool.expire-blocker.thread-count: 1           # thread pool for expiring blockers
       pool.expire-process-data.thread-count: 1      # thread pool for expiring process data
       process.status.ttl: 4h                          # TTL for process status cache
 ```
