@@ -23,6 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -63,10 +64,28 @@ public interface FormatTableDescriptor {
 
   /** Get the paged optimizing process information of the {@link AmoroTable} and total size. */
   Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset);
+      AmoroTable<?> amoroTable,
+      String type,
+      String processCategory,
+      ProcessStatus status,
+      int limit,
+      int offset);
 
   /** Return the optimizing types of the {@link AmoroTable} is supported. */
   Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable);
+
+  /** Return the process types for the given category of the {@link AmoroTable}. */
+  default Map<String, String> getTableProcessTypes(
+      AmoroTable<?> amoroTable, String processCategory) {
+    if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
+      return getTableOptimizingTypes(amoroTable);
+    }
+
+    return Collections.emptyMap();
+  }
+
+  /** Returns the list of process type names belonging to the given category. */
+  List<String> getProcessTypesByCategory(String processCategory);
 
   /** Get the paged optimizing process tasks information of the {@link AmoroTable}. */
   List<OptimizingTaskInfo> getOptimizingTaskInfos(AmoroTable<?> amoroTable, String processId);

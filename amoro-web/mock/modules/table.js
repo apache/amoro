@@ -307,17 +307,32 @@ export default [
     }),
   },
   {
-    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/optimizing-types',
+    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/process-types',
     method: 'get',
-    response: () => ({
-      "message": "success",
-      "code": 200,
-      "result": {
-        "MINOR": "minor",
-        "MAJOR": "major",
-        "FULL": "full",
+    response: ({ query }) => {
+      const processCategory = query?.processCategory || 'OPTIMIZING'
+      const result = {
+        OPTIMIZING: {
+          'MINOR': 'minor',
+          'MAJOR': 'major',
+          'FULL': 'full',
+        },
+        CLEANUP: {
+          'EXPIRE-SNAPSHOTS': 'Expire Snapshots',
+          'CLEAN-ORPHAN-FILES': 'Clean Orphan Files',
+          'CLEAN-DANGLING-DELETE-FILES': 'Clean Dangling Delete Files',
+          'EXPIRE-DATA': 'Expire Data',
+        },
+        PROFILING: {
+          'AUTO-CREATE-TAGS': 'Auto Create Tags',
+        },
       }
-    }),
+      return {
+        'message': 'success',
+        'code': 200,
+        'result': result[processCategory] || result.OPTIMIZING,
+      }
+    },
   },
   {
     url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/operations',
