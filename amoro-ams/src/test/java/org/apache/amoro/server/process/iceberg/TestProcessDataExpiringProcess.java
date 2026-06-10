@@ -64,12 +64,12 @@ public class TestProcessDataExpiringProcess extends AMSServiceTestBase {
   public void testProcessHistoryExpiringWhenShorterThanKeepTime() {
     long now = System.currentTimeMillis();
 
-    // Insert a terminal (SUCCESS) process at 10 days ago - should be deleted by historyKeepTime
+    // Insert a terminal (SUCCESS) process at 10 days ago - should be deleted by processKeepTime
     long tenDaysAgo = now - Duration.ofDays(10).toMillis();
     long processId10d = SnowflakeIdGenerator.getMinSnowflakeId(tenDaysAgo) + 1;
     persistency.insertProcess(TABLE_ID, processId10d, ProcessStatus.SUCCESS, tenDaysAgo);
 
-    // Insert a terminal (SUCCESS) process at 3 days ago - should be kept (within historyKeepTime)
+    // Insert a terminal (SUCCESS) process at 3 days ago - should be kept (within processKeepTime)
     long threeDaysAgo = now - Duration.ofDays(3).toMillis();
     long processId3d = SnowflakeIdGenerator.getMinSnowflakeId(threeDaysAgo) + 1;
     persistency.insertProcess(TABLE_ID, processId3d, ProcessStatus.SUCCESS, threeDaysAgo);
@@ -90,7 +90,7 @@ public class TestProcessDataExpiringProcess extends AMSServiceTestBase {
   public void testProcessHistoryNotExpiringWhenEqualToKeepTime() {
     long now = System.currentTimeMillis();
 
-    // Insert a terminal process at 5 days ago - within both runtimeKeepTime and historyKeepTime
+    // Insert a terminal process at 5 days ago - within both optimizingKeepTime and processKeepTime
     long fiveDaysAgo = now - Duration.ofDays(5).toMillis();
     long processId5d = SnowflakeIdGenerator.getMinSnowflakeId(fiveDaysAgo) + 1;
     persistency.insertProcess(TABLE_ID, processId5d, ProcessStatus.SUCCESS, fiveDaysAgo);
@@ -102,7 +102,7 @@ public class TestProcessDataExpiringProcess extends AMSServiceTestBase {
             tableRuntime, engine, Duration.ofDays(7).toMillis(), Duration.ofDays(7).toMillis());
     process.run();
 
-    // The process should still exist - historyKeepTime == runtimeKeepTime, so no extra cleanup
+    // The process should still exist - processKeepTime == optimizingKeepTime, so no extra cleanup
     Assert.assertEquals(1, persistency.listProcesses(TABLE_ID).size());
   }
 

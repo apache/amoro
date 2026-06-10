@@ -40,17 +40,17 @@ public class ProcessDataExpiringProcess extends TableProcess implements LocalPro
   private static final Logger LOG = LoggerFactory.getLogger(ProcessDataExpiringProcess.class);
 
   private final Persistency persistency = new Persistency();
-  private final long runtimeKeepTimeMs;
-  private final long historyKeepTimeMs;
+  private final long optimizingKeepTimeMs;
+  private final long processKeepTimeMs;
 
   public ProcessDataExpiringProcess(
       TableRuntime tableRuntime,
       ExecuteEngine engine,
-      long runtimeKeepTimeMs,
-      long historyKeepTimeMs) {
+      long optimizingKeepTimeMs,
+      long processKeepTimeMs) {
     super(tableRuntime, engine);
-    this.runtimeKeepTimeMs = runtimeKeepTimeMs;
-    this.historyKeepTimeMs = historyKeepTimeMs;
+    this.optimizingKeepTimeMs = optimizingKeepTimeMs;
+    this.processKeepTimeMs = processKeepTimeMs;
   }
 
   @Override
@@ -88,8 +88,8 @@ public class ProcessDataExpiringProcess extends TableProcess implements LocalPro
       long tableId = tableRuntime.getTableIdentifier().getId();
       long now = System.currentTimeMillis();
 
-      // 1. Expire optimizing runtime data
-      long optimizingMinId = SnowflakeIdGenerator.getMinSnowflakeId(now - runtimeKeepTimeMs);
+      // 1. Expire optimizing runtime data (optimizingKeepTimeMs, e.g. 30d)
+      long optimizingMinId = SnowflakeIdGenerator.getMinSnowflakeId(now - optimizingKeepTimeMs);
       doAsTransaction(
           () ->
               doAs(
@@ -108,11 +108,12 @@ public class ProcessDataExpiringProcess extends TableProcess implements LocalPro
                   OptimizingProcessMapper.class,
                   mapper -> mapper.deleteOptimizingQuotaBefore(tableId, optimizingMinId)));
 
-      // 2. Expire process history terminal records
-      //    Only deletes terminal records in the window between historyKeepTime and runtimeKeepTime,
-      //    since records older than runtimeKeepTime are already removed by step 1.
-      if (historyKeepTimeMs < runtimeKeepTimeMs) {
-        long processMinId = SnowflakeIdGenerator.getMinSnowflakeId(now - historyKeepTimeMs);
+      // 2. Expire process history terminal records (processKeepTimeMs, e.g. 7d)
+      //    Only deletes terminal records in the window between processKeepTime and
+      // optimizingKeepTime,
+      //    since records older than optimizingKeepTime are already removed by step 1.
+      if (processKeepTimeMs < optimizingKeepTimeMs) {
+        long processMinId = SnowflakeIdGenerator.getMinSnowflakeId(now - processKeepTimeMs);
         doAs(
             TableProcessMapper.class,
             mapper -> mapper.deleteExpiredProcesses(tableId, processMinId));
