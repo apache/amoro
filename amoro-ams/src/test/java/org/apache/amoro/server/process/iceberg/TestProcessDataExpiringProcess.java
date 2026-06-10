@@ -52,7 +52,7 @@ public class TestProcessDataExpiringProcess extends AMSServiceTestBase {
   private LocalExecutionEngine engine;
 
   @Before
-  public void setup() {
+  public void mock() {
     tableRuntime = mock(DefaultTableRuntime.class);
     engine = mock(LocalExecutionEngine.class);
     doReturn(LocalExecutionEngine.ENGINE_NAME).when(engine).name();
@@ -76,9 +76,11 @@ public class TestProcessDataExpiringProcess extends AMSServiceTestBase {
 
     Assert.assertEquals(2, persistency.listProcesses(TABLE_ID).size());
 
+    long optimizingKeepTimeMs = Duration.ofDays(30).toMillis();
+    long processKeepTimeMs = Duration.ofDays(7).toMillis();
     ProcessDataExpiringProcess process =
         new ProcessDataExpiringProcess(
-            tableRuntime, engine, Duration.ofDays(30).toMillis(), Duration.ofDays(7).toMillis());
+            tableRuntime, engine, optimizingKeepTimeMs, processKeepTimeMs);
     process.run();
 
     List<TableProcessMeta> remaining = persistency.listProcesses(TABLE_ID);
@@ -97,12 +99,13 @@ public class TestProcessDataExpiringProcess extends AMSServiceTestBase {
 
     Assert.assertEquals(1, persistency.listProcesses(TABLE_ID).size());
 
+    long optimizingKeepTimeMs = Duration.ofDays(7).toMillis();
+    long processKeepTimeMs = Duration.ofDays(7).toMillis();
     ProcessDataExpiringProcess process =
         new ProcessDataExpiringProcess(
-            tableRuntime, engine, Duration.ofDays(7).toMillis(), Duration.ofDays(7).toMillis());
+            tableRuntime, engine, optimizingKeepTimeMs, processKeepTimeMs);
     process.run();
 
-    // The process should still exist - processKeepTime == optimizingKeepTime, so no extra cleanup
     Assert.assertEquals(1, persistency.listProcesses(TABLE_ID).size());
   }
 
@@ -133,9 +136,11 @@ public class TestProcessDataExpiringProcess extends AMSServiceTestBase {
 
     Assert.assertEquals(6, persistency.listProcesses(TABLE_ID).size());
 
+    long optimizingKeepTimeMs = Duration.ofDays(30).toMillis();
+    long processKeepTimeMs = Duration.ofDays(7).toMillis();
     ProcessDataExpiringProcess process =
         new ProcessDataExpiringProcess(
-            tableRuntime, engine, Duration.ofDays(30).toMillis(), Duration.ofDays(7).toMillis());
+            tableRuntime, engine, optimizingKeepTimeMs, processKeepTimeMs);
     process.run();
 
     List<TableProcessMeta> remaining = persistency.listProcesses(TABLE_ID);
