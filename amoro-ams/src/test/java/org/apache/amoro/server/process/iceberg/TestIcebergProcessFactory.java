@@ -55,6 +55,8 @@ public class TestIcebergProcessFactory {
         "clean-dangling-delete-files", IcebergActions.CLEAN_DANGLING_DELETE, Duration.ofHours(24));
     assertSupportedAction("expire-data", IcebergActions.EXPIRE_DATA, Duration.ofHours(24));
     assertSupportedAction("sync-hive-tables", IcebergActions.SYNC_HIVE_TABLES, Duration.ofHours(1));
+    assertSupportedAction(
+        "expire-process-data", IcebergActions.EXPIRE_PROCESS_DATA, Duration.ofHours(1));
   }
 
   @Test
@@ -73,6 +75,11 @@ public class TestIcebergProcessFactory {
         "auto-create-tags", IcebergActions.AUTO_CREATE_TAGS, TagsAutoCreatingProcess.class, 0);
     assertTriggerWhenDue(
         "sync-hive-tables", IcebergActions.SYNC_HIVE_TABLES, HiveCommitSyncProcess.class, 0);
+    assertTriggerWhenDue(
+        "expire-process-data",
+        IcebergActions.EXPIRE_PROCESS_DATA,
+        ProcessDataExpiringProcess.class,
+        0);
   }
 
   @Test
@@ -135,6 +142,14 @@ public class TestIcebergProcessFactory {
   }
 
   @Test
+  public void testRecoverExpireProcessDataProcess() {
+    assertRecover(
+        "expire-process-data",
+        IcebergActions.EXPIRE_PROCESS_DATA,
+        ProcessDataExpiringProcess.class);
+  }
+
+  @Test
   public void testRecoverUnsupportedActionThrows() {
     IcebergProcessFactory factory = openedFactory("expire-snapshots");
 
@@ -180,12 +195,20 @@ public class TestIcebergProcessFactory {
     Assert.assertEquals(LocalExecutionEngine.ENGINE_NAME, process.getExecutionEngine());
   }
 
+  private Map<String, String> buildFactoryProperties(String configKey, String interval) {
+    Map<String, String> properties = new HashMap<>();
+    if ("expire-process-data".equals(configKey)) {
+      properties.put("expire-process-data.runtime-data-expire-interval", interval);
+    } else {
+      properties.put(configKey + ".enabled", "true");
+      properties.put(configKey + ".interval", interval);
+    }
+    return properties;
+  }
+
   private IcebergProcessFactory openedFactory(String configKey) {
     IcebergProcessFactory factory = new IcebergProcessFactory();
-    Map<String, String> properties = new HashMap<>();
-    properties.put(configKey + ".enabled", "true");
-    properties.put(configKey + ".interval", "1h");
-    factory.open(properties);
+    factory.open(buildFactoryProperties(configKey, "1h"));
     return factory;
   }
 
@@ -193,9 +216,7 @@ public class TestIcebergProcessFactory {
       String configKey, org.apache.amoro.Action action, Duration interval) {
     IcebergProcessFactory factory = new IcebergProcessFactory();
 
-    Map<String, String> properties = new HashMap<>();
-    properties.put(configKey + ".enabled", "true");
-    properties.put(configKey + ".interval", interval.toHours() + "h");
+    Map<String, String> properties = buildFactoryProperties(configKey, interval.toHours() + "h");
 
     factory.open(properties);
 
@@ -212,10 +233,7 @@ public class TestIcebergProcessFactory {
       String configKey, org.apache.amoro.Action action, Class<?> processClass, long lastTime) {
     IcebergProcessFactory factory = new IcebergProcessFactory();
 
-    Map<String, String> properties = new HashMap<>();
-    properties.put(configKey + ".enabled", "true");
-    properties.put(configKey + ".interval", "1h");
-    factory.open(properties);
+    factory.open(buildFactoryProperties(configKey, "1h"));
 
     LocalExecutionEngine localEngine = mock(LocalExecutionEngine.class);
     doReturn(LocalExecutionEngine.ENGINE_NAME).when(localEngine).name();

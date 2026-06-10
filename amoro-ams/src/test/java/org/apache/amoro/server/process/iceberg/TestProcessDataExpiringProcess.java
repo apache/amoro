@@ -16,17 +16,20 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.scheduler.inline;
+package org.apache.amoro.server.process.iceberg;
+
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.process.LocalExecutionEngine;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.AMSServiceTestBase;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,7 +40,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
-public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
+public class TestProcessDataExpiringProcess extends AMSServiceTestBase {
 
   private static final long TABLE_ID = 1L;
   private static final ServerTableIdentifier TABLE_IDENTIFIER =
@@ -46,42 +49,37 @@ public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
 
   private final Persistency persistency = new Persistency();
   private DefaultTableRuntime tableRuntime;
-  private TableService tableService;
+  private LocalExecutionEngine engine;
 
   @Before
-  public void mock() {
-    tableRuntime = Mockito.mock(DefaultTableRuntime.class);
-    tableService = Mockito.mock(TableService.class);
+  public void setup() {
+    tableRuntime = mock(DefaultTableRuntime.class);
+    engine = mock(LocalExecutionEngine.class);
+    doReturn(LocalExecutionEngine.ENGINE_NAME).when(engine).name();
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(TABLE_IDENTIFIER);
-    // Clean up any leftover data
     persistency.cleanAll(TABLE_ID);
   }
 
   @Test
   public void testProcessHistoryExpiringWhenShorterThanKeepTime() {
-    // optimizingKeepTime=30d, processKeepTime=7d
-    Duration optimizingKeepTime = Duration.ofDays(30);
-    Duration expireInterval = Duration.ofHours(1);
-    Duration processKeepTime = Duration.ofDays(7);
-
     long now = System.currentTimeMillis();
 
-    // Insert a terminal (SUCCESS) process at 10 days ago - should be deleted by processKeepTime
+    // Insert a terminal (SUCCESS) process at 10 days ago - should be deleted by historyKeepTime
     long tenDaysAgo = now - Duration.ofDays(10).toMillis();
     long processId10d = SnowflakeIdGenerator.getMinSnowflakeId(tenDaysAgo) + 1;
     persistency.insertProcess(TABLE_ID, processId10d, ProcessStatus.SUCCESS, tenDaysAgo);
 
-    // Insert a terminal (SUCCESS) process at 3 days ago - should be kept (within processKeepTime)
+    // Insert a terminal (SUCCESS) process at 3 days ago - should be kept (within historyKeepTime)
     long threeDaysAgo = now - Duration.ofDays(3).toMillis();
     long processId3d = SnowflakeIdGenerator.getMinSnowflakeId(threeDaysAgo) + 1;
     persistency.insertProcess(TABLE_ID, processId3d, ProcessStatus.SUCCESS, threeDaysAgo);
 
     Assert.assertEquals(2, persistency.listProcesses(TABLE_ID).size());
 
-    ProcessDataExpiringExecutor executor =
-        new ProcessDataExpiringExecutor(
-            tableService, optimizingKeepTime, expireInterval, processKeepTime);
-    executor.execute(tableRuntime);
+    ProcessDataExpiringProcess process =
+        new ProcessDataExpiringProcess(
+            tableRuntime, engine, Duration.ofDays(30).toMillis(), Duration.ofDays(7).toMillis());
+    process.run();
 
     List<TableProcessMeta> remaining = persistency.listProcesses(TABLE_ID);
     Assert.assertEquals(1, remaining.size());
@@ -90,36 +88,26 @@ public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
 
   @Test
   public void testProcessHistoryNotExpiringWhenEqualToKeepTime() {
-    // When processKeepTime >= optimizingKeepTime, the extra process cleanup should not trigger
-    Duration optimizingKeepTime = Duration.ofDays(7);
-    Duration expireInterval = Duration.ofHours(1);
-    Duration processKeepTime = Duration.ofDays(7);
-
     long now = System.currentTimeMillis();
 
-    // Insert a terminal process at 5 days ago - within both optimizingKeepTime and processKeepTime
+    // Insert a terminal process at 5 days ago - within both runtimeKeepTime and historyKeepTime
     long fiveDaysAgo = now - Duration.ofDays(5).toMillis();
     long processId5d = SnowflakeIdGenerator.getMinSnowflakeId(fiveDaysAgo) + 1;
     persistency.insertProcess(TABLE_ID, processId5d, ProcessStatus.SUCCESS, fiveDaysAgo);
 
     Assert.assertEquals(1, persistency.listProcesses(TABLE_ID).size());
 
-    ProcessDataExpiringExecutor executor =
-        new ProcessDataExpiringExecutor(
-            tableService, optimizingKeepTime, expireInterval, processKeepTime);
-    executor.execute(tableRuntime);
+    ProcessDataExpiringProcess process =
+        new ProcessDataExpiringProcess(
+            tableRuntime, engine, Duration.ofDays(7).toMillis(), Duration.ofDays(7).toMillis());
+    process.run();
 
-    // The process should still exist - not expired by either mechanism
+    // The process should still exist - historyKeepTime == runtimeKeepTime, so no extra cleanup
     Assert.assertEquals(1, persistency.listProcesses(TABLE_ID).size());
   }
 
   @Test
   public void testDeleteExpiredProcessesSkipsActiveStatuses() {
-    // optimizingKeepTime=30d, processKeepTime=7d
-    Duration optimizingKeepTime = Duration.ofDays(30);
-    Duration expireInterval = Duration.ofHours(1);
-    Duration processKeepTime = Duration.ofDays(7);
-
     long now = System.currentTimeMillis();
     long tenDaysAgo = now - Duration.ofDays(10).toMillis();
 
@@ -136,7 +124,7 @@ public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
     long pidCanceling = SnowflakeIdGenerator.getMinSnowflakeId(tenDaysAgo) + 4;
     persistency.insertProcess(TABLE_ID, pidCanceling, ProcessStatus.CANCELING, tenDaysAgo);
 
-    // Insert a terminal process at 10 days ago - SHOULD be deleted
+    // Insert terminal processes at 10 days ago - SHOULD be deleted
     long pidSuccess = SnowflakeIdGenerator.getMinSnowflakeId(tenDaysAgo) + 5;
     persistency.insertProcess(TABLE_ID, pidSuccess, ProcessStatus.SUCCESS, tenDaysAgo);
 
@@ -145,10 +133,10 @@ public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
 
     Assert.assertEquals(6, persistency.listProcesses(TABLE_ID).size());
 
-    ProcessDataExpiringExecutor executor =
-        new ProcessDataExpiringExecutor(
-            tableService, optimizingKeepTime, expireInterval, processKeepTime);
-    executor.execute(tableRuntime);
+    ProcessDataExpiringProcess process =
+        new ProcessDataExpiringProcess(
+            tableRuntime, engine, Duration.ofDays(30).toMillis(), Duration.ofDays(7).toMillis());
+    process.run();
 
     List<TableProcessMeta> remaining = persistency.listProcesses(TABLE_ID);
     // Active statuses (RUNNING, SUBMITTED, PENDING, CANCELING) should survive
