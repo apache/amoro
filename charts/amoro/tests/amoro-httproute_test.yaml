@@ -1,0 +1,192 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#    or more contributor license agreements.  See the NOTICE file
+#    distributed with this work for additional information
+#    regarding copyright ownership.  The ASF licenses this file
+#    to you under the Apache License, Version 2.0 (the
+#    "License"); you may not use this file except in compliance
+#    with the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
+
+suite: Test Amoro HTTPRoute
+templates:
+  - amoro-httproute.yaml
+chart:
+  appVersion: 0.1.0
+  version: 0.6.0
+tests:
+  - it: Amoro HTTPRoute should not exist if enabled is set to false
+    set:
+      httpRoute:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: Amoro HTTPRoute should exist if enabled is set to true
+    set:
+      fullnameOverride: test
+      httpRoute:
+        enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HTTPRoute
+      - isAPIVersion:
+          of: gateway.networking.k8s.io/v1
+      - equal:
+          path: metadata.name
+          value: test
+  - it: Amoro HTTPRoute should contain common labels and common annotations if set
+    set:
+      httpRoute:
+        enabled: true
+      commonLabels:
+        LABEL: LABEL_V
+      commonAnnotations:
+        ANNOTATION: ANNOTATION_V
+    asserts:
+      - exists:
+          path: metadata.labels
+      - isSubset:
+          path: metadata.labels
+          content:
+            LABEL: LABEL_V
+      - equal:
+          path: metadata.labels['app.kubernetes.io/component']
+          value: httproute
+      - exists:
+          path: metadata.annotations
+      - isSubset:
+          path: metadata.annotations
+          content:
+            ANNOTATION: ANNOTATION_V
+  - it: Amoro HTTPRoute should contain httpRoute annotations if set
+    set:
+      httpRoute:
+        enabled: true
+        annotations:
+          ANNOTATION: ANNOTATION_V2
+    asserts:
+      - exists:
+          path: metadata.annotations
+      - isSubset:
+          path: metadata.annotations
+          content:
+            ANNOTATION: ANNOTATION_V2
+  - it: Amoro HTTPRoute should not contain annotations if annotations are not set
+    set:
+      httpRoute:
+        enabled: true
+    asserts:
+      - notExists:
+          path: metadata.annotations
+  - it: Amoro HTTPRoute should not contain parentRefs if not set
+    set:
+      httpRoute:
+        enabled: true
+        parentRefs: [ ]
+    asserts:
+      - notExists:
+          path: spec.parentRefs
+  - it: Amoro HTTPRoute should contain parentRefs if set
+    set:
+      httpRoute:
+        enabled: true
+        parentRefs:
+          - name: eg
+            namespace: envoy-gateway-system
+            sectionName: http
+    asserts:
+      - contains:
+          path: spec.parentRefs
+          content:
+            name: eg
+            namespace: envoy-gateway-system
+            sectionName: http
+  - it: Amoro HTTPRoute should contain default hostname, path match and backendRef
+    set:
+      fullnameOverride: test
+      httpRoute:
+        enabled: true
+    asserts:
+      - contains:
+          path: spec.hostnames
+          content: amoro.local
+      - equal:
+          path: spec.rules[0].matches[0].path.type
+          value: PathPrefix
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /
+      - contains:
+          path: spec.rules[0].backendRefs
+          content:
+            name: test-rest
+            port: 1630
+  - it: Amoro HTTPRoute should not contain hostnames if hostname and extraHosts are empty
+    set:
+      httpRoute:
+        enabled: true
+        hostname: ""
+        extraHosts: [ ]
+    asserts:
+      - notExists:
+          path: spec.hostnames
+  - it: Amoro HTTPRoute should contain extra Hosts if set
+    set:
+      httpRoute:
+        enabled: true
+        hostname: "amoro.local"
+        extraHosts:
+          - amoro2.local
+    asserts:
+      - contains:
+          path: spec.hostnames
+          content: amoro.local
+      - contains:
+          path: spec.hostnames
+          content: amoro2.local
+  - it: Amoro HTTPRoute should respect custom path and pathType
+    set:
+      httpRoute:
+        enabled: true
+        path: /amoro
+        pathType: Exact
+    asserts:
+      - equal:
+          path: spec.rules[0].matches[0].path.type
+          value: Exact
+      - equal:
+          path: spec.rules[0].matches[0].path.value
+          value: /amoro
+  - it: Amoro HTTPRoute should contain extra Rules if set
+    set:
+      httpRoute:
+        enabled: true
+        extraRules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /extra
+            backendRefs:
+              - name: extra-svc
+                port: 8080
+    asserts:
+      - contains:
+          path: spec.rules
+          content:
+            matches:
+              - path:
+                  type: PathPrefix
+                  value: /extra
+            backendRefs:
+              - name: extra-svc
+                port: 8080
