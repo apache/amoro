@@ -813,40 +813,40 @@ The configuration for kyuubi mode can refer to: <a href="../using-kyuubi/">Using
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">local.using-session-catalog-for-hive</span>: <span style="color:#66d9ef">true</span>
 </span></span></code></pre></div><p>More properties the terminal supports including:</p>
 <table>
-  <thead>
-      <tr>
-          <th>Key</th>
-          <th>Default</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>terminal.backend</td>
-          <td>local</td>
-          <td>Terminal backend implementation. local, kyuubi and custom are valid values.</td>
-      </tr>
-      <tr>
-          <td>terminal.factory</td>
-          <td>-</td>
-          <td>Session factory implement of terminal, <code>terminal.backend</code> must be <code>custom</code> if this is set.</td>
-      </tr>
-      <tr>
-          <td>terminal.result.limit</td>
-          <td>1000</td>
-          <td>Row limit of result-set</td>
-      </tr>
-      <tr>
-          <td>terminal.stop-on-error</td>
-          <td>false</td>
-          <td>When a statement fails to execute, stop execution or continue executing the remaining statements.</td>
-      </tr>
-      <tr>
-          <td>terminal.session.timeout</td>
-          <td>30</td>
-          <td>Session timeout in minutes.</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Key</th>
+					<th>Default</th>
+					<th>Description</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>terminal.backend</td>
+					<td>local</td>
+					<td>Terminal backend implementation. local, kyuubi and custom are valid values.</td>
+			</tr>
+			<tr>
+					<td>terminal.factory</td>
+					<td>-</td>
+					<td>Session factory implement of terminal, <code>terminal.backend</code> must be <code>custom</code> if this is set.</td>
+			</tr>
+			<tr>
+					<td>terminal.result.limit</td>
+					<td>1000</td>
+					<td>Row limit of result-set</td>
+			</tr>
+			<tr>
+					<td>terminal.stop-on-error</td>
+					<td>false</td>
+					<td>When a statement fails to execute, stop execution or continue executing the remaining statements.</td>
+			</tr>
+			<tr>
+					<td>terminal.session.timeout</td>
+					<td>30</td>
+					<td>Session timeout in minutes.</td>
+			</tr>
+	</tbody>
 </table>
 <h3 id="configure-metric-reporter">Configure metric reporter</h3>
 <p>Amoro provides metric reporters by plugin mechanism to connect to  external metric systems.</p>
@@ -899,6 +899,9 @@ They are configured in <code>$AMORO_CONF_DIR/plugins/process-factories.yaml</cod
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">auto-create-tags.interval</span>: <span style="color:#e6db74">&#34;1m&#34;</span>        <span style="color:#75715e"># interval for auto creating tags</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">sync-hive-tables.enabled</span>: <span style="color:#e6db74">&#34;false&#34;</span>             <span style="color:#75715e"># enable synchronizing Hive tables</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">sync-hive-tables.interval</span>: <span style="color:#e6db74">&#34;10min&#34;</span>            <span style="color:#75715e"># interval for synchronizing Hive tables</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">expire-process-data.runtime-data-expire-interval</span>: <span style="color:#e6db74">&#34;1h&#34;</span>            <span style="color:#75715e"># interval for expiring process data</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">expire-process-data.runtime-data-keep-time</span>: <span style="color:#e6db74">&#34;30d&#34;</span>    <span style="color:#75715e"># duration to keep optimizing runtime data</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">expire-process-data.history-data-keep-time</span>: <span style="color:#e6db74">&#34;7d&#34;</span>           <span style="color:#75715e"># duration to keep terminal process history records</span>
 </span></span></code></pre></div><div class="info">
     Process-level properties control whether an action is registered. Table-level properties (see <a href="../../user-guides/configurations/">Table Configurations</a>) control whether a specific table executes the action.
 </div>
@@ -923,6 +926,7 @@ They are configured in <code>$AMORO_CONF_DIR/plugins/execute-engines.yaml</code>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">pool.expire-data.thread-count</span>: <span style="color:#ae81ff">10</span>               <span style="color:#75715e"># thread pool for data expiration</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">pool.auto-create-tags.thread-count</span>: <span style="color:#ae81ff">3</span>           <span style="color:#75715e"># thread pool for auto creating tags</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">pool.sync-hive-tables.thread-count</span>: <span style="color:#ae81ff">10</span>          <span style="color:#75715e"># thread pool for synchronizing Hive tables</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">pool.expire-process-data.thread-count</span>: <span style="color:#ae81ff">1</span>      <span style="color:#75715e"># thread pool for expiring process data</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">process.status.ttl</span>: <span style="color:#ae81ff">4h                         </span> <span style="color:#75715e"># TTL for process status cache</span>
 </span></span></code></pre></div><div class="info">
     Custom pools use the pattern <code>pool.&lt;name&gt;.thread-count</code>. Processes select pools via their <code>tag()</code> method, falling back to the default pool if no match.
@@ -956,59 +960,59 @@ Currently, AMS provides built-in support for base64 decryption, and users can al
 <p>The following environment variables take effect during the startup process of AMS,
 you can set up those environments to overwrite the default value.</p>
 <table>
-  <thead>
-      <tr>
-          <th>Environments variable name</th>
-          <th>Default value</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>AMORO_CONF_DIR</td>
-          <td>${AMORO_HOME}/conf</td>
-          <td>location where Amoro loading config files.</td>
-      </tr>
-      <tr>
-          <td>AMORO_LOG_DIR</td>
-          <td>${AMORO_HOME}/logs</td>
-          <td>location where the logs files output</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Environments variable name</th>
+					<th>Default value</th>
+					<th>Description</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>AMORO_CONF_DIR</td>
+					<td>${AMORO_HOME}/conf</td>
+					<td>location where Amoro loading config files.</td>
+			</tr>
+			<tr>
+					<td>AMORO_LOG_DIR</td>
+					<td>${AMORO_HOME}/logs</td>
+					<td>location where the logs files output</td>
+			</tr>
+	</tbody>
 </table>
 <p>Note: <code>$AMORO_HOME</code> can&rsquo;t be overwritten from environment variable. It always points to the parent dir of <code>./bin</code>.</p>
 <h3 id="configure-ams-jvm">Configure AMS JVM</h3>
 <p>The following JVM options could be set in <code>${AMORO_CONF_DIR}/jvm.properties</code>.</p>
 <table>
-  <thead>
-      <tr>
-          <th>Property Name</th>
-          <th>Related Jvm option</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>xms</td>
-          <td>&ldquo;-Xms${value}m</td>
-          <td>Xms config for jvm</td>
-      </tr>
-      <tr>
-          <td>xmx</td>
-          <td>&ldquo;-Xmx${value}m</td>
-          <td>Xmx config for jvm</td>
-      </tr>
-      <tr>
-          <td>jmx.remote.port</td>
-          <td>&ldquo;-Dcom.sun.management.jmxremote.port=${value}</td>
-          <td>Enable remote debug</td>
-      </tr>
-      <tr>
-          <td>extra.options</td>
-          <td>&ldquo;JAVA_OPTS=&quot;${JAVA_OPTS} ${JVM_EXTRA_CONFIG}&rdquo;</td>
-          <td>The addition jvm options</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th>Property Name</th>
+					<th>Related Jvm option</th>
+					<th>Description</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>xms</td>
+					<td>&ldquo;-Xms${value}m</td>
+					<td>Xms config for jvm</td>
+			</tr>
+			<tr>
+					<td>xmx</td>
+					<td>&ldquo;-Xmx${value}m</td>
+					<td>Xmx config for jvm</td>
+			</tr>
+			<tr>
+					<td>jmx.remote.port</td>
+					<td>&ldquo;-Dcom.sun.management.jmxremote.port=${value}</td>
+					<td>Enable remote debug</td>
+			</tr>
+			<tr>
+					<td>extra.options</td>
+					<td>&ldquo;JAVA_OPTS=&quot;${JAVA_OPTS} ${JVM_EXTRA_CONFIG}&rdquo;</td>
+					<td>The addition jvm options</td>
+			</tr>
+	</tbody>
 </table>
 <h2 id="start-ams">Start AMS</h2>
 <p>Enter the directory amoro-x.y.z and execute bin/ams.sh start to start AMS.</p>

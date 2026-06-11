@@ -801,34 +801,34 @@ Note that timestamp, timestampz, and long field types use UTC, while others use 
 <h2 id="explore-table-details">Explore table details</h2>
 <p>The Amoro Tables details page provides multiple tabs to display the status of the table from various dimensions, mainly including:</p>
 <table>
-  <thead>
-      <tr>
-          <th><strong>Tab Name</strong></th>
-          <th><strong>Description</strong></th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>Details</td>
-          <td>Display the table&rsquo;s schema, primary key configuration, partition configuration, properties; as well as the metric information of the files stored in ChangeStore and BaseStore, including the number of files and average file size, as well as the latest submission time of the files.</td>
-      </tr>
-      <tr>
-          <td>Files</td>
-          <td>Display all partitions and files of the table.</td>
-      </tr>
-      <tr>
-          <td>Snapshots</td>
-          <td>Display all snapshots of the table, which can be filtered by branch and tag.</td>
-      </tr>
-      <tr>
-          <td>Optimizing</td>
-          <td>Display all the self-optimizing processes of the table, each record shows the number and average size of files before and after Optimize, as well as the execution time of each process.</td>
-      </tr>
-      <tr>
-          <td>Operations</td>
-          <td>Display the current table&rsquo;s DDL historical change records.</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th><strong>Tab Name</strong></th>
+					<th><strong>Description</strong></th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Details</td>
+					<td>Display the table&rsquo;s schema, primary key configuration, partition configuration, properties; as well as the metric information of the files stored in ChangeStore and BaseStore, including the number of files and average file size, as well as the latest submission time of the files.</td>
+			</tr>
+			<tr>
+					<td>Files</td>
+					<td>Display all partitions and files of the table.</td>
+			</tr>
+			<tr>
+					<td>Snapshots</td>
+					<td>Display all snapshots of the table, which can be filtered by branch and tag.</td>
+			</tr>
+			<tr>
+					<td>Optimizing</td>
+					<td>Display all the self-optimizing processes of the table, each record shows the number and average size of files before and after Optimize, as well as the execution time of each process.</td>
+			</tr>
+			<tr>
+					<td>Operations</td>
+					<td>Display the current table&rsquo;s DDL historical change records.</td>
+			</tr>
+	</tbody>
 </table>
 <p><img src="../images/admin/table_metrics.png" alt="table-details"></p>
 <p><img src="../images/admin/table_optimizer_history.png" alt="table-optimize-history"></p>

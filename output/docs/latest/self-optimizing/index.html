@@ -749,38 +749,38 @@ major optimizing.</p>
 logic of both optimizing is consistent, as they both involve file compaction, data deduplication, and conversion from write-friendly format to
 read-friendly format. The input-output relationships of Minor, Major, and Full optimizing are shown in the following table:</p>
 <table>
-  <thead>
-      <tr>
-          <th style="text-align: left">Self-optimizing type</th>
-          <th style="text-align: left">Input space</th>
-          <th style="text-align: left">Output space</th>
-          <th style="text-align: left">Input file types</th>
-          <th style="text-align: left">Output file types</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td style="text-align: left">minor</td>
-          <td style="text-align: left">fragment</td>
-          <td style="text-align: left">fragment/segment</td>
-          <td style="text-align: left">insert, eq-delete, pos-delete</td>
-          <td style="text-align: left">insert, pos-delete</td>
-      </tr>
-      <tr>
-          <td style="text-align: left">major</td>
-          <td style="text-align: left">fragment, segment</td>
-          <td style="text-align: left">segment</td>
-          <td style="text-align: left">insert, eq-delete, pos-delete</td>
-          <td style="text-align: left">insert, pos-delete</td>
-      </tr>
-      <tr>
-          <td style="text-align: left">full</td>
-          <td style="text-align: left">fragment, segment</td>
-          <td style="text-align: left">segment</td>
-          <td style="text-align: left">insert, eq-delete, pos-delete</td>
-          <td style="text-align: left">insert</td>
-      </tr>
-  </tbody>
+	<thead>
+			<tr>
+					<th style="text-align: left">Self-optimizing type</th>
+					<th style="text-align: left">Input space</th>
+					<th style="text-align: left">Output space</th>
+					<th style="text-align: left">Input file types</th>
+					<th style="text-align: left">Output file types</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td style="text-align: left">minor</td>
+					<td style="text-align: left">fragment</td>
+					<td style="text-align: left">fragment/segment</td>
+					<td style="text-align: left">insert, eq-delete, pos-delete</td>
+					<td style="text-align: left">insert, pos-delete</td>
+			</tr>
+			<tr>
+					<td style="text-align: left">major</td>
+					<td style="text-align: left">fragment, segment</td>
+					<td style="text-align: left">segment</td>
+					<td style="text-align: left">insert, eq-delete, pos-delete</td>
+					<td style="text-align: left">insert, pos-delete</td>
+			</tr>
+			<tr>
+					<td style="text-align: left">full</td>
+					<td style="text-align: left">fragment, segment</td>
+					<td style="text-align: left">segment</td>
+					<td style="text-align: left">insert, eq-delete, pos-delete</td>
+					<td style="text-align: left">insert</td>
+			</tr>
+	</tbody>
 </table>
 <h2 id="self-optimizing-scheduling-policy">Self-optimizing scheduling policy</h2>
 <p>AMS determines the Scheduling Policy to sequence the self-optimization process for different tables. The actual resources allocated for
