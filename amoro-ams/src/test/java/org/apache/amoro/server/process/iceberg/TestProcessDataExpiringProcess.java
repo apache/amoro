@@ -16,17 +16,17 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.scheduler.inline;
+package org.apache.amoro.server.process.iceberg;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.process.LocalExecutionEngine;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.AMSServiceTestBase;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,7 +37,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
-public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
+public class TestProcessDataExpiringProcess extends AMSServiceTestBase {
 
   private static final long TABLE_ID = 1L;
   private static final ServerTableIdentifier TABLE_IDENTIFIER =
@@ -46,12 +46,13 @@ public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
 
   private final Persistency persistency = new Persistency();
   private DefaultTableRuntime tableRuntime;
-  private TableService tableService;
+  private LocalExecutionEngine engine;
 
   @Before
   public void mock() {
     tableRuntime = Mockito.mock(DefaultTableRuntime.class);
-    tableService = Mockito.mock(TableService.class);
+    engine = Mockito.mock(LocalExecutionEngine.class);
+    Mockito.when(engine.name()).thenReturn(LocalExecutionEngine.ENGINE_NAME);
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(TABLE_IDENTIFIER);
     // Clean up any leftover data
     persistency.cleanAll(TABLE_ID);
@@ -61,7 +62,6 @@ public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
   public void testProcessHistoryExpiringWhenShorterThanKeepTime() {
     // optimizingKeepTime=30d, processKeepTime=7d
     Duration optimizingKeepTime = Duration.ofDays(30);
-    Duration expireInterval = Duration.ofHours(1);
     Duration processKeepTime = Duration.ofDays(7);
 
     long now = System.currentTimeMillis();
@@ -78,10 +78,10 @@ public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
 
     Assert.assertEquals(2, persistency.listProcesses(TABLE_ID).size());
 
-    ProcessDataExpiringExecutor executor =
-        new ProcessDataExpiringExecutor(
-            tableService, optimizingKeepTime, expireInterval, processKeepTime);
-    executor.execute(tableRuntime);
+    ProcessDataExpiringProcess process =
+        new ProcessDataExpiringProcess(
+            tableRuntime, engine, optimizingKeepTime.toMillis(), processKeepTime.toMillis());
+    process.run();
 
     List<TableProcessMeta> remaining = persistency.listProcesses(TABLE_ID);
     Assert.assertEquals(1, remaining.size());
@@ -92,7 +92,6 @@ public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
   public void testProcessHistoryNotExpiringWhenEqualToKeepTime() {
     // When processKeepTime >= optimizingKeepTime, the extra process cleanup should not trigger
     Duration optimizingKeepTime = Duration.ofDays(7);
-    Duration expireInterval = Duration.ofHours(1);
     Duration processKeepTime = Duration.ofDays(7);
 
     long now = System.currentTimeMillis();
@@ -104,10 +103,10 @@ public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
 
     Assert.assertEquals(1, persistency.listProcesses(TABLE_ID).size());
 
-    ProcessDataExpiringExecutor executor =
-        new ProcessDataExpiringExecutor(
-            tableService, optimizingKeepTime, expireInterval, processKeepTime);
-    executor.execute(tableRuntime);
+    ProcessDataExpiringProcess process =
+        new ProcessDataExpiringProcess(
+            tableRuntime, engine, optimizingKeepTime.toMillis(), processKeepTime.toMillis());
+    process.run();
 
     // The process should still exist - not expired by either mechanism
     Assert.assertEquals(1, persistency.listProcesses(TABLE_ID).size());
@@ -117,7 +116,6 @@ public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
   public void testDeleteExpiredProcessesSkipsActiveStatuses() {
     // optimizingKeepTime=30d, processKeepTime=7d
     Duration optimizingKeepTime = Duration.ofDays(30);
-    Duration expireInterval = Duration.ofHours(1);
     Duration processKeepTime = Duration.ofDays(7);
 
     long now = System.currentTimeMillis();
@@ -145,10 +143,10 @@ public class TestProcessDataExpiringExecutor extends AMSServiceTestBase {
 
     Assert.assertEquals(6, persistency.listProcesses(TABLE_ID).size());
 
-    ProcessDataExpiringExecutor executor =
-        new ProcessDataExpiringExecutor(
-            tableService, optimizingKeepTime, expireInterval, processKeepTime);
-    executor.execute(tableRuntime);
+    ProcessDataExpiringProcess process =
+        new ProcessDataExpiringProcess(
+            tableRuntime, engine, optimizingKeepTime.toMillis(), processKeepTime.toMillis());
+    process.run();
 
     List<TableProcessMeta> remaining = persistency.listProcesses(TABLE_ID);
     // Active statuses (RUNNING, SUBMITTED, PENDING, CANCELING) should survive

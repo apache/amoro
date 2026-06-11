@@ -22,15 +22,12 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.table.TableService;
 
-import java.time.Duration;
-
 public class InlineTableExecutors {
 
   private static final InlineTableExecutors instance = new InlineTableExecutors();
   private TableRuntimeRefreshExecutor tableRefreshingExecutor;
   private BlockerExpiringExecutor blockerExpiringExecutor;
   private OptimizingCommitExecutor optimizingCommitExecutor;
-  private ProcessDataExpiringExecutor processDataExpiringExecutor;
 
   public static InlineTableExecutors getInstance() {
     return instance;
@@ -40,23 +37,6 @@ public class InlineTableExecutors {
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
             tableService, conf.getInteger(AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
-    Duration optimizingKeepTime =
-        conf.contains(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_TIME)
-            ? conf.get(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_TIME)
-            : Duration.ofDays(
-                conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_KEEP_DAYS));
-    Duration expireInterval =
-        conf.contains(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL)
-            ? conf.get(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL)
-            : Duration.ofHours(
-                conf.getInteger(AmoroManagementConf.OPTIMIZING_RUNTIME_DATA_EXPIRE_INTERVAL_HOURS));
-    Duration processKeepTime =
-        conf.contains(AmoroManagementConf.PROCESS_HISTORY_DATA_KEEP_TIME)
-            ? conf.get(AmoroManagementConf.PROCESS_HISTORY_DATA_KEEP_TIME)
-            : Duration.ofDays(conf.getInteger(AmoroManagementConf.PROCESS_HISTORY_DATA_KEEP_DAYS));
-    this.processDataExpiringExecutor =
-        new ProcessDataExpiringExecutor(
-            tableService, optimizingKeepTime, expireInterval, processKeepTime);
     this.blockerExpiringExecutor = new BlockerExpiringExecutor(tableService);
     this.tableRefreshingExecutor =
         new TableRuntimeRefreshExecutor(
@@ -76,9 +56,5 @@ public class InlineTableExecutors {
 
   public OptimizingCommitExecutor getOptimizingCommitExecutor() {
     return optimizingCommitExecutor;
-  }
-
-  public ProcessDataExpiringExecutor getProcessDataExpiringExecutor() {
-    return processDataExpiringExecutor;
   }
 }
