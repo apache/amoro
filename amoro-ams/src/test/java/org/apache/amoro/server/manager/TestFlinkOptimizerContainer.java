@@ -28,9 +28,14 @@ import org.apache.amoro.resource.ResourceType;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.utils.MemorySize;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +43,8 @@ import java.util.Objects;
 
 public class TestFlinkOptimizerContainer {
   FlinkOptimizerContainer container = new FlinkOptimizerContainer();
+
+  @Rule public TemporaryFolder tempFolder = new TemporaryFolder();
 
   Map<String, String> containerProperties = Maps.newHashMap();
 
@@ -97,6 +104,22 @@ public class TestFlinkOptimizerContainer {
     Map<String, String> flinkConfig = container.loadFlinkConfigForYAML(newFlinkConfResourceUrl);
     Assert.assertEquals(flinkConfig.get(TASK_MANAGER_TOTAL_PROCESS_MEMORY), "1728m");
     Assert.assertEquals(flinkConfig.get(JOB_MANAGER_TOTAL_PROCESS_MEMORY), "1600m");
+  }
+
+  @Test
+  public void testReadLegacyFlinkConfigWithMetricFilterIncludes() throws Exception {
+    File flinkConf = tempFolder.newFile("flink-conf.yaml");
+    Files.write(
+        flinkConf.toPath(),
+        String.join(
+                "\n",
+                "jobmanager.rpc.address: localhost",
+                "xxx.metrics.filter.includes: *RSS:*:*;Heap:Used,Max:*")
+            .getBytes(StandardCharsets.UTF_8));
+
+    Map<String, String> flinkConfig = container.loadFlinkConfigForYAML(flinkConf.toURI().toURL());
+    Assert.assertEquals("localhost", flinkConfig.get("jobmanager.rpc.address"));
+    Assert.assertEquals("*RSS:*:*;Heap:Used,Max:*", flinkConfig.get("xxx.metrics.filter.includes"));
   }
 
   @Test
