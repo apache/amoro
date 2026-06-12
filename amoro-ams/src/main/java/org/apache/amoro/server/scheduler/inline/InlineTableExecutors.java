@@ -36,7 +36,7 @@ public class InlineTableExecutors {
     this.optimizingCommitExecutor =
         new OptimizingCommitExecutor(
             tableService, conf.getInteger(AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
-     this.tableRefreshingExecutor =
+    this.tableRefreshingExecutor =
         new TableRuntimeRefreshExecutor(
             tableService,
             conf.getInteger(AmoroManagementConf.REFRESH_TABLES_THREAD_COUNT),
