@@ -129,8 +129,7 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
 
   @Override
   public AmoroTable<?> loadTable(String database, String tableName) {
-    validateDatabase(database);
-    if (!tableExists(database, tableName)) {
+    if (!databaseExists(database) || !tableExists(database, tableName)) {
       throw new NoSuchTableException("Table: " + database + "." + tableName + " does not exist");
     }
 
