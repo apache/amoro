@@ -30,6 +30,7 @@ import org.apache.arrow.util.Preconditions;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.lance.Dataset;
 import org.lance.namespace.LanceNamespace;
+import org.lance.namespace.errors.TableNotFoundException;
 import org.lance.namespace.model.DropTableRequest;
 import org.lance.namespace.model.ListTablesRequest;
 import org.lance.namespace.model.ListTablesResponse;
@@ -96,7 +97,7 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
       TableExistsRequest request = new TableExistsRequest().id(Collections.singletonList(table));
       namespace.tableExists(request);
       return true;
-    } catch (RuntimeException e) {
+    } catch (TableNotFoundException e) {
       return false;
     }
   }

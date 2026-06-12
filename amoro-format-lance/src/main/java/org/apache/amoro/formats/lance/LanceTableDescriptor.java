@@ -162,7 +162,8 @@ public class LanceTableDescriptor implements FormatTableDescriptor {
       try {
         snapshots.add(future.get());
       } catch (InterruptedException e) {
-        // ignore
+        Thread.currentThread().interrupt();
+        throw new RuntimeException("Interrupted while loading Lance snapshots", e);
       } catch (ExecutionException e) {
         throw new RuntimeException(e);
       }
