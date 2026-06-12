@@ -389,12 +389,6 @@ public class AmoroManagementConf {
                   + " offer the ability to record the real remote IP address in an HTTP header that will be"
                   + " added to the request for other devices to use.");
 
-  public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
-      ConfigOptions.key("self-optimizing.commit-thread-count")
-          .intType()
-          .defaultValue(10)
-          .withDescription("The number of threads that self-optimizing uses to submit results.");
-
   public static final ConfigOption<Boolean> OPTIMIZING_BREAK_QUOTA_LIMIT_ENABLED =
       ConfigOptions.key("self-optimizing.break-quota-limit-enabled")
           .booleanType()

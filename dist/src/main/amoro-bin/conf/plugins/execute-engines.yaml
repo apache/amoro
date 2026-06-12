@@ -29,3 +29,4 @@ execute-engines:
       pool.sync-hive-tables.thread-count: 10
       pool.expire-blocker.thread-count: 1
       pool.expire-process-data.thread-count: 1
+      pool.optimizing-commit.thread-count: 10

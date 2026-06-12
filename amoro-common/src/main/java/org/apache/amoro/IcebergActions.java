@@ -33,4 +33,5 @@ public class IcebergActions {
   public static final Action AUTO_CREATE_TAGS = Action.register("auto-create-tags");
   public static final Action EXPIRE_BLOCKER = Action.register("expire-blocker");
   public static final Action EXPIRE_PROCESS_DATA = Action.register("expire-process-data");
+  public static final Action OPTIMIZING_COMMIT = Action.register("optimizing-commit");
 }

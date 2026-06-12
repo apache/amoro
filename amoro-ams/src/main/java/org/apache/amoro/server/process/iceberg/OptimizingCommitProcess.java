@@ -16,45 +16,34 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.scheduler.inline;
+package org.apache.amoro.server.process.iceberg;
 
+import org.apache.amoro.Action;
+import org.apache.amoro.IcebergActions;
 import org.apache.amoro.TableRuntime;
-import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
+import org.apache.amoro.process.ExecuteEngine;
+import org.apache.amoro.process.LocalProcess;
+import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.server.table.DefaultTableRuntime;
-import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 
+import java.util.Map;
 import java.util.Optional;
 
-public class OptimizingCommitExecutor extends PeriodicTableScheduler {
+/** Local table process for committing self-optimizing results. */
+public class OptimizingCommitProcess extends TableProcess implements LocalProcess {
 
-  private static final long INTERVAL = 60 * 1000L; // 1min
-
-  public OptimizingCommitExecutor(TableService tableService, int poolSize) {
-    super(tableService, poolSize);
+  public OptimizingCommitProcess(TableRuntime tableRuntime, ExecuteEngine engine) {
+    super(tableRuntime, engine);
   }
 
   @Override
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return INTERVAL;
+  public String tag() {
+    return getAction().getName().toLowerCase();
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
-    return Optional.of(tableRuntime)
-        .filter(t -> t instanceof DefaultTableRuntime)
-        .map(t -> (DefaultTableRuntime) t)
-        .map(t -> t.getOptimizingStatus() == OptimizingStatus.COMMITTING)
-        .orElse(false);
-  }
-
-  @Override
-  protected long getExecutorDelay() {
-    return 0;
-  }
-
-  @Override
-  protected void execute(TableRuntime tableRuntime) {
+  public void run() {
     Optional.of(tableRuntime)
         .filter(t -> t instanceof DefaultTableRuntime)
         .map(t -> (DefaultTableRuntime) t)
@@ -67,11 +56,17 @@ public class OptimizingCommitExecutor extends PeriodicTableScheduler {
   }
 
   @Override
-  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-    scheduleIfNecessary(tableRuntime, getStartDelay());
+  public Action getAction() {
+    return IcebergActions.OPTIMIZING_COMMIT;
   }
 
-  protected long getStartDelay() {
-    return 0;
+  @Override
+  public Map<String, String> getProcessParameters() {
+    return Maps.newHashMap();
+  }
+
+  @Override
+  public Map<String, String> getSummary() {
+    return Maps.newHashMap();
   }
 }

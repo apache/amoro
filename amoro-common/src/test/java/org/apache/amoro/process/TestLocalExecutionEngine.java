@@ -52,6 +52,7 @@ public class TestLocalExecutionEngine {
     assertCustomPoolByTag("auto-create-tags");
     assertCustomPoolByTag("sync-hive-tables");
     assertCustomPoolByTag("expire-process-data");
+    assertCustomPoolByTag("optimizing-commit");
   }
 
   private void assertCustomPoolByTag(String tag) throws Exception {
@@ -165,6 +166,7 @@ public class TestLocalExecutionEngine {
     properties.put("pool.sync-hive-tables.thread-count", "1");
     properties.put("pool.expire-process-data.thread-count", "1");
     properties.put("pool.expire-blocker.thread-count", "1");
+    properties.put("pool.optimizing-commit.thread-count", "1");
     properties.put("process.status.ttl", ttl);
     localEngine.open(properties);
     return localEngine;

@@ -33,6 +33,8 @@ import org.apache.amoro.process.ProcessTriggerStrategy;
 import org.apache.amoro.process.RecoverProcessFailedException;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.server.optimizing.OptimizingProcess;
+import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.cleanup.TableRuntimeCleanupState;
 import org.junit.Assert;
@@ -58,6 +60,8 @@ public class TestIcebergProcessFactory {
     assertSupportedAction("expire-blocker", IcebergActions.EXPIRE_BLOCKER, Duration.ofHours(1));
     assertSupportedAction(
         "expire-process-data", IcebergActions.EXPIRE_PROCESS_DATA, Duration.ofHours(1));
+    assertSupportedAction(
+        "optimizing-commit", IcebergActions.OPTIMIZING_COMMIT, Duration.ofMinutes(1));
   }
 
   @Test
@@ -83,6 +87,7 @@ public class TestIcebergProcessFactory {
         IcebergActions.EXPIRE_PROCESS_DATA,
         ProcessDataExpiringProcess.class,
         0);
+    assertTriggerOptimizingCommitWhenCommitting();
   }
 
   @Test
@@ -158,6 +163,12 @@ public class TestIcebergProcessFactory {
   }
 
   @Test
+  public void testRecoverOptimizingCommitProcess() {
+    assertRecover(
+        "optimizing-commit", IcebergActions.OPTIMIZING_COMMIT, OptimizingCommitProcess.class);
+  }
+
+  @Test
   public void testRecoverUnsupportedActionThrows() {
     IcebergProcessFactory factory = openedFactory("expire-snapshots");
 
@@ -185,12 +196,30 @@ public class TestIcebergProcessFactory {
         () -> factory.recover(mock(TableRuntime.class), store));
   }
 
-  private void assertRecover(String configKey, Action action, Class<?> processClass) {
-    IcebergProcessFactory factory = openedFactory(configKey);
+  private void assertTriggerOptimizingCommitWhenCommitting() {
+    IcebergProcessFactory factory = openedFactoryWithEngine("optimizing-commit");
 
+    DefaultTableRuntime runtime = mock(DefaultTableRuntime.class);
+    doReturn(OptimizingStatus.COMMITTING).when(runtime).getOptimizingStatus();
+    doReturn(mock(OptimizingProcess.class)).when(runtime).getOptimizingProcess();
+
+    Optional<TableProcess> process = factory.trigger(runtime, IcebergActions.OPTIMIZING_COMMIT);
+
+    Assert.assertTrue(process.isPresent());
+    Assert.assertTrue(process.get() instanceof OptimizingCommitProcess);
+    Assert.assertEquals(LocalExecutionEngine.ENGINE_NAME, process.get().getExecutionEngine());
+  }
+
+  private IcebergProcessFactory openedFactoryWithEngine(String configKey) {
+    IcebergProcessFactory factory = openedFactory(configKey);
     LocalExecutionEngine localEngine = mock(LocalExecutionEngine.class);
     doReturn(LocalExecutionEngine.ENGINE_NAME).when(localEngine).name();
     factory.availableExecuteEngines(Arrays.asList(localEngine));
+    return factory;
+  }
+
+  private void assertRecover(String configKey, Action action, Class<?> processClass) {
+    IcebergProcessFactory factory = openedFactoryWithEngine(configKey);
 
     TableProcessStore store = mock(TableProcessStore.class);
     doReturn(action).when(store).getAction();

@@ -105,7 +105,6 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | refresh-tables.thread-count | 10 | The number of threads used for refreshing tables. |
 | self-optimizing.break-quota-limit-enabled | true | Allow the table to break the quota limit when the resource is sufficient. |
 | self-optimizing.commit-manifest-io-thread-count | 10 | Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent commit operations. |
-| self-optimizing.commit-thread-count | 10 | The number of threads that self-optimizing uses to submit results. |
 | self-optimizing.plan-manifest-io-thread-count | 10 | Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent planning operations. |
 | self-optimizing.refresh-group-interval | 30 s | Optimizer group refresh interval. |
 | server-bind-host | 0.0.0.0 | The host bound to the server. |

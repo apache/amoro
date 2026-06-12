@@ -26,17 +26,13 @@ public class InlineTableExecutors {
 
   private static final InlineTableExecutors instance = new InlineTableExecutors();
   private TableRuntimeRefreshExecutor tableRefreshingExecutor;
-  private OptimizingCommitExecutor optimizingCommitExecutor;
 
   public static InlineTableExecutors getInstance() {
     return instance;
   }
 
   public void setup(TableService tableService, Configurations conf) {
-    this.optimizingCommitExecutor =
-        new OptimizingCommitExecutor(
-            tableService, conf.getInteger(AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT));
-     this.tableRefreshingExecutor =
+    this.tableRefreshingExecutor =
         new TableRuntimeRefreshExecutor(
             tableService,
             conf.getInteger(AmoroManagementConf.REFRESH_TABLES_THREAD_COUNT),
@@ -46,9 +42,5 @@ public class InlineTableExecutors {
 
   public TableRuntimeRefreshExecutor getTableRefreshingExecutor() {
     return tableRefreshingExecutor;
-  }
-
-  public OptimizingCommitExecutor getOptimizingCommitExecutor() {
-    return optimizingCommitExecutor;
   }
 }

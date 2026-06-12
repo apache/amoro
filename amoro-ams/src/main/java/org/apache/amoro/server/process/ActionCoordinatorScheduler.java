@@ -23,6 +23,7 @@ import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.ActionCoordinator;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
 import org.apache.amoro.server.table.TableService;
 import org.slf4j.Logger;
@@ -115,5 +116,10 @@ public class ActionCoordinatorScheduler extends PeriodicTableScheduler {
   @Override
   protected long getExecutorDelay() {
     return coordinator.getExecutorDelay();
+  }
+
+  @Override
+  public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+    scheduleIfNecessary(tableRuntime, getStartDelay());
   }
 }

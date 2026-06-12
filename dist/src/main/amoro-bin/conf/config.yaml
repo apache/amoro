@@ -82,7 +82,6 @@ ams:
     max-pending-partition-count: 100 # default 100
 
   self-optimizing:
-    commit-thread-count: 10
     refresh-group-interval: 30s
     break-quota-limit-enabled: true
 

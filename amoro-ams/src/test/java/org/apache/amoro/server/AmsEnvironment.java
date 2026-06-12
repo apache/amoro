@@ -384,7 +384,6 @@ public class AmsEnvironment {
         + "    bind-port: 1630\n"
         + "\n"
         + "  self-optimizing:\n"
-        + "    commit-thread-count: 10\n"
         + "    break-quota-limit-enabled: true\n"
         + "\n"
         + "  database:\n"

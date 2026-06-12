@@ -32,6 +32,7 @@ import org.apache.amoro.process.ProcessTriggerStrategy;
 import org.apache.amoro.process.RecoverProcessFailedException;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
@@ -172,6 +173,8 @@ public class IcebergProcessFactory implements ProcessFactory {
       return triggerProcessDataExpiring(tableRuntime);
     } else if (IcebergActions.EXPIRE_BLOCKER.equals(action)) {
       return triggerExpireBlocker(tableRuntime);
+    } else if (IcebergActions.OPTIMIZING_COMMIT.equals(action)) {
+      return triggerOptimizingCommit(tableRuntime);
     }
 
     return Optional.empty();
@@ -211,6 +214,8 @@ public class IcebergProcessFactory implements ProcessFactory {
           expireProcessDataHistoryKeepTimeMs);
     } else if (IcebergActions.EXPIRE_BLOCKER.equals(action)) {
       return new BlockerExpiringProcess(tableRuntime, localEngine);
+    } else if (IcebergActions.OPTIMIZING_COMMIT.equals(action)) {
+      return new OptimizingCommitProcess(tableRuntime, localEngine);
     }
 
     throw new RecoverProcessFailedException(
@@ -272,6 +277,10 @@ public class IcebergProcessFactory implements ProcessFactory {
     this.actions.put(
         IcebergActions.EXPIRE_BLOCKER,
         ProcessTriggerStrategy.triggerAtFixRate(Duration.ofHours(1)));
+
+    this.actions.put(
+        IcebergActions.OPTIMIZING_COMMIT,
+        ProcessTriggerStrategy.triggerAtFixRate(Duration.ofMinutes(1)));
   }
 
   private Optional<TableProcess> triggerExpireSnapshot(TableRuntime tableRuntime) {
@@ -375,6 +384,18 @@ public class IcebergProcessFactory implements ProcessFactory {
     }
 
     return Optional.of(new BlockerExpiringProcess(tableRuntime, localEngine));
+  }
+
+  private Optional<TableProcess> triggerOptimizingCommit(TableRuntime tableRuntime) {
+    if (localEngine == null || !(tableRuntime instanceof DefaultTableRuntime)) {
+      return Optional.empty();
+    }
+    DefaultTableRuntime runtime = (DefaultTableRuntime) tableRuntime;
+    if (runtime.getOptimizingStatus() != OptimizingStatus.COMMITTING
+        || runtime.getOptimizingProcess() == null) {
+      return Optional.empty();
+    }
+    return Optional.of(new OptimizingCommitProcess(tableRuntime, localEngine));
   }
 
   @Override

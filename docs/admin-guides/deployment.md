@@ -321,6 +321,7 @@ execute-engines:
       pool.sync-hive-tables.thread-count: 10          # thread pool for synchronizing Hive tables
       pool.expire-blocker.thread-count: 1           # thread pool for expiring blockers
       pool.expire-process-data.thread-count: 1      # thread pool for expiring process data
+      pool.optimizing-commit.thread-count: 10        # thread pool for self-optimizing commit
       process.status.ttl: 4h                          # TTL for process status cache
 ```
 

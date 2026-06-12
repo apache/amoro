@@ -80,7 +80,6 @@ public class AmoroManagementConfValidator {
     }
 
     validateThreadCount(configurations, AmoroManagementConf.REFRESH_TABLES_THREAD_COUNT);
-    validateThreadCount(configurations, AmoroManagementConf.OPTIMIZING_COMMIT_THREAD_COUNT);
   }
 
   private static void validateThreadCount(
