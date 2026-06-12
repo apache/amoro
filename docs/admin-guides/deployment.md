@@ -282,9 +282,6 @@ process-factories:
       auto-create-tags.interval: "1m"        # interval for auto creating tags
       sync-hive-tables.enabled: "false"             # enable synchronizing Hive tables
       sync-hive-tables.interval: "10min"            # interval for synchronizing Hive tables
-      expire-process-data.runtime-data-expire-interval: "1h"            # interval for expiring process data
-      expire-process-data.runtime-data-keep-time: "30d"    # duration to keep optimizing runtime data
-      expire-process-data.history-data-keep-time: "7d"           # duration to keep terminal process history records
 ```
 
 {{< hint info >}}
@@ -319,7 +316,6 @@ execute-engines:
       pool.expire-data.thread-count: 10               # thread pool for data expiration
       pool.auto-create-tags.thread-count: 3           # thread pool for auto creating tags
       pool.sync-hive-tables.thread-count: 10          # thread pool for synchronizing Hive tables
-      pool.expire-process-data.thread-count: 1      # thread pool for expiring process data
       process.status.ttl: 4h                          # TTL for process status cache
 ```
 
