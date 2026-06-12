@@ -185,11 +185,17 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   public synchronized void refresh() {
     if (metaSupplier != null) {
       CatalogMeta newMeta = metaSupplier.get();
-      if (newMeta.equals(this.meta)) {
+      Map<String, String> newCatalogProperties =
+          mergeCatalogProperties(newMeta.getCatalogProperties());
+      boolean metaChanged = !newMeta.equals(this.meta);
+      boolean catalogPropertiesChanged = !newCatalogProperties.equals(this.catalogProperties);
+      if (!metaChanged && !catalogPropertiesChanged) {
         return;
       }
-      this.catalogProperties = mergeCatalogProperties(newMeta.getCatalogProperties());
-      this.tableMetaStore = CatalogUtil.buildMetaStore(newMeta);
+      this.catalogProperties = newCatalogProperties;
+      if (metaChanged) {
+        this.tableMetaStore = CatalogUtil.buildMetaStore(newMeta);
+      }
       this.meta = newMeta;
       this.initializeFormatCatalogs();
     }
