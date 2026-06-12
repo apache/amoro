@@ -27,6 +27,7 @@ import org.apache.amoro.table.TableIdentifier;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.util.Preconditions;
+import org.apache.iceberg.aliyun.AliyunProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.lance.Dataset;
 import org.lance.namespace.LanceNamespace;
@@ -52,6 +53,9 @@ import java.util.Map;
 public class LanceDirectoryV1Catalog implements FormatCatalog {
 
   private static final String DEFAULT_DATABASE = "default";
+  private static final String STORAGE_ACCESS_KEY_ID = "storage.access_key_id";
+  private static final String STORAGE_SECRET_ACCESS_KEY = "storage.secret_access_key";
+  private static final String STORAGE_ENDPOINT = "storage.endpoint";
   private final String catalogName;
   private final Map<String, String> namespaceProperties;
   private final LanceNamespace namespace;
@@ -63,19 +67,28 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
     this.catalogName = catalogName;
     this.namespaceProperties = new HashMap<>(catalogProperties);
     String root = namespaceProperties.remove(CatalogMetaProperties.KEY_WAREHOUSE);
-    String s3AccessKey = namespaceProperties.remove(S3FileIOProperties.ACCESS_KEY_ID);
-    String s3SecretKey = namespaceProperties.remove(S3FileIOProperties.SECRET_ACCESS_KEY);
+    String storageAccessKey =
+        removeFirstNonNull(
+            namespaceProperties,
+            S3FileIOProperties.ACCESS_KEY_ID,
+            AliyunProperties.CLIENT_ACCESS_KEY_ID);
+    String storageSecretKey =
+        removeFirstNonNull(
+            namespaceProperties,
+            S3FileIOProperties.SECRET_ACCESS_KEY,
+            AliyunProperties.CLIENT_ACCESS_KEY_SECRET);
 
     Preconditions.checkArgument(
         root != null && !root.isEmpty(), "Warehouse must be set in catalogProperties.");
     this.namespaceProperties.put("manifest_enabled", "false");
     this.namespaceProperties.put("root", root);
-    if (s3AccessKey != null) {
-      this.namespaceProperties.put("storage.access_key_id", s3AccessKey);
+    if (storageAccessKey != null) {
+      this.namespaceProperties.put(STORAGE_ACCESS_KEY_ID, storageAccessKey);
     }
-    if (s3SecretKey != null) {
-      this.namespaceProperties.put("storage.secret_access_key", s3SecretKey);
+    if (storageSecretKey != null) {
+      this.namespaceProperties.put(STORAGE_SECRET_ACCESS_KEY, storageSecretKey);
     }
+    putStorageEndpointIfPresent(namespaceProperties);
     this.namespace = initializeNamespace(new RootAllocator(Long.MAX_VALUE));
   }
 
@@ -130,8 +143,14 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
 
   @Override
   public boolean dropTable(String database, String table, boolean purge) {
-    namespace.dropTable(new DropTableRequest().id(Collections.singletonList(table)));
-    return true;
+    validateDatabase(database);
+
+    try {
+      namespace.dropTable(new DropTableRequest().id(Collections.singletonList(table)));
+      return true;
+    } catch (TableNotFoundException e) {
+      return false;
+    }
   }
 
   @Override
@@ -158,6 +177,31 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
 
   private LanceNamespace initializeNamespace(BufferAllocator allocator) {
     return LanceNamespace.connect("dir", namespaceProperties, allocator);
+  }
+
+  private static String removeFirstNonNull(Map<String, String> properties, String... keys) {
+    String value = null;
+    for (String key : keys) {
+      String removed = properties.remove(key);
+      if (value == null && removed != null) {
+        value = removed;
+      }
+    }
+    return value;
+  }
+
+  private static void putStorageEndpointIfPresent(Map<String, String> properties) {
+    if (properties.containsKey(STORAGE_ENDPOINT)) {
+      return;
+    }
+
+    String endpoint = properties.get(S3FileIOProperties.ENDPOINT);
+    if (endpoint == null) {
+      endpoint = properties.get(AliyunProperties.OSS_ENDPOINT);
+    }
+    if (endpoint != null) {
+      properties.put(STORAGE_ENDPOINT, endpoint);
+    }
   }
 
   private void validateDatabase(String database) {
