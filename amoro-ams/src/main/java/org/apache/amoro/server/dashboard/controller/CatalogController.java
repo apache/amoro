@@ -440,7 +440,9 @@ public class CatalogController {
           S3FileIOProperties.ENDPOINT,
           STORAGE_CONFIGS_KEY_S3_ENDPOINT);
     } else if (STORAGE_CONFIGS_VALUE_TYPE_OSS.equals(storageType)) {
-      if (tableFormats.contains(ICEBERG.name()) || tableFormats.contains(MIXED_ICEBERG.name())) {
+      if (tableFormats.contains(ICEBERG.name())
+          || tableFormats.contains(MIXED_ICEBERG.name())
+          || tableFormats.contains(LANCE.name())) {
         CatalogUtil.copyProperty(
             catalogMeta.getCatalogProperties(),
             storageConfig,
@@ -536,7 +538,8 @@ public class CatalogController {
           S3FileIOProperties.ENDPOINT);
     } else if (storageType.equals(STORAGE_CONFIGS_VALUE_TYPE_OSS)) {
       if (info.getTableFormatList().contains(ICEBERG.name())
-          || info.getTableFormatList().contains(MIXED_ICEBERG.name())) {
+          || info.getTableFormatList().contains(MIXED_ICEBERG.name())
+          || info.getTableFormatList().contains(LANCE.name())) {
         CatalogUtil.copyProperty(
             info.getStorageConfig(),
             catalogMeta.getCatalogProperties(),
