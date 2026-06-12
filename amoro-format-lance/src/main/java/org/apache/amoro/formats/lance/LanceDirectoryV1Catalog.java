@@ -125,7 +125,7 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
             .namespaceClient(namespace)
             .tableId(Collections.singletonList(tableName))
             .build();
-    return new LanceTable(identifier, dataset, namespaceProperties);
+    return new LanceTable(identifier, dataset, Collections.emptyMap());
   }
 
   @Override
