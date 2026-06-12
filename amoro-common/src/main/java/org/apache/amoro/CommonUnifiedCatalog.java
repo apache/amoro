@@ -49,13 +49,12 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   public CommonUnifiedCatalog(
       Supplier<CatalogMeta> catalogMetaSupplier, Map<String, String> properties) {
     CatalogMeta catalogMeta = catalogMetaSupplier.get();
-    CatalogUtil.mergeCatalogProperties(catalogMeta, properties);
     this.meta = catalogMeta;
     this.catalogName = catalogMeta.getCatalogName();
     this.metaStoreType = catalogMeta.getCatalogType();
     this.tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
-    this.clientProperties = properties;
-    this.catalogProperties = catalogMeta.getCatalogProperties();
+    this.clientProperties = properties == null ? Maps.newHashMap() : Maps.newHashMap(properties);
+    this.catalogProperties = mergeCatalogProperties(catalogMeta.getCatalogProperties());
     this.metaSupplier = catalogMetaSupplier;
     initializeFormatCatalogs();
   }
@@ -186,11 +185,10 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   public synchronized void refresh() {
     if (metaSupplier != null) {
       CatalogMeta newMeta = metaSupplier.get();
-      CatalogUtil.mergeCatalogProperties(meta, clientProperties);
       if (newMeta.equals(this.meta)) {
         return;
       }
-      this.catalogProperties = newMeta.getCatalogProperties();
+      this.catalogProperties = mergeCatalogProperties(newMeta.getCatalogProperties());
       this.tableMetaStore = CatalogUtil.buildMetaStore(newMeta);
       this.meta = newMeta;
       this.initializeFormatCatalogs();
@@ -232,5 +230,14 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
         .map(formatCatalogs::get)
         .findFirst()
         .orElseThrow(() -> new IllegalStateException("No format catalog found."));
+  }
+
+  private Map<String, String> mergeCatalogProperties(Map<String, String> serverProperties) {
+    Map<String, String> properties = Maps.newHashMap();
+    if (serverProperties != null) {
+      properties.putAll(serverProperties);
+    }
+    properties.putAll(clientProperties);
+    return properties;
   }
 }
