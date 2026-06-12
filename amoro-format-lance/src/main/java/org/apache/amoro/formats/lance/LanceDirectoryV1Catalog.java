@@ -104,7 +104,9 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
 
   @Override
   public boolean tableExists(String database, String table) {
-    validateDatabase(database);
+    if (!databaseExists(database)) {
+      return false;
+    }
 
     try {
       TableExistsRequest request = new TableExistsRequest().id(Collections.singletonList(table));
@@ -155,7 +157,9 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
 
   @Override
   public List<String> listTables(String database) {
-    validateDatabase(database);
+    if (!databaseExists(database)) {
+      return Collections.emptyList();
+    }
     return listTablesFromNamespace();
   }
 
