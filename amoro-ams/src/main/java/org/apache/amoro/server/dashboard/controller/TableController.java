@@ -71,6 +71,7 @@ import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
 import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
 import org.apache.amoro.table.descriptor.PartitionBaseInfo;
 import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
+import org.apache.amoro.table.descriptor.ProcessCategory;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
@@ -332,6 +333,11 @@ public class TableController {
       type = null;
     }
 
+    String processCategory = ctx.queryParam("processCategory");
+    if (StringUtils.isBlank(processCategory)) {
+      processCategory = null;
+    }
+
     String status = ctx.queryParam("status");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
@@ -346,21 +352,32 @@ public class TableController {
         StringUtils.isBlank(status) ? null : ProcessStatus.valueOf(status);
     Pair<List<OptimizingProcessInfo>, Integer> optimizingProcessesInfo =
         tableDescriptor.getOptimizingProcessesInfo(
-            tableIdentifier.buildTableIdentifier(), type, processStatus, limit, offset);
+            tableIdentifier.buildTableIdentifier(),
+            type,
+            processCategory,
+            processStatus,
+            limit,
+            offset);
     List<OptimizingProcessInfo> result = optimizingProcessesInfo.getLeft();
     int total = optimizingProcessesInfo.getRight();
 
     ctx.json(OkResponse.of(PageResult.of(result, total)));
   }
 
-  public void getOptimizingTypes(Context ctx) {
+  public void getProcessTypes(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
+    String processCategory =
+        ctx.queryParamAsClass("processCategory", String.class).getOrDefault(null);
+    if (StringUtils.isBlank(processCategory)) {
+      processCategory = ProcessCategory.OPTIMIZING.getName();
+    }
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
 
     Map<String, String> values =
-        tableDescriptor.getTableOptimizingTypes(tableIdentifier.buildTableIdentifier());
+        tableDescriptor.getTableProcessTypes(
+            tableIdentifier.buildTableIdentifier(), processCategory);
     ctx.json(OkResponse.of(values));
   }
 
@@ -671,7 +688,7 @@ public class TableController {
   }
 
   /**
-   * cancel the running optimizing process of one certain table.
+   * Cancel the running process of one certain table.
    *
    * @param ctx - context for handling the request and response
    */

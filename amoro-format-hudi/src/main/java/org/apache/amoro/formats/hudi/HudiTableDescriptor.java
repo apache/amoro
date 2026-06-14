@@ -37,6 +37,7 @@ import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
 import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
 import org.apache.amoro.table.descriptor.PartitionBaseInfo;
 import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
+import org.apache.amoro.table.descriptor.ProcessCategory;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
@@ -79,6 +80,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -97,6 +99,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
   private static final Logger LOG = LoggerFactory.getLogger(HudiTableDescriptor.class);
   private static final String COMPACTION = "compaction";
   private static final String CLUSTERING = "clustering";
+  private static final List<String> OPTIMIZING_TYPES = Arrays.asList(COMPACTION, CLUSTERING);
   // table comment
   private static final String COMMENT = "comment";
 
@@ -340,7 +343,12 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
+      AmoroTable<?> amoroTable,
+      String type,
+      String processCategory,
+      ProcessStatus status,
+      int limit,
+      int offset) {
     HoodieJavaTable hoodieTable = (HoodieJavaTable) amoroTable.originalTable();
     HoodieDefaultTimeline timeline = new HoodieActiveTimeline(hoodieTable.getMetaClient(), false);
     List<HoodieInstant> instants = timeline.getInstants();
@@ -381,12 +389,18 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
                 })
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
+    List<String> categoryTypes = getProcessTypesByCategory(processCategory);
     infos =
         infos.stream()
             .filter(
                 i ->
                     StringUtils.isNullOrEmpty(type) || type.equalsIgnoreCase(i.getOptimizingType()))
             .filter(i -> status == null || status == i.getStatus())
+            .filter(
+                i ->
+                    i.getOptimizingType() != null
+                        && categoryTypes.stream()
+                            .anyMatch(t -> t.equalsIgnoreCase(i.getOptimizingType())))
             .collect(Collectors.toList());
     int total = infos.size();
     infos = infos.stream().skip(offset).limit(limit).collect(Collectors.toList());
@@ -399,6 +413,15 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
     types.put(COMPACTION, COMPACTION);
     types.put(CLUSTERING, CLUSTERING);
     return types;
+  }
+
+  @Override
+  public List<String> getProcessTypesByCategory(String processCategory) {
+    if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
+      return OPTIMIZING_TYPES;
+    }
+
+    return Collections.emptyList();
   }
 
   protected OptimizingProcessInfo getOptimizingInfo(

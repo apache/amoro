@@ -22,6 +22,7 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.IcebergActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
@@ -67,12 +68,14 @@ import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
 import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
 import org.apache.amoro.table.descriptor.PartitionBaseInfo;
 import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
+import org.apache.amoro.table.descriptor.ProcessCategory;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
 import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileScanTask;
@@ -117,6 +120,19 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     implements FormatTableDescriptor {
 
   private static final Logger LOG = LoggerFactory.getLogger(MixedAndIcebergTableDescriptor.class);
+
+  private static final List<String> OPTIMIZING_TYPE_LIST =
+      Arrays.stream(OptimizingType.values()).map(Enum::name).collect(Collectors.toList());
+
+  private static final List<String> CLEANUP_TYPE_LIST =
+      ImmutableList.of(
+          IcebergActions.EXPIRE_SNAPSHOTS.getName(),
+          IcebergActions.CLEAN_ORPHAN.getName(),
+          IcebergActions.CLEAN_DANGLING_DELETE.getName(),
+          IcebergActions.EXPIRE_DATA.getName());
+
+  private static final List<String> PROFILING_TYPE_LIST =
+      ImmutableList.of(IcebergActions.AUTO_CREATE_TAGS.getName());
 
   private ExecutorService executorService;
 
@@ -655,7 +671,12 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
+      AmoroTable<?> amoroTable,
+      String type,
+      String processCategory,
+      ProcessStatus status,
+      int limit,
+      int offset) {
     TableIdentifier tableIdentifier = amoroTable.id();
     ServerTableIdentifier identifier =
         getAs(
@@ -671,12 +692,33 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     int total = 0;
     // page helper is 1-based
     int pageNumber = (offset / limit) + 1;
+
+    // Only apply category filtering when type is not specified
+    final List<String> includeTypes;
+
+    if (StringUtils.isBlank(type)) {
+      if (processCategory == null) {
+        // No category specified: return empty results
+        return Pair.of(Collections.emptyList(), 0);
+      } else {
+        List<String> categoryTypes = getProcessTypesByCategory(processCategory);
+        if (categoryTypes.isEmpty()) {
+          // Unknown category: return empty results to avoid exposing all processes
+          return Pair.of(Collections.emptyList(), 0);
+        }
+
+        includeTypes = categoryTypes;
+      }
+    } else {
+      includeTypes = null;
+    }
+
     List<TableProcessMeta> processMetaList = Collections.emptyList();
     try (Page<?> ignored = PageHelper.startPage(pageNumber, limit, true)) {
       processMetaList =
           getAs(
               TableProcessMapper.class,
-              mapper -> mapper.listProcessMeta(identifier.getId(), type, status));
+              mapper -> mapper.listProcessMeta(identifier.getId(), type, includeTypes, status));
       PageInfo<TableProcessMeta> pageInfo = new PageInfo<>(processMetaList);
       total = (int) pageInfo.getTotal();
       LOG.info(
@@ -714,6 +756,48 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
       types.put(type.name(), OptimizingStatus.ofOptimizingType(type).displayValue());
     }
     return types;
+  }
+
+  @Override
+  public Map<String, String> getTableProcessTypes(
+      AmoroTable<?> amoroTable, String processCategory) {
+    if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
+      return getTableOptimizingTypes(amoroTable);
+    }
+
+    if (ProcessCategory.CLEANUP.getName().equalsIgnoreCase(processCategory)) {
+      Map<String, String> types = Maps.newHashMap();
+      types.put(IcebergActions.EXPIRE_SNAPSHOTS.getName(), "Expire Snapshots");
+      types.put(IcebergActions.CLEAN_ORPHAN.getName(), "Clean Orphan Files");
+      types.put(IcebergActions.CLEAN_DANGLING_DELETE.getName(), "Clean Dangling Delete Files");
+      types.put(IcebergActions.EXPIRE_DATA.getName(), "Expire Data");
+      return types;
+    }
+
+    if (ProcessCategory.PROFILING.getName().equalsIgnoreCase(processCategory)) {
+      Map<String, String> types = Maps.newHashMap();
+      types.put(IcebergActions.AUTO_CREATE_TAGS.getName(), "Auto Create Tags");
+      return types;
+    }
+
+    return Collections.emptyMap();
+  }
+
+  @Override
+  public List<String> getProcessTypesByCategory(String processCategory) {
+    if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
+      return OPTIMIZING_TYPE_LIST;
+    }
+
+    if (ProcessCategory.CLEANUP.getName().equalsIgnoreCase(processCategory)) {
+      return CLEANUP_TYPE_LIST;
+    }
+
+    if (ProcessCategory.PROFILING.getName().equalsIgnoreCase(processCategory)) {
+      return PROFILING_TYPE_LIST;
+    }
+
+    return Collections.emptyList();
   }
 
   @Override
