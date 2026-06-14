@@ -45,6 +45,7 @@ import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
+import org.apache.amoro.server.optimizing.dra.DynamicAllocationConfig;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.ResourceMapper;
@@ -181,6 +182,18 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizerGroups.forEach(
         group -> {
           String groupName = group.getName();
+          // Fail-safe: a persisted group carrying an invalid DRA config (e.g. manual DB edits)
+          // must not crash AMS. Surface it and fall back to DRA-disabled behavior.
+          DynamicAllocationConfig.warnDeprecatedMinParallelism(group);
+          try {
+            DynamicAllocationConfig.parse(group).validate();
+          } catch (IllegalArgumentException e) {
+            LOG.warn(
+                "Resource group:{} has an invalid dynamic-allocation config, "
+                    + "falling back to DRA-disabled mode: {}",
+                groupName,
+                e.getMessage());
+          }
           List<DefaultTableRuntime> tableRuntimes = groupToTableRuntimes.remove(groupName);
           OptimizingQueue optimizingQueue =
               new OptimizingQueue(
@@ -840,19 +853,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     public int getMinParallelism(ResourceGroup resourceGroup) {
-      if (!resourceGroup
-          .getProperties()
-          .containsKey(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM)) {
-        return 0;
-      }
-      String minParallelism =
-          resourceGroup.getProperties().get(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM);
-      try {
-        return Integer.parseInt(minParallelism);
-      } catch (Throwable t) {
-        LOG.warn("Illegal minParallelism : {}, will use default value 0", minParallelism, t);
-        return 0;
-      }
+      return DynamicAllocationConfig.resolveMinParallelism(resourceGroup);
     }
 
     public int tryKeeping(ResourceGroup resourceGroup) {
@@ -921,6 +922,17 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
       if (keepingTask.getAttempts() > groupMaxKeepingAttempts) {
         int minParallelism = keepingTask.getMinParallelism(resourceGroup);
+        if (DynamicAllocationConfig.isEffectivelyEnabled(resourceGroup)) {
+          // Dynamic allocation owns scale decisions for the group; never erode its
+          // min-parallelism floor automatically.
+          LOG.warn(
+              "Resource Group:{}, creating optimizer {} times in a row, optimizers still below min-parallel:{}; dynamic allocation is enabled so min-parallel is kept",
+              resourceGroup.getName(),
+              keepingTask.getAttempts(),
+              minParallelism);
+          keepInTouch(resourceGroup.getName(), 1);
+          return;
+        }
         LOG.warn(
             "Resource Group:{}, creating optimizer {} times in a row, optimizers still below min-parallel:{}, will reset min-parallel to {}",
             resourceGroup.getName(),
@@ -930,7 +942,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
         resourceGroup
             .getProperties()
             .put(
-                OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM,
+                DynamicAllocationConfig.effectiveMinParallelismKey(resourceGroup),
                 String.valueOf(minParallelism - requiredCores));
         updateResourceGroup(resourceGroup);
         optimizerManager.updateResourceGroup(resourceGroup);
