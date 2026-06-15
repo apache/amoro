@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.Gson;
@@ -44,6 +45,7 @@ import org.apache.amoro.optimizing.TableOptimizingCommitter;
 import org.apache.amoro.optimizing.TaskMetricsSummary;
 import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.process.StagedTaskDescriptor;
+import org.apache.amoro.server.persistence.converter.TaskDescriptorRecoveryTypes;
 import org.apache.amoro.server.persistence.converter.TaskDescriptorTypeConverter;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.utils.SerializationUtil;
@@ -499,6 +501,32 @@ public class TestPaimonOptimizingE2E {
     // The empty RewriteFilesInput contributes zero; we only care that the shape loaded cleanly.
     assertEquals(0, agg.getRewriteDataFileCnt());
     assertEquals(0, agg.getNewDataFileCnt());
+  }
+
+  @Test
+  public void validateRecoveredPaimonTaskAcceptsPaimonDescriptorInputOutputAndSummary()
+      throws Exception {
+    PaimonCompactionTask task = new PaimonCompactionTask();
+    task.ensureExecutorFactoryImpl(PaimonCompactionExecutorFactory.class.getName());
+    PaimonCompactionOutput output =
+        new PaimonCompactionOutput(new byte[] {1}, 7, 9L, 900L, 3L, 300L);
+    task.setOutputBytes(serializeOutput(output));
+    PaimonCompactionInput input =
+        new PaimonCompactionInput(null, new byte[] {2}, 2, "u", "p", 10L, 11L);
+
+    TaskDescriptorRecoveryTypes.validateRecoveredTask(task, input);
+  }
+
+  @Test
+  public void validateRecoveredTaskRejectsLegacyDescriptorWithPaimonInput() {
+    RewriteStageTask descriptor = new RewriteStageTask();
+    descriptor.ensureExecutorFactoryImpl(IcebergRewriteExecutorFactory.class.getName());
+    PaimonCompactionInput input =
+        new PaimonCompactionInput(null, new byte[] {2}, 2, "u", "p", 10L, 11L);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> TaskDescriptorRecoveryTypes.validateRecoveredTask(descriptor, input));
   }
 
   // ---------------------------------------------------------------------------------------------

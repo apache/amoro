@@ -121,11 +121,53 @@ class TestPaimonAppendTaskPacker {
   }
 
   @Test
-  void majorPackingKeepsEarlierLegalBinWhenLastRegularNeedsPartner() {
-    PaimonPlanContext context = context(900L);
+  void majorPackingSkipsPureUndersizedNoBenefitBin() {
+    PaimonPlanContext context = context(4096L);
+    // Keep this regression at DataFileMeta level because exact Parquet output sizes vary.
     PaimonPartitionEvaluation evaluation =
         evaluation(
             OptimizingType.MAJOR,
+            candidates(context, file("near-target", 990, 100), file("tail", 300, 100)));
+
+    List<AppendCompactTask> tasks = new PaimonAppendTaskPacker(context).pack(evaluation);
+
+    assertTrue(tasks.isEmpty());
+  }
+
+  @Test
+  void majorPackingKeepsPureSizeBasedReducingBin() {
+    PaimonPlanContext context = context(4096L);
+    PaimonPartitionEvaluation evaluation =
+        evaluation(
+            OptimizingType.MAJOR,
+            candidates(context, file("left", 400, 100), file("right", 450, 100)));
+
+    List<AppendCompactTask> tasks = new PaimonAppendTaskPacker(context).pack(evaluation);
+
+    assertEquals(1, tasks.size());
+    assertEquals(2, tasks.get(0).compactBefore().size());
+  }
+
+  @Test
+  void majorPackingKeepsHighDeleteNoBenefitBin() {
+    PaimonPlanContext context = context(4096L);
+    PaimonPartitionEvaluation evaluation =
+        evaluation(
+            OptimizingType.MAJOR,
+            candidates(context, file("deleted", 1200, 100, 30L), file("tail", 300, 100)));
+
+    List<AppendCompactTask> tasks = new PaimonAppendTaskPacker(context).pack(evaluation);
+
+    assertEquals(1, tasks.size());
+    assertEquals(2, tasks.get(0).compactBefore().size());
+  }
+
+  @Test
+  void fullPackingKeepsEarlierLegalBinWhenLastRegularNeedsPartner() {
+    PaimonPlanContext context = context(900L);
+    PaimonPartitionEvaluation evaluation =
+        evaluation(
+            OptimizingType.FULL,
             candidates(
                 context,
                 file("a", 100, 100),
@@ -141,11 +183,11 @@ class TestPaimonAppendTaskPacker {
   }
 
   @Test
-  void majorPackingPairsMultipleOverLimitRegularFilesWithReservedPartners() {
+  void fullPackingPairsMultipleOverLimitRegularFilesWithReservedPartners() {
     PaimonPlanContext context = context(900L);
     PaimonPartitionEvaluation evaluation =
         evaluation(
-            OptimizingType.MAJOR,
+            OptimizingType.FULL,
             candidates(
                 context,
                 file("a", 100, 100),
@@ -167,11 +209,11 @@ class TestPaimonAppendTaskPacker {
   }
 
   @Test
-  void majorPackingSkipsUnpairedOverLimitRegularFiles() {
+  void fullPackingSkipsUnpairedOverLimitRegularFiles() {
     PaimonPlanContext context = context(900L);
     PaimonPartitionEvaluation evaluation =
         evaluation(
-            OptimizingType.MAJOR,
+            OptimizingType.FULL,
             candidates(context, file("large-1", 10_000, 100), file("large-2", 10_000, 100)));
 
     List<AppendCompactTask> tasks = new PaimonAppendTaskPacker(context).pack(evaluation);
@@ -180,11 +222,11 @@ class TestPaimonAppendTaskPacker {
   }
 
   @Test
-  void majorPackingDoesNotPairOverLimitRegularFilesTogetherWhenPartnersAreInsufficient() {
+  void fullPackingDoesNotPairOverLimitRegularFilesTogetherWhenPartnersAreInsufficient() {
     PaimonPlanContext context = context(900L);
     PaimonPartitionEvaluation evaluation =
         evaluation(
-            OptimizingType.MAJOR,
+            OptimizingType.FULL,
             candidates(
                 context,
                 file("small", 100, 100),
@@ -324,7 +366,7 @@ class TestPaimonAppendTaskPacker {
   }
 
   @Test
-  void majorPackingKeepsLargePartnerReservationLinearForManyUnits() {
+  void fullPackingKeepsLargePartnerReservationLinearForManyUnits() {
     PaimonPlanContext context = context(900L);
     List<PaimonFileCandidate> files = new ArrayList<>();
     for (int i = 0; i < 30_000; i++) {
@@ -333,7 +375,7 @@ class TestPaimonAppendTaskPacker {
     for (int i = 0; i < 30_000; i++) {
       files.addAll(candidates(context, file("large-" + i, 10_000, 100)));
     }
-    PaimonPartitionEvaluation evaluation = evaluation(OptimizingType.MAJOR, files);
+    PaimonPartitionEvaluation evaluation = evaluation(OptimizingType.FULL, files);
 
     List<AppendCompactTask> tasks =
         assertTimeoutPreemptively(
@@ -376,6 +418,10 @@ class TestPaimonAppendTaskPacker {
   }
 
   private static DataFileMeta file(String name, long size, long rows) {
+    return file(name, size, rows, null);
+  }
+
+  private static DataFileMeta file(String name, long size, long rows, Long deleteRows) {
     return DataFileMeta.create(
         name,
         size,
@@ -388,7 +434,7 @@ class TestPaimonAppendTaskPacker {
         0L,
         0L,
         DataFileMeta.DUMMY_LEVEL,
-        null,
+        deleteRows,
         null,
         null,
         null,

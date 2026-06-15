@@ -33,9 +33,11 @@ import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
+import org.apache.amoro.server.persistence.TableRuntimeState;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
+import org.apache.amoro.server.persistence.mapper.TableRuntimeMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.table.cleanup.CleanupOperation;
@@ -120,7 +122,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime implements Optimiz
     }
     this.optimizingProcess = optimizingProcess;
     if (this.optimizingProcess.getStatus() == ProcessStatus.SUCCESS) {
-      completeProcess(true);
+      completeProcess(optimizingProcess, true);
     }
   }
 
@@ -265,7 +267,51 @@ public class DefaultTableRuntime extends AbstractTableRuntime implements Optimiz
   }
 
   public long getProcessId() {
-    return store().getState(PROCESS_ID_KEY);
+    TableRuntimeState state =
+        getAs(
+            TableRuntimeMapper.class,
+            mapper ->
+                mapper.getState(
+                    getTableIdentifier().getId(), DefaultTableRuntime.PROCESS_ID_KEY.getKey()));
+    if (state == null || state.getStateValue() == null) {
+      return 0L;
+    }
+    return Long.parseLong(state.getStateValue());
+  }
+
+  public boolean tryAcquireProcessOwner(long processId) {
+    return compareAndSetProcessOwner(0L, processId);
+  }
+
+  public boolean tryReleaseProcessOwner(long processId) {
+    return compareAndSetProcessOwner(processId, 0L);
+  }
+
+  public boolean normalizeProcessOwner(long processId) {
+    return compareAndSetProcessOwner(processId, 0L);
+  }
+
+  private boolean compareAndSetProcessOwner(long expected, long next) {
+    TableRuntimeState currentState =
+        getAs(
+            TableRuntimeMapper.class,
+            mapper -> mapper.getState(getTableIdentifier().getId(), PROCESS_ID_KEY.getKey()));
+    if (currentState == null || currentState.getStateValue() == null) {
+      return expected == 0L && next == 0L;
+    }
+    if (!String.valueOf(expected).equals(currentState.getStateValue())) {
+      return false;
+    }
+    long updated =
+        updateAs(
+            TableRuntimeMapper.class,
+            mapper ->
+                mapper.setStateValueIfVersion(
+                    getTableIdentifier().getId(),
+                    PROCESS_ID_KEY.getKey(),
+                    currentState.getStateVersion(),
+                    String.valueOf(next)));
+    return updated == 1L;
   }
 
   public OptimizingProcess getOptimizingProcess() {
@@ -396,12 +442,15 @@ public class DefaultTableRuntime extends AbstractTableRuntime implements Optimiz
   }
 
   public void beginProcess(OptimizingProcess optimizingProcess) {
-    OptimizingStatus originalStatus = getOptimizingStatus();
+    Objects.requireNonNull(optimizingProcess, "optimizingProcess is null when beginning process");
+    if (!tryAcquireProcessOwner(optimizingProcess.getProcessId())) {
+      throw new OptimizingOwnerConflictException(
+          "acquire", getTableIdentifier(), optimizingProcess.getProcessId(), getProcessId());
+    }
     this.optimizingProcess = optimizingProcess;
 
     store()
         .begin()
-        .updateState(PROCESS_ID_KEY, any -> optimizingProcess.getProcessId())
         .updateStatusCode(
             code ->
                 OptimizingStatus.ofOptimizingType(optimizingProcess.getOptimizingType()).getCode())
@@ -451,8 +500,29 @@ public class DefaultTableRuntime extends AbstractTableRuntime implements Optimiz
   }
 
   public void completeProcess(boolean success) {
-    OptimizingStatus originalStatus = getOptimizingStatus();
-    OptimizingType processType = optimizingProcess.getOptimizingType();
+    completeProcess(
+        Objects.requireNonNull(
+            optimizingProcess, "optimizingProcess is null when completing table process"),
+        success);
+  }
+
+  public void completeProcess(OptimizingProcess process, boolean success) {
+    Objects.requireNonNull(process, "process is null when completing table process");
+    if (!tryReleaseProcessOwner(process.getProcessId())) {
+      long currentOwner = getProcessId();
+      if (currentOwner != process.getProcessId()) {
+        LOG.warn(
+            "Skip completing process {} for table {} because current owner is {}",
+            process.getProcessId(),
+            getTableIdentifier(),
+            currentOwner);
+        return;
+      }
+      throw new OptimizingOwnerConflictException(
+          "release", getTableIdentifier(), process.getProcessId(), currentOwner);
+    }
+    OptimizingType processType = process.getOptimizingType();
+    long planTime = process.getPlanTime();
 
     store()
         .begin()
@@ -460,16 +530,15 @@ public class DefaultTableRuntime extends AbstractTableRuntime implements Optimiz
             OPTIMIZING_STATE_KEY,
             state -> {
               if (success) {
-                state.setLastOptimizedSnapshotId(optimizingProcess.getTargetSnapshotId());
-                state.setLastOptimizedChangeSnapshotId(
-                    optimizingProcess.getTargetChangeSnapshotId());
+                state.setLastOptimizedSnapshotId(process.getTargetSnapshotId());
+                state.setLastOptimizedChangeSnapshotId(process.getTargetChangeSnapshotId());
               }
               if (processType == OptimizingType.MINOR) {
-                state.setLastMinorOptimizingTime(optimizingProcess.getPlanTime());
+                state.setLastMinorOptimizingTime(planTime);
               } else if (processType == OptimizingType.MAJOR) {
-                state.setLastMajorOptimizingTime(optimizingProcess.getPlanTime());
+                state.setLastMajorOptimizingTime(planTime);
               } else if (processType == OptimizingType.FULL) {
-                state.setLastFullOptimizingTime(optimizingProcess.getPlanTime());
+                state.setLastFullOptimizingTime(planTime);
               }
               return state;
             })
@@ -481,8 +550,10 @@ public class DefaultTableRuntime extends AbstractTableRuntime implements Optimiz
         .updateStatusCode(code -> OptimizingStatus.IDLE.getCode())
         .commit();
 
-    optimizingMetrics.processComplete(processType, success, optimizingProcess.getPlanTime());
-    optimizingProcess = null;
+    optimizingMetrics.processComplete(processType, success, planTime);
+    if (optimizingProcess == null || optimizingProcess.getProcessId() == process.getProcessId()) {
+      optimizingProcess = null;
+    }
   }
 
   /**
@@ -494,6 +565,13 @@ public class DefaultTableRuntime extends AbstractTableRuntime implements Optimiz
     OptimizingStatus originalStatus = getOptimizingStatus();
     if (originalStatus == OptimizingStatus.IDLE) {
       return;
+    }
+    long processId = getProcessId();
+    if (processId != 0L && !normalizeProcessOwner(processId)) {
+      throw new IllegalStateException(
+          String.format(
+              "failed to normalize optimizing owner for table %s, expected owner %d, current owner %d",
+              getTableIdentifier(), processId, getProcessId()));
     }
     store()
         .begin()

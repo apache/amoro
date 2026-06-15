@@ -102,7 +102,8 @@ class TestOptimizingQueueEmptyPlanResult {
         "optimizerGroup",
         new org.apache.amoro.resource.ResourceGroup.Builder("test", "local").build());
     setField(queue, "tableQueue", new LinkedTransferQueue<>());
-    setField(queue, "planningTables", new java.util.HashSet<>());
+    setField(queue, "planningTables", java.util.concurrent.ConcurrentHashMap.newKeySet());
+    setField(queue, "planningSlots", new java.util.concurrent.Semaphore(1));
     setField(
         queue,
         "scheduleLock",

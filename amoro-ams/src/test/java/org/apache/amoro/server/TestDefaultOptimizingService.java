@@ -42,7 +42,9 @@ import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
+import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.optimizing.SchedulingPolicy;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
@@ -541,6 +543,30 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
+  public void testReloadCommittingWithRunningCompletedProcessResetsForIceberg() {
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+    optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
+    optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
+
+    DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
+    Assertions.assertEquals(OptimizingStatus.COMMITTING, runtime.getOptimizingStatus());
+    Assertions.assertNotNull(runtime.getOptimizingProcess());
+    Assertions.assertEquals(ProcessStatus.RUNNING, runtime.getOptimizingProcess().getStatus());
+
+    reload();
+
+    DefaultTableRuntime reloaded = getDefaultTableRuntime(serverTableIdentifier().getId());
+    Assertions.assertNull(
+        reloaded.getOptimizingProcess(),
+        "Iceberg COMMITTING + RUNNING must keep the existing reset behavior");
+    Assertions.assertEquals(
+        OptimizingStatus.IDLE,
+        reloaded.getOptimizingStatus(),
+        "This Paimon incident must not enable Iceberg commit replay");
+  }
+
+  @Test
   public void testReloadOptimizingWithNoProcessRecord() {
     // Simulate: table is *_OPTIMIZING but process record is missing from DB
     // Before fix: table became a ghost (not in scheduler or tableQueue)
@@ -675,6 +701,52 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     // Verify that completeEmptyProcess was called on the spy
     verify(spyRuntime).completeEmptyProcess();
+  }
+
+  @Test
+  public void testPlanningStatusChangedDoesNotRefreshSchedulingQueue() throws Exception {
+    DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
+    SchedulingPolicy policy = getSchedulingPolicy(runtime.getGroupName());
+
+    policy.removeTable(runtime);
+    Assertions.assertFalse(
+        policy.tableIdentifiersSnapshot().contains(runtime.getTableIdentifier()));
+
+    runtime.beginPlanning();
+    Assertions.assertEquals(OptimizingStatus.PLANNING, runtime.getOptimizingStatus());
+
+    Assertions.assertFalse(
+        policy.tableIdentifiersSnapshot().contains(runtime.getTableIdentifier()));
+  }
+
+  @Test
+  public void testPendingStatusChangedStillRefreshesSchedulingQueue() throws Exception {
+    DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
+    SchedulingPolicy policy = getSchedulingPolicy(runtime.getGroupName());
+
+    policy.removeTable(runtime);
+    Assertions.assertFalse(
+        policy.tableIdentifiersSnapshot().contains(runtime.getTableIdentifier()));
+
+    runtime.planFailed();
+    Assertions.assertEquals(OptimizingStatus.PENDING, runtime.getOptimizingStatus());
+
+    Assertions.assertTrue(policy.tableIdentifiersSnapshot().contains(runtime.getTableIdentifier()));
+  }
+
+  private SchedulingPolicy getSchedulingPolicy(String groupName) throws Exception {
+    java.lang.reflect.Field queuesField =
+        DefaultOptimizingService.class.getDeclaredField("optimizingQueueByGroup");
+    queuesField.setAccessible(true);
+    @SuppressWarnings("unchecked")
+    Map<String, OptimizingQueue> queues =
+        (Map<String, OptimizingQueue>) queuesField.get(optimizingService());
+    OptimizingQueue queue = queues.get(groupName);
+
+    java.lang.reflect.Method schedulingPolicyMethod =
+        OptimizingQueue.class.getDeclaredMethod("getSchedulingPolicy");
+    schedulingPolicyMethod.setAccessible(true);
+    return (SchedulingPolicy) schedulingPolicyMethod.invoke(queue);
   }
 
   private OptimizerRegisterInfo buildRegisterInfo() {

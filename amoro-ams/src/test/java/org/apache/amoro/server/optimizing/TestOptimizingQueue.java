@@ -40,6 +40,7 @@ import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.metrics.Gauge;
 import org.apache.amoro.metrics.MetricKey;
@@ -51,6 +52,7 @@ import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.process.ProcessFactoryRouter;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.process.iceberg.IcebergProcessFactory;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerThread;
@@ -74,13 +76,22 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
@@ -162,6 +173,33 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         planExecutor,
         Collections.emptyList(),
         1,
+        router);
+  }
+
+  private OptimizingQueue buildOptimizingGroupService(
+      List<DefaultTableRuntime> tableRuntimes, Executor executor, int maxPlanningParallelism) {
+    return new OptimizingQueue(
+        CATALOG_MANAGER,
+        testResourceGroup(),
+        quotaProvider,
+        executor,
+        tableRuntimes,
+        maxPlanningParallelism,
+        router);
+  }
+
+  private OptimizingQueue buildOptimizingGroupService(
+      CatalogManager catalogManager,
+      List<DefaultTableRuntime> tableRuntimes,
+      Executor executor,
+      int maxPlanningParallelism) {
+    return new OptimizingQueue(
+        catalogManager,
+        testResourceGroup(),
+        quotaProvider,
+        executor,
+        tableRuntimes,
+        maxPlanningParallelism,
         router);
   }
 
@@ -344,6 +382,195 @@ public class TestOptimizingQueue extends AMSTableTestBase {
         "Task2 and Task3 should come from different tables", task2TableId, task3TableId);
     queue.dispose();
     tableRuntime2.dispose();
+  }
+
+  @Test
+  public void testPollTaskFillsPlanningSlotsUpToMaxParallelism() throws Exception {
+    DefaultTableRuntime tableRuntime1 = initTableWithFiles();
+    DefaultTableRuntime tableRuntime2 = createTable(tableIdentifier("plan_fill_table_2", 200L));
+    DefaultTableRuntime tableRuntime3 = createTable(tableIdentifier("plan_fill_table_3", 201L));
+    CapturingPlanExecutor capturingExecutor = new CapturingPlanExecutor();
+    OptimizingQueue queue =
+        buildOptimizingGroupService(
+            Lists.newArrayList(tableRuntime1, tableRuntime2, tableRuntime3), capturingExecutor, 3);
+
+    Assert.assertNull(queue.pollTask(optimizerThread, 0));
+
+    Assert.assertEquals(3, capturingExecutor.submittedCount());
+    Set<ServerTableIdentifier> planningTables = readPlanningTables(queue);
+    Assert.assertEquals(3, planningTables.size());
+    Assert.assertEquals(3, new HashSet<>(planningTables).size());
+
+    queue.dispose();
+    tableRuntime2.dispose();
+    tableRuntime3.dispose();
+  }
+
+  @Test
+  public void testPollTaskDoesNotExceedMaxPlanningParallelism() throws Exception {
+    DefaultTableRuntime tableRuntime1 = initTableWithFiles();
+    DefaultTableRuntime tableRuntime2 = createTable(tableIdentifier("plan_fill_cap_table_2", 202L));
+    DefaultTableRuntime tableRuntime3 = createTable(tableIdentifier("plan_fill_cap_table_3", 203L));
+    CapturingPlanExecutor capturingExecutor = new CapturingPlanExecutor();
+    OptimizingQueue queue =
+        buildOptimizingGroupService(
+            Lists.newArrayList(tableRuntime1, tableRuntime2, tableRuntime3), capturingExecutor, 2);
+
+    Assert.assertNull(queue.pollTask(optimizerThread, 0));
+
+    Assert.assertEquals(2, capturingExecutor.submittedCount());
+    Assert.assertEquals(2, readPlanningTables(queue).size());
+
+    queue.dispose();
+    tableRuntime2.dispose();
+    tableRuntime3.dispose();
+  }
+
+  @Test
+  public void testCompletedPlanningProcessIsVisibleBeforeScheduleLockSignal() throws Exception {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    CapturingPlanExecutor capturingExecutor = new CapturingPlanExecutor();
+    OptimizingQueue queue =
+        buildOptimizingGroupService(Collections.singletonList(tableRuntime), capturingExecutor, 1);
+
+    Assert.assertNull(queue.pollTask(optimizerThread, 0));
+    Assert.assertEquals(1, capturingExecutor.submittedCount());
+
+    Lock scheduleLock = readScheduleLock(queue);
+    scheduleLock.lock();
+    CountDownLatch completed = new CountDownLatch(1);
+    Thread plannerThread =
+        new Thread(
+            () -> {
+              try {
+                capturingExecutor.command(0).run();
+              } finally {
+                completed.countDown();
+              }
+            });
+    plannerThread.start();
+
+    long deadline = System.currentTimeMillis() + 5000;
+    while (queue.collectTasks().isEmpty() && System.currentTimeMillis() < deadline) {
+      Thread.sleep(10);
+    }
+    Assert.assertEquals(1, queue.collectTasks().size());
+    Assert.assertEquals(1, readAvailablePlanningSlots(queue));
+    Assert.assertTrue(readPlanningTables(queue).isEmpty());
+    Assert.assertEquals(1, completed.getCount());
+
+    scheduleLock.unlock();
+    plannerThread.join(5000);
+    Assert.assertEquals(0, completed.getCount());
+    queue.dispose();
+  }
+
+  @Test
+  public void testDirectExecutorPlanningDoesNotLoseSignal() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue =
+        buildOptimizingGroupService(Collections.singletonList(tableRuntime), Runnable::run, 1);
+
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+
+    Assert.assertNotNull(task);
+    queue.dispose();
+  }
+
+  @Test
+  public void testConcurrentPollDoesNotSubmitDuplicatePlanningForSameTable() throws Exception {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    CapturingPlanExecutor capturingExecutor = new CapturingPlanExecutor();
+    OptimizingQueue queue =
+        buildOptimizingGroupService(Collections.singletonList(tableRuntime), capturingExecutor, 2);
+
+    CountDownLatch start = new CountDownLatch(1);
+    Thread first =
+        new Thread(
+            () -> {
+              awaitLatch(start);
+              queue.pollTask(optimizerThread, 0);
+            });
+    Thread second =
+        new Thread(
+            () -> {
+              awaitLatch(start);
+              queue.pollTask(optimizerThread2, 0);
+            });
+
+    first.start();
+    second.start();
+    start.countDown();
+    first.join(5000);
+    second.join(5000);
+
+    Assert.assertEquals(1, capturingExecutor.submittedCount());
+    Assert.assertEquals(1, readPlanningTables(queue).size());
+    queue.dispose();
+  }
+
+  @Test
+  public void testRejectedPlanningSubmissionReleasesPlanningSlot() throws Exception {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    Executor rejectingExecutor =
+        command -> {
+          throw new RejectedExecutionException("reject for test");
+        };
+    OptimizingQueue queue =
+        buildOptimizingGroupService(Collections.singletonList(tableRuntime), rejectingExecutor, 1);
+
+    Assert.assertNull(queue.pollTask(optimizerThread, 0));
+
+    Assert.assertTrue(readPlanningTables(queue).isEmpty());
+    Assert.assertEquals(1, readAvailablePlanningSlots(queue));
+    Assert.assertEquals(OptimizingStatus.PENDING, tableRuntime.getOptimizingStatus());
+    queue.dispose();
+  }
+
+  @Test
+  public void testFailedPlanningReleasesSlotAndUpdatesLastPlanTime() throws Exception {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    long beforePlanTime = tableRuntime.getLastPlanTime();
+    CatalogManager failingCatalogManager = Mockito.mock(CatalogManager.class);
+    Mockito.when(
+            failingCatalogManager.loadTable(
+                Mockito.any(org.apache.amoro.table.TableIdentifier.class)))
+        .thenThrow(new RuntimeException("load table failed for test"));
+    CapturingPlanExecutor capturingExecutor = new CapturingPlanExecutor();
+    OptimizingQueue queue =
+        buildOptimizingGroupService(
+            failingCatalogManager, Collections.singletonList(tableRuntime), capturingExecutor, 1);
+
+    Assert.assertNull(queue.pollTask(optimizerThread, 0));
+    Assert.assertEquals(1, capturingExecutor.submittedCount());
+
+    capturingExecutor.command(0).run();
+
+    Assert.assertTrue(readPlanningTables(queue).isEmpty());
+    Assert.assertEquals(1, readAvailablePlanningSlots(queue));
+    Assert.assertEquals(OptimizingStatus.PENDING, tableRuntime.getOptimizingStatus());
+    Assert.assertTrue(tableRuntime.getLastPlanTime() >= beforePlanTime);
+    queue.dispose();
+  }
+
+  @Test
+  public void testZeroPlanningParallelismDoesNotSchedulePlanning() throws Exception {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    CapturingPlanExecutor capturingExecutor = new CapturingPlanExecutor();
+    OptimizingQueue queue =
+        buildOptimizingGroupService(Collections.singletonList(tableRuntime), capturingExecutor, 0);
+
+    Assert.assertNull(queue.pollTask(optimizerThread, 0));
+
+    Assert.assertEquals(0, capturingExecutor.submittedCount());
+    Assert.assertTrue(readPlanningTables(queue).isEmpty());
+    Assert.assertEquals(0, readAvailablePlanningSlots(queue));
+    queue.dispose();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testNegativePlanningParallelismIsRejected() {
+    buildOptimizingGroupService(Collections.emptyList(), Runnable::run, -1);
   }
 
   @Test
@@ -659,6 +886,150 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   }
 
   @Test
+  public void testPaimonCommittingRunningCompletedProcessIsEligibleForReplayOnRecovery()
+      throws Exception {
+    DefaultTableRuntime runtime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(runtime);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+    task.ack(optimizerThread);
+    task.complete(
+        optimizerThread,
+        new OptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId())
+            .setTaskOutput(
+                SerializationUtil.simpleSerialize(new RewriteFilesOutput(null, null, null))));
+
+    Assert.assertEquals(OptimizingStatus.COMMITTING, runtime.getOptimizingStatus());
+    OptimizingProcess process = runtime.getOptimizingProcess();
+    Assert.assertNotNull(process);
+    Assert.assertEquals(ProcessStatus.RUNNING, process.getStatus());
+
+    DefaultTableRuntime paimonRuntime = Mockito.spy(runtime);
+    Mockito.doReturn(TableFormat.PAIMON).when(paimonRuntime).getFormat();
+
+    Assert.assertTrue(canReplayPaimonCommittingProcess(queue, process, paimonRuntime));
+    Assert.assertFalse(canReplayPaimonCommittingProcess(queue, process, runtime));
+    queue.dispose();
+  }
+
+  @Test
+  public void testCompleteProcessWithExplicitProcessWorksWhenRuntimeProcessIsDetached()
+      throws Exception {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    Assert.assertNotNull(process);
+
+    setOptimizingProcess(tableRuntime, null);
+
+    tableRuntime.completeProcess(process, true);
+
+    Assert.assertNull(tableRuntime.getOptimizingProcess());
+    Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
+    queue.dispose();
+  }
+
+  @Test
+  public void testProcessOwnerCasAcquireAndRelease() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+
+    Assert.assertTrue(tableRuntime.tryAcquireProcessOwner(1001L));
+    Assert.assertEquals(1001L, tableRuntime.getProcessId());
+    Assert.assertFalse(tableRuntime.tryAcquireProcessOwner(1002L));
+    Assert.assertFalse(tableRuntime.tryReleaseProcessOwner(1002L));
+    Assert.assertTrue(tableRuntime.tryReleaseProcessOwner(1001L));
+    Assert.assertEquals(0L, tableRuntime.getProcessId());
+  }
+
+  @Test
+  public void testPrepareOwnerForPlanningBlocksActiveOwner() throws Exception {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+
+    Assert.assertFalse(invokePrepareOwnerForPlanning(queue, tableRuntime));
+    queue.dispose();
+  }
+
+  @Test
+  public void testPrepareOwnerForPlanningNormalizesTerminalOwner() throws Exception {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+    queue.ackTask(task.getTaskId(), optimizerThread);
+    queue.completeTask(
+        optimizerThread,
+        buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    Assert.assertNotNull(process);
+    process.commit();
+    Assert.assertEquals(ProcessStatus.SUCCESS, process.getStatus());
+    long completedProcessId = process.getProcessId();
+
+    Assert.assertTrue(tableRuntime.tryAcquireProcessOwner(completedProcessId));
+    Assert.assertEquals(completedProcessId, tableRuntime.getProcessId());
+
+    Assert.assertTrue(invokePrepareOwnerForPlanning(queue, tableRuntime));
+    Assert.assertEquals(0L, tableRuntime.getProcessId());
+    queue.dispose();
+  }
+
+  @Test
+  public void testRecycleStaleOwnerClearsOwner() throws Exception {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+    queue.ackTask(task.getTaskId(), optimizerThread);
+    queue.completeTask(
+        optimizerThread,
+        buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
+
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    Assert.assertNotNull(process);
+    long ownerProcessId = process.getProcessId();
+
+    TableProcessMeta staleMeta = new TableProcessMeta();
+    staleMeta.setProcessId(ownerProcessId);
+    staleMeta.setTableId(tableRuntime.getTableIdentifier().getId());
+    staleMeta.setStatus(ProcessStatus.RUNNING);
+    staleMeta.setCreateTime(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(16));
+    staleMeta.setRetryNumber(0);
+    staleMeta.setSummary(new HashMap<>());
+    staleMeta.setProcessParameters(new HashMap<>());
+    staleMeta.setExternalProcessIdentifier("");
+
+    Assert.assertTrue(invokeRecycleStaleOwner(queue, tableRuntime, staleMeta, ownerProcessId));
+    Assert.assertEquals(0L, tableRuntime.getProcessId());
+    queue.dispose();
+  }
+
+  @Test
+  public void testCompleteProcessSkipsWhenOwnerLost() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+
+    OptimizingProcess process = tableRuntime.getOptimizingProcess();
+    Assert.assertNotNull(process);
+    long processId = process.getProcessId();
+    Assert.assertTrue(tableRuntime.tryReleaseProcessOwner(processId));
+    Assert.assertEquals(0L, tableRuntime.getProcessId());
+
+    OptimizingStatus statusBefore = tableRuntime.getOptimizingStatus();
+    tableRuntime.completeProcess(process, false);
+    Assert.assertEquals(statusBefore, tableRuntime.getOptimizingStatus());
+
+    queue.dispose();
+  }
+
+  @Test
   public void testReleaseOrphanedPlanningTableOnRestart() {
     // Scenario: Table config was changed (optimizer group: "old_group" -> "default"),
     // the optimizing process was closed but table runtime is persisted with "old_group" and
@@ -714,6 +1085,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     tableIdentifier.setId(9999L);
 
     Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(tableIdentifier);
+    Mockito.when(tableRuntime.getFormat()).thenReturn(TableFormat.PAIMON);
+    Mockito.when(tableRuntime.getOptimizingStatus()).thenReturn(OptimizingStatus.PENDING);
     Mockito.doReturn(paimonTable).when(catalogManager).loadTable(tableIdentifier.getIdentifier());
     Mockito.when(paimonTable.format()).thenReturn(TableFormat.PAIMON);
 
@@ -738,6 +1111,36 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Mockito.verify(tableRuntime).completeEmptyProcess();
     Mockito.verify(tableRuntime, Mockito.never()).planFailed();
 
+    queue.dispose();
+  }
+
+  @Test
+  public void testRefreshTableSkipsSelfOptimizingDisabledRuntime() {
+    DefaultTableRuntime tableRuntime = Mockito.mock(DefaultTableRuntime.class);
+    ServerTableIdentifier tableIdentifier =
+        ServerTableIdentifier.of(
+            org.apache.amoro.table.TableIdentifier.of("mock", "db", "disabled_table"),
+            TableFormat.ICEBERG);
+    tableIdentifier.setId(10000L);
+
+    Mockito.when(tableRuntime.getTableIdentifier()).thenReturn(tableIdentifier);
+    Mockito.when(tableRuntime.getFormat()).thenReturn(TableFormat.ICEBERG);
+    Mockito.when(tableRuntime.getOptimizingConfig())
+        .thenReturn(new OptimizingConfig().setEnabled(false));
+
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            Mockito.mock(CatalogManager.class),
+            testResourceGroup(),
+            quotaProvider,
+            planExecutor,
+            Collections.emptyList(),
+            1,
+            router);
+
+    queue.refreshTable(tableRuntime);
+
+    Mockito.verify(tableRuntime, Mockito.never()).resetTaskQuotas(Mockito.anyLong());
     queue.dispose();
   }
 
@@ -805,6 +1208,45 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     return tableRuntime;
   }
 
+  private void setOptimizingProcess(DefaultTableRuntime runtime, OptimizingProcess process)
+      throws Exception {
+    Field field = DefaultTableRuntime.class.getDeclaredField("optimizingProcess");
+    field.setAccessible(true);
+    field.set(runtime, process);
+  }
+
+  private boolean canReplayPaimonCommittingProcess(
+      OptimizingQueue queue, OptimizingProcess process, DefaultTableRuntime tableRuntime)
+      throws Exception {
+    Method method =
+        OptimizingQueue.class.getDeclaredMethod(
+            "canReplayPaimonCommittingProcess", process.getClass(), DefaultTableRuntime.class);
+    method.setAccessible(true);
+    return (boolean) method.invoke(queue, process, tableRuntime);
+  }
+
+  private boolean invokePrepareOwnerForPlanning(
+      OptimizingQueue queue, DefaultTableRuntime tableRuntime) throws Exception {
+    Method method =
+        OptimizingQueue.class.getDeclaredMethod(
+            "prepareOwnerForPlanning", DefaultTableRuntime.class);
+    method.setAccessible(true);
+    return (boolean) method.invoke(queue, tableRuntime);
+  }
+
+  private boolean invokeRecycleStaleOwner(
+      OptimizingQueue queue,
+      DefaultTableRuntime tableRuntime,
+      TableProcessMeta processMeta,
+      long ownerProcessId)
+      throws Exception {
+    Method method =
+        OptimizingQueue.class.getDeclaredMethod(
+            "recycleStaleOwner", DefaultTableRuntime.class, TableProcessMeta.class, long.class);
+    method.setAccessible(true);
+    return (boolean) method.invoke(queue, tableRuntime, processMeta, ownerProcessId);
+  }
+
   private void appendPartitionedData(UnkeyedTable table, int id) {
     ArrayList<Record> newRecords =
         Lists.newArrayList(
@@ -863,6 +1305,61 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     tableRuntime.refresh(tableService().loadTable(serverTableIdentifier));
 
     return tableRuntime;
+  }
+
+  private ServerTableIdentifier tableIdentifier(String tableName, long id) {
+    ServerTableIdentifier identifier =
+        ServerTableIdentifier.of(
+            org.apache.amoro.table.TableIdentifier.of(
+                serverTableIdentifier().getCatalog(), "db", tableName),
+            TableFormat.ICEBERG);
+    identifier.setId(id);
+    return identifier;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Set<ServerTableIdentifier> readPlanningTables(OptimizingQueue queue) throws Exception {
+    Field field = OptimizingQueue.class.getDeclaredField("planningTables");
+    field.setAccessible(true);
+    return new HashSet<>((Set<ServerTableIdentifier>) field.get(queue));
+  }
+
+  private int readAvailablePlanningSlots(OptimizingQueue queue) throws Exception {
+    Field field = OptimizingQueue.class.getDeclaredField("planningSlots");
+    field.setAccessible(true);
+    return ((Semaphore) field.get(queue)).availablePermits();
+  }
+
+  private Lock readScheduleLock(OptimizingQueue queue) throws Exception {
+    Field field = OptimizingQueue.class.getDeclaredField("scheduleLock");
+    field.setAccessible(true);
+    return (Lock) field.get(queue);
+  }
+
+  private void awaitLatch(CountDownLatch latch) {
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static class CapturingPlanExecutor implements Executor {
+    private final List<Runnable> commands = Collections.synchronizedList(new ArrayList<>());
+
+    @Override
+    public void execute(Runnable command) {
+      commands.add(command);
+    }
+
+    private int submittedCount() {
+      return commands.size();
+    }
+
+    private Runnable command(int index) {
+      return commands.get(index);
+    }
   }
 
   private OptimizingTaskResult buildOptimizingTaskResult(OptimizingTaskId taskId, int threadId) {

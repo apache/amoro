@@ -28,9 +28,13 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -38,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 public class SchedulingPolicy {
 
@@ -84,14 +89,32 @@ public class SchedulingPolicy {
     return policyName;
   }
 
-  public DefaultTableRuntime scheduleTable(Set<ServerTableIdentifier> skipSet) {
+  public List<DefaultTableRuntime> scheduleTables(Set<ServerTableIdentifier> skipSet, int limit) {
+    if (limit <= 0) {
+      return Collections.emptyList();
+    }
+
+    List<DefaultTableRuntime> tableRuntimeSnapshot;
     tableLock.lock();
     try {
-      fillSkipSet(skipSet);
-      return tableRuntimeMap.values().stream()
-          .filter(tableRuntime -> !skipSet.contains(tableRuntime.getTableIdentifier()))
-          .min(createSorterByPolicy())
-          .orElse(null);
+      tableRuntimeSnapshot = new ArrayList<>(tableRuntimeMap.values());
+    } finally {
+      tableLock.unlock();
+    }
+
+    Set<ServerTableIdentifier> effectiveSkipSet = new HashSet<>(skipSet);
+    fillSkipSet(tableRuntimeSnapshot, effectiveSkipSet);
+    return tableRuntimeSnapshot.stream()
+        .filter(tableRuntime -> !effectiveSkipSet.contains(tableRuntime.getTableIdentifier()))
+        .sorted(createSorterByPolicy())
+        .limit(limit)
+        .collect(Collectors.toList());
+  }
+
+  public Set<ServerTableIdentifier> tableIdentifiersSnapshot() {
+    tableLock.lock();
+    try {
+      return new HashSet<>(tableRuntimeMap.keySet());
     } finally {
       tableLock.unlock();
     }
@@ -106,9 +129,10 @@ public class SchedulingPolicy {
     }
   }
 
-  private void fillSkipSet(Set<ServerTableIdentifier> originalSet) {
+  private void fillSkipSet(
+      List<DefaultTableRuntime> tableRuntimes, Set<ServerTableIdentifier> originalSet) {
     long currentTime = System.currentTimeMillis();
-    tableRuntimeMap.values().stream()
+    tableRuntimes.stream()
         .filter(
             tableRuntime ->
                 !isTablePending(tableRuntime)
