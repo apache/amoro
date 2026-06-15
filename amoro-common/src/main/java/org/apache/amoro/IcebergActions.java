@@ -31,5 +31,4 @@ public class IcebergActions {
   public static final Action EXPIRE_SNAPSHOTS = Action.register("expire-snapshots");
   public static final Action CLEAN_DANGLING_DELETE = Action.register("clean-dangling-delete-files");
   public static final Action AUTO_CREATE_TAGS = Action.register("auto-create-tags");
-  public static final Action EXPIRE_PROCESS_DATA = Action.register("expire-process-data");
 }

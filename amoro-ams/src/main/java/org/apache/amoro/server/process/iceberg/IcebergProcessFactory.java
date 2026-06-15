@@ -95,36 +95,7 @@ public class IcebergProcessFactory implements ProcessFactory {
           .durationType()
           .defaultValue(Duration.ofMinutes(10));
 
-  public static final ConfigOption<Duration> EXPIRE_PROCESS_DATA_RUNTIME_DATA_EXPIRE_INTERVAL =
-      ConfigOptions.key("expire-process-data.runtime-data-expire-interval")
-          .durationType()
-          .defaultValue(Duration.ofHours(1))
-          .withDescription(
-              "The interval for expiring process runtime data, "
-                  + "including optimizing runtime data and completed process metadata.");
-
-  public static final ConfigOption<Duration> EXPIRE_PROCESS_DATA_RUNTIME_DATA_KEEP_TIME =
-      ConfigOptions.key("expire-process-data.runtime-data-keep-time")
-          .durationType()
-          .defaultValue(Duration.ofDays(30))
-          .withDescription(
-              "The maximum retention time for process runtime data "
-                  + "(e.g., process records, process states, task runtimes, optimizing quotas). "
-                  + "Data older than this will be cleaned up during expire-process-data execution.");
-
-  public static final ConfigOption<Duration> EXPIRE_PROCESS_DATA_HISTORY_DATA_KEEP_TIME =
-      ConfigOptions.key("expire-process-data.history-data-keep-time")
-          .durationType()
-          .defaultValue(Duration.ofDays(7))
-          .withDescription(
-              "The maximum retention time for completed process history data. "
-                  + "Only applies when it is shorter than runtime-data-keep-time,"
-                  + " and only affects terminal process records (SUCCESS/FAILED). "
-                  + "Active processes (RUNNING/SUBMITTED/PENDING/CANCELING) are never deleted.");
-
   private ExecuteEngine localEngine;
-  private long expireProcessDataRuntimeKeepTimeMs;
-  private long expireProcessDataHistoryKeepTimeMs;
   private final Map<Action, ProcessTriggerStrategy> actions = Maps.newHashMap();
   private final List<TableFormat> formats =
       Lists.newArrayList(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.MIXED_HIVE);
@@ -168,8 +139,6 @@ public class IcebergProcessFactory implements ProcessFactory {
       return triggerAutoCreateTag(tableRuntime);
     } else if (IcebergActions.SYNC_HIVE_TABLES.equals(action)) {
       return triggerHiveCommitSync(tableRuntime);
-    } else if (IcebergActions.EXPIRE_PROCESS_DATA.equals(action)) {
-      return triggerProcessDataExpiring(tableRuntime);
     }
 
     return Optional.empty();
@@ -201,12 +170,6 @@ public class IcebergProcessFactory implements ProcessFactory {
       return new TagsAutoCreatingProcess(tableRuntime, localEngine);
     } else if (IcebergActions.SYNC_HIVE_TABLES.equals(action)) {
       return new HiveCommitSyncProcess(tableRuntime, localEngine);
-    } else if (IcebergActions.EXPIRE_PROCESS_DATA.equals(action)) {
-      return new ProcessDataExpiringProcess(
-          tableRuntime,
-          localEngine,
-          expireProcessDataRuntimeKeepTimeMs,
-          expireProcessDataHistoryKeepTimeMs);
     }
 
     throw new RecoverProcessFailedException(
@@ -254,16 +217,6 @@ public class IcebergProcessFactory implements ProcessFactory {
       this.actions.put(
           IcebergActions.SYNC_HIVE_TABLES, ProcessTriggerStrategy.triggerAtFixRate(interval));
     }
-
-    Duration expireProcessDataInterval =
-        configs.getDuration(EXPIRE_PROCESS_DATA_RUNTIME_DATA_EXPIRE_INTERVAL);
-    this.actions.put(
-        IcebergActions.EXPIRE_PROCESS_DATA,
-        ProcessTriggerStrategy.triggerAtFixRate(expireProcessDataInterval));
-    this.expireProcessDataRuntimeKeepTimeMs =
-        configs.getDuration(EXPIRE_PROCESS_DATA_RUNTIME_DATA_KEEP_TIME).toMillis();
-    this.expireProcessDataHistoryKeepTimeMs =
-        configs.getDuration(EXPIRE_PROCESS_DATA_HISTORY_DATA_KEEP_TIME).toMillis();
   }
 
   private Optional<TableProcess> triggerExpireSnapshot(TableRuntime tableRuntime) {
@@ -346,19 +299,6 @@ public class IcebergProcessFactory implements ProcessFactory {
     }
 
     return Optional.of(new HiveCommitSyncProcess(tableRuntime, localEngine));
-  }
-
-  private Optional<TableProcess> triggerProcessDataExpiring(TableRuntime tableRuntime) {
-    if (localEngine == null) {
-      return Optional.empty();
-    }
-
-    return Optional.of(
-        new ProcessDataExpiringProcess(
-            tableRuntime,
-            localEngine,
-            expireProcessDataRuntimeKeepTimeMs,
-            expireProcessDataHistoryKeepTimeMs));
   }
 
   @Override

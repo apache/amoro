@@ -16,71 +16,62 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.process.iceberg;
+package org.apache.amoro.server.scheduler.inline;
 
-import org.apache.amoro.Action;
-import org.apache.amoro.IcebergActions;
 import org.apache.amoro.TableRuntime;
-import org.apache.amoro.process.ExecuteEngine;
-import org.apache.amoro.process.LocalProcess;
-import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
+import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
-import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+import java.time.Duration;
 
-/** Local table process for expiring optimizing runtime data and process history records. */
-public class ProcessDataExpiringProcess extends TableProcess implements LocalProcess {
-
-  private static final Logger LOG = LoggerFactory.getLogger(ProcessDataExpiringProcess.class);
+public class ProcessDataExpiringExecutor extends PeriodicTableScheduler {
+  private static final Logger LOG = LoggerFactory.getLogger(ProcessDataExpiringExecutor.class);
 
   private final Persistency persistency = new Persistency();
   private final long optimizingKeepTimeMs;
   private final long processKeepTimeMs;
+  private final long expireIntervalMs;
 
-  public ProcessDataExpiringProcess(
-      TableRuntime tableRuntime,
-      ExecuteEngine engine,
-      long optimizingKeepTimeMs,
-      long processKeepTimeMs) {
-    super(tableRuntime, engine);
-    this.optimizingKeepTimeMs = optimizingKeepTimeMs;
-    this.processKeepTimeMs = processKeepTimeMs;
+  public ProcessDataExpiringExecutor(
+      TableService tableService,
+      Duration optimizingKeepTime,
+      Duration expireInterval,
+      Duration processKeepTime) {
+    super(tableService, 1);
+    this.optimizingKeepTimeMs = optimizingKeepTime.toMillis();
+    this.processKeepTimeMs = processKeepTime.toMillis();
+    this.expireIntervalMs = expireInterval.toMillis();
   }
 
   @Override
-  public String tag() {
-    return getAction().getName().toLowerCase();
+  protected long getNextExecutingTime(TableRuntime tableRuntime) {
+    return expireIntervalMs;
   }
 
   @Override
-  public void run() {
+  protected boolean enabled(TableRuntime tableRuntime) {
+    return true;
+  }
+
+  @Override
+  protected long getExecutorDelay() {
+    return 0;
+  }
+
+  @Override
+  protected void execute(TableRuntime tableRuntime) {
     try {
       persistency.doExpiring(tableRuntime);
-    } catch (Throwable t) {
-      LOG.error("Expiring table runtimes of {} failed.", tableRuntime.getTableIdentifier(), t);
-      throw new RuntimeException(t);
+    } catch (Throwable throwable) {
+      LOG.error(
+          "Expiring table runtimes of {} failed.", tableRuntime.getTableIdentifier(), throwable);
     }
-  }
-
-  @Override
-  public Action getAction() {
-    return IcebergActions.EXPIRE_PROCESS_DATA;
-  }
-
-  @Override
-  public Map<String, String> getProcessParameters() {
-    return Maps.newHashMap();
-  }
-
-  @Override
-  public Map<String, String> getSummary() {
-    return Maps.newHashMap();
   }
 
   private class Persistency extends PersistentBase {
@@ -109,9 +100,8 @@ public class ProcessDataExpiringProcess extends TableProcess implements LocalPro
                   mapper -> mapper.deleteOptimizingQuotaBefore(tableId, optimizingMinId)));
 
       // 2. Expire process history terminal records (processKeepTimeMs, e.g. 7d)
-      //    Only deletes terminal records in the window between processKeepTime and
-      // optimizingKeepTime,
-      //    since records older than optimizingKeepTime are already removed by step 1.
+      //    Only deletes terminal records in the window between processKeepTime and keepTime,
+      //    since records older than keepTime are already removed by step 1.
       if (processKeepTimeMs < optimizingKeepTimeMs) {
         long processMinId = SnowflakeIdGenerator.getMinSnowflakeId(now - processKeepTimeMs);
         doAs(
