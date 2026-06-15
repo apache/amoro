@@ -65,7 +65,7 @@ public class TestHttpRemoteSparkStandAloneSubmit {
     engine = new HttpRemoteSparkStandAloneSubmit();
     Map<String, String> props = new HashMap<>();
     props.put("base-url", "http://localhost:" + port);
-    props.put("cur-user", "test-user");
+    props.put("execute.user", "test-user");
     props.put("source-tag", "schedule");
     props.put("default-spark-version", "321");
     engine.open(props);
