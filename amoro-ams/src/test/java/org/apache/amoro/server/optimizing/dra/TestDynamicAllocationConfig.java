@@ -71,6 +71,22 @@ public class TestDynamicAllocationConfig {
   }
 
   @Test
+  void enabledWithUnparsableMinParallelismIsRejected() {
+    // resolveMinParallelism() is lenient (legacy/keeper path), but an opted-in group must not
+    // silently degrade an unparsable min-parallelism to 0.
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM, "abc");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> parseAndValidate(group(props)));
+  }
+
+  @Test
+  void enabledWithNegativeMinParallelismIsRejected() {
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM, "-3");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> parseAndValidate(group(props)));
+  }
+
+  @Test
   void executorIdleTimeoutBelowMinimumIsRejected() {
     Map<String, String> props = enabledProps();
     props.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT, "10s");

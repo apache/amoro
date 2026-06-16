@@ -41,6 +41,7 @@ public class DynamicAllocationConfig {
   private final String container;
   private final boolean enabled;
   private final int minParallelism;
+  private final String minParallelismRaw;
   private final Integer maxParallelism;
   private final Duration schedulerBacklogTimeout;
   private final Duration sustainedBacklogTimeout;
@@ -53,6 +54,7 @@ public class DynamicAllocationConfig {
       String container,
       boolean enabled,
       int minParallelism,
+      String minParallelismRaw,
       Integer maxParallelism,
       Duration schedulerBacklogTimeout,
       Duration sustainedBacklogTimeout,
@@ -63,6 +65,7 @@ public class DynamicAllocationConfig {
     this.container = container;
     this.enabled = enabled;
     this.minParallelism = minParallelism;
+    this.minParallelismRaw = minParallelismRaw;
     this.maxParallelism = maxParallelism;
     this.schedulerBacklogTimeout = schedulerBacklogTimeout;
     this.sustainedBacklogTimeout = sustainedBacklogTimeout;
@@ -83,6 +86,7 @@ public class DynamicAllocationConfig {
             OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED,
             OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED_DEFAULT);
     int minParallelism = resolveMinParallelism(group);
+    String minParallelismRaw = rawMinParallelism(group);
 
     Integer maxParallelism =
         PropertyUtil.propertyAsNullableInt(
@@ -93,6 +97,7 @@ public class DynamicAllocationConfig {
         group.getContainer(),
         enabled,
         minParallelism,
+        minParallelismRaw,
         maxParallelism,
         parseDuration(
             properties,
@@ -136,6 +141,23 @@ public class DynamicAllocationConfig {
       return parseIntOrDefault(group.getName(), legacy);
     }
     return OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM_DEFAULT;
+  }
+
+  /**
+   * The raw, unparsed min-parallelism string the group relies on, following the same resolution
+   * order as {@link #resolveMinParallelism(ResourceGroup)} ({@link
+   * OptimizerProperties#DYNAMIC_ALLOCATION_MIN_PARALLELISM} → {@link
+   * OptimizerProperties#OPTIMIZER_GROUP_MIN_PARALLELISM}), or {@code null} when neither is set.
+   * Retained so {@link #validate()} can distinguish "explicitly configured but unparsable" from
+   * "unset", which the lenient resolved {@code int} collapses to the same {@code 0}.
+   */
+  private static String rawMinParallelism(ResourceGroup group) {
+    Map<String, String> properties = group.getProperties();
+    String namespaced = properties.get(OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM);
+    if (namespaced != null) {
+      return namespaced;
+    }
+    return properties.get(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM);
   }
 
   /**
@@ -208,6 +230,28 @@ public class DynamicAllocationConfig {
               "Resource group:%s enables dynamic allocation but '%s' is not set; it is required.",
               groupName, OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM));
     }
+    // min-parallelism: resolveMinParallelism() stays lenient for the keeper hot path and legacy
+    // compatibility, but on an opted-in group an explicitly configured value must be strict —
+    // otherwise a typo silently degrades to 0 and a negative value slips through unchecked.
+    if (minParallelismRaw != null) {
+      int parsedMin;
+      try {
+        parsedMin = Integer.parseInt(minParallelismRaw.trim());
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Resource group:%s '%s'(%s) is not a valid integer.",
+                groupName,
+                OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM,
+                minParallelismRaw));
+      }
+      if (parsedMin < 0) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Resource group:%s '%s'(%d) must not be negative.",
+                groupName, OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM, parsedMin));
+      }
+    }
     if (maxParallelism < minParallelism) {
       throw new IllegalArgumentException(
           String.format(
@@ -239,6 +283,9 @@ public class DynamicAllocationConfig {
               executorIdleTimeout,
               OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT_MIN));
     }
+    // TODO AIP-5 Phase 2: these polling-oriented timeouts only enforce a positive lower bound; a
+    // value like "1ns" passes here but would busy-spin the scale loop. Add realistic minimums once
+    // the scaling loop that consumes them lands.
     requirePositive(
         OptimizerProperties.DYNAMIC_ALLOCATION_SCHEDULER_BACKLOG_TIMEOUT, schedulerBacklogTimeout);
     requirePositive(
@@ -283,6 +330,12 @@ public class DynamicAllocationConfig {
     return minParallelism;
   }
 
+  /**
+   * The configured max-parallelism. Precondition: only call on a config that has passed {@link
+   * #validate()} with DRA enabled — {@code max-parallelism} is nullable and only mandatory when
+   * enabled, so calling this on a disabled or unvalidated config may throw {@link
+   * NullPointerException} on unboxing.
+   */
   public int getMaxParallelism() {
     return maxParallelism;
   }
