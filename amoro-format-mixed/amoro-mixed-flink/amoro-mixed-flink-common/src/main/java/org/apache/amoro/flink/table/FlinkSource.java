@@ -57,6 +57,7 @@ import org.apache.iceberg.flink.source.FlinkInputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -263,7 +264,7 @@ public class FlinkSource {
     }
 
     /** extract op from dataStream, and wrap krb support */
-    private DataStream<RowData> wrapKrb(DataStream<RowData> ds, Long startSnapshotId) {
+    private DataStream<RowData> wrapKrb(DataStream<RowData> ds, @Nullable Long startSnapshotId) {
       IcebergClassUtil.clean(env);
       Transformation origin = ds.getTransformation();
       int scanParallelism =

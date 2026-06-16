@@ -1512,7 +1512,6 @@
                     <configuration>
                         <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
                         <argLine>${amoro.surefire.baseArgLine}</argLine>
-                        <excludedGroups>${surefire.excludedGroups.jdk}</excludedGroups>
                     </configuration>
                 </plugin>
                 <plugin>

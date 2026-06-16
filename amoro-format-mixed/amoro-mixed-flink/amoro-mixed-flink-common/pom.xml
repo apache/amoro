@@ -430,7 +430,6 @@
                             <value>org.apache.amoro.listener.AmoroRunListener</value>
                         </property>
                     </properties>
-                    <excludedGroups>${surefire.excludedGroups.jdk}</excludedGroups>
                     <argLine>${amoro.surefire.baseArgLine}</argLine>
                 </configuration>
             </plugin>
