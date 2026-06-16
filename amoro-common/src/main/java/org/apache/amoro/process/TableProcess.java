@@ -32,7 +32,7 @@ public abstract class TableProcess implements AmoroProcess {
   private final SimpleFuture completeFuture = new SimpleFuture();
 
   protected final TableRuntime tableRuntime;
-  private final ExecuteEngine executeEngine;
+  protected final ExecuteEngine executeEngine;
 
   protected TableProcess(TableRuntime tableRuntime, ExecuteEngine engine) {
     this.tableRuntime = tableRuntime;

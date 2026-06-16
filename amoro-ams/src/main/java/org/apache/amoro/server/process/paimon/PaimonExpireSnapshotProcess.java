@@ -23,6 +23,7 @@ import org.apache.amoro.PaimonActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.process.ExecuteEngine;
+import org.apache.amoro.process.HttpRemoteSparkStandAloneSubmit;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.server.table.DefaultTableRuntime;
@@ -45,6 +46,7 @@ public class PaimonExpireSnapshotProcess extends TableProcess {
 
   private static final String DEFAULT_SNAPSHOT_TIME_RETAINED = "1 h";
   private static final int DEFAULT_SNAPSHOT_NUM_RETAINED_MAX = 10;
+  private static final int DEFAULT_MAX_DELETES = 550;
 
   private static final String PROP_SNAPSHOT_TIME_RETAINED = "snapshot.time-retained";
   private static final String PROP_SNAPSHOT_NUM_RETAINED_MAX = "snapshot.num-retained.max";
@@ -80,16 +82,24 @@ public class PaimonExpireSnapshotProcess extends TableProcess {
 
   @Override
   public Map<String, String> getProcessParameters() {
+    String executeUser = getExecutionUser();
     Map<String, String> params = new HashMap<>();
     params.put("hql", buildExpireSnapshotsSql());
-    params.put("curUser", "sljdp");
-    params.put("logUser", "sljdp");
-    params.put("group", "sljdp");
+    params.put("curUser", executeUser);
+    params.put("logUser", executeUser);
+    params.put("group", executeUser);
     params.put("userId", "470");
     params.put("sparkVersion", String.valueOf(sparkVersion));
     params.put("sourceTag", "AMORO");
-    params.put("conf", "{\"sparkVersion\":\"" + sparkVersion + "\"}");
+    params.put("conf", "{\"sparkVersion\":\"" + sparkVersion + "\",\"paimon.version\":\"1.3\"}");
     return params;
+  }
+
+  private String getExecutionUser() {
+    if (executeEngine instanceof HttpRemoteSparkStandAloneSubmit) {
+      return ((HttpRemoteSparkStandAloneSubmit) executeEngine).configuredExecuteUser();
+    }
+    return "sljdp";
   }
 
   @Override
@@ -124,8 +134,8 @@ public class PaimonExpireSnapshotProcess extends TableProcess {
 
     String sql =
         String.format(
-            "CALL sys.expire_snapshots(table => '%s', retain_max => %d, older_than => %s)",
-            fullTableName, retainMax, String.valueOf(olderThanTimestampMillis));
+            "CALL sys.expire_snapshots(table => '%s', retain_max => %d, older_than => %s, max_deletes => %d)",
+            fullTableName, retainMax, olderThanTimestampMillis, DEFAULT_MAX_DELETES);
 
     LOG.info("Built expire snapshots SQL for table {}: {}", tableId, sql);
     return sql;

@@ -57,14 +57,14 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
   private static final String PROP_READ_TIMEOUT = "read-timeout-ms";
   private static final String PROP_DEFAULT_SPARK_VERSION = "default-spark-version";
   private static final String PROP_SOURCE_TAG = "source-tag";
-  private static final String PROP_CUR_USER = "cur-user";
+  private static final String PROP_EXECUTE_USER = "execute.user";
 
   private static final int DEFAULT_CONNECT_TIMEOUT_MS = 5000;
   private static final int DEFAULT_READ_TIMEOUT_MS = 30000;
   private static final int DEFAULT_SPARK_VERSION = 321;
   private static final String DEFAULT_BASE_URL = "http://spark-server-api-pre.eclytics.com";
   private static final String DEFAULT_SOURCE_TAG = "schedule";
-  private static final String DEFAULT_CUR_USER = "amoro";
+  private static final String DEFAULT_EXECUTE_USER = "amoro";
 
   private static final String SUBMIT_PATH = "/spark/job/submit";
   private static final String STATE_PATH = "/spark/job/state";
@@ -90,7 +90,11 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
   private int readTimeoutMs;
   private int defaultSparkVersion;
   private String sourceTag;
-  private String curUser;
+  private String executeUser;
+
+  public String configuredExecuteUser() {
+    return executeUser;
+  }
 
   @Override
   public String name() {
@@ -119,7 +123,7 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
     this.defaultSparkVersion =
         parseInt(engineProperties.get(PROP_DEFAULT_SPARK_VERSION), DEFAULT_SPARK_VERSION);
     this.sourceTag = engineProperties.getOrDefault(PROP_SOURCE_TAG, DEFAULT_SOURCE_TAG);
-    this.curUser = engineProperties.getOrDefault(PROP_CUR_USER, DEFAULT_CUR_USER);
+    this.executeUser = engineProperties.getOrDefault(PROP_EXECUTE_USER, DEFAULT_EXECUTE_USER);
 
     LOG.info(
         "HttpRemoteSparkStandAloneSubmit engine opened with baseUrl={}, connectTimeout={}ms, readTimeout={}ms",
@@ -289,7 +293,7 @@ public class HttpRemoteSparkStandAloneSubmit implements ExecuteEngine {
     ObjectNode requestNode = objectMapper.createObjectNode();
     requestNode.put(PARAM_JOB_TYPE, "sql");
     requestNode.put(PARAM_HQL, hql);
-    requestNode.put(PARAM_CUR_USER, params.getOrDefault(PARAM_CUR_USER, curUser));
+    requestNode.put(PARAM_CUR_USER, params.getOrDefault(PARAM_CUR_USER, executeUser));
     requestNode.put(PARAM_SOURCE_TAG, params.getOrDefault(PARAM_SOURCE_TAG, sourceTag));
     requestNode.put(
         PARAM_SPARK_VERSION, parseInt(params.get(PARAM_SPARK_VERSION), defaultSparkVersion));
