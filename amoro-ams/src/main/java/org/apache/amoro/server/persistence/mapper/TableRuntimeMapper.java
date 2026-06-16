@@ -179,6 +179,18 @@ public interface TableRuntimeMapper {
       @Param("stateKey") String stateKey,
       @Param("stateValue") String value);
 
+  @Update(
+      "UPDATE "
+          + STATE_TABLE_NAME
+          + " SET state_value = #{stateValue}, state_version = state_version + 1 "
+          + " WHERE table_id = #{tableId} AND state_key = #{stateKey}"
+          + " AND state_version = #{expectedStateVersion}")
+  int setStateValueIfVersion(
+      @Param("tableId") long tableId,
+      @Param("stateKey") String stateKey,
+      @Param("expectedStateVersion") long expectedStateVersion,
+      @Param("stateValue") String stateValue);
+
   @Select(
       "SELECT state_id, table_id, state_key, state_value, state_version FROM "
           + STATE_TABLE_NAME

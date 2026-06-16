@@ -180,129 +180,162 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
     if (necessary != null) {
       return necessary;
     }
-    AppendOnlyFileStoreTable table = unwrapBucketUnawareTable();
-    if (table == null) {
-      necessary = false;
-      return false;
-    }
+    long startTime = logPlanStart("isNecessary");
+    try {
+      AppendOnlyFileStoreTable table = unwrapBucketUnawareTable();
+      if (table == null) {
+        necessary = false;
+        logPlanFinish("isNecessary", startTime, "necessary=false,reason=unsupported-table");
+        return false;
+      }
 
-    PaimonPlanContext context =
-        PaimonPlanContext.forOptions(
-            CoreOptions.fromMap(table.options()),
-            optimizingConfig,
-            lastMinorOptimizingTime,
-            lastMajorOptimizingTime,
-            lastFullOptimizingTime,
-            availableCore,
-            maxInputSizePerThread,
-            planTime);
-    PaimonAppendFileScanner.ScanResult scanResult =
-        new PaimonAppendFileScanner(table, context, partitionFilter).scan();
-    targetSnapshotId = scanResult.snapshotId();
-    Map<BinaryRow, List<PaimonFileCandidate>> filesByPartition = scanResult.files();
-    List<PlannedAppendTask> tasks = new ArrayList<>();
-    PaimonPartitionEvaluator evaluator = new PaimonPartitionEvaluator(context);
-    PaimonAppendTaskPacker packer = new PaimonAppendTaskPacker(context);
-    for (Map.Entry<BinaryRow, List<PaimonFileCandidate>> entry : filesByPartition.entrySet()) {
-      PaimonPartitionEvaluation evaluation = evaluator.evaluate(entry.getKey(), entry.getValue());
-      if (!evaluation.necessary()) {
-        continue;
+      PaimonPlanContext context =
+          PaimonPlanContext.forOptions(
+              CoreOptions.fromMap(table.options()),
+              optimizingConfig,
+              lastMinorOptimizingTime,
+              lastMajorOptimizingTime,
+              lastFullOptimizingTime,
+              availableCore,
+              maxInputSizePerThread,
+              planTime);
+      PaimonAppendFileScanner.ScanResult scanResult =
+          new PaimonAppendFileScanner(table, context, partitionFilter).scan();
+      targetSnapshotId = scanResult.snapshotId();
+      Map<BinaryRow, List<PaimonFileCandidate>> filesByPartition = scanResult.files();
+      List<PlannedAppendTask> tasks = new ArrayList<>();
+      PaimonPartitionEvaluator evaluator = new PaimonPartitionEvaluator(context);
+      PaimonAppendTaskPacker packer = new PaimonAppendTaskPacker(context);
+      for (Map.Entry<BinaryRow, List<PaimonFileCandidate>> entry : filesByPartition.entrySet()) {
+        PaimonPartitionEvaluation evaluation = evaluator.evaluate(entry.getKey(), entry.getValue());
+        if (!evaluation.necessary()) {
+          continue;
+        }
+        List<AppendCompactTask> packed = packer.pack(evaluation);
+        if (packed.isEmpty()) {
+          continue;
+        }
+        for (AppendCompactTask task : packed) {
+          tasks.add(new PlannedAppendTask(task, evaluation.optimizingType()));
+        }
       }
-      List<AppendCompactTask> packed = packer.pack(evaluation);
-      if (packed.isEmpty()) {
-        continue;
+      cachedTasks = tasks;
+      optimizingType = highestType(cachedTasks);
+      necessary = !cachedTasks.isEmpty();
+      if (!necessary) {
+        LOG.info(
+            "Paimon table [{}] has no eligible optimizing tasks — skip optimizing.",
+            paimonTable.id().getTableName());
       }
-      for (AppendCompactTask task : packed) {
-        tasks.add(new PlannedAppendTask(task, evaluation.optimizingType()));
-      }
+      logPlanFinish(
+          "isNecessary",
+          startTime,
+          String.format(
+              "necessary=%s,cachedTasks=%d,snapshot=%d,type=%s",
+              necessary, cachedTasks.size(), targetSnapshotId, optimizingType));
+      return necessary;
+    } catch (RuntimeException | Error e) {
+      logPlanFinish("isNecessary", startTime, "failed:" + e.getClass().getSimpleName());
+      throw e;
     }
-    cachedTasks = tasks;
-    optimizingType = highestType(cachedTasks);
-    necessary = !cachedTasks.isEmpty();
-    if (!necessary) {
-      LOG.info(
-          "Paimon table [{}] has no eligible optimizing tasks — skip optimizing.",
-          paimonTable.id().getTableName());
-    }
-    return necessary;
   }
 
   @Override
   public OptimizingPlanResult<PaimonCompactionTask> plan() {
-    if (!isNecessary()) {
-      return emptyResult();
-    }
-    AppendOnlyFileStoreTable table = unwrapBucketUnawareTable();
-    if (table == null) {
-      return emptyResult();
-    }
-
-    AppendCompactTaskSerializer serializer = new AppendCompactTaskSerializer();
-    int serializerVersion = serializer.getVersion();
-
-    // Generate commitUser once per Planner instance — retries within the same plan MUST reuse
-    // the same value so Paimon's (user + identifier) idempotency can dedupe stale commits.
-    if (commitUser == null) {
-      commitUser = CoreOptions.createCommitUser(Options.fromMap(table.options()));
-    }
-
-    // Apply plan-tick quota: cap count to ceil(availableCore). Input-size splitting is handled by
-    // PaimonAppendTaskPacker before this point.
-    // NOTE (§3.4 split contract): this does NOT re-split, merge, or otherwise mutate the
-    // Amoro-built AppendCompactTask — we only decide how many tasks get released this tick.
-    List<PlannedAppendTask> eligible =
-        applyQuotaInternal(
-            cachedTasks,
-            availableCore,
-            maxInputSizePerThread,
-            plannedTask -> totalCompactBeforeSize(plannedTask.task()),
-            paimonTable.id().getTableName());
-
-    if (eligible.isEmpty()) {
-      LOG.info(
-          "Paimon table [{}] plan tick produced 0 eligible tasks — "
-              + "reset isNecessary() to false for this planner instance.",
-          paimonTable.id().getTableName());
-      necessary = false;
-      return emptyResult();
-    }
-    optimizingType = highestType(eligible);
-
-    List<PaimonCompactionTask> wrapped = new ArrayList<>(eligible.size());
-    for (PlannedAppendTask plannedTask : eligible) {
-      AppendCompactTask task = plannedTask.task();
-      byte[] bytes;
-      try {
-        bytes = serializer.serialize(task);
-      } catch (IOException e) {
-        throw new IllegalStateException(
-            "Failed to serialize Paimon AppendCompactTask for partition " + task.partition(), e);
+    long startTime = logPlanStart("plan");
+    try {
+      if (!isNecessary()) {
+        OptimizingPlanResult<PaimonCompactionTask> result = emptyResult();
+        logPlanFinish("plan", startTime, "necessary=false,tasks=0");
+        return result;
       }
-      PaimonCompactionInput input =
-          new PaimonCompactionInput(
-              paimonTable,
-              bytes,
-              serializerVersion,
-              commitUser,
-              task.partition() == null ? "" : task.partition().toString(),
-              targetSnapshotId,
-              processId);
-      Map<String, String> props = Maps.newHashMap();
-      props.put(
-          TaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
-          PaimonCompactionExecutorFactory.class.getName());
-      wrapped.add(new PaimonCompactionTask(tableId, input.getPartitionPath(), input, props));
-    }
+      AppendOnlyFileStoreTable table = unwrapBucketUnawareTable();
+      if (table == null) {
+        OptimizingPlanResult<PaimonCompactionTask> result = emptyResult();
+        logPlanFinish("plan", startTime, "necessary=false,reason=unsupported-table,tasks=0");
+        return result;
+      }
 
-    return new OptimizingPlanResult<>(
-        processId,
-        getOptimizingType(),
-        planTime,
-        targetSnapshotId,
-        -1L /* targetChangeSnapshotId — Paimon has no change snapshot */,
-        wrapped,
-        Collections.emptyMap() /* fromSequence */,
-        Collections.emptyMap() /* toSequence */);
+      AppendCompactTaskSerializer serializer = new AppendCompactTaskSerializer();
+      int serializerVersion = serializer.getVersion();
+
+      // Generate commitUser once per Planner instance — retries within the same plan MUST reuse
+      // the same value so Paimon's (user + identifier) idempotency can dedupe stale commits.
+      if (commitUser == null) {
+        commitUser = CoreOptions.createCommitUser(Options.fromMap(table.options()));
+      }
+
+      // Apply plan-tick quota: cap count to ceil(availableCore). Input-size splitting is handled by
+      // PaimonAppendTaskPacker before this point.
+      // NOTE (§3.4 split contract): this does NOT re-split, merge, or otherwise mutate the
+      // Amoro-built AppendCompactTask — we only decide how many tasks get released this tick.
+      List<PlannedAppendTask> eligible =
+          applyQuotaInternal(
+              cachedTasks,
+              availableCore,
+              maxInputSizePerThread,
+              plannedTask -> totalCompactBeforeSize(plannedTask.task()),
+              paimonTable.id().getTableName());
+
+      if (eligible.isEmpty()) {
+        LOG.info(
+            "Paimon table [{}] plan tick produced 0 eligible tasks — "
+                + "reset isNecessary() to false for this planner instance.",
+            paimonTable.id().getTableName());
+        necessary = false;
+        OptimizingPlanResult<PaimonCompactionTask> result = emptyResult();
+        logPlanFinish("plan", startTime, "tasks=0");
+        return result;
+      }
+      optimizingType = highestType(eligible);
+
+      List<PaimonCompactionTask> wrapped = new ArrayList<>(eligible.size());
+      for (PlannedAppendTask plannedTask : eligible) {
+        AppendCompactTask task = plannedTask.task();
+        byte[] bytes;
+        try {
+          bytes = serializer.serialize(task);
+        } catch (IOException e) {
+          throw new IllegalStateException(
+              "Failed to serialize Paimon AppendCompactTask for partition " + task.partition(), e);
+        }
+        PaimonCompactionInput input =
+            new PaimonCompactionInput(
+                paimonTable,
+                bytes,
+                serializerVersion,
+                commitUser,
+                task.partition() == null ? "" : task.partition().toString(),
+                targetSnapshotId,
+                processId);
+        Map<String, String> props = Maps.newHashMap();
+        props.put(
+            TaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
+            PaimonCompactionExecutorFactory.class.getName());
+        wrapped.add(new PaimonCompactionTask(tableId, input.getPartitionPath(), input, props));
+      }
+
+      OptimizingPlanResult<PaimonCompactionTask> result =
+          new OptimizingPlanResult<>(
+              processId,
+              getOptimizingType(),
+              planTime,
+              targetSnapshotId,
+              -1L /* targetChangeSnapshotId — Paimon has no change snapshot */,
+              wrapped,
+              Collections.emptyMap() /* fromSequence */,
+              Collections.emptyMap() /* toSequence */);
+      logPlanFinish(
+          "plan",
+          startTime,
+          String.format(
+              "tasks=%d,type=%s,snapshot=%d",
+              result.getTasks().size(), result.getOptimizingType(), targetSnapshotId));
+      return result;
+    } catch (RuntimeException | Error e) {
+      logPlanFinish("plan", startTime, "failed:" + e.getClass().getSimpleName());
+      throw e;
+    }
   }
 
   /**
@@ -440,6 +473,27 @@ public class PaimonOptimizingPlanner implements TableOptimizingPlanner {
   @Override
   public Map<String, Long> getToSequence() {
     return Collections.emptyMap();
+  }
+
+  private long logPlanStart(String phase) {
+    long startTime = System.currentTimeMillis();
+    LOG.info(
+        "Paimon table [{}] {} planning started at {}.",
+        paimonTable.id().getTableName(),
+        phase,
+        startTime);
+    return startTime;
+  }
+
+  private void logPlanFinish(String phase, long startTime, String result) {
+    long endTime = System.currentTimeMillis();
+    LOG.info(
+        "Paimon table [{}] {} planning finished at {} with result {} in {} ms.",
+        paimonTable.id().getTableName(),
+        phase,
+        endTime,
+        result,
+        endTime - startTime);
   }
 
   private AppendOnlyFileStoreTable unwrapBucketUnawareTable() {

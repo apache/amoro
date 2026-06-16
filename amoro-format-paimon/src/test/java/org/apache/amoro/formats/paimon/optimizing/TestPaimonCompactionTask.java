@@ -19,17 +19,21 @@
 package org.apache.amoro.formats.paimon.optimizing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
+import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.utils.SerializationUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @DisplayName("PaimonCompactionTask descriptor")
@@ -89,5 +93,31 @@ public class TestPaimonCompactionTask {
     assertNotNull(protocolTask);
     assertNotNull(protocolTask.getTaskInput());
     assertEquals("x.y.Z", protocolTask.getProperties().get("task-executor-factory-impl"));
+  }
+
+  @Test
+  public void setInputNormalizesPollutedSummaryBeforeRecalculating() throws Exception {
+    PaimonCompactionTask task = new PaimonCompactionTask();
+    PaimonCompactionOutput output =
+        new PaimonCompactionOutput(new byte[] {1, 2, 3}, 7, 11L, 1100L, 4L, 400L);
+    ByteBuffer outputBuffer = SerializationUtil.simpleSerialize(output);
+    byte[] outputBytes = new byte[outputBuffer.remaining()];
+    outputBuffer.get(outputBytes);
+    task.setOutputBytes(outputBytes);
+
+    Field summaryField = StagedTaskDescriptor.class.getDeclaredField("summary");
+    summaryField.setAccessible(true);
+    summaryField.set(task, new LinkedHashMap<>());
+
+    PaimonCompactionInput input =
+        new PaimonCompactionInput(
+            null, new byte[] {4, 5, 6}, 2, "commit-user", "partition=20260525", 42L, 1001L);
+    task.setInput(input);
+
+    PaimonMetricsSummary summary = assertInstanceOf(PaimonMetricsSummary.class, task.getSummary());
+    assertEquals(11L, summary.getCompactedFileCount());
+    assertEquals(1100L, summary.getCompactedFileSize());
+    assertEquals(4L, summary.getProducedFileCount());
+    assertEquals(400L, summary.getProducedFileSize());
   }
 }

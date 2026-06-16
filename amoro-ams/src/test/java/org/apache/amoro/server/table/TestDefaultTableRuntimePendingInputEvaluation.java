@@ -67,4 +67,24 @@ public class TestDefaultTableRuntimePendingInputEvaluation extends AMSTableTestB
     Assert.assertEquals(OptimizingStatus.PENDING, runtime.getOptimizingStatus());
     verify(table).evaluatePendingInput(any(), eq(MAX_PENDING_PARTITIONS));
   }
+
+  @Test
+  public void testEvaluatePendingInputFalseKeepsRuntimeIdle() {
+    DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
+    runtime.completeEmptyProcess();
+
+    @SuppressWarnings("unchecked")
+    AmoroTable<Object> table = mock(AmoroTable.class);
+    AbstractOptimizingEvaluator.PendingInput pendingInput =
+        new AbstractOptimizingEvaluator.PendingInput();
+    when(table.evaluatePendingInput(any(), anyInt()))
+        .thenReturn(Optional.of(new PendingInputResult(pendingInput, false)));
+
+    boolean optimizingNeeded =
+        runtime.evaluatePendingInputAndTransition(table, MAX_PENDING_PARTITIONS);
+
+    Assert.assertFalse(optimizingNeeded);
+    Assert.assertEquals(OptimizingStatus.IDLE, runtime.getOptimizingStatus());
+    verify(table).evaluatePendingInput(any(), eq(MAX_PENDING_PARTITIONS));
+  }
 }

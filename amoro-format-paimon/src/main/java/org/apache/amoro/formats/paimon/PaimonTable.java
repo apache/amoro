@@ -21,6 +21,7 @@ package org.apache.amoro.formats.paimon;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableSnapshot;
+import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.formats.paimon.optimizing.PaimonPendingInput;
 import org.apache.amoro.optimizing.OptimizationContext;
 import org.apache.amoro.optimizing.PendingInputResult;
@@ -35,6 +36,8 @@ import org.apache.paimon.io.DataFileMeta;
 import org.apache.paimon.manifest.FileKind;
 import org.apache.paimon.manifest.ManifestEntry;
 import org.apache.paimon.operation.FileStoreScan;
+import org.apache.paimon.table.AppendOnlyFileStoreTable;
+import org.apache.paimon.table.BucketMode;
 import org.apache.paimon.table.DataTable;
 import org.apache.paimon.table.FileStoreTable;
 import org.apache.paimon.table.Table;
@@ -121,8 +124,11 @@ public class PaimonTable implements AmoroTable<Table>, Serializable {
       OptimizationContext context, int maxPendingPartitions) {
     return doAs(
         () -> {
-          PaimonPendingInput pendingInput = collectPaimonPendingInput();
-          return Optional.of(new PendingInputResult(pendingInput, true));
+          boolean appendBucketUnaware = isAppendBucketUnawareTable();
+          PaimonPendingInput pendingInput =
+              appendBucketUnaware ? collectPaimonPendingInput() : new PaimonPendingInput();
+          boolean optimizingNecessary = appendBucketUnaware && isSelfOptimizingEnabled(context);
+          return Optional.of(new PendingInputResult(pendingInput, optimizingNecessary));
         });
   }
 
@@ -141,6 +147,22 @@ public class PaimonTable implements AmoroTable<Table>, Serializable {
     } catch (Exception e) {
       throw new RuntimeException("Run with Paimon table authentication context failed.", e);
     }
+  }
+
+  private boolean isSelfOptimizingEnabled(OptimizationContext context) {
+    if (context == null) {
+      return true;
+    }
+    OptimizingConfig config = context.getOptimizingConfig();
+    return config == null || config.isEnabled();
+  }
+
+  private boolean isAppendBucketUnawareTable() {
+    if (!(table instanceof AppendOnlyFileStoreTable)) {
+      return false;
+    }
+    AppendOnlyFileStoreTable appendOnlyTable = (AppendOnlyFileStoreTable) table;
+    return appendOnlyTable.bucketMode() == BucketMode.BUCKET_UNAWARE;
   }
 
   private PaimonPendingInput collectPaimonPendingInput() {

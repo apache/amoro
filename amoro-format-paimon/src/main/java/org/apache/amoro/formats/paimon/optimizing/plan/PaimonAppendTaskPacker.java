@@ -85,13 +85,13 @@ final class PaimonAppendTaskPacker {
         total += file.fileSize() + context.openFileCost();
       }
       if (bin.size() > 1 && total >= context.targetSize() * 2) {
-        tasks.add(task(evaluation, bin));
+        addTask(tasks, evaluation, bin);
         bin = new ArrayList<>();
         total = 0L;
       }
     }
     if (!bin.isEmpty()) {
-      tasks.add(task(evaluation, bin));
+      addTask(tasks, evaluation, bin);
     }
     return tasks;
   }
@@ -106,14 +106,14 @@ final class PaimonAppendTaskPacker {
       bin.add(file);
       total += file.fileSize() + context.openFileCost();
       if (bin.size() > 1 && total >= context.targetSize() * 2) {
-        tasks.add(task(evaluation, bin));
+        addTask(tasks, evaluation, bin);
         bin = new ArrayList<>();
         total = 0L;
       }
     }
     if (bin.size() >= context.minorMinFileNum()
         || (bin.size() > 1 && context.reachMinorInterval())) {
-      tasks.add(task(evaluation, bin));
+      addTask(tasks, evaluation, bin);
     }
     return tasks;
   }
@@ -163,7 +163,7 @@ final class PaimonAppendTaskPacker {
           && total + unit.totalSize() > limit
           && legal(bin)
           && canStartNewBin(bin, units, i, lookahead, limit)) {
-        tasks.add(taskFromUnits(evaluation, bin));
+        addTaskFromUnits(tasks, evaluation, bin);
         bin = new ArrayList<>();
         total = 0L;
       }
@@ -171,7 +171,7 @@ final class PaimonAppendTaskPacker {
       total += unit.totalSize();
     }
     if (legal(bin)) {
-      tasks.add(taskFromUnits(evaluation, bin));
+      addTaskFromUnits(tasks, evaluation, bin);
     } else if (!bin.isEmpty()) {
       LOG.info(
           "Skip illegal Paimon compact bin for partition {} with {} file(s).",
@@ -209,7 +209,7 @@ final class PaimonAppendTaskPacker {
 
     List<AppendCompactTask> tasks = new ArrayList<>();
     for (List<AtomicUnit> bin : BinPacking.packForOrdered(packable, AtomicUnit::totalSize, limit)) {
-      tasks.add(taskFromUnits(evaluation, bin));
+      addTaskFromUnits(tasks, evaluation, bin);
     }
     return tasks;
   }
@@ -242,7 +242,7 @@ final class PaimonAppendTaskPacker {
     if (prefixSize > 0) {
       List<AtomicUnit> prefix = new ArrayList<>(bin.subList(0, prefixSize));
       if (legal(prefix)) {
-        tasks.add(taskFromUnits(evaluation, prefix));
+        addTaskFromUnits(tasks, evaluation, prefix);
         workingTotal -= totalSizeOfUnits(prefix);
         bin.subList(0, prefixSize).clear();
       }
@@ -258,7 +258,7 @@ final class PaimonAppendTaskPacker {
       logSkipOversizedRegular(evaluation, unit, limit);
       return PackResult.packed(tasks, bin, workingTotal);
     }
-    tasks.add(taskFromUnits(evaluation, currentTask));
+    addTaskFromUnits(tasks, evaluation, currentTask);
     long remainingTotal = workingTotal - totalSizeOfUnits(bin, 0, currentTaskSize);
     bin.subList(0, currentTaskSize).clear();
     return PackResult.packed(tasks, bin, remainingTotal);
@@ -349,16 +349,29 @@ final class PaimonAppendTaskPacker {
 
   private AppendCompactTask task(
       PaimonPartitionEvaluation evaluation, List<PaimonFileCandidate> candidates) {
+    if (!PaimonAppendCompactBenefit.shouldKeep(evaluation.optimizingType(), candidates, context)) {
+      return null;
+    }
     return new AppendCompactTask(
         evaluation.partition(),
         candidates.stream().map(PaimonFileCandidate::file).collect(Collectors.toList()));
   }
 
-  private AppendCompactTask taskFromUnits(
-      PaimonPartitionEvaluation evaluation, List<AtomicUnit> units) {
+  private void addTask(
+      List<AppendCompactTask> tasks,
+      PaimonPartitionEvaluation evaluation,
+      List<PaimonFileCandidate> candidates) {
+    AppendCompactTask task = task(evaluation, candidates);
+    if (task != null) {
+      tasks.add(task);
+    }
+  }
+
+  private void addTaskFromUnits(
+      List<AppendCompactTask> tasks, PaimonPartitionEvaluation evaluation, List<AtomicUnit> units) {
     List<PaimonFileCandidate> candidates =
         units.stream().flatMap(unit -> unit.files().stream()).collect(Collectors.toList());
-    return task(evaluation, candidates);
+    addTask(tasks, evaluation, candidates);
   }
 
   private static class PackResult {

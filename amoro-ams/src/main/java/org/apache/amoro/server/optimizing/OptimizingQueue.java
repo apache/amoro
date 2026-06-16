@@ -46,6 +46,7 @@ import org.apache.amoro.server.optimizing.TaskRuntime.Status;
 import org.apache.amoro.server.persistence.OptimizingProcessState;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
+import org.apache.amoro.server.persistence.converter.TaskDescriptorRecoveryTypes;
 import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
@@ -55,6 +56,7 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableRuntime;
+import org.apache.amoro.server.table.OptimizingOwnerConflictException;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
@@ -66,19 +68,20 @@ import org.apache.amoro.utils.ExceptionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
@@ -90,6 +93,13 @@ import java.util.stream.Collectors;
 public class OptimizingQueue extends PersistentBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(OptimizingQueue.class);
+  private static final long STALE_OWNER_RECYCLE_MILLIS = TimeUnit.MINUTES.toMillis(15);
+  private static final Set<ProcessStatus> ACTIVE_PROCESS_STATUSES =
+      EnumSet.of(
+          ProcessStatus.PENDING,
+          ProcessStatus.SUBMITTED,
+          ProcessStatus.RUNNING,
+          ProcessStatus.CANCELING);
 
   private final QuotaProvider quotaProvider;
   private final Queue<TableOptimizingProcess> tableQueue = new LinkedTransferQueue<>();
@@ -97,10 +107,11 @@ public class OptimizingQueue extends PersistentBase {
   private final CatalogManager catalogManager;
   private final Executor planExecutor;
   // Keep all planning table identifiers
-  private final Set<ServerTableIdentifier> planningTables = new HashSet<>();
+  private final Set<ServerTableIdentifier> planningTables = ConcurrentHashMap.newKeySet();
   private final Lock scheduleLock = new ReentrantLock();
   private final Condition planningCompleted = scheduleLock.newCondition();
   private final int maxPlanningParallelism;
+  private final Semaphore planningSlots;
   private final OptimizerGroupMetrics metrics;
   private ResourceGroup optimizerGroup;
   private final ProcessFactoryRouter router;
@@ -121,7 +132,10 @@ public class OptimizingQueue extends PersistentBase {
     this.quotaProvider = quotaProvider;
     this.scheduler = new SchedulingPolicy(optimizerGroup);
     this.catalogManager = catalogManager;
+    Preconditions.checkArgument(
+        maxPlanningParallelism >= 0, "Max planning parallelism can not be negative");
     this.maxPlanningParallelism = maxPlanningParallelism;
+    this.planningSlots = new Semaphore(this.maxPlanningParallelism);
     this.router = router;
     this.metrics =
         new OptimizerGroupMetrics(
@@ -147,7 +161,13 @@ public class OptimizingQueue extends PersistentBase {
       tableRuntime.resetTaskQuotas(
           System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME);
 
-      if (canResumeProcess(process, tableRuntime)) {
+      if (canReplayPaimonCommittingProcess(process, tableRuntime)) {
+        LOG.info(
+            "Paimon process {} on table {} is already COMMITTING with completed tasks during"
+                + " recovery, keeping it for commit replay",
+            process.getProcessId(),
+            tableRuntime.getTableIdentifier());
+      } else if (canResumeProcess(process, tableRuntime)) {
         if (process.allTasksPrepared()) {
           LOG.info(
               "All tasks already completed for process {} on table {} during recovery,"
@@ -202,6 +222,15 @@ public class OptimizingQueue extends PersistentBase {
         && tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING;
   }
 
+  private boolean canReplayPaimonCommittingProcess(
+      TableOptimizingProcess process, DefaultTableRuntime tableRuntime) {
+    return tableRuntime.getFormat() == TableFormat.PAIMON
+        && process != null
+        && process.getStatus() == ProcessStatus.RUNNING
+        && tableRuntime.getOptimizingStatus() == OptimizingStatus.COMMITTING
+        && process.allTasksPrepared();
+  }
+
   private void resetTableForRecovery(
       TableOptimizingProcess process, DefaultTableRuntime tableRuntime) {
     closeProcessIfRunning(process);
@@ -232,7 +261,7 @@ public class OptimizingQueue extends PersistentBase {
     }
     if (tableRuntime.getOptimizingConfig().isEnabled()
         && !tableRuntime.getOptimizingStatus().isProcessing()) {
-      LOG.info(
+      LOG.debug(
           "Bind queue {} success with table {}",
           optimizerGroup.getName(),
           tableRuntime.getTableIdentifier());
@@ -280,7 +309,12 @@ public class OptimizingQueue extends PersistentBase {
     resetStaleTasksForThread(thread);
     long deadline = calculateDeadline(maxWaitTime);
     TaskRuntime<?> task = fetchScheduledTask(thread, true);
-    while (task == null && waitTask(deadline)) {
+    while (task == null) {
+      fillPlanningSlots();
+      task = fetchScheduledTask(thread, true);
+      if (task != null || !awaitPlanningCompleted(deadline)) {
+        break;
+      }
       task = fetchScheduledTask(thread, true);
     }
     if (task == null && breakQuotaLimit && planningTables.isEmpty()) {
@@ -298,15 +332,15 @@ public class OptimizingQueue extends PersistentBase {
     return deadline <= 0 ? Long.MAX_VALUE : deadline;
   }
 
-  private boolean waitTask(long waitDeadline) {
+  private boolean awaitPlanningCompleted(long waitDeadline) {
     scheduleLock.lock();
     try {
       long currentTime = System.currentTimeMillis();
-      scheduleTableIfNecessary(currentTime);
       return waitDeadline > currentTime
           && planningCompleted.await(waitDeadline - currentTime, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       LOG.error("Schedule table interrupted", e);
+      Thread.currentThread().interrupt();
       return false;
     } finally {
       scheduleLock.unlock();
@@ -321,12 +355,31 @@ public class OptimizingQueue extends PersistentBase {
         .orElse(null);
   }
 
-  private void scheduleTableIfNecessary(long startTime) {
-    if (planningTables.size() < maxPlanningParallelism) {
-      Set<ServerTableIdentifier> skipTables = new HashSet<>(planningTables);
-      skipBlockedTables(skipTables);
-      Optional.ofNullable(scheduler.scheduleTable(skipTables))
-          .ifPresent(tableRuntime -> triggerAsyncPlanning(tableRuntime, skipTables, startTime));
+  private void fillPlanningSlots() {
+    int availableSlots = planningSlots.availablePermits();
+    if (availableSlots <= 0) {
+      return;
+    }
+
+    Set<ServerTableIdentifier> skipTables = new HashSet<>(planningTables);
+    skipBlockedTables(skipTables);
+
+    List<DefaultTableRuntime> candidates = scheduler.scheduleTables(skipTables, availableSlots);
+    for (DefaultTableRuntime tableRuntime : candidates) {
+      ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
+      if (!planningSlots.tryAcquire()) {
+        return;
+      }
+      if (!planningTables.add(identifier)) {
+        planningSlots.release();
+        continue;
+      }
+      skipTables.add(identifier);
+      if (!triggerAsyncPlanning(tableRuntime, new HashSet<>(skipTables))) {
+        planningTables.remove(identifier);
+        planningSlots.release();
+        signalPlanningCompleted();
+      }
     }
   }
 
@@ -336,7 +389,7 @@ public class OptimizingQueue extends PersistentBase {
             TableBlockerMapper.class,
             mapper -> mapper.selectAllBlockers(System.currentTimeMillis()));
     Map<TableIdentifier, ServerTableIdentifier> identifierMap = Maps.newHashMap();
-    for (ServerTableIdentifier identifier : scheduler.getTableRuntimeMap().keySet()) {
+    for (ServerTableIdentifier identifier : scheduler.tableIdentifiersSnapshot()) {
       identifierMap.put(identifier.getIdentifier(), identifier);
     }
     tableBlockerList.stream()
@@ -350,53 +403,185 @@ public class OptimizingQueue extends PersistentBase {
         .forEach(skipTables::add);
   }
 
-  private void triggerAsyncPlanning(
-      DefaultTableRuntime tableRuntime, Set<ServerTableIdentifier> skipTables, long startTime) {
+  private boolean triggerAsyncPlanning(
+      DefaultTableRuntime tableRuntime, Set<ServerTableIdentifier> skipTables) {
+    long startTime = System.currentTimeMillis();
     LOG.info(
         "Trigger planning table {} by policy {}",
         tableRuntime.getTableIdentifier(),
         scheduler.name());
-    planningTables.add(tableRuntime.getTableIdentifier());
-    CompletableFuture.supplyAsync(() -> planInternal(tableRuntime), planExecutor)
-        .whenComplete(
-            (process, throwable) -> {
-              if (throwable != null) {
-                LOG.error("Failed to plan table {}", tableRuntime.getTableIdentifier(), throwable);
-              }
-              long currentTime = System.currentTimeMillis();
-              scheduleLock.lock();
-              try {
-                tableRuntime.setLastPlanTime(currentTime);
-                planningTables.remove(tableRuntime.getTableIdentifier());
-                if (process != null) {
-                  tableQueue.offer(process);
-                  String skipIds =
-                      skipTables.stream()
-                          .map(ServerTableIdentifier::getId)
-                          .sorted()
-                          .map(item -> item + "")
-                          .collect(Collectors.joining(","));
-                  LOG.info(
-                      "Completed planning on table {} with {} tasks with a total cost of {} ms, skipping {} tables.",
-                      tableRuntime.getTableIdentifier(),
-                      process.getTaskMap().size(),
-                      currentTime - startTime,
-                      skipTables.size());
-                  LOG.debug("Skipped planning table IDs:{}", skipIds);
-                } else if (throwable == null) {
-                  LOG.info(
-                      "Skipping planning table {} with a total cost of {} ms.",
-                      tableRuntime.getTableIdentifier(),
-                      currentTime - startTime);
-                }
-                planningCompleted.signalAll();
-              } finally {
-                scheduleLock.unlock();
-              }
-            });
+    try {
+      CompletableFuture.supplyAsync(() -> planInternal(tableRuntime), planExecutor)
+          .whenComplete(
+              (process, throwable) ->
+                  completePlanning(tableRuntime, process, throwable, skipTables, startTime));
+      return true;
+    } catch (RuntimeException e) {
+      LOG.error("Failed to submit planning table {}", tableRuntime.getTableIdentifier(), e);
+      return false;
+    }
+  }
+
+  private void completePlanning(
+      DefaultTableRuntime tableRuntime,
+      TableOptimizingProcess process,
+      Throwable throwable,
+      Set<ServerTableIdentifier> skipTables,
+      long startTime) {
+    long currentTime = System.currentTimeMillis();
+    try {
+      if (throwable != null) {
+        LOG.error("Failed to plan table {}", tableRuntime.getTableIdentifier(), throwable);
+      }
+      if (process != null) {
+        tableQueue.offer(process);
+        String skipIds =
+            skipTables.stream()
+                .map(ServerTableIdentifier::getId)
+                .sorted()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+        LOG.info(
+            "Completed planning on table {} with {} tasks with a total cost of {} ms, skipping {} tables.",
+            tableRuntime.getTableIdentifier(),
+            process.getTaskMap().size(),
+            currentTime - startTime,
+            skipTables.size());
+        LOG.debug("Skipped planning table IDs:{}", skipIds);
+      } else if (throwable == null) {
+        LOG.info(
+            "Skipping planning table {} with a total cost of {} ms.",
+            tableRuntime.getTableIdentifier(),
+            currentTime - startTime);
+      }
+      tableRuntime.setLastPlanTime(currentTime);
+    } finally {
+      planningTables.remove(tableRuntime.getTableIdentifier());
+      planningSlots.release();
+      signalPlanningCompleted();
+    }
+  }
+
+  private void signalPlanningCompleted() {
+    scheduleLock.lock();
+    try {
+      planningCompleted.signalAll();
+    } finally {
+      scheduleLock.unlock();
+    }
+  }
+
+  private boolean prepareOwnerForPlanning(DefaultTableRuntime tableRuntime) {
+    for (int attempts = 0; attempts < 3; attempts++) {
+      long ownerProcessId = tableRuntime.getProcessId();
+      if (ownerProcessId == 0L) {
+        return true;
+      }
+
+      TableProcessMeta processMeta =
+          getAs(TableProcessMapper.class, mapper -> mapper.getProcessMeta(ownerProcessId));
+      if (processMeta == null || !isActiveProcess(processMeta.getStatus())) {
+        if (tableRuntime.normalizeProcessOwner(ownerProcessId)) {
+          LOG.info(
+              "Normalized owner process {} for table {} before planning",
+              ownerProcessId,
+              tableRuntime.getTableIdentifier());
+          return true;
+        }
+        continue;
+      }
+
+      if (shouldRecycleStaleOwner(processMeta)
+          && recycleStaleOwner(tableRuntime, processMeta, ownerProcessId)) {
+        continue;
+      }
+
+      LOG.info(
+          "Skip planning table {} because owner process {} is still active with status {}",
+          tableRuntime.getTableIdentifier(),
+          ownerProcessId,
+          processMeta.getStatus());
+      return false;
+    }
+
+    if (tableRuntime.getProcessId() == 0L) {
+      return true;
+    }
+    LOG.warn(
+        "Skip planning table {} because owner normalization exceeded retry budget",
+        tableRuntime.getTableIdentifier());
+    return false;
+  }
+
+  private boolean shouldRecycleStaleOwner(TableProcessMeta processMeta) {
+    return System.currentTimeMillis() - processMeta.getCreateTime() > STALE_OWNER_RECYCLE_MILLIS;
+  }
+
+  private boolean recycleStaleOwner(
+      DefaultTableRuntime tableRuntime, TableProcessMeta processMeta, long ownerProcessId) {
+    int unfinishedTasks =
+        getAs(
+            OptimizingProcessMapper.class,
+            mapper ->
+                mapper.countUnfinishedTasks(
+                    tableRuntime.getTableIdentifier().getId(), ownerProcessId));
+    if (unfinishedTasks > 0) {
+      return false;
+    }
+
+    String staleReason =
+        String.format(
+            "recycled stale optimizing owner process %d after %d ms without unfinished tasks",
+            ownerProcessId, System.currentTimeMillis() - processMeta.getCreateTime());
+    doAsTransaction(
+        () ->
+            doAs(
+                TableProcessMapper.class,
+                mapper ->
+                    mapper.updateProcess(
+                        tableRuntime.getTableIdentifier().getId(),
+                        ownerProcessId,
+                        processMeta.getExternalProcessIdentifier(),
+                        ProcessStatus.FAILED,
+                        tableRuntime.getOptimizingStatus().name().toLowerCase(),
+                        processMeta.getRetryNumber(),
+                        System.currentTimeMillis(),
+                        staleReason,
+                        processMeta.getProcessParameters() == null
+                            ? new HashMap<>()
+                            : processMeta.getProcessParameters(),
+                        processMeta.getSummary() == null
+                            ? new HashMap<>()
+                            : processMeta.getSummary())),
+        () -> {
+          if (!tableRuntime.normalizeProcessOwner(ownerProcessId)) {
+            throw new IllegalStateException(
+                String.format(
+                    "failed to clear stale owner process %d for table %s",
+                    ownerProcessId, tableRuntime.getTableIdentifier()));
+          }
+        },
+        () ->
+            tableRuntime
+                .store()
+                .begin()
+                .updateStatusCode(code -> OptimizingStatus.PENDING.getCode())
+                .commit());
+    LOG.warn(
+        "Recycled stale owner process {} for table {}",
+        ownerProcessId,
+        tableRuntime.getTableIdentifier());
+    return true;
+  }
+
+  private boolean isActiveProcess(ProcessStatus status) {
+    return ACTIVE_PROCESS_STATUSES.contains(status);
   }
 
   private TableOptimizingProcess planInternal(DefaultTableRuntime tableRuntime) {
+    if (!prepareOwnerForPlanning(tableRuntime)) {
+      return null;
+    }
     tableRuntime.beginPlanning();
     try {
       ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
@@ -428,10 +613,38 @@ public class OptimizingQueue extends PersistentBase {
         return null;
       }
     } catch (Throwable throwable) {
+      if (containsCause(throwable, OptimizingOwnerConflictException.class)) {
+        long currentOwner = tableRuntime.getProcessId();
+        if (currentOwner == 0L) {
+          // Defensive fallback for rare races where owner changed after beginPlanning but before
+          // exception handling. Keep the table schedulable instead of leaving it in PLANNING.
+          tableRuntime.planFailed();
+          LOG.warn(
+              "Owner conflict observed for table {} but owner is already cleared, reset status to PENDING",
+              tableRuntime.getTableIdentifier());
+        } else {
+          LOG.info(
+              "Skip planning table {} because optimizing owner {} is already held by another process",
+              tableRuntime.getTableIdentifier(),
+              currentOwner);
+        }
+        return null;
+      }
       tableRuntime.planFailed();
       LOG.error("Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
       throw throwable;
     }
+  }
+
+  private boolean containsCause(Throwable throwable, Class<? extends Throwable> causeClass) {
+    Throwable current = throwable;
+    while (current != null) {
+      if (causeClass.isInstance(current)) {
+        return true;
+      }
+      current = current.getCause();
+    }
+    return false;
   }
 
   public void ackTask(OptimizingTaskId taskId, OptimizerThread thread) {
@@ -706,6 +919,10 @@ public class OptimizingQueue extends PersistentBase {
               }
               return v;
             });
+        // task cancel means persistAndSetCompleted has been called and start/end may be absent.
+        if (taskRuntime.getStatus() == TaskRuntime.Status.CANCELED) {
+          return;
+        }
         try {
           tableRuntime.addTaskQuota(taskRuntime.getCurrentQuota());
         } catch (Throwable throwable) {
@@ -714,10 +931,6 @@ public class OptimizingQueue extends PersistentBase {
               tableRuntime.getTableIdentifier(),
               taskRuntime.getTaskId(),
               throwable);
-        }
-        // task cancel means persistAndSetCompleted has been called
-        if (taskRuntime.getStatus() == TaskRuntime.Status.CANCELED) {
-          return;
         }
         if (isClosed()) {
           throw new OptimizingClosedException(processId);
@@ -870,6 +1083,15 @@ public class OptimizingQueue extends PersistentBase {
         }
         try {
           hasCommitted = true;
+          if (successTasks.isEmpty()) {
+            status = ProcessStatus.FAILED;
+            failedReason =
+                "No successful task is available for commit, stop building committer to avoid"
+                    + " invalid commit identity.";
+            endTime = System.currentTimeMillis();
+            persistAndSetCompleted(false);
+            return;
+          }
           buildCommit().commit();
           if (allTasksPrepared()) {
             status = ProcessStatus.SUCCESS;
@@ -990,7 +1212,7 @@ public class OptimizingQueue extends PersistentBase {
                           getFailedReason(),
                           new HashMap<>(),
                           getSummary().summaryAsMap(false))),
-          () -> tableRuntime.completeProcess(success),
+          () -> tableRuntime.completeProcess(this, success),
           () -> clearProcess(this));
     }
 
@@ -1096,8 +1318,10 @@ public class OptimizingQueue extends PersistentBase {
         taskRuntimes.forEach(
             taskRuntime -> {
               taskRuntime.getCompletedFuture().whenCompleted(() -> acceptResult(taskRuntime));
-              bindLoadedInput(
-                  taskRuntime.getTaskDescriptor(), inputs.get(taskRuntime.getTaskId().getTaskId()));
+              BaseOptimizingInput input = inputs.get(taskRuntime.getTaskId().getTaskId());
+              TaskDescriptorRecoveryTypes.validateRecoveredTask(
+                  taskRuntime.getTaskDescriptor(), input, tableRuntime.getFormat());
+              bindLoadedInput(taskRuntime.getTaskDescriptor(), input);
               taskMap.put(taskRuntime.getTaskId(), taskRuntime);
               if (taskRuntime.getStatus() == TaskRuntime.Status.PLANNED) {
                 taskQueue.offer(taskRuntime);
@@ -1114,7 +1338,7 @@ public class OptimizingQueue extends PersistentBase {
                 retryTask(taskRuntime);
               }
             });
-      } catch (IllegalArgumentException e) {
+      } catch (IllegalArgumentException | ClassCastException e) {
         LOG.warn(
             "Load task inputs failed, close the optimizing process : {}",
             optimizingProcess.getProcessId(),

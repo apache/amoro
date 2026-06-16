@@ -467,7 +467,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
     @Override
     public void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
       DefaultTableRuntime defaultTableRuntime = (DefaultTableRuntime) tableRuntime;
-      if (!defaultTableRuntime.getOptimizingStatus().isProcessing()) {
+      OptimizingStatus status = defaultTableRuntime.getOptimizingStatus();
+      if (status == OptimizingStatus.PENDING || status == OptimizingStatus.IDLE) {
         getOptionalQueueByGroup(defaultTableRuntime.getGroupName())
             .ifPresent(q -> q.refreshTable(defaultTableRuntime));
       }

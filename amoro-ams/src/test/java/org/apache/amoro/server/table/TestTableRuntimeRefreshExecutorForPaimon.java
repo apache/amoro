@@ -114,6 +114,10 @@ public class TestTableRuntimeRefreshExecutorForPaimon extends AMSServiceTestBase
   }
 
   private AmoroTable<?> paimonAmoroTable(TableSnapshot snapshot) {
+    return paimonAmoroTable(snapshot, true);
+  }
+
+  private AmoroTable<?> paimonAmoroTable(TableSnapshot snapshot, boolean optimizingNecessary) {
     AmoroTable<?> t = mock(AmoroTable.class);
     when(t.format()).thenReturn(TableFormat.PAIMON);
     when(t.originalTable())
@@ -124,7 +128,7 @@ public class TestTableRuntimeRefreshExecutorForPaimon extends AMSServiceTestBase
     // Mock evaluatePendingInput to return PaimonPendingInput when called
     PaimonPendingInput pendingInput = new PaimonPendingInput();
     when(t.evaluatePendingInput(any(), anyInt()))
-        .thenReturn(Optional.of(new PendingInputResult(pendingInput, true)));
+        .thenReturn(Optional.of(new PendingInputResult(pendingInput, optimizingNecessary)));
     return t;
   }
 
@@ -156,6 +160,16 @@ public class TestTableRuntimeRefreshExecutorForPaimon extends AMSServiceTestBase
   @Test
   public void noNewSnapshotKeepsIdle() throws Exception {
     AmoroTable<?> mockAmoroTable = paimonAmoroTable(null);
+    TableRuntimeRefreshExecutor executor = executorWith(mockAmoroTable);
+
+    executor.execute(paimonRuntime);
+
+    assertEquals(OptimizingStatus.IDLE, paimonRuntime.getOptimizingStatus());
+  }
+
+  @Test
+  public void newSnapshotWithNoOptimizingDemandKeepsIdle() throws Exception {
+    AmoroTable<?> mockAmoroTable = paimonAmoroTable(snapshotWithId(150L), false);
     TableRuntimeRefreshExecutor executor = executorWith(mockAmoroTable);
 
     executor.execute(paimonRuntime);
