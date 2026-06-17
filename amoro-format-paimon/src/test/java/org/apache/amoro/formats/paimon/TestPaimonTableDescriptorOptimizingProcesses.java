@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -80,6 +81,17 @@ import java.util.stream.Collectors;
 class TestPaimonTableDescriptorOptimizingProcesses {
 
   private static final TableIdentifier TID = TableIdentifier.of("cat", "db", "t");
+
+  @Test
+  void tableOptimizingTypesExposeMajor() {
+    PaimonTableDescriptor descriptor = new PaimonTableDescriptor();
+
+    Map<String, String> types = descriptor.getTableOptimizingTypes(mock(AmoroTable.class));
+
+    assertEquals("FULL", types.get("FULL"));
+    assertEquals("MAJOR", types.get("MAJOR"));
+    assertEquals("MINOR", types.get("MINOR"));
+  }
 
   /**
    * Assembles an {@link AmoroTable} whose internal object graph reaches the {@link SnapshotManager}

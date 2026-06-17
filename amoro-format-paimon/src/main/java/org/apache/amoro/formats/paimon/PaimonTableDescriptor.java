@@ -96,6 +96,7 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   public static final String PAIMON_MAIN_BRANCH_NAME = "main";
 
   private static final String PAIMON_OPTIMIZING_TYPE_FULL = "FULL";
+  private static final String PAIMON_OPTIMIZING_TYPE_MAJOR = "MAJOR";
   private static final String PAIMON_OPTIMIZING_TYPE_MINOR = "MINOR";
 
   private ExecutorService executor;
@@ -680,8 +681,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable) {
     Map<String, String> types = Maps.newHashMap();
-    types.put("FULL", "FULL");
-    types.put("MINOR", "MINOR");
+    types.put(PAIMON_OPTIMIZING_TYPE_FULL, PAIMON_OPTIMIZING_TYPE_FULL);
+    types.put(PAIMON_OPTIMIZING_TYPE_MAJOR, PAIMON_OPTIMIZING_TYPE_MAJOR);
+    types.put(PAIMON_OPTIMIZING_TYPE_MINOR, PAIMON_OPTIMIZING_TYPE_MINOR);
     types.put("INTERNAL", "INTERNAL");
     return types;
   }
