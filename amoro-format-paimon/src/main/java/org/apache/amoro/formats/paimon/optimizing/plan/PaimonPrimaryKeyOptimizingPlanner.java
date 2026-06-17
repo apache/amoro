@@ -80,6 +80,29 @@ public class PaimonPrimaryKeyOptimizingPlanner implements TableOptimizingPlanner
   private long targetSnapshotId = -1L;
   private String commitUser;
 
+  public static boolean supports(PaimonTable paimonTable) {
+    if (paimonTable == null) {
+      return false;
+    }
+    Object raw = paimonTable.originalTable();
+    if (!(raw instanceof FileStoreTable) || raw instanceof AppendOnlyFileStoreTable) {
+      return false;
+    }
+    FileStoreTable table = (FileStoreTable) raw;
+    if (table.primaryKeys() == null || table.primaryKeys().isEmpty()) {
+      return false;
+    }
+    if (table.bucketMode() != BucketMode.HASH_FIXED
+        && table.bucketMode() != BucketMode.HASH_DYNAMIC) {
+      return false;
+    }
+    try {
+      return PaimonPrimaryKeyOptions.from(table.options()).enabled();
+    } catch (RuntimeException e) {
+      return false;
+    }
+  }
+
   public PaimonPrimaryKeyOptimizingPlanner(
       PaimonTable paimonTable,
       long tableId,

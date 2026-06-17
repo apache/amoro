@@ -26,6 +26,10 @@ import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionOutput;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionTask;
 import org.apache.amoro.formats.paimon.optimizing.PaimonMetricsSummary;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionExecutorFactory;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionInput;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionOutput;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionTask;
 import org.apache.amoro.hive.optimizing.MixedHiveRewriteExecutorFactory;
 import org.apache.amoro.optimizing.BaseOptimizingInput;
 import org.apache.amoro.optimizing.IcebergRewriteExecutorFactory;
@@ -73,6 +77,13 @@ public final class TaskDescriptorRecoveryTypes {
             PaimonCompactionTask.class,
             PaimonCompactionInput.class,
             PaimonCompactionOutput.class,
+            PaimonMetricsSummary.class));
+    mappings.put(
+        PaimonPrimaryKeyCompactionExecutorFactory.class.getName(),
+        new RecoveryTypes(
+            PaimonPrimaryKeyCompactionTask.class,
+            PaimonPrimaryKeyCompactionInput.class,
+            PaimonPrimaryKeyCompactionOutput.class,
             PaimonMetricsSummary.class));
     FACTORY_IMPL_TO_RECOVERY_TYPES = Collections.unmodifiableMap(mappings);
   }

@@ -33,6 +33,9 @@ import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionTask;
 import org.apache.amoro.formats.paimon.optimizing.commit.PaimonTableCommit;
 import org.apache.amoro.formats.paimon.optimizing.plan.PaimonOptimizingPlanner;
+import org.apache.amoro.formats.paimon.optimizing.plan.PaimonPrimaryKeyOptimizingPlanner;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionTask;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyTableCommit;
 import org.apache.amoro.optimizing.OptimizationContext;
 import org.apache.amoro.optimizing.TableOptimizingCommitter;
 import org.apache.amoro.optimizing.TableOptimizingPlanner;
@@ -43,6 +46,8 @@ import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.utils.SnowflakeIdGenerator;
 import org.apache.paimon.table.AppendOnlyFileStoreTable;
+import org.apache.paimon.table.BucketMode;
+import org.apache.paimon.table.FileStoreTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,6 +141,19 @@ public class PaimonProcessFactory implements ProcessFactory {
       lastMajor = context.getLastMajorOptimizingTime();
       lastFull = context.getLastFullOptimizingTime();
     }
+    if (PaimonPrimaryKeyOptimizingPlanner.supports(paimonTable)) {
+      return new PaimonPrimaryKeyOptimizingPlanner(
+          paimonTable,
+          tableId,
+          processId,
+          availableCore,
+          maxInputSizePerThread,
+          optimizingConfig,
+          lastMinor,
+          lastMajor,
+          lastFull,
+          null);
+    }
     return new PaimonOptimizingPlanner(
         paimonTable,
         tableId,
@@ -150,7 +168,6 @@ public class PaimonProcessFactory implements ProcessFactory {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public TableOptimizingCommitter createCommitter(
       AmoroTable<?> table,
       long targetSnapshotId,
@@ -165,20 +182,42 @@ public class PaimonProcessFactory implements ProcessFactory {
     }
     PaimonTable paimonTable = (PaimonTable) table;
     Object raw = paimonTable.originalTable();
+    TaskGroups taskGroups = splitTaskGroups(successTasks);
+    if (!taskGroups.primaryKeyTasks.isEmpty()) {
+      if (!(raw instanceof FileStoreTable) || raw instanceof AppendOnlyFileStoreTable) {
+        throw new IllegalStateException(
+            "PaimonProcessFactory.createCommitter requires primary-key FileStoreTable, got "
+                + (raw == null ? "null" : raw.getClass().getName()));
+      }
+      FileStoreTable fileStoreTable = (FileStoreTable) raw;
+      if (fileStoreTable.primaryKeys() == null
+          || fileStoreTable.primaryKeys().isEmpty()
+          || (fileStoreTable.bucketMode() != BucketMode.HASH_FIXED
+              && fileStoreTable.bucketMode() != BucketMode.HASH_DYNAMIC)) {
+        throw new IllegalStateException(
+            "PaimonProcessFactory.createCommitter requires primary-key HASH_FIXED/HASH_DYNAMIC "
+                + "FileStoreTable, got bucketMode="
+                + fileStoreTable.bucketMode()
+                + ", primaryKeys="
+                + fileStoreTable.primaryKeys());
+      }
+      return new PaimonPrimaryKeyTableCommit(
+          paimonTable, fileStoreTable, taskGroups.primaryKeyTasks);
+    }
     if (!(raw instanceof AppendOnlyFileStoreTable)) {
       throw new IllegalStateException(
           "PaimonProcessFactory.createCommitter requires AppendOnlyFileStoreTable, got "
               + (raw == null ? "null" : raw.getClass().getName()));
     }
     AppendOnlyFileStoreTable fileStoreTable = (AppendOnlyFileStoreTable) raw;
-    Collection<PaimonCompactionTask> paimonTasks =
-        successTasks == null
-            ? Collections.emptyList()
-            : new ArrayList<>((Collection<PaimonCompactionTask>) successTasks);
-    CommitIdentity identity = extractCommitIdentity(paimonTasks);
+    CommitIdentity identity = extractCommitIdentity(taskGroups.appendTasks);
 
     return new PaimonTableCommit(
-        paimonTable, fileStoreTable, paimonTasks, identity.commitUser, identity.commitIdentifier);
+        paimonTable,
+        fileStoreTable,
+        taskGroups.appendTasks,
+        identity.commitUser,
+        identity.commitIdentifier);
   }
 
   @Override
@@ -248,6 +287,35 @@ public class PaimonProcessFactory implements ProcessFactory {
       }
     }
     return new CommitIdentity(commitUser, commitIdentifier);
+  }
+
+  private static TaskGroups splitTaskGroups(
+      Collection<? extends StagedTaskDescriptor<?, ?, ?>> successTasks) {
+    TaskGroups groups = new TaskGroups();
+    if (successTasks == null || successTasks.isEmpty()) {
+      return groups;
+    }
+    for (StagedTaskDescriptor<?, ?, ?> task : successTasks) {
+      if (task instanceof PaimonPrimaryKeyCompactionTask) {
+        groups.primaryKeyTasks.add((PaimonPrimaryKeyCompactionTask) task);
+      } else if (task instanceof PaimonCompactionTask) {
+        groups.appendTasks.add((PaimonCompactionTask) task);
+      } else {
+        throw new IllegalStateException(
+            "PaimonProcessFactory.createCommitter got unsupported task type "
+                + (task == null ? "null" : task.getClass().getName()));
+      }
+    }
+    if (!groups.primaryKeyTasks.isEmpty() && !groups.appendTasks.isEmpty()) {
+      throw new IllegalStateException(
+          "PaimonProcessFactory.createCommitter got mixed Paimon task types.");
+    }
+    return groups;
+  }
+
+  private static class TaskGroups {
+    private final Collection<PaimonCompactionTask> appendTasks = new ArrayList<>();
+    private final Collection<PaimonPrimaryKeyCompactionTask> primaryKeyTasks = new ArrayList<>();
   }
 
   private static class CommitIdentity {

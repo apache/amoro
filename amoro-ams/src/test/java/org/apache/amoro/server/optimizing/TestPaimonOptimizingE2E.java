@@ -34,11 +34,16 @@ import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionOutput;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionTask;
 import org.apache.amoro.formats.paimon.optimizing.plan.PaimonOptimizingPlanner;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionExecutorFactory;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionInput;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionOutput;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionTask;
 import org.apache.amoro.formats.paimon.process.PaimonProcessFactory;
 import org.apache.amoro.optimizing.BaseOptimizingInput;
 import org.apache.amoro.optimizing.IcebergRewriteExecutorFactory;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingPlanResult;
+import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
 import org.apache.amoro.optimizing.RewriteStageTask;
 import org.apache.amoro.optimizing.TableOptimizingCommitter;
@@ -518,6 +523,23 @@ public class TestPaimonOptimizingE2E {
   }
 
   @Test
+  public void validateRecoveredPaimonPrimaryKeyTaskAcceptsDescriptorInputOutputAndSummary()
+      throws Exception {
+    PaimonPrimaryKeyCompactionTask task = new PaimonPrimaryKeyCompactionTask();
+    task.ensureExecutorFactoryImpl(PaimonPrimaryKeyCompactionExecutorFactory.class.getName());
+    PaimonPrimaryKeyCompactionOutput output =
+        new PaimonPrimaryKeyCompactionOutput(
+            Collections.singletonList(new byte[] {1}), 1, 2, 3, 4, 5, 6);
+    task.setOutputBytes(serializePrimaryKeyOutput(output));
+    PaimonPrimaryKeyCompactionInput input =
+        new PaimonPrimaryKeyCompactionInput(
+            null, Collections.emptyList(), OptimizingType.MINOR, false, 10L, "u", 11L);
+
+    TaskDescriptorRecoveryTypes.validateRecoveredTask(
+        task, input, org.apache.amoro.TableFormat.PAIMON);
+  }
+
+  @Test
   public void validateRecoveredTaskRejectsLegacyDescriptorWithPaimonInput() {
     RewriteStageTask descriptor = new RewriteStageTask();
     descriptor.ensureExecutorFactoryImpl(IcebergRewriteExecutorFactory.class.getName());
@@ -611,6 +633,13 @@ public class TestPaimonOptimizingE2E {
   }
 
   private static byte[] serializeOutput(PaimonCompactionOutput output) {
+    ByteBuffer buffer = SerializationUtil.simpleSerialize(output);
+    byte[] bytes = new byte[buffer.remaining()];
+    buffer.get(bytes);
+    return bytes;
+  }
+
+  private static byte[] serializePrimaryKeyOutput(PaimonPrimaryKeyCompactionOutput output) {
     ByteBuffer buffer = SerializationUtil.simpleSerialize(output);
     byte[] bytes = new byte[buffer.remaining()];
     buffer.get(bytes);

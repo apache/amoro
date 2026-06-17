@@ -37,6 +37,12 @@ import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionTask;
 import org.apache.amoro.formats.paimon.optimizing.commit.PaimonTableCommit;
 import org.apache.amoro.formats.paimon.optimizing.plan.PaimonOptimizingPlanner;
+import org.apache.amoro.formats.paimon.optimizing.plan.PaimonPrimaryKeyOptimizingPlanner;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonBucketCompactionUnit;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionInput;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionTask;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyOptions;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyTableCommit;
 import org.apache.amoro.optimizing.OptimizationContext;
 import org.apache.amoro.optimizing.OptimizingPlanResult;
 import org.apache.amoro.optimizing.OptimizingType;
@@ -109,6 +115,26 @@ public class TestPaimonProcessFactory {
     return new PaimonTable(TableIdentifier.of("test_catalog", "db1", tableName), table);
   }
 
+  private static PaimonTable buildPrimaryKeyTable(Path warehouse, String tableName)
+      throws Exception {
+    Map<String, String> props = new HashMap<>();
+    props.put(CatalogOptions.WAREHOUSE.key(), warehouse.toUri().toString());
+    Catalog catalog = PaimonCatalogFactory.paimonCatalog(props, new Configuration());
+    catalog.createDatabase("db1", true);
+    Schema schema =
+        Schema.newBuilder()
+            .column("id", DataTypes.INT())
+            .column("name", DataTypes.STRING())
+            .primaryKey("id")
+            .option("bucket", "1")
+            .option(PaimonPrimaryKeyOptions.ENABLED, "true")
+            .build();
+    Identifier id = Identifier.create("db1", tableName);
+    catalog.createTable(id, schema, true);
+    Table table = catalog.getTable(id);
+    return new PaimonTable(TableIdentifier.of("test_catalog", "db1", tableName), table);
+  }
+
   private static void writeRecords(Table table, List<GenericRow> rowsInOneCommit) throws Exception {
     BatchWriteBuilder builder = table.newBatchWriteBuilder();
     try (BatchTableWrite write = builder.newWrite()) {
@@ -164,6 +190,19 @@ public class TestPaimonProcessFactory {
     TableOptimizingPlanner planner = factory.createPlanner(null, table, 1.0, 1024L);
     assertNotNull(planner);
     assertTrue(planner instanceof PaimonOptimizingPlanner);
+  }
+
+  @Test
+  @DisplayName("createPlanner routes enabled primary-key HASH_FIXED table to primary-key planner")
+  void testCreatePlannerRoutesPrimaryKeyHashFixed(@TempDir Path warehouse) throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    PaimonTable table = buildPrimaryKeyTable(warehouse, "t_pk_plan");
+
+    TableOptimizingPlanner planner = factory.createPlanner(null, table, 1.0, 1024L);
+
+    assertNotNull(planner);
+    assertTrue(planner instanceof PaimonPrimaryKeyOptimizingPlanner);
   }
 
   @Test
@@ -295,6 +334,82 @@ public class TestPaimonProcessFactory {
     assertTrue(committer instanceof PaimonTableCommit);
     assertEquals("user-abc", commitUser(committer));
     assertEquals(101L, commitIdentifier(committer));
+  }
+
+  @Test
+  @DisplayName("createCommitter routes primary-key task to primary-key committer")
+  void testCreateCommitterRoutesPrimaryKeyTask(@TempDir Path warehouse) throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    PaimonTable table = buildPrimaryKeyTable(warehouse, "t_pk_commit");
+    PaimonPrimaryKeyCompactionInput input =
+        new PaimonPrimaryKeyCompactionInput(
+            table,
+            Collections.singletonList(
+                new PaimonBucketCompactionUnit(new byte[] {0}, 0, 1, 1, 1, 0)),
+            OptimizingType.MINOR,
+            false,
+            3L,
+            "user-pk",
+            101L);
+    PaimonPrimaryKeyCompactionTask task =
+        new PaimonPrimaryKeyCompactionTask(1L, "primary-key-buckets", input, new HashMap<>());
+
+    TableOptimizingCommitter committer =
+        factory.createCommitter(
+            table,
+            3L,
+            -1L,
+            Collections.singletonList((StagedTaskDescriptor<?, ?, ?>) task),
+            Collections.emptyMap(),
+            Collections.emptyMap());
+
+    assertNotNull(committer);
+    assertTrue(committer instanceof PaimonPrimaryKeyTableCommit);
+  }
+
+  @Test
+  @DisplayName("createCommitter rejects mixed append and primary-key tasks")
+  void testCreateCommitterRejectsMixedTaskTypes(@TempDir Path warehouse) throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    PaimonTable table = buildPrimaryKeyTable(warehouse, "t_mixed_tasks");
+    PaimonCompactionTask appendTask =
+        new PaimonCompactionTask(
+            1L,
+            "p",
+            new PaimonCompactionInput(table, new byte[] {1}, 2, "user", "p", 3L, 101L),
+            new HashMap<>());
+    PaimonPrimaryKeyCompactionTask primaryTask =
+        new PaimonPrimaryKeyCompactionTask(
+            1L,
+            "primary-key-buckets",
+            new PaimonPrimaryKeyCompactionInput(
+                table,
+                Collections.singletonList(
+                    new PaimonBucketCompactionUnit(new byte[] {0}, 0, 1, 1, 1, 0)),
+                OptimizingType.MINOR,
+                false,
+                3L,
+                "user",
+                101L),
+            new HashMap<>());
+
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                factory.createCommitter(
+                    table,
+                    3L,
+                    -1L,
+                    Arrays.asList(
+                        (StagedTaskDescriptor<?, ?, ?>) appendTask,
+                        (StagedTaskDescriptor<?, ?, ?>) primaryTask),
+                    Collections.emptyMap(),
+                    Collections.emptyMap()));
+
+    assertTrue(ex.getMessage().contains("mixed Paimon task types"));
   }
 
   @Test
