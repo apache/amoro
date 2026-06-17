@@ -43,7 +43,15 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Queue;
 
-/** Minimal reader operator to avoid depending on Iceberg's non-public StreamingReaderOperator. */
+/**
+ * Reader operator for Amoro's unkeyed Iceberg file source.
+ *
+ * <p>This mirrors Iceberg's non-public {@code StreamingReaderOperator} behavior while allowing
+ * Amoro to create the {@code FlinkInputFormat} through {@link
+ * org.apache.amoro.flink.interceptor.ProxyFactory} at operator runtime. This keeps the
+ * Kerberos-aware file IO wrapper without reflectively depending on Iceberg's package-private
+ * operator factory or private constructor.
+ */
 public class UnkeyedStreamingReaderOperator extends AbstractStreamOperator<RowData>
     implements OneInputStreamOperator<FlinkInputSplit, RowData> {
 
