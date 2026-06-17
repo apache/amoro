@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.formats.paimon.optimizing.PaimonPendingInput;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyOptions;
 import org.apache.amoro.optimizing.OptimizationContext;
 import org.apache.amoro.optimizing.PendingInputResult;
 import org.apache.amoro.table.TableIdentifier;
@@ -63,19 +64,11 @@ class TestPaimonTablePendingInputEligibility {
   }
 
   @Test
-  @DisplayName("primary-key table is not bound to optimizing queue")
-  void primaryKeyTableIsNotOptimizingNecessary(@TempDir Path warehouse) throws Exception {
+  @DisplayName("primary-key HASH_FIXED table is not bound to optimizing queue by default")
+  void primaryKeyHashFixedTableIsNotOptimizingNecessaryByDefault(@TempDir Path warehouse)
+      throws Exception {
     Catalog catalog = fsCatalog(warehouse);
-    catalog.createDatabase("db1", true);
-    Schema schema =
-        Schema.newBuilder()
-            .column("id", DataTypes.INT())
-            .column("name", DataTypes.STRING())
-            .primaryKey("id")
-            .option("bucket", "2")
-            .build();
-    Identifier id = Identifier.create("db1", "t_pk");
-    catalog.createTable(id, schema, true);
+    Identifier id = createPrimaryKeyTable(catalog, "t_pk_default", new HashMap<>());
     PaimonTable paimonTable = wrap(catalog.getTable(id), "t_pk");
 
     PendingInputResult result =
@@ -84,6 +77,25 @@ class TestPaimonTablePendingInputEligibility {
             .orElseThrow(AssertionError::new);
 
     assertFalse(result.optimizingNecessary());
+    assertEmptyPendingInput(result);
+  }
+
+  @Test
+  @DisplayName("primary-key HASH_FIXED table can request optimizing when enabled")
+  void primaryKeyHashFixedTableIsOptimizingNecessaryWhenEnabled(@TempDir Path warehouse)
+      throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = new HashMap<>();
+    options.put(PaimonPrimaryKeyOptions.ENABLED, "true");
+    Identifier id = createPrimaryKeyTable(catalog, "t_pk_enabled", options);
+    PaimonTable paimonTable = wrap(catalog.getTable(id), "t_pk_enabled");
+
+    PendingInputResult result =
+        paimonTable
+            .evaluatePendingInput(optimizationContext(true), 10)
+            .orElseThrow(AssertionError::new);
+
+    assertTrue(result.optimizingNecessary());
     assertEmptyPendingInput(result);
   }
 
@@ -140,6 +152,21 @@ class TestPaimonTablePendingInputEligibility {
     Identifier id = Identifier.create("db1", tableName);
     catalog.createTable(id, builder.build(), true);
     return catalog.getTable(id);
+  }
+
+  private static Identifier createPrimaryKeyTable(
+      Catalog catalog, String tableName, Map<String, String> extraOptions) throws Exception {
+    catalog.createDatabase("db1", true);
+    Schema.Builder builder =
+        Schema.newBuilder()
+            .column("id", DataTypes.INT())
+            .column("name", DataTypes.STRING())
+            .primaryKey("id")
+            .option("bucket", "2");
+    extraOptions.forEach(builder::option);
+    Identifier id = Identifier.create("db1", tableName);
+    catalog.createTable(id, builder.build(), true);
+    return id;
   }
 
   private static PaimonTable wrap(Table table, String name) {

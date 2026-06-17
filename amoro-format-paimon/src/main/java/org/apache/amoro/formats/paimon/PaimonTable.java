@@ -23,6 +23,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableSnapshot;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.formats.paimon.optimizing.PaimonPendingInput;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyOptions;
 import org.apache.amoro.optimizing.OptimizationContext;
 import org.apache.amoro.optimizing.PendingInputResult;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
@@ -127,7 +128,9 @@ public class PaimonTable implements AmoroTable<Table>, Serializable {
           boolean appendBucketUnaware = isAppendBucketUnawareTable();
           PaimonPendingInput pendingInput =
               appendBucketUnaware ? collectPaimonPendingInput() : new PaimonPendingInput();
-          boolean optimizingNecessary = appendBucketUnaware && isSelfOptimizingEnabled(context);
+          boolean selfOptimizingEnabled = isSelfOptimizingEnabled(context);
+          boolean optimizingNecessary =
+              selfOptimizingEnabled && (appendBucketUnaware || isPrimaryKeyHashOptimizingEnabled());
           return Optional.of(new PendingInputResult(pendingInput, optimizingNecessary));
         });
   }
@@ -163,6 +166,26 @@ public class PaimonTable implements AmoroTable<Table>, Serializable {
     }
     AppendOnlyFileStoreTable appendOnlyTable = (AppendOnlyFileStoreTable) table;
     return appendOnlyTable.bucketMode() == BucketMode.BUCKET_UNAWARE;
+  }
+
+  private boolean isPrimaryKeyHashOptimizingEnabled() {
+    if (!(table instanceof FileStoreTable) || table instanceof AppendOnlyFileStoreTable) {
+      return false;
+    }
+    FileStoreTable fileStoreTable = (FileStoreTable) table;
+    if (fileStoreTable.bucketMode() != BucketMode.HASH_FIXED
+        && fileStoreTable.bucketMode() != BucketMode.HASH_DYNAMIC) {
+      return false;
+    }
+    try {
+      return PaimonPrimaryKeyOptions.from(fileStoreTable.options()).enabled();
+    } catch (RuntimeException e) {
+      LOG.warn(
+          "Paimon primary-key optimizing options are invalid for table [{}], skip pending input.",
+          tableIdentifier,
+          e);
+      return false;
+    }
   }
 
   private PaimonPendingInput collectPaimonPendingInput() {
