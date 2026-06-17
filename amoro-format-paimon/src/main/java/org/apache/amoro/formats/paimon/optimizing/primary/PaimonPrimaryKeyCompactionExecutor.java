@@ -19,6 +19,18 @@
 package org.apache.amoro.formats.paimon.optimizing.primary;
 
 import org.apache.amoro.optimizing.OptimizingExecutor;
+import org.apache.paimon.data.BinaryRow;
+import org.apache.paimon.io.CompactIncrement;
+import org.apache.paimon.io.DataFileMeta;
+import org.apache.paimon.table.AppendOnlyFileStoreTable;
+import org.apache.paimon.table.FileStoreTable;
+import org.apache.paimon.table.sink.BatchTableWrite;
+import org.apache.paimon.table.sink.CommitMessage;
+import org.apache.paimon.table.sink.CommitMessageImpl;
+import org.apache.paimon.table.sink.CommitMessageSerializer;
+import org.apache.paimon.utils.SerializationUtils;
+
+import java.util.List;
 
 public class PaimonPrimaryKeyCompactionExecutor
     implements OptimizingExecutor<PaimonPrimaryKeyCompactionOutput> {
@@ -33,6 +45,100 @@ public class PaimonPrimaryKeyCompactionExecutor
 
   @Override
   public PaimonPrimaryKeyCompactionOutput execute() {
-    throw new UnsupportedOperationException("Implemented in executor task");
+    validateInput();
+
+    Object raw = input.getTable().originalTable();
+    if (!(raw instanceof FileStoreTable) || raw instanceof AppendOnlyFileStoreTable) {
+      throw new IllegalStateException(
+          "PaimonPrimaryKeyCompactionExecutor requires non-append FileStoreTable, got "
+              + (raw == null ? "null" : raw.getClass().getName()));
+    }
+    FileStoreTable table = (FileStoreTable) raw;
+
+    try (BatchTableWrite write = table.newBatchWriteBuilder().newWrite()) {
+      for (PaimonBucketCompactionUnit unit : input.getUnits()) {
+        BinaryRow partition = SerializationUtils.deserializeBinaryRow(unit.getPartitionBytes());
+        write.compact(partition, unit.getBucket(), input.isFullCompaction());
+      }
+      List<CommitMessage> messages = write.prepareCommit();
+      return new PaimonPrimaryKeyCompactionOutput(
+          CommitMessageSerializer.serializeAll(messages),
+          input.getUnits().size(),
+          compactedFileCount(),
+          compactedFileSize(),
+          compactedRecordCount(),
+          producedFileCount(messages),
+          producedFileSize(messages));
+    } catch (Exception e) {
+      throw new IllegalStateException("Failed to execute Paimon primary-key compaction.", e);
+    }
+  }
+
+  private void validateInput() {
+    if (input == null || input.getTable() == null || input.getUnits() == null) {
+      throw new IllegalStateException(
+          "PaimonPrimaryKeyCompactionInput is missing required fields (table / units).");
+    }
+    if (input.getUnits().isEmpty()) {
+      throw new IllegalStateException("PaimonPrimaryKeyCompactionInput has empty units.");
+    }
+    if (input.getCommitUser() == null || input.getCommitUser().isEmpty()) {
+      throw new IllegalStateException("PaimonPrimaryKeyCompactionInput is missing commitUser.");
+    }
+    if (input.getCommitIdentifier() <= 0L) {
+      throw new IllegalStateException(
+          "PaimonPrimaryKeyCompactionInput has invalid commitIdentifier "
+              + input.getCommitIdentifier()
+              + ".");
+    }
+  }
+
+  private long compactedFileCount() {
+    return input.getUnits().stream().mapToLong(PaimonBucketCompactionUnit::getFileCount).sum();
+  }
+
+  private long compactedFileSize() {
+    return input.getUnits().stream()
+        .mapToLong(PaimonBucketCompactionUnit::getFileSizeInBytes)
+        .sum();
+  }
+
+  private long compactedRecordCount() {
+    return input.getUnits().stream().mapToLong(PaimonBucketCompactionUnit::getRecordCount).sum();
+  }
+
+  private static long producedFileCount(List<CommitMessage> messages) {
+    long count = 0L;
+    for (CommitMessage message : messages) {
+      count += compactAfter(message).size();
+    }
+    return count;
+  }
+
+  private static long producedFileSize(List<CommitMessage> messages) {
+    long size = 0L;
+    for (CommitMessage message : messages) {
+      for (DataFileMeta file : compactAfter(message)) {
+        size += file.fileSize();
+      }
+    }
+    return size;
+  }
+
+  private static List<DataFileMeta> compactAfter(CommitMessage message) {
+    if (!(message instanceof CommitMessageImpl)) {
+      throw new IllegalStateException(
+          "Paimon primary-key compact message must be CommitMessageImpl, got "
+              + (message == null ? "null" : message.getClass().getName()));
+    }
+    CompactIncrement increment = ((CommitMessageImpl) message).compactIncrement();
+    if (increment == null) {
+      throw new IllegalStateException("Paimon primary-key compact message has null increment.");
+    }
+    List<DataFileMeta> compactAfter = increment.compactAfter();
+    if (compactAfter == null) {
+      throw new IllegalStateException("Paimon primary-key compact message has null compactAfter.");
+    }
+    return compactAfter;
   }
 }
