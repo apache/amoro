@@ -116,6 +116,43 @@ class TestPaimonPrimaryKeyCompactionExecutor {
   }
 
   @Test
+  @DisplayName("execute rejects inconsistent optimizing type and compaction mode")
+  void executorRejectsInconsistentOptimizingMode(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Identifier id = createPrimaryKeyTable(catalog, "t_bad_mode", primaryKeyOptions());
+    writeCommits(catalog.getTable(id), 2);
+    PaimonPrimaryKeyCompactionInput valid = planMinorTasks(catalog, id).get(0).getInput();
+
+    PaimonPrimaryKeyCompactionInput minorFull =
+        copyInput(
+            valid,
+            valid.getUnits(),
+            OptimizingType.MINOR,
+            true,
+            valid.getCommitUser(),
+            valid.getCommitIdentifier());
+    IllegalStateException minorFullEx =
+        assertThrows(
+            IllegalStateException.class,
+            () -> new PaimonPrimaryKeyCompactionExecutor(minorFull).execute());
+    assertTrue(minorFullEx.getMessage().contains("requires fullCompaction=false"));
+
+    PaimonPrimaryKeyCompactionInput majorNonFull =
+        copyInput(
+            valid,
+            valid.getUnits(),
+            OptimizingType.MAJOR,
+            false,
+            valid.getCommitUser(),
+            valid.getCommitIdentifier());
+    IllegalStateException majorNonFullEx =
+        assertThrows(
+            IllegalStateException.class,
+            () -> new PaimonPrimaryKeyCompactionExecutor(majorNonFull).execute());
+    assertTrue(majorNonFullEx.getMessage().contains("requires fullCompaction=true"));
+  }
+
+  @Test
   @DisplayName("execute rejects append-only table")
   void executorRejectsAppendOnlyTable(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
@@ -216,11 +253,27 @@ class TestPaimonPrimaryKeyCompactionExecutor {
       List<PaimonBucketCompactionUnit> units,
       String commitUser,
       long commitIdentifier) {
-    return new PaimonPrimaryKeyCompactionInput(
-        input.getTable(),
+    return copyInput(
+        input,
         units,
         input.getOptimizingType(),
         input.isFullCompaction(),
+        commitUser,
+        commitIdentifier);
+  }
+
+  private static PaimonPrimaryKeyCompactionInput copyInput(
+      PaimonPrimaryKeyCompactionInput input,
+      List<PaimonBucketCompactionUnit> units,
+      OptimizingType optimizingType,
+      boolean fullCompaction,
+      String commitUser,
+      long commitIdentifier) {
+    return new PaimonPrimaryKeyCompactionInput(
+        input.getTable(),
+        units,
+        optimizingType,
+        fullCompaction,
         input.getTargetSnapshotId(),
         commitUser,
         commitIdentifier);

@@ -22,14 +22,15 @@ import org.apache.amoro.exception.OptimizingCommitException;
 import org.apache.amoro.formats.paimon.PaimonTable;
 import org.apache.amoro.optimizing.TableOptimizingCommitter;
 import org.apache.paimon.table.FileStoreTable;
-import org.apache.paimon.table.sink.BatchTableCommit;
 import org.apache.paimon.table.sink.CommitMessage;
 import org.apache.paimon.table.sink.CommitMessageSerializer;
+import org.apache.paimon.table.sink.StreamTableCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
@@ -66,14 +67,15 @@ public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
       throw new OptimizingCommitException(
           "Paimon primary-key commit has empty CommitMessage list for table=" + name(), false);
     }
+    CommitIdentity identity = extractCommitIdentity();
 
     try {
       if (paimonTable == null) {
-        commitMessages(messages);
+        commitMessages(messages, identity);
       } else {
         paimonTable.doAs(
             () -> {
-              commitMessages(messages);
+              commitMessages(messages, identity);
               return null;
             });
       }
@@ -117,13 +119,64 @@ public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
     return messages;
   }
 
-  private void commitMessages(List<CommitMessage> messages) throws OptimizingCommitException {
-    try (BatchTableCommit commit = table.newBatchWriteBuilder().newCommit()) {
-      commit.commit(messages);
+  private CommitIdentity extractCommitIdentity() throws OptimizingCommitException {
+    String commitUser = null;
+    Long commitIdentifier = null;
+    for (PaimonPrimaryKeyCompactionTask task : successTasks) {
+      PaimonPrimaryKeyCompactionInput input = task == null ? null : task.getInput();
+      if (input == null) {
+        throw new OptimizingCommitException(
+            "Paimon primary-key success task for partition "
+                + partition(task)
+                + " has no PaimonPrimaryKeyCompactionInput",
+            false);
+      }
+      String taskCommitUser = input.getCommitUser();
+      if (taskCommitUser == null || taskCommitUser.isEmpty()) {
+        throw new OptimizingCommitException(
+            "Paimon primary-key success task for partition "
+                + partition(task)
+                + " has no commitUser",
+            false);
+      }
+      long taskCommitIdentifier = input.getCommitIdentifier();
+      if (taskCommitIdentifier <= 0L) {
+        throw new OptimizingCommitException(
+            "Paimon primary-key success task for partition "
+                + partition(task)
+                + " has invalid commitIdentifier "
+                + taskCommitIdentifier,
+            false);
+      }
+      if (commitUser == null) {
+        commitUser = taskCommitUser;
+      } else if (!commitUser.equals(taskCommitUser)) {
+        throw new OptimizingCommitException(
+            "Paimon primary-key success tasks have inconsistent commitUser", false);
+      }
+      if (commitIdentifier == null) {
+        commitIdentifier = taskCommitIdentifier;
+      } else if (commitIdentifier.longValue() != taskCommitIdentifier) {
+        throw new OptimizingCommitException(
+            "Paimon primary-key success tasks have inconsistent commitIdentifier", false);
+      }
+    }
+    return new CommitIdentity(commitUser, commitIdentifier);
+  }
+
+  private void commitMessages(List<CommitMessage> messages, CommitIdentity identity)
+      throws OptimizingCommitException {
+    try (StreamTableCommit commit = table.newCommit(identity.commitUser)) {
+      int committed =
+          commit.filterAndCommit(Collections.singletonMap(identity.commitIdentifier, messages));
       LOG.info(
-          "PaimonPrimaryKeyTableCommit: committed {} messages for table={}",
+          "PaimonPrimaryKeyTableCommit: committed {} identifier(s), {} messages for table={} "
+              + "commitUser={} identifier={}",
+          committed,
           messages.size(),
-          name());
+          name(),
+          identity.commitUser,
+          identity.commitIdentifier);
     } catch (Exception e) {
       throw new OptimizingCommitException(
           "Paimon primary-key commit failed for table=" + name(), e);
@@ -136,5 +189,15 @@ public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
 
   private static String partition(PaimonPrimaryKeyCompactionTask task) {
     return task == null ? "<null-task>" : task.getPartition();
+  }
+
+  private static class CommitIdentity {
+    private final String commitUser;
+    private final long commitIdentifier;
+
+    private CommitIdentity(String commitUser, long commitIdentifier) {
+      this.commitUser = commitUser;
+      this.commitIdentifier = commitIdentifier;
+    }
   }
 }

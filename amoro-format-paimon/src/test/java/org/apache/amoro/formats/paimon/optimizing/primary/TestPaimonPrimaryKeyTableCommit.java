@@ -83,7 +83,29 @@ class TestPaimonPrimaryKeyTableCommit {
     Snapshot snapshot = afterCommit.snapshotManager().latestSnapshot();
     assertEquals(snapshotBefore + 1, snapshot.id());
     assertEquals(Snapshot.CommitKind.COMPACT, snapshot.commitKind());
+    assertEquals(7L, snapshot.commitIdentifier());
     assertEquals(rowsBefore, readRows(afterCommit));
+  }
+
+  @Test
+  @DisplayName("Committer filters replayed commit identity")
+  void committerFiltersReplayedCommitIdentity(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Identifier id = createPrimaryKeyTable(catalog, "t_replay_commit", primaryKeyOptions());
+    writeCommits(catalog.getTable(id), 2);
+    List<PaimonPrimaryKeyCompactionTask> tasks = planAndExecute(catalog, id);
+    assertFalse(tasks.isEmpty());
+    FileStoreTable table = (FileStoreTable) catalog.getTable(id);
+
+    new PaimonPrimaryKeyTableCommit(table, tasks).commit();
+    long snapshotAfterFirstCommit =
+        ((FileStoreTable) catalog.getTable(id)).snapshotManager().latestSnapshot().id();
+
+    new PaimonPrimaryKeyTableCommit((FileStoreTable) catalog.getTable(id), tasks).commit();
+
+    assertEquals(
+        snapshotAfterFirstCommit,
+        ((FileStoreTable) catalog.getTable(id)).snapshotManager().latestSnapshot().id());
   }
 
   @Test

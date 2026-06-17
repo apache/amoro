@@ -19,6 +19,7 @@
 package org.apache.amoro.formats.paimon.optimizing.primary;
 
 import org.apache.amoro.optimizing.OptimizingExecutor;
+import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.paimon.data.BinaryRow;
 import org.apache.paimon.disk.IOManager;
 import org.apache.paimon.io.CompactIncrement;
@@ -104,6 +105,19 @@ public class PaimonPrimaryKeyCompactionExecutor
           "PaimonPrimaryKeyCompactionInput has invalid commitIdentifier "
               + input.getCommitIdentifier()
               + ".");
+    }
+    if (input.getOptimizingType() == null) {
+      throw new IllegalStateException("PaimonPrimaryKeyCompactionInput is missing optimizingType.");
+    }
+    if (input.getOptimizingType() == OptimizingType.MINOR && input.isFullCompaction()) {
+      throw new IllegalStateException(
+          "Paimon primary-key MINOR compaction requires fullCompaction=false.");
+    }
+    if (input.getOptimizingType() != OptimizingType.MINOR && !input.isFullCompaction()) {
+      throw new IllegalStateException(
+          "Paimon primary-key "
+              + input.getOptimizingType()
+              + " compaction requires fullCompaction=true.");
     }
   }
 

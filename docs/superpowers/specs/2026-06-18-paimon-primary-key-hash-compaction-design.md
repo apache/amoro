@@ -42,9 +42,9 @@ Paimon Spark `CALL sys.compact` 对 `HASH_FIXED` 和 `HASH_DYNAMIC` 共用 `comp
 3. 在 Spark task 内创建 `BatchTableWrite`。
 4. 循环调用 `write.compact(partition,bucket,fullCompact)`。
 5. `prepareCommit()` 后由 driver 汇总 commit messages。
-6. 使用 `BatchTableCommit.commit(messages)` 提交。
+6. Spark driver 使用 `BatchTableCommit.commit(messages)` 提交。
 
-这一模型证明主键表优化可以采用“一个 task 内处理多个 bucket，一次 prepareCommit”的执行方式。
+这一模型证明主键表优化可以采用“一个 task 内处理多个 bucket，一次 prepareCommit”的执行方式。Amoro 的 AMS committer 还需要处理进程恢复后的 replay，因此提交端不直接照搬 Spark batch commit，而是使用 Paimon `StreamTableCommit.filterAndCommit` 对单个 process commit identifier 做幂等过滤。
 
 ### Paimon Spark Producer
 
@@ -58,7 +58,7 @@ Spark Producer 写入路由会区分 bucket mode：
 1. `DataWrite` 通过 `full-compaction.delta-commits` 判断是否触发 full compaction。
 2. 写入过程中记录本次写入触达的 `writtenBuckets`。
 3. `preCommit()` 中对这些 bucket 循环调用 `write.compact(partition,bucket,true)`。
-4. 提交仍使用 `BatchTableCommit.commit(messages)`。
+4. Spark batch 提交仍使用 `BatchTableCommit.commit(messages)`。
 
 对 Amoro 的启发：
 
@@ -432,9 +432,10 @@ skip planning to avoid silently ignoring filter.
 
 1. 收集所有成功 task 的 `PaimonPrimaryKeyCompactionOutput`。
 2. 反序列化所有 Paimon `CommitMessage`。
-3. 创建 `BatchTableCommit`。
-4. 调用 `BatchTableCommit.commit(messages)`。
-5. 关闭 commit。
+3. 从所有 task input 中提取并校验同一个 `commitUser` 和 `commitIdentifier=processId`。
+4. 创建 `StreamTableCommit`。
+5. 调用 `filterAndCommit(Collections.singletonMap(commitIdentifier, messages))`。
+6. 关闭 commit。
 
 第一版不实现 partial commit：
 
@@ -459,13 +460,16 @@ Paimon core 的事实：
 2. `FileStoreCommitImpl` 按 `commit.max-retries` / `commit.timeout` 重试。
 3. Paimon 会做 LSM conflict detection。
 4. 检测到不可合并冲突或超过重试后抛异常。
+5. `BatchTableCommit.commit(messages)` 使用 batch 固定 identifier，不能过滤 AMS 重启后 replay 的同一批 messages；重复提交已 compact-before 文件会触发 Paimon file deletion conflict。
+6. `StreamTableCommit.filterAndCommit` 会先检查指定 `commitIdentifier` 是否已提交，适合 Amoro process replay 幂等。
 
 Amoro 设计：
 
-1. Committer 不复用旧 commit messages。
-2. Committer 不在当前 process 内重规划。
-3. Paimon commit 最终失败时，当前 Amoro process 失败。
-4. 后续由 Amoro 现有重试或下一轮 planning 基于最新 snapshot 重新生成任务。
+1. Committer 使用单个 `commitIdentifier=processId` 提交所有成功 task messages，不做 bucket 级 partial commit。
+2. 如果同一 process 因 AMS 恢复 replay，`filterAndCommit` 会过滤已提交 identifier，不生成重复 snapshot。
+3. Committer 不在当前 process 内重规划。
+4. Paimon commit 最终失败时，当前 Amoro process 失败。
+5. 后续由 Amoro 现有重试或下一轮 planning 基于最新 snapshot 重新生成任务。
 
 ## ProcessFactory 集成
 
@@ -548,8 +552,9 @@ Amoro 设计：
 1. Paimon Spark procedure 对 `HASH_FIXED/HASH_DYNAMIC` 共用 aware bucket compact 路径。
 2. Paimon Spark Producer 的 full compaction producer 只对 touched buckets 做局部 full compact，不按 bucket mode 拆 compact 逻辑。
 3. Paimon public API `TableWrite.compact(partition,bucket,fullCompaction)` 能表达 `MINOR` 和 `MAJOR/FULL` 的执行差异。
-4. Paimon `BatchTableCommit.commit(messages)` 内部负责 commit retry 和 LSM conflict detection。
-5. 当前 Amoro Paimon APPEND 链路不能直接承载主键表 task。
+4. Paimon `BatchTableCommit.commit(messages)` 内部负责 commit retry 和 LSM conflict detection，但不适合 AMS replay 幂等。
+5. Paimon `StreamTableCommit.filterAndCommit` 能按 `commitUser/commitIdentifier` 过滤已提交 identifier，适合 Amoro process 恢复重放。
+6. 当前 Amoro Paimon APPEND 链路不能直接承载主键表 task。
 
 ### 仍可能出错的漏洞与修复措施
 
@@ -582,8 +587,8 @@ Amoro 设计：
    - 修复：主键表第一版任何非空 filter 都拒绝规划并 `LOG.warn`。
 
 8. **commit 冲突后旧 messages 误提交**
-   - 漏洞：compact result 基于旧文件状态，冲突后复用旧 messages 可能破坏 LSM 约束。
-   - 修复：只调用 Paimon commit；Paimon 最终失败后 Amoro process 失败，下一轮重新 plan。
+   - 漏洞：compact result 基于旧文件状态，冲突后复用旧 messages 可能破坏 LSM 约束；已验证 `BatchTableCommit.commit(messages)` replay 同一 compact output 会触发 Paimon file deletion conflict。
+   - 修复：主键表 committer 使用 `StreamTableCommit.filterAndCommit` 和单个 `commitIdentifier=processId` 过滤已提交 replay；若 Paimon 最终失败，Amoro process 失败，下一轮重新 plan。
 
 ### 事实上的 100% 信心标准
 

@@ -4,7 +4,7 @@
 
 **Goal:** 为 Paimon 主键表 `HASH_FIXED` / `HASH_DYNAMIC` 增加独立自优化链路，支持 Amoro `MINOR / MAJOR / FULL` 语义，同时保持现有 APPEND 表优化行为不变。
 
-**Architecture:** 新增主键表专用 Planner、Task/Input/Output、Executor、Committer 和 recovery 映射。Planner 使用 Paimon `SnapshotReader.bucketEntries()` 做轻量候选判断；Executor 使用 `BatchTableWrite.compact(partition,bucket,fullCompaction)`；Committer 使用 Paimon `BatchTableCommit.commit(messages)`。现有 APPEND 链路继续使用 `PaimonOptimizingPlanner / PaimonCompactionExecutor / PaimonTableCommit`。
+**Architecture:** 新增主键表专用 Planner、Task/Input/Output、Executor、Committer 和 recovery 映射。Planner 使用 Paimon `SnapshotReader.bucketEntries()` 做轻量候选判断；Executor 使用 Paimon `BatchTableWrite.compact(partition,bucket,fullCompaction)` 并 `prepareCommit()`；Committer 使用 Paimon `StreamTableCommit.filterAndCommit` 以单个 process commit identifier 提交并过滤 replay。现有 APPEND 链路继续使用 `PaimonOptimizingPlanner / PaimonCompactionExecutor / PaimonTableCommit`。
 
 **Tech Stack:** Java 11, Maven, JUnit 5, Apache Paimon public API, Amoro optimizing SPI, `amoro-format-paimon`, `amoro-ams` recovery converters。
 
@@ -22,7 +22,7 @@
 关键补充：
 
 1. Spec 方向成立，但实现必须修改 `PaimonTable.evaluatePendingInput()`，否则主键表即使有新 Planner，也不会进入 `OptimizingQueue`。
-2. 主键表 committer 必须与 APPEND committer 分离。APPEND 当前使用 `StreamTableCommit.filterAndCommit`，主键表按 Spec 使用 Spark procedure 风格 `BatchTableCommit.commit(messages)`。
+2. 主键表 committer 必须与 APPEND committer 分离。Executor 参考 Spark procedure 的 compact / prepareCommit 模式；AMS committer 使用 `StreamTableCommit.filterAndCommit`，避免 `BatchTableCommit.commit(messages)` 在 AMS replay 时重复提交同一 compact output。
 3. 主键表 input 应复用 APPEND input 的 commit identity 思路：每个 process 固定 `commitUser` 与 `commitIdentifier=processId`，但不能复用 APPEND `PaimonCompactionInput` 类型。
 4. Paimon API 版本必须以本仓库依赖实际编译结果为准；若 `BucketEntry` / `PartitionEntry` / `BatchTableWrite` 方法签名与外部源码不同，按编译错误调整，但不得改设计语义。
 
@@ -52,7 +52,7 @@
   Optimizer 反射创建 executor 的 factory。
 
 - `amoro-format-paimon/src/main/java/org/apache/amoro/formats/paimon/optimizing/primary/PaimonPrimaryKeyTableCommit.java`  
-  AMS 侧主键表专用 committer，反序列化 commit messages 并 `BatchTableCommit.commit(messages)`。
+  AMS 侧主键表专用 committer，反序列化 commit messages 并用 `StreamTableCommit.filterAndCommit` 按 process commit identity 幂等提交。
 
 - `amoro-format-paimon/src/main/java/org/apache/amoro/formats/paimon/optimizing/plan/PaimonPrimaryKeyOptimizingPlanner.java`  
   主键表独立 Planner。
@@ -975,12 +975,14 @@ Committer algorithm:
 
 ```java
 List<CommitMessage> messages = new ArrayList<>();
+CommitIdentity identity = null;
 for (PaimonPrimaryKeyCompactionTask task : successTasks) {
+  identity = mergeAndValidateCommitIdentity(identity, task.getInput());
   PaimonPrimaryKeyCompactionOutput output = task.getOutput();
   messages.addAll(CommitMessageSerializer.deserializeAll(output.getCommitMessageBytesList()));
 }
-try (BatchTableCommit commit = table.newBatchWriteBuilder().newCommit()) {
-  commit.commit(messages);
+try (StreamTableCommit commit = table.newCommit(identity.commitUser)) {
+  commit.filterAndCommit(Collections.singletonMap(identity.commitIdentifier, messages));
 }
 ```
 
@@ -989,6 +991,8 @@ Rules:
 ```java
 if successTasks is null or empty: log info and return;
 if output missing: throw OptimizingCommitException;
+if commitUser / commitIdentifier missing or inconsistent: throw OptimizingCommitException;
+if replaying an already committed identifier: filterAndCommit returns 0 and no snapshot is created;
 if Paimon commit fails: wrap in OptimizingCommitException;
 ```
 
@@ -1229,7 +1233,8 @@ Check each Spec invariant:
 [ ] MAJOR > MINOR > FULL
 [ ] FULL requires partition-idle-time
 [ ] no partial commit
-[ ] Paimon commit conflict bubbles to Amoro failure
+[ ] committed replay is filtered by process commit identity
+[ ] real Paimon commit conflict bubbles to Amoro failure
 [ ] recovery mapping registered
 [ ] descriptor exposes MAJOR
 ```
@@ -1286,7 +1291,7 @@ git commit -m "test: verify paimon primary key optimizing"
 - `self-optimizing.filter` 拒绝：Task 3 tests and planner guard。
 - task batch buckets：Task 3 packing tests; Task 4 executor loops units。
 - no partial commit：Task 4 committer design and test。
-- commit conflict strategy：Task 4 wraps Paimon commit failure; no message reuse path。
+- commit conflict strategy：Task 4 filters committed replay by process commit identity; real Paimon commit failure still fails current process。
 - recovery mapping：Task 5。
 - descriptor MAJOR：Task 6。
 
