@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskId;
@@ -140,8 +141,8 @@ class TestPaimonPrimaryKeyCompactionTask {
   }
 
   @Test
-  @DisplayName("factory creates temporary executor skeleton")
-  void factoryCreatesExecutorSkeleton() {
+  @DisplayName("factory creates primary-key executor")
+  void factoryCreatesPrimaryKeyExecutor() {
     PaimonPrimaryKeyCompactionExecutorFactory factory =
         new PaimonPrimaryKeyCompactionExecutorFactory();
     factory.initialize(Collections.singletonMap("k", "v"));
@@ -149,9 +150,8 @@ class TestPaimonPrimaryKeyCompactionTask {
     OptimizingExecutor<?> executor = factory.createExecutor(newInput());
 
     assertInstanceOf(PaimonPrimaryKeyCompactionExecutor.class, executor);
-    UnsupportedOperationException error =
-        assertThrows(UnsupportedOperationException.class, executor::execute);
-    assertEquals("Implemented in executor task", error.getMessage());
+    IllegalStateException error = assertThrows(IllegalStateException.class, executor::execute);
+    assertTrue(error.getMessage().contains("missing required fields"));
   }
 
   private static PaimonPrimaryKeyCompactionInput newInput() {
