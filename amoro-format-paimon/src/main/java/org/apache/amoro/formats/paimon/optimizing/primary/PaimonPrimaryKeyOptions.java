@@ -54,7 +54,7 @@ public class PaimonPrimaryKeyOptions {
 
   public static PaimonPrimaryKeyOptions from(Map<String, String> properties) {
     Map<String, String> props = properties == null ? Collections.emptyMap() : properties;
-    boolean enabled = Boolean.parseBoolean(props.getOrDefault(ENABLED, "false"));
+    boolean enabled = enabled(properties);
     int maxBucketsPerTask = Integer.parseInt(props.getOrDefault(MAX_BUCKETS_PER_TASK, "16"));
     Duration partitionIdleTime =
         props.containsKey(PARTITION_IDLE_TIME)
@@ -67,6 +67,11 @@ public class PaimonPrimaryKeyOptions {
 
     return new PaimonPrimaryKeyOptions(
         enabled, maxBucketsPerTask, partitionIdleTime, majorFileCountThreshold);
+  }
+
+  public static boolean enabled(Map<String, String> properties) {
+    Map<String, String> props = properties == null ? Collections.emptyMap() : properties;
+    return Boolean.parseBoolean(props.getOrDefault(ENABLED, "false"));
   }
 
   public boolean enabled() {

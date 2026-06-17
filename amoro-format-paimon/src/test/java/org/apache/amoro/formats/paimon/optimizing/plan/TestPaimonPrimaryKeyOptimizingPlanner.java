@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.formats.paimon.PaimonCatalogFactory;
@@ -34,6 +36,7 @@ import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.paimon.Snapshot;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.data.BinaryString;
@@ -58,6 +61,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @DisplayName("PaimonPrimaryKeyOptimizingPlanner")
 class TestPaimonPrimaryKeyOptimizingPlanner {
@@ -442,6 +446,28 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
             .plan();
 
     assertTrue(result.getTasks().isEmpty());
+  }
+
+  @Test
+  @DisplayName("HASH table without primary key is rejected before planning")
+  void nonPrimaryKeyHashTableIsRejectedBeforePlanning() {
+    FileStoreTable table = mock(FileStoreTable.class);
+    Map<String, String> options = primaryKeyOptions();
+    when(table.options()).thenReturn(options);
+    when(table.primaryKeys()).thenReturn(Collections.emptyList());
+    when(table.bucketMode()).thenReturn(BucketMode.HASH_FIXED);
+    Snapshot snapshot = mock(Snapshot.class);
+    when(snapshot.id()).thenReturn(1L);
+    when(table.latestSnapshot()).thenReturn(Optional.of(snapshot));
+    PaimonTable paimonTable = wrap(table, "t_hash_without_pk");
+
+    PaimonPrimaryKeyOptimizingPlanner planner =
+        new PaimonPrimaryKeyOptimizingPlanner(
+            paimonTable, 100L, 7L, 4.0, 64L * 1024 * 1024, defaultConfig(), 0L, 0L, 0L, null);
+
+    assertFalse(PaimonPrimaryKeyOptimizingPlanner.supports(paimonTable));
+    assertFalse(planner.isNecessary());
+    assertTrue(planner.plan().getTasks().isEmpty());
   }
 
   private static PaimonPrimaryKeyOptimizingPlanner planner(

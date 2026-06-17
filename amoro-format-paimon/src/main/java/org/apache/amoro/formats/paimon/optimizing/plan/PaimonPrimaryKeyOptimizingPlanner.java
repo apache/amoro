@@ -96,11 +96,7 @@ public class PaimonPrimaryKeyOptimizingPlanner implements TableOptimizingPlanner
         && table.bucketMode() != BucketMode.HASH_DYNAMIC) {
       return false;
     }
-    try {
-      return PaimonPrimaryKeyOptions.from(table.options()).enabled();
-    } catch (RuntimeException e) {
-      return false;
-    }
+    return PaimonPrimaryKeyOptions.enabled(table.options());
   }
 
   public PaimonPrimaryKeyOptimizingPlanner(
@@ -461,6 +457,12 @@ public class PaimonPrimaryKeyOptimizingPlanner implements TableOptimizingPlanner
       return null;
     }
     FileStoreTable table = (FileStoreTable) raw;
+    if (table.primaryKeys() == null || table.primaryKeys().isEmpty()) {
+      LOG.info(
+          "Paimon table [{}] does not have primary key; skip primary-key optimizing.",
+          paimonTable.id().getTableName());
+      return null;
+    }
     if (table.bucketMode() != BucketMode.HASH_FIXED
         && table.bucketMode() != BucketMode.HASH_DYNAMIC) {
       LOG.info(

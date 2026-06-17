@@ -173,6 +173,9 @@ public class PaimonTable implements AmoroTable<Table>, Serializable {
       return false;
     }
     FileStoreTable fileStoreTable = (FileStoreTable) table;
+    if (fileStoreTable.primaryKeys() == null || fileStoreTable.primaryKeys().isEmpty()) {
+      return false;
+    }
     if (fileStoreTable.bucketMode() != BucketMode.HASH_FIXED
         && fileStoreTable.bucketMode() != BucketMode.HASH_DYNAMIC) {
       return false;

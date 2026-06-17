@@ -35,6 +35,8 @@ import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.options.CatalogOptions;
 import org.apache.paimon.schema.Schema;
+import org.apache.paimon.table.BucketMode;
+import org.apache.paimon.table.FileStoreTable;
 import org.apache.paimon.table.Table;
 import org.apache.paimon.types.DataTypes;
 import org.junit.jupiter.api.DisplayName;
@@ -42,6 +44,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -116,6 +119,26 @@ class TestPaimonTablePendingInputEligibility {
             .orElseThrow(AssertionError::new);
 
     assertTrue(result.optimizingNecessary());
+    assertEmptyPendingInput(result);
+  }
+
+  @Test
+  @DisplayName("HASH table without primary key is not bound to optimizing queue")
+  void nonPrimaryKeyHashTableIsNotOptimizingNecessaryWhenEnabled() {
+    FileStoreTable table = mock(FileStoreTable.class);
+    Map<String, String> options = new HashMap<>();
+    options.put(PaimonPrimaryKeyOptions.ENABLED, "true");
+    when(table.options()).thenReturn(options);
+    when(table.primaryKeys()).thenReturn(Collections.emptyList());
+    when(table.bucketMode()).thenReturn(BucketMode.HASH_FIXED);
+    PaimonTable paimonTable = wrap(table, "t_hash_without_pk");
+
+    PendingInputResult result =
+        paimonTable
+            .evaluatePendingInput(optimizationContext(true), 10)
+            .orElseThrow(AssertionError::new);
+
+    assertFalse(result.optimizingNecessary());
     assertEmptyPendingInput(result);
   }
 

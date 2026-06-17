@@ -117,6 +117,11 @@ public class TestPaimonProcessFactory {
 
   private static PaimonTable buildPrimaryKeyTable(Path warehouse, String tableName)
       throws Exception {
+    return buildPrimaryKeyTable(warehouse, tableName, Collections.emptyMap());
+  }
+
+  private static PaimonTable buildPrimaryKeyTable(
+      Path warehouse, String tableName, Map<String, String> options) throws Exception {
     Map<String, String> props = new HashMap<>();
     props.put(CatalogOptions.WAREHOUSE.key(), warehouse.toUri().toString());
     Catalog catalog = PaimonCatalogFactory.paimonCatalog(props, new Configuration());
@@ -128,6 +133,7 @@ public class TestPaimonProcessFactory {
             .primaryKey("id")
             .option("bucket", "1")
             .option(PaimonPrimaryKeyOptions.ENABLED, "true")
+            .options(options)
             .build();
     Identifier id = Identifier.create("db1", tableName);
     catalog.createTable(id, schema, true);
@@ -203,6 +209,23 @@ public class TestPaimonProcessFactory {
 
     assertNotNull(planner);
     assertTrue(planner instanceof PaimonPrimaryKeyOptimizingPlanner);
+  }
+
+  @Test
+  @DisplayName("createPlanner routes invalid enabled primary-key options to primary-key planner")
+  void testCreatePlannerRoutesInvalidEnabledPrimaryKeyOptions(@TempDir Path warehouse)
+      throws Exception {
+    PaimonProcessFactory factory = new PaimonProcessFactory();
+    factory.open(enabledProps());
+    Map<String, String> options = new HashMap<>();
+    options.put(PaimonPrimaryKeyOptions.MAX_BUCKETS_PER_TASK, "0");
+    PaimonTable table = buildPrimaryKeyTable(warehouse, "t_pk_invalid_options", options);
+
+    TableOptimizingPlanner planner = factory.createPlanner(null, table, 1.0, 1024L);
+
+    assertNotNull(planner);
+    assertTrue(planner instanceof PaimonPrimaryKeyOptimizingPlanner);
+    assertFalse(planner.isNecessary());
   }
 
   @Test
