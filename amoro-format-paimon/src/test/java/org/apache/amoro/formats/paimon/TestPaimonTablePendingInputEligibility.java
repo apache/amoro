@@ -100,6 +100,26 @@ class TestPaimonTablePendingInputEligibility {
   }
 
   @Test
+  @DisplayName("primary-key HASH_DYNAMIC table can request optimizing when enabled")
+  void primaryKeyHashDynamicTableIsOptimizingNecessaryWhenEnabled(@TempDir Path warehouse)
+      throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = new HashMap<>();
+    options.put("bucket", "-1");
+    options.put(PaimonPrimaryKeyOptions.ENABLED, "true");
+    Identifier id = createPrimaryKeyTable(catalog, "t_pk_dynamic_enabled", options);
+    PaimonTable paimonTable = wrap(catalog.getTable(id), "t_pk_dynamic_enabled");
+
+    PendingInputResult result =
+        paimonTable
+            .evaluatePendingInput(optimizationContext(true), 10)
+            .orElseThrow(AssertionError::new);
+
+    assertTrue(result.optimizingNecessary());
+    assertEmptyPendingInput(result);
+  }
+
+  @Test
   @DisplayName("fixed-bucket append-only table is not bound to optimizing queue")
   void fixedBucketAppendOnlyTableIsNotOptimizingNecessary(@TempDir Path warehouse)
       throws Exception {

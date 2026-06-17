@@ -39,6 +39,7 @@ import org.apache.paimon.catalog.Identifier;
 import org.apache.paimon.data.BinaryString;
 import org.apache.paimon.data.GenericRow;
 import org.apache.paimon.options.CatalogOptions;
+import org.apache.paimon.predicate.Predicate;
 import org.apache.paimon.schema.Schema;
 import org.apache.paimon.table.BucketMode;
 import org.apache.paimon.table.FileStoreTable;
@@ -92,6 +93,23 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
   }
 
   @Test
+  @DisplayName("explicit Paimon minor trigger can suppress lower Amoro minor file count")
+  void explicitPaimonMinorTriggerSuppressesLowerAmoroMinorFileCount(@TempDir Path warehouse)
+      throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put("bucket", "1");
+    options.put("num-sorted-run.compaction-trigger", "3");
+    Identifier id = createPrimaryKeyTable(catalog, "t_real_option_minor", options);
+    writeCommits(catalog.getTable(id), 2);
+
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(catalog, id, defaultConfig().setMinorLeastFileCount(2)).plan();
+
+    assertTrue(result.getTasks().isEmpty());
+  }
+
+  @Test
   @DisplayName("HASH_FIXED MAJOR overrides MINOR")
   void hashFixedMajorOverridesMinor(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
@@ -119,6 +137,30 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
       assertEquals(OptimizingType.MAJOR, task.getInput().getOptimizingType());
       assertTrue(task.getInput().isFullCompaction());
     }
+  }
+
+  @Test
+  @DisplayName("explicit Paimon stop trigger is used as MAJOR threshold")
+  void explicitPaimonStopTriggerIsUsedAsMajorThreshold(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put("bucket", "1");
+    options.put("num-sorted-run.compaction-trigger", "99");
+    Identifier id = createPrimaryKeyTable(catalog, "t_paimon_stop_major", options);
+    writeCommits(catalog.getTable(id), 3);
+
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(
+                catalog,
+                id,
+                defaultConfig(),
+                runtimeOptions(
+                    "num-sorted-run.compaction-trigger", "2", "num-sorted-run.stop-trigger", "3"))
+            .plan();
+
+    assertEquals(OptimizingType.MAJOR, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+    assertTrue(result.getTasks().get(0).getInput().isFullCompaction());
   }
 
   @Test
@@ -162,6 +204,30 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
   }
 
   @Test
+  @DisplayName("partition filter returns empty plan")
+  void partitionFilterReturnsEmptyPlan(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put("bucket", "1");
+    options.put("num-sorted-run.compaction-trigger", "99");
+    Identifier id = createPrimaryKeyTable(catalog, "t_partition_filter", options);
+    writeCommits(catalog.getTable(id), 2);
+
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(
+                catalog,
+                id,
+                defaultConfig(),
+                runtimeOptions("num-sorted-run.compaction-trigger", "2"),
+                0L,
+                0L,
+                org.mockito.Mockito.mock(Predicate.class))
+            .plan();
+
+    assertTrue(result.getTasks().isEmpty());
+  }
+
+  @Test
   @DisplayName("FULL without partition idle time returns empty plan")
   void fullWithoutPartitionIdleTimeReturnsEmptyPlan(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
@@ -198,6 +264,30 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
       assertEquals(OptimizingType.FULL, task.getInput().getOptimizingType());
       assertTrue(task.getInput().isFullCompaction());
     }
+  }
+
+  @Test
+  @DisplayName("FULL is not planned when MINOR candidates exist")
+  void fullIsNotPlannedWhenMinorCandidatesExist(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put("bucket", "1");
+    options.put("num-sorted-run.compaction-trigger", "99");
+    options.put(PaimonPrimaryKeyOptions.PARTITION_IDLE_TIME, "PT0S");
+    Identifier id = createPrimaryKeyTable(catalog, "t_full_blocked_by_minor", options);
+    writeCommits(catalog.getTable(id), 2);
+
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(
+                catalog,
+                id,
+                defaultConfig().setFullTriggerInterval(1),
+                runtimeOptions("num-sorted-run.compaction-trigger", "2"))
+            .plan();
+
+    assertEquals(OptimizingType.MINOR, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+    assertFalse(result.getTasks().get(0).getInput().isFullCompaction());
   }
 
   @Test
@@ -373,6 +463,19 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
       long lastMinorOptimizingTime,
       long lastFullOptimizingTime)
       throws Exception {
+    return planner(
+        catalog, id, config, runtimeOptions, lastMinorOptimizingTime, lastFullOptimizingTime, null);
+  }
+
+  private static PaimonPrimaryKeyOptimizingPlanner planner(
+      Catalog catalog,
+      Identifier id,
+      OptimizingConfig config,
+      Map<String, String> runtimeOptions,
+      long lastMinorOptimizingTime,
+      long lastFullOptimizingTime,
+      Predicate partitionFilter)
+      throws Exception {
     PaimonTable table = wrap(catalog.getTable(id).copy(runtimeOptions), id.getObjectName());
     return new PaimonPrimaryKeyOptimizingPlanner(
         table,
@@ -384,7 +487,7 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
         lastMinorOptimizingTime,
         0L,
         lastFullOptimizingTime,
-        null);
+        partitionFilter);
   }
 
   private static Catalog fsCatalog(Path warehouse) {
