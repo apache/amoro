@@ -51,7 +51,8 @@ public class TestPaimonExpireSnapshotProcess {
     Assert.assertEquals("sl_real_time_merger", params.get("curUser"));
     Assert.assertEquals("sl_real_time_merger", params.get("logUser"));
     Assert.assertEquals("AMORO", params.get("sourceTag"));
-    Assert.assertEquals("{\"sparkVersion\":\"354\",\"paimon.version\":\"1.3\"}", params.get("conf"));
+    Assert.assertEquals(
+        "{\"sparkVersion\":\"354\",\"paimon.version\":\"1.3\"}", params.get("conf"));
   }
 
   @Test
