@@ -69,6 +69,7 @@ public class PaimonPrimaryKeyOptimizingPlanner implements TableOptimizingPlanner
   private final long processId;
   private final long planTime;
   private final OptimizingConfig optimizingConfig;
+  private final long lastMinorOptimizingTime;
   private final long lastFullOptimizingTime;
   private final Predicate partitionFilter;
 
@@ -114,6 +115,7 @@ public class PaimonPrimaryKeyOptimizingPlanner implements TableOptimizingPlanner
     this.processId = processId;
     this.planTime = System.currentTimeMillis();
     this.optimizingConfig = optimizingConfig == null ? defaultOptimizingConfig() : optimizingConfig;
+    this.lastMinorOptimizingTime = lastMinorOptimizingTime;
     this.lastFullOptimizingTime = lastFullOptimizingTime;
     this.partitionFilter = partitionFilter;
   }
@@ -181,6 +183,12 @@ public class PaimonPrimaryKeyOptimizingPlanner implements TableOptimizingPlanner
     long effectiveMajor = effectiveMajor(table, coreOptions, primaryKeyOptions, effectiveMinor);
 
     List<PaimonBucketCompactionUnit> allUnits = bucketUnits(table);
+    if (primaryKeyOptions.partitionIdleTime().isPresent()) {
+      allUnits = idleUnits(table, allUnits, primaryKeyOptions.partitionIdleTime().get());
+      if (allUnits.isEmpty()) {
+        return cacheEmpty(false);
+      }
+    }
     List<PaimonBucketCompactionUnit> minorCandidates = new ArrayList<>();
     List<PaimonBucketCompactionUnit> majorCandidates = new ArrayList<>();
     for (PaimonBucketCompactionUnit unit : allUnits) {
@@ -196,7 +204,10 @@ public class PaimonPrimaryKeyOptimizingPlanner implements TableOptimizingPlanner
       return cache(majorCandidates, OptimizingType.MAJOR, true);
     }
     if (!minorCandidates.isEmpty()) {
-      return cache(minorCandidates, OptimizingType.MINOR, false);
+      if (reachMinorInterval()) {
+        return cache(minorCandidates, OptimizingType.MINOR, false);
+      }
+      return cacheEmpty(false);
     }
     return planFullIfNeeded(table, allUnits, primaryKeyOptions);
   }
@@ -296,16 +307,24 @@ public class PaimonPrimaryKeyOptimizingPlanner implements TableOptimizingPlanner
     }
 
     Duration idleTime = primaryKeyOptions.partitionIdleTime().get();
-    List<PaimonBucketCompactionUnit> fullCandidates;
-    if (table.partitionKeys().isEmpty()) {
-      fullCandidates = idleBucketUnits(allUnits, idleTime);
-    } else {
-      fullCandidates = idlePartitionBucketUnits(table, allUnits, idleTime);
-    }
+    List<PaimonBucketCompactionUnit> fullCandidates = idleUnits(table, allUnits, idleTime);
     if (fullCandidates.isEmpty()) {
       return cacheEmpty(false);
     }
     return cache(fullCandidates, OptimizingType.FULL, true);
+  }
+
+  private List<PaimonBucketCompactionUnit> idleUnits(
+      FileStoreTable table, List<PaimonBucketCompactionUnit> units, Duration idleTime) {
+    if (table.partitionKeys().isEmpty()) {
+      return idleBucketUnits(units, idleTime);
+    }
+    return idlePartitionBucketUnits(table, units, idleTime);
+  }
+
+  private boolean reachMinorInterval() {
+    return optimizingConfig.getMinorLeastInterval() >= 0
+        && planTime - lastMinorOptimizingTime > optimizingConfig.getMinorLeastInterval();
   }
 
   private List<PaimonBucketCompactionUnit> idleBucketUnits(

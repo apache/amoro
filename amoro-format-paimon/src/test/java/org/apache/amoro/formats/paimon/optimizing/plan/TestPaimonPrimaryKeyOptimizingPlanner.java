@@ -228,6 +228,107 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
   }
 
   @Test
+  @DisplayName("partition idle time filters MINOR candidates")
+  void partitionIdleTimeFiltersMinorCandidates(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put("bucket", "1");
+    options.put("num-sorted-run.compaction-trigger", "99");
+    options.put(PaimonPrimaryKeyOptions.PARTITION_IDLE_TIME, "PT999999H");
+    Identifier id = createPartitionedPrimaryKeyTable(catalog, "t_idle_minor", options);
+    writePartitionCommits(catalog.getTable(id), "p1", 2);
+    writePartitionCommits(catalog.getTable(id), "p2", 2);
+
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(
+                catalog,
+                id,
+                defaultConfig(),
+                runtimeOptions("num-sorted-run.compaction-trigger", "2"))
+            .plan();
+
+    assertTrue(result.getTasks().isEmpty());
+  }
+
+  @Test
+  @DisplayName("partition idle time filters MAJOR candidates")
+  void partitionIdleTimeFiltersMajorCandidates(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put("bucket", "1");
+    options.put("num-sorted-run.compaction-trigger", "99");
+    options.put(PaimonPrimaryKeyOptions.PARTITION_IDLE_TIME, "PT999999H");
+    Identifier id = createPartitionedPrimaryKeyTable(catalog, "t_idle_major", options);
+    writePartitionCommits(catalog.getTable(id), "p1", 3);
+    writePartitionCommits(catalog.getTable(id), "p2", 3);
+
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(
+                catalog,
+                id,
+                defaultConfig(),
+                runtimeOptions(
+                    "num-sorted-run.compaction-trigger",
+                    "2",
+                    PaimonPrimaryKeyOptions.MAJOR_FILE_COUNT_THRESHOLD,
+                    "3"))
+            .plan();
+
+    assertTrue(result.getTasks().isEmpty());
+  }
+
+  @Test
+  @DisplayName("minor interval throttles MINOR planning")
+  void minorIntervalThrottlesMinorPlanning(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put("bucket", "1");
+    options.put("num-sorted-run.compaction-trigger", "99");
+    Identifier id = createPrimaryKeyTable(catalog, "t_minor_interval", options);
+    writeCommits(catalog.getTable(id), 2);
+
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(
+                catalog,
+                id,
+                defaultConfig().setMinorLeastInterval(Integer.MAX_VALUE).setFullTriggerInterval(1),
+                runtimeOptions("num-sorted-run.compaction-trigger", "2"),
+                System.currentTimeMillis(),
+                0L)
+            .plan();
+
+    assertTrue(result.getTasks().isEmpty());
+  }
+
+  @Test
+  @DisplayName("MAJOR ignores minor interval under high pressure")
+  void majorIgnoresMinorIntervalWhenHighPressure(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put("bucket", "1");
+    options.put("num-sorted-run.compaction-trigger", "99");
+    Identifier id = createPrimaryKeyTable(catalog, "t_major_interval", options);
+    writeCommits(catalog.getTable(id), 3);
+
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(
+                catalog,
+                id,
+                defaultConfig().setMinorLeastInterval(Integer.MAX_VALUE),
+                runtimeOptions(
+                    "num-sorted-run.compaction-trigger",
+                    "2",
+                    PaimonPrimaryKeyOptions.MAJOR_FILE_COUNT_THRESHOLD,
+                    "3"),
+                System.currentTimeMillis(),
+                0L)
+            .plan();
+
+    assertEquals(OptimizingType.MAJOR, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+  }
+
+  @Test
   @DisplayName("private major threshold smaller than minor returns empty plan")
   void privateMajorThresholdSmallerThanMinorReturnsEmptyPlan(@TempDir Path warehouse)
       throws Exception {
@@ -261,9 +362,29 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
   private static PaimonPrimaryKeyOptimizingPlanner planner(
       Catalog catalog, Identifier id, OptimizingConfig config, Map<String, String> runtimeOptions)
       throws Exception {
+    return planner(catalog, id, config, runtimeOptions, 0L, 0L);
+  }
+
+  private static PaimonPrimaryKeyOptimizingPlanner planner(
+      Catalog catalog,
+      Identifier id,
+      OptimizingConfig config,
+      Map<String, String> runtimeOptions,
+      long lastMinorOptimizingTime,
+      long lastFullOptimizingTime)
+      throws Exception {
     PaimonTable table = wrap(catalog.getTable(id).copy(runtimeOptions), id.getObjectName());
     return new PaimonPrimaryKeyOptimizingPlanner(
-        table, 100L, 7L, 4.0, 64L * 1024 * 1024, config, 0L, 0L, 0L, null);
+        table,
+        100L,
+        7L,
+        4.0,
+        64L * 1024 * 1024,
+        config,
+        lastMinorOptimizingTime,
+        0L,
+        lastFullOptimizingTime,
+        null);
   }
 
   private static Catalog fsCatalog(Path warehouse) {
