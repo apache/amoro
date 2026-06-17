@@ -20,9 +20,11 @@ package org.apache.amoro.formats.paimon.optimizing.primary;
 
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.paimon.data.BinaryRow;
+import org.apache.paimon.disk.IOManager;
 import org.apache.paimon.io.CompactIncrement;
 import org.apache.paimon.io.DataFileMeta;
 import org.apache.paimon.table.AppendOnlyFileStoreTable;
+import org.apache.paimon.table.BucketMode;
 import org.apache.paimon.table.FileStoreTable;
 import org.apache.paimon.table.sink.BatchTableWrite;
 import org.apache.paimon.table.sink.CommitMessage;
@@ -54,8 +56,20 @@ public class PaimonPrimaryKeyCompactionExecutor
               + (raw == null ? "null" : raw.getClass().getName()));
     }
     FileStoreTable table = (FileStoreTable) raw;
+    if (table.primaryKeys() == null
+        || table.primaryKeys().isEmpty()
+        || (table.bucketMode() != BucketMode.HASH_FIXED
+            && table.bucketMode() != BucketMode.HASH_DYNAMIC)) {
+      throw new IllegalStateException(
+          "PaimonPrimaryKeyCompactionExecutor requires primary-key HASH_FIXED/HASH_DYNAMIC"
+              + " FileStoreTable, got bucketMode="
+              + table.bucketMode()
+              + ", primaryKeys="
+              + table.primaryKeys());
+    }
 
-    try (BatchTableWrite write = table.newBatchWriteBuilder().newWrite()) {
+    try (IOManager ioManager = IOManager.create(System.getProperty("java.io.tmpdir"));
+        BatchTableWrite write = table.newBatchWriteBuilder().newWrite().withIOManager(ioManager)) {
       for (PaimonBucketCompactionUnit unit : input.getUnits()) {
         BinaryRow partition = SerializationUtils.deserializeBinaryRow(unit.getPartitionBytes());
         write.compact(partition, unit.getBucket(), input.isFullCompaction());

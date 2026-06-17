@@ -116,6 +116,53 @@ class TestPaimonPrimaryKeyCompactionExecutor {
   }
 
   @Test
+  @DisplayName("execute rejects append-only table")
+  void executorRejectsAppendOnlyTable(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Identifier id = createNonPrimaryKeyHashTable(catalog, "t_non_primary_key_hash");
+    PaimonPrimaryKeyCompactionInput input =
+        new PaimonPrimaryKeyCompactionInput(
+            wrap(catalog.getTable(id), id.getObjectName()),
+            List.of(new PaimonBucketCompactionUnit(new byte[] {0}, 0, 1L, 1L, 1L, 1L)),
+            OptimizingType.MINOR,
+            false,
+            1L,
+            "user",
+            1L);
+
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class,
+            () -> new PaimonPrimaryKeyCompactionExecutor(input).execute());
+
+    assertTrue(ex.getMessage().contains("requires non-append FileStoreTable"), ex::getMessage);
+  }
+
+  @Test
+  @DisplayName("execute rejects primary-key non-hash bucket mode")
+  void executorRejectsPrimaryKeyNonHashBucketMode(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Identifier id = createPostponePrimaryKeyTable(catalog, "t_postpone_primary_key");
+    PaimonPrimaryKeyCompactionInput input =
+        new PaimonPrimaryKeyCompactionInput(
+            wrap(catalog.getTable(id), id.getObjectName()),
+            List.of(new PaimonBucketCompactionUnit(new byte[] {0}, -2, 1L, 1L, 1L, 1L)),
+            OptimizingType.MINOR,
+            false,
+            1L,
+            "user",
+            1L);
+
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class,
+            () -> new PaimonPrimaryKeyCompactionExecutor(input).execute());
+
+    assertTrue(ex.getMessage().contains("primary-key HASH_FIXED/HASH_DYNAMIC"), ex::getMessage);
+    assertTrue(ex.getMessage().contains("POSTPONE_MODE"), ex::getMessage);
+  }
+
+  @Test
   @DisplayName("MINOR executor produces commit messages without committing a snapshot")
   void minorExecutorProducesCommitMessages(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
@@ -228,6 +275,28 @@ class TestPaimonPrimaryKeyCompactionExecutor {
     Identifier id = Identifier.create("db1", tableName);
     catalog.createTable(id, builder.build(), true);
     return id;
+  }
+
+  private static Identifier createNonPrimaryKeyHashTable(Catalog catalog, String tableName)
+      throws Exception {
+    catalog.createDatabase("db1", true);
+    Schema schema =
+        Schema.newBuilder()
+            .column("id", DataTypes.INT())
+            .column("name", DataTypes.STRING())
+            .option("bucket", "1")
+            .option("bucket-key", "id")
+            .build();
+    Identifier id = Identifier.create("db1", tableName);
+    catalog.createTable(id, schema, true);
+    return id;
+  }
+
+  private static Identifier createPostponePrimaryKeyTable(Catalog catalog, String tableName)
+      throws Exception {
+    Map<String, String> options = primaryKeyOptions();
+    options.put("bucket", "-2");
+    return createPrimaryKeyTable(catalog, tableName, options);
   }
 
   private static void writeCommits(Table table, int count) throws Exception {
