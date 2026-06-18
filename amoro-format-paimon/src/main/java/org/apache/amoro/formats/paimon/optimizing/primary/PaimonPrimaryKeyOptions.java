@@ -18,6 +18,8 @@
 
 package org.apache.amoro.formats.paimon.optimizing.primary;
 
+import org.apache.paimon.utils.TimeUtils;
+
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
@@ -58,7 +60,7 @@ public class PaimonPrimaryKeyOptions {
     int maxBucketsPerTask = Integer.parseInt(props.getOrDefault(MAX_BUCKETS_PER_TASK, "16"));
     Duration partitionIdleTime =
         props.containsKey(PARTITION_IDLE_TIME)
-            ? Duration.parse(props.get(PARTITION_IDLE_TIME))
+            ? parseDuration(props.get(PARTITION_IDLE_TIME))
             : null;
     Long majorFileCountThreshold =
         props.containsKey(MAJOR_FILE_COUNT_THRESHOLD)
@@ -72,6 +74,19 @@ public class PaimonPrimaryKeyOptions {
   public static boolean enabled(Map<String, String> properties) {
     Map<String, String> props = properties == null ? Collections.emptyMap() : properties;
     return Boolean.parseBoolean(props.getOrDefault(ENABLED, "false"));
+  }
+
+  private static Duration parseDuration(String value) {
+    try {
+      return TimeUtils.parseDuration(value);
+    } catch (RuntimeException paimonStyleFailure) {
+      try {
+        return Duration.parse(value);
+      } catch (RuntimeException isoFailure) {
+        paimonStyleFailure.addSuppressed(isoFailure);
+        throw paimonStyleFailure;
+      }
+    }
   }
 
   public boolean enabled() {

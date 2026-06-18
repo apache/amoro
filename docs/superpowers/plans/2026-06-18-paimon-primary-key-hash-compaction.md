@@ -4,7 +4,7 @@
 
 **Goal:** 为 Paimon 主键表 `HASH_FIXED` / `HASH_DYNAMIC` 增加独立自优化链路，支持 Amoro `MINOR / MAJOR / FULL` 语义，同时保持现有 APPEND 表优化行为不变。
 
-**Architecture:** 新增主键表专用 Planner、Task/Input/Output、Executor、Committer 和 recovery 映射。Planner 使用 Paimon `SnapshotReader.bucketEntries()` 做轻量候选判断；Executor 使用 Paimon `BatchTableWrite.compact(partition,bucket,fullCompaction)` 并 `prepareCommit()`；Committer 使用 Paimon `StreamTableCommit.filterAndCommit` 以单个 process commit identifier 提交并过滤 replay。现有 APPEND 链路继续使用 `PaimonOptimizingPlanner / PaimonCompactionExecutor / PaimonTableCommit`。
+**Architecture:** 新增主键表专用 Planner、Task/Input/Output、Executor、Committer 和 recovery 映射。Planner 使用 Paimon `SnapshotReader.bucketEntries()` 做轻量候选判断；Executor 使用 `write-only=false` 的 Paimon table copy 调用 `BatchTableWrite.compact(partition,bucket,fullCompaction)` 并 `prepareCommit()`，FULL 执行前二次校验 latest snapshot 未变化；Committer 使用 `write-only=false` 的 table copy 和 Paimon `StreamTableCommit.filterAndCommit` 以单个 process commit identifier 提交并过滤 replay，空 commit messages 视为合法 no-op。现有 APPEND 链路继续使用 `PaimonOptimizingPlanner / PaimonCompactionExecutor / PaimonTableCommit`。
 
 **Tech Stack:** Java 11, Maven, JUnit 5, Apache Paimon public API, Amoro optimizing SPI, `amoro-format-paimon`, `amoro-ams` recovery converters。
 
@@ -25,13 +25,16 @@
 2. 主键表 committer 必须与 APPEND committer 分离。Executor 参考 Spark procedure 的 compact / prepareCommit 模式；AMS committer 使用 `StreamTableCommit.filterAndCommit`，避免 `BatchTableCommit.commit(messages)` 在 AMS replay 时重复提交同一 compact output。
 3. 主键表 input 应复用 APPEND input 的 commit identity 思路：每个 process 固定 `commitUser` 与 `commitIdentifier=processId`，但不能复用 APPEND `PaimonCompactionInput` 类型。
 4. Paimon API 版本必须以本仓库依赖实际编译结果为准；若 `BucketEntry` / `PartitionEntry` / `BatchTableWrite` 方法签名与外部源码不同，按编译错误调整，但不得改设计语义。
+5. Paimon Spark Procedure 会强制 compact 使用 `write-only=false`；Amoro 主键 executor / committer 必须同样使用 table copy 覆盖 `write-only=false`。
+6. Paimon compact 可能返回空 commit messages，这是合法 no-op；提交端不能把空 messages 当作失败。
+7. FULL 的冷却判断需要执行前二次保护；如果 latest snapshot 已不同于 plan 的 `targetSnapshotId`，FULL task 必须 no-op。
 
 ## File Structure
 
 ### 新增文件
 
 - `amoro-format-paimon/src/main/java/org/apache/amoro/formats/paimon/optimizing/primary/PaimonPrimaryKeyOptions.java`  
-  主键表私有配置常量、解析和校验。
+  主键表私有配置常量、解析和校验。`partition-idle-time` 需要支持 Paimon duration（如 `10s`、`5 min`）并兼容 ISO-8601（如 `PT30M`）。
 
 - `amoro-format-paimon/src/main/java/org/apache/amoro/formats/paimon/optimizing/primary/PaimonBucketCompactionUnit.java`  
   一个 `(partition,bucket)` 的轻量候选单元，保存 serialized partition 与 `BucketEntry` 指标。
@@ -937,7 +940,12 @@ if (!(raw instanceof FileStoreTable) || raw instanceof AppendOnlyFileStoreTable)
   throw new IllegalStateException("PaimonPrimaryKeyCompactionExecutor requires primary-key FileStoreTable.");
 }
 FileStoreTable table = (FileStoreTable) raw;
-BatchWriteBuilder builder = table.newBatchWriteBuilder();
+FileStoreTable compactTable = table.copy(Collections.singletonMap(CoreOptions.WRITE_ONLY.key(), "false"));
+if (input.getOptimizingType() == OptimizingType.FULL
+    && latestSnapshotId(table) != input.getTargetSnapshotId()) {
+  return emptyNoOpOutput();
+}
+BatchWriteBuilder builder = compactTable.newBatchWriteBuilder();
 try (BatchTableWrite write = builder.newWrite()) {
   for (PaimonBucketCompactionUnit unit : input.getUnits()) {
     BinaryRow partition = SerializationUtils.deserializeBinaryRow(unit.getPartitionBytes());
@@ -969,6 +977,14 @@ producedFileCount = sum(((CommitMessageImpl) message).compactIncrement().compact
 producedFileSize = sum fileSize() for every DataFileMeta in compactAfter().
 ```
 
+Executor additional rules:
+
+```text
+write-only=true table must still compact by using table.copy({write-only=false});
+FULL task must no-op if latest snapshot changed after planning;
+empty commit message list from prepareCommit is valid output.
+```
+
 - [ ] **Step 5: Implement committer**
 
 Committer algorithm:
@@ -979,9 +995,16 @@ CommitIdentity identity = null;
 for (PaimonPrimaryKeyCompactionTask task : successTasks) {
   identity = mergeAndValidateCommitIdentity(identity, task.getInput());
   PaimonPrimaryKeyCompactionOutput output = task.getOutput();
+  if (output.getCommitMessageBytesList().isEmpty()) {
+    continue;
+  }
   messages.addAll(CommitMessageSerializer.deserializeAll(output.getCommitMessageBytesList()));
 }
-try (StreamTableCommit commit = table.newCommit(identity.commitUser)) {
+if (messages.isEmpty()) {
+  return;
+}
+FileStoreTable commitTable = table.copy(Collections.singletonMap(CoreOptions.WRITE_ONLY.key(), "false"));
+try (StreamTableCommit commit = commitTable.newCommit(identity.commitUser)) {
   commit.filterAndCommit(Collections.singletonMap(identity.commitIdentifier, messages));
 }
 ```
@@ -991,6 +1014,8 @@ Rules:
 ```java
 if successTasks is null or empty: log info and return;
 if output missing: throw OptimizingCommitException;
+if output commit message list is empty: skip this task as legal no-op;
+if every success task has empty commit messages: log info and return;
 if commitUser / commitIdentifier missing or inconsistent: throw OptimizingCommitException;
 if replaying an already committed identifier: filterAndCommit returns 0 and no snapshot is created;
 if Paimon commit fails: wrap in OptimizingCommitException;
@@ -1232,7 +1257,10 @@ Check each Spec invariant:
 [ ] MAJOR threshold uses override > explicit stop-trigger > effective minor + 3
 [ ] MAJOR > MINOR > FULL
 [ ] FULL requires partition-idle-time
+[ ] FULL no-ops if latest snapshot changed after planning
 [ ] no partial commit
+[ ] empty Paimon commit messages are legal no-op
+[ ] write-only=true primary-key table compacts via write-only=false copy
 [ ] committed replay is filtered by process commit identity
 [ ] real Paimon commit conflict bubbles to Amoro failure
 [ ] recovery mapping registered

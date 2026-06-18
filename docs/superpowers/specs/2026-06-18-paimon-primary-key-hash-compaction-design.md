@@ -184,7 +184,7 @@ Paimon 主键表 normal compaction 由 `UniversalCompaction` / `ForceUpLevel0Com
 |---|---:|---|
 | `paimon-optimizer.primary-key.enabled` | `false` | 是否启用 Paimon 主键表自优化 |
 | `paimon-optimizer.primary-key.max-buckets-per-task` | `16` | 单个 Amoro task 最多处理的 bucket 数 |
-| `paimon-optimizer.primary-key.partition-idle-time` | 未配置 | partition 冷却时间，按表配置 |
+| `paimon-optimizer.primary-key.partition-idle-time` | 未配置 | partition 冷却时间，按表配置；支持 Paimon duration（如 `10s`、`5 min`）并兼容 ISO-8601（如 `PT30M`） |
 | `paimon-optimizer.primary-key.major.file-count-threshold` | 未配置 | MAJOR 文件数阈值覆盖项 |
 
 复用通用 Amoro 表属性：
@@ -234,7 +234,10 @@ effectiveMinorTriggerFileCount =
   ?: Amoro self-optimizing.minor.trigger.file-count
 ```
 
-当 `bucket.fileCount >= effectiveMinorTriggerFileCount` 时，bucket 进入 MINOR 候选。
+当 `bucket.fileCount >= effectiveMinorTriggerFileCount` 时，bucket 进入 MINOR 候选。这里的
+`effectiveMinorTriggerFileCount` 是 Amoro 对 Paimon `num-sorted-run.compaction-trigger`
+配置值的轻量压力映射，不代表 Amoro 已经读取或精确判断 Paimon 内部 sorted run 数；
+真正的 sorted run 选择仍由 Paimon `write.compact(..., false)` 决定，可能产生合法 no-op。
 
 `self-optimizing.minor.trigger.interval` 和 `self-optimizing.min-plan-interval` 只作为 Amoro 表级规划节流，不作为 bucket 压力指标。
 
@@ -252,8 +255,13 @@ MAJOR 阈值：
 
 1. bucket 必须先满足 `bucket.fileCount >= effectiveMinorTriggerFileCount`。
 2. 如果配置了 `paimon-optimizer.primary-key.major.file-count-threshold`，使用该值。
-3. 否则如果 Paimon 显式配置了 `num-sorted-run.stop-trigger`，使用 Paimon stop-trigger。
-4. 否则使用 `effectiveMinorTriggerFileCount + 3`，对齐 Paimon 默认 stop-trigger 语义。
+3. 否则如果 Paimon 显式配置了 `num-sorted-run.stop-trigger`，使用 Paimon stop-trigger
+   的配置值作为 Amoro 文件数压力阈值。
+4. 否则使用 `effectiveMinorTriggerFileCount + 3`，对齐 Paimon 默认 stop-trigger 的配置差值。
+
+MAJOR 阈值是 Amoro 的 bucket 文件数压力指标，不是 Paimon 内部 sorted run count 的精确判断。
+MAJOR 最终调用 `write.compact(..., true)`，如果 Paimon 内部判断无需 compact，输出空
+commit messages 是合法 no-op。
 
 覆盖配置必须满足：
 
@@ -286,7 +294,9 @@ Paimon primary-key FULL optimizing requires paimon-optimizer.primary-key.partiti
 skip FULL to avoid compacting active partitions.
 ```
 
-FULL 不处理活跃 partition。找不到冷却 bucket 时不创建 process。
+FULL 不处理活跃 partition。找不到冷却 bucket 时不创建 process。Executor 执行 FULL
+前还必须二次校验 latest snapshot 是否仍等于 planner 记录的 `targetSnapshotId`；如果
+计划后表有新 snapshot，FULL task 直接返回 no-op output，避免把计划后的活跃写入纳入 FULL。
 
 ## Planner 设计
 
@@ -408,15 +418,19 @@ skip planning to avoid silently ignoring filter.
 1. 从 task 反序列化 bucket units。
 2. 重新加载 Paimon 表。
 3. 校验表仍是主键表，bucket mode 仍是 `HASH_FIXED` 或 `HASH_DYNAMIC`。
-4. 创建 `BatchTableWrite`。
-5. 创建并设置 `IOManager`。
-6. 对 task 内每个 unit 循环调用：
+4. 将执行用表 copy 为 `write-only=false`，对齐 Paimon Spark Procedure，避免
+   `write-only=true` 表进入 `NoopCompactManager`。
+5. 如果是 FULL，校验当前 latest snapshot 仍等于 input `targetSnapshotId`；不相等则
+   返回空 commit messages 的 no-op output。
+6. 创建 `BatchTableWrite`。
+7. 创建并设置 `IOManager`。
+8. 对 task 内每个 unit 循环调用：
    - `MINOR`: `write.compact(partition,bucket,false)`
    - `MAJOR/FULL`: `write.compact(partition,bucket,true)`
-7. 调用 `write.prepareCommit()`。
-8. 使用 `CommitMessageSerializer` 序列化 commit messages。
-9. 生成 `PaimonPrimaryKeyCompactionOutput`。
-10. 关闭 write 和 IOManager。
+9. 调用 `write.prepareCommit()`。
+10. 使用 `CommitMessageSerializer` 序列化 commit messages。
+11. 生成 `PaimonPrimaryKeyCompactionOutput`。
+12. 关闭 write 和 IOManager。
 
 失败语义：
 
@@ -431,11 +445,14 @@ skip planning to avoid silently ignoring filter.
 提交流程：
 
 1. 收集所有成功 task 的 `PaimonPrimaryKeyCompactionOutput`。
-2. 反序列化所有 Paimon `CommitMessage`。
+2. 反序列化所有 Paimon `CommitMessage`；单个 task 的空 commit message list 是合法
+   no-op，跳过该 task。
 3. 从所有 task input 中提取并校验同一个 `commitUser` 和 `commitIdentifier=processId`。
-4. 创建 `StreamTableCommit`。
-5. 调用 `filterAndCommit(Collections.singletonMap(commitIdentifier, messages))`。
-6. 关闭 commit。
+4. 如果所有成功 task 都没有 commit messages，提交端直接成功返回，不创建 snapshot。
+5. 将提交用表 copy 为 `write-only=false`。
+6. 创建 `StreamTableCommit`。
+7. 调用 `filterAndCommit(Collections.singletonMap(commitIdentifier, messages))`。
+8. 关闭 commit。
 
 第一版不实现 partial commit：
 
@@ -564,7 +581,7 @@ Amoro 设计：
 
 2. **`BucketEntry.fileCount` 与 sorted run count 不完全等价**
    - 漏洞：Paimon LSM 压力核心是 sorted run，`BucketEntry` 暴露的是 file count。
-   - 修复：第一版明确使用 file count 作为轻量近似，并让真正 compact 选择交给 Paimon `write.compact`。如果测试发现误判过多，再探索 public API 是否能稳定读取 run/level 信息；不能为了精确而直接依赖内部 `MergeTreeCompactManager`。
+   - 修复：第一版明确使用 file count 作为 Amoro 侧轻量压力近似，并让真正 compact 选择交给 Paimon `write.compact`。MINOR/MAJOR/FULL 都必须接受 Paimon 返回空 commit messages 的合法 no-op。如果测试发现误判过多，再探索 public API 是否能稳定读取 run/level 信息；不能为了精确而直接依赖内部 `MergeTreeCompactManager`。
 
 3. **FULL 冷却判断的时间来源**
    - 漏洞：`BucketEntry.lastFileCreationTime` 和 `PartitionEntry.lastFileCreationTime` 的聚合语义需要以实际 Paimon 版本确认。
@@ -589,6 +606,14 @@ Amoro 设计：
 8. **commit 冲突后旧 messages 误提交**
    - 漏洞：compact result 基于旧文件状态，冲突后复用旧 messages 可能破坏 LSM 约束；已验证 `BatchTableCommit.commit(messages)` replay 同一 compact output 会触发 Paimon file deletion conflict。
    - 修复：主键表 committer 使用 `StreamTableCommit.filterAndCommit` 和单个 `commitIdentifier=processId` 过滤已提交 replay；若 Paimon 最终失败，Amoro process 失败，下一轮重新 plan。
+
+9. **`write-only=true` 表 compact 失效**
+   - 漏洞：Paimon `write-only=true` 会使用 `NoopCompactManager`；MAJOR/FULL 会失败，MINOR 可能 no-op。
+   - 修复：主键表 executor 和 committer 均使用 `table.copy({write-only=false})` 执行 compact / commit，对齐 Paimon Spark Procedure。
+
+10. **FULL 计划后表变活跃**
+    - 漏洞：Planner 冷却判断只代表计划时刻；计划后如果新 snapshot 产生，Executor 使用当前 writer 会 compact 新文件。
+    - 修复：FULL executor 在 compact 前校验 latest snapshot 等于 `targetSnapshotId`；不相等时返回 no-op output。
 
 ### 事实上的 100% 信心标准
 

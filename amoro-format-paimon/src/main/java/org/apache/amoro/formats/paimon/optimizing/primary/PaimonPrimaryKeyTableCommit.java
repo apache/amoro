@@ -21,6 +21,7 @@ package org.apache.amoro.formats.paimon.optimizing.primary;
 import org.apache.amoro.exception.OptimizingCommitException;
 import org.apache.amoro.formats.paimon.PaimonTable;
 import org.apache.amoro.optimizing.TableOptimizingCommitter;
+import org.apache.paimon.CoreOptions;
 import org.apache.paimon.table.FileStoreTable;
 import org.apache.paimon.table.sink.CommitMessage;
 import org.apache.paimon.table.sink.CommitMessageSerializer;
@@ -51,7 +52,10 @@ public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
       FileStoreTable table,
       Collection<PaimonPrimaryKeyCompactionTask> successTasks) {
     this.paimonTable = paimonTable;
-    this.table = table;
+    this.table =
+        table == null
+            ? null
+            : table.copy(Collections.singletonMap(CoreOptions.WRITE_ONLY.key(), "false"));
     this.successTasks = successTasks;
   }
 
@@ -62,12 +66,14 @@ public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
       return;
     }
 
+    CommitIdentity identity = extractCommitIdentity();
     List<CommitMessage> messages = collectCommitMessages();
     if (messages.isEmpty()) {
-      throw new OptimizingCommitException(
-          "Paimon primary-key commit has empty CommitMessage list for table=" + name(), false);
+      LOG.info(
+          "PaimonPrimaryKeyTableCommit: empty CommitMessage list for table={} - skip commit.",
+          name());
+      return;
     }
-    CommitIdentity identity = extractCommitIdentity();
 
     try {
       if (paimonTable == null) {
@@ -101,11 +107,11 @@ public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
       }
       List<byte[]> bytesList = output.getCommitMessageBytesList();
       if (bytesList.isEmpty()) {
-        throw new OptimizingCommitException(
-            "Paimon primary-key success task for partition "
-                + partition(task)
-                + " has empty CommitMessage list",
-            false);
+        LOG.info(
+            "PaimonPrimaryKeyTableCommit: success task for partition {} has empty CommitMessage "
+                + "list - skip task.",
+            partition(task));
+        continue;
       }
       try {
         messages.addAll(CommitMessageSerializer.deserializeAll(bytesList));

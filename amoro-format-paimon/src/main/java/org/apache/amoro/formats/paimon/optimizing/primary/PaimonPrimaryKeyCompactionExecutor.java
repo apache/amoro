@@ -20,6 +20,8 @@ package org.apache.amoro.formats.paimon.optimizing.primary;
 
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingType;
+import org.apache.paimon.CoreOptions;
+import org.apache.paimon.Snapshot;
 import org.apache.paimon.data.BinaryRow;
 import org.apache.paimon.disk.IOManager;
 import org.apache.paimon.io.CompactIncrement;
@@ -33,7 +35,9 @@ import org.apache.paimon.table.sink.CommitMessageImpl;
 import org.apache.paimon.table.sink.CommitMessageSerializer;
 import org.apache.paimon.utils.SerializationUtils;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class PaimonPrimaryKeyCompactionExecutor
     implements OptimizingExecutor<PaimonPrimaryKeyCompactionOutput> {
@@ -69,8 +73,15 @@ public class PaimonPrimaryKeyCompactionExecutor
               + table.primaryKeys());
     }
 
+    if (shouldSkipStaleFull(table)) {
+      return noOpOutput();
+    }
+
+    FileStoreTable compactTable =
+        table.copy(Collections.singletonMap(CoreOptions.WRITE_ONLY.key(), "false"));
     try (IOManager ioManager = IOManager.create(System.getProperty("java.io.tmpdir"));
-        BatchTableWrite write = table.newBatchWriteBuilder().newWrite().withIOManager(ioManager)) {
+        BatchTableWrite write =
+            compactTable.newBatchWriteBuilder().newWrite().withIOManager(ioManager)) {
       for (PaimonBucketCompactionUnit unit : input.getUnits()) {
         BinaryRow partition = SerializationUtils.deserializeBinaryRow(unit.getPartitionBytes());
         write.compact(partition, unit.getBucket(), input.isFullCompaction());
@@ -119,6 +130,18 @@ public class PaimonPrimaryKeyCompactionExecutor
               + input.getOptimizingType()
               + " compaction requires fullCompaction=true.");
     }
+  }
+
+  private boolean shouldSkipStaleFull(FileStoreTable table) {
+    if (input.getOptimizingType() != OptimizingType.FULL) {
+      return false;
+    }
+    Optional<Snapshot> latestSnapshot = table.latestSnapshot();
+    return !latestSnapshot.isPresent() || latestSnapshot.get().id() != input.getTargetSnapshotId();
+  }
+
+  private PaimonPrimaryKeyCompactionOutput noOpOutput() {
+    return new PaimonPrimaryKeyCompactionOutput(Collections.emptyList(), 0, 0L, 0L, 0L, 0L, 0L);
   }
 
   private long compactedFileCount() {

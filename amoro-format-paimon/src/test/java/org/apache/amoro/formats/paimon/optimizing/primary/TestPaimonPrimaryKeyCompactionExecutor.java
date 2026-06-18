@@ -51,6 +51,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -248,6 +249,49 @@ class TestPaimonPrimaryKeyCompactionExecutor {
     assertEquals(snapshotBefore, latestSnapshotId(catalog, id));
   }
 
+  @Test
+  @DisplayName("MAJOR executor compacts write-only table by forcing write-only false")
+  void majorExecutorCompactsWriteOnlyTable(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put("write-only", "true");
+    options.put("num-sorted-run.compaction-trigger", "99");
+    Identifier id = createPrimaryKeyTable(catalog, "t_write_only_major_execute", options);
+    writeCommits(catalog.getTable(id), 3);
+    List<PaimonPrimaryKeyCompactionTask> tasks = planMajorTasks(catalog, id);
+    assertFalse(tasks.isEmpty());
+
+    PaimonPrimaryKeyCompactionOutput output =
+        new PaimonPrimaryKeyCompactionExecutor(tasks.get(0).getInput()).execute();
+
+    assertFalse(output.getCommitMessageBytesList().isEmpty());
+    assertTrue(output.getProducedFileCount() > 0);
+  }
+
+  @Test
+  @DisplayName("FULL executor returns no-op output when snapshot changed after planning")
+  void fullExecutorNoOpsWhenSnapshotChangedAfterPlanning(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put(PaimonPrimaryKeyOptions.PARTITION_IDLE_TIME, "0s");
+    Identifier id = createPrimaryKeyTable(catalog, "t_full_stale_snapshot", options);
+    writeCommits(catalog.getTable(id), 1);
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(catalog, id, Collections.emptyMap(), defaultConfig().setFullTriggerInterval(1))
+            .plan();
+    assertEquals(OptimizingType.FULL, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+    writeCommits(catalog.getTable(id), 1);
+
+    PaimonPrimaryKeyCompactionOutput output =
+        new PaimonPrimaryKeyCompactionExecutor(result.getTasks().get(0).getInput()).execute();
+
+    assertTrue(output.getCommitMessageBytesList().isEmpty());
+    assertEquals(0, output.getCompactedBucketCount());
+    assertEquals(0L, output.getCompactedFileCount());
+    assertEquals(0L, output.getProducedFileCount());
+  }
+
   private static PaimonPrimaryKeyCompactionInput copyInput(
       PaimonPrimaryKeyCompactionInput input,
       List<PaimonBucketCompactionUnit> units,
@@ -305,9 +349,15 @@ class TestPaimonPrimaryKeyCompactionExecutor {
 
   private static PaimonPrimaryKeyOptimizingPlanner planner(
       Catalog catalog, Identifier id, Map<String, String> runtimeOptions) throws Exception {
+    return planner(catalog, id, runtimeOptions, defaultConfig());
+  }
+
+  private static PaimonPrimaryKeyOptimizingPlanner planner(
+      Catalog catalog, Identifier id, Map<String, String> runtimeOptions, OptimizingConfig config)
+      throws Exception {
     PaimonTable table = wrap(catalog.getTable(id).copy(runtimeOptions), id.getObjectName());
     return new PaimonPrimaryKeyOptimizingPlanner(
-        table, 100L, 7L, 4.0, 64L * 1024 * 1024, defaultConfig(), 0L, 0L, 0L, null);
+        table, 100L, 7L, 4.0, 64L * 1024 * 1024, config, 0L, 0L, 0L, null);
   }
 
   private static Catalog fsCatalog(Path warehouse) {

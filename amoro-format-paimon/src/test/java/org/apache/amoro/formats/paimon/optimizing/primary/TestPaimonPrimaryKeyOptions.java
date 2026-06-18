@@ -59,6 +59,17 @@ class TestPaimonPrimaryKeyOptions {
   }
 
   @Test
+  void parsesPaimonStylePartitionIdleTime() {
+    Map<String, String> props = new HashMap<>();
+    props.put(PaimonPrimaryKeyOptions.PARTITION_IDLE_TIME, "10s");
+
+    PaimonPrimaryKeyOptions options = PaimonPrimaryKeyOptions.from(props);
+
+    assertEquals(
+        Duration.ofSeconds(10), options.partitionIdleTime().orElseThrow(AssertionError::new));
+  }
+
+  @Test
   void rejectsInvalidMaxBucketsPerTask() {
     Map<String, String> props = new HashMap<>();
     props.put(PaimonPrimaryKeyOptions.MAX_BUCKETS_PER_TASK, "0");

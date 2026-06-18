@@ -136,8 +136,8 @@ class TestPaimonPrimaryKeyTableCommit {
   }
 
   @Test
-  @DisplayName("Committer rejects empty commit message list")
-  void committerRejectsEmptyCommitMessageList(@TempDir Path warehouse) throws Exception {
+  @DisplayName("Committer treats empty commit message list as no-op")
+  void committerTreatsEmptyCommitMessageListAsNoOp(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
     Identifier id = createPrimaryKeyTable(catalog, "t_empty_messages", primaryKeyOptions());
     writeCommits(catalog.getTable(id), 1);
@@ -158,12 +158,8 @@ class TestPaimonPrimaryKeyTableCommit {
     FileStoreTable table = (FileStoreTable) catalog.getTable(id);
     long snapshotBefore = table.snapshotManager().latestSnapshot().id();
 
-    OptimizingCommitException ex =
-        assertThrows(
-            OptimizingCommitException.class,
-            () -> new PaimonPrimaryKeyTableCommit(table, Collections.singletonList(task)).commit());
+    new PaimonPrimaryKeyTableCommit(table, Collections.singletonList(task)).commit();
 
-    assertTrue(ex.getMessage().contains("empty CommitMessage list"));
     assertEquals(
         snapshotBefore,
         ((FileStoreTable) catalog.getTable(id)).snapshotManager().latestSnapshot().id());
