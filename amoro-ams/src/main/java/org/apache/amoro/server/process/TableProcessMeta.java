@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TableProcessMeta {
-  private static final SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator();
+
   private long processId;
   private long tableId;
   private volatile String externalProcessIdentifier;
@@ -193,7 +193,7 @@ public class TableProcessMeta {
 
   public static TableProcessMeta createProcessMeta(TableProcess process) {
     TableProcessMeta tableProcessMeta = new TableProcessMeta();
-    tableProcessMeta.setProcessId(idGenerator.generateId());
+    tableProcessMeta.setProcessId(SnowflakeIdGenerator.INSTANCE.generateId());
     tableProcessMeta.setTableId(process.getTableIdentifier().getId());
     tableProcessMeta.setExternalProcessIdentifier("");
     tableProcessMeta.setStatus(ProcessStatus.PENDING);
