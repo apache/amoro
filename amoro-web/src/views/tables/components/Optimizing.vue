@@ -57,16 +57,24 @@ const TASK_STATUS_CONFIG = shallowReactive({
 })
 
 const { t } = useI18n()
-const columns: IColumns[] = shallowReactive([
+const baseColumns: IColumns[] = [
   { title: t('processId'), dataIndex: 'processId' },
   { title: t('startTime'), dataIndex: 'startTime', width: 172 },
   { title: t('type'), dataIndex: 'optimizingType' },
   { title: t('status'), dataIndex: 'status' },
   { title: t('duration'), dataIndex: 'duration', width: 120 },
+]
+
+const optimizingColumns: IColumns[] = [
   { title: t('tasks'), dataIndex: 'tasks' },
   { title: t('finishTime'), dataIndex: 'finishTime', width: 172 },
   { title: t('input'), dataIndex: 'inputFiles' },
   { title: t('output'), dataIndex: 'outputFiles' },
+]
+
+const columns: IColumns[] = shallowReactive([
+  ...baseColumns,
+  ...(props.processCategory === 'OPTIMIZING' ? optimizingColumns : [{ title: t('finishTime'), dataIndex: 'finishTime', width: 172 }]),
 ])
 
 const breadcrumbColumns = shallowReactive([
