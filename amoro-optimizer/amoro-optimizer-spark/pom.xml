@@ -37,6 +37,14 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Spark executors deserialize Paimon task inputs from OptimizingTask.taskInput directly.
+             Keep format-specific task DTOs and executor factories in optimizer-job.jar explicitly. -->
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-format-paimon</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- spark dependencies begin -->
         <dependency>
             <groupId>org.apache.spark</groupId>
