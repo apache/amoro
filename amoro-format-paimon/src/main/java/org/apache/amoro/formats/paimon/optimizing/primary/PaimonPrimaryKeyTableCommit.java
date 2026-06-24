@@ -20,8 +20,10 @@ package org.apache.amoro.formats.paimon.optimizing.primary;
 
 import org.apache.amoro.exception.OptimizingCommitException;
 import org.apache.amoro.formats.paimon.PaimonTable;
+import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.TableOptimizingCommitter;
 import org.apache.paimon.CoreOptions;
+import org.apache.paimon.Snapshot;
 import org.apache.paimon.table.FileStoreTable;
 import org.apache.paimon.table.sink.CommitMessage;
 import org.apache.paimon.table.sink.CommitMessageSerializer;
@@ -33,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
 
@@ -65,9 +68,20 @@ public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
       LOG.info("PaimonPrimaryKeyTableCommit: no success tasks for table={} - skip commit.", name());
       return;
     }
+    if (table == null) {
+      throw new OptimizingCommitException(
+          "Paimon primary-key success tasks have no Paimon table", false);
+    }
 
     CommitIdentity identity = extractCommitIdentity();
     List<CommitMessage> messages = collectCommitMessages();
+    if (shouldSkipStaleFull(identity)) {
+      LOG.info(
+          "PaimonPrimaryKeyTableCommit: skip stale FULL commit for table={} targetSnapshotId={}.",
+          name(),
+          identity.targetSnapshotId);
+      return;
+    }
     if (messages.isEmpty()) {
       LOG.info(
           "PaimonPrimaryKeyTableCommit: empty CommitMessage list for table={} - skip commit.",
@@ -128,6 +142,8 @@ public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
   private CommitIdentity extractCommitIdentity() throws OptimizingCommitException {
     String commitUser = null;
     Long commitIdentifier = null;
+    OptimizingType optimizingType = null;
+    Long targetSnapshotId = null;
     for (PaimonPrimaryKeyCompactionTask task : successTasks) {
       PaimonPrimaryKeyCompactionInput input = task == null ? null : task.getInput();
       if (input == null) {
@@ -154,6 +170,23 @@ public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
                 + taskCommitIdentifier,
             false);
       }
+      OptimizingType taskOptimizingType = input.getOptimizingType();
+      if (taskOptimizingType == null) {
+        throw new OptimizingCommitException(
+            "Paimon primary-key success task for partition "
+                + partition(task)
+                + " has no optimizingType",
+            false);
+      }
+      long taskTargetSnapshotId = input.getTargetSnapshotId();
+      if (taskTargetSnapshotId <= 0L) {
+        throw new OptimizingCommitException(
+            "Paimon primary-key success task for partition "
+                + partition(task)
+                + " has invalid targetSnapshotId "
+                + taskTargetSnapshotId,
+            false);
+      }
       if (commitUser == null) {
         commitUser = taskCommitUser;
       } else if (!commitUser.equals(taskCommitUser)) {
@@ -166,8 +199,28 @@ public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
         throw new OptimizingCommitException(
             "Paimon primary-key success tasks have inconsistent commitIdentifier", false);
       }
+      if (optimizingType == null) {
+        optimizingType = taskOptimizingType;
+      } else if (optimizingType != taskOptimizingType) {
+        throw new OptimizingCommitException(
+            "Paimon primary-key success tasks have inconsistent optimizingType", false);
+      }
+      if (targetSnapshotId == null) {
+        targetSnapshotId = taskTargetSnapshotId;
+      } else if (targetSnapshotId.longValue() != taskTargetSnapshotId) {
+        throw new OptimizingCommitException(
+            "Paimon primary-key success tasks have inconsistent targetSnapshotId", false);
+      }
     }
-    return new CommitIdentity(commitUser, commitIdentifier);
+    return new CommitIdentity(commitUser, commitIdentifier, optimizingType, targetSnapshotId);
+  }
+
+  private boolean shouldSkipStaleFull(CommitIdentity identity) {
+    if (identity.optimizingType != OptimizingType.FULL) {
+      return false;
+    }
+    Optional<Snapshot> latestSnapshot = table.latestSnapshot();
+    return !latestSnapshot.isPresent() || latestSnapshot.get().id() != identity.targetSnapshotId;
   }
 
   private void commitMessages(List<CommitMessage> messages, CommitIdentity identity)
@@ -200,10 +253,18 @@ public class PaimonPrimaryKeyTableCommit implements TableOptimizingCommitter {
   private static class CommitIdentity {
     private final String commitUser;
     private final long commitIdentifier;
+    private final OptimizingType optimizingType;
+    private final long targetSnapshotId;
 
-    private CommitIdentity(String commitUser, long commitIdentifier) {
+    private CommitIdentity(
+        String commitUser,
+        long commitIdentifier,
+        OptimizingType optimizingType,
+        long targetSnapshotId) {
       this.commitUser = commitUser;
       this.commitIdentifier = commitIdentifier;
+      this.optimizingType = optimizingType;
+      this.targetSnapshotId = targetSnapshotId;
     }
   }
 }

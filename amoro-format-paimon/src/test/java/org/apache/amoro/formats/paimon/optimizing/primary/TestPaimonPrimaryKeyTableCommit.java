@@ -109,6 +109,41 @@ class TestPaimonPrimaryKeyTableCommit {
   }
 
   @Test
+  @DisplayName("Committer skips stale FULL output when snapshot changed after execute")
+  void committerSkipsStaleFullOutputWhenSnapshotChangedAfterExecute(@TempDir Path warehouse)
+      throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put(PaimonPrimaryKeyOptions.PARTITION_IDLE_TIME, "0s");
+    Identifier id = createPrimaryKeyTable(catalog, "t_stale_full_commit", options);
+    writeCommits(catalog.getTable(id), 2);
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(
+                catalog,
+                id,
+                Collections.emptyMap(),
+                defaultConfig().setMinorLeastFileCount(99).setFullTriggerInterval(1))
+            .plan();
+    assertEquals(OptimizingType.FULL, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+    List<PaimonPrimaryKeyCompactionTask> tasks = new ArrayList<>(result.getTasks());
+    for (PaimonPrimaryKeyCompactionTask task : tasks) {
+      PaimonPrimaryKeyCompactionOutput output =
+          new PaimonPrimaryKeyCompactionExecutor(task.getInput()).execute();
+      assertFalse(output.getCommitMessageBytesList().isEmpty());
+      setOutput(task, output);
+    }
+    writeCommits(catalog.getTable(id), 1);
+    long snapshotBeforeCommit =
+        ((FileStoreTable) catalog.getTable(id)).snapshotManager().latestSnapshot().id();
+
+    new PaimonPrimaryKeyTableCommit((FileStoreTable) catalog.getTable(id), tasks).commit();
+
+    FileStoreTable afterCommit = (FileStoreTable) catalog.getTable(id);
+    assertEquals(snapshotBeforeCommit, afterCommit.snapshotManager().latestSnapshot().id());
+  }
+
+  @Test
   @DisplayName("Committer rejects success task without output")
   void committerRejectsMissingOutput(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
@@ -128,6 +163,60 @@ class TestPaimonPrimaryKeyTableCommit {
         assertThrows(
             OptimizingCommitException.class,
             () -> new PaimonPrimaryKeyTableCommit(table, tasksWithMissingOutput).commit());
+
+    assertTrue(ex.getMessage().contains("has no Paimon CommitMessage list"));
+    assertEquals(
+        snapshotBefore,
+        ((FileStoreTable) catalog.getTable(id)).snapshotManager().latestSnapshot().id());
+  }
+
+  @Test
+  @DisplayName("Committer rejects success task without table")
+  void committerRejectsMissingTable(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Identifier id = createPrimaryKeyTable(catalog, "t_missing_table", primaryKeyOptions());
+    writeCommits(catalog.getTable(id), 2);
+    List<PaimonPrimaryKeyCompactionTask> tasks = planAndExecute(catalog, id);
+    assertFalse(tasks.isEmpty());
+
+    OptimizingCommitException ex =
+        assertThrows(
+            OptimizingCommitException.class,
+            () -> new PaimonPrimaryKeyTableCommit(null, tasks).commit());
+
+    assertTrue(ex.getMessage().contains("have no Paimon table"));
+  }
+
+  @Test
+  @DisplayName("Committer rejects stale FULL success task without output")
+  void committerRejectsStaleFullMissingOutput(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put(PaimonPrimaryKeyOptions.PARTITION_IDLE_TIME, "0s");
+    Identifier id = createPrimaryKeyTable(catalog, "t_stale_full_missing_output", options);
+    writeCommits(catalog.getTable(id), 2);
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(
+                catalog,
+                id,
+                Collections.emptyMap(),
+                defaultConfig().setMinorLeastFileCount(99).setFullTriggerInterval(1))
+            .plan();
+    assertEquals(OptimizingType.FULL, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+    PaimonPrimaryKeyCompactionTask missingOutput =
+        new PaimonPrimaryKeyCompactionTask(
+            100L, "primary-key-buckets", result.getTasks().get(0).getInput(), new HashMap<>());
+    writeCommits(catalog.getTable(id), 1);
+    FileStoreTable table = (FileStoreTable) catalog.getTable(id);
+    long snapshotBefore = table.snapshotManager().latestSnapshot().id();
+
+    OptimizingCommitException ex =
+        assertThrows(
+            OptimizingCommitException.class,
+            () ->
+                new PaimonPrimaryKeyTableCommit(table, Collections.singletonList(missingOutput))
+                    .commit());
 
     assertTrue(ex.getMessage().contains("has no Paimon CommitMessage list"));
     assertEquals(
@@ -206,9 +295,15 @@ class TestPaimonPrimaryKeyTableCommit {
 
   private static PaimonPrimaryKeyOptimizingPlanner planner(
       Catalog catalog, Identifier id, Map<String, String> runtimeOptions) throws Exception {
+    return planner(catalog, id, runtimeOptions, defaultConfig());
+  }
+
+  private static PaimonPrimaryKeyOptimizingPlanner planner(
+      Catalog catalog, Identifier id, Map<String, String> runtimeOptions, OptimizingConfig config)
+      throws Exception {
     PaimonTable table = wrap(catalog.getTable(id).copy(runtimeOptions), id.getObjectName());
     return new PaimonPrimaryKeyOptimizingPlanner(
-        table, 100L, 7L, 4.0, 64L * 1024 * 1024, defaultConfig(), 0L, 0L, 0L, null);
+        table, 100L, 7L, 4.0, 64L * 1024 * 1024, config, 0L, 0L, 0L, null);
   }
 
   private static Catalog fsCatalog(Path warehouse) {

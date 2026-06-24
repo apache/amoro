@@ -294,9 +294,11 @@ Paimon primary-key FULL optimizing requires paimon-optimizer.primary-key.partiti
 skip FULL to avoid compacting active partitions.
 ```
 
-FULL 不处理活跃 partition。找不到冷却 bucket 时不创建 process。Executor 执行 FULL
-前还必须二次校验 latest snapshot 是否仍等于 planner 记录的 `targetSnapshotId`；如果
-计划后表有新 snapshot，FULL task 直接返回 no-op output，避免把计划后的活跃写入纳入 FULL。
+FULL 不处理活跃 partition。找不到冷却 bucket 时不创建 process。Executor 与 Committer
+执行 FULL 前还必须二次校验 latest snapshot 是否仍等于 planner 记录的
+`targetSnapshotId`；如果计划后表有新 snapshot，FULL task 或 commit 直接 no-op，
+避免把计划后的活跃写入纳入 FULL。Paimon public commit API 没有 target-snapshot
+条件提交能力，该双重检查用于缩小 executor 与 committer 之间的竞态窗口。
 
 ## Planner 设计
 
@@ -325,14 +327,13 @@ table.newSnapshotReader().bucketEntries()
 2. 校验危险误配置。
 3. 获取 target snapshot id。
 4. 读取 `bucketEntries()`。
-5. 如果配置了 `partition-idle-time`，按 partition 冷却时间过滤候选。
-6. 计算 `effectiveMinorTriggerFileCount`。
-7. 计算 MAJOR 阈值。
-8. 先筛选 MAJOR bucket。
-9. 无 MAJOR 时筛选 MINOR bucket。
-10. 无 MAJOR/MINOR 时判断 FULL 条件并筛选 FULL bucket。
-11. 按 `max-buckets-per-task` 打包 task。
-12. 生成 `OptimizingPlanResult<PaimonPrimaryKeyCompactionTask>`。
+5. 计算 `effectiveMinorTriggerFileCount`。
+6. 计算 MAJOR 阈值。
+7. 先筛选 MAJOR bucket。
+8. 无 MAJOR 时筛选 MINOR bucket。
+9. 无 MAJOR/MINOR 时判断 FULL 条件，并仅在 FULL 路径按 `partition-idle-time` 筛选冷却 bucket。
+10. 按 `max-buckets-per-task` 打包 task。
+11. 生成 `OptimizingPlanResult<PaimonPrimaryKeyCompactionTask>`。
 
 `HASH_FIXED` 与 `HASH_DYNAMIC` 使用完全相同的候选判断和 task packing。
 
@@ -347,9 +348,9 @@ paimon-optimizer.primary-key.partition-idle-time
 语义：
 
 1. 默认不配置。
-2. 未配置时，`MINOR/MAJOR` 可处理所有 bucket。
-3. 配置后，`MINOR/MAJOR/FULL` 都只处理冷却 partition。
-4. `FULL` 强制要求配置。
+2. `MINOR/MAJOR` 不受该参数过滤，仍按 bucket 压力处理所有候选 bucket。
+3. `FULL` 强制要求配置，并且只处理冷却 partition。
+4. 找不到冷却 partition / bucket 时不规划 FULL process。
 
 冷却判断参考 Paimon Spark procedure 的 `partition_idle_time` 思路，以 partition 维度 `lastFileCreationTime` 判断。实现阶段优先使用 `SnapshotReader.partitionEntries()` 获取 partition 级 `lastFileCreationTime`；如果同一版本 Paimon API 行为存在差异，需要继续探索 Paimon 内核并选择 public API 可稳定表达的方案。
 
@@ -447,12 +448,15 @@ skip planning to avoid silently ignoring filter.
 1. 收集所有成功 task 的 `PaimonPrimaryKeyCompactionOutput`。
 2. 反序列化所有 Paimon `CommitMessage`；单个 task 的空 commit message list 是合法
    no-op，跳过该 task。
-3. 从所有 task input 中提取并校验同一个 `commitUser` 和 `commitIdentifier=processId`。
-4. 如果所有成功 task 都没有 commit messages，提交端直接成功返回，不创建 snapshot。
-5. 将提交用表 copy 为 `write-only=false`。
-6. 创建 `StreamTableCommit`。
-7. 调用 `filterAndCommit(Collections.singletonMap(commitIdentifier, messages))`。
-8. 关闭 commit。
+3. 从所有 task input 中提取并校验同一个 `commitUser`、`commitIdentifier=processId`、
+   `optimizingType` 和 `targetSnapshotId`。
+4. 如果是 FULL，提交前再次校验 latest snapshot 是否仍等于 `targetSnapshotId`；不相等则
+   直接 no-op。
+5. 如果所有成功 task 都没有 commit messages，提交端直接成功返回，不创建 snapshot。
+6. 将提交用表 copy 为 `write-only=false`。
+7. 创建 `StreamTableCommit`。
+8. 调用 `filterAndCommit(Collections.singletonMap(commitIdentifier, messages))`。
+9. 关闭 commit。
 
 第一版不实现 partial commit：
 
@@ -613,7 +617,7 @@ Amoro 设计：
 
 10. **FULL 计划后表变活跃**
     - 漏洞：Planner 冷却判断只代表计划时刻；计划后如果新 snapshot 产生，Executor 使用当前 writer 会 compact 新文件。
-    - 修复：FULL executor 在 compact 前校验 latest snapshot 等于 `targetSnapshotId`；不相等时返回 no-op output。
+    - 修复：FULL executor 在 compact 前校验 latest snapshot 等于 `targetSnapshotId`；FULL committer 在提交前再次校验 latest snapshot；不相等时返回 no-op。由于 Paimon public commit API 没有 target-snapshot 条件提交，提交前校验用于缩小 executor 与 committer 之间的竞态窗口。
 
 ### 事实上的 100% 信心标准
 

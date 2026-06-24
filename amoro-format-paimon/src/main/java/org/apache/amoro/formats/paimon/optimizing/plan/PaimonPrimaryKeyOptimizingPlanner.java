@@ -202,12 +202,6 @@ public class PaimonPrimaryKeyOptimizingPlanner implements TableOptimizingPlanner
     long effectiveMajor = effectiveMajor(table, coreOptions, primaryKeyOptions, effectiveMinor);
 
     List<PaimonBucketCompactionUnit> allUnits = bucketUnits(table);
-    if (primaryKeyOptions.partitionIdleTime().isPresent()) {
-      allUnits = idleUnits(table, allUnits, primaryKeyOptions.partitionIdleTime().get());
-      if (allUnits.isEmpty()) {
-        return cacheEmpty(false);
-      }
-    }
     List<PaimonBucketCompactionUnit> minorCandidates = new ArrayList<>();
     List<PaimonBucketCompactionUnit> majorCandidates = new ArrayList<>();
     for (PaimonBucketCompactionUnit unit : allUnits) {

@@ -168,6 +168,29 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
   }
 
   @Test
+  @DisplayName("MAJOR default threshold uses effective minor plus three")
+  void majorDefaultThresholdUsesEffectiveMinorPlusThree(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put("bucket", "1");
+    options.put("num-sorted-run.compaction-trigger", "99");
+    Identifier id = createPrimaryKeyTable(catalog, "t_major_default_threshold", options);
+    writeCommits(catalog.getTable(id), 5);
+
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(
+                catalog,
+                id,
+                defaultConfig(),
+                runtimeOptions("num-sorted-run.compaction-trigger", "2"))
+            .plan();
+
+    assertEquals(OptimizingType.MAJOR, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+    assertTrue(result.getTasks().get(0).getInput().isFullCompaction());
+  }
+
+  @Test
   @DisplayName("HASH_DYNAMIC uses the same planner logic")
   void hashDynamicUsesSamePlannerLogic(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
@@ -271,6 +294,23 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
   }
 
   @Test
+  @DisplayName("FULL with no cold buckets returns empty plan")
+  void fullWithNoColdBucketsReturnsEmptyPlan(@TempDir Path warehouse) throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put("bucket", "1");
+    options.put(PaimonPrimaryKeyOptions.PARTITION_IDLE_TIME, "PT999999H");
+    Identifier id = createPrimaryKeyTable(catalog, "t_full_no_cold_bucket", options);
+    writeCommits(catalog.getTable(id), 1);
+
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(catalog, id, defaultConfig().setMinorLeastFileCount(99).setFullTriggerInterval(1))
+            .plan();
+
+    assertTrue(result.getTasks().isEmpty());
+  }
+
+  @Test
   @DisplayName("FULL is not planned when MINOR candidates exist")
   void fullIsNotPlannedWhenMinorCandidatesExist(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
@@ -322,8 +362,8 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
   }
 
   @Test
-  @DisplayName("partition idle time filters MINOR candidates")
-  void partitionIdleTimeFiltersMinorCandidates(@TempDir Path warehouse) throws Exception {
+  @DisplayName("partition idle time does not filter MINOR candidates")
+  void partitionIdleTimeDoesNotFilterMinorCandidates(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
     Map<String, String> options = primaryKeyOptions();
     options.put("bucket", "1");
@@ -341,12 +381,14 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
                 runtimeOptions("num-sorted-run.compaction-trigger", "2"))
             .plan();
 
-    assertTrue(result.getTasks().isEmpty());
+    assertEquals(OptimizingType.MINOR, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+    assertFalse(result.getTasks().get(0).getInput().isFullCompaction());
   }
 
   @Test
-  @DisplayName("partition idle time filters MAJOR candidates")
-  void partitionIdleTimeFiltersMajorCandidates(@TempDir Path warehouse) throws Exception {
+  @DisplayName("partition idle time does not filter MAJOR candidates")
+  void partitionIdleTimeDoesNotFilterMajorCandidates(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
     Map<String, String> options = primaryKeyOptions();
     options.put("bucket", "1");
@@ -368,7 +410,9 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
                     "3"))
             .plan();
 
-    assertTrue(result.getTasks().isEmpty());
+    assertEquals(OptimizingType.MAJOR, result.getOptimizingType());
+    assertFalse(result.getTasks().isEmpty());
+    assertTrue(result.getTasks().get(0).getInput().isFullCompaction());
   }
 
   @Test
