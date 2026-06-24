@@ -33,11 +33,15 @@ import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Set;
 
 public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends StatedPersistentBase {
+
+  private static final Logger LOG = LoggerFactory.getLogger(TaskRuntime.class);
 
   private final SimpleFuture future = new SimpleFuture();
   private final TaskStatusMachine statusMachine = new TaskStatusMachine();
@@ -82,9 +86,22 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
   }
 
   void complete(OptimizerThread thread, OptimizingTaskResult result) {
+    // A completion for an already reset/rescheduled task is stale: the execution it reports belongs
+    // to a round that the OptimizerKeeper has already torn down. Absorb it gracefully instead of
+    // failing the (now illegal) state transition; the task will be re-executed in its current
+    // round.
+    if (isStaleResponse(thread) || status != Status.ACKED) {
+      LOG.warn(
+          "Ignoring stale completion for task {} from optimizer thread {}, current status {} and "
+              + "owner {}. The task was likely reset by the OptimizerKeeper and will be re-executed.",
+          taskId,
+          thread,
+          status,
+          getResourceDesc());
+      return;
+    }
     invokeConsistency(
         () -> {
-          validThread(thread);
           if (result.getErrorMessage() != null) {
             statusMachine.accept(Status.FAILED);
             failReason = result.getErrorMessage();
@@ -133,9 +150,21 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
   }
 
   void ack(OptimizerThread thread) {
+    // If the task has been reset/rescheduled, reject the stale ack so the optimizer skips executing
+    // this obsolete round (OptimizerExecutor treats the failure as "skip"). Thrown outside the
+    // transaction to avoid a misleading "failed to commit transaction" error for this expected
+    // case.
+    if (isStaleResponse(thread) || status != Status.SCHEDULED) {
+      LOG.warn(
+          "Rejecting stale ack for task {} from optimizer thread {}: current status {}, owner {}.",
+          taskId,
+          thread,
+          status,
+          getResourceDesc());
+      throw new TaskRuntimeException("Task has been reset or not yet scheduled, taskId:%s", taskId);
+    }
     invokeConsistency(
         () -> {
-          validThread(thread);
           statusMachine.accept(Status.ACKED);
           persistTaskRuntime();
         });
@@ -247,15 +276,14 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
         .toString();
   }
 
-  private void validThread(OptimizerThread thread) {
-    if (token == null) {
-      throw new TaskRuntimeException("Task has been reset or not yet scheduled, taskId:%s", taskId);
-    }
-    if (!thread.getToken().equals(getToken()) || thread.getThreadId() != threadId) {
-      throw new TaskRuntimeException(
-          "The optimizer thread does not match, the thread in the task is OptimizerThread(token=%s, threadId=%s), and the thread in the request is OptimizerThread(token=%s, threadId=%s).",
-          getToken(), threadId, thread.getToken(), thread.getThreadId());
-    }
+  /**
+   * Detects a response from an optimizer round the task no longer belongs to: it was reset (token
+   * cleared) or has since been rescheduled to a different owner. Reads token/threadId outside
+   * {@link #invokeConsistency}, so callers must hold the owning TableOptimizingProcess lock, under
+   * which OptimizingQueue serializes ack/complete/reset/poll.
+   */
+  private boolean isStaleResponse(OptimizerThread thread) {
+    return token == null || !thread.getToken().equals(token) || thread.getThreadId() != threadId;
   }
 
   private void persistTaskRuntime() {
