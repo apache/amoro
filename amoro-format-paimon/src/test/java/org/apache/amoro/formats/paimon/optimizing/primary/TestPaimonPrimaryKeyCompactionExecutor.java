@@ -161,7 +161,8 @@ class TestPaimonPrimaryKeyCompactionExecutor {
     PaimonPrimaryKeyCompactionInput input =
         new PaimonPrimaryKeyCompactionInput(
             wrap(catalog.getTable(id), id.getObjectName()),
-            List.of(new PaimonBucketCompactionUnit(new byte[] {0}, 0, 1L, 1L, 1L, 1L)),
+            Collections.singletonList(
+                new PaimonBucketCompactionUnit(new byte[] {0}, 0, 1L, 1L, 1L, 1L)),
             OptimizingType.MINOR,
             false,
             1L,
@@ -184,7 +185,8 @@ class TestPaimonPrimaryKeyCompactionExecutor {
     PaimonPrimaryKeyCompactionInput input =
         new PaimonPrimaryKeyCompactionInput(
             wrap(catalog.getTable(id), id.getObjectName()),
-            List.of(new PaimonBucketCompactionUnit(new byte[] {0}, -2, 1L, 1L, 1L, 1L)),
+            Collections.singletonList(
+                new PaimonBucketCompactionUnit(new byte[] {0}, -2, 1L, 1L, 1L, 1L)),
             OptimizingType.MINOR,
             false,
             1L,
