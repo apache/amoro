@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 
 public class SimpleSerializer<R> implements ResourceSerde<R> {
 
@@ -46,11 +47,37 @@ public class SimpleSerializer<R> implements ResourceSerde<R> {
       return null;
     }
     try (ByteArrayInputStream bis = new ByteArrayInputStream(input)) {
-      try (ObjectInputStream ois = new ObjectInputStream(bis)) {
+      try (ObjectInputStream ois =
+          new ContextClassLoaderObjectInputStream(
+              bis, Thread.currentThread().getContextClassLoader())) {
         return (R) ois.readObject();
       }
     } catch (IOException | ClassNotFoundException e) {
       throw new IllegalArgumentException("deserialization error ", e);
+    }
+  }
+
+  private static class ContextClassLoaderObjectInputStream extends ObjectInputStream {
+
+    private final ClassLoader classLoader;
+
+    private ContextClassLoaderObjectInputStream(ByteArrayInputStream input, ClassLoader classLoader)
+        throws IOException {
+      super(input);
+      this.classLoader = classLoader;
+    }
+
+    @Override
+    protected Class<?> resolveClass(ObjectStreamClass desc)
+        throws IOException, ClassNotFoundException {
+      if (classLoader != null) {
+        try {
+          return Class.forName(desc.getName(), false, classLoader);
+        } catch (ClassNotFoundException ignored) {
+          // Fall through to ObjectInputStream's default loader resolution.
+        }
+      }
+      return super.resolveClass(desc);
     }
   }
 }

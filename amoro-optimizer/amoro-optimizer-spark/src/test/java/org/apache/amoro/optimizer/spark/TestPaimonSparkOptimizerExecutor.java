@@ -28,6 +28,8 @@ import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionExecutorFactory;
 import org.apache.amoro.formats.paimon.optimizing.PaimonCompactionInput;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionExecutorFactory;
+import org.apache.amoro.formats.paimon.optimizing.primary.PaimonPrimaryKeyCompactionInput;
 import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.utils.SerializationUtil;
@@ -91,6 +93,34 @@ public class TestPaimonSparkOptimizerExecutor {
     assertTrue(
         result.getErrorMessage().contains("PaimonCompactionInput is missing required fields"),
         "Spark executor should return the Paimon executor failure, was: "
+            + result.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("local Spark executor deserializes Paimon primary-key input")
+  void testLocalSparkExecutorDeserializesPrimaryKeyPaimonInput() throws CmdLineException {
+    OptimizingTask task = new OptimizingTask(new OptimizingTaskId(89L, 1));
+    task.setTaskInput(SerializationUtil.simpleSerialize(new PaimonPrimaryKeyCompactionInput()));
+    Map<String, String> properties = new HashMap<>();
+    properties.put(
+        TaskProperties.TASK_EXECUTOR_FACTORY_IMPL,
+        PaimonPrimaryKeyCompactionExecutorFactory.class.getName());
+    task.setProperties(properties);
+
+    SparkOptimizingTaskFunction function = new SparkOptimizingTaskFunction(optimizerConfig(), 3);
+    List<OptimizingTaskResult> results =
+        jsc.parallelize(Collections.singletonList(task), 1).map(function).collect();
+
+    assertEquals(1, results.size());
+    OptimizingTaskResult result = results.get(0);
+    assertEquals(task.getTaskId(), result.getTaskId());
+    assertNotNull(result.getErrorMessage());
+    assertFalse(result.getErrorMessage().isEmpty());
+    assertTrue(
+        result
+            .getErrorMessage()
+            .contains("PaimonPrimaryKeyCompactionInput is missing required fields"),
+        "Spark executor should reach the Paimon primary-key executor failure, was: "
             + result.getErrorMessage());
   }
 
