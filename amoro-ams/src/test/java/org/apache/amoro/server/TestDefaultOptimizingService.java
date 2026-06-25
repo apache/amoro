@@ -303,7 +303,8 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
     // Completing before ack is now treated as a stale response and absorbed silently (see
-    // TaskRuntime#complete): the result cannot be told apart from a stale completion for a task that
+    // TaskRuntime#complete): the result cannot be told apart from a stale completion for a task
+    // that
     // was reset and re-scheduled to the same thread, so the task simply stays SCHEDULED.
     optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
     assertTaskStatus(TaskRuntime.Status.SCHEDULED);
