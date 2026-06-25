@@ -175,5 +175,5 @@ Paimon 主键表原生只有 `minor` 和 `full`：
 1. `MAJOR` 没有 Paimon 原生 strategy 名称，必须在文档和日志中明确它是 Amoro 局部 full compact 语义，避免用户误认为 Paimon procedure 支持 `major` 参数。
 2. 主键表是否进入 queue 需要改变 `PaimonTable.evaluatePendingInput()` 的测试锁定行为，必须新增开关和回归测试保护 APPEND 表。
 3. 现有 task 恢复映射只认识 append executor factory。若新增主键表 executor factory，必须同步扩展 `TaskDescriptorRecoveryTypes`。
-4. 一个 Amoro task 内批量循环多个 bucket 已确认，但失败重试和 metrics 粒度会变粗；需要通过 `paimon-optimizer.primary-key.max-buckets-per-task=16` 控制。
+4. 一个 Amoro task 内批量循环多个 bucket 已确认，但失败重试、metrics 粒度和 COMPLETE payload 风险会变粗；当前版本不提供合并多个 bucket 的配置，固定一个 partition-bucket unit 一个 task。
 5. `HASH_DYNAMIC` 与 `HASH_FIXED` 共用实现已确认，但仍需要在 eligibility、日志和测试中覆盖动态桶表，避免只在固定桶表上验证通过。

@@ -34,6 +34,8 @@ import org.apache.paimon.table.sink.CommitMessage;
 import org.apache.paimon.table.sink.CommitMessageImpl;
 import org.apache.paimon.table.sink.CommitMessageSerializer;
 import org.apache.paimon.utils.SerializationUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +43,9 @@ import java.util.Optional;
 
 public class PaimonPrimaryKeyCompactionExecutor
     implements OptimizingExecutor<PaimonPrimaryKeyCompactionOutput> {
+
+  private static final Logger LOG =
+      LoggerFactory.getLogger(PaimonPrimaryKeyCompactionExecutor.class);
 
   private static final long serialVersionUID = 1L;
 
@@ -87,14 +92,30 @@ public class PaimonPrimaryKeyCompactionExecutor
         write.compact(partition, unit.getBucket(), input.isFullCompaction());
       }
       List<CommitMessage> messages = write.prepareCommit();
-      return new PaimonPrimaryKeyCompactionOutput(
-          CommitMessageSerializer.serializeAll(messages),
+      PaimonPrimaryKeyCompactionOutput output =
+          new PaimonPrimaryKeyCompactionOutput(
+              CommitMessageSerializer.serializeAll(messages),
+              input.getUnits().size(),
+              compactedFileCount(),
+              compactedFileSize(),
+              compactedRecordCount(),
+              producedFileCount(messages),
+              producedFileSize(messages));
+      LOG.info(
+          "Paimon primary-key compaction produced commit messages: table={}, type={}, "
+              + "identifier={}, buckets={}, commitMessageCount={}, commitMessageBytes={}, "
+              + "compactedFiles={}, compactedBytes={}, producedFiles={}, producedBytes={}",
+          input.getTable().id(),
+          input.getOptimizingType(),
+          input.getCommitIdentifier(),
           input.getUnits().size(),
-          compactedFileCount(),
-          compactedFileSize(),
-          compactedRecordCount(),
-          producedFileCount(messages),
-          producedFileSize(messages));
+          output.commitMessageCount(),
+          output.commitMessageBytesSize(),
+          output.getCompactedFileCount(),
+          output.getCompactedFileSize(),
+          output.getProducedFileCount(),
+          output.getProducedFileSize());
+      return output;
     } catch (Exception e) {
       throw new IllegalStateException("Failed to execute Paimon primary-key compaction.", e);
     }

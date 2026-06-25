@@ -172,9 +172,8 @@ Paimon 主键表 normal compaction 由 `UniversalCompaction` / `ForceUpLevel0Com
 危险误配置使用 `LOG.warn` 并拒绝主键表规划：
 
 1. `self-optimizing.filter` 非空。
-2. `paimon-optimizer.primary-key.max-buckets-per-task <= 0`。
-3. `paimon-optimizer.primary-key.major.file-count-threshold < effectiveMinorTriggerFileCount`。
-4. FULL 达到触发但未配置 `paimon-optimizer.primary-key.partition-idle-time`。
+2. `paimon-optimizer.primary-key.major.file-count-threshold < effectiveMinorTriggerFileCount`。
+3. FULL 达到触发但未配置 `paimon-optimizer.primary-key.partition-idle-time`。
 
 ## 配置
 
@@ -183,7 +182,6 @@ Paimon 主键表 normal compaction 由 `UniversalCompaction` / `ForceUpLevel0Com
 | 配置 | 默认值 | 说明 |
 |---|---:|---|
 | `paimon-optimizer.primary-key.enabled` | `false` | 是否启用 Paimon 主键表自优化 |
-| `paimon-optimizer.primary-key.max-buckets-per-task` | `16` | 单个 Amoro task 最多处理的 bucket 数 |
 | `paimon-optimizer.primary-key.partition-idle-time` | 未配置 | partition 冷却时间，按表配置；支持 Paimon duration（如 `10s`、`5 min`）并兼容 ISO-8601（如 `PT30M`） |
 | `paimon-optimizer.primary-key.major.file-count-threshold` | 未配置 | MAJOR 文件数阈值覆盖项 |
 
@@ -332,7 +330,7 @@ table.newSnapshotReader().bucketEntries()
 7. 先筛选 MAJOR bucket。
 8. 无 MAJOR 时筛选 MINOR bucket。
 9. 无 MAJOR/MINOR 时判断 FULL 条件，并仅在 FULL 路径按 `partition-idle-time` 筛选冷却 bucket。
-10. 按 `max-buckets-per-task` 打包 task。
+10. 每个候选 partition-bucket unit 生成一个独立 task。
 11. 生成 `OptimizingPlanResult<PaimonPrimaryKeyCompactionTask>`。
 
 `HASH_FIXED` 与 `HASH_DYNAMIC` 使用完全相同的候选判断和 task packing。
@@ -530,17 +528,16 @@ Amoro 设计：
 3. `HASH_FIXED` 和 `HASH_DYNAMIC` 共用行为。
 4. APPEND `BUCKET_UNAWARE` 表继续走现有 planner。
 5. 非空 `self-optimizing.filter` 拒绝规划并 `LOG.warn`。
-6. `max-buckets-per-task <= 0` 拒绝规划并 `LOG.warn`。
-7. MINOR 阈值：Paimon 显式 `num-sorted-run.compaction-trigger` 优先，否则使用 Amoro `self-optimizing.minor.trigger.file-count`。
-8. MAJOR 阈值：私有覆盖参数优先，其次 Paimon `num-sorted-run.stop-trigger`，否则 `effectiveMinor + 3`。
-9. `major.file-count-threshold < effectiveMinorTriggerFileCount` 拒绝规划并 `LOG.warn`。
-10. `MAJOR > MINOR > FULL` 优先级。
-11. 同时存在 MAJOR 和 MINOR 候选时，只规划 MAJOR。
-12. FULL 达到 interval 但存在 MAJOR/MINOR 候选时，不规划 FULL。
-13. FULL 未配置 `partition-idle-time` 时拒绝 FULL 并 `LOG.warn`。
-14. FULL 只处理冷却 partition。
-15. 找不到冷却 bucket 时不创建 process。
-16. task packing 遵守 `max-buckets-per-task=16` 默认值。
+6. MINOR 阈值：Paimon 显式 `num-sorted-run.compaction-trigger` 优先，否则使用 Amoro `self-optimizing.minor.trigger.file-count`。
+7. MAJOR 阈值：私有覆盖参数优先，其次 Paimon `num-sorted-run.stop-trigger`，否则 `effectiveMinor + 3`。
+8. `major.file-count-threshold < effectiveMinorTriggerFileCount` 拒绝规划并 `LOG.warn`。
+9. `MAJOR > MINOR > FULL` 优先级。
+10. 同时存在 MAJOR 和 MINOR 候选时，只规划 MAJOR。
+11. FULL 达到 interval 但存在 MAJOR/MINOR 候选时，不规划 FULL。
+12. FULL 未配置 `partition-idle-time` 时拒绝 FULL 并 `LOG.warn`。
+13. FULL 只处理冷却 partition。
+14. 找不到冷却 bucket 时不创建 process。
+15. task packing 固定每个 partition-bucket unit 一个 Amoro task，不提供合并多个 unit 的表参数。
 
 ### Executor / Committer 测试
 

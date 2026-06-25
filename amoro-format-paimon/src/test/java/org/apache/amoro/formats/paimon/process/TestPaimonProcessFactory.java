@@ -218,7 +218,7 @@ public class TestPaimonProcessFactory {
     PaimonProcessFactory factory = new PaimonProcessFactory();
     factory.open(enabledProps());
     Map<String, String> options = new HashMap<>();
-    options.put(PaimonPrimaryKeyOptions.MAX_BUCKETS_PER_TASK, "0");
+    options.put(PaimonPrimaryKeyOptions.MAJOR_FILE_COUNT_THRESHOLD, "1");
     PaimonTable table = buildPrimaryKeyTable(warehouse, "t_pk_invalid_options", options);
 
     TableOptimizingPlanner planner = factory.createPlanner(null, table, 1.0, 1024L);

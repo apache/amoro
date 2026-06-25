@@ -238,19 +238,7 @@ public class PaimonPrimaryKeyOptimizingPlanner implements TableOptimizingPlanner
       commitUser = CoreOptions.createCommitUser(Options.fromMap(table.options()));
     }
 
-    PaimonPrimaryKeyOptions primaryKeyOptions;
-    try {
-      primaryKeyOptions = PaimonPrimaryKeyOptions.from(table.options());
-    } catch (RuntimeException e) {
-      LOG.warn(
-          "Paimon primary-key optimizing options are invalid for table [{}], skip planning.",
-          paimonTable.id().getTableName(),
-          e);
-      return emptyResult();
-    }
-
-    List<PaimonPrimaryKeyCompactionTask> tasks =
-        packTasks(cachedUnits, primaryKeyOptions.maxBucketsPerTask());
+    List<PaimonPrimaryKeyCompactionTask> tasks = packTasks(cachedUnits);
     return new OptimizingPlanResult<>(
         processId,
         getOptimizingType(),
@@ -373,12 +361,11 @@ public class PaimonPrimaryKeyOptimizingPlanner implements TableOptimizingPlanner
     return idleMillis == 0 || planTime - lastFileCreationTime >= idleMillis;
   }
 
-  private List<PaimonPrimaryKeyCompactionTask> packTasks(
-      List<PaimonBucketCompactionUnit> units, int maxBucketsPerTask) {
+  private List<PaimonPrimaryKeyCompactionTask> packTasks(List<PaimonBucketCompactionUnit> units) {
     List<PaimonPrimaryKeyCompactionTask> tasks = new ArrayList<>();
-    for (int offset = 0; offset < units.size(); offset += maxBucketsPerTask) {
-      int end = Math.min(offset + maxBucketsPerTask, units.size());
-      List<PaimonBucketCompactionUnit> taskUnits = new ArrayList<>(units.subList(offset, end));
+    for (PaimonBucketCompactionUnit unit : units) {
+      List<PaimonBucketCompactionUnit> taskUnits = new ArrayList<>();
+      taskUnits.add(unit);
       PaimonPrimaryKeyCompactionInput input =
           new PaimonPrimaryKeyCompactionInput(
               paimonTable,

@@ -130,7 +130,6 @@ class TestPaimonPrimaryKeyOptions {
     PaimonPrimaryKeyOptions options = PaimonPrimaryKeyOptions.from(new HashMap<>());
 
     assertFalse(options.enabled());
-    assertEquals(16, options.maxBucketsPerTask());
     assertFalse(options.partitionIdleTime().isPresent());
     assertFalse(options.majorFileCountThreshold().isPresent());
   }
@@ -139,24 +138,14 @@ class TestPaimonPrimaryKeyOptions {
   void parsesPrimaryKeySpecificOptions() {
     Map<String, String> props = new HashMap<>();
     props.put(PaimonPrimaryKeyOptions.ENABLED, "true");
-    props.put(PaimonPrimaryKeyOptions.MAX_BUCKETS_PER_TASK, "8");
     props.put(PaimonPrimaryKeyOptions.PARTITION_IDLE_TIME, "PT30M");
     props.put(PaimonPrimaryKeyOptions.MAJOR_FILE_COUNT_THRESHOLD, "12");
 
     PaimonPrimaryKeyOptions options = PaimonPrimaryKeyOptions.from(props);
 
     assertTrue(options.enabled());
-    assertEquals(8, options.maxBucketsPerTask());
     assertEquals(Duration.ofMinutes(30), options.partitionIdleTime().orElseThrow(AssertionError::new));
     assertEquals(12L, options.majorFileCountThreshold().orElseThrow(AssertionError::new));
-  }
-
-  @Test
-  void rejectsInvalidMaxBucketsPerTask() {
-    Map<String, String> props = new HashMap<>();
-    props.put(PaimonPrimaryKeyOptions.MAX_BUCKETS_PER_TASK, "0");
-
-    assertThrows(IllegalArgumentException.class, () -> PaimonPrimaryKeyOptions.from(props));
   }
 }
 ```
@@ -185,28 +174,18 @@ import java.util.Optional;
 public class PaimonPrimaryKeyOptions {
 
   public static final String ENABLED = "paimon-optimizer.primary-key.enabled";
-  public static final String MAX_BUCKETS_PER_TASK =
-      "paimon-optimizer.primary-key.max-buckets-per-task";
   public static final String PARTITION_IDLE_TIME =
       "paimon-optimizer.primary-key.partition-idle-time";
   public static final String MAJOR_FILE_COUNT_THRESHOLD =
       "paimon-optimizer.primary-key.major.file-count-threshold";
 
   private final boolean enabled;
-  private final int maxBucketsPerTask;
   private final Duration partitionIdleTime;
   private final Long majorFileCountThreshold;
 
   private PaimonPrimaryKeyOptions(
-      boolean enabled,
-      int maxBucketsPerTask,
-      Duration partitionIdleTime,
-      Long majorFileCountThreshold) {
-    if (maxBucketsPerTask <= 0) {
-      throw new IllegalArgumentException(MAX_BUCKETS_PER_TASK + " must be greater than 0.");
-    }
+      boolean enabled, Duration partitionIdleTime, Long majorFileCountThreshold) {
     this.enabled = enabled;
-    this.maxBucketsPerTask = maxBucketsPerTask;
     this.partitionIdleTime = partitionIdleTime;
     this.majorFileCountThreshold = majorFileCountThreshold;
   }
@@ -214,22 +193,17 @@ public class PaimonPrimaryKeyOptions {
   public static PaimonPrimaryKeyOptions from(Map<String, String> properties) {
     Map<String, String> props = properties == null ? java.util.Collections.emptyMap() : properties;
     boolean enabled = Boolean.parseBoolean(props.getOrDefault(ENABLED, "false"));
-    int maxBucketsPerTask = Integer.parseInt(props.getOrDefault(MAX_BUCKETS_PER_TASK, "16"));
     Duration partitionIdleTime =
         props.containsKey(PARTITION_IDLE_TIME) ? Duration.parse(props.get(PARTITION_IDLE_TIME)) : null;
     Long majorThreshold =
         props.containsKey(MAJOR_FILE_COUNT_THRESHOLD)
             ? Long.parseLong(props.get(MAJOR_FILE_COUNT_THRESHOLD))
             : null;
-    return new PaimonPrimaryKeyOptions(enabled, maxBucketsPerTask, partitionIdleTime, majorThreshold);
+    return new PaimonPrimaryKeyOptions(enabled, partitionIdleTime, majorThreshold);
   }
 
   public boolean enabled() {
     return enabled;
-  }
-
-  public int maxBucketsPerTask() {
-    return maxBucketsPerTask;
   }
 
   public Optional<Duration> partitionIdleTime() {
@@ -654,13 +628,9 @@ void fullRunsOnlyWhenNoMinorOrMajorCandidate(@TempDir Path warehouse) throws Exc
 }
 
 @Test
-void packsAtMostConfiguredBucketsPerTask(@TempDir Path warehouse) throws Exception {
+void packsOneBucketUnitPerTask(@TempDir Path warehouse) throws Exception {
   Catalog catalog = fsCatalog(warehouse);
-  Table table =
-      createPrimaryKeyTable(
-          catalog,
-          "t_pack",
-          mapOf("bucket", "4", PaimonPrimaryKeyOptions.MAX_BUCKETS_PER_TASK, "1"));
+  Table table = createPrimaryKeyTable(catalog, "t_pack", mapOf("bucket", "4"));
   writePrimaryKeyCommits(table, 8);
 
   OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
@@ -816,9 +786,8 @@ long effectiveMajor =
 Packing:
 
 ```java
-for (int i = 0; i < selected.size(); i += options.maxBucketsPerTask()) {
-  List<PaimonBucketCompactionUnit> units =
-      selected.subList(i, Math.min(i + options.maxBucketsPerTask(), selected.size()));
+for (PaimonBucketCompactionUnit unit : selected) {
+  List<PaimonBucketCompactionUnit> units = java.util.Collections.singletonList(unit);
   PaimonPrimaryKeyCompactionInput input =
       new PaimonPrimaryKeyCompactionInput(
           paimonTable, new ArrayList<>(units), type, fullCompaction, targetSnapshotId, commitUser, processId);
@@ -1255,7 +1224,7 @@ Check each Spec invariant:
 [ ] HASH_FIXED/HASH_DYNAMIC share primary-key implementation
 [ ] APPEND planner/executor/committer unchanged semantically
 [ ] primary-key.enabled defaults false
-[ ] max-buckets-per-task defaults 16
+[ ] primary-key task packing uses one partition-bucket unit per task
 [ ] non-empty self-optimizing.filter is rejected with LOG.warn
 [ ] MINOR threshold uses explicit Paimon trigger before Amoro minor file count
 [ ] MAJOR threshold uses override > explicit stop-trigger > effective minor + 3

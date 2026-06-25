@@ -79,6 +79,30 @@ class TestPaimonPrimaryKeyCompactionOutput {
   }
 
   @Test
+  @DisplayName("commit message metrics count messages and sum bytes")
+  void commitMessageMetricsCountMessagesAndSumBytes() {
+    PaimonPrimaryKeyCompactionOutput output =
+        new PaimonPrimaryKeyCompactionOutput(
+            Arrays.asList(new byte[] {1, 2}, new byte[] {3}, null), 2, 9L, 900L, 30L, 3L, 300L);
+
+    assertEquals(3, output.commitMessageCount());
+    assertEquals(3L, output.commitMessageBytesSize());
+  }
+
+  @Test
+  @DisplayName("commit message metrics use zero for null and empty messages")
+  void commitMessageMetricsUseZeroForNullAndEmptyMessages() {
+    PaimonPrimaryKeyCompactionOutput defaultOutput = new PaimonPrimaryKeyCompactionOutput();
+    PaimonPrimaryKeyCompactionOutput emptyOutput =
+        new PaimonPrimaryKeyCompactionOutput(Collections.emptyList(), 0, 0L, 0L, 0L, 0L, 0L);
+
+    assertEquals(0, defaultOutput.commitMessageCount());
+    assertEquals(0L, defaultOutput.commitMessageBytesSize());
+    assertEquals(0, emptyOutput.commitMessageCount());
+    assertEquals(0L, emptyOutput.commitMessageBytesSize());
+  }
+
+  @Test
   @DisplayName("output serializes and deserializes every field")
   void outputRoundTripsEveryField() {
     List<byte[]> commitMessages = Arrays.asList(new byte[] {1, 2}, new byte[] {3, 4});

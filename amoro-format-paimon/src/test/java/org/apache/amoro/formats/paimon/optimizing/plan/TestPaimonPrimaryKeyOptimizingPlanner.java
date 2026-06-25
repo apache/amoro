@@ -335,14 +335,41 @@ class TestPaimonPrimaryKeyOptimizingPlanner {
   }
 
   @Test
-  @DisplayName("MAX_BUCKETS_PER_TASK=1 puts at most one unit in each task")
-  void maxBucketsPerTaskOnePacksOneUnitPerTask(@TempDir Path warehouse) throws Exception {
+  @DisplayName("primary-key planner keeps one unit per task")
+  void primaryKeyPlannerPacksOneUnitPerTask(@TempDir Path warehouse) throws Exception {
     Catalog catalog = fsCatalog(warehouse);
     Map<String, String> options = primaryKeyOptions();
     options.put("bucket", "1");
     options.put("num-sorted-run.compaction-trigger", "99");
-    options.put(PaimonPrimaryKeyOptions.MAX_BUCKETS_PER_TASK, "1");
-    Identifier id = createPartitionedPrimaryKeyTable(catalog, "t_pack_one", options);
+    Identifier id = createPartitionedPrimaryKeyTable(catalog, "t_pack_default_one", options);
+    writePartitionCommits(catalog.getTable(id), "p1", 2);
+    writePartitionCommits(catalog.getTable(id), "p2", 2);
+
+    OptimizingPlanResult<PaimonPrimaryKeyCompactionTask> result =
+        planner(
+                catalog,
+                id,
+                defaultConfig(),
+                runtimeOptions("num-sorted-run.compaction-trigger", "2"))
+            .plan();
+
+    assertEquals(OptimizingType.MINOR, result.getOptimizingType());
+    assertTrue(result.getTasks().size() >= 2);
+    for (PaimonPrimaryKeyCompactionTask task : result.getTasks()) {
+      assertEquals(1, task.getInput().getUnits().size());
+    }
+  }
+
+  @Test
+  @DisplayName("removed max-buckets-per-task option does not change task packing")
+  void removedMaxBucketsPerTaskOptionDoesNotChangePacking(@TempDir Path warehouse)
+      throws Exception {
+    Catalog catalog = fsCatalog(warehouse);
+    Map<String, String> options = primaryKeyOptions();
+    options.put("bucket", "1");
+    options.put("num-sorted-run.compaction-trigger", "99");
+    options.put("paimon-optimizer.primary-key.max-buckets-per-task", "2");
+    Identifier id = createPartitionedPrimaryKeyTable(catalog, "t_pack_removed_option", options);
     writePartitionCommits(catalog.getTable(id), "p1", 2);
     writePartitionCommits(catalog.getTable(id), "p2", 2);
 

@@ -20,7 +20,6 @@ package org.apache.amoro.formats.paimon.optimizing.primary;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -36,7 +35,6 @@ class TestPaimonPrimaryKeyOptions {
     PaimonPrimaryKeyOptions options = PaimonPrimaryKeyOptions.from(new HashMap<>());
 
     assertFalse(options.enabled());
-    assertEquals(16, options.maxBucketsPerTask());
     assertFalse(options.partitionIdleTime().isPresent());
     assertFalse(options.majorFileCountThreshold().isPresent());
   }
@@ -45,14 +43,12 @@ class TestPaimonPrimaryKeyOptions {
   void parsesPrimaryKeySpecificOptions() {
     Map<String, String> props = new HashMap<>();
     props.put(PaimonPrimaryKeyOptions.ENABLED, "true");
-    props.put(PaimonPrimaryKeyOptions.MAX_BUCKETS_PER_TASK, "8");
     props.put(PaimonPrimaryKeyOptions.PARTITION_IDLE_TIME, "PT30M");
     props.put(PaimonPrimaryKeyOptions.MAJOR_FILE_COUNT_THRESHOLD, "12");
 
     PaimonPrimaryKeyOptions options = PaimonPrimaryKeyOptions.from(props);
 
     assertTrue(options.enabled());
-    assertEquals(8, options.maxBucketsPerTask());
     assertEquals(
         Duration.ofMinutes(30), options.partitionIdleTime().orElseThrow(AssertionError::new));
     assertEquals(12L, options.majorFileCountThreshold().orElseThrow(AssertionError::new));
@@ -70,10 +66,12 @@ class TestPaimonPrimaryKeyOptions {
   }
 
   @Test
-  void rejectsInvalidMaxBucketsPerTask() {
+  void ignoresRemovedMaxBucketsPerTaskOption() {
     Map<String, String> props = new HashMap<>();
-    props.put(PaimonPrimaryKeyOptions.MAX_BUCKETS_PER_TASK, "0");
+    props.put("paimon-optimizer.primary-key.max-buckets-per-task", "0");
 
-    assertThrows(IllegalArgumentException.class, () -> PaimonPrimaryKeyOptions.from(props));
+    PaimonPrimaryKeyOptions options = PaimonPrimaryKeyOptions.from(props);
+
+    assertFalse(options.enabled());
   }
 }

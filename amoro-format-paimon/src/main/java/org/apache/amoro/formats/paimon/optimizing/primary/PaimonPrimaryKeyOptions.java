@@ -28,28 +28,18 @@ import java.util.Optional;
 public class PaimonPrimaryKeyOptions {
 
   public static final String ENABLED = "paimon-optimizer.primary-key.enabled";
-  public static final String MAX_BUCKETS_PER_TASK =
-      "paimon-optimizer.primary-key.max-buckets-per-task";
   public static final String PARTITION_IDLE_TIME =
       "paimon-optimizer.primary-key.partition-idle-time";
   public static final String MAJOR_FILE_COUNT_THRESHOLD =
       "paimon-optimizer.primary-key.major.file-count-threshold";
 
   private final boolean enabled;
-  private final int maxBucketsPerTask;
   private final Duration partitionIdleTime;
   private final Long majorFileCountThreshold;
 
   private PaimonPrimaryKeyOptions(
-      boolean enabled,
-      int maxBucketsPerTask,
-      Duration partitionIdleTime,
-      Long majorFileCountThreshold) {
-    if (maxBucketsPerTask <= 0) {
-      throw new IllegalArgumentException(MAX_BUCKETS_PER_TASK + " must be greater than 0.");
-    }
+      boolean enabled, Duration partitionIdleTime, Long majorFileCountThreshold) {
     this.enabled = enabled;
-    this.maxBucketsPerTask = maxBucketsPerTask;
     this.partitionIdleTime = partitionIdleTime;
     this.majorFileCountThreshold = majorFileCountThreshold;
   }
@@ -57,7 +47,6 @@ public class PaimonPrimaryKeyOptions {
   public static PaimonPrimaryKeyOptions from(Map<String, String> properties) {
     Map<String, String> props = properties == null ? Collections.emptyMap() : properties;
     boolean enabled = enabled(properties);
-    int maxBucketsPerTask = Integer.parseInt(props.getOrDefault(MAX_BUCKETS_PER_TASK, "16"));
     Duration partitionIdleTime =
         props.containsKey(PARTITION_IDLE_TIME)
             ? parseDuration(props.get(PARTITION_IDLE_TIME))
@@ -67,8 +56,7 @@ public class PaimonPrimaryKeyOptions {
             ? Long.parseLong(props.get(MAJOR_FILE_COUNT_THRESHOLD))
             : null;
 
-    return new PaimonPrimaryKeyOptions(
-        enabled, maxBucketsPerTask, partitionIdleTime, majorFileCountThreshold);
+    return new PaimonPrimaryKeyOptions(enabled, partitionIdleTime, majorFileCountThreshold);
   }
 
   public static boolean enabled(Map<String, String> properties) {
@@ -91,10 +79,6 @@ public class PaimonPrimaryKeyOptions {
 
   public boolean enabled() {
     return enabled;
-  }
-
-  public int maxBucketsPerTask() {
-    return maxBucketsPerTask;
   }
 
   public Optional<Duration> partitionIdleTime() {

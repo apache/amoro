@@ -249,7 +249,16 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
   }
 
   protected void completeTask(String amsUrl, OptimizingTaskResult optimizingTaskResult) {
+    int taskOutputBytes = taskOutputBytes(optimizingTaskResult);
+    String status = taskStatus(optimizingTaskResult);
     try {
+      LOG.info(
+          "Optimizer executor[{}] completing task[{}](status: {}) to AMS {}, taskOutputBytes={}",
+          threadId,
+          optimizingTaskResult.getTaskId(),
+          status,
+          amsUrl,
+          taskOutputBytes);
       callAuthenticatedAms(
           amsUrl,
           (client, token) -> {
@@ -257,20 +266,32 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
             return null;
           });
       LOG.info(
-          "Optimizer executor[{}] completed task[{}](status: {}) to AMS {}",
+          "Optimizer executor[{}] completed task[{}](status: {}) to AMS {}, taskOutputBytes={}",
           threadId,
           optimizingTaskResult.getTaskId(),
-          optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL",
-          amsUrl);
+          status,
+          amsUrl,
+          taskOutputBytes);
     } catch (Exception exception) {
       LOG.error(
-          "Optimizer executor[{}] completed task[{}](status: {}) to AMS {} failed",
+          "Optimizer executor[{}] completed task[{}](status: {}) to AMS {} failed, "
+              + "taskOutputBytes={}",
           threadId,
           optimizingTaskResult.getTaskId(),
-          optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL",
+          status,
           amsUrl,
+          taskOutputBytes,
           exception);
     }
+  }
+
+  private static String taskStatus(OptimizingTaskResult optimizingTaskResult) {
+    return optimizingTaskResult.getErrorMessage() == null ? "SUCCESS" : "FAIL";
+  }
+
+  private static int taskOutputBytes(OptimizingTaskResult optimizingTaskResult) {
+    byte[] taskOutput = optimizingTaskResult.getTaskOutput();
+    return taskOutput == null ? 0 : taskOutput.length;
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})

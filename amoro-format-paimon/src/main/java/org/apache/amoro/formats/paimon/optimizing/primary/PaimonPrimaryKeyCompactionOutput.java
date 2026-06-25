@@ -73,6 +73,20 @@ public class PaimonPrimaryKeyCompactionOutput implements TableOptimizing.Optimiz
     return commitMessageBytesList == null ? Collections.emptyList() : commitMessageBytesList;
   }
 
+  public int commitMessageCount() {
+    return getCommitMessageBytesList().size();
+  }
+
+  public long commitMessageBytesSize() {
+    long size = 0L;
+    for (byte[] bytes : getCommitMessageBytesList()) {
+      if (bytes != null) {
+        size += bytes.length;
+      }
+    }
+    return size;
+  }
+
   public int getCompactedBucketCount() {
     return compactedBucketCount;
   }
@@ -116,7 +130,8 @@ public class PaimonPrimaryKeyCompactionOutput implements TableOptimizing.Optimiz
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("commitMessageCount", getCommitMessageBytesList().size())
+        .add("commitMessageCount", commitMessageCount())
+        .add("commitMessageBytesSize", commitMessageBytesSize())
         .add("compactedBucketCount", compactedBucketCount)
         .add("compactedFileCount", compactedFileCount)
         .add("compactedFileSize", compactedFileSize)
