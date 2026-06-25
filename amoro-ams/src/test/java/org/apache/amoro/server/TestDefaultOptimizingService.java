@@ -35,7 +35,6 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.exception.IllegalTaskStateException;
 import org.apache.amoro.exception.PluginRetryAuthException;
 import org.apache.amoro.exception.TaskRuntimeException;
 import org.apache.amoro.io.MixedDataTestHelpers;
@@ -303,9 +302,11 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   public void testAckAndCompleteTask() {
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
-    Assertions.assertThrows(
-        IllegalTaskStateException.class,
-        () -> optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId())));
+    // Completing before ack is now treated as a stale response and absorbed silently (see
+    // TaskRuntime#complete): the result cannot be told apart from a stale completion for a task that
+    // was reset and re-scheduled to the same thread, so the task simply stays SCHEDULED.
+    optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
+    assertTaskStatus(TaskRuntime.Status.SCHEDULED);
 
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
 
