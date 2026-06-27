@@ -87,6 +87,30 @@ public class TestDynamicAllocationConfig {
   }
 
   @Test
+  void malformedMinParallelismIsRejectedAtParseEvenWhenDisabled() {
+    // Mirrors max-parallelism: a malformed numeric is rejected at parse() regardless of enabled,
+    // honoring parse()'s documented contract rather than being silently degraded to 0.
+    Map<String, String> props = new HashMap<>();
+    props.put(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM, "abc");
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> DynamicAllocationConfig.parse(group(props)));
+  }
+
+  @Test
+  void whitespacePaddedMinParallelismIsResolvedConsistently() {
+    // validate() trims, so it accepts " 5 " as 5; the keeper's resolveMinParallelism() must agree.
+    // Otherwise a config validate() accepts silently degrades to a floor of 0 at runtime.
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM, " 5 ");
+    ResourceGroup g = group(props);
+
+    DynamicAllocationConfig config = DynamicAllocationConfig.parse(g);
+    assertDoesNotThrow(config::validate);
+    Assertions.assertEquals(5, config.getMinParallelism());
+    Assertions.assertEquals(5, DynamicAllocationConfig.resolveMinParallelism(g));
+  }
+
+  @Test
   void executorIdleTimeoutBelowMinimumIsRejected() {
     Map<String, String> props = enabledProps();
     props.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT, "10s");
