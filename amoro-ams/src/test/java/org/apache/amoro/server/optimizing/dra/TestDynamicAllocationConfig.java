@@ -97,6 +97,20 @@ public class TestDynamicAllocationConfig {
   }
 
   @Test
+  void malformedMinParallelismErrorCitesTheKeyActuallyUsed() {
+    // Value comes only from the legacy key; the error must name that key, not the namespaced one
+    // the user never set.
+    Map<String, String> props = new HashMap<>();
+    props.put(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM, "abc");
+    IllegalArgumentException e =
+        Assertions.assertThrows(
+            IllegalArgumentException.class, () -> DynamicAllocationConfig.parse(group(props)));
+    Assertions.assertTrue(
+        e.getMessage().contains("'" + OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM + "'"),
+        "error should cite the legacy key actually used: " + e.getMessage());
+  }
+
+  @Test
   void whitespacePaddedMinParallelismIsResolvedConsistently() {
     // validate() trims, so it accepts " 5 " as 5; the keeper's resolveMinParallelism() must agree.
     // Otherwise a config validate() accepts silently degrades to a floor of 0 at runtime.

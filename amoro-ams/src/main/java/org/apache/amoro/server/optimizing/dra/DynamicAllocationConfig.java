@@ -139,31 +139,23 @@ public class DynamicAllocationConfig {
   }
 
   /**
-   * The raw, unparsed min-parallelism string the group relies on, following the same resolution
-   * order as {@link #resolveMinParallelism(ResourceGroup)} ({@link
+   * Strictly parse the configured min-parallelism, or {@code null} when unset. Follows the
+   * resolution order of {@link #resolveMinParallelism(ResourceGroup)} ({@link
    * OptimizerProperties#DYNAMIC_ALLOCATION_MIN_PARALLELISM} → {@link
-   * OptimizerProperties#OPTIMIZER_GROUP_MIN_PARALLELISM}), or {@code null} when neither is set.
-   * Used by {@link #parseMinParallelism(ResourceGroup)} to distinguish "unset" ({@code null}) from
-   * an explicitly configured value.
-   */
-  private static String rawMinParallelism(ResourceGroup group) {
-    Map<String, String> properties = group.getProperties();
-    String namespaced = properties.get(OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM);
-    if (namespaced != null) {
-      return namespaced;
-    }
-    return properties.get(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM);
-  }
-
-  /**
-   * Strictly parse the configured min-parallelism, or {@code null} when unset. Mirrors {@code
-   * max-parallelism}: a malformed value throws at parse time (honoring {@link #parse}'s contract)
-   * rather than being silently degraded to {@code 0} by the lenient {@link
-   * #resolveMinParallelism(ResourceGroup)} on the keeper hot path. Shares its trim semantics so the
-   * value {@link #validate()} accepts is the one the keeper resolves.
+   * OptimizerProperties#OPTIMIZER_GROUP_MIN_PARALLELISM}). Mirrors {@code max-parallelism}: a
+   * malformed value throws at parse time (honoring {@link #parse}'s contract) rather than being
+   * silently degraded to {@code 0} by the lenient {@link #resolveMinParallelism(ResourceGroup)} on
+   * the keeper hot path. Shares its trim semantics so the value {@link #validate()} accepts is the
+   * one the keeper resolves; the error cites the key the value actually came from.
    */
   private static Integer parseMinParallelism(ResourceGroup group) {
-    String raw = rawMinParallelism(group);
+    Map<String, String> properties = group.getProperties();
+    String key = OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM;
+    String raw = properties.get(key);
+    if (raw == null) {
+      key = OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM;
+      raw = properties.get(key);
+    }
     if (raw == null) {
       return null;
     }
@@ -172,8 +164,7 @@ public class DynamicAllocationConfig {
     } catch (NumberFormatException e) {
       throw new IllegalArgumentException(
           String.format(
-              "Resource group:%s '%s'(%s) is not a valid integer.",
-              group.getName(), OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM, raw));
+              "Resource group:%s '%s'(%s) is not a valid integer.", group.getName(), key, raw));
     }
   }
 
