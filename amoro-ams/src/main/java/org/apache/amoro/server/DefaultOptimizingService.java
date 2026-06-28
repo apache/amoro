@@ -182,18 +182,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizerGroups.forEach(
         group -> {
           String groupName = group.getName();
-          // Fail-safe: a persisted group carrying an invalid DRA config (e.g. manual DB edits)
-          // must not crash AMS. Surface it and fall back to DRA-disabled behavior.
-          DynamicAllocationConfig.warnDeprecatedMinParallelism(group);
-          try {
-            DynamicAllocationConfig.parse(group).validate();
-          } catch (IllegalArgumentException e) {
-            LOG.warn(
-                "Resource group:{} has an invalid dynamic-allocation config, "
-                    + "falling back to DRA-disabled mode: {}",
-                groupName,
-                e.getMessage());
-          }
           List<DefaultTableRuntime> tableRuntimes = groupToTableRuntimes.remove(groupName);
           OptimizingQueue optimizingQueue =
               new OptimizingQueue(
