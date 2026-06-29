@@ -87,9 +87,12 @@ public class PaimonPrimaryKeyCompactionInput extends BaseOptimizingInput {
   @Override
   public String describe() {
     String tableId = table == null ? "<unknown>" : String.valueOf(table.id());
+    int unitCount = units == null ? 0 : units.size();
+    String bucketDescription =
+        unitCount == 1 ? String.format(", bucket:%d", units.get(0).getBucket()) : "";
     return String.format(
-        "Amoro paimon primary-key compaction task, table:%s, type:%s, buckets:%d",
-        tableId, optimizingType, units == null ? 0 : units.size());
+        "Amoro paimon primary-key compaction task, table:%s, type:%s, bucketUnits:%d%s",
+        tableId, optimizingType, unitCount, bucketDescription);
   }
 
   @Override

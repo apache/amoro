@@ -103,7 +103,7 @@ public class PaimonPrimaryKeyCompactionExecutor
               producedFileSize(messages));
       LOG.info(
           "Paimon primary-key compaction produced commit messages: table={}, type={}, "
-              + "identifier={}, buckets={}, commitMessageCount={}, commitMessageBytes={}, "
+              + "identifier={}, bucketUnits={}, commitMessageCount={}, commitMessageBytes={}, "
               + "compactedFiles={}, compactedBytes={}, producedFiles={}, producedBytes={}",
           input.getTable().id(),
           input.getOptimizingType(),

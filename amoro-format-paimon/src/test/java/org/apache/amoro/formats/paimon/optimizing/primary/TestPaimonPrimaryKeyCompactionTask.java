@@ -19,6 +19,7 @@
 package org.apache.amoro.formats.paimon.optimizing.primary;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -66,8 +67,10 @@ class TestPaimonPrimaryKeyCompactionTask {
     assertEquals("user", input.getCommitUser());
     assertEquals(11L, input.getCommitIdentifier());
     assertEquals(
-        "Amoro paimon primary-key compaction task, table:<unknown>, type:MAJOR, buckets:1",
+        "Amoro paimon primary-key compaction task, table:<unknown>, type:MAJOR, "
+            + "bucketUnits:1, bucket:0",
         input.describe());
+    assertFalse(input.describe().contains("buckets:1"));
   }
 
   @Test
