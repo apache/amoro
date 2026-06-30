@@ -345,7 +345,7 @@ public class AbstractOptimizerOperator implements Serializable {
     try {
       TimeUnit.MILLISECONDS.sleep(waitTime);
     } catch (InterruptedException e) {
-      // ignore
+      Thread.currentThread().interrupt();
     }
   }
 

@@ -33,6 +33,7 @@ public class Optimizer {
   private final OptimizerConfig config;
   private final OptimizerToucher toucher;
   private final OptimizerExecutor[] executors;
+  private volatile Thread[] executorThreads;
 
   public Optimizer(OptimizerConfig config) {
     this(config, () -> new OptimizerToucher(config), (i) -> new OptimizerExecutor(config, i));
@@ -54,20 +55,70 @@ public class Optimizer {
 
   public void startOptimizing() {
     LOG.info("Starting optimizer with configuration:{}", config);
-    Arrays.stream(executors)
+    executorThreads = new Thread[executors.length];
+    IntStream.range(0, executors.length)
         .forEach(
-            optimizerExecutor -> {
-              new Thread(
-                      optimizerExecutor::start,
-                      String.format("Optimizer-executor-%d", optimizerExecutor.getThreadId()))
-                  .start();
+            i -> {
+              executorThreads[i] =
+                  new Thread(
+                      executors[i]::start,
+                      String.format("Optimizer-executor-%d", executors[i].getThreadId()));
+              executorThreads[i].start();
             });
     toucher.withTokenChangeListener(new SetTokenToExecutors()).start();
   }
 
   public void stopOptimizing() {
-    toucher.stop();
+    LOG.info("Stopping optimizer, waiting for in-progress tasks to complete...");
+    // Stop executors first so they don't poll new tasks, but keep the toucher alive
+    // so it keeps sending heartbeats. Otherwise AMS hits its heartbeat-timeout during
+    // long-running in-flight tasks, unregisters this optimizer, and the subsequent
+    // best-effort completeTask fails with "Optimizer has not been authenticated".
     Arrays.stream(executors).forEach(OptimizerExecutor::stop);
+
+    Thread[] threads = executorThreads;
+    if (threads == null) {
+      toucher.stop();
+      LOG.info("Optimizer stopped (no executor threads to wait for)");
+      return;
+    }
+
+    long shutdownTimeoutMs = config.getShutdownTimeoutMs();
+    long deadline = System.currentTimeMillis() + shutdownTimeoutMs;
+    for (Thread t : threads) {
+      if (t == null) {
+        continue;
+      }
+      long remaining = deadline - System.currentTimeMillis();
+      if (remaining <= 0) {
+        break;
+      }
+      try {
+        t.join(remaining);
+      } catch (InterruptedException e) {
+        LOG.warn("Interrupted while waiting for executor thread {} to finish", t.getName());
+        Thread.currentThread().interrupt();
+        break;
+      }
+    }
+
+    for (Thread t : threads) {
+      if (t != null && t.isAlive()) {
+        LOG.warn(
+            "Executor thread {} did not terminate within {}ms timeout, force-interrupting",
+            t.getName(),
+            shutdownTimeoutMs);
+        t.interrupt();
+        try {
+          t.join(1_000);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          break;
+        }
+      }
+    }
+    toucher.stop();
+    LOG.info("Optimizer stopped");
   }
 
   public OptimizerToucher getToucher() {

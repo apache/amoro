@@ -20,6 +20,7 @@ package org.apache.amoro.optimizer.common;
 
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskResult;
+import org.apache.amoro.client.OptimizingClientPools;
 import org.apache.amoro.io.reader.DeleteCache;
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingExecutorFactory;
@@ -250,12 +251,23 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
   protected void completeTask(String amsUrl, OptimizingTaskResult optimizingTaskResult) {
     try {
-      callAuthenticatedAms(
-          amsUrl,
-          (client, token) -> {
-            client.completeTask(token, optimizingTaskResult);
-            return null;
-          });
+      if (isStarted()) {
+        callAuthenticatedAms(
+            amsUrl,
+            (client, token) -> {
+              client.completeTask(token, optimizingTaskResult);
+              return null;
+            });
+      } else {
+        // After shutdown was requested the gated retry loop in callAuthenticatedAms exits
+        // immediately, which would silently drop the in-flight task result. Make a single
+        // best-effort direct call so graceful shutdown still reports completed work to AMS.
+        String token = getToken();
+        if (token == null) {
+          throw new TException("Cannot complete task during shutdown: token unavailable");
+        }
+        OptimizingClientPools.getClient(amsUrl).completeTask(token, optimizingTaskResult);
+      }
       LOG.info(
           "Optimizer executor[{}] completed task[{}](status: {}) to AMS {}",
           threadId,

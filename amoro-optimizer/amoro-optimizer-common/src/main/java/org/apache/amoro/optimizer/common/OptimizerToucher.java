@@ -35,6 +35,7 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
   private transient TokenChangeListener tokenChangeListener;
   private final Map<String, String> registerProperties = Maps.newHashMap();
   private final long startTime;
+  private transient volatile Thread runnerThread;
 
   public OptimizerToucher(OptimizerConfig config) {
     super(config);
@@ -54,17 +55,34 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
 
   public void start() {
     LOG.info("Starting optimizer toucher with configuration:{}", getConfig());
-    while (isStarted()) {
-      try {
-        if (checkToken()) {
-          touch();
+    runnerThread = Thread.currentThread();
+    try {
+      while (isStarted()) {
+        try {
+          if (checkToken()) {
+            touch();
+          }
+          waitAShortTime(getConfig().getHeartBeat());
+        } catch (Throwable t) {
+          LOG.error("Optimizer toucher got an unexpected error", t);
         }
-        waitAShortTime(getConfig().getHeartBeat());
-      } catch (Throwable t) {
-        LOG.error("Optimizer toucher got an unexpected error", t);
       }
+    } finally {
+      runnerThread = null;
     }
     LOG.info("Optimizer toucher stopped");
+  }
+
+  @Override
+  public void stop() {
+    super.stop();
+    // Wake the runner immediately if it is sleeping in waitAShortTime, so the heartbeat
+    // loop terminates without waiting up to one full heartbeat interval. waitAShortTime
+    // preserves the interrupt flag so the loop exits cleanly on its next isStarted() check.
+    Thread t = runnerThread;
+    if (t != null) {
+      t.interrupt();
+    }
   }
 
   private boolean checkToken() {

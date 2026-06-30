@@ -34,6 +34,7 @@ import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
@@ -75,6 +76,13 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
 
   private static final String EXTRA_PROPERTY_PREFIX = "extra.";
 
+  /**
+   * Buffer added on top of optimizer's shutdown-timeout when deriving K8s
+   * terminationGracePeriodSeconds, to leave room for thread join, best-effort task result
+   * reporting, and log flush before SIGKILL.
+   */
+  static final long TERMINATION_GRACE_BUFFER_SECONDS = 30L;
+
   private static final Map<String, String> EXTRA_PROPERTY_DEFAULTS = new HashMap<>();
 
   static {
@@ -84,6 +92,30 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
   private String getExtraProperty(Map<String, String> properties, String key) {
     return properties.getOrDefault(
         EXTRA_PROPERTY_PREFIX + key, EXTRA_PROPERTY_DEFAULTS.getOrDefault(key, null));
+  }
+
+  static long parseShutdownTimeoutMs(String startUpArgs) {
+    if (startUpArgs == null) {
+      return OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS_DEFAULT;
+    }
+    String[] tokens = startUpArgs.split("\\s+");
+    String longFlag = "--" + OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS;
+    for (int i = 0; i < tokens.length - 1; i++) {
+      if ("-st".equals(tokens[i]) || longFlag.equals(tokens[i])) {
+        try {
+          return Long.parseLong(tokens[i + 1]);
+        } catch (NumberFormatException e) {
+          return OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS_DEFAULT;
+        }
+      }
+    }
+    return OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS_DEFAULT;
+  }
+
+  static long resolveTerminationGracePeriodSeconds(String startUpArgs) {
+    long shutdownTimeoutMs = parseShutdownTimeoutMs(startUpArgs);
+    long shutdownTimeoutSeconds = (shutdownTimeoutMs + 999L) / 1000L;
+    return shutdownTimeoutSeconds + TERMINATION_GRACE_BUFFER_SECONDS;
   }
 
   private KubernetesClient client;
@@ -220,6 +252,8 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
       long memory,
       List<LocalObjectReference> imagePullSecretsList) {
 
+    long terminationGraceSeconds = resolveTerminationGracePeriodSeconds(startUpArgs);
+
     DeploymentBuilder deploymentBuilder =
         new DeploymentBuilder()
             .withNewMetadata()
@@ -234,11 +268,12 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
             .addToLabels("AmoroResourceId", resourceId)
             .endMetadata()
             .withNewSpec()
+            .withTerminationGracePeriodSeconds(terminationGraceSeconds)
             .addNewContainer()
             .withName("optimizer")
             .withImage(image)
             .withImagePullPolicy(pullPolicy)
-            .withCommand("sh", "-c", startUpArgs)
+            .withCommand("sh", "-c", "exec " + startUpArgs)
             .withResources(
                 new ResourceRequirementsBuilder()
                     .withLimits(
@@ -305,7 +340,7 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
     container.setName("optimizer");
     container.setImage(image);
     container.setImagePullPolicy(pullPolicy);
-    container.setCommand(new ArrayList<>(Arrays.asList("sh", "-c", startUpArgs)));
+    container.setCommand(new ArrayList<>(Arrays.asList("sh", "-c", "exec " + startUpArgs)));
 
     ResourceRequirements resourceRequirements = new ResourceRequirements();
     resourceRequirements.setLimits(
@@ -322,6 +357,13 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
 
     if (!imagePullSecretsList.isEmpty()) {
       podTemplate.getTemplate().getSpec().setImagePullSecrets(imagePullSecretsList);
+    }
+
+    if (podTemplate.getTemplate().getSpec().getTerminationGracePeriodSeconds() == null) {
+      podTemplate
+          .getTemplate()
+          .getSpec()
+          .setTerminationGracePeriodSeconds(resolveTerminationGracePeriodSeconds(startUpArgs));
     }
 
     DeploymentSpec deploymentSpec = new DeploymentSpec();
