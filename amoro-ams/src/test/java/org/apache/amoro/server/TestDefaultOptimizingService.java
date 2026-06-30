@@ -35,8 +35,8 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.exception.IllegalTaskStateException;
 import org.apache.amoro.exception.PluginRetryAuthException;
+import org.apache.amoro.exception.TaskRuntimeException;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
@@ -302,9 +302,12 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   public void testAckAndCompleteTask() {
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
-    Assertions.assertThrows(
-        IllegalTaskStateException.class,
-        () -> optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId())));
+    // Completing before ack is now treated as a stale response and absorbed silently (see
+    // TaskRuntime#complete): the result cannot be told apart from a stale completion for a task
+    // that
+    // was reset and re-scheduled to the same thread, so the task simply stays SCHEDULED.
+    optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
+    assertTaskStatus(TaskRuntime.Status.SCHEDULED);
 
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
 
@@ -312,6 +315,31 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         optimizingService().listTasks(defaultResourceGroup().getName()).get(0);
     optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
     assertTaskCompleted(taskRuntime);
+  }
+
+  // Reproduces the EXACT path of issue #4235 end-to-end with the real OptimizerKeeper: a live
+  // optimizer (the Toucher keeps heartbeating) polls a task but its ack is delayed past
+  // OPTIMIZER_TASK_ACK_TIMEOUT (30s). The keeper, via the SCHEDULED + ackTimeout branch of
+  // buildSuspendingPredication, resets the still-owned task to PLANNED. The late ack then arrives
+  // and is rejected -- this is the "Task has been reset or not yet scheduled" from the issue log,
+  // produced without any artificial retryTask() call.
+  @Test
+  public void testAckTimeoutResetThenLateAckRejected() throws InterruptedException {
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+    assertTaskStatus(TaskRuntime.Status.SCHEDULED); // polled but NOT acked
+
+    // ack-timeout is 30s; the optimizer stays alive (Toucher touches every 300ms), so this hits the
+    // SCHEDULED + ackTimeout branch rather than the optimizer-expired branch.
+    Thread.sleep(35000);
+
+    assertTaskStatus(
+        TaskRuntime.Status.PLANNED); // keeper reset it out from under the live optimizer
+
+    // the delayed ack arrives for the now-reset task -> rejected, exactly like the issue
+    Assertions.assertThrows(
+        TaskRuntimeException.class,
+        () -> optimizingService().ackTask(token, THREAD_ID, task.getTaskId()));
   }
 
   @Test
