@@ -87,6 +87,12 @@ public class TableFileUtil {
     if (directoryPath == null || directoryPath.isEmpty()) {
       return;
     }
+    // Object stores (S3FileIO / OSSFileIO / GCSFileIO ...) have no real directory concept.
+    // They are exposed via AuthenticatedFileIOAdapter whose supportFileSystemOperations() is
+    // false, so calling asFileSystemIO() would fail the precondition. Skip silently in that case.
+    if (!io.supportFileSystemOperations()) {
+      return;
+    }
     if (!io.exists(directoryPath)) {
       LOG.debug("The target directory {} does not exist or has been deleted", directoryPath);
       return;

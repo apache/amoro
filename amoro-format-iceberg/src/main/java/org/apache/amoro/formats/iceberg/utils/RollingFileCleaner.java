@@ -92,32 +92,43 @@ public class RollingFileCleaner {
       return;
     }
 
-    if (fileIO.supportBulkOperations()) {
-      try {
-        fileIO.asBulkFileIO().deleteFiles(collectedFiles);
-        cleanedFileCounter.addAndGet(collectedFiles.size());
-      } catch (BulkDeletionFailureException e) {
-        LOG.warn("Failed to delete {} expired files in bulk", e.numberFailedObjects());
-      }
-    } else {
-      for (String filePath : collectedFiles) {
+    try {
+      if (fileIO.supportBulkOperations()) {
         try {
-          fileIO.deleteFile(filePath);
-          cleanedFileCounter.incrementAndGet();
-        } catch (Exception e) {
-          LOG.warn("Failed to delete expired file: {}", filePath, e);
+          fileIO.asBulkFileIO().deleteFiles(collectedFiles);
+          cleanedFileCounter.addAndGet(collectedFiles.size());
+        } catch (BulkDeletionFailureException e) {
+          LOG.warn("Failed to delete {} expired files in bulk", e.numberFailedObjects());
+        }
+      } else {
+        for (String filePath : collectedFiles) {
+          try {
+            fileIO.deleteFile(filePath);
+            cleanedFileCounter.incrementAndGet();
+          } catch (Exception e) {
+            LOG.warn("Failed to delete expired file: {}", filePath, e);
+          }
         }
       }
-    }
-    // Try to delete empty parent directories
-    for (String parentDir : parentDirectories) {
-      TableFileUtil.deleteEmptyDirectory(fileIO, parentDir, excludeFiles);
-    }
-    parentDirectories.clear();
+      // Try to delete empty parent directories. Skipped automatically by
+      // TableFileUtil.deleteEmptyDirectory when the underlying FileIO is an object store.
+      if (fileIO.supportFileSystemOperations()) {
+        for (String parentDir : parentDirectories) {
+          try {
+            TableFileUtil.deleteEmptyDirectory(fileIO, parentDir, excludeFiles);
+          } catch (Exception e) {
+            LOG.warn("Failed to delete empty parent directory: {}", parentDir, e);
+          }
+        }
+      }
 
-    LOG.debug("Cleaned expired a file group, total files: {}", collectedFiles.size());
-
-    collectedFiles.clear();
+      LOG.debug("Cleaned expired a file group, total files: {}", collectedFiles.size());
+    } finally {
+      // Always drop both buffers so a failure in directory cleanup does not cause the
+      // already-deleted files to be re-submitted on the next batch.
+      parentDirectories.clear();
+      collectedFiles.clear();
+    }
   }
 
   public int fileCount() {

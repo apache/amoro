@@ -26,33 +26,58 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>amoro-format-hudi</artifactId>
-    <name>Amoro Project Hudi Format</name>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+    <artifactId>amoro-format-lance</artifactId>
+    <name>Amoro Project Lance Format</name>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-common</artifactId>
         </dependency>
-
-        <!--  apache hudi dependencies -->
         <dependency>
-            <groupId>org.apache.hudi</groupId>
-            <artifactId>hudi-java-client</artifactId>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-memory-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-vector</artifactId>
+        </dependency>
+
+        <!-- Lance format Java API -->
+        <dependency>
+            <groupId>org.lance</groupId>
+            <artifactId>lance-core</artifactId>
+            <version>7.0.0</version>
             <exclusions>
                 <exclusion>
-                    <groupId>org.apache.orc</groupId>
-                    <artifactId>orc-core</artifactId>
+                    <groupId>org.lance</groupId>
+                    <artifactId>lance-namespace-core</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>asm</groupId>
-                    <artifactId>asm</artifactId>
+                    <groupId>org.lance</groupId>
+                    <artifactId>lance-namespace-apache-client</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!-- Lance namespace interfaces and models -->
+        <dependency>
+            <groupId>org.lance</groupId>
+            <artifactId>lance-namespace-core</artifactId>
+            <version>0.8.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lance</groupId>
+            <artifactId>lance-namespace-apache-client</artifactId>
+            <version>0.8.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-aws</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>iceberg-aliyun</artifactId>
         </dependency>
     </dependencies>
 
