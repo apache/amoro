@@ -39,6 +39,7 @@ import org.apache.amoro.resource.Resource;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.utils.PropertyUtil;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,26 +95,12 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
         EXTRA_PROPERTY_PREFIX + key, EXTRA_PROPERTY_DEFAULTS.getOrDefault(key, null));
   }
 
-  static long parseShutdownTimeoutMs(String startUpArgs) {
-    if (startUpArgs == null) {
-      return OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS_DEFAULT;
-    }
-    String[] tokens = startUpArgs.split("\\s+");
-    String longFlag = "--" + OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS;
-    for (int i = 0; i < tokens.length - 1; i++) {
-      if ("-st".equals(tokens[i]) || longFlag.equals(tokens[i])) {
-        try {
-          return Long.parseLong(tokens[i + 1]);
-        } catch (NumberFormatException e) {
-          return OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS_DEFAULT;
-        }
-      }
-    }
-    return OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS_DEFAULT;
-  }
-
-  static long resolveTerminationGracePeriodSeconds(String startUpArgs) {
-    long shutdownTimeoutMs = parseShutdownTimeoutMs(startUpArgs);
+  static long resolveTerminationGracePeriodSeconds(Map<String, String> properties) {
+    long shutdownTimeoutMs =
+        PropertyUtil.propertyAsLong(
+            properties,
+            OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS,
+            OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS_DEFAULT);
     long shutdownTimeoutSeconds = (shutdownTimeoutMs + 999L) / 1000L;
     return shutdownTimeoutSeconds + TERMINATION_GRACE_BUFFER_SECONDS;
   }
@@ -150,6 +137,7 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
     String groupName = argsList.get("groupName").toString();
     String resourceId = argsList.get("resourceId").toString();
     String startUpArgs = argsList.get("startUpArgs").toString();
+    long terminationGraceSeconds = (long) argsList.get("terminationGraceSeconds");
 
     String kubernetesName = NAME_PREFIX + resourceId;
     Deployment deployment;
@@ -168,7 +156,8 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
               resourceId,
               startUpArgs,
               memory,
-              imagePullSecretsList);
+              imagePullSecretsList,
+              terminationGraceSeconds);
     } else {
       deployment =
           initPodTemplateWithoutConfig(
@@ -179,7 +168,8 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
               resourceId,
               startUpArgs,
               memory,
-              imagePullSecretsList);
+              imagePullSecretsList,
+              terminationGraceSeconds);
     }
 
     client.apps().deployments().inNamespace(namespace).resource(deployment).create();
@@ -238,6 +228,11 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
     argsList.put("resourceId", resourceId);
     argsList.put("groupName", groupName);
     argsList.put("startUpArgs", startUpArgs);
+    // Derive the grace period from the same resource properties that drive the -st startup arg
+    // (buildOptimizerStartupArgsString), so the pod's SIGKILL deadline can never fall below the
+    // shutdown timeout the optimizer JVM actually honors.
+    argsList.put(
+        "terminationGraceSeconds", resolveTerminationGracePeriodSeconds(resource.getProperties()));
 
     return argsList;
   }
@@ -250,9 +245,8 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
       String resourceId,
       String startUpArgs,
       long memory,
-      List<LocalObjectReference> imagePullSecretsList) {
-
-    long terminationGraceSeconds = resolveTerminationGracePeriodSeconds(startUpArgs);
+      List<LocalObjectReference> imagePullSecretsList,
+      long terminationGraceSeconds) {
 
     DeploymentBuilder deploymentBuilder =
         new DeploymentBuilder()
@@ -323,7 +317,8 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
       String resourceId,
       String startUpArgs,
       long memory,
-      List<LocalObjectReference> imagePullSecretsList) {
+      List<LocalObjectReference> imagePullSecretsList,
+      long terminationGraceSeconds) {
     podTemplate
         .getTemplate()
         .getMetadata()
@@ -360,10 +355,7 @@ public class KubernetesOptimizerContainer extends AbstractOptimizerContainer {
     }
 
     if (podTemplate.getTemplate().getSpec().getTerminationGracePeriodSeconds() == null) {
-      podTemplate
-          .getTemplate()
-          .getSpec()
-          .setTerminationGracePeriodSeconds(resolveTerminationGracePeriodSeconds(startUpArgs));
+      podTemplate.getTemplate().getSpec().setTerminationGracePeriodSeconds(terminationGraceSeconds);
     }
 
     DeploymentSpec deploymentSpec = new DeploymentSpec();
