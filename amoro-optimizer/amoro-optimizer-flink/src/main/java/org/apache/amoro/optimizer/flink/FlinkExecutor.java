@@ -19,6 +19,7 @@
 package org.apache.amoro.optimizer.flink;
 
 import static org.apache.flink.configuration.HighAvailabilityOptions.HA_CLUSTER_ID;
+import static org.apache.flink.configuration.TaskManagerOptions.TASK_CANCELLATION_TIMEOUT;
 import static org.apache.flink.configuration.TaskManagerOptions.TASK_MANAGER_RESOURCE_ID;
 
 import org.apache.amoro.optimizer.common.OptimizerExecutor;
@@ -29,14 +30,24 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 public class FlinkExecutor extends AbstractStreamOperator<Void>
     implements OneInputStreamOperator<String, Void> {
 
+  /**
+   * Kept below Flink's cancellation watchdog deadline (task.cancellation.timeout) so the
+   * force-interrupt and thread exit complete before Flink fails the whole TaskManager.
+   */
+  static final long CANCELLATION_SAFETY_MARGIN_MS = 10_000L;
+
   private final OptimizerExecutor[] allExecutors;
+  private final long shutdownTimeoutMs;
   private FlinkOptimizerExecutor executor;
   private String optimizeGroupName;
   private Thread optimizerThread;
+  private long drainTimeoutMs;
 
-  public FlinkExecutor(OptimizerExecutor[] allExecutors, String optimizeGroupName) {
+  public FlinkExecutor(
+      OptimizerExecutor[] allExecutors, String optimizeGroupName, long shutdownTimeoutMs) {
     this.allExecutors = allExecutors;
     this.optimizeGroupName = optimizeGroupName;
+    this.shutdownTimeoutMs = shutdownTimeoutMs;
   }
 
   @Override
@@ -62,6 +73,12 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
     // add label optimize_group;
     getMetricGroup().getAllVariables().put("<optimizer_group>", optimizeGroupName);
     executor.initOperatorMetric(getMetricGroup());
+    long taskCancellationTimeoutMs =
+        getRuntimeContext()
+            .getTaskManagerRuntimeInfo()
+            .getConfiguration()
+            .get(TASK_CANCELLATION_TIMEOUT);
+    drainTimeoutMs = effectiveDrainTimeoutMs(shutdownTimeoutMs, taskCancellationTimeoutMs);
     optimizerThread =
         new Thread(() -> executor.start(), "flink-optimizer-executor-" + subTaskIndex);
     optimizerThread.setDaemon(true);
@@ -73,14 +90,65 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
     if (executor != null) {
       executor.stop();
     }
-    if (optimizerThread != null && optimizerThread.isAlive()) {
+    drainThenForceStop(optimizerThread, drainTimeoutMs);
+  }
+
+  /**
+   * Bounds the graceful drain by Flink's cancellation watchdog: when a cancelled task has not
+   * terminated within task.cancellation.timeout (default 180s), Flink kills the entire TaskManager,
+   * so waiting any longer than that would turn a graceful drain into a TM failure. A value of 0
+   * disables the watchdog, in which case the full shutdown timeout applies.
+   */
+  static long effectiveDrainTimeoutMs(long shutdownTimeoutMs, long taskCancellationTimeoutMs) {
+    if (taskCancellationTimeoutMs <= 0) {
+      return shutdownTimeoutMs;
+    }
+    long cap = taskCancellationTimeoutMs - CANCELLATION_SAFETY_MARGIN_MS;
+    return Math.max(0, Math.min(shutdownTimeoutMs, cap));
+  }
+
+  static void drainThenForceStop(Thread optimizerThread, long drainTimeoutMs) {
+    if (optimizerThread == null || !optimizerThread.isAlive()) {
+      return;
+    }
+    // Flink's cancellation machinery (TaskCanceler/TaskInterrupter) interrupts the task thread
+    // running close() to unblock I/O; absorb those interrupts and keep waiting until the drain
+    // deadline — the budget is capped below the cancellation watchdog, so close() always
+    // returns before Flink escalates to failing the TaskManager.
+    boolean selfInterrupted = joinUntil(optimizerThread, drainTimeoutMs);
+    if (optimizerThread.isAlive()) {
+      LOG.warn(
+          "Optimizer executor thread {} did not finish in-progress work within {}ms, "
+              + "force-interrupting",
+          optimizerThread.getName(),
+          drainTimeoutMs);
       optimizerThread.interrupt();
+      selfInterrupted |= joinUntil(optimizerThread, 1_000);
+    }
+    if (selfInterrupted) {
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  /**
+   * Joins the thread until the deadline, absorbing interrupts of the calling thread. Returns
+   * whether an interrupt was absorbed so the caller can restore the flag afterwards.
+   */
+  private static boolean joinUntil(Thread thread, long timeoutMs) {
+    boolean interrupted = false;
+    long deadline = System.currentTimeMillis() + timeoutMs;
+    while (thread.isAlive()) {
+      long remaining = deadline - System.currentTimeMillis();
+      if (remaining <= 0) {
+        break;
+      }
       try {
-        optimizerThread.join(5000);
+        thread.join(remaining);
       } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
+        interrupted = true;
       }
     }
+    return interrupted;
   }
 
   @Override
