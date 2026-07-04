@@ -20,7 +20,6 @@ package org.apache.amoro.optimizer.common;
 
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskResult;
-import org.apache.amoro.client.OptimizingClientPools;
 import org.apache.amoro.io.reader.DeleteCache;
 import org.apache.amoro.optimizing.OptimizingExecutor;
 import org.apache.amoro.optimizing.OptimizingExecutorFactory;
@@ -46,6 +45,14 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerExecutor.class);
   protected static final int ERROR_MESSAGE_MAX_LENGTH = 4000;
+
+  /**
+   * How long completeTask keeps retrying through transient AMS errors, measured from the moment
+   * shutdown is first observed by the retry loop. Sized to ride out a short network blip or AMS
+   * failover; note the force-interrupt issued at the stopOptimizing deadline aborts the window
+   * early, so retries never extend the overall shutdown beyond the configured timeout.
+   */
+  static final long COMPLETE_TASK_DRAIN_TIMEOUT_MS = 30_000L;
 
   private final int threadId;
 
@@ -251,23 +258,17 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
   protected void completeTask(String amsUrl, OptimizingTaskResult optimizingTaskResult) {
     try {
-      if (isStarted()) {
-        callAuthenticatedAms(
-            amsUrl,
-            (client, token) -> {
-              client.completeTask(token, optimizingTaskResult);
-              return null;
-            });
-      } else {
-        // After shutdown was requested the gated retry loop in callAuthenticatedAms exits
-        // immediately, which would silently drop the in-flight task result. Make a single
-        // best-effort direct call so graceful shutdown still reports completed work to AMS.
-        String token = getToken();
-        if (token == null) {
-          throw new TException("Cannot complete task during shutdown: token unavailable");
-        }
-        OptimizingClientPools.getClient(amsUrl).completeTask(token, optimizingTaskResult);
-      }
+      // Report the result even when shutdown was requested before or during this call: a
+      // finished task is exactly what the graceful drain exists to preserve. The bounded
+      // drain window keeps retrying through transient errors instead of dropping the result
+      // on the first failure.
+      callAuthenticatedAmsWithDrain(
+          amsUrl,
+          (client, token) -> {
+            client.completeTask(token, optimizingTaskResult);
+            return null;
+          },
+          COMPLETE_TASK_DRAIN_TIMEOUT_MS);
       LOG.info(
           "Optimizer executor[{}] completed task[{}](status: {}) to AMS {}",
           threadId,

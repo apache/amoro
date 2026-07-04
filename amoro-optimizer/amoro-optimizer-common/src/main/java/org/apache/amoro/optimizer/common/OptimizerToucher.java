@@ -36,6 +36,8 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
   private final Map<String, String> registerProperties = Maps.newHashMap();
   private final long startTime;
   private transient volatile Thread runnerThread;
+  private volatile boolean draining = false;
+  private transient boolean drainTokenLossLogged = false;
 
   public OptimizerToucher(OptimizerConfig config) {
     super(config);
@@ -73,6 +75,17 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
     LOG.info("Optimizer toucher stopped");
   }
 
+  /**
+   * Enters drain mode: keep heartbeating with the current token but never re-register. During
+   * graceful shutdown AMS may have already unregistered this optimizer (a scale-down releases the
+   * resource before the pod receives SIGTERM); re-registering on the resulting auth error would
+   * create a ghost optimizer AMS never asked for and rotate the executors' token, so their final
+   * completeTask would be rejected as coming from the wrong optimizer.
+   */
+  public void enterDrainMode() {
+    this.draining = true;
+  }
+
   @Override
   public void stop() {
     super.stop();
@@ -87,6 +100,16 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
 
   private boolean checkToken() {
     if (!tokenIsReady()) {
+      if (draining) {
+        if (!drainTokenLossLogged) {
+          drainTokenLossLogged = true;
+          LOG.warn(
+              "Optimizer token became invalid while draining; skip re-registering to AMS {} "
+                  + "to avoid creating a ghost optimizer",
+              getConfig().getAmsUrl());
+        }
+        return false;
+      }
       LOG.info(
           "Registering optimizer to AMS {} (group: {}, mode: {}, threads: {}, memory: {}MB) ...",
           getConfig().getAmsUrl(),

@@ -55,16 +55,20 @@ public class Optimizer {
 
   public void startOptimizing() {
     LOG.info("Starting optimizer with configuration:{}", config);
-    executorThreads = new Thread[executors.length];
-    IntStream.range(0, executors.length)
-        .forEach(
-            i -> {
-              executorThreads[i] =
-                  new Thread(
-                      executors[i]::start,
-                      String.format("Optimizer-executor-%d", executors[i].getThreadId()));
-              executorThreads[i].start();
-            });
+    Thread[] threads = new Thread[executors.length];
+    for (int i = 0; i < executors.length; i++) {
+      threads[i] =
+          new Thread(
+              executors[i]::start,
+              String.format("Optimizer-executor-%d", executors[i].getThreadId()));
+    }
+    // Publish the fully-built array before starting any thread: a concurrent shutdown hook
+    // reads executorThreads, and volatile orders only the array reference, not element
+    // writes made after publication.
+    executorThreads = threads;
+    for (Thread thread : threads) {
+      thread.start();
+    }
     toucher.withTokenChangeListener(new SetTokenToExecutors()).start();
   }
 
@@ -74,6 +78,9 @@ public class Optimizer {
     // so it keeps sending heartbeats. Otherwise AMS hits its heartbeat-timeout during
     // long-running in-flight tasks, unregisters this optimizer, and the subsequent
     // best-effort completeTask fails with "Optimizer has not been authenticated".
+    // Drain mode stops the toucher from re-registering if AMS has already unregistered
+    // this optimizer (scale-down releases the resource before the pod gets SIGTERM).
+    toucher.enterDrainMode();
     Arrays.stream(executors).forEach(OptimizerExecutor::stop);
 
     Thread[] threads = executorThreads;
@@ -84,41 +91,53 @@ public class Optimizer {
     }
 
     long shutdownTimeoutMs = config.getShutdownTimeoutMs();
-    long deadline = System.currentTimeMillis() + shutdownTimeoutMs;
-    for (Thread t : threads) {
-      if (t == null) {
-        continue;
-      }
-      long remaining = deadline - System.currentTimeMillis();
-      if (remaining <= 0) {
-        break;
-      }
-      try {
-        t.join(remaining);
-      } catch (InterruptedException e) {
-        LOG.warn("Interrupted while waiting for executor thread {} to finish", t.getName());
-        Thread.currentThread().interrupt();
-        break;
-      }
-    }
+    boolean selfInterrupted = !joinAll(threads, shutdownTimeoutMs);
 
+    // Force-interrupt pass: interrupt ALL survivors first, then wait for them against one
+    // shared deadline. Interleaving interrupt with per-thread joins would both serialize
+    // the waits (N extra seconds past the deadline) and, when this thread was itself
+    // interrupted above, skip interrupting the remaining threads because join() throws
+    // instantly while the interrupt flag is set.
+    boolean anyAlive = false;
     for (Thread t : threads) {
-      if (t != null && t.isAlive()) {
+      if (t.isAlive()) {
+        anyAlive = true;
         LOG.warn(
             "Executor thread {} did not terminate within {}ms timeout, force-interrupting",
             t.getName(),
             shutdownTimeoutMs);
         t.interrupt();
-        try {
-          t.join(1_000);
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-          break;
-        }
       }
     }
+    if (anyAlive) {
+      selfInterrupted |= !joinAll(threads, 1_000);
+    }
     toucher.stop();
+    if (selfInterrupted) {
+      Thread.currentThread().interrupt();
+    }
     LOG.info("Optimizer stopped");
+  }
+
+  /**
+   * Joins all threads against one shared deadline. Returns false if the calling thread was
+   * interrupted while waiting; the interrupt flag is left cleared so subsequent joins work.
+   */
+  private static boolean joinAll(Thread[] threads, long timeoutMs) {
+    long deadline = System.currentTimeMillis() + timeoutMs;
+    for (Thread t : threads) {
+      long remaining = deadline - System.currentTimeMillis();
+      if (remaining <= 0) {
+        return true;
+      }
+      try {
+        t.join(remaining);
+      } catch (InterruptedException e) {
+        LOG.warn("Interrupted while waiting for executor thread {} to finish", t.getName());
+        return false;
+      }
+    }
+    return true;
   }
 
   public OptimizerToucher getToucher() {
