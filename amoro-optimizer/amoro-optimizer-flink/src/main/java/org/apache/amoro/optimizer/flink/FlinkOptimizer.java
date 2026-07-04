@@ -58,9 +58,7 @@ public class FlinkOptimizer extends Optimizer {
             FlinkExecutor.class.getName(),
             Types.VOID,
             new FlinkExecutor(
-                optimizer.getExecutors(),
-                optimizerConfig.getGroupName(),
-                optimizerConfig.getShutdownTimeoutMs()))
+                optimizer.getExecutors(), optimizerConfig.getGroupName(), optimizerConfig))
         .setParallelism(optimizerConfig.getExecutionParallel())
         .addSink(new DiscardingSink<>())
         .name("Optimizer empty sink")

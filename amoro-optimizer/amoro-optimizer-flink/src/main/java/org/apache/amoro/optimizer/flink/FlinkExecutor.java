@@ -22,6 +22,7 @@ import static org.apache.flink.configuration.HighAvailabilityOptions.HA_CLUSTER_
 import static org.apache.flink.configuration.TaskManagerOptions.TASK_CANCELLATION_TIMEOUT;
 import static org.apache.flink.configuration.TaskManagerOptions.TASK_MANAGER_RESOURCE_ID;
 
+import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.apache.amoro.optimizer.common.OptimizerExecutor;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
@@ -38,16 +39,18 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
 
   private final OptimizerExecutor[] allExecutors;
   private final long shutdownTimeoutMs;
+  private final long heartbeatIntervalMs;
   private FlinkOptimizerExecutor executor;
   private String optimizeGroupName;
   private Thread optimizerThread;
   private long drainTimeoutMs;
 
   public FlinkExecutor(
-      OptimizerExecutor[] allExecutors, String optimizeGroupName, long shutdownTimeoutMs) {
+      OptimizerExecutor[] allExecutors, String optimizeGroupName, OptimizerConfig config) {
     this.allExecutors = allExecutors;
     this.optimizeGroupName = optimizeGroupName;
-    this.shutdownTimeoutMs = shutdownTimeoutMs;
+    this.shutdownTimeoutMs = config.getShutdownTimeoutMs();
+    this.heartbeatIntervalMs = config.getHeartBeat();
   }
 
   @Override
@@ -90,7 +93,12 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
     if (executor != null) {
       executor.stop();
     }
-    drainThenForceStop(optimizerThread, drainTimeoutMs);
+    // The FlinkToucher source is cancelled before this operator, so heartbeats have already
+    // stopped when the drain begins. Keep the registration alive by touching AMS with the
+    // existing token from here — otherwise AMS expires the optimizer after its heartbeat
+    // timeout (default 1 min) and resets the in-flight task, dropping the drained result.
+    Runnable drainHeartbeat = executor != null ? executor::bestEffortTouch : null;
+    drainThenForceStop(optimizerThread, drainTimeoutMs, heartbeatIntervalMs, drainHeartbeat);
   }
 
   /**
@@ -107,7 +115,11 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
     return Math.max(0, Math.min(shutdownTimeoutMs, cap));
   }
 
-  static void drainThenForceStop(Thread optimizerThread, long drainTimeoutMs) {
+  static void drainThenForceStop(
+      Thread optimizerThread,
+      long drainTimeoutMs,
+      long heartbeatIntervalMs,
+      Runnable drainHeartbeat) {
     if (optimizerThread == null || !optimizerThread.isAlive()) {
       return;
     }
@@ -115,7 +127,8 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
     // running close() to unblock I/O; absorb those interrupts and keep waiting until the drain
     // deadline — the budget is capped below the cancellation watchdog, so close() always
     // returns before Flink escalates to failing the TaskManager.
-    boolean selfInterrupted = joinUntil(optimizerThread, drainTimeoutMs);
+    boolean selfInterrupted =
+        joinUntil(optimizerThread, drainTimeoutMs, heartbeatIntervalMs, drainHeartbeat);
     if (optimizerThread.isAlive()) {
       LOG.warn(
           "Optimizer executor thread {} did not finish in-progress work within {}ms, "
@@ -123,7 +136,7 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
           optimizerThread.getName(),
           drainTimeoutMs);
       optimizerThread.interrupt();
-      selfInterrupted |= joinUntil(optimizerThread, 1_000);
+      selfInterrupted |= joinUntil(optimizerThread, 1_000, 1_000, null);
     }
     if (selfInterrupted) {
       Thread.currentThread().interrupt();
@@ -131,10 +144,12 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
   }
 
   /**
-   * Joins the thread until the deadline, absorbing interrupts of the calling thread. Returns
-   * whether an interrupt was absorbed so the caller can restore the flag afterwards.
+   * Joins the thread until the deadline, absorbing interrupts of the calling thread and running the
+   * heartbeat action between join slices. Returns whether an interrupt was absorbed so the caller
+   * can restore the flag afterwards.
    */
-  private static boolean joinUntil(Thread thread, long timeoutMs) {
+  private static boolean joinUntil(
+      Thread thread, long timeoutMs, long heartbeatIntervalMs, Runnable heartbeat) {
     boolean interrupted = false;
     long deadline = System.currentTimeMillis() + timeoutMs;
     while (thread.isAlive()) {
@@ -143,9 +158,12 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
         break;
       }
       try {
-        thread.join(remaining);
+        thread.join(Math.min(remaining, heartbeatIntervalMs));
       } catch (InterruptedException e) {
         interrupted = true;
+      }
+      if (heartbeat != null && thread.isAlive()) {
+        heartbeat.run();
       }
     }
     return interrupted;

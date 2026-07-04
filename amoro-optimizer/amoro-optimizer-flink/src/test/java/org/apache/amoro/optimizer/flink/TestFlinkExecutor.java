@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestFlinkExecutor {
 
@@ -42,11 +43,33 @@ public class TestFlinkExecutor {
             });
     worker.start();
 
-    FlinkExecutor.drainThenForceStop(worker, 10_000);
+    FlinkExecutor.drainThenForceStop(worker, 10_000, 10_000, null);
 
     Assertions.assertFalse(worker.isAlive(), "Worker thread should have terminated");
     Assertions.assertTrue(taskCompleted.get(), "In-progress task should complete within budget");
     Assertions.assertFalse(interrupted.get(), "Task within budget must not be interrupted");
+  }
+
+  @Test
+  public void testDrainKeepsHeartbeatingWhileWaiting() throws InterruptedException {
+    AtomicInteger heartbeats = new AtomicInteger();
+    Thread worker =
+        new Thread(
+            () -> {
+              try {
+                TimeUnit.MILLISECONDS.sleep(900);
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+              }
+            });
+    worker.start();
+
+    FlinkExecutor.drainThenForceStop(worker, 10_000, 200, heartbeats::incrementAndGet);
+
+    Assertions.assertFalse(worker.isAlive(), "Worker thread should have terminated");
+    Assertions.assertTrue(
+        heartbeats.get() >= 2,
+        "Drain must keep sending heartbeats periodically, got " + heartbeats.get());
   }
 
   @Test
@@ -64,7 +87,7 @@ public class TestFlinkExecutor {
     worker.start();
 
     long start = System.currentTimeMillis();
-    FlinkExecutor.drainThenForceStop(worker, 300);
+    FlinkExecutor.drainThenForceStop(worker, 300, 10_000, null);
     long elapsed = System.currentTimeMillis() - start;
 
     Assertions.assertFalse(worker.isAlive(), "Worker thread should have been force-stopped");
@@ -104,7 +127,7 @@ public class TestFlinkExecutor {
             });
     canceler.start();
     try {
-      FlinkExecutor.drainThenForceStop(worker, 10_000);
+      FlinkExecutor.drainThenForceStop(worker, 10_000, 10_000, null);
 
       Assertions.assertTrue(
           Thread.interrupted(), "Self-interrupt must be restored after the drain completes");
@@ -121,11 +144,11 @@ public class TestFlinkExecutor {
 
   @Test
   public void testDrainToleratesDeadOrNullThread() {
-    FlinkExecutor.drainThenForceStop(null, 1_000);
+    FlinkExecutor.drainThenForceStop(null, 1_000, 1_000, null);
 
     Thread finished = new Thread(() -> {});
     finished.start();
-    FlinkExecutor.drainThenForceStop(finished, 1_000);
+    FlinkExecutor.drainThenForceStop(finished, 1_000, 1_000, null);
   }
 
   @Test
