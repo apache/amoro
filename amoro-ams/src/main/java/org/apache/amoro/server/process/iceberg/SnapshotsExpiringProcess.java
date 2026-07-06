@@ -26,7 +26,7 @@ import org.apache.amoro.maintainer.TableMaintainer;
 import org.apache.amoro.process.ExecuteEngine;
 import org.apache.amoro.process.LocalProcess;
 import org.apache.amoro.process.TableProcess;
-import org.apache.amoro.server.optimizing.maintainer.TableMaintainers;
+import org.apache.amoro.server.optimizing.maintainer.TableMaintainerFactory;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.slf4j.Logger;
@@ -38,6 +38,8 @@ import java.util.Map;
 public class SnapshotsExpiringProcess extends TableProcess implements LocalProcess {
 
   private static final Logger LOG = LoggerFactory.getLogger(SnapshotsExpiringProcess.class);
+
+  private volatile Map<String, String> summary = Maps.newLinkedHashMap();
 
   public SnapshotsExpiringProcess(TableRuntime tableRuntime, ExecuteEngine engine) {
     super(tableRuntime, engine);
@@ -52,8 +54,8 @@ public class SnapshotsExpiringProcess extends TableProcess implements LocalProce
   public void run() {
     try {
       AmoroTable<?> amoroTable = tableRuntime.loadTable();
-      TableMaintainer tableMaintainer = TableMaintainers.create(amoroTable, tableRuntime);
-      tableMaintainer.expireSnapshots();
+      TableMaintainer tableMaintainer = TableMaintainerFactory.create(amoroTable, tableRuntime);
+      summary = tableMaintainer.expireSnapshots();
       tableRuntime.updateState(
           DefaultTableRuntime.CLEANUP_STATE_KEY,
           cleanUp -> cleanUp.setLastSnapshotsExpiringTime(System.currentTimeMillis()));
@@ -75,6 +77,6 @@ public class SnapshotsExpiringProcess extends TableProcess implements LocalProce
 
   @Override
   public Map<String, String> getSummary() {
-    return Maps.newHashMap();
+    return summary;
   }
 }
