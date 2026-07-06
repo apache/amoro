@@ -43,5 +43,6 @@ public abstract class OptimizerTestBase {
     TEST_AMS.getOptimizerHandler().getPendingTasks().clear();
     TEST_AMS.getOptimizerHandler().getExecutingTasks().clear();
     TEST_AMS.getOptimizerHandler().getCompletedTasks().clear();
+    TEST_AMS.getOptimizerHandler().failNextCompleteTasks(0);
   }
 }

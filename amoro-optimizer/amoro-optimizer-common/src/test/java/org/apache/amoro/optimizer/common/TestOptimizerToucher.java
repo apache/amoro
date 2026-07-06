@@ -62,6 +62,38 @@ public class TestOptimizerToucher extends OptimizerTestBase {
     optimizerToucher.stop();
   }
 
+  @Test
+  public void testNoReRegistrationInDrainMode() throws InterruptedException {
+    OptimizerConfig optimizerConfig =
+        OptimizerTestHelpers.buildOptimizerConfig(TEST_AMS.getServerUrl());
+    OptimizerToucher optimizerToucher = new OptimizerToucher(optimizerConfig);
+    TestTokenChangeListener tokenChangeListener = new TestTokenChangeListener();
+    optimizerToucher.withTokenChangeListener(tokenChangeListener);
+    new Thread(optimizerToucher::start).start();
+    try {
+      tokenChangeListener.waitForTokenChange();
+      Assertions.assertEquals(1, TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().size());
+
+      // Drain begins (graceful shutdown keeps the toucher alive for heartbeats), then AMS
+      // unregisters this optimizer the way a scale-down does before deleting the pod.
+      optimizerToucher.enterDrainMode();
+      TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().clear();
+
+      // Give the heartbeat loop several cycles to hit the auth error.
+      TimeUnit.MILLISECONDS.sleep(3_000);
+
+      Assertions.assertTrue(
+          TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().isEmpty(),
+          "Toucher must not re-register a ghost optimizer while draining");
+      Assertions.assertEquals(
+          1,
+          tokenChangeListener.tokenList().size(),
+          "Executor tokens must not be rotated during drain");
+    } finally {
+      optimizerToucher.stop();
+    }
+  }
+
   private void validateRegisteredOptimizer(
       String token, OptimizerConfig registerConfig, Map<String, String> optimizerProperties) {
     Map<String, OptimizerRegisterInfo> registeredOptimizerMap =
