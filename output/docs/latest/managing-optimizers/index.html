@@ -1195,6 +1195,13 @@ contain several optimizers with the same container implementation to facilitate 
 					<td>The minimum total parallelism (CPU cores) that the optimizer group should maintain. When the total cores of running optimizers fall below this value, <code>OptimizerGroupKeeper</code> will automatically scale out new optimizers. Set to <code>0</code> to disable auto-scaling. Note: The behavior of the auto-scaling mechanism is controlled by the AMS-level configurations <code>optimizer-group.min-parallelism-check-interval</code> and <code>optimizer-group.max-keeping-attempts</code>.</td>
 			</tr>
 			<tr>
+					<td>shutdown-timeout-ms</td>
+					<td>All</td>
+					<td>No</td>
+					<td>600000(10min)</td>
+					<td>Graceful shutdown timeout in milliseconds. On shutdown the optimizer waits up to this long for in-progress tasks to complete before force-interrupting them. For Kubernetes optimizers, the pod&rsquo;s <code>terminationGracePeriodSeconds</code> is derived from this value plus a 30s buffer. For Flink optimizers, the effective wait is additionally capped below <code>task.cancellation.timeout</code>.</td>
+			</tr>
+			<tr>
 					<td>memory</td>
 					<td>Local</td>
 					<td>Yes</td>
@@ -1223,6 +1230,7 @@ contain several optimizers with the same container implementation to facilitate 
 <li>Set <code>flink-conf.taskmanager.memory.managed.size</code> to <code>32mb</code> as Flink optimizer does not have any computation logic, it does not need to occupy managed memory.</li>
 <li>Set <code>flink-conf.taskmanager.memory.network.max</code> to <code>32mb</code> as there is no need for communication between operators in Flink Optimizer.</li>
 <li>Set <code>flink-conf.taskmanager.memory.network.min</code> to <code>32mb</code> as there is no need for communication between operators in Flink Optimizer.</li>
+<li>When using <code>shutdown-timeout-ms</code> with a Flink Optimizer, also raise <code>flink-conf.task.cancellation.timeout</code> (default 180000) accordingly — the graceful drain on job cancellation is capped below Flink&rsquo;s cancellation watchdog, which otherwise fails the whole TaskManager.</li>
 </ul>
 </div>
 <h3 id="edit-optimizer-group">Edit optimizer group</h3>
@@ -1320,6 +1328,11 @@ If the optimizer runs normally, you will see an optimizer with the status <code>
 					<td>No</td>
 					<td>Timeout in optimizer cache, default 10Min.</td>
 			</tr>
+			<tr>
+					<td>-st</td>
+					<td>No</td>
+					<td>Graceful shutdown timeout(ms) — on job cancellation, wait this long for in-progress tasks to complete before force-interrupting them, default 600000(ms). The effective wait is capped below task.cancellation.timeout (default 180000).</td>
+			</tr>
 	</tbody>
 </table>
 <p>Or you can submit optimizer in your own Spark task development platform or local Spark environment with the following configuration. The main parameters include:</p>
@@ -1397,6 +1410,11 @@ If the optimizer runs normally, you will see an optimizer with the status <code>
 					<td>-ct</td>
 					<td>No</td>
 					<td>Timeout in optimizer cache, default 10Min.</td>
+			</tr>
+			<tr>
+					<td>-st</td>
+					<td>No</td>
+					<td>Graceful shutdown timeout(ms) — on shutdown, wait this long for in-progress tasks to complete before force-interrupting them, default 600000(ms).</td>
 			</tr>
 	</tbody>
 </table>
