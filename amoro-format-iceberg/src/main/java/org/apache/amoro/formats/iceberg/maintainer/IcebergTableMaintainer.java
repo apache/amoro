@@ -168,7 +168,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     Snapshot currentSnapshot = table.currentSnapshot();
     if (currentSnapshot == null) {
-      return ImmutableMap.of("dangling-delete-files-cleaned", "0", "dangling-delete-size", "0");
+      return ImmutableMap.of(
+          "dangling-delete-files-cleaned", "0", "dangling-delete-files-size-bytes", "0");
     }
     Optional<String> totalDeleteFiles =
         Optional.ofNullable(currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
@@ -179,7 +180,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
       LOG.debug(
           "There are no delete files here, so there is no need to clean dangling delete file for table {}",
           table.name());
-      return ImmutableMap.of("dangling-delete-files-cleaned", "0", "dangling-delete-size", "0");
+      return ImmutableMap.of(
+          "dangling-delete-files-cleaned", "0", "dangling-delete-files-size-bytes", "0");
     }
   }
 
@@ -345,9 +347,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
         expiredFiles.deleteFiles.stream().mapToLong(ContentFile::fileSizeInBytes).sum();
     Map<String, String> summary = Maps.newLinkedHashMap();
     summary.put("expired-data-files-cleaned", String.valueOf(dataCount));
-    summary.put("expired-data-size", String.valueOf(dataSize));
+    summary.put("expired-data-files-size-bytes", String.valueOf(dataSize));
     summary.put("expired-delete-files-cleaned", String.valueOf(deleteCount));
-    summary.put("expired-delete-size", String.valueOf(deleteSize));
+    summary.put("expired-delete-files-size-bytes", String.valueOf(deleteSize));
     return summary;
   }
 
@@ -392,7 +394,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     Map<String, String> summary = Maps.newLinkedHashMap();
     long totalSize = danglingDeleteFiles.stream().mapToLong(ContentFile::fileSizeInBytes).sum();
     summary.put("dangling-delete-files-cleaned", String.valueOf(danglingDeleteFilesCnt));
-    summary.put("dangling-delete-size", String.valueOf(totalSize));
+    summary.put("dangling-delete-files-size-bytes", String.valueOf(totalSize));
     return summary;
   }
 

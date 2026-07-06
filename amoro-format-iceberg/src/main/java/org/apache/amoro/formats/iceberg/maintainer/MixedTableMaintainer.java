@@ -215,9 +215,9 @@ public class MixedTableMaintainer implements TableMaintainer {
 
     Map<String, String> summary = Maps.newLinkedHashMap();
     summary.put("expired-data-files-cleaned", String.valueOf(dataCount));
-    summary.put("expired-data-size", String.valueOf(dataSize));
+    summary.put("expired-data-files-size-bytes", String.valueOf(dataSize));
     summary.put("expired-delete-files-cleaned", String.valueOf(deleteCount));
-    summary.put("expired-delete-size", String.valueOf(deleteSize));
+    summary.put("expired-delete-files-size-bytes", String.valueOf(deleteSize));
     return summary;
   }
 
