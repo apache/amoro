@@ -46,6 +46,14 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerExecutor.class);
   protected static final int ERROR_MESSAGE_MAX_LENGTH = 4000;
 
+  /**
+   * How long completeTask keeps retrying through transient AMS errors, measured from the moment
+   * shutdown is first observed by the retry loop. Sized to ride out a short network blip or AMS
+   * failover; note the force-interrupt issued at the stopOptimizing deadline aborts the window
+   * early, so retries never extend the overall shutdown beyond the configured timeout.
+   */
+  static final long COMPLETE_TASK_DRAIN_TIMEOUT_MS = 30_000L;
+
   private final int threadId;
 
   public OptimizerExecutor(OptimizerConfig config, int threadId) {
@@ -250,12 +258,17 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
 
   protected void completeTask(String amsUrl, OptimizingTaskResult optimizingTaskResult) {
     try {
-      callAuthenticatedAms(
+      // Report the result even when shutdown was requested before or during this call: a
+      // finished task is exactly what the graceful drain exists to preserve. The bounded
+      // drain window keeps retrying through transient errors instead of dropping the result
+      // on the first failure.
+      callAuthenticatedAmsWithDrain(
           amsUrl,
           (client, token) -> {
             client.completeTask(token, optimizingTaskResult);
             return null;
-          });
+          },
+          COMPLETE_TASK_DRAIN_TIMEOUT_MS);
       LOG.info(
           "Optimizer executor[{}] completed task[{}](status: {}) to AMS {}",
           threadId,

@@ -22,11 +22,14 @@ import org.apache.amoro.optimizer.common.Optimizer;
 import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.apache.amoro.optimizer.common.OptimizerToucher;
 import org.apache.amoro.resource.Resource;
+import org.apache.hadoop.util.ShutdownHookManager;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 /** The {@code SparkOptimizer} acts as an entrypoint of the spark program */
 public class SparkOptimizer extends Optimizer {
@@ -65,6 +68,29 @@ public class SparkOptimizer extends Optimizer {
     OptimizerToucher toucher = optimizer.getToucher();
     toucher.withRegisterProperty(Resource.PROPERTY_JOB_ID, spark.sparkContext().applicationId());
 
+    // Register with Hadoop's ShutdownHookManager so that our hook runs to completion
+    // before downstream cleanup. ShutdownHookManager runs hooks in priority descending
+    // order, sequentially. Two cleanups must come AFTER our graceful shutdown:
+    //   - Hadoop FileSystem cache close (priority FS_CACHE = 10) — would otherwise
+    //     close in-flight HDFS writers and cause ClosedChannelException on flush.
+    //   - SparkContext.stop (Spark's SPARK_CONTEXT_SHUTDOWN_PRIORITY = 50) — would
+    //     otherwise tear down executors mid-task, failing in-flight RDD actions.
+    // Use SPARK_CONTEXT_SHUTDOWN_PRIORITY + 10 to guarantee both ordering constraints
+    // in a single value (60 > 50 > 10).
+    // Pass an explicit timeout — the 2-arg overload uses hadoop.service.shutdown.timeout
+    // (default 30s), which would cancel our hook well before stopOptimizing's
+    // shutdownTimeoutMs deadline.
+    int shutdownPriority =
+        org.apache.spark.util.ShutdownHookManager.SPARK_CONTEXT_SHUTDOWN_PRIORITY() + 10;
+    ShutdownHookManager.get()
+        .addShutdownHook(
+            () -> {
+              LOG.info("Received shutdown signal, initiating graceful shutdown...");
+              optimizer.stopOptimizing();
+            },
+            shutdownPriority,
+            config.getShutdownTimeoutMs() + 10_000L,
+            TimeUnit.MILLISECONDS);
     LOG.info("Starting the spark optimizer with configuration:{}", config);
     optimizer.startOptimizing();
   }
