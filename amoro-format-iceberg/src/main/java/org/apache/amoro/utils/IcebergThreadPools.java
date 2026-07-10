@@ -90,7 +90,7 @@ public class IcebergThreadPools {
     return getThreadPool(COMMIT_POOL_NAME_PREFIX);
   }
 
-  private static ExecutorService getThreadPool(String namePrefix) {
+  public static ExecutorService getThreadPool(String namePrefix) {
     ExecutorService executorService = POOLS.get(namePrefix);
     if (executorService == null) {
       return ThreadPools.getWorkerPool();
@@ -98,7 +98,7 @@ public class IcebergThreadPools {
     return executorService;
   }
 
-  private static synchronized void newThreadPool(String namePrefix, int poolSize) {
+  public static synchronized void newThreadPool(String namePrefix, int poolSize) {
     if (namePrefix == null || namePrefix.isEmpty()) {
       throw new IllegalArgumentException("Thread pool name prefix must not be empty");
     }
