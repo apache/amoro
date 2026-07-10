@@ -32,6 +32,13 @@ public class TestIcebergThreadPools {
     ExecutorService workerPool = ThreadPools.getWorkerPool();
     Assert.assertSame(workerPool, IcebergThreadPools.getPlanningExecutor());
     Assert.assertSame(workerPool, IcebergThreadPools.getCommitExecutor());
+    Assert.assertSame(workerPool, IcebergThreadPools.getThreadPool("unregistered-test-pool"));
+
+    IcebergThreadPools.newThreadPool("registered-test-pool", 1);
+    ExecutorService registeredPool = IcebergThreadPools.getThreadPool("registered-test-pool");
+    Assert.assertNotSame(workerPool, registeredPool);
+    IcebergThreadPools.newThreadPool("registered-test-pool", 2);
+    Assert.assertSame(registeredPool, IcebergThreadPools.getThreadPool("registered-test-pool"));
 
     IcebergThreadPools.init(1, 1);
 

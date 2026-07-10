@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
@@ -36,6 +37,7 @@ public class IcebergThreadPools {
 
   private static final Map<String, Integer> POOL_SIZES = new ConcurrentHashMap<>();
   private static final Map<String, ExecutorService> POOLS = new ConcurrentHashMap<>();
+  private static final Set<String> FALLBACK_WARNED_POOLS = ConcurrentHashMap.newKeySet();
 
   /**
    * Initializes the self-optimizing Iceberg I/O pools.
@@ -90,14 +92,43 @@ public class IcebergThreadPools {
     return getThreadPool(COMMIT_POOL_NAME_PREFIX);
   }
 
+  /**
+   * Returns the registered Iceberg thread pool for the given name prefix.
+   *
+   * <p>If the pool has not been initialized, a warning is logged once for the name prefix and
+   * Iceberg's global worker pool is returned.
+   *
+   * @param namePrefix thread pool name prefix
+   * @return the registered thread pool, or Iceberg's global worker pool if none is registered
+   * @throws IllegalArgumentException if the name prefix is empty
+   */
   public static ExecutorService getThreadPool(String namePrefix) {
+    if (namePrefix == null || namePrefix.isEmpty()) {
+      throw new IllegalArgumentException("Thread pool name prefix must not be empty");
+    }
+
     ExecutorService executorService = POOLS.get(namePrefix);
     if (executorService == null) {
+      if (FALLBACK_WARNED_POOLS.add(namePrefix)) {
+        LOG.warn(
+            "Iceberg thread pool {} has not been initialized; using Iceberg's global worker pool",
+            namePrefix);
+      }
       return ThreadPools.getWorkerPool();
     }
     return executorService;
   }
 
+  /**
+   * Creates and registers a process-wide Iceberg thread pool.
+   *
+   * <p>If a pool with the same name prefix already exists, the existing pool is retained because
+   * thread pools cannot be resized.
+   *
+   * @param namePrefix thread pool name prefix
+   * @param poolSize number of worker threads
+   * @throws IllegalArgumentException if the name prefix is empty or the pool size is not positive
+   */
   public static synchronized void newThreadPool(String namePrefix, int poolSize) {
     if (namePrefix == null || namePrefix.isEmpty()) {
       throw new IllegalArgumentException("Thread pool name prefix must not be empty");
