@@ -301,7 +301,7 @@ public class UnKeyedTableCommit {
     }
 
     RewriteFiles rewriteFiles =
-        transaction.newRewrite().scanManifestsWith(IcebergThreadPools.getCommitExecutor());
+        transaction.newRewrite().scanManifestsWith(IcebergThreadPools.getCommitPool());
     if (targetSnapshotId != Constants.INVALID_SNAPSHOT_ID) {
       long sequenceNumber = table.asUnkeyedTable().snapshot(targetSnapshotId).sequenceNumber();
       rewriteFiles.validateFromSnapshot(targetSnapshotId).dataSequenceNumber(sequenceNumber);
@@ -322,7 +322,7 @@ public class UnKeyedTableCommit {
 
   private void addDeleteFiles(Transaction transaction, Set<DeleteFile> addDeleteFiles) {
     RowDelta rowDelta =
-        transaction.newRowDelta().scanManifestsWith(IcebergThreadPools.getCommitExecutor());
+        transaction.newRowDelta().scanManifestsWith(IcebergThreadPools.getCommitPool());
     addDeleteFiles.forEach(rowDelta::addDeletes);
     rowDelta.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
     rowDelta.commit();
