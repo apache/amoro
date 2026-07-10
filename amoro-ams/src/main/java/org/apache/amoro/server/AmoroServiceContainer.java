@@ -630,10 +630,16 @@ public class AmoroServiceContainer {
       System.setProperty(
           SystemConfigs.WORKER_THREAD_POOL_SIZE.propertyKey(),
           String.valueOf(workerThreadPoolSize));
-      IcebergThreadPools.initSelfOptimizingPools(
-          serviceConfig,
-          AmoroManagementConf.TABLE_MANIFEST_IO_PLANNING_THREAD_COUNT,
-          AmoroManagementConf.TABLE_MANIFEST_IO_COMMIT_THREAD_COUNT);
+      int planningThreadPoolSize =
+          Math.max(
+              Runtime.getRuntime().availableProcessors() / 2,
+              serviceConfig.getInteger(
+                  AmoroManagementConf.TABLE_MANIFEST_IO_PLANNING_THREAD_COUNT));
+      int commitThreadPoolSize =
+          Math.max(
+              Runtime.getRuntime().availableProcessors() / 2,
+              serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_COMMIT_THREAD_COUNT));
+      IcebergThreadPools.init(planningThreadPoolSize, commitThreadPoolSize);
     }
 
     private void initContainerConfig() {

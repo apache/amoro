@@ -18,12 +18,12 @@
 
 package org.apache.amoro.utils;
 
-import org.apache.amoro.config.ConfigOption;
-import org.apache.amoro.config.Configurations;
 import org.apache.iceberg.util.ThreadPools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 /** Long-lived Iceberg I/O pools that isolate Amoro maintenance workloads from one another. */
@@ -31,44 +31,26 @@ public class IcebergThreadPools {
 
   private static final Logger LOG = LoggerFactory.getLogger(IcebergThreadPools.class);
 
-  private static ExecutorService planningPool;
-  private static ExecutorService commitPool;
-  private static volatile boolean optimizingPoolsInited;
+  private static final String PLANNING_POOL_NAME_PREFIX = "iceberg-planning-pool";
+  private static final String COMMIT_POOL_NAME_PREFIX = "iceberg-commit-pool";
 
-  private IcebergThreadPools() {}
+  private static final Map<String, Integer> POOL_SIZES = new ConcurrentHashMap<>();
+  private static final Map<String, ExecutorService> POOLS = new ConcurrentHashMap<>();
 
   /**
-   * Initializes the self-optimizing Iceberg I/O pools from the supplied configuration options.
+   * Initializes the self-optimizing Iceberg I/O pools.
    *
    * <p>Thread pools are process-wide and can only be initialized once. Repeated initialization is
    * ignored because existing pools cannot be resized.
    */
-  public static synchronized void initSelfOptimizingPools(
-      Configurations configurations,
-      ConfigOption<Integer> planningPoolSizeOption,
-      ConfigOption<Integer> commitPoolSizeOption) {
-    if (optimizingPoolsInited) {
-      LOG.warn("Self-optimizing Iceberg thread pools are already initialized");
-      return;
-    }
-
-    int planningPoolSize =
-        Math.max(
-            Runtime.getRuntime().availableProcessors() / 2,
-            configurations.getInteger(planningPoolSizeOption));
-    int commitPoolSize =
-        Math.max(
-            Runtime.getRuntime().availableProcessors() / 2,
-            configurations.getInteger(commitPoolSizeOption));
-
-    planningPool = ThreadPools.newExitingWorkerPool("iceberg-planning-pool", planningPoolSize);
-    commitPool = ThreadPools.newExitingWorkerPool("iceberg-commit-pool", commitPoolSize);
-    optimizingPoolsInited = true;
+  public static synchronized void init(int planningThreadPoolSize, int commitThreadPoolSize) {
+    newThreadPool(PLANNING_POOL_NAME_PREFIX, planningThreadPoolSize);
+    newThreadPool(COMMIT_POOL_NAME_PREFIX, commitThreadPoolSize);
 
     LOG.info(
         "Initialized Iceberg thread pools, self-optimizing planning: {}, self-optimizing commit: {}",
-        planningPoolSize,
-        commitPoolSize);
+        POOL_SIZES.get(PLANNING_POOL_NAME_PREFIX),
+        POOL_SIZES.get(COMMIT_POOL_NAME_PREFIX));
   }
 
   /**
@@ -80,14 +62,13 @@ public class IcebergThreadPools {
    * <p>The size of this pool is controlled by the AMS configuration {@code
    * self-optimizing.plan-manifest-io-thread-count}.
    *
-   * @return an {@link ExecutorService} that uses the self-optimizing planning pool
-   * @throws IllegalStateException if the pools have not been initialized
+   * <p>Before the dedicated pool is initialized, this returns Iceberg's global worker pool.
+   *
+   * @return an {@link ExecutorService} that uses the self-optimizing planning pool, or Iceberg's
+   *     global worker pool if the dedicated pool has not been initialized
    */
-  public static ExecutorService getPlanningPool() {
-    if (!optimizingPoolsInited) {
-      throw new IllegalStateException("Iceberg planning pool has not been initialized");
-    }
-    return planningPool;
+  public static ExecutorService getPlanningExecutor() {
+    return getThreadPool(PLANNING_POOL_NAME_PREFIX);
   }
 
   /**
@@ -100,13 +81,46 @@ public class IcebergThreadPools {
    * <p>The size of this pool is controlled by the AMS configuration {@code
    * self-optimizing.commit-manifest-io-thread-count}.
    *
-   * @return an {@link ExecutorService} that uses the self-optimizing commit pool
-   * @throws IllegalStateException if the pools have not been initialized
+   * <p>Before the dedicated pool is initialized, this returns Iceberg's global worker pool.
+   *
+   * @return an {@link ExecutorService} that uses the self-optimizing commit pool, or Iceberg's
+   *     global worker pool if the dedicated pool has not been initialized
    */
-  public static ExecutorService getCommitPool() {
-    if (!optimizingPoolsInited) {
-      throw new IllegalStateException("Iceberg commit pool has not been initialized");
+  public static ExecutorService getCommitExecutor() {
+    return getThreadPool(COMMIT_POOL_NAME_PREFIX);
+  }
+
+  private static ExecutorService getThreadPool(String namePrefix) {
+    ExecutorService executorService = POOLS.get(namePrefix);
+    if (executorService == null) {
+      return ThreadPools.getWorkerPool();
     }
-    return commitPool;
+    return executorService;
+  }
+
+  private static synchronized void newThreadPool(String namePrefix, int poolSize) {
+    if (namePrefix == null || namePrefix.isEmpty()) {
+      throw new IllegalArgumentException("Thread pool name prefix must not be empty");
+    }
+    if (poolSize <= 0) {
+      throw new IllegalArgumentException("Thread pool size must be greater than 0");
+    }
+
+    ExecutorService existingPool = POOLS.get(namePrefix);
+    if (existingPool != null) {
+      int existingPoolSize = POOL_SIZES.get(namePrefix);
+      if (existingPoolSize != poolSize) {
+        LOG.warn(
+            "Iceberg thread pool {} is already initialized with size {} and cannot be resized to {}; keeping the existing pool",
+            namePrefix,
+            existingPoolSize,
+            poolSize);
+      }
+      return;
+    }
+
+    ExecutorService executorService = ThreadPools.newExitingWorkerPool(namePrefix, poolSize);
+    POOL_SIZES.put(namePrefix, poolSize);
+    POOLS.put(namePrefix, executorService);
   }
 }

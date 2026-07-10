@@ -50,7 +50,7 @@ public class IcebergTableFileScanHelper implements TableFileScanHelper {
     return CloseableIterable.transform(
         table
             .newScan()
-            .planWith(IcebergThreadPools.getPlanningPool())
+            .planWith(IcebergThreadPools.getPlanningExecutor())
             .useSnapshot(snapshotId)
             .filter(partitionFilter)
             .planFiles(),
