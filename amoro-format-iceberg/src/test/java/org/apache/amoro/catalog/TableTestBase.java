@@ -20,16 +20,26 @@ package org.apache.amoro.catalog;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
+import org.apache.amoro.config.ConfigOptions;
+import org.apache.amoro.config.Configurations;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableBuilder;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.CatalogUtil;
+import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.MixedTableUtil;
 import org.junit.After;
 import org.junit.Before;
 
 public abstract class TableTestBase extends CatalogTestBase {
+
+  static {
+    IcebergThreadPools.initSelfOptimizingPools(
+        new Configurations(),
+        ConfigOptions.key("test.plan-manifest-io-thread-count").intType().defaultValue(1),
+        ConfigOptions.key("test.commit-manifest-io-thread-count").intType().defaultValue(1));
+  }
 
   private final TableTestHelper tableTestHelper;
   private MixedTable mixedTable;
