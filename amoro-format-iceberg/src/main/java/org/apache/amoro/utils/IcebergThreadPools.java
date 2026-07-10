@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
@@ -37,7 +36,6 @@ public class IcebergThreadPools {
 
   private static final Map<String, Integer> POOL_SIZES = new ConcurrentHashMap<>();
   private static final Map<String, ExecutorService> POOLS = new ConcurrentHashMap<>();
-  private static final Set<String> FALLBACK_WARNED_POOLS = ConcurrentHashMap.newKeySet();
 
   /**
    * Initializes the self-optimizing Iceberg I/O pools.
@@ -109,11 +107,10 @@ public class IcebergThreadPools {
 
     ExecutorService executorService = POOLS.get(namePrefix);
     if (executorService == null) {
-      if (FALLBACK_WARNED_POOLS.add(namePrefix)) {
-        LOG.warn(
-            "Iceberg thread pool {} has not been initialized; using Iceberg's global worker pool",
-            namePrefix);
-      }
+      LOG.warn(
+          "Iceberg thread pool {} has not been initialized; using Iceberg's global worker pool",
+          namePrefix);
+
       return ThreadPools.getWorkerPool();
     }
     return executorService;
