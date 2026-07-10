@@ -36,6 +36,7 @@ import org.apache.amoro.maintainer.TableMaintainer;
 import org.apache.amoro.maintainer.TableMaintainerContext;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -134,56 +135,68 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void cleanOrphanFiles() {
+  public Map<String, String> cleanOrphanFiles() {
     TableConfiguration tableConfiguration = context.getTableConfiguration();
     MaintainerMetrics metrics = context.getMetrics();
 
     if (!tableConfiguration.isCleanOrphanEnabled()) {
-      return;
+      return Maps.newHashMap();
     }
 
     long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
 
-    cleanContentFiles(System.currentTimeMillis() - keepTime, metrics);
+    int dataDeleted = cleanContentFiles(System.currentTimeMillis() - keepTime, metrics);
 
     // refresh
     table.refresh();
 
     // clear metadata files
-    cleanMetadata(System.currentTimeMillis() - keepTime, metrics);
+    int metadataDeleted = cleanMetadata(System.currentTimeMillis() - keepTime, metrics);
+
+    Map<String, String> summary = Maps.newLinkedHashMap();
+    summary.put("orphan-data-files-cleaned", String.valueOf(dataDeleted));
+    summary.put("orphan-metadata-files-cleaned", String.valueOf(metadataDeleted));
+    return summary;
   }
 
   @Override
-  public void cleanDanglingDeleteFiles() {
+  public Map<String, String> cleanDanglingDeleteFiles() {
     TableConfiguration tableConfiguration = context.getTableConfiguration();
     if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
-      return;
+      return Maps.newHashMap();
     }
 
     Snapshot currentSnapshot = table.currentSnapshot();
     if (currentSnapshot == null) {
-      return;
+      return ImmutableMap.of(
+          "dangling-delete-files-cleaned", "0", "dangling-delete-files-size-bytes", "0");
     }
     Optional<String> totalDeleteFiles =
         Optional.ofNullable(currentSnapshot.summary().get(SnapshotSummary.TOTAL_DELETE_FILES_PROP));
     if (totalDeleteFiles.isPresent() && Long.parseLong(totalDeleteFiles.get()) > 0) {
       // clear dangling delete files
-      doCleanDanglingDeleteFiles();
+      return doCleanDanglingDeleteFiles();
     } else {
       LOG.debug(
           "There are no delete files here, so there is no need to clean dangling delete file for table {}",
           table.name());
+      return ImmutableMap.of(
+          "dangling-delete-files-cleaned", "0", "dangling-delete-files-size-bytes", "0");
     }
   }
 
   @Override
-  public void expireSnapshots() {
+  public Map<String, String> expireSnapshots() {
     if (!expireSnapshotEnabled()) {
-      return;
+      return Maps.newHashMap();
     }
-    expireSnapshots(
-        mustOlderThan(System.currentTimeMillis()),
-        context.getTableConfiguration().getSnapshotMinCount());
+    int cleaned =
+        expireSnapshots(
+            mustOlderThan(System.currentTimeMillis()),
+            context.getTableConfiguration().getSnapshotMinCount(),
+            expireSnapshotNeedToExcludeFiles());
+
+    return ImmutableMap.of("snapshot-files-cleaned", String.valueOf(cleaned));
   }
 
   public boolean expireSnapshotEnabled() {
@@ -196,7 +209,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     expireSnapshots(mustOlderThan, minCount, expireSnapshotNeedToExcludeFiles());
   }
 
-  private void expireSnapshots(long olderThan, int minCount, Set<String> exclude) {
+  protected int expireSnapshots(long olderThan, int minCount, Set<String> exclude) {
     LOG.debug(
         "Starting snapshots expiration for table {}, expiring snapshots older than {} and retain last {} snapshots, excluding {}",
         table.name(),
@@ -225,11 +238,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     int collectedFiles = expiredFileCleaner.fileCount();
     expiredFileCleaner.clear();
+    int cleanedFiles = expiredFileCleaner.cleanedFileCount();
     if (collectedFiles > 0) {
       LOG.info(
           "Expired {}/{} files for table {} order than {}",
           collectedFiles,
-          expiredFileCleaner.cleanedFileCount(),
+          cleanedFiles,
           table.name(),
           DateTimeUtil.formatTimestampMillis(olderThan));
     } else {
@@ -238,6 +252,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
           table.name(),
           DateTimeUtil.formatTimestampMillis(olderThan));
     }
+    return cleanedFiles;
   }
 
   /**
@@ -263,17 +278,18 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireData() {
+  public Map<String, String> expireData() {
     DataExpirationConfig expirationConfig = context.getTableConfiguration().getExpiringDataConfig();
     try {
       Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
       if (!isValidDataExpirationField(expirationConfig, field, table.name())) {
-        return;
+        return Maps.newHashMap();
       }
 
-      expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
+      return expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableIdentifier, t);
+      return Maps.newHashMap();
     }
   }
 
@@ -304,9 +320,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
    *     zone
    */
   @VisibleForTesting
-  public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+  public Map<String, String> expireDataFrom(
+      DataExpirationConfig expirationConfig, Instant instant) {
     if (instant.equals(Instant.MIN)) {
-      return;
+      return Maps.newHashMap();
     }
 
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
@@ -322,6 +339,18 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
     ExpireFiles expiredFiles = expiredFileScan(expirationConfig, dataFilter, expireTimestamp);
     expireFiles(expiredFiles, expireTimestamp);
+
+    int dataCount = expiredFiles.dataFiles.size();
+    int deleteCount = expiredFiles.deleteFiles.size();
+    long dataSize = expiredFiles.dataFiles.stream().mapToLong(ContentFile::fileSizeInBytes).sum();
+    long deleteSize =
+        expiredFiles.deleteFiles.stream().mapToLong(ContentFile::fileSizeInBytes).sum();
+    Map<String, String> summary = Maps.newLinkedHashMap();
+    summary.put("expired-data-files-cleaned", String.valueOf(dataCount));
+    summary.put("expired-data-files-size-bytes", String.valueOf(dataSize));
+    summary.put("expired-delete-files-cleaned", String.valueOf(deleteCount));
+    summary.put("expired-delete-files-size-bytes", String.valueOf(deleteSize));
+    return summary;
   }
 
   @Override
@@ -330,7 +359,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     new AutoCreateIcebergTagAction(table, tagConfiguration, LocalDateTime.now()).execute();
   }
 
-  public void cleanContentFiles(long lastTime, MaintainerMetrics metrics) {
+  public int cleanContentFiles(long lastTime, MaintainerMetrics metrics) {
     // For clean data files, should getRuntime valid files in the base store and the change store,
     // so acquire in advance
     // to prevent repeated acquisition
@@ -339,20 +368,21 @@ public class IcebergTableMaintainer implements TableMaintainer {
         "Starting cleaning orphan content files for table {} before {}",
         table.name(),
         Instant.ofEpochMilli(lastTime));
-    clearInternalTableContentsFiles(lastTime, validFiles, metrics);
+    return clearInternalTableContentsFiles(lastTime, validFiles, metrics);
   }
 
-  public void cleanMetadata(long lastTime, MaintainerMetrics metrics) {
+  public int cleanMetadata(long lastTime, MaintainerMetrics metrics) {
     LOG.info(
         "Starting cleaning metadata files for table {} before {}",
         table.name(),
         Instant.ofEpochMilli(lastTime));
-    clearInternalTableMetadata(lastTime, metrics);
+    return clearInternalTableMetadata(lastTime, metrics);
   }
 
-  public void doCleanDanglingDeleteFiles() {
+  public Map<String, String> doCleanDanglingDeleteFiles() {
     LOG.info("Starting cleaning dangling delete files for table {}", table.name());
-    int danglingDeleteFilesCnt = clearInternalTableDanglingDeleteFiles();
+    Set<DeleteFile> danglingDeleteFiles = IcebergTableUtil.getDanglingDeleteFiles(table);
+    int danglingDeleteFilesCnt = clearInternalTableDanglingDeleteFiles(danglingDeleteFiles);
     runWithCondition(
         danglingDeleteFilesCnt > 0,
         () ->
@@ -360,6 +390,12 @@ public class IcebergTableMaintainer implements TableMaintainer {
                 "Deleted {} dangling delete files for table {}",
                 danglingDeleteFilesCnt,
                 table.name()));
+
+    Map<String, String> summary = Maps.newLinkedHashMap();
+    long totalSize = danglingDeleteFiles.stream().mapToLong(ContentFile::fileSizeInBytes).sum();
+    summary.put("dangling-delete-files-cleaned", String.valueOf(danglingDeleteFilesCnt));
+    summary.put("dangling-delete-files-size-bytes", String.valueOf(totalSize));
+    return summary;
   }
 
   public long mustOlderThan(long now) {
@@ -402,7 +438,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     return (AuthenticatedFileIO) table.io();
   }
 
-  private void clearInternalTableContentsFiles(
+  private int clearInternalTableContentsFiles(
       long lastTime, Set<String> exclude, MaintainerMetrics metrics) {
     String dataLocation = table.location() + File.separator + DATA_FOLDER_NAME;
     int expected = 0, deleted = 0;
@@ -443,9 +479,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
               table.name());
           metrics.recordOrphanDataFilesCleaned(finalExpected, finalDeleted);
         });
+    return finalDeleted;
   }
 
-  private void clearInternalTableMetadata(long lastTime, MaintainerMetrics metrics) {
+  private int clearInternalTableMetadata(long lastTime, MaintainerMetrics metrics) {
     Set<String> validFiles = getValidMetadataFiles(table);
     LOG.info("Found {} valid metadata files for table {}", validFiles.size(), table.name());
     Pattern excludeFileNameRegex = getExcludeFileNameRegex(table);
@@ -457,12 +494,13 @@ public class IcebergTableMaintainer implements TableMaintainer {
     LOG.info("start orphan files clean in {}", metadataLocation);
 
     AuthenticatedFileIO io = fileIO();
+    int deleted;
     if (io.supportPrefixOperations()) {
       SupportsPrefixOperations pio = io.asPrefixFileIO();
       Set<String> filesToDelete =
           deleteInvalidMetadataFile(
               pio, metadataLocation, lastTime, validFiles, excludeFileNameRegex);
-      int deleted = TableFileUtil.deleteFiles(io, filesToDelete);
+      deleted = TableFileUtil.deleteFiles(io, filesToDelete);
 
       runWithCondition(
           !filesToDelete.isEmpty(),
@@ -475,15 +513,16 @@ public class IcebergTableMaintainer implements TableMaintainer {
             metrics.recordOrphanMetadataFilesCleaned(filesToDelete.size(), deleted);
           });
     } else {
+      deleted = 0;
       LOG.warn(
           String.format(
               "Table %s doesn't support a fileIo with listDirectory or listPrefix, so skip clear files.",
               table.name()));
     }
+    return deleted;
   }
 
-  private int clearInternalTableDanglingDeleteFiles() {
-    Set<DeleteFile> danglingDeleteFiles = IcebergTableUtil.getDanglingDeleteFiles(table);
+  private int clearInternalTableDanglingDeleteFiles(Set<DeleteFile> danglingDeleteFiles) {
     if (danglingDeleteFiles.isEmpty()) {
       return 0;
     }

@@ -30,6 +30,7 @@ import org.apache.amoro.maintainer.TableMaintainerContext;
 import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
@@ -70,6 +71,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Table maintainer for mixed-iceberg and mixed-hive tables. */
 public class MixedTableMaintainer implements TableMaintainer {
@@ -99,24 +101,39 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void cleanOrphanFiles() {
+  public Map<String, String> cleanOrphanFiles() {
+    Map<String, String> result = Maps.newHashMap();
     if (changeMaintainer != null) {
-      changeMaintainer.cleanOrphanFiles();
+      result.putAll(changeMaintainer.cleanOrphanFiles());
     }
-    baseMaintainer.cleanOrphanFiles();
+    baseMaintainer
+        .cleanOrphanFiles()
+        .forEach(
+            (k, v) ->
+                result.merge(
+                    k, v, (a, b) -> String.valueOf(Long.parseLong(a) + Long.parseLong(b))));
+    return result;
   }
 
   @Override
-  public void cleanDanglingDeleteFiles() {
+  public Map<String, String> cleanDanglingDeleteFiles() {
     // Mixed table doesn't support clean dangling delete files
+    return Maps.newHashMap();
   }
 
   @Override
-  public void expireSnapshots() {
+  public Map<String, String> expireSnapshots() {
+    Map<String, String> result = Maps.newHashMap();
     if (changeMaintainer != null) {
-      changeMaintainer.expireSnapshots();
+      result.putAll(changeMaintainer.expireSnapshots());
     }
-    baseMaintainer.expireSnapshots();
+    baseMaintainer
+        .expireSnapshots()
+        .forEach(
+            (k, v) ->
+                result.merge(
+                    k, v, (a, b) -> String.valueOf(Long.parseLong(a) + Long.parseLong(b))));
+    return result;
   }
 
   @VisibleForTesting
@@ -128,18 +145,19 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @Override
-  public void expireData() {
+  public Map<String, String> expireData() {
     DataExpirationConfig expirationConfig = context.getTableConfiguration().getExpiringDataConfig();
     try {
       Types.NestedField field =
           mixedTable.schema().findField(expirationConfig.getExpirationField());
       if (!isValidDataExpirationField(expirationConfig, field, mixedTable.name())) {
-        return;
+        return Maps.newHashMap();
       }
 
-      expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig, field));
+      return expireDataFrom(expirationConfig, expireMixedBaseOnRule(expirationConfig, field));
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", mixedTable.id(), t);
+      return Maps.newHashMap();
     }
   }
 
@@ -158,9 +176,10 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   @VisibleForTesting
-  public void expireDataFrom(DataExpirationConfig expirationConfig, Instant instant) {
+  public Map<String, String> expireDataFrom(
+      DataExpirationConfig expirationConfig, Instant instant) {
     if (instant.equals(Instant.MIN)) {
-      return;
+      return Maps.newHashMap();
     }
 
     long expireTimestamp = instant.minusMillis(expirationConfig.getRetentionTime()).toEpochMilli();
@@ -180,6 +199,26 @@ public class MixedTableMaintainer implements TableMaintainer {
         mixedExpiredFileScan(expirationConfig, dataFilter, expireTimestamp);
 
     expireMixedFiles(mixedExpiredFiles.getLeft(), mixedExpiredFiles.getRight(), expireTimestamp);
+
+    IcebergTableMaintainer.ExpireFiles changeFiles = mixedExpiredFiles.getLeft();
+    IcebergTableMaintainer.ExpireFiles baseFiles = mixedExpiredFiles.getRight();
+    int dataCount = changeFiles.dataFiles.size() + baseFiles.dataFiles.size();
+    int deleteCount = changeFiles.deleteFiles.size() + baseFiles.deleteFiles.size();
+    long dataSize =
+        Stream.concat(changeFiles.dataFiles.stream(), baseFiles.dataFiles.stream())
+            .mapToLong(ContentFile::fileSizeInBytes)
+            .sum();
+    long deleteSize =
+        Stream.concat(changeFiles.deleteFiles.stream(), baseFiles.deleteFiles.stream())
+            .mapToLong(ContentFile::fileSizeInBytes)
+            .sum();
+
+    Map<String, String> summary = Maps.newLinkedHashMap();
+    summary.put("expired-data-files-cleaned", String.valueOf(dataCount));
+    summary.put("expired-data-files-size-bytes", String.valueOf(dataSize));
+    summary.put("expired-delete-files-cleaned", String.valueOf(deleteCount));
+    summary.put("expired-delete-files-size-bytes", String.valueOf(deleteSize));
+    return summary;
   }
 
   private Pair<IcebergTableMaintainer.ExpireFiles, IcebergTableMaintainer.ExpireFiles>
@@ -347,13 +386,18 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    public void expireSnapshots() {
+    public Map<String, String> expireSnapshots() {
       if (!expireSnapshotEnabled()) {
-        return;
+        return Maps.newHashMap();
       }
       long now = System.currentTimeMillis();
       expireFiles(now - getSnapshotsKeepTime());
-      expireSnapshots(getMustOlderThan(now), context.getTableConfiguration().getSnapshotMinCount());
+      int cleaned =
+          expireSnapshots(
+              getMustOlderThan(now),
+              context.getTableConfiguration().getSnapshotMinCount(),
+              expireSnapshotNeedToExcludeFiles());
+      return ImmutableMap.of("snapshot-files-cleaned", String.valueOf(cleaned));
     }
 
     private long getSnapshotsKeepTime() {

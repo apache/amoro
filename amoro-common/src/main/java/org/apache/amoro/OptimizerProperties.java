@@ -49,4 +49,6 @@ public class OptimizerProperties {
   public static final String OPTIMIZER_CACHE_TIMEOUT = "cache-timeout";
   public static final String OPTIMIZER_CACHE_TIMEOUT_DEFAULT = "10min";
   public static final String OPTIMIZER_MASTER_SLAVE_MODE_ENABLED = "master-slave-mode-enabled";
+  public static final String OPTIMIZER_SHUTDOWN_TIMEOUT_MS = "shutdown-timeout-ms";
+  public static final long OPTIMIZER_SHUTDOWN_TIMEOUT_MS_DEFAULT = 600_000L; // 10 min
 }
