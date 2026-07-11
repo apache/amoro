@@ -42,6 +42,7 @@ public class DynamicAllocationConfig {
   private final boolean enabled;
   private final Integer minParallelism;
   private final Integer maxParallelism;
+  private final int executorParallelism;
   private final Duration schedulerBacklogTimeout;
   private final Duration sustainedBacklogTimeout;
   private final Duration executorIdleTimeout;
@@ -54,6 +55,7 @@ public class DynamicAllocationConfig {
       boolean enabled,
       Integer minParallelism,
       Integer maxParallelism,
+      int executorParallelism,
       Duration schedulerBacklogTimeout,
       Duration sustainedBacklogTimeout,
       Duration executorIdleTimeout,
@@ -64,6 +66,7 @@ public class DynamicAllocationConfig {
     this.enabled = enabled;
     this.minParallelism = minParallelism;
     this.maxParallelism = maxParallelism;
+    this.executorParallelism = executorParallelism;
     this.schedulerBacklogTimeout = schedulerBacklogTimeout;
     this.sustainedBacklogTimeout = sustainedBacklogTimeout;
     this.executorIdleTimeout = executorIdleTimeout;
@@ -88,12 +91,19 @@ public class DynamicAllocationConfig {
         PropertyUtil.propertyAsNullableInt(
             properties, OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM);
 
+    int executorParallelism =
+        PropertyUtil.propertyAsInt(
+            properties,
+            OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM,
+            OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM_DEFAULT);
+
     return new DynamicAllocationConfig(
         group.getName(),
         group.getContainer(),
         enabled,
         minParallelism,
         maxParallelism,
+        executorParallelism,
         parseDuration(
             properties,
             OptimizerProperties.DYNAMIC_ALLOCATION_SCHEDULER_BACKLOG_TIMEOUT,
@@ -269,6 +279,26 @@ public class DynamicAllocationConfig {
               maxParallelism,
               OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM_LIMIT));
     }
+    if (executorParallelism < 1) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Resource group:%s '%s'(%d) must be >= 1.",
+              groupName,
+              OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM,
+              executorParallelism));
+    }
+    // A single executorParallelism-thread instance is the scaling unit; if it alone exceeds
+    // max-parallelism, scale-up could never create anything, leaving a silent no-op group.
+    if (executorParallelism > maxParallelism) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Resource group:%s '%s'(%d) must not exceed '%s'(%d).",
+              groupName,
+              OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM,
+              executorParallelism,
+              OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM,
+              maxParallelism));
+    }
     Duration idleMin =
         ConfigHelpers.TimeUtils.parseDuration(
             OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT_MIN);
@@ -338,6 +368,10 @@ public class DynamicAllocationConfig {
    */
   public int getMaxParallelism() {
     return maxParallelism;
+  }
+
+  public int getExecutorParallelism() {
+    return executorParallelism;
   }
 
   public Duration getSchedulerBacklogTimeout() {
