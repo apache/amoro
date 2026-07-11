@@ -31,6 +31,13 @@ public class TaskProperties {
   public static final String PROCESS_ID = "process-id";
   public static final String UNKNOWN_PROCESS_ID = "unknown";
 
+  /**
+   * Attempt id of a task execution round, stamped by AMS on every schedule and echoed back by the
+   * optimizer in the result summary, so AMS can tell a stale completion of a previous attempt apart
+   * from the current one.
+   */
+  public static final String TASK_ATTEMPT_ID = "task-attempt-id";
+
   public static final String EXTEND_DISK_STORAGE =
       OptimizerProperties.OPTIMIZER_EXTEND_DISK_STORAGE;
   public static final boolean EXTEND_DISK_STORAGE_DEFAULT = false;

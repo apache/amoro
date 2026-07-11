@@ -24,6 +24,7 @@ import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.exception.IllegalTaskStateException;
 import org.apache.amoro.exception.TaskRuntimeException;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.process.SimpleFuture;
 import org.apache.amoro.process.StagedTaskDescriptor;
 import org.apache.amoro.server.AmoroServiceConstants;
@@ -33,6 +34,7 @@ import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableSet;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,14 +92,17 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
     // to a round that the OptimizerKeeper has already torn down. Absorb it gracefully instead of
     // failing the (now illegal) state transition; the task will be re-executed in its current
     // round.
-    if (isStaleResponse(thread) || status != Status.ACKED) {
+    if (isStaleResponse(thread) || status != Status.ACKED || isStaleAttempt(result)) {
       LOG.warn(
-          "Ignoring stale completion for task {} from optimizer thread {}, current status {} and "
-              + "owner {}. The task was likely reset by the OptimizerKeeper and will be re-executed.",
+          "Ignoring stale completion for task {} from optimizer thread {}, current status {}, "
+              + "owner {}, attempt {} (reported attempt {}). The task was likely reset by the "
+              + "OptimizerKeeper and will be re-executed.",
           taskId,
           thread,
           status,
-          getResourceDesc());
+          getResourceDesc(),
+          currentAttemptId(),
+          reportedAttemptId(result));
       return;
     }
     invokeConsistency(
@@ -145,6 +150,7 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
           token = thread.getToken();
           threadId = thread.getThreadId();
           startTime = System.currentTimeMillis();
+          stampNextAttemptId();
           persistTaskRuntime();
         });
   }
@@ -284,6 +290,48 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
    */
   private boolean isStaleResponse(OptimizerThread thread) {
     return token == null || !thread.getToken().equals(token) || thread.getThreadId() != threadId;
+  }
+
+  /**
+   * Detects a completion from a previous attempt of this task, which {@link #isStaleResponse}
+   * cannot: once a reset task is re-scheduled to the same optimizer thread and re-acked, (token,
+   * threadId, status) all match again. Optimizers echo the attempt id they received with the task
+   * back in the result summary; a result from an older optimizer carries none and is checked by
+   * (token, threadId, status) alone.
+   */
+  private boolean isStaleAttempt(OptimizingTaskResult result) {
+    String reported = reportedAttemptId(result);
+    return reported != null && !reported.equals(currentAttemptId());
+  }
+
+  /**
+   * Advances the attempt id stamped into the task properties, which reach the optimizer via {@link
+   * #extractProtocolTask()}. The properties map is replaced instead of mutated, because
+   * extractProtocolTask hands the live reference to thrift serialization outside the process lock.
+   * The id is persisted with the task, so it stays monotonic across AMS restarts; if the enclosing
+   * transaction rolls back, the in-memory increment survives (properties are not a {@link
+   * StateField}), which merely skips a value and never reuses one.
+   */
+  private void stampNextAttemptId() {
+    String current = currentAttemptId();
+    long next = current == null ? 1 : Long.parseLong(current) + 1;
+    Map<String, String> properties =
+        taskDescriptor.getProperties() == null
+            ? Maps.newHashMap()
+            : Maps.newHashMap(taskDescriptor.getProperties());
+    properties.put(TaskProperties.TASK_ATTEMPT_ID, Long.toString(next));
+    taskDescriptor.setProperties(properties);
+  }
+
+  private String currentAttemptId() {
+    Map<String, String> properties = taskDescriptor.getProperties();
+    return properties == null ? null : properties.get(TaskProperties.TASK_ATTEMPT_ID);
+  }
+
+  private static String reportedAttemptId(OptimizingTaskResult result) {
+    return result.getSummary() == null
+        ? null
+        : result.getSummary().get(TaskProperties.TASK_ATTEMPT_ID);
   }
 
   private void persistTaskRuntime() {

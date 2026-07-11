@@ -46,6 +46,7 @@ import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
+import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.manager.MetricManager;
@@ -430,6 +431,51 @@ public class TestOptimizingQueue extends AMSTableTestBase {
 
     // the current re-scheduled round is untouched: still SCHEDULED, awaiting its own ack
     Assert.assertEquals(TaskRuntime.Status.SCHEDULED, task.getStatus());
+    queue.dispose();
+  }
+
+  // The (token, threadId, status) checks alone cannot tell two attempts of the same task on the
+  // same optimizer thread apart: once the rescheduled round is ACKED again, a delayed completion
+  // of the previous attempt matches all three. Every schedule therefore stamps an attempt id into
+  // the task properties, and a completion echoing a different attempt id must be ignored.
+  @Test
+  public void testStaleCompleteFromPreviousAttemptIsIgnored() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+
+    // 1. first attempt: poll + ack, the optimizer starts executing
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+    String firstAttempt =
+        task.extractProtocolTask().getProperties().get(TaskProperties.TASK_ATTEMPT_ID);
+    Assert.assertNotNull(firstAttempt);
+    queue.ackTask(task.getTaskId(), optimizerThread);
+
+    // 2. the same thread polls again: the task is reset and re-scheduled to the SAME thread with
+    //    a new attempt id, then the second attempt is acked -> (token, threadId, ACKED) is now
+    //    identical to what the first attempt's completion will carry
+    TaskRuntime<?> repolled = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertSame(task, repolled);
+    String secondAttempt =
+        task.extractProtocolTask().getProperties().get(TaskProperties.TASK_ATTEMPT_ID);
+    Assert.assertNotEquals(firstAttempt, secondAttempt);
+    queue.ackTask(task.getTaskId(), optimizerThread);
+    Assert.assertEquals(TaskRuntime.Status.ACKED, task.getStatus());
+
+    // 3. the delayed completion of the FIRST attempt arrives; only the echoed attempt id can
+    //    expose it as stale -> ignored, the second attempt keeps executing
+    OptimizingTaskResult staleResult =
+        buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId());
+    staleResult.setSummary(ImmutableMap.of(TaskProperties.TASK_ATTEMPT_ID, firstAttempt));
+    queue.completeTask(optimizerThread, staleResult);
+    Assert.assertEquals(TaskRuntime.Status.ACKED, task.getStatus());
+
+    // 4. the second attempt's own completion (echoing the current attempt id) is accepted
+    OptimizingTaskResult currentResult =
+        buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId());
+    currentResult.setSummary(ImmutableMap.of(TaskProperties.TASK_ATTEMPT_ID, secondAttempt));
+    queue.completeTask(optimizerThread, currentResult);
+    Assert.assertEquals(TaskRuntime.Status.SUCCESS, task.getStatus());
     queue.dispose();
   }
 
