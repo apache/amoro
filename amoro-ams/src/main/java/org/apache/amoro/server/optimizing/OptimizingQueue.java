@@ -38,6 +38,7 @@ import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.TaskRuntime.Status;
+import org.apache.amoro.server.optimizing.dra.DynamicAllocationState;
 import org.apache.amoro.server.persistence.OptimizingProcessState;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
@@ -416,6 +417,47 @@ public class OptimizingQueue extends PersistentBase {
         .flatMap(p -> p.getTaskMap().values().stream())
         .filter(predicate)
         .collect(Collectors.toList());
+  }
+
+  /**
+   * Snapshot the demand-side load of this queue for dynamic allocation: busy threads, serviceable
+   * PLANNED tasks (quota-mode aware, see {@link DynamicAllocationState#serviceablePlannedCount}),
+   * and PENDING tables. PENDING tables are observable with zero optimizers, which makes them the
+   * only scale-up signal on a cold group where nothing polls and planning never runs.
+   */
+  public DynamicAllocationState.GroupLoad collectDynamicAllocationLoad() {
+    Map<Long, Integer> plannedByTable = Maps.newHashMap();
+    Map<Long, Integer> occupiedByTable = Maps.newHashMap();
+    int busyThreads = 0;
+    for (TaskRuntime<?> task : collectTasks()) {
+      if (DynamicAllocationState.occupiesThread(task.getStatus())) {
+        busyThreads++;
+        occupiedByTable.merge(task.getTableId(), 1, Integer::sum);
+      } else if (task.getStatus() == Status.PLANNED) {
+        plannedByTable.merge(task.getTableId(), 1, Integer::sum);
+      }
+    }
+    Map<Long, Double> targetQuotaByTable = Maps.newHashMap();
+    int pendingTables = 0;
+    for (DefaultTableRuntime tableRuntime : scheduler.getTableRuntimeMap().values()) {
+      targetQuotaByTable.put(
+          tableRuntime.getTableIdentifier().getId(),
+          tableRuntime.getOptimizingConfig().getTargetQuota());
+      if (tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING) {
+        pendingTables++;
+      }
+    }
+    List<DynamicAllocationState.TableDemand> demands = Lists.newArrayList();
+    plannedByTable.forEach(
+        (tableId, planned) ->
+            demands.add(
+                new DynamicAllocationState.TableDemand(
+                    planned,
+                    // Unknown table (racing removal): default to proportional, counting in full.
+                    targetQuotaByTable.getOrDefault(tableId, 1.0),
+                    occupiedByTable.getOrDefault(tableId, 0))));
+    return new DynamicAllocationState.GroupLoad(
+        busyThreads, DynamicAllocationState.serviceablePlannedCount(demands), pendingTables);
   }
 
   public void retryTask(TaskRuntime<?> taskRuntime) {

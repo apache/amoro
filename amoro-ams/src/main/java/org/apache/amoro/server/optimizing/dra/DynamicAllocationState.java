@@ -115,6 +115,31 @@ public final class DynamicAllocationState {
     return (value + divisor - 1) / divisor;
   }
 
+  /** Snapshot of a group's current load, the demand-side inputs of {@link #computeScaleUp}. */
+  public static class GroupLoad {
+    private final int busyThreads;
+    private final int serviceablePlanned;
+    private final int pendingTables;
+
+    public GroupLoad(int busyThreads, int serviceablePlanned, int pendingTables) {
+      this.busyThreads = busyThreads;
+      this.serviceablePlanned = serviceablePlanned;
+      this.pendingTables = pendingTables;
+    }
+
+    public int getBusyThreads() {
+      return busyThreads;
+    }
+
+    public int getServiceablePlanned() {
+      return serviceablePlanned;
+    }
+
+    public int getPendingTables() {
+      return pendingTables;
+    }
+  }
+
   /** Per-table demand snapshot consumed by {@link #serviceablePlannedCount(Collection)}. */
   public static class TableDemand {
     private final int plannedCount;
