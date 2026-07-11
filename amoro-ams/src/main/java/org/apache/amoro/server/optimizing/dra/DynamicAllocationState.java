@@ -23,12 +23,97 @@ import org.apache.amoro.server.optimizing.TaskRuntime;
 import java.util.Collection;
 
 /**
- * Demand accounting for dynamic allocation (AIP-5). Pure functions over plain values so the scaling
- * decision logic is testable without a live optimizing queue.
+ * Per-group scale-up decision state for dynamic allocation (AIP-5): the backlog timer, the
+ * scale-out cadence, and the exponential ramp. {@link #computeScaleUp} is driven by injected inputs
+ * (loads, config, time), so the decision logic is deterministic and testable without a live
+ * optimizing queue; the static demand-accounting helpers are pure functions.
  */
 public final class DynamicAllocationState {
 
-  private DynamicAllocationState() {}
+  /** When demand was first observed; {@code -1} while there is no demand. */
+  private long backlogSinceMs = -1;
+
+  /** Earliest time the next scale-out may happen; {@code -1} before the first one. */
+  private long nextAllowedAddMs = -1;
+
+  /** Instances to add in the next immediate-demand round (1, 2, 4, 8 ...). */
+  private int rampInstances = 1;
+
+  /**
+   * Decide how many executor-parallelism-thread optimizer instances to create in this round.
+   *
+   * <p>Ordered checks: the {@code min-parallelism} floor is enforced immediately (no timing gate);
+   * immediate demand ({@code busy + serviceable > effective}) scales exponentially, clamped to the
+   * actual need (Spark semantics: the ramp resets when the clamp binds, and a round with no demand
+   * resets it too); future demand (pending tables while every thread is busy — including the
+   * zero-optimizer cold start, where nothing polls and planning never runs) adds a single probe
+   * instance, because pending tables are not quantified demand before planning. Demand must persist
+   * for {@code scheduler-backlog-timeout} before the first scale-out; subsequent ones are spaced by
+   * {@code sustained-backlog-timeout}. The {@code max-parallelism} cap always wins.
+   *
+   * @return the number of instances of {@code executor-parallelism} threads to create, {@code >= 0}
+   */
+  public int computeScaleUp(
+      int effectiveThreads,
+      int busyThreads,
+      int serviceablePlanned,
+      int pendingTables,
+      DynamicAllocationConfig config,
+      long nowMs) {
+    int k = config.getExecutorParallelism();
+    int allowedInstances = Math.max(0, (config.getMaxParallelism() - effectiveThreads) / k);
+
+    int minParallelism = config.getMinParallelism();
+    if (effectiveThreads < minParallelism) {
+      int neededInstances = ceilDiv(minParallelism - effectiveThreads, k);
+      return Math.min(neededInstances, allowedInstances);
+    }
+
+    int actionableNeed = Math.max(busyThreads + serviceablePlanned - effectiveThreads, 0);
+    boolean futureDemand = pendingTables > 0 && busyThreads >= effectiveThreads;
+    if (actionableNeed <= 0 && !futureDemand) {
+      backlogSinceMs = -1;
+      nextAllowedAddMs = -1;
+      rampInstances = 1;
+      return 0;
+    }
+
+    if (backlogSinceMs < 0) {
+      backlogSinceMs = nowMs;
+      nextAllowedAddMs = -1;
+    }
+    long gate =
+        nextAllowedAddMs >= 0
+            ? nextAllowedAddMs
+            : backlogSinceMs + config.getSchedulerBacklogTimeout().toMillis();
+    if (nowMs < gate) {
+      return 0;
+    }
+
+    int add;
+    if (actionableNeed > 0) {
+      int wantInstances = ceilDiv(actionableNeed, k);
+      add = Math.min(Math.min(wantInstances, rampInstances), allowedInstances);
+      if (add <= 0) {
+        return 0;
+      }
+      // Spark semantics: keep doubling only while the ramp is the binding constraint; once the
+      // actual need clamps the add, a grown ramp is no longer justified by demand.
+      rampInstances = wantInstances > rampInstances ? rampInstances * 2 : 1;
+    } else {
+      add = Math.min(1, allowedInstances);
+      if (add <= 0) {
+        return 0;
+      }
+      rampInstances = 1;
+    }
+    nextAllowedAddMs = nowMs + config.getSustainedBacklogTimeout().toMillis();
+    return add;
+  }
+
+  private static int ceilDiv(int value, int divisor) {
+    return (value + divisor - 1) / divisor;
+  }
 
   /** Per-table demand snapshot consumed by {@link #serviceablePlannedCount(Collection)}. */
   public static class TableDemand {
