@@ -1002,6 +1002,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     private final Map<String, PendingRegistrations> pendingRegistrations =
         new ConcurrentHashMap<>();
     private final Set<String> watchedGroups = ConcurrentHashMap.newKeySet();
+    private final Set<String> planningBoundGroups = ConcurrentHashMap.newKeySet();
 
     public OptimizerScaleKeeper(String threadName) {
       super(threadName);
@@ -1032,6 +1033,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       watchedGroups.remove(groupName);
       scaleStates.remove(groupName);
       pendingRegistrations.remove(groupName);
+      planningBoundGroups.remove(groupName);
     }
 
     @Override
@@ -1061,6 +1063,35 @@ public class DefaultOptimizingService extends StatedPersistentBase
       }
     }
 
+    /**
+     * Warn once on entering the planning-bound state (idle threads, PENDING tables, nothing
+     * PLANNED): the bottleneck is {@code optimizer.max-planning-parallelism}, so scaling out would
+     * only add idle threads. Edge-triggered to avoid a warning per evaluation round.
+     */
+    private void warnOnPlanningBoundTransition(
+        String groupName, int effectiveThreads, DynamicAllocationState.GroupLoad load) {
+      boolean planningBound =
+          DynamicAllocationState.isPlanningBound(
+              effectiveThreads,
+              load.getBusyThreads(),
+              load.getServiceablePlanned(),
+              load.getPendingTables());
+      if (planningBound) {
+        if (planningBoundGroups.add(groupName)) {
+          LOG.warn(
+              "Resource group {} is planning-bound: {} idle thread(s) while {} table(s) are "
+                  + "PENDING and no tasks are PLANNED. Scaling out will not help; consider "
+                  + "raising {}.",
+              groupName,
+              effectiveThreads - load.getBusyThreads(),
+              load.getPendingTables(),
+              AmoroManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM.key());
+        }
+      } else {
+        planningBoundGroups.remove(groupName);
+      }
+    }
+
     private void scaleIfNeeded(
         ResourceGroup resourceGroup, OptimizingQueue queue, DynamicAllocationConfig config) {
       String groupName = resourceGroup.getName();
@@ -1072,6 +1103,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
           scaleStates.computeIfAbsent(groupName, name -> new DynamicAllocationState());
       int effectiveThreads = getTotalQuota(groupName) + pending.pendingThreads(now);
       DynamicAllocationState.GroupLoad load = queue.collectDynamicAllocationLoad();
+      warnOnPlanningBoundTransition(groupName, effectiveThreads, load);
       int addInstances =
           state.computeScaleUp(
               effectiveThreads,

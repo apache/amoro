@@ -182,4 +182,19 @@ public final class DynamicAllocationState {
   public static boolean occupiesThread(TaskRuntime.Status status) {
     return status == TaskRuntime.Status.SCHEDULED || status == TaskRuntime.Status.ACKED;
   }
+
+  /**
+   * Whether the group is bottlenecked on planning rather than on thread capacity: threads sit idle
+   * while tables wait as PENDING and no PLANNED tasks materialize (planning is serialized by {@code
+   * optimizer.max-planning-parallelism}). Scaling out in this state would only add more idle
+   * threads, so the condition is surfaced as a warning instead of a scale-out. A cold group (zero
+   * threads) is the future-demand case, not a planning bottleneck.
+   */
+  public static boolean isPlanningBound(
+      int effectiveThreads, int busyThreads, int serviceablePlanned, int pendingTables) {
+    return effectiveThreads > 0
+        && busyThreads < effectiveThreads
+        && serviceablePlanned == 0
+        && pendingTables > 0;
+  }
 }

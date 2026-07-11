@@ -107,6 +107,39 @@ public class TestDynamicAllocationState {
         0, DynamicAllocationState.serviceablePlannedCount(Collections.emptyList()));
   }
 
+  // --- isPlanningBound ---
+  // Idle threads while tables wait as PENDING and no PLANNED tasks materialize means the
+  // bottleneck is planning (maxPlanningParallelism), not thread capacity: scaling out would only
+  // add more idle threads. The condition is surfaced as a warning, never as a scale-out.
+
+  @Test
+  void planningBoundWhenThreadsIdleTablesPendingAndNothingPlanned() {
+    Assertions.assertTrue(DynamicAllocationState.isPlanningBound(4, 2, 0, 10));
+  }
+
+  @Test
+  void notPlanningBoundWhenPlannedTasksAwaitPickup() {
+    // Idle threads have work to poll; planning is keeping up.
+    Assertions.assertFalse(DynamicAllocationState.isPlanningBound(4, 2, 3, 10));
+  }
+
+  @Test
+  void notPlanningBoundWhenAllThreadsBusy() {
+    // Saturated threads are Layer-2 territory, not a planning bottleneck signal.
+    Assertions.assertFalse(DynamicAllocationState.isPlanningBound(4, 4, 0, 10));
+  }
+
+  @Test
+  void notPlanningBoundWithoutPendingTables() {
+    Assertions.assertFalse(DynamicAllocationState.isPlanningBound(4, 2, 0, 0));
+  }
+
+  @Test
+  void notPlanningBoundOnColdGroup() {
+    // Zero optimizers is the cold-start case handled by future demand, not a planning issue.
+    Assertions.assertFalse(DynamicAllocationState.isPlanningBound(0, 0, 0, 10));
+  }
+
   // --- occupiesThread ---
   // A task occupies an optimizer thread from the moment it is assigned (SCHEDULED, set by
   // pollTask) until it terminates; counting only ACKED would overestimate headroom during the
