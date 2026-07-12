@@ -299,6 +299,24 @@ public class DynamicAllocationConfig {
               OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM,
               maxParallelism));
     }
+    // The floor is satisfied in executor-parallelism-thread instance units; if covering it would
+    // already exceed max-parallelism, the group would silently sit below its floor forever.
+    int floorThreads =
+        (minParallelism + executorParallelism - 1) / executorParallelism * executorParallelism;
+    if (floorThreads > maxParallelism) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Resource group:%s '%s'(%d) is not reachable in '%s'(%d) units: covering the floor "
+                  + "requires %d threads, exceeding '%s'(%d).",
+              groupName,
+              OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM,
+              minParallelism,
+              OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM,
+              executorParallelism,
+              floorThreads,
+              OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM,
+              maxParallelism));
+    }
     Duration idleMin =
         ConfigHelpers.TimeUtils.parseDuration(
             OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT_MIN);

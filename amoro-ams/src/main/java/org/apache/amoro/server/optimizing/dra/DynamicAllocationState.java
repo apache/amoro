@@ -65,6 +65,12 @@ public final class DynamicAllocationState {
 
     int minParallelism = config.getMinParallelism();
     if (effectiveThreads < minParallelism) {
+      // A floor deficit (optimizers died or the group is new) invalidates any demand-phase
+      // state: after recovery, demand must re-prove backlog persistence instead of firing
+      // through a stale gate with a stale ramp.
+      backlogSinceMs = -1;
+      nextAllowedAddMs = -1;
+      rampInstances = 1;
       int neededInstances = ceilDiv(minParallelism - effectiveThreads, k);
       return Math.min(neededInstances, allowedInstances);
     }

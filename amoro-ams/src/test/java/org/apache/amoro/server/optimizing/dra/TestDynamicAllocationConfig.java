@@ -103,6 +103,28 @@ public class TestDynamicAllocationConfig {
   }
 
   @Test
+  void executorParallelismMakingFloorUnreachableIsRejected() {
+    // min=5, max=6, K=4: covering the floor needs ceil(5/4)=2 instances = 8 threads > max,
+    // so the floor could never be satisfied in K units and the group would silently sit
+    // below its floor forever.
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM, "5");
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM, "6");
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM, "4");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> parseAndValidate(group(props)));
+  }
+
+  @Test
+  void reachableFloorInExecutorParallelismUnitsIsAccepted() {
+    // min=5, max=8, K=4: ceil(5/4)=2 instances = 8 threads fits under max.
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM, "5");
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM, "8");
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM, "4");
+    assertDoesNotThrow(() -> parseAndValidate(group(props)));
+  }
+
+  @Test
   void malformedExecutorParallelismIsRejectedAtParse() {
     // Same parse() contract as min/max-parallelism: a malformed numeric is rejected at parse
     // regardless of enabled.

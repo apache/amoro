@@ -83,6 +83,16 @@ public class TestDynamicAllocationState {
   }
 
   @Test
+  void absoluteQuotaFractionalLimitTruncates() {
+    // The limit is (int) targetQuota, matching the poll gate's getQuotaLimit cast: 2.5 -> 2
+    // slots, so 2 occupied threads leave zero free.
+    Assertions.assertEquals(
+        0,
+        DynamicAllocationState.serviceablePlannedCount(
+            Collections.singletonList(demand(5, 2.5, 2))));
+  }
+
+  @Test
   void absoluteQuotaFreeSlotsCappedByPlanned() {
     // Free slots exceed the planned backlog; only actual tasks count.
     Assertions.assertEquals(

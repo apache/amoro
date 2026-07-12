@@ -62,6 +62,8 @@ public class TestComputeScaleUp {
   void floorNeverExceedsMaxParallelism() {
     DynamicAllocationState state = new DynamicAllocationState();
     // min=5, max=6, K=4: ceil(5/4)=2 instances would be 8 threads > max; cap allows only 1.
+    // validate() rejects this combination up front (unreachable floor); the cap clamp here is
+    // defense in depth for a config that bypassed validation (e.g. persisted before upgrade).
     Assertions.assertEquals(1, state.computeScaleUp(0, 0, 0, 0, config(5, 6, 4), T0));
   }
 
@@ -149,6 +151,22 @@ public class TestComputeScaleUp {
     // At the cap: nothing more can be created no matter the backlog.
     Assertions.assertEquals(
         0, state.computeScaleUp(10, 10, 100, 0, config, T0 + BACKLOG_MS + SUSTAINED_MS));
+  }
+
+  @Test
+  void floorRoundsResetDemandTiming() {
+    DynamicAllocationState state = new DynamicAllocationState();
+    DynamicAllocationConfig config = config(2, 100, 1);
+    // A demand phase establishes a passed cadence gate.
+    Assertions.assertEquals(0, state.computeScaleUp(2, 2, 10, 0, config, T0));
+    Assertions.assertEquals(1, state.computeScaleUp(2, 2, 10, 0, config, T0 + BACKLOG_MS));
+    // Optimizers die: effective drops below the floor; floor rounds bypass demand timing.
+    Assertions.assertEquals(2, state.computeScaleUp(0, 0, 0, 0, config, T0 + BACKLOG_MS + 10_000));
+    // After recovery, fresh demand must re-prove backlog persistence instead of firing
+    // immediately through the stale gate left over from the earlier demand phase.
+    long recovered = T0 + BACKLOG_MS + 120_000;
+    Assertions.assertEquals(0, state.computeScaleUp(2, 2, 10, 0, config, recovered));
+    Assertions.assertEquals(1, state.computeScaleUp(2, 2, 10, 0, config, recovered + BACKLOG_MS));
   }
 
   @Test
