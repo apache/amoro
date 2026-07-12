@@ -202,6 +202,11 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
                 1,
                 optimizer.getThreadCount(),
                 "each instance should have executor-parallelism threads"));
+    Assertions.assertEquals(
+        0,
+        optimizingService().pendingScaleThreads(group.getName()),
+        "registration must clear the boot-window accounting, or registered capacity would be "
+            + "double-counted and suppress demand scaling");
   }
 
   /**
