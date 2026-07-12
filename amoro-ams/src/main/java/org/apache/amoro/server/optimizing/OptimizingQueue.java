@@ -439,7 +439,7 @@ public class OptimizingQueue extends PersistentBase {
     }
     Map<Long, Double> targetQuotaByTable = Maps.newHashMap();
     int pendingTables = 0;
-    for (DefaultTableRuntime tableRuntime : scheduler.getTableRuntimeMap().values()) {
+    for (DefaultTableRuntime tableRuntime : scheduler.snapshotTableRuntimes()) {
       targetQuotaByTable.put(
           tableRuntime.getTableIdentifier().getId(),
           tableRuntime.getOptimizingConfig().getTargetQuota());
