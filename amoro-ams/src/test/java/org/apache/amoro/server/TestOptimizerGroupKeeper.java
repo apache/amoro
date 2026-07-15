@@ -313,6 +313,67 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
             + ":min-parallelism should be reset to optimizer's current total cores (1) when no more resources available");
   }
 
+  /**
+   * Test scenario 5: min-parallelism auto-reset is skipped when dynamic allocation is enabled.
+   *
+   * <p>When a group opts into dynamic allocation, DRA owns scale decisions for the group; the
+   * keeper must not erode its min-parallelism floor even after exhausting creation attempts.
+   */
+  @Test
+  public void testAutoResetSkippedWhenDynamicAllocationEnabled() throws InterruptedException {
+    resourceAvailable.set(false);
+    scaleOutCallCount.set(0);
+    ResourceGroup resourceGroup = buildTestResourceGroup(TEST_GROUP_NAME + "-5", 2);
+    resourceGroup.getProperties().put(OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED, "true");
+    resourceGroup.getProperties().put(OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM, "8");
+
+    optimizerManager().createResourceGroup(resourceGroup);
+    optimizingService().createResourceGroup(resourceGroup);
+
+    Thread.sleep(200);
+
+    ResourceGroup updatedGroup = optimizerManager().getResourceGroup(resourceGroup.getName());
+    Assertions.assertEquals(
+        "2",
+        updatedGroup.getProperties().get(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM),
+        resourceGroup.getName()
+            + ":min-parallelism must not be auto-reset when dynamic allocation is enabled");
+  }
+
+  /**
+   * Test scenario 6: auto-reset writes the namespaced min-parallelism key when the group uses it.
+   *
+   * <p>A group configured with dynamic-allocation.min-parallelism (DRA not enabled) must have the
+   * auto-reset applied to that key; writing the deprecated flat key would be shadowed by the
+   * namespaced one, turning the reset into an endless no-op loop.
+   */
+  @Test
+  public void testAutoResetWritesNamespacedKeyWhenUsed() throws InterruptedException {
+    resourceAvailable.set(false);
+    scaleOutCallCount.set(0);
+    String groupName = TEST_GROUP_NAME + "-6";
+    this.currentGroupName = groupName;
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM, "2");
+    properties.put("memory", "1024");
+    ResourceGroup resourceGroup =
+        new ResourceGroup.Builder(groupName, MOCK_CONTAINER_NAME).addProperties(properties).build();
+
+    optimizerManager().createResourceGroup(resourceGroup);
+    optimizingService().createResourceGroup(resourceGroup);
+
+    Thread.sleep(200);
+
+    ResourceGroup updatedGroup = optimizerManager().getResourceGroup(resourceGroup.getName());
+    Assertions.assertEquals(
+        "0",
+        updatedGroup.getProperties().get(OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM),
+        groupName + ":auto-reset must write the namespaced min-parallelism key the group uses");
+    Assertions.assertNull(
+        updatedGroup.getProperties().get(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM),
+        groupName + ":auto-reset must not introduce the deprecated flat min-parallelism key");
+  }
+
   private static OptimizerRegisterInfo buildRegisterInfo(String groupName, int threadCount) {
     OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
     Map<String, String> registerProperties = Maps.newHashMap();
