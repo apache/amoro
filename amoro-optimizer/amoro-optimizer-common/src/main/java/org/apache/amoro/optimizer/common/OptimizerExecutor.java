@@ -156,6 +156,9 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
           }
         } finally {
           if (result != null) {
+            // every completion passes through here, including error results built by executor
+            // subclasses (e.g. SparkOptimizerExecutor), so the attempt id is echoed exactly once
+            echoTaskAttemptId(ackTask, result);
             completeTask(amsUrl, result);
           }
         }
@@ -326,6 +329,25 @@ public class OptimizerExecutor extends AbstractOptimizerOperator {
       errorResult.setErrorMessage(ExceptionUtil.getErrorMessage(t, ERROR_MESSAGE_MAX_LENGTH));
       return errorResult;
     }
+  }
+
+  /**
+   * Echoes the attempt id received with the task back in the result summary, so AMS can tell a
+   * stale completion of a previous attempt apart from the current one. Tasks from older AMS
+   * versions carry no attempt id and the result is left untouched.
+   */
+  private static void echoTaskAttemptId(OptimizingTask task, OptimizingTaskResult result) {
+    String attemptId =
+        task.getProperties() == null
+            ? null
+            : task.getProperties().get(TaskProperties.TASK_ATTEMPT_ID);
+    if (attemptId == null) {
+      return;
+    }
+    Map<String, String> summary =
+        result.getSummary() == null ? Maps.newHashMap() : Maps.newHashMap(result.getSummary());
+    summary.put(TaskProperties.TASK_ATTEMPT_ID, attemptId);
+    result.setSummary(summary);
   }
 
   private static Map<String, String> fillTaskProperties(

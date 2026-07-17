@@ -159,6 +159,42 @@ public class TestOptimizerExecutor extends OptimizerTestBase {
   }
 
   @Test
+  public void testEchoTaskAttemptIdOnSuccess() throws InterruptedException, TException {
+    TEST_AMS.getOptimizerHandler().authenticate(new OptimizerRegisterInfo());
+    String token =
+        TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().keySet().iterator().next();
+    OptimizingTask task = TestOptimizingInput.successInput(1).toTask(0, 0);
+    task.getProperties().put(TaskProperties.TASK_ATTEMPT_ID, "7");
+    TEST_AMS.getOptimizerHandler().offerTask(task);
+    optimizerExecutor.setToken(token);
+    TimeUnit.MILLISECONDS.sleep(OptimizerTestHelpers.CALL_AMS_INTERVAL * 2);
+    OptimizingTaskResult taskResult =
+        TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).get(0);
+    Assertions.assertNull(taskResult.getErrorMessage());
+    // TestOptimizingOutput.summary() is null, so the echo must create the summary map itself
+    Assertions.assertNotNull(taskResult.getSummary());
+    Assertions.assertEquals("7", taskResult.getSummary().get(TaskProperties.TASK_ATTEMPT_ID));
+  }
+
+  @Test
+  public void testEchoTaskAttemptIdOnFailure() throws InterruptedException, TException {
+    TEST_AMS.getOptimizerHandler().authenticate(new OptimizerRegisterInfo());
+    String token =
+        TEST_AMS.getOptimizerHandler().getRegisteredOptimizers().keySet().iterator().next();
+    OptimizingTask task = TestOptimizingInput.failedInput(1).toTask(0, 0);
+    task.getProperties().put(TaskProperties.TASK_ATTEMPT_ID, "7");
+    TEST_AMS.getOptimizerHandler().offerTask(task);
+    optimizerExecutor.setToken(token);
+    TimeUnit.MILLISECONDS.sleep(OptimizerTestHelpers.CALL_AMS_INTERVAL * 2);
+    OptimizingTaskResult taskResult =
+        TEST_AMS.getOptimizerHandler().getCompletedTasks().get(token).get(0);
+    // an error result reports the attempt id too, so a stale FAILED completion cannot poison the
+    // retry counting of the current attempt
+    Assertions.assertTrue(taskResult.getErrorMessage().contains(FAILED_TASK_MESSAGE));
+    Assertions.assertEquals("7", taskResult.getSummary().get(TaskProperties.TASK_ATTEMPT_ID));
+  }
+
+  @Test
   public void testExecuteTaskFailed() throws InterruptedException, TException {
     TEST_AMS.getOptimizerHandler().authenticate(new OptimizerRegisterInfo());
     String token =
