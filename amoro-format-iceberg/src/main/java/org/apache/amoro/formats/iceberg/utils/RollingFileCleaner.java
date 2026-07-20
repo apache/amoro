@@ -27,8 +27,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /** Rolling file cleaner for Iceberg table maintenance operations. */
 public class RollingFileCleaner {
@@ -110,25 +113,32 @@ public class RollingFileCleaner {
           }
         }
       }
-      // Try to delete empty parent directories. Skipped automatically by
-      // TableFileUtil.deleteEmptyDirectory when the underlying FileIO is an object store.
-      if (fileIO.supportFileSystemOperations()) {
-        for (String parentDir : parentDirectories) {
-          try {
-            TableFileUtil.deleteEmptyDirectory(fileIO, parentDir, excludeFiles);
-          } catch (Exception e) {
-            LOG.warn("Failed to delete empty parent directory: {}", parentDir, e);
-          }
-        }
-      }
 
       LOG.debug("Cleaned expired a file group, total files: {}", collectedFiles.size());
     } finally {
-      // Always drop both buffers so a failure in directory cleanup does not cause the
-      // already-deleted files to be re-submitted on the next batch.
-      parentDirectories.clear();
       collectedFiles.clear();
     }
+  }
+
+  public void doCleanParentDirectory() {
+    // Try to delete empty parent directories. Skipped automatically by
+    // TableFileUtil.deleteEmptyDirectory when the underlying FileIO is an object store.
+    if (fileIO.supportFileSystemOperations()) {
+      List<String> parentDirectoriesSorted =
+          parentDirectories.stream()
+              .sorted(Comparator.comparingInt(String::length).reversed())
+              .collect(Collectors.toList());
+      for (String parentDir : parentDirectoriesSorted) {
+        try {
+          TableFileUtil.deleteEmptyDirectory(fileIO, parentDir, excludeFiles, parentDirectories);
+        } catch (Exception e) {
+          LOG.warn("Failed to delete empty parent directory: {}", parentDir, e);
+        }
+      }
+    }
+    // Always drop both buffers so a failure in directory cleanup does not cause the
+    // already-deleted files to be re-submitted on the next batch.
+    parentDirectories.clear();
   }
 
   public int fileCount() {
@@ -142,6 +152,9 @@ public class RollingFileCleaner {
   public void clear() {
     if (!collectedFiles.isEmpty()) {
       doCleanFiles();
+    }
+    if (!parentDirectories.isEmpty()) {
+      doCleanParentDirectory();
     }
 
     collectedFiles.clear();

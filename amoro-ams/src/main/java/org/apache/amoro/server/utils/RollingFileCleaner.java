@@ -27,8 +27,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class RollingFileCleaner {
   private final Set<String> collectedFiles = Sets.newConcurrentHashSet();
@@ -108,15 +111,22 @@ public class RollingFileCleaner {
         }
       }
     }
-    // Try to delete empty parent directories
-    for (String parentDir : parentDirectories) {
-      TableFileUtil.deleteEmptyDirectory(fileIO, parentDir, excludeFiles);
-    }
-    parentDirectories.clear();
 
     LOG.debug("Cleaned expired a file group, total files: {}", collectedFiles.size());
 
     collectedFiles.clear();
+  }
+
+  public void doCleanParentDirectory() {
+    // Try to delete empty parent directories
+    List<String> parentDirectoriesSorted =
+        parentDirectories.stream()
+            .sorted(Comparator.comparingInt(String::length).reversed())
+            .collect(Collectors.toList());
+    for (String parentDir : parentDirectoriesSorted) {
+      TableFileUtil.deleteEmptyDirectory(fileIO, parentDir, excludeFiles);
+    }
+    parentDirectories.clear();
   }
 
   public int fileCount() {
@@ -130,6 +140,9 @@ public class RollingFileCleaner {
   public void clear() {
     if (!collectedFiles.isEmpty()) {
       doCleanFiles();
+    }
+    if (!parentDirectories.isEmpty()) {
+      doCleanParentDirectory();
     }
 
     collectedFiles.clear();
