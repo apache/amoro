@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -163,10 +164,28 @@ public class ProcessService extends PersistentBase {
     LOG.info("Initializing process service");
     // Pre-configured coordinators built from TableRuntimeFactory / ProcessFactory
     for (ActionCoordinator actionCoordinator : actionCoordinatorList) {
-      actionCoordinators
-          .computeIfAbsent(actionCoordinator.action().getName(), k -> new ArrayList<>())
-          .add(
-              new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this));
+      ActionCoordinatorScheduler scheduler =
+          new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this);
+      List<ActionCoordinatorScheduler> schedulers =
+          actionCoordinators.computeIfAbsent(
+              actionCoordinator.action().getName(), k -> new CopyOnWriteArrayList<>());
+      // Validate (action, format) uniqueness: warn if a scheduler with overlapping format support
+      // already exists for the same action
+      for (ActionCoordinatorScheduler existing : schedulers) {
+        for (TableFormat format : TableFormat.values()) {
+          if (existing.getCoordinator().formatSupported(format)
+              && actionCoordinator.formatSupported(format)) {
+            LOG.warn(
+                "Duplicate ActionCoordinator for action {} and format {}: existing={}, new={}. "
+                    + "The later one will shadow the former in findScheduler.",
+                actionCoordinator.action().getName(),
+                format,
+                existing.getCoordinator().name(),
+                actionCoordinator.name());
+          }
+        }
+      }
+      schedulers.add(scheduler);
     }
     executeEngineManager
         .installedPlugins()
@@ -198,7 +217,19 @@ public class ProcessService extends PersistentBase {
                 findScheduler(processMeta.getProcessType(), tableRuntime.getFormat());
             if (scheduler != null) {
               recoverProcess(tableRuntime, scheduler, processMeta);
+            } else {
+              LOG.warn(
+                  "No ActionCoordinatorScheduler found for process {} (type={}, format={}), "
+                      + "skipping recovery. The process record will remain in its current state.",
+                  processMeta.getProcessId(),
+                  processMeta.getProcessType(),
+                  tableRuntime.getFormat());
             }
+          } else {
+            LOG.warn(
+                "Table runtime not found for process {} (tableId={}), skipping recovery.",
+                processMeta.getProcessId(),
+                processMeta.getTableId());
           }
         });
   }
@@ -310,6 +341,14 @@ public class ProcessService extends PersistentBase {
                 process.getSummary());
             executeOrTraceProcess(store, process);
           } else {
+            if (store.getStatus() == ProcessStatus.FAILED && process.getTableRuntime() != null) {
+              LOG.info(
+                  "FAILED process {} will not be retried: scheduler={}, retryNumber={}, maxRetry={}",
+                  store.getProcessId(),
+                  scheduler != null ? "found" : "not found",
+                  store.getRetryNumber(),
+                  ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER);
+            }
             untrackTableProcessInstance(
                 process.getTableRuntime().getTableIdentifier(), store.getProcessId());
           }
@@ -512,9 +551,26 @@ public class ProcessService extends PersistentBase {
 
   @VisibleForTesting
   public void installActionCoordinator(ActionCoordinator actionCoordinator) {
-    this.actionCoordinators
-        .computeIfAbsent(actionCoordinator.action().getName(), k -> new ArrayList<>())
-        .add(new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this));
+    ActionCoordinatorScheduler scheduler =
+        new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this);
+    List<ActionCoordinatorScheduler> schedulers =
+        this.actionCoordinators.computeIfAbsent(
+            actionCoordinator.action().getName(), k -> new CopyOnWriteArrayList<>());
+    // Validate (action, format) uniqueness
+    for (ActionCoordinatorScheduler existing : schedulers) {
+      for (TableFormat format : TableFormat.values()) {
+        if (existing.getCoordinator().formatSupported(format)
+            && actionCoordinator.formatSupported(format)) {
+          LOG.warn(
+              "Duplicate ActionCoordinator for action {} and format {}: existing={}, new={}.",
+              actionCoordinator.action().getName(),
+              format,
+              existing.getCoordinator().name(),
+              actionCoordinator.name());
+        }
+      }
+    }
+    schedulers.add(scheduler);
   }
 
   @VisibleForTesting
