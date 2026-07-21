@@ -41,6 +41,7 @@ import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTe
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +60,7 @@ public class ProcessService extends PersistentBase {
   private static final Logger LOG = LoggerFactory.getLogger(ProcessService.class);
   private final TableService tableService;
 
-  private final Map<String, ActionCoordinatorScheduler> actionCoordinators =
+  private final Map<String, List<ActionCoordinatorScheduler>> actionCoordinators =
       new ConcurrentHashMap<>();
   private final Map<String, ExecuteEngine> executeEngines = new ConcurrentHashMap<>();
 
@@ -124,9 +125,10 @@ public class ProcessService extends PersistentBase {
     LOG.info("Initializing process service");
     // Pre-configured coordinators built from TableRuntimeFactory / ProcessFactory
     for (ActionCoordinator actionCoordinator : actionCoordinatorList) {
-      actionCoordinators.put(
-          actionCoordinator.action().getName(),
-          new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this));
+      actionCoordinators
+          .computeIfAbsent(actionCoordinator.action().getName(), k -> new ArrayList<>())
+          .add(
+              new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this));
     }
     executeEngineManager
         .installedPlugins()
@@ -135,7 +137,7 @@ public class ProcessService extends PersistentBase {
               executeEngines.put(executeEngine.name(), executeEngine);
             });
     recoverProcesses(tableRuntimes);
-    actionCoordinators.values().forEach(s -> s.initialize(tableRuntimes));
+    actionCoordinators.values().forEach(list -> list.forEach(s -> s.initialize(tableRuntimes)));
   }
 
   /**
@@ -153,10 +155,15 @@ public class ProcessService extends PersistentBase {
     activeProcesses.forEach(
         processMeta -> {
           TableRuntime tableRuntime = tableIdToRuntimes.get(processMeta.getTableId());
-          ActionCoordinatorScheduler scheduler =
+          List<ActionCoordinatorScheduler> schedulers =
               actionCoordinators.get(processMeta.getProcessType());
-          if (tableRuntime != null && scheduler != null) {
-            recoverProcess(tableRuntime, scheduler, processMeta);
+          if (tableRuntime != null && schedulers != null) {
+            for (ActionCoordinatorScheduler scheduler : schedulers) {
+              if (scheduler.formatSupported(tableRuntime.getFormat())) {
+                recoverProcess(tableRuntime, scheduler, processMeta);
+                break;
+              }
+            }
           }
         });
   }
@@ -250,8 +257,17 @@ public class ProcessService extends PersistentBase {
     TableProcessExecutor executor = new TableProcessExecutor(process, store, executeEngine);
     executor.onProcessFinished(
         () -> {
-          ActionCoordinatorScheduler scheduler =
+          List<ActionCoordinatorScheduler> schedulers =
               actionCoordinators.get(store.getAction().getName());
+          ActionCoordinatorScheduler scheduler = null;
+          if (schedulers != null && process.getTableRuntime() != null) {
+            for (ActionCoordinatorScheduler s : schedulers) {
+              if (s.formatSupported(process.getTableRuntime().getFormat())) {
+                scheduler = s;
+                break;
+              }
+            }
+          }
           if (scheduler != null
               && store.getStatus() == ProcessStatus.FAILED
               && store.getRetryNumber() < ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER
@@ -389,7 +405,7 @@ public class ProcessService extends PersistentBase {
    * @return coordinators map
    */
   @VisibleForTesting
-  public Map<String, ActionCoordinatorScheduler> getActionCoordinators() {
+  public Map<String, List<ActionCoordinatorScheduler>> getActionCoordinators() {
     return actionCoordinators;
   }
 
@@ -467,9 +483,9 @@ public class ProcessService extends PersistentBase {
 
   @VisibleForTesting
   public void installActionCoordinator(ActionCoordinator actionCoordinator) {
-    this.actionCoordinators.put(
-        actionCoordinator.action().getName(),
-        new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this));
+    this.actionCoordinators
+        .computeIfAbsent(actionCoordinator.action().getName(), k -> new ArrayList<>())
+        .add(new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this));
   }
 
   @VisibleForTesting
@@ -509,7 +525,9 @@ public class ProcessService extends PersistentBase {
      */
     @Override
     protected void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-      actionCoordinators.values().forEach(s -> s.handleStatusChanged(tableRuntime, originalStatus));
+      actionCoordinators
+          .values()
+          .forEach(list -> list.forEach(s -> s.handleStatusChanged(tableRuntime, originalStatus)));
     }
 
     /**
@@ -521,7 +539,9 @@ public class ProcessService extends PersistentBase {
     @Override
     protected void handleConfigChanged(
         TableRuntime tableRuntime, TableConfiguration originalConfig) {
-      actionCoordinators.values().forEach(s -> s.handleConfigChanged(tableRuntime, originalConfig));
+      actionCoordinators
+          .values()
+          .forEach(list -> list.forEach(s -> s.handleConfigChanged(tableRuntime, originalConfig)));
     }
 
     /**
@@ -532,7 +552,9 @@ public class ProcessService extends PersistentBase {
      */
     @Override
     protected void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
-      actionCoordinators.values().forEach(s -> s.handleTableAdded(table, tableRuntime));
+      actionCoordinators
+          .values()
+          .forEach(list -> list.forEach(s -> s.handleTableAdded(table, tableRuntime)));
     }
 
     /**
@@ -542,7 +564,9 @@ public class ProcessService extends PersistentBase {
      */
     @Override
     protected void handleTableRemoved(TableRuntime tableRuntime) {
-      actionCoordinators.values().forEach(s -> s.handleTableRemoved(tableRuntime));
+      actionCoordinators
+          .values()
+          .forEach(list -> list.forEach(s -> s.handleTableRemoved(tableRuntime)));
       List<TableProcessHolder> processes =
           getTableProcessInstances(tableRuntime.getTableIdentifier()).values().stream()
               .collect(Collectors.toList());
