@@ -81,14 +81,25 @@ public class InternalIcebergCreator implements InternalTableCreator {
   }
 
   @Override
+  public org.apache.iceberg.TableMetadata stage() {
+    checkClosed();
+    return icebergMetadata;
+  }
+
+  @Override
   public TableMetadata create() {
+    return create(icebergMetadata);
+  }
+
+  @Override
+  public TableMetadata create(org.apache.iceberg.TableMetadata metadata) {
     checkClosed();
 
     String icebergMetadataFileLocation =
-        InternalTableUtil.genNewMetadataFileLocation(null, icebergMetadata);
+        InternalTableUtil.genNewMetadataFileLocation(null, metadata);
     TableMeta meta = new TableMeta();
-    meta.putToLocations(MetaTableProperties.LOCATION_KEY_TABLE, icebergMetadata.location());
-    meta.putToLocations(MetaTableProperties.LOCATION_KEY_BASE, icebergMetadata.location());
+    meta.putToLocations(MetaTableProperties.LOCATION_KEY_TABLE, metadata.location());
+    meta.putToLocations(MetaTableProperties.LOCATION_KEY_BASE, metadata.location());
     meta.setFormat(format().name());
     meta.putToProperties(
         InternalTableConstants.PROPERTIES_METADATA_LOCATION, icebergMetadataFileLocation);
@@ -96,10 +107,9 @@ public class InternalIcebergCreator implements InternalTableCreator {
     ServerTableIdentifier serverTableIdentifier =
         ServerTableIdentifier.of(catalogMeta.getCatalogName(), database, tableName, format());
     meta.setTableIdentifier(serverTableIdentifier.getIdentifier().buildTableIdentifier());
-    // write metadata file.
     OutputFile outputFile = io.newOutputFile(icebergMetadataFileLocation);
     this.metadataFileLocation = icebergMetadataFileLocation;
-    TableMetadataParser.overwrite(icebergMetadata, outputFile);
+    TableMetadataParser.overwrite(metadata, outputFile);
     return new TableMetadata(serverTableIdentifier, meta, catalogMeta);
   }
 

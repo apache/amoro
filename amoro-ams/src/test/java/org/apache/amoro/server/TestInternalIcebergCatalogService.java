@@ -51,6 +51,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +60,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -237,7 +240,9 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
 
     @AfterEach
     public void clean() {
-      nsCatalog.dropTable(identifier);
+      if (nsCatalog.tableExists(identifier)) {
+        nsCatalog.dropTable(identifier);
+      }
       if (serverCatalog.tableExists(database, table)) {
         serverCatalog.dropTable(database, table);
       }
@@ -282,6 +287,29 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
       Table created = nsCatalog.createTable(identifier, schema);
 
       Assertions.assertEquals(namespaceLocation + "/" + table, created.location());
+    }
+
+    @Test
+    public void testStagedCreate(@TempDir Path tempDir) {
+      Path tablePath = tempDir.resolve("staged-table");
+      String tableLocation = tablePath.toUri().toString();
+      Transaction transaction =
+          nsCatalog
+              .buildTable(identifier, schema)
+              .withLocation(tableLocation)
+              .withProperty("owner", "analytics")
+              .createTransaction();
+
+      Assertions.assertFalse(serverCatalog.tableExists(database, table));
+      Assertions.assertFalse(Files.exists(tablePath));
+
+      transaction.commitTransaction();
+
+      Assertions.assertTrue(serverCatalog.tableExists(database, table));
+      Assertions.assertTrue(Files.exists(tablePath.resolve("metadata")));
+      Table loaded = nsCatalog.loadTable(identifier);
+      Assertions.assertEquals(tableLocation, loaded.location());
+      Assertions.assertEquals("analytics", loaded.properties().get("owner"));
     }
 
     @Test

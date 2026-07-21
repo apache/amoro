@@ -55,8 +55,10 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
+import org.apache.iceberg.MetadataUpdate;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableOperations;
+import org.apache.iceberg.UpdateRequirement;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
@@ -317,6 +319,7 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
         ctx,
         (catalog, database) -> {
           CreateTableRequest request = bodyAsClass(ctx, CreateTableRequest.class);
+          request.validate();
           String tableName = request.name();
           TableFormat format =
               TablePropertyUtil.isBaseStore(request.properties(), TableFormat.MIXED_ICEBERG)
@@ -325,6 +328,11 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
           try (InternalTableCreator creator =
               catalog.newTableCreator(database, tableName, format, request)) {
+            if (request.stageCreate()) {
+              checkAlreadyExists(!catalog.tableExists(database, tableName), "Table", tableName);
+              return LoadTableResponse.builder().withTableMetadata(creator.stage()).build();
+            }
+
             try {
               org.apache.amoro.server.table.TableMetadata metadata = creator.create();
               tableManager.createTable(catalog.name(), metadata);
@@ -358,25 +366,101 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   /** POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table} */
   public void commitTable(Context ctx) {
-    handleTable(
-        ctx,
-        handler -> {
-          UpdateTableRequest request = bodyAsClass(ctx, UpdateTableRequest.class);
-          TableOperations ops = handler.newTableOperator();
-          TableMetadata base = ops.current();
-          if (base == null) {
-            throw new CommitFailedException("table metadata lost.");
-          }
+    UpdateTableRequest request = bodyAsClass(ctx, UpdateTableRequest.class);
+    request.validate();
+    if (isCreate(request)) {
+      handleNamespace(
+          ctx,
+          (catalog, database) -> {
+            String tableName = ctx.pathParam("table");
+            Preconditions.checkNotNull(tableName, "table name is null");
+            return commitCreateTable(catalog, database, tableName, request);
+          });
+    } else {
+      handleTable(
+          ctx,
+          handler -> {
+            TableOperations ops = handler.newTableOperator();
+            TableMetadata base = ops.current();
+            if (base == null) {
+              throw new CommitFailedException("table metadata lost.");
+            }
 
-          TableMetadata.Builder builder = TableMetadata.buildFrom(base);
-          request.requirements().forEach(r -> r.validate(base));
-          request.updates().forEach(u -> u.applyTo(builder));
-          TableMetadata newMetadata = builder.build();
+            TableMetadata.Builder builder = TableMetadata.buildFrom(base);
+            request.requirements().forEach(r -> r.validate(base));
+            request.updates().forEach(u -> u.applyTo(builder));
+            TableMetadata newMetadata = builder.build();
 
-          ops.commit(base, newMetadata);
-          TableMetadata current = ops.current();
-          return LoadTableResponse.builder().withTableMetadata(current).build();
-        });
+            ops.commit(base, newMetadata);
+            TableMetadata current = ops.current();
+            return LoadTableResponse.builder().withTableMetadata(current).build();
+          });
+    }
+  }
+
+  private LoadTableResponse commitCreateTable(
+      InternalCatalog catalog, String database, String tableName, UpdateTableRequest request) {
+    request.requirements().forEach(requirement -> requirement.validate((TableMetadata) null));
+
+    Optional<Integer> formatVersion =
+        request.updates().stream()
+            .filter(MetadataUpdate.UpgradeFormatVersion.class::isInstance)
+            .map(MetadataUpdate.UpgradeFormatVersion.class::cast)
+            .map(MetadataUpdate.UpgradeFormatVersion::formatVersion)
+            .findFirst();
+    TableMetadata.Builder builder =
+        formatVersion.map(TableMetadata::buildFromEmpty).orElseGet(TableMetadata::buildFromEmpty);
+    request.updates().forEach(update -> update.applyTo(builder));
+    TableMetadata icebergMetadata = builder.build();
+
+    CreateTableRequest createRequest =
+        CreateTableRequest.builder()
+            .withName(tableName)
+            .withSchema(icebergMetadata.schema())
+            .withPartitionSpec(icebergMetadata.spec())
+            .withWriteOrder(icebergMetadata.sortOrder())
+            .withLocation(icebergMetadata.location())
+            .setProperties(icebergMetadata.properties())
+            .build();
+    TableFormat format =
+        TablePropertyUtil.isBaseStore(createRequest.properties(), TableFormat.MIXED_ICEBERG)
+            ? TableFormat.MIXED_ICEBERG
+            : TableFormat.ICEBERG;
+
+    try (InternalTableCreator creator =
+        catalog.newTableCreator(database, tableName, format, createRequest)) {
+      try {
+        org.apache.amoro.server.table.TableMetadata metadata = creator.create(icebergMetadata);
+        tableManager.createTable(catalog.name(), metadata);
+      } catch (RuntimeException e) {
+        creator.rollback();
+        throw e;
+      }
+    }
+
+    try (InternalTableHandler<TableOperations> handler =
+        catalog.newTableHandler(database, tableName)) {
+      return LoadTableResponse.builder()
+          .withTableMetadata(handler.newTableOperator().current())
+          .build();
+    }
+  }
+
+  private static boolean isCreate(UpdateTableRequest request) {
+    boolean create =
+        request.requirements().stream()
+            .anyMatch(UpdateRequirement.AssertTableDoesNotExist.class::isInstance);
+    if (create) {
+      List<UpdateRequirement> invalidRequirements =
+          request.requirements().stream()
+              .filter(
+                  requirement ->
+                      !(requirement instanceof UpdateRequirement.AssertTableDoesNotExist))
+              .collect(Collectors.toList());
+      Preconditions.checkArgument(
+          invalidRequirements.isEmpty(), "Invalid create requirements: %s", invalidRequirements);
+    }
+    return create;
   }
 
   /** DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table} */
