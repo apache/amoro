@@ -81,6 +81,7 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
     Preconditions.checkArgument(
         root != null && !root.isEmpty(), "Warehouse must be set in catalogProperties.");
     this.namespaceProperties.put("manifest_enabled", "false");
+    this.namespaceProperties.put("vend_input_storage_options", "true");
     this.namespaceProperties.put("root", root);
     if (storageAccessKey != null) {
       this.namespaceProperties.put(STORAGE_ACCESS_KEY_ID, storageAccessKey);
