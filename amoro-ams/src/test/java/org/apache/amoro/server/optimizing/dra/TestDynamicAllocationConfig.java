@@ -71,6 +71,70 @@ public class TestDynamicAllocationConfig {
   }
 
   @Test
+  void executorParallelismDefaultsToOne() {
+    DynamicAllocationConfig config = DynamicAllocationConfig.parse(group(enabledProps()));
+    assertDoesNotThrow(config::validate);
+    Assertions.assertEquals(1, config.getExecutorParallelism());
+  }
+
+  @Test
+  void executorParallelismIsParsed() {
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM, "4");
+    DynamicAllocationConfig config = DynamicAllocationConfig.parse(group(props));
+    assertDoesNotThrow(config::validate);
+    Assertions.assertEquals(4, config.getExecutorParallelism());
+  }
+
+  @Test
+  void executorParallelismBelowOneIsRejected() {
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM, "0");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> parseAndValidate(group(props)));
+  }
+
+  @Test
+  void executorParallelismAboveMaxParallelismIsRejected() {
+    // A single K-thread instance would already exceed the max-parallelism cap, so scale-up
+    // could never create anything; reject up front instead of leaving a silent no-op group.
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM, "32");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> parseAndValidate(group(props)));
+  }
+
+  @Test
+  void executorParallelismMakingFloorUnreachableIsRejected() {
+    // min=5, max=6, K=4: covering the floor needs ceil(5/4)=2 instances = 8 threads > max,
+    // so the floor could never be satisfied in K units and the group would silently sit
+    // below its floor forever.
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM, "5");
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM, "6");
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM, "4");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> parseAndValidate(group(props)));
+  }
+
+  @Test
+  void reachableFloorInExecutorParallelismUnitsIsAccepted() {
+    // min=5, max=8, K=4: ceil(5/4)=2 instances = 8 threads fits under max.
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM, "5");
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM, "8");
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM, "4");
+    assertDoesNotThrow(() -> parseAndValidate(group(props)));
+  }
+
+  @Test
+  void malformedExecutorParallelismIsRejectedAtParse() {
+    // Same parse() contract as min/max-parallelism: a malformed numeric is rejected at parse
+    // regardless of enabled.
+    Map<String, String> props = new HashMap<>();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM, "abc");
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> DynamicAllocationConfig.parse(group(props)));
+  }
+
+  @Test
   void enabledWithUnparsableMinParallelismIsRejected() {
     // resolveMinParallelism() is lenient (legacy/keeper path), but an opted-in group must not
     // silently degrade an unparsable min-parallelism to 0.

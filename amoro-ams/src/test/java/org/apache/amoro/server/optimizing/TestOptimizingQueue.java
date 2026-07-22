@@ -50,6 +50,7 @@ import org.apache.amoro.optimizing.TaskProperties;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.optimizing.dra.DynamicAllocationState;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
@@ -196,6 +197,31 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertNotNull(task);
     Assert.assertEquals(TaskRuntime.Status.SCHEDULED, task.getStatus());
     Assert.assertNull(queue.pollTask(optimizerThread, 0));
+    queue.dispose();
+  }
+
+  @Test
+  public void testCollectDynamicAllocationLoad() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+
+    // Before any poll nothing has been planned: the PENDING table is the only demand signal —
+    // exactly what dynamic allocation must observe on a cold group with zero optimizers.
+    DynamicAllocationState.GroupLoad before = queue.collectDynamicAllocationLoad();
+    Assert.assertEquals(0, before.getBusyThreads());
+    Assert.assertEquals(0, before.getServiceablePlanned());
+    Assert.assertEquals(1, before.getPendingTables());
+
+    // A poll drives planning and takes the produced task: the thread is busy from SCHEDULED
+    // (not only from ACKED), and the table is no longer PENDING.
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+    Assert.assertEquals(TaskRuntime.Status.SCHEDULED, task.getStatus());
+
+    DynamicAllocationState.GroupLoad after = queue.collectDynamicAllocationLoad();
+    Assert.assertEquals(1, after.getBusyThreads());
+    Assert.assertEquals(0, after.getServiceablePlanned());
+    Assert.assertEquals(0, after.getPendingTables());
     queue.dispose();
   }
 
