@@ -46,6 +46,8 @@ import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.dra.DynamicAllocationConfig;
+import org.apache.amoro.server.optimizing.dra.DynamicAllocationState;
+import org.apache.amoro.server.optimizing.dra.PendingRegistrations;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.ResourceMapper;
@@ -59,6 +61,7 @@ import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -116,6 +119,8 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final OptimizerKeeper optimizerKeeper = new OptimizerKeeper("optimizer-keeper-thread");
   private final OptimizerGroupKeeper optimizerGroupKeeper =
       new OptimizerGroupKeeper("optimizer-group-keeper-thread");
+  private final OptimizerScaleKeeper optimizerScaleKeeper =
+      new OptimizerScaleKeeper("optimizer-scale-keeper-thread");
   private final OptimizingConfigWatcher optimizingConfigWatcher = new OptimizingConfigWatcher();
   private final CatalogManager catalogManager;
   private final OptimizerManager optimizerManager;
@@ -193,6 +198,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
                   maxPlanningParallelism);
           optimizingQueueByGroup.put(groupName, optimizingQueue);
           optimizerGroupKeeper.keepInTouch(groupName, 1);
+          optimizerScaleKeeper.watch(group);
         });
     optimizers.forEach(optimizer -> registerOptimizer(optimizer, false));
     // Avoid keeping the tables in processing/pending status forever in below cases:
@@ -229,6 +235,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     authOptimizers.put(optimizer.getToken(), optimizer);
     optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue);
     optimizerKeeper.keepInTouch(optimizer);
+    optimizerScaleKeeper.onOptimizerRegistered(optimizer);
   }
 
   private void unregisterOptimizer(String token) {
@@ -405,17 +412,25 @@ public class DefaultOptimizingService extends StatedPersistentBase
           String groupName = resourceGroup.getName();
           optimizingQueueByGroup.put(groupName, optimizingQueue);
           optimizerGroupKeeper.keepInTouch(groupName, 1);
+          optimizerScaleKeeper.watch(resourceGroup);
         });
   }
 
   public void deleteResourceGroup(String groupName) {
     OptimizingQueue optimizingQueue = optimizingQueueByGroup.remove(groupName);
     optimizingQueue.dispose();
+    optimizerScaleKeeper.onGroupDeleted(groupName);
   }
 
   public void updateResourceGroup(ResourceGroup resourceGroup) {
     Optional.ofNullable(optimizingQueueByGroup.get(resourceGroup.getName()))
         .ifPresent(queue -> queue.updateOptimizerGroup(resourceGroup));
+    optimizerScaleKeeper.watch(resourceGroup);
+  }
+
+  @VisibleForTesting
+  int pendingScaleThreads(String groupName) {
+    return optimizerScaleKeeper.pendingThreads(groupName);
   }
 
   public void dispose() {
@@ -426,6 +441,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizingQueueByGroup.values().forEach(OptimizingQueue::dispose);
     optimizerKeeper.dispose();
     optimizerGroupKeeper.dispose();
+    optimizerScaleKeeper.dispose();
     tableHandlerChain.dispose();
     optimizingQueueByGroup.clear();
     optimizingQueueByToken.clear();
@@ -497,6 +513,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
               .collect(Collectors.toList()));
       optimizerKeeper.start();
       optimizerGroupKeeper.start();
+      optimizerScaleKeeper.start();
       optimizingConfigWatcher.start();
       LOG.info("SuspendingDetector for Optimizer has been started.");
       LOG.info("OptimizerManagementService initializing has completed");
@@ -900,6 +917,13 @@ public class DefaultOptimizingService extends StatedPersistentBase
         return;
       }
 
+      if (DynamicAllocationConfig.isEffectivelyEnabled(resourceGroup)) {
+        // Dynamic allocation owns this group's floor and demand scaling (see
+        // OptimizerScaleKeeper); keep watching in case it is disabled later.
+        keepInTouch(resourceGroup.getName(), 1);
+        return;
+      }
+
       int requiredCores = keepingTask.tryKeeping(resourceGroup);
       if (requiredCores <= 0) {
         LOG.debug(
@@ -910,17 +934,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
       if (keepingTask.getAttempts() > groupMaxKeepingAttempts) {
         int minParallelism = keepingTask.getMinParallelism(resourceGroup);
-        if (DynamicAllocationConfig.isEffectivelyEnabled(resourceGroup)) {
-          // Dynamic allocation owns scale decisions for the group; never erode its
-          // min-parallelism floor automatically.
-          LOG.warn(
-              "Resource Group:{}, creating optimizer {} times in a row, optimizers still below min-parallel:{}; dynamic allocation is enabled so min-parallel is kept",
-              resourceGroup.getName(),
-              keepingTask.getAttempts(),
-              minParallelism);
-          keepInTouch(resourceGroup.getName(), 1);
-          return;
-        }
         LOG.warn(
             "Resource Group:{}, creating optimizer {} times in a row, optimizers still below min-parallel:{}, will reset min-parallel to {}",
             resourceGroup.getName(),
@@ -955,6 +968,252 @@ public class DefaultOptimizingService extends StatedPersistentBase
           "Resource Group:{} has insufficient resources, created an optimizer with parallelism of {}",
           resourceGroup.getName(),
           requiredCores);
+    }
+  }
+
+  private class DraScaleTask implements Delayed {
+
+    private final String groupName;
+    private final long readyTimeMs;
+
+    private DraScaleTask(String groupName, long delayMs) {
+      this.groupName = groupName;
+      this.readyTimeMs = System.currentTimeMillis() + delayMs;
+    }
+
+    @Override
+    public long getDelay(@NotNull TimeUnit unit) {
+      return unit.convert(readyTimeMs - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public int compareTo(@NotNull Delayed other) {
+      return Long.compare(readyTimeMs, ((DraScaleTask) other).readyTimeMs);
+    }
+  }
+
+  /**
+   * Keeper owning both the floor and the demand scaling of dynamic-allocation-enabled groups
+   * (AIP-5). It is separate from {@link OptimizerGroupKeeper}, whose min-parallelism-check cadence
+   * (minutes, multiplied by attempts) would render the DRA backlog timeouts (seconds) unreachable;
+   * a group's scale evaluations run at its own sustained-backlog-timeout instead.
+   */
+  private class OptimizerScaleKeeper extends AbstractKeeper<DraScaleTask> {
+
+    // Must exceed a normal pod boot including image pull: evicting a legitimately booting pod
+    // from the pending accounting would cause duplicate scale-outs, which is worse than a few
+    // conservative rounds with phantom capacity.
+    private static final long BOOT_TIMEOUT_MS = 3 * 60 * 1000L;
+
+    // Retry delay after a transient resource-group read failure, when the group's configured
+    // cadence is unknown because the group itself could not be loaded.
+    private static final long TRANSIENT_RETRY_DELAY_MS = 5_000L;
+
+    private final Map<String, DynamicAllocationState> scaleStates = new ConcurrentHashMap<>();
+    private final Map<String, PendingRegistrations> pendingRegistrations =
+        new ConcurrentHashMap<>();
+    private final Set<String> watchedGroups = ConcurrentHashMap.newKeySet();
+    private final Map<String, Integer> planningBoundStreaks = new ConcurrentHashMap<>();
+
+    public OptimizerScaleKeeper(String threadName) {
+      super(threadName);
+    }
+
+    /** Start watching a group if dynamic allocation is effectively enabled on it. Idempotent. */
+    public void watch(ResourceGroup resourceGroup) {
+      if (!DynamicAllocationConfig.isEffectivelyEnabled(resourceGroup)) {
+        return;
+      }
+      if (watchedGroups.add(resourceGroup.getName())) {
+        suspendingQueue.add(new DraScaleTask(resourceGroup.getName(), 0));
+      }
+    }
+
+    /** Clear the boot-window accounting of a registered optimizer (AMS-launched ones only). */
+    public void onOptimizerRegistered(OptimizerInstance optimizer) {
+      if (optimizer.getResourceId() == null) {
+        return;
+      }
+      PendingRegistrations pending = pendingRegistrations.get(optimizer.getGroupName());
+      if (pending != null) {
+        pending.registered(optimizer.getResourceId());
+      }
+    }
+
+    private void unwatch(String groupName) {
+      watchedGroups.remove(groupName);
+      scaleStates.remove(groupName);
+      planningBoundStreaks.remove(groupName);
+      // pendingRegistrations is deliberately kept: a pod requested before a disable survives its
+      // boot window, so re-enabling within it does not re-request the same capacity. Entries
+      // self-prune past their deadline.
+    }
+
+    /**
+     * Full cleanup on group deletion. Unlike a disable, a deleted group's boot-window accounting
+     * must go too: leaving it would leak the entry and, if a group with the same name is created
+     * before the next evaluation, suppress its scale-up with the old group's phantom capacity.
+     */
+    public void onGroupDeleted(String groupName) {
+      unwatch(groupName);
+      pendingRegistrations.remove(groupName);
+    }
+
+    @Override
+    protected void processTask(DraScaleTask task) {
+      ResourceGroup resourceGroup;
+      try {
+        resourceGroup = optimizerManager.getResourceGroup(task.groupName);
+      } catch (Exception e) {
+        // A transient failure (e.g. a database hiccup) must not be treated as deletion: there is
+        // no periodic re-watch, so dropping the group here would silently disable its dynamic
+        // allocation until the next config change. Keep the task alive and retry.
+        LOG.warn(
+            "Failed to load resource group {} for dynamic allocation, will retry",
+            task.groupName,
+            e);
+        suspendingQueue.add(new DraScaleTask(task.groupName, TRANSIENT_RETRY_DELAY_MS));
+        return;
+      }
+      if (resourceGroup == null || !DynamicAllocationConfig.isEffectivelyEnabled(resourceGroup)) {
+        // Deleted or disabled: stop watching; an update re-enabling DRA re-watches the group.
+        unwatch(task.groupName);
+        // An update may have re-enabled the group between our read and the unwatch, in which
+        // case its watch() call was swallowed by the still-present watchedGroups entry:
+        // double-check on a fresh read so such a group is not orphaned until its next change.
+        recheckAfterUnwatch(task.groupName);
+        return;
+      }
+      OptimizingQueue queue = optimizingQueueByGroup.get(task.groupName);
+      if (queue == null) {
+        // The group exists with DRA enabled but its queue is momentarily absent (e.g. a
+        // delete/recreate racing the config watcher). Unwatch + rewatch here would spin a
+        // delay-0 hot loop until the watcher recreates the queue; treat it as transient.
+        suspendingQueue.add(new DraScaleTask(task.groupName, TRANSIENT_RETRY_DELAY_MS));
+        return;
+      }
+      DynamicAllocationConfig config = DynamicAllocationConfig.parse(resourceGroup);
+      try {
+        scaleIfNeeded(resourceGroup, queue, config);
+      } catch (Throwable t) {
+        LOG.error("Dynamic allocation scale evaluation failed for group {}", task.groupName, t);
+      } finally {
+        suspendingQueue.add(
+            new DraScaleTask(task.groupName, config.getSustainedBacklogTimeout().toMillis()));
+      }
+    }
+
+    /** Threads still expected to register for the group; testing hook for boot accounting. */
+    private int pendingThreads(String groupName) {
+      PendingRegistrations pending = pendingRegistrations.get(groupName);
+      return pending == null ? 0 : pending.pendingThreads(System.currentTimeMillis());
+    }
+
+    private void recheckAfterUnwatch(String groupName) {
+      try {
+        ResourceGroup fresh = optimizerManager.getResourceGroup(groupName);
+        if (fresh != null) {
+          watch(fresh);
+        }
+      } catch (Exception e) {
+        // The group became unreadable right after a successful read; its next update watches it.
+        LOG.warn("Failed to re-check resource group {} after unwatch", groupName, e);
+      }
+    }
+
+    /**
+     * Warn when the planning-bound state (idle threads, PENDING tables, nothing PLANNED — the
+     * bottleneck is {@code optimizer.max-planning-parallelism}, so scaling out would only add idle
+     * threads) persists across two consecutive evaluations. A single snapshot can hold this
+     * condition transiently while planning is merely in flight, so one round is not evidence;
+     * counting registered threads only keeps a booting pod's phantom capacity from being mistaken
+     * for idle threads. Warns once per episode.
+     */
+    private void warnOnPlanningBoundTransition(
+        String groupName, int registeredThreads, DynamicAllocationState.GroupLoad load) {
+      boolean planningBound =
+          DynamicAllocationState.isPlanningBound(
+              registeredThreads,
+              load.getBusyThreads(),
+              load.getServiceablePlanned(),
+              load.getPendingTables());
+      if (!planningBound) {
+        planningBoundStreaks.remove(groupName);
+        return;
+      }
+      int streak = planningBoundStreaks.merge(groupName, 1, Integer::sum);
+      if (streak == 2) {
+        LOG.warn(
+            "Resource group {} is planning-bound: {} idle thread(s) while {} table(s) are "
+                + "PENDING and no tasks are PLANNED. Scaling out will not help; consider "
+                + "raising {}.",
+            groupName,
+            registeredThreads - load.getBusyThreads(),
+            load.getPendingTables(),
+            AmoroManagementConf.OPTIMIZER_MAX_PLANNING_PARALLELISM.key());
+      }
+    }
+
+    private void scaleIfNeeded(
+        ResourceGroup resourceGroup, OptimizingQueue queue, DynamicAllocationConfig config) {
+      String groupName = resourceGroup.getName();
+      long now = System.currentTimeMillis();
+      PendingRegistrations pending =
+          pendingRegistrations.computeIfAbsent(
+              groupName, name -> new PendingRegistrations(BOOT_TIMEOUT_MS));
+      DynamicAllocationState state =
+          scaleStates.computeIfAbsent(groupName, name -> new DynamicAllocationState());
+      int registeredThreads = getTotalQuota(groupName);
+      int effectiveThreads = registeredThreads + pending.pendingThreads(now);
+      DynamicAllocationState.GroupLoad load = queue.collectDynamicAllocationLoad();
+      warnOnPlanningBoundTransition(groupName, registeredThreads, load);
+      int addInstances =
+          state.computeScaleUp(
+              effectiveThreads,
+              load.getBusyThreads(),
+              load.getServiceablePlanned(),
+              load.getPendingTables(),
+              config,
+              now);
+      if (addInstances <= 0) {
+        return;
+      }
+      int threadsPerInstance = config.getExecutorParallelism();
+      LOG.info(
+          "Dynamic allocation scaling out group {}: {} instance(s) of {} thread(s), effective threads {}",
+          groupName,
+          addInstances,
+          threadsPerInstance,
+          effectiveThreads);
+      for (int i = 0; i < addInstances; i++) {
+        Resource resource =
+            new Resource.Builder(resourceGroup.getContainer(), groupName, ResourceType.OPTIMIZER)
+                .setProperties(resourceGroup.getProperties())
+                .setThreadCount(threadsPerInstance)
+                .build();
+        ResourceContainer resourceContainer = Containers.get(resource.getContainerName());
+        pending.requested(resource.getResourceId(), threadsPerInstance, now);
+        boolean podRequested = false;
+        try {
+          ((AbstractOptimizerContainer) resourceContainer).requestResource(resource);
+          podRequested = true;
+          optimizerManager.createResource(resource);
+        } catch (Throwable t) {
+          if (podRequested) {
+            // The pod was started; only its persistence failed. Keep the pending accounting —
+            // the pod will self-register — instead of erasing it and re-requesting a duplicate.
+            LOG.warn(
+                "Dynamic allocation scale-out of group {} requested resource {} but failed to "
+                    + "persist it",
+                groupName,
+                resource.getResourceId(),
+                t);
+          } else {
+            pending.failed(resource.getResourceId());
+            LOG.warn("Dynamic allocation scale-out failed for group {}", groupName, t);
+          }
+        }
+      }
     }
   }
 }
