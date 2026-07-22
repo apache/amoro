@@ -24,10 +24,15 @@ import org.apache.amoro.io.IcebergDataTestHelpers;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.io.reader.GenericUnkeyedDataReader;
 import org.apache.amoro.properties.CatalogMetaProperties;
+import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Streams;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.amoro.table.MixedTable;
+import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
@@ -50,9 +55,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBase {
@@ -102,14 +114,111 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
 
   @Nested
   public class NamespaceTests {
+    @AfterEach
+    public void clean() {
+      if (serverCatalog.databaseExists(database)) {
+        serverCatalog.dropDatabase(database);
+      }
+    }
+
     @Test
     public void testNamespaceOperations() throws IOException {
       Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
       nsCatalog.createNamespace(Namespace.of(database));
       Assertions.assertEquals(1, nsCatalog.listNamespaces().size());
       Assertions.assertEquals(0, nsCatalog.listNamespaces(Namespace.of(database)).size());
+      Assertions.assertTrue(nsCatalog.loadNamespaceMetadata(ns).isEmpty());
       nsCatalog.dropNamespace(Namespace.of(database));
       Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
+    }
+
+    @Test
+    public void testNamespaceProperties() {
+      Map<String, String> properties = Maps.newHashMap();
+      properties.put("location", "s3://warehouse/test_ns");
+      properties.put("owner", "analytics");
+
+      nsCatalog.createNamespace(ns, properties);
+
+      Assertions.assertEquals(properties, nsCatalog.loadNamespaceMetadata(ns));
+      Assertions.assertEquals(properties, serverCatalog.getDatabaseProperties(database));
+    }
+
+    @Test
+    public void testUpdateNamespaceProperties() {
+      Map<String, String> properties = Maps.newHashMap();
+      properties.put("location", "s3://warehouse/test_ns");
+      properties.put("owner", "analytics");
+      nsCatalog.createNamespace(ns, properties);
+
+      Map<String, String> updates = Maps.newHashMap();
+      updates.put("owner", "platform");
+      updates.put("retention-days", "30");
+      nsCatalog.setProperties(ns, updates);
+      nsCatalog.removeProperties(ns, Sets.newHashSet("owner", "missing"));
+
+      Map<String, String> expected = Maps.newHashMap();
+      expected.put("location", "s3://warehouse/test_ns");
+      expected.put("retention-days", "30");
+      Assertions.assertEquals(expected, nsCatalog.loadNamespaceMetadata(ns));
+    }
+
+    @Test
+    public void testUpdateNamespacePropertiesResponse() throws IOException, InterruptedException {
+      Map<String, String> properties = Maps.newHashMap();
+      properties.put("location", "s3://warehouse/test_ns");
+      properties.put("owner", "analytics");
+      nsCatalog.createNamespace(ns, properties);
+
+      String requestBody =
+          "{\"updates\":{\"retention-days\":\"30\"}," + "\"removals\":[\"owner\",\"missing\"]}";
+      HttpRequest request =
+          HttpRequest.newBuilder(
+                  URI.create(
+                      ams.getHttpUrl()
+                          + restCatalogUri
+                          + "/v1/catalogs/"
+                          + catalogName()
+                          + "/namespaces/"
+                          + database
+                          + "/properties"))
+              .header("Content-Type", "application/json")
+              .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+              .build();
+      HttpResponse<String> response =
+          HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+
+      Assertions.assertEquals(200, response.statusCode());
+      JsonNode responseBody = new ObjectMapper().readTree(response.body());
+      Assertions.assertEquals(
+          Sets.newHashSet("retention-days"), stringSet(responseBody.get("updated")));
+      Assertions.assertEquals(Sets.newHashSet("owner"), stringSet(responseBody.get("removed")));
+      Assertions.assertEquals(Sets.newHashSet("missing"), stringSet(responseBody.get("missing")));
+    }
+
+    @Test
+    public void testNullNamespaceProperties() throws SQLException {
+      nsCatalog.createNamespace(ns);
+      try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession(true);
+          PreparedStatement statement =
+              session
+                  .getConnection()
+                  .prepareStatement(
+                      "UPDATE database_metadata SET properties = NULL"
+                          + " WHERE catalog_name = ? AND db_name = ?")) {
+        statement.setString(1, catalogName());
+        statement.setString(2, database);
+        Assertions.assertEquals(1, statement.executeUpdate());
+      }
+
+      Assertions.assertTrue(serverCatalog.getDatabaseProperties(database).isEmpty());
+      Assertions.assertTrue(nsCatalog.loadNamespaceMetadata(ns).isEmpty());
+    }
+
+    private Set<String> stringSet(JsonNode values) {
+      Set<String> result = Sets.newHashSet();
+      values.forEach(value -> result.add(value.asText()));
+      return result;
     }
   }
 
@@ -156,6 +265,23 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
       Assertions.assertTrue(nsCatalog.tableExists(identifier));
       nsCatalog.dropTable(identifier);
       Assertions.assertFalse(nsCatalog.tableExists(identifier));
+    }
+
+    @Test
+    public void testCreateTableInNamespaceLocation() {
+      String namespaceLocation =
+          serverCatalog
+                  .getMetadata()
+                  .getCatalogProperties()
+                  .get(CatalogMetaProperties.KEY_WAREHOUSE)
+              + "/namespace-location";
+      Map<String, String> properties = Maps.newHashMap();
+      properties.put("location", namespaceLocation);
+      nsCatalog.setProperties(ns, properties);
+
+      Table created = nsCatalog.createTable(identifier, schema);
+
+      Assertions.assertEquals(namespaceLocation + "/" + table, created.location());
     }
 
     @Test
