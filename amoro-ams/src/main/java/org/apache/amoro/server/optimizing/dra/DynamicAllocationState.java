@@ -21,7 +21,10 @@ package org.apache.amoro.server.optimizing.dra;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Per-group scale-up decision state for dynamic allocation (AIP-5): the backlog timer, the
@@ -39,6 +42,16 @@ public final class DynamicAllocationState {
 
   /** Instances to add in the next immediate-demand round (1, 2, 4, 8 ...). */
   private int rampInstances = 1;
+
+  /**
+   * Last time each registered token was observed with in-flight tasks; seeded with the first
+   * observation time, so a fresh instance is idle from creation and a permanently unused one still
+   * becomes a removal candidate.
+   */
+  private final Map<String, Long> lastBusyMs = new HashMap<>();
+
+  /** Time of the last scale-down selection; {@code -1} before the first one. */
+  private long lastScaleDownMs = -1;
 
   /**
    * Decide how many executor-parallelism-thread optimizer instances to create in this round.
@@ -116,6 +129,84 @@ public final class DynamicAllocationState {
     }
     nextAllowedAddMs = nowMs + config.getSustainedBacklogTimeout().toMillis();
     return add;
+  }
+
+  /**
+   * Update per-token idle observations from this round's snapshot. A token with in-flight tasks has
+   * its busy timestamp refreshed; a token seen for the first time is seeded with {@code nowMs}
+   * (idle from first sight, see {@link #lastBusyMs}); tokens no longer registered are pruned, so a
+   * re-registered identity re-earns its idle time instead of inheriting a stale timestamp.
+   */
+  public void observe(
+      Set<String> registeredTokens, Map<String, Integer> inFlightByToken, long nowMs) {
+    lastBusyMs.keySet().retainAll(registeredTokens);
+    for (String token : registeredTokens) {
+      if (inFlightByToken.getOrDefault(token, 0) > 0 || !lastBusyMs.containsKey(token)) {
+        lastBusyMs.put(token, nowMs);
+      }
+    }
+  }
+
+  /**
+   * Pick at most one optimizer to drain this round, or {@code null}. The caller passes only
+   * eligible candidates (registered, AMS-launched, not already draining). Selection: skip inside
+   * the {@code scale-down-cooldown} window; among candidates idle for at least {@code
+   * executor-idle-timeout} whose removal keeps {@code registeredThreads - drainingThreads} at or
+   * above the floor, pick the longest-idle one. Draining threads are counted as already gone —
+   * still-registered draining instances must not let consecutive removals pass the floor check and
+   * land the group below {@code min-parallelism} once they all complete.
+   */
+  public String computeScaleDown(
+      List<RemovalCandidate> candidates,
+      int registeredThreads,
+      int drainingThreads,
+      DynamicAllocationConfig config,
+      long nowMs) {
+    if (lastScaleDownMs >= 0
+        && nowMs - lastScaleDownMs < config.getScaleDownCooldown().toMillis()) {
+      return null;
+    }
+    long idleTimeoutMs = config.getExecutorIdleTimeout().toMillis();
+    int floorBase = registeredThreads - drainingThreads;
+    RemovalCandidate selected = null;
+    long selectedBusyMs = Long.MAX_VALUE;
+    for (RemovalCandidate candidate : candidates) {
+      Long busy = lastBusyMs.get(candidate.getToken());
+      if (busy == null || nowMs - busy < idleTimeoutMs) {
+        continue;
+      }
+      if (floorBase - candidate.getThreadCount() < config.getMinParallelism()) {
+        continue;
+      }
+      if (busy < selectedBusyMs) {
+        selectedBusyMs = busy;
+        selected = candidate;
+      }
+    }
+    if (selected == null) {
+      return null;
+    }
+    lastScaleDownMs = nowMs;
+    return selected.getToken();
+  }
+
+  /** A removal candidate: a registered, AMS-launched, not-yet-draining optimizer instance. */
+  public static class RemovalCandidate {
+    private final String token;
+    private final int threadCount;
+
+    public RemovalCandidate(String token, int threadCount) {
+      this.token = token;
+      this.threadCount = threadCount;
+    }
+
+    public String getToken() {
+      return token;
+    }
+
+    public int getThreadCount() {
+      return threadCount;
+    }
   }
 
   private static int ceilDiv(int value, int divisor) {
