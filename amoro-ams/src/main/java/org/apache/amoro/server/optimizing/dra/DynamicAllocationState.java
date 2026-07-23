@@ -21,6 +21,7 @@ package org.apache.amoro.server.optimizing.dra;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Per-group scale-up decision state for dynamic allocation (AIP-5): the backlog timer, the
@@ -126,11 +127,17 @@ public final class DynamicAllocationState {
     private final int busyThreads;
     private final int serviceablePlanned;
     private final int pendingTables;
+    private final Map<String, Integer> inFlightByToken;
 
-    public GroupLoad(int busyThreads, int serviceablePlanned, int pendingTables) {
+    public GroupLoad(
+        int busyThreads,
+        int serviceablePlanned,
+        int pendingTables,
+        Map<String, Integer> inFlightByToken) {
       this.busyThreads = busyThreads;
       this.serviceablePlanned = serviceablePlanned;
       this.pendingTables = pendingTables;
+      this.inFlightByToken = inFlightByToken;
     }
 
     public int getBusyThreads() {
@@ -143,6 +150,11 @@ public final class DynamicAllocationState {
 
     public int getPendingTables() {
       return pendingTables;
+    }
+
+    /** SCHEDULED/ACKED task count per optimizer token, the per-instance side of the snapshot. */
+    public Map<String, Integer> getInFlightByToken() {
+      return inFlightByToken;
     }
   }
 
