@@ -283,6 +283,21 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
+  public void testHeartbeatExpiryClearsDrainState() throws InterruptedException {
+    // An optimizer that dies mid-drain is unregistered by heartbeat expiry, a path that must
+    // clear the drain state too: the token can never be matched again, so a leftover entry would
+    // sit in the pending-removal set forever.
+    optimizingService().beginGracefulDrain(token, Long.MAX_VALUE);
+    toucher.stop();
+    toucher = null;
+    Thread.sleep(1000);
+    Assertions.assertThrows(PluginRetryAuthException.class, () -> optimizingService().touch(token));
+    Assertions.assertFalse(
+        optimizingService().isDraining(token),
+        "unregistration must clear the drain state of a dead optimizer");
+  }
+
+  @Test
   public void testTouchTimeout() throws InterruptedException {
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);

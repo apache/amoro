@@ -255,6 +255,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
     if (optimizingQueue != null) {
       optimizingQueue.removeOptimizer(optimizer);
     }
+    // An optimizer that dies mid-drain is unregistered here by heartbeat expiry; its token can
+    // never be matched again, so leftover drain state would sit in the pending-removal set
+    // forever (its replacement pod registers under a fresh token).
+    cancelDrain(token);
   }
 
   @Override
@@ -388,7 +392,6 @@ public class DefaultOptimizingService extends StatedPersistentBase
       return;
     }
     unregisterOptimizer(token);
-    cancelDrain(token);
     LOG.info("Optimizer {} (resource {}) removed by scale-down", token, optimizer.getResourceId());
   }
 
@@ -1156,6 +1159,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
       watchedGroups.remove(groupName);
       scaleStates.remove(groupName);
       planningBoundStreaks.remove(groupName);
+      // A drain block left behind would starve the group's pods forever once the legacy floor
+      // keeper resumes duty for the disabled group: re-admit them to task assignment.
+      authOptimizers.values().stream()
+          .filter(optimizer -> groupName.equals(optimizer.getGroupName()))
+          .map(OptimizerInstance::getToken)
+          .forEach(DefaultOptimizingService.this::cancelDrain);
       // pendingRegistrations is deliberately kept: a pod requested before a disable survives its
       // boot window, so re-enabling within it does not re-request the same capacity. Entries
       // self-prune past their deadline.

@@ -491,4 +491,43 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
         optimizerManager().listOptimizers(group.getName()).isEmpty(),
         "the cooldown expiry should admit the next removal");
   }
+
+  /**
+   * Disabling dynamic allocation mid-drain re-admits the draining pod to task assignment: once the
+   * legacy floor keeper resumes duty for the group, a leftover drain block would starve the pod
+   * forever.
+   */
+  @Test
+  public void testDisablingDraCancelsLingeringDrain() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildDraResourceGroup(TEST_GROUP_NAME + "-11", 0, 1);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    OptimizerInstance optimizer = registerOptimizer(group.getName(), 1);
+
+    // A drain that cannot complete (release keeps failing) lingers across keeper rounds.
+    mockContainer.setReleaseAvailable(false);
+    optimizingService().beginGracefulDrain(optimizer.getToken(), Long.MAX_VALUE);
+    Thread.sleep(200);
+    Assertions.assertTrue(optimizingService().isDraining(optimizer.getToken()));
+
+    Map<String, String> legacyProps = Maps.newHashMap();
+    legacyProps.put("memory", "1024");
+    ResourceGroup disabled =
+        new ResourceGroup.Builder(group.getName(), MOCK_CONTAINER_NAME)
+            .addProperties(legacyProps)
+            .build();
+    optimizerManager().updateResourceGroup(disabled);
+    optimizingService().updateResourceGroup(disabled);
+    Thread.sleep(500);
+
+    Assertions.assertFalse(
+        optimizingService().isDraining(optimizer.getToken()),
+        "unwatching a disabled group must lift its drain blocks");
+    Assertions.assertEquals(
+        1,
+        optimizerManager().listOptimizers(group.getName()).size(),
+        "the pod survives and resumes normal duty");
+  }
 }
