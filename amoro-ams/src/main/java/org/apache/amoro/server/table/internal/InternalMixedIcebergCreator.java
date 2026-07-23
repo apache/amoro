@@ -44,6 +44,15 @@ public class InternalMixedIcebergCreator extends InternalIcebergCreator {
     super(catalog, database, tableName, request);
   }
 
+  public InternalMixedIcebergCreator(
+      CatalogMeta catalog,
+      String database,
+      String tableName,
+      CreateTableRequest request,
+      String namespaceLocation) {
+    super(catalog, database, tableName, request, namespaceLocation);
+  }
+
   @Override
   protected TableFormat format() {
     return TableFormat.MIXED_ICEBERG;
