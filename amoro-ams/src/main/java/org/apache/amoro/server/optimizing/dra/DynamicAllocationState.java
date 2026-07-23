@@ -53,6 +53,9 @@ public final class DynamicAllocationState {
   /** Time of the last scale-down selection; {@code -1} before the first one. */
   private long lastScaleDownMs = -1;
 
+  /** Whether the last {@link #computeScaleUp} evaluation saw any demand (or a floor deficit). */
+  private boolean lastEvalDemandActive = false;
+
   /**
    * Decide how many executor-parallelism-thread optimizer instances to create in this round.
    *
@@ -82,6 +85,7 @@ public final class DynamicAllocationState {
       // A floor deficit (optimizers died or the group is new) invalidates any demand-phase
       // state: after recovery, demand must re-prove backlog persistence instead of firing
       // through a stale gate with a stale ramp.
+      lastEvalDemandActive = true;
       backlogSinceMs = -1;
       nextAllowedAddMs = -1;
       rampInstances = 1;
@@ -91,6 +95,7 @@ public final class DynamicAllocationState {
 
     int actionableNeed = Math.max(busyThreads + serviceablePlanned - effectiveThreads, 0);
     boolean futureDemand = pendingTables > 0 && busyThreads >= effectiveThreads;
+    lastEvalDemandActive = actionableNeed > 0 || futureDemand;
     if (actionableNeed <= 0 && !futureDemand) {
       backlogSinceMs = -1;
       nextAllowedAddMs = -1;
@@ -129,6 +134,15 @@ public final class DynamicAllocationState {
     }
     nextAllowedAddMs = nowMs + config.getSustainedBacklogTimeout().toMillis();
     return add;
+  }
+
+  /**
+   * Whether the last {@link #computeScaleUp} evaluation saw demand — including a floor deficit and
+   * demand still held back by the backlog gate. Scale-down must not run in such a round: it would
+   * remove exactly the warm capacity the next round re-requests.
+   */
+  public boolean wasDemandActive() {
+    return lastEvalDemandActive;
   }
 
   /**

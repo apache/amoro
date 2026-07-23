@@ -340,6 +340,20 @@ public class DefaultOptimizingService extends StatedPersistentBase
   }
 
   /**
+   * Run one dynamic-allocation round for the group at an injected time. The production cadence is
+   * driven by the scale keeper's delay queue with the wall clock; tests inject times because the
+   * validated minimum {@code executor-idle-timeout} (30s) puts real idle waits beyond sane test
+   * durations.
+   */
+  @VisibleForTesting
+  void evaluateDynamicAllocation(String groupName, long nowMs) {
+    ResourceGroup resourceGroup = optimizerManager.getResourceGroup(groupName);
+    OptimizingQueue queue = optimizingQueueByGroup.get(groupName);
+    optimizerScaleKeeper.scaleIfNeeded(
+        resourceGroup, queue, DynamicAllocationConfig.parse(resourceGroup), nowMs);
+  }
+
+  /**
    * Remove a drained optimizer: release the container resource, delete the persisted resource row,
    * and unregister. A missing resource row (the pod self-registered after a persist failure, or a
    * manual release raced the row away) is not an error — the instance itself carries the
@@ -1192,7 +1206,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       }
       DynamicAllocationConfig config = DynamicAllocationConfig.parse(resourceGroup);
       try {
-        scaleIfNeeded(resourceGroup, queue, config);
+        scaleIfNeeded(resourceGroup, queue, config, System.currentTimeMillis());
       } catch (Throwable t) {
         LOG.error("Dynamic allocation scale evaluation failed for group {}", task.groupName, t);
       } finally {
@@ -1205,6 +1219,81 @@ public class DefaultOptimizingService extends StatedPersistentBase
     private int pendingThreads(String groupName) {
       PendingRegistrations pending = pendingRegistrations.get(groupName);
       return pending == null ? 0 : pending.pendingThreads(System.currentTimeMillis());
+    }
+
+    /**
+     * Advance this group's drains: an entry whose in-flight count reached zero, or whose {@code
+     * drain-timeout} deadline passed, executes its removal now (a force-removed instance's orphaned
+     * tasks are reclaimed by the existing suspending-task safety net). Returns the thread and
+     * busy-task counts of instances still draining afterwards — a failed release keeps its instance
+     * in both, since it remains registered.
+     */
+    private int[] processDrainProgress(
+        String groupName, DynamicAllocationState.GroupLoad load, long now) {
+      int drainingThreads = 0;
+      int drainingBusy = 0;
+      for (String token : pendingRemovalTokens) {
+        OptimizerInstance optimizer = authOptimizers.get(token);
+        if (optimizer == null) {
+          // Unregistered mid-drain (e.g. its heartbeat expired): nothing left to remove.
+          cancelDrain(token);
+          continue;
+        }
+        if (!groupName.equals(optimizer.getGroupName())) {
+          continue;
+        }
+        int inFlight = load.getInFlightByToken().getOrDefault(token, 0);
+        Long deadline = drainDeadlines.get(token);
+        if (inFlight == 0 || (deadline != null && now >= deadline)) {
+          executeRemoval(token);
+          if (!authOptimizers.containsKey(token)) {
+            continue;
+          }
+        }
+        drainingThreads += optimizer.getThreadCount();
+        drainingBusy += inFlight;
+      }
+      return new int[] {drainingThreads, drainingBusy};
+    }
+
+    private Set<String> registeredTokens(String groupName) {
+      return authOptimizers.values().stream()
+          .filter(optimizer -> groupName.equals(optimizer.getGroupName()))
+          .map(OptimizerInstance::getToken)
+          .collect(Collectors.toSet());
+    }
+
+    private void evaluateScaleDown(
+        String groupName,
+        OptimizingQueue queue,
+        DynamicAllocationState state,
+        DynamicAllocationConfig config,
+        int registeredThreads,
+        int drainingThreads,
+        long now) {
+      List<DynamicAllocationState.RemovalCandidate> candidates =
+          authOptimizers.values().stream()
+              // Externally-registered optimizers (no resourceId) are not AMS's to remove.
+              .filter(optimizer -> groupName.equals(optimizer.getGroupName()))
+              .filter(optimizer -> optimizer.getResourceId() != null)
+              .filter(optimizer -> !pendingRemovalTokens.contains(optimizer.getToken()))
+              .map(
+                  optimizer ->
+                      new DynamicAllocationState.RemovalCandidate(
+                          optimizer.getToken(), optimizer.getThreadCount()))
+              .collect(Collectors.toList());
+      String victim =
+          state.computeScaleDown(candidates, registeredThreads, drainingThreads, config, now);
+      if (victim == null) {
+        return;
+      }
+      beginGracefulDrain(victim, now + config.getDrainTimeout().toMillis());
+      // Only a snapshot taken after the token entered the pending-removal set can prove idleness:
+      // the pre-insert one may miss a task fetched by a long-poll racing the drain start.
+      DynamicAllocationState.GroupLoad fresh = queue.collectDynamicAllocationLoad();
+      if (fresh.getInFlightByToken().getOrDefault(victim, 0) == 0) {
+        executeRemoval(victim);
+      }
     }
 
     private void recheckAfterUnwatch(String groupName) {
@@ -1253,27 +1342,46 @@ public class DefaultOptimizingService extends StatedPersistentBase
     }
 
     private void scaleIfNeeded(
-        ResourceGroup resourceGroup, OptimizingQueue queue, DynamicAllocationConfig config) {
+        ResourceGroup resourceGroup,
+        OptimizingQueue queue,
+        DynamicAllocationConfig config,
+        long now) {
       String groupName = resourceGroup.getName();
-      long now = System.currentTimeMillis();
       PendingRegistrations pending =
           pendingRegistrations.computeIfAbsent(
               groupName, name -> new PendingRegistrations(BOOT_TIMEOUT_MS));
       DynamicAllocationState state =
           scaleStates.computeIfAbsent(groupName, name -> new DynamicAllocationState());
-      int registeredThreads = getTotalQuota(groupName);
-      int effectiveThreads = registeredThreads + pending.pendingThreads(now);
       DynamicAllocationState.GroupLoad load = queue.collectDynamicAllocationLoad();
+      // Drain progress runs before anything else and unconditionally: a completed or expired
+      // drain must convert to a removal even in rounds that scale up, or a busy drain would
+      // linger to its full timeout while backlog persists.
+      int[] draining = processDrainProgress(groupName, load, now);
+      int drainingThreads = draining[0];
+      int drainingBusy = draining[1];
+      int registeredThreads = getTotalQuota(groupName);
+      // A draining instance takes no new work, so it is accounted as already gone on both sides:
+      // leaving its threads in the capacity undercounts demand by up to their count, and leaving
+      // its tasks in the load keeps future demand (busy >= effective) from ever firing mid-drain.
+      int effectiveThreads = registeredThreads - drainingThreads + pending.pendingThreads(now);
+      int busyThreads = load.getBusyThreads() - drainingBusy;
+      // Observed every round, including scale-up ones: an instance busy through a burst must not
+      // come out of it looking idle since before the burst began.
+      state.observe(registeredTokens(groupName), load.getInFlightByToken(), now);
       warnOnPlanningBoundTransition(groupName, registeredThreads, load);
       int addInstances =
           state.computeScaleUp(
               effectiveThreads,
-              load.getBusyThreads(),
+              busyThreads,
               load.getServiceablePlanned(),
               load.getPendingTables(),
               config,
               now);
       if (addInstances <= 0) {
+        if (!state.wasDemandActive()) {
+          evaluateScaleDown(
+              groupName, queue, state, config, registeredThreads, drainingThreads, now);
+        }
         return;
       }
       int threadsPerInstance = config.getExecutorParallelism();

@@ -372,4 +372,123 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
     Assertions.assertFalse(optimizingService().isDraining(optimizer.getToken()));
     Assertions.assertTrue(optimizerManager().listOptimizers(group.getName()).isEmpty());
   }
+
+  /**
+   * DRA group whose rounds are driven manually with injected times. The huge real cadence keeps the
+   * live keeper's own rounds from racing the injected ones on the per-group decision state
+   * (idle-timeout 1200s respects the sustained &le; idle/2 validation).
+   */
+  private ResourceGroup buildSlowDraResourceGroup(String groupName, int minParallelism) {
+    this.currentGroupName = groupName;
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED, "true");
+    properties.put(
+        OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM, String.valueOf(minParallelism));
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM, "8");
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM, "1");
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_SUSTAINED_BACKLOG_TIMEOUT, "600s");
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT, "1200s");
+    properties.put("memory", "1024");
+    return new ResourceGroup.Builder(groupName, MOCK_CONTAINER_NAME)
+        .addProperties(properties)
+        .build();
+  }
+
+  /** Register an optimizer the way a booted pod would: persisted resource row + self-register. */
+  private OptimizerInstance registerOptimizer(String groupName, int threadCount) {
+    org.apache.amoro.resource.Resource resource =
+        new org.apache.amoro.resource.Resource.Builder(
+                MOCK_CONTAINER_NAME, groupName, org.apache.amoro.resource.ResourceType.OPTIMIZER)
+            .setThreadCount(threadCount)
+            .build();
+    optimizerManager().createResource(resource);
+    org.apache.amoro.api.OptimizerRegisterInfo registerInfo =
+        new org.apache.amoro.api.OptimizerRegisterInfo();
+    Map<String, String> registerProperties = Maps.newHashMap();
+    registerProperties.put(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL, "100");
+    registerInfo.setProperties(registerProperties);
+    registerInfo.setThreadCount(threadCount);
+    registerInfo.setMemoryMb(1024);
+    registerInfo.setGroupName(groupName);
+    registerInfo.setResourceId(resource.getResourceId());
+    registerInfo.setStartTime(System.currentTimeMillis());
+    String token = optimizingService().authenticate(registerInfo);
+    return optimizerManager().listOptimizers(groupName).stream()
+        .filter(optimizer -> token.equals(optimizer.getToken()))
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException("registered optimizer not listed"));
+  }
+
+  /** An instance idle past executor-idle-timeout is drained and, being idle, removed in-round. */
+  @Test
+  public void testIdleOptimizerScaledDownViaInjectedRounds() {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-8", 0);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    OptimizerInstance optimizer = registerOptimizer(group.getName(), 1);
+
+    long t0 = System.currentTimeMillis();
+    optimizingService().evaluateDynamicAllocation(group.getName(), t0); // seeds the observation
+    Assertions.assertEquals(1, optimizerManager().listOptimizers(group.getName()).size());
+
+    optimizingService().evaluateDynamicAllocation(group.getName(), t0 + 1_300_000L);
+    Assertions.assertTrue(
+        optimizerManager().listOptimizers(group.getName()).isEmpty(),
+        "an idle instance past the timeout should be drained and removed in the same round");
+    Assertions.assertTrue(
+        mockContainer.getReleasedResources().stream()
+            .anyMatch(r -> optimizer.getResourceId().equals(r.getResourceId())));
+  }
+
+  /** The min-parallelism floor keeps the last instance no matter how long it idles. */
+  @Test
+  public void testScaleDownRespectsFloor() {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-9", 1);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    registerOptimizer(group.getName(), 1);
+
+    long t0 = System.currentTimeMillis();
+    optimizingService().evaluateDynamicAllocation(group.getName(), t0);
+    optimizingService().evaluateDynamicAllocation(group.getName(), t0 + 1_300_000L);
+
+    Assertions.assertEquals(
+        1,
+        optimizerManager().listOptimizers(group.getName()).size(),
+        "the floor must keep the last instance");
+  }
+
+  /** Removals proceed one instance per cooldown period, never in batches. */
+  @Test
+  public void testScaleDownRemovesOneInstancePerCooldown() {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-10", 0);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    registerOptimizer(group.getName(), 1);
+    registerOptimizer(group.getName(), 1);
+
+    long t0 = System.currentTimeMillis();
+    optimizingService().evaluateDynamicAllocation(group.getName(), t0);
+    long firstRemovalAt = t0 + 1_300_000L;
+    optimizingService().evaluateDynamicAllocation(group.getName(), firstRemovalAt);
+    Assertions.assertEquals(
+        1,
+        optimizerManager().listOptimizers(group.getName()).size(),
+        "only one instance per round may be removed");
+
+    // Inside the scale-down-cooldown window (default 1min): the second instance stays.
+    optimizingService().evaluateDynamicAllocation(group.getName(), firstRemovalAt + 30_000L);
+    Assertions.assertEquals(1, optimizerManager().listOptimizers(group.getName()).size());
+
+    optimizingService().evaluateDynamicAllocation(group.getName(), firstRemovalAt + 70_000L);
+    Assertions.assertTrue(
+        optimizerManager().listOptimizers(group.getName()).isEmpty(),
+        "the cooldown expiry should admit the next removal");
+  }
 }
