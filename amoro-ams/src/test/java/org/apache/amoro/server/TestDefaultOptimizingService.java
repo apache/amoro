@@ -169,6 +169,35 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
+  public void testPollTaskBlockedWhileDraining() {
+    // A draining optimizer receives no new assignments even though a task is available; in-flight
+    // completion paths (touch/ack/complete) are deliberately not blocked.
+    optimizingService().beginGracefulDrain(token, Long.MAX_VALUE);
+    Assertions.assertNull(optimizingService().pollTask(token, THREAD_ID));
+
+    optimizingService().cancelDrain(token);
+    Assertions.assertNotNull(optimizingService().pollTask(token, THREAD_ID));
+  }
+
+  @Test
+  public void testDrainStartedDuringPollHandsTaskBack() {
+    OptimizingTask polled = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(polled);
+    TaskRuntime<?> taskRuntime =
+        optimizingService().listTasks(defaultResourceGroup().getName()).stream()
+            .filter(t -> t.getStatus() == TaskRuntime.Status.SCHEDULED)
+            .findFirst()
+            .orElse(null);
+    Assertions.assertNotNull(taskRuntime);
+
+    // The drain begins while a long-poll is parked inside the queue: the entry check has already
+    // passed, so the post-poll guard must hand the fetched task back instead of assigning it.
+    optimizingService().beginGracefulDrain(token, Long.MAX_VALUE);
+    Assertions.assertNull(optimizingService().guardDrainedPoll(token, taskRuntime));
+    Assertions.assertEquals(TaskRuntime.Status.PLANNED, taskRuntime.getStatus());
+  }
+
+  @Test
   public void testPollTaskTwice() {
     // 1.poll task
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);

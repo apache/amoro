@@ -116,6 +116,16 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final Map<String, OptimizingQueue> optimizingQueueByGroup = new ConcurrentHashMap<>();
   private final Map<String, OptimizingQueue> optimizingQueueByToken = new ConcurrentHashMap<>();
   private final Map<String, OptimizerInstance> authOptimizers = new ConcurrentHashMap<>();
+
+  /**
+   * Tokens of draining optimizers (AIP-5 scale-down): {@link #pollTask} returns {@code null} for
+   * them, blocking new assignments while in-flight tasks complete normally.
+   */
+  private final Set<String> pendingRemovalTokens = ConcurrentHashMap.newKeySet();
+
+  /** Force-removal deadline per draining token, the {@code drain-timeout} safety net. */
+  private final Map<String, Long> drainDeadlines = new ConcurrentHashMap<>();
+
   private final OptimizerKeeper optimizerKeeper = new OptimizerKeeper("optimizer-keeper-thread");
   private final OptimizerGroupKeeper optimizerGroupKeeper =
       new OptimizerGroupKeeper("optimizer-group-keeper-thread");
@@ -269,15 +279,103 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   @Override
   public OptimizingTask pollTask(String authToken, int threadId) {
+    if (pendingRemovalTokens.contains(authToken)) {
+      return null;
+    }
     LOG.debug("Optimizer {} (threadId {}) try polling task", authToken, threadId);
     OptimizerThread optimizerThread = getAuthenticatedOptimizer(authToken).getThread(threadId);
     OptimizingQueue queue = getQueueByToken(authToken);
-    TaskRuntime<?> task = queue.pollTask(optimizerThread, pollingTimeout, breakQuotaLimit);
+    TaskRuntime<?> task =
+        guardDrainedPoll(
+            authToken, queue.pollTask(optimizerThread, pollingTimeout, breakQuotaLimit));
     if (task != null) {
       LOG.info("OptimizerThread {} polled task {}", optimizerThread, task.getTaskId());
       return task.extractProtocolTask();
     }
     return null;
+  }
+
+  /**
+   * Close the long-poll race on drain start: the entry check above cannot stop a thread already
+   * parked inside the queue's poll, which may fetch a task after its token entered the
+   * pending-removal set. Hand such a task back instead of assigning it to a draining optimizer.
+   */
+  @VisibleForTesting
+  TaskRuntime<?> guardDrainedPoll(String authToken, TaskRuntime<?> task) {
+    if (task == null || !pendingRemovalTokens.contains(authToken)) {
+      return task;
+    }
+    OptimizingQueue queue = optimizingQueueByToken.get(authToken);
+    if (queue != null) {
+      try {
+        queue.retryTask(task);
+      } catch (Exception e) {
+        // The existing suspending-task safety net will still reclaim it after the removal.
+        LOG.warn(
+            "Failed to hand back task {} from draining optimizer {}",
+            task.getTaskId(),
+            authToken,
+            e);
+      }
+    }
+    return null;
+  }
+
+  /** Block new task assignments to the token; in-flight tasks keep completing normally. */
+  void beginGracefulDrain(String token, long deadlineMs) {
+    drainDeadlines.put(token, deadlineMs);
+    pendingRemovalTokens.add(token);
+    LOG.info("Optimizer {} begins graceful drain", token);
+  }
+
+  /** Re-admit the token to task assignment, e.g. when dynamic allocation is disabled mid-drain. */
+  void cancelDrain(String token) {
+    pendingRemovalTokens.remove(token);
+    drainDeadlines.remove(token);
+  }
+
+  @VisibleForTesting
+  boolean isDraining(String token) {
+    return pendingRemovalTokens.contains(token);
+  }
+
+  /**
+   * Remove a drained optimizer: release the container resource, delete the persisted resource row,
+   * and unregister. A missing resource row (the pod self-registered after a persist failure, or a
+   * manual release raced the row away) is not an error — the instance itself carries the
+   * container-side identity, so release through it and only skip the row delete; treating this as a
+   * retryable failure would loop forever on a pod whose row can never reappear. A container release
+   * failure keeps the drain state so a later round retries the idempotent deletion.
+   */
+  void executeRemoval(String token) {
+    OptimizerInstance optimizer = authOptimizers.get(token);
+    if (optimizer == null || optimizer.getResourceId() == null) {
+      // Already unregistered, or externally launched: nothing for AMS to release.
+      cancelDrain(token);
+      return;
+    }
+    try {
+      Resource resource = optimizerManager.getResource(optimizer.getResourceId());
+      if (resource != null) {
+        resource.getProperties().putAll(optimizer.getProperties());
+        ((AbstractOptimizerContainer) Containers.get(resource.getContainerName()))
+            .releaseResource(resource);
+        optimizerManager.deleteResource(optimizer.getResourceId());
+      } else {
+        ((AbstractOptimizerContainer) Containers.get(optimizer.getContainerName()))
+            .releaseResource(optimizer);
+      }
+    } catch (Throwable t) {
+      LOG.warn(
+          "Failed to release optimizer {} (resource {}), will retry",
+          token,
+          optimizer.getResourceId(),
+          t);
+      return;
+    }
+    unregisterOptimizer(token);
+    cancelDrain(token);
+    LOG.info("Optimizer {} (resource {}) removed by scale-down", token, optimizer.getResourceId());
   }
 
   @Override

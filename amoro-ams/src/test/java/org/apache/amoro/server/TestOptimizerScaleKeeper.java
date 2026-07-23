@@ -64,6 +64,7 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
   private volatile Function<org.apache.amoro.api.OptimizerRegisterInfo, String> optimizerRegistrar;
   private static boolean originIsInitialized = false;
   private String currentGroupName;
+  private TestOptimizerGroupKeeper.MockOptimizerContainer mockContainer;
 
   public TestOptimizerScaleKeeper(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -120,7 +121,7 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
   }
 
   private void setupMockContainer(Supplier<String> targetGroupNameSupplier) throws Exception {
-    TestOptimizerGroupKeeper.MockOptimizerContainer mockContainer =
+    mockContainer =
         new TestOptimizerGroupKeeper.MockOptimizerContainer(
             resourceAvailable,
             scaleOutCallCount,
@@ -282,5 +283,93 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
     List<OptimizerInstance> optimizers = optimizerManager().listOptimizers(currentGroupName);
     Assertions.assertEquals(
         2, optimizers.size(), "runtime-enabled DRA group should reach its floor in K units");
+  }
+
+  private OptimizerInstance awaitSingleOptimizer(String groupName) throws InterruptedException {
+    Thread.sleep(500);
+    List<OptimizerInstance> optimizers = optimizerManager().listOptimizers(groupName);
+    Assertions.assertEquals(1, optimizers.size(), "floor of 1 should register one optimizer");
+    return optimizers.get(0);
+  }
+
+  /** Removal releases the container resource, deletes the persisted row, and unregisters. */
+  @Test
+  public void testExecuteRemovalReleasesResourceAndUnregisters() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildDraResourceGroup(TEST_GROUP_NAME + "-5", 1, 1);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    OptimizerInstance optimizer = awaitSingleOptimizer(group.getName());
+
+    // Keep the keeper from instantly re-filling the floor while we assert emptiness.
+    resourceAvailable.set(false);
+    optimizingService().executeRemoval(optimizer.getToken());
+
+    Assertions.assertTrue(optimizerManager().listOptimizers(group.getName()).isEmpty());
+    Assertions.assertNull(optimizerManager().getResource(optimizer.getResourceId()));
+    Assertions.assertTrue(
+        mockContainer.getReleasedResources().stream()
+            .anyMatch(r -> optimizer.getResourceId().equals(r.getResourceId())),
+        "the container resource must be released");
+  }
+
+  /**
+   * A registered optimizer whose resource row is missing (the pod self-registered after a persist
+   * failure, or a manual release raced the row away) must still be removable: the instance itself
+   * carries the container-side identity, so release through it and only skip the row delete.
+   */
+  @Test
+  public void testExecuteRemovalFallsBackWhenResourceRowMissing() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildDraResourceGroup(TEST_GROUP_NAME + "-6", 1, 1);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    OptimizerInstance optimizer = awaitSingleOptimizer(group.getName());
+
+    resourceAvailable.set(false);
+    optimizerManager().deleteResource(optimizer.getResourceId());
+    optimizingService().executeRemoval(optimizer.getToken());
+
+    Assertions.assertTrue(
+        optimizerManager().listOptimizers(group.getName()).isEmpty(),
+        "a row-less optimizer must not become an unremovable zombie");
+    Assertions.assertTrue(
+        mockContainer.getReleasedResources().stream()
+            .anyMatch(r -> optimizer.getResourceId().equals(r.getResourceId())),
+        "the container side must still be released via the instance");
+  }
+
+  /**
+   * A transient container release failure keeps the drain state so a later round retries the
+   * idempotent deletion; the optimizer must not be unregistered while its pod may still exist.
+   */
+  @Test
+  public void testExecuteRemovalKeepsDrainStateOnReleaseFailure() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildDraResourceGroup(TEST_GROUP_NAME + "-7", 1, 1);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    OptimizerInstance optimizer = awaitSingleOptimizer(group.getName());
+
+    resourceAvailable.set(false);
+    optimizingService().beginGracefulDrain(optimizer.getToken(), Long.MAX_VALUE);
+    mockContainer.setReleaseAvailable(false);
+    optimizingService().executeRemoval(optimizer.getToken());
+
+    Assertions.assertTrue(
+        optimizingService().isDraining(optimizer.getToken()),
+        "drain state must survive the failed release for a later retry");
+    Assertions.assertEquals(
+        1,
+        optimizerManager().listOptimizers(group.getName()).size(),
+        "the optimizer must stay registered while its pod may still exist");
+
+    mockContainer.setReleaseAvailable(true);
+    optimizingService().executeRemoval(optimizer.getToken());
+    Assertions.assertFalse(optimizingService().isDraining(optimizer.getToken()));
+    Assertions.assertTrue(optimizerManager().listOptimizers(group.getName()).isEmpty());
   }
 }
