@@ -33,9 +33,7 @@ import org.mockito.Mockito;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Tests for {@link TableProcessExecutor}.
- */
+/** Tests for {@link TableProcessExecutor}. */
 public class TestTableProcessExecutor {
 
   /**
