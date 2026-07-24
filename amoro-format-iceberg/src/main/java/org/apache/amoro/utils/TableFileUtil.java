@@ -86,9 +86,9 @@ public class TableFileUtil {
    *
    * @param io mixed-format file io
    * @param directoryPath directory location
-   * @param exclude the directory will not be deleted 
-   * @Param directoriesToBeDeleted: all the directories that need to be deleted
-   *     directories that need to be deleted
+   * @param exclude the directory will not be deleted
+   * @param directoriesToBeDeleted: all the directories that need to be deleted directories that
+   *     need to be deleted
    */
   public static void deleteEmptyDirectory(
       AuthenticatedFileIO io,

@@ -120,7 +120,7 @@ public class RollingFileCleaner {
     }
   }
 
-  public void doCleanParentDirectory() {
+  private void doCleanParentDirectory() {
     // Try to delete empty parent directories. Skipped automatically by
     // TableFileUtil.deleteEmptyDirectory when the underlying FileIO is an object store.
     if (fileIO.supportFileSystemOperations()) {
