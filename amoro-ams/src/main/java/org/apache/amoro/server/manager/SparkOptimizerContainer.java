@@ -202,6 +202,12 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
 
   private void addKubernetesProperties(
       Resource resource, SparkOptimizerContainer.SparkConf sparkConf) {
+    sparkConf.putToOptions(
+        SparkConfKeys.KUBERNETES_SUBMISSION_WAIT_APP_COMPLETION,
+        StringUtils.defaultIfEmpty(
+            sparkConf.configValue(SparkConfKeys.KUBERNETES_SUBMISSION_WAIT_APP_COMPLETION),
+            "false"));
+
     String driverName = kubernetesDriverName(resource);
     sparkConf.putToOptions(
         SparkOptimizerContainer.SparkConfKeys.KUBERNETES_DRIVER_NAME, driverName);
@@ -332,6 +338,8 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
     public static final String KUBERNETES_IMAGE_REF = "spark.kubernetes.container.image";
     public static final String KUBERNETES_DRIVER_NAME = "spark.kubernetes.driver.pod.name";
     public static final String KUBERNETES_NAMESPACE = "spark.kubernetes.namespace";
+    public static final String KUBERNETES_SUBMISSION_WAIT_APP_COMPLETION =
+        "spark.kubernetes.submission.waitAppCompletion";
     public static final String KUBERNETES_EXECUTOR_LABEL_PREFIX = "spark.kubernetes.driver.label.";
     public static final String KUBERNETES_DRIVER_LABEL_PREFIX = "spark.kubernetes.driver.label.";
     public static final String KUBERNETES_DRA_ENABLED = "spark.dynamicAllocation.enabled";
