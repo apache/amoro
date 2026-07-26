@@ -19,6 +19,8 @@
 package org.apache.amoro.server.manager;
 
 import org.apache.amoro.OptimizerProperties;
+import org.apache.amoro.resource.Resource;
+import org.apache.amoro.resource.ResourceType;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Test;
@@ -57,5 +59,76 @@ public class TestSparkOptimizerContainer {
     Assert.assertTrue(sparkOptions.contains("--conf key1=value1"));
     Assert.assertTrue(sparkOptions.contains("--conf key2=value4"));
     Assert.assertTrue(sparkOptions.contains("--conf key5=value5"));
+  }
+
+  @Test
+  public void testKubernetesWaitAppCompletionDefaultsToFalse() {
+    SparkOptimizerContainer container = createContainer("k8s://https://127.0.0.1:6443");
+
+    String startupArgs =
+        container.buildOptimizerStartupArgsString(createResource(Maps.newHashMap()));
+
+    Assert.assertTrue(
+        startupArgs.contains(
+            "--conf "
+                + SparkOptimizerContainer.SparkConfKeys.KUBERNETES_SUBMISSION_WAIT_APP_COMPLETION
+                + "=false"));
+  }
+
+  @Test
+  public void testKubernetesWaitAppCompletionCanBeOverridden() {
+    SparkOptimizerContainer container = createContainer("k8s://https://127.0.0.1:6443");
+    Map<String, String> resourceProperties = Maps.newHashMap();
+    resourceProperties.put(
+        SparkOptimizerContainer.SparkConf.SPARK_PARAMETER_PREFIX
+            + SparkOptimizerContainer.SparkConfKeys.KUBERNETES_SUBMISSION_WAIT_APP_COMPLETION,
+        "true");
+
+    String startupArgs =
+        container.buildOptimizerStartupArgsString(createResource(resourceProperties));
+
+    Assert.assertTrue(
+        startupArgs.contains(
+            "--conf "
+                + SparkOptimizerContainer.SparkConfKeys.KUBERNETES_SUBMISSION_WAIT_APP_COMPLETION
+                + "=true"));
+    Assert.assertFalse(
+        startupArgs.contains(
+            "--conf "
+                + SparkOptimizerContainer.SparkConfKeys.KUBERNETES_SUBMISSION_WAIT_APP_COMPLETION
+                + "=false"));
+  }
+
+  @Test
+  public void testYarnDoesNotSetKubernetesWaitAppCompletion() {
+    SparkOptimizerContainer container = createContainer("yarn");
+
+    String startupArgs =
+        container.buildOptimizerStartupArgsString(createResource(Maps.newHashMap()));
+
+    Assert.assertFalse(
+        startupArgs.contains(
+            SparkOptimizerContainer.SparkConfKeys.KUBERNETES_SUBMISSION_WAIT_APP_COMPLETION));
+  }
+
+  private SparkOptimizerContainer createContainer(String master) {
+    Map<String, String> properties = Maps.newHashMap(containerProperties);
+    properties.put(SparkOptimizerContainer.SPARK_MASTER, master);
+    if (master.startsWith("k8s://")) {
+      properties.put(
+          SparkOptimizerContainer.SparkConf.SPARK_PARAMETER_PREFIX
+              + SparkOptimizerContainer.SparkConfKeys.KUBERNETES_IMAGE_REF,
+          "apache/amoro-spark-optimizer:test");
+    }
+    SparkOptimizerContainer container = new SparkOptimizerContainer();
+    container.init("spark", properties);
+    return container;
+  }
+
+  private Resource createResource(Map<String, String> properties) {
+    return new Resource.Builder("spark", "test-group", ResourceType.OPTIMIZER)
+        .setThreadCount(1)
+        .setProperties(properties)
+        .build();
   }
 }

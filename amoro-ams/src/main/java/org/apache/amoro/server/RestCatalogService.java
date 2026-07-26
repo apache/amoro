@@ -60,15 +60,18 @@ import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.exceptions.BadRequestException;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.exceptions.UnprocessableEntityException;
 import org.apache.iceberg.rest.RESTResponse;
 import org.apache.iceberg.rest.RESTSerializers;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.rest.requests.ReportMetricsRequest;
 import org.apache.iceberg.rest.requests.ReportMetricsRequestParser;
+import org.apache.iceberg.rest.requests.UpdateNamespacePropertiesRequest;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
 import org.apache.iceberg.rest.responses.ConfigResponse;
 import org.apache.iceberg.rest.responses.CreateNamespaceResponse;
@@ -77,6 +80,7 @@ import org.apache.iceberg.rest.responses.GetNamespaceResponse;
 import org.apache.iceberg.rest.responses.ListNamespacesResponse;
 import org.apache.iceberg.rest.responses.ListTablesResponse;
 import org.apache.iceberg.rest.responses.LoadTableResponse;
+import org.apache.iceberg.rest.responses.UpdateNamespacePropertiesResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,7 +135,9 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
             post("/v1/catalogs/{catalog}/namespaces", this::createNamespace);
             get("/v1/catalogs/{catalog}/namespaces/{namespace}", this::getNamespace);
             delete("/v1/catalogs/{catalog}/namespaces/{namespace}", this::dropNamespace);
-            post("/v1/catalogs/{catalog}/namespaces/{namespace}", this::setNamespaceProperties);
+            post(
+                "/v1/catalogs/{catalog}/namespaces/{namespace}/properties",
+                this::setNamespaceProperties);
             get(
                 "/v1/catalogs/{catalog}/namespaces/{namespace}/tables",
                 this::listTablesInNamespace);
@@ -229,12 +235,16 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
         ctx,
         catalog -> {
           CreateNamespaceRequest request = bodyAsClass(ctx, CreateNamespaceRequest.class);
+          request.validate();
           Namespace ns = request.namespace();
           checkUnsupported(ns.length() == 1, "multi-level namespace is not supported now");
           String database = ns.level(0);
           checkAlreadyExists(!catalog.databaseExists(database), "Database", database);
-          catalog.createDatabase(database);
-          return CreateNamespaceResponse.builder().withNamespace(Namespace.of(database)).build();
+          catalog.createDatabase(database, request.properties());
+          return CreateNamespaceResponse.builder()
+              .withNamespace(Namespace.of(database))
+              .setProperties(catalog.getDatabaseProperties(database))
+              .build();
         });
   }
 
@@ -243,7 +253,10 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
     handleNamespace(
         ctx,
         (catalog, database) ->
-            GetNamespaceResponse.builder().withNamespace(Namespace.of(database)).build());
+            GetNamespaceResponse.builder()
+                .withNamespace(Namespace.of(database))
+                .setProperties(catalog.getDatabaseProperties(database))
+                .build());
   }
 
   /** DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace} */
@@ -258,7 +271,30 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   /** POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/properties */
   public void setNamespaceProperties(Context ctx) {
-    throw new UnsupportedOperationException("namespace properties is not supported");
+    handleNamespace(
+        ctx,
+        (catalog, database) -> {
+          UpdateNamespacePropertiesRequest request =
+              bodyAsClass(ctx, UpdateNamespacePropertiesRequest.class);
+          request.validate();
+
+          Map<String, String> properties =
+              catalog.applyDatabasePropertiesUpdate(
+                  database, request.updates(), request.removals());
+          List<String> removed =
+              request.removals().stream()
+                  .filter(properties::containsKey)
+                  .collect(Collectors.toList());
+          List<String> missing =
+              request.removals().stream()
+                  .filter(key -> !properties.containsKey(key))
+                  .collect(Collectors.toList());
+          return UpdateNamespacePropertiesResponse.builder()
+              .addUpdated(request.updates().keySet())
+              .addRemoved(removed)
+              .addMissing(missing)
+              .build();
+        });
   }
 
   /** GET PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables */
@@ -488,6 +524,7 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
     AuthenticationTimeout(419),
     NotFound(404),
     Conflict(409),
+    UnprocessableEntity(422),
     InternalServerError(500),
     ServiceUnavailable(503);
     public final int code;
@@ -497,7 +534,11 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
     }
 
     public static IcebergRestErrorCode exceptionToCode(Exception e) {
-      if (e instanceof UnsupportedOperationException) {
+      if (e instanceof BadRequestException || e instanceof IllegalArgumentException) {
+        return BadRequest;
+      } else if (e instanceof UnprocessableEntityException) {
+        return UnprocessableEntity;
+      } else if (e instanceof UnsupportedOperationException) {
         return UnsupportedOperation;
       } else if (e instanceof ObjectNotExistsException) {
         return NotFound;
