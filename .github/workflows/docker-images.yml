@@ -51,13 +51,13 @@ jobs:
           cache: maven
           check-latest: false
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@4574d27a4764455b4219d61b5899f1b0d2445625 # v3.2.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@f7ce87c0d8a0c5b3ab3af68c5d8b845b5a3b60c0 # v3.10.0
 
       - name: Set up Docker tags
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@902e13164e78e1bd7f56b1ca0f3e0e16e9b03278 # v5.7.0
         id: meta
         with:
           flavor: |
@@ -76,7 +76,7 @@ jobs:
         run: echo '${{ steps.meta.outputs.tags }}'
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@9780b0c4428bb0055a6b35373227f230ec16666d # v3.3.0
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -90,7 +90,7 @@ jobs:
         run: ./mvnw clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats -Pno-extended-disk-storage -Pno-plugin-bin
 
       - name: Build and Push Amoro Docker Image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@ca877d9245402d1537745e0eaa6bc6f784ace2d7 # v6.4.1
         with:
           context: .
           push: true
@@ -115,13 +115,13 @@ jobs:
           cache: maven
           check-latest: false
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@4574d27a4764455b4219d61b5899f1b0d2445625 # v3.2.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@f7ce87c0d8a0c5b3ab3af68c5d8b845b5a3b60c0 # v3.10.0
 
       - name: Set up Docker tags
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@902e13164e78e1bd7f56b1ca0f3e0e16e9b03278 # v5.7.0
         id: meta
         with:
           flavor: |
@@ -141,7 +141,7 @@ jobs:
         run: echo '${{ steps.meta.outputs.tags }}'
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@9780b0c4428bb005a6b35373227f230ec16666d # v3.3.0
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -167,7 +167,7 @@ jobs:
         run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
 
       - name: Build and Push Flink Optimizer Docker Image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@ca877d9245402d1537745e0eaa6bc6f784ace2d7 # v6.4.1
         env:
           AMORO_VERSION: ${{ steps.version.outputs.AMORO_VERSION }}
         with:
@@ -198,13 +198,13 @@ jobs:
           cache: maven
           check-latest: false
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@4574d27a4764455b4219d61b5899f1b0d2445625 # v3.2.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@f7ce87c0d8a0c5b3ab3af68c5d8b845b5a3b60c0 # v3.10.0
 
       - name: Set up Docker tags
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@902e13164e78e1bd7f56b1ca0f3e0e16e9b03278 # v5.7.0
         id: meta
         with:
           flavor: |
@@ -222,7 +222,7 @@ jobs:
         run: echo '${{ steps.meta.outputs.tags }}'
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@9780b0c4428bb005a6b35373227f230ec16666d # v3.3.0
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -248,7 +248,7 @@ jobs:
         run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${SPARK_VERSION} -DskipTests -B -ntp
 
       - name: Build and Push Spark Optimizer Docker Image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@ca877d9245402d1537745e0eaa6bc6f784ace2d7 # v6.4.1
         env:
           AMORO_VERSION: ${{ steps.version.outputs.AMORO_VERSION }}
           SPARK_MAJOR_VERSION: ${{ steps.versions.outputs.SPARK_MAJOR_VERSION }}
