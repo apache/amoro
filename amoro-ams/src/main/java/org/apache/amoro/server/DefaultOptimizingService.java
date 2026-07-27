@@ -252,8 +252,13 @@ public class DefaultOptimizingService extends StatedPersistentBase
     doAs(OptimizerMapper.class, mapper -> mapper.deleteOptimizer(token));
     OptimizingQueue optimizingQueue = optimizingQueueByToken.remove(token);
     OptimizerInstance optimizer = authOptimizers.remove(token);
-    if (optimizingQueue != null) {
-      optimizingQueue.removeOptimizer(optimizer);
+    if (optimizer != null) {
+      if (optimizingQueue == null) {
+        optimizingQueue = optimizingQueueByGroup.get(optimizer.getGroupName());
+      }
+      if (optimizingQueue != null) {
+        optimizingQueue.removeOptimizer(optimizer);
+      }
     }
     // An optimizer that dies mid-drain is unregistered here by heartbeat expiry; its token can
     // never be matched again, so leftover drain state would sit in the pending-removal set
