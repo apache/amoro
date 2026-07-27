@@ -41,6 +41,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.ContentScanTask;
@@ -143,6 +144,10 @@ public class IcebergTableMaintainer implements TableMaintainer {
       return Maps.newHashMap();
     }
 
+    if (!shouldProceedOrphanCleanup(tableConfiguration)) {
+      return Maps.newHashMap();
+    }
+
     long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
 
     int dataDeleted = cleanContentFiles(System.currentTimeMillis() - keepTime, metrics);
@@ -157,6 +162,61 @@ public class IcebergTableMaintainer implements TableMaintainer {
     summary.put("orphan-data-files-cleaned", String.valueOf(dataDeleted));
     summary.put("orphan-metadata-files-cleaned", String.valueOf(metadataDeleted));
     return summary;
+  }
+
+  /**
+   * Inspects whether the table's location is shared with another table before cleaning orphan
+   * files.
+   *
+   * @return {@code true} if the cleanup should proceed; {@code false} if it must be skipped to
+   *     avoid deleting files that may belong to another table.
+   */
+  private boolean shouldProceedOrphanCleanup(TableConfiguration tableConfiguration) {
+    boolean conflictDetected;
+    String conflictDetail = null;
+    try {
+      conflictDetected = IcebergTableUtil.hasOtherTableInLocation(table);
+    } catch (ValidationException e) {
+      // The shared-location check could not run (e.g. FileIO lacks prefix support).
+      conflictDetected = true;
+      conflictDetail = e.getMessage();
+    }
+
+    if (!conflictDetected) {
+      return true;
+    }
+
+    if (tableConfiguration.isIgnoreLocationConflictWhenCleanOrphan()) {
+      // The user opted out of the conflict check, so proceed despite it.
+      LOG.warn(
+          "Location conflict detected for table {} at '{}' ({}), but the table property {} is "
+              + "enabled; skipping the conflict check and proceeding with cleanup.",
+          table.name(),
+          table.location(),
+          conflictDetail != null
+              ? "unable to determine shared location: " + conflictDetail
+              : "another table shares this location",
+          TableProperties.IGNORE_LOCATION_CONFLICT_WHEN_CLEAN_ORPHAN);
+      return true;
+    }
+
+    if (conflictDetail != null) {
+      // Fail closed: skip cleanup instead of risking another table's files.
+      LOG.error(
+          "Unable to determine whether another table shares location '{}': {}. "
+              + "Skipping cleanup to avoid deleting files that may belong to another table. "
+              + "If you are certain this location is not shared, set {} to true to skip this check "
+              + "and proceed with cleanup.",
+          table.location(),
+          conflictDetail,
+          TableProperties.IGNORE_LOCATION_CONFLICT_WHEN_CLEAN_ORPHAN);
+    } else {
+      LOG.warn(
+          "Table {} has other table in location {}, skip clean orphan files",
+          table.name(),
+          table.location());
+    }
+    return false;
   }
 
   @Override
