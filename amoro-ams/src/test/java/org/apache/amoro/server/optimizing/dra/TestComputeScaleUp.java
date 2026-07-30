@@ -228,4 +228,30 @@ public class TestComputeScaleUp {
     Assertions.assertEquals(
         1, state.computeScaleUp(8, 8, 0, 10, config, T0 + BACKLOG_MS + 2 * SUSTAINED_MS));
   }
+
+  // --- demand-signal exposure for scale-down mutual exclusion ---
+
+  @Test
+  void demandActiveWhileBacklogGateStillHolds() {
+    DynamicAllocationState state = new DynamicAllocationState();
+    // Demand exists but the backlog gate has not elapsed: no instances are added yet, but the
+    // signal must read active — scaling down a warm instance right before the gate opens would
+    // remove exactly the capacity the next round re-requests.
+    Assertions.assertEquals(0, state.computeScaleUp(2, 2, 3, 0, config(0, 100, 1), T0));
+    Assertions.assertTrue(state.wasDemandActive());
+  }
+
+  @Test
+  void demandInactiveOnQuietRound() {
+    DynamicAllocationState state = new DynamicAllocationState();
+    Assertions.assertEquals(0, state.computeScaleUp(4, 2, 0, 0, config(0, 100, 2), T0));
+    Assertions.assertFalse(state.wasDemandActive());
+  }
+
+  @Test
+  void floorDeficitCountsAsDemandActive() {
+    DynamicAllocationState state = new DynamicAllocationState();
+    Assertions.assertEquals(3, state.computeScaleUp(0, 0, 0, 0, config(5, 100, 2), T0));
+    Assertions.assertTrue(state.wasDemandActive());
+  }
 }
