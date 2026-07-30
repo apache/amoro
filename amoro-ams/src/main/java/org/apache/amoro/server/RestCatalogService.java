@@ -409,10 +409,14 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
             .map(MetadataUpdate.UpgradeFormatVersion::formatVersion)
             .findFirst();
     TableMetadata.Builder builder =
-        formatVersion.map(TableMetadata::buildFromEmpty).orElseGet(TableMetadata::buildFromEmpty);
+        formatVersion.isPresent()
+            ? TableMetadata.buildFromEmpty(formatVersion.get())
+            : TableMetadata.buildFromEmpty();
     request.updates().forEach(update -> update.applyTo(builder));
     TableMetadata icebergMetadata = builder.build();
 
+    // InternalTableCreator currently requires a CreateTableRequest for initialization. The
+    // metadata reconstructed above is passed to create(...) and is the metadata that is persisted.
     CreateTableRequest createRequest =
         CreateTableRequest.builder()
             .withName(tableName)
