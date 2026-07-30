@@ -76,6 +76,17 @@ public class TestSparkOptimizerContainer {
   }
 
   @Test
+  public void testKubernetesAddsLabelsToDriverAndExecutorPods() {
+    SparkOptimizerContainer container = createContainer("k8s://https://127.0.0.1:6443");
+    Resource resource = createResource(Maps.newHashMap());
+
+    String startupArgs = container.buildOptimizerStartupArgsString(resource);
+
+    assertPodLabels(startupArgs, "spark.kubernetes.driver.label.", resource);
+    assertPodLabels(startupArgs, "spark.kubernetes.executor.label.", resource);
+  }
+
+  @Test
   public void testKubernetesWaitAppCompletionCanBeOverridden() {
     SparkOptimizerContainer container = createContainer("k8s://https://127.0.0.1:6443");
     Map<String, String> resourceProperties = Maps.newHashMap();
@@ -130,5 +141,16 @@ public class TestSparkOptimizerContainer {
         .setThreadCount(1)
         .setProperties(properties)
         .build();
+  }
+
+  private void assertPodLabels(String startupArgs, String labelPrefix, Resource resource) {
+    Assert.assertTrue(
+        startupArgs.contains(
+            "--conf " + labelPrefix + "optimizer-group=" + resource.getGroupName()));
+    Assert.assertTrue(
+        startupArgs.contains(
+            "--conf " + labelPrefix + "optimizer-implementation=spark-native-kubernetes"));
+    Assert.assertTrue(
+        startupArgs.contains("--conf " + labelPrefix + "optimizer-id=" + resource.getResourceId()));
   }
 }
