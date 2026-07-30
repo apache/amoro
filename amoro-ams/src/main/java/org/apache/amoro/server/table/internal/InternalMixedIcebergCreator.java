@@ -59,46 +59,40 @@ public class InternalMixedIcebergCreator extends InternalIcebergCreator {
   }
 
   @Override
+  public org.apache.iceberg.TableMetadata stage() {
+    validate(icebergMetadata);
+    return super.stage();
+  }
+
+  @Override
   public TableMetadata create() {
-    Map<String, String> properties = request.properties();
-    Preconditions.checkArgument(
-        TablePropertyUtil.isBaseStore(properties, TableFormat.MIXED_ICEBERG),
-        "The table creation request must be base store of mixed-iceberg");
+    return create(icebergMetadata);
+  }
 
-    PrimaryKeySpec keySpec =
-        TablePropertyUtil.parsePrimaryKeySpec(request.schema(), request.properties());
+  @Override
+  public TableMetadata create(org.apache.iceberg.TableMetadata baseMetadata) {
+    validate(baseMetadata);
 
-    if (keySpec.primaryKeyExisted()) {
-      TableIdentifier identifier = TableIdentifier.of(database, tableName);
-      TableIdentifier changeIdentifier = TablePropertyUtil.parseChangeIdentifier(properties);
-      String expectChangeStoreName =
-          identifier.name() + InternalTableConstants.CHANGE_STORE_TABLE_NAME_SUFFIX;
-      TableIdentifier expectChangeIdentifier =
-          TableIdentifier.of(identifier.namespace(), expectChangeStoreName);
-      Preconditions.checkArgument(
-          expectChangeIdentifier.equals(changeIdentifier),
-          "the change store identifier is not expected. expected: %s, but found %s",
-          expectChangeIdentifier.toString(),
-          changeIdentifier.toString());
-    }
-
-    TableMetadata metadata = super.create();
+    TableMetadata metadata = super.create(baseMetadata);
     metadata
         .getProperties()
         .put(InternalTableConstants.MIXED_ICEBERG_BASED_REST, Boolean.toString(true));
+
+    PrimaryKeySpec keySpec =
+        TablePropertyUtil.parsePrimaryKeySpec(baseMetadata.schema(), baseMetadata.properties());
     if (!keySpec.primaryKeyExisted()) {
       return metadata;
     }
 
-    Map<String, String> changeProperties = Maps.newHashMap(request.properties());
+    Map<String, String> changeProperties = Maps.newHashMap(baseMetadata.properties());
     changeProperties.putAll(
         TablePropertyUtil.changeStoreProperties(keySpec, TableFormat.MIXED_ICEBERG));
     String changeTableLocation = metadata.getTableLocation() + "/change";
     org.apache.iceberg.TableMetadata changeMetadata =
         org.apache.iceberg.TableMetadata.newTableMetadata(
-            icebergMetadata.schema(),
-            icebergMetadata.spec(),
-            icebergMetadata.sortOrder(),
+            baseMetadata.schema(),
+            baseMetadata.spec(),
+            baseMetadata.sortOrder(),
             changeTableLocation,
             changeProperties);
     String changeMetadataFileLocation =
@@ -116,6 +110,30 @@ public class InternalMixedIcebergCreator extends InternalIcebergCreator {
     this.changMetadataFileLocation = changeMetadataFileLocation;
     TableMetadataParser.overwrite(changeMetadata, changeStoreFile);
     return metadata;
+  }
+
+  private void validate(org.apache.iceberg.TableMetadata metadata) {
+    Map<String, String> properties = metadata.properties();
+    Preconditions.checkArgument(
+        TablePropertyUtil.isBaseStore(properties, TableFormat.MIXED_ICEBERG),
+        "The table creation request must be base store of mixed-iceberg");
+
+    PrimaryKeySpec keySpec =
+        TablePropertyUtil.parsePrimaryKeySpec(metadata.schema(), metadata.properties());
+
+    if (keySpec.primaryKeyExisted()) {
+      TableIdentifier identifier = TableIdentifier.of(database, tableName);
+      TableIdentifier changeIdentifier = TablePropertyUtil.parseChangeIdentifier(properties);
+      String expectChangeStoreName =
+          identifier.name() + InternalTableConstants.CHANGE_STORE_TABLE_NAME_SUFFIX;
+      TableIdentifier expectChangeIdentifier =
+          TableIdentifier.of(identifier.namespace(), expectChangeStoreName);
+      Preconditions.checkArgument(
+          expectChangeIdentifier.equals(changeIdentifier),
+          "the change store identifier is not expected. expected: %s, but found %s",
+          expectChangeIdentifier.toString(),
+          changeIdentifier.toString());
+    }
   }
 
   @Override

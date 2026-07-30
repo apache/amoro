@@ -16,28 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.internal;
+package org.apache.amoro.server.optimizing;
 
-import org.apache.amoro.server.table.TableMetadata;
+import org.apache.amoro.api.OptimizingTaskId;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
-import java.io.Closeable;
+public class TestTaskRuntime {
 
-/** Interface to create an internal table. */
-public interface InternalTableCreator extends Closeable {
+  @Test
+  void taskQuotaCopiesFailReason() {
+    TaskRuntime<?> task = Mockito.mock(TaskRuntime.class);
+    Mockito.when(task.getTaskId()).thenReturn(new OptimizingTaskId(1L, 1));
+    Mockito.when(task.getFailReason()).thenReturn("task failed");
 
-  /** Build Iceberg metadata without writing files or registering the table. */
-  org.apache.iceberg.TableMetadata stage();
+    TaskRuntime.TaskQuota quota = new TaskRuntime.TaskQuota(task);
 
-  /** Write Iceberg metadata and prepare the {@link TableMetadata} for AMS. */
-  TableMetadata create();
-
-  /** Persist Iceberg metadata and prepare the table metadata for AMS. */
-  TableMetadata create(org.apache.iceberg.TableMetadata icebergMetadata);
-
-  /** Remove files written during {@link #create()}. */
-  void rollback();
-
-  /** Release resources such as {@link org.apache.iceberg.io.FileIO}. */
-  @Override
-  default void close() {}
+    Assertions.assertEquals("task failed", quota.getFailReason());
+  }
 }
