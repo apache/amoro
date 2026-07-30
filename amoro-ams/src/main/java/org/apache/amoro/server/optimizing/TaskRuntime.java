@@ -408,6 +408,7 @@ public class TaskRuntime<T extends StagedTaskDescriptor<?, ?, ?>> extends Stated
       this.taskId = task.getTaskId().getTaskId();
       this.tableId = task.getTableId();
       this.retryNum = task.getRetry();
+      this.failReason = task.getFailReason();
     }
 
     public long getStartTime() {
