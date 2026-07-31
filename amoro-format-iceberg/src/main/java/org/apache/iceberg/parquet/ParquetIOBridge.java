@@ -16,12 +16,25 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.cleanup;
+package org.apache.iceberg.parquet;
 
-/** Table cleanup operation enum. Defines different operation types for table cleanup tasks. */
-public enum CleanupOperation {
-  SNAPSHOTS_EXPIRING,
-  //  NONE indicates operation types where no cleanup process records are
-  //  saved in the table_runtime_state table.
-  NONE;
+import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.io.OutputFile;
+
+/**
+ * Bridge for reusing Iceberg's package-scoped {@link ParquetIO} conversions from parquet row-group
+ * merge path. This class lives in the same package as {@link ParquetIO} on purpose to convert
+ * Iceberg {@link org.apache.iceberg.io.InputFile}/{@link org.apache.iceberg.io.OutputFile}
+ * instances into Parquet file abstractions without re-implementing Iceberg's adapter logic.
+ */
+public final class ParquetIOBridge {
+  private ParquetIOBridge() {}
+
+  public static org.apache.parquet.io.InputFile file(InputFile file) {
+    return ParquetIO.file(file);
+  }
+
+  public static org.apache.parquet.io.OutputFile file(OutputFile file) {
+    return ParquetIO.file(file);
+  }
 }

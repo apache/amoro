@@ -18,6 +18,10 @@
 
 package org.apache.amoro.maintainer;
 
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+
+import java.util.Map;
+
 /**
  * API for maintaining table.
  *
@@ -27,24 +31,24 @@ package org.apache.amoro.maintainer;
 public interface TableMaintainer {
 
   /** Clean table orphan files. Includes: data files, metadata files. */
-  void cleanOrphanFiles();
+  Map<String, String> cleanOrphanFiles();
 
   /** Clean table dangling delete files. */
-  default void cleanDanglingDeleteFiles() {
-    // DO nothing by default
+  default Map<String, String> cleanDanglingDeleteFiles() {
+    return Maps.newHashMap();
   }
 
   /**
    * Expire snapshots. The optimizing based on the snapshot that the current table relies on will
    * not expire according to TableRuntime.
    */
-  void expireSnapshots();
+  Map<String, String> expireSnapshots();
 
   /**
    * Expire historical data based on the expiration field, and data that exceeds the retention
    * period will be purged
    */
-  void expireData();
+  Map<String, String> expireData();
 
   /** Auto create tags for table. */
   void autoCreateTags();

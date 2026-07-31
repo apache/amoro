@@ -45,6 +45,9 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
       configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, Duration.ofMillis(800L));
       configurations.set(
           AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT, Duration.ofMillis(30000L));
+      // must stay above OPTIMIZER_POLLING_TIMEOUT (3s): a blocking pollTask waiting out its full
+      // timeout would otherwise pick up the task the keeper reset by ack-timeout in the meantime
+      configurations.set(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT, Duration.ofMillis(5000L));
       configurations.set(
           AmoroManagementConf.OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL,
           Duration.ofMillis(10L));

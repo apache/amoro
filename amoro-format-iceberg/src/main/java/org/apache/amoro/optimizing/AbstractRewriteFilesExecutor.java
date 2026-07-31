@@ -145,7 +145,7 @@ public abstract class AbstractRewriteFilesExecutor
     return posDeleteWriter.result().deleteFiles();
   }
 
-  private List<DataFile> rewriterDataFiles() throws Exception {
+  protected List<DataFile> rewriterDataFiles() throws Exception {
     List<DataFile> result = Lists.newArrayList();
     TaskWriter<Record> writer = dataWriter();
 

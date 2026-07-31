@@ -39,6 +39,8 @@ public class OrphanFilesCleaningProcess extends TableProcess implements LocalPro
 
   private static final Logger LOG = LoggerFactory.getLogger(OrphanFilesCleaningProcess.class);
 
+  private volatile Map<String, String> summary = Maps.newLinkedHashMap();
+
   public OrphanFilesCleaningProcess(TableRuntime tableRuntime, ExecuteEngine engine) {
     super(tableRuntime, engine);
   }
@@ -53,7 +55,7 @@ public class OrphanFilesCleaningProcess extends TableProcess implements LocalPro
     try {
       AmoroTable<?> amoroTable = tableRuntime.loadTable();
       TableMaintainer tableMaintainer = TableMaintainerFactory.create(amoroTable, tableRuntime);
-      tableMaintainer.cleanOrphanFiles();
+      summary = tableMaintainer.cleanOrphanFiles();
       tableRuntime.updateState(
           DefaultTableRuntime.CLEANUP_STATE_KEY,
           cleanUp -> cleanUp.setLastOrphanFilesCleanTime(System.currentTimeMillis()));
@@ -75,6 +77,6 @@ public class OrphanFilesCleaningProcess extends TableProcess implements LocalPro
 
   @Override
   public Map<String, String> getSummary() {
-    return Maps.newHashMap();
+    return summary;
   }
 }

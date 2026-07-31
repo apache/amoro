@@ -20,6 +20,7 @@ package org.apache.amoro.optimizer.flink;
 
 import org.apache.amoro.api.OptimizingTask;
 import org.apache.amoro.api.OptimizingTaskResult;
+import org.apache.amoro.client.OptimizingClientPools;
 import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.apache.amoro.optimizer.common.OptimizerExecutor;
 import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
@@ -51,6 +52,26 @@ public class FlinkOptimizerExecutor extends OptimizerExecutor {
 
   public void addRuntimeContext(String key, String value) {
     runtimeContext.put(key, value);
+  }
+
+  /**
+   * Best-effort heartbeat with the current token, usable after stop(). Flink cancels the
+   * FlinkToucher source before this operator, so the drain in {@link FlinkExecutor#close()} keeps
+   * the registration alive by touching AMS directly — otherwise AMS expires the optimizer after its
+   * heartbeat timeout and resets the in-flight task, dropping the drained result. Failures are
+   * swallowed; the next drain heartbeat simply retries. This never re-registers, consistent with
+   * the drain-mode toucher.
+   */
+  void bestEffortTouch() {
+    String currentToken = getToken();
+    if (currentToken == null) {
+      return;
+    }
+    try {
+      OptimizingClientPools.getClient(getConfig().getAmsUrl()).touch(currentToken);
+    } catch (Exception e) {
+      LOG.debug("Best-effort touch to AMS failed, will retry on the next drain heartbeat", e);
+    }
   }
 
   public void initOperatorMetric(MetricGroup metricGroup) {

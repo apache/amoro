@@ -41,6 +41,7 @@ import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
 import org.apache.amoro.table.descriptor.OptimizingTaskInfo;
 import org.apache.amoro.table.descriptor.PartitionBaseInfo;
 import org.apache.amoro.table.descriptor.PartitionFileBaseInfo;
+import org.apache.amoro.table.descriptor.ProcessCategory;
 import org.apache.amoro.table.descriptor.ServerTableMeta;
 import org.apache.amoro.table.descriptor.TableSummary;
 import org.apache.amoro.table.descriptor.TagOrBranchInfo;
@@ -89,6 +90,9 @@ import java.util.stream.Collectors;
 public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   public static final String PAIMON_MAIN_BRANCH_NAME = "main";
+  private static final String FULL_TYPE = "FULL";
+  private static final String MINOR_TYPE = "MINOR";
+  private static final List<String> OPTIMIZING_TYPES = Arrays.asList(FULL_TYPE, MINOR_TYPE);
 
   private ExecutorService executor;
 
@@ -372,7 +376,12 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
 
   @Override
   public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
-      AmoroTable<?> amoroTable, String type, ProcessStatus status, int limit, int offset) {
+      AmoroTable<?> amoroTable,
+      String type,
+      String processCategory,
+      ProcessStatus status,
+      int limit,
+      int offset) {
     // Temporary solution for Paimon. TODO: Get compaction info from Paimon compaction task
     List<OptimizingProcessInfo> processInfoList;
     TableIdentifier tableIdentifier = amoroTable.id();
@@ -428,9 +437,9 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
                       }
                     }
                     if (isPrimaryTable && hasMaxLevels) {
-                      optimizingProcessInfo.setOptimizingType("FULL");
+                      optimizingProcessInfo.setOptimizingType(FULL_TYPE);
                     } else {
-                      optimizingProcessInfo.setOptimizingType("MINOR");
+                      optimizingProcessInfo.setOptimizingType(MINOR_TYPE);
                     }
                     optimizingProcessInfo.setSuccessTasks(buckets.size());
                     optimizingProcessInfo.setTotalTasks(buckets.size());
@@ -445,10 +454,16 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+    List<String> categoryTypes = getProcessTypesByCategory(processCategory);
     processInfoList =
         processInfoList.stream()
             .filter(p -> StringUtils.isBlank(type) || type.equalsIgnoreCase(p.getOptimizingType()))
             .filter(p -> status == null || status == p.getStatus())
+            .filter(
+                p ->
+                    p.getOptimizingType() != null
+                        && categoryTypes.stream()
+                            .anyMatch(t -> t.equalsIgnoreCase(p.getOptimizingType())))
             .collect(Collectors.toList());
     int total = processInfoList.size();
     processInfoList =
@@ -459,9 +474,18 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   @Override
   public Map<String, String> getTableOptimizingTypes(AmoroTable<?> amoroTable) {
     Map<String, String> types = Maps.newHashMap();
-    types.put("FULL", "full");
-    types.put("MINOR", "MINOR");
+    types.put(FULL_TYPE, "full");
+    types.put(MINOR_TYPE, "MINOR");
     return types;
+  }
+
+  @Override
+  public List<String> getProcessTypesByCategory(String processCategory) {
+    if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
+      return OPTIMIZING_TYPES;
+    }
+
+    return Collections.emptyList();
   }
 
   @Override

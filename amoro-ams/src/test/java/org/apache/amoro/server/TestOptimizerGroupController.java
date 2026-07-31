@@ -19,14 +19,19 @@
 package org.apache.amoro.server;
 
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
+import org.apache.amoro.OptimizerProperties;
+import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.dashboard.controller.OptimizerGroupController;
 import org.apache.amoro.server.resource.OptimizerManager;
 import org.apache.amoro.server.table.TableManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -76,5 +81,44 @@ public class TestOptimizerGroupController {
 
     when(ctx.bodyAsClass(Map.class)).thenReturn(requestBody);
     assertThrows(BadRequestException.class, () -> controller.createResourceGroup(ctx));
+  }
+
+  private Map<String, Object> groupRequest(String name, Map<String, String> properties) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("name", name);
+    requestBody.put("container", "flink");
+    requestBody.put("properties", properties);
+    return requestBody;
+  }
+
+  @Test
+  void createWithInvalidDynamicAllocationIsRejected() {
+    Map<String, String> properties = new HashMap<>();
+    // enabled without the required max-parallelism
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED, "true");
+
+    when(ctx.bodyAsClass(Map.class)).thenReturn(groupRequest("group1", properties));
+    assertThrows(BadRequestException.class, () -> controller.createResourceGroup(ctx));
+  }
+
+  @Test
+  void updateWithInvalidDynamicAllocationIsRejected() {
+    Map<String, String> properties = new HashMap<>();
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED, "true");
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM, "2048");
+
+    when(ctx.bodyAsClass(Map.class)).thenReturn(groupRequest("group1", properties));
+    assertThrows(BadRequestException.class, () -> controller.updateResourceGroup(ctx));
+  }
+
+  @Test
+  void createWithValidDynamicAllocationSucceeds() {
+    Map<String, String> properties = new HashMap<>();
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED, "true");
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM, "16");
+
+    when(ctx.bodyAsClass(Map.class)).thenReturn(groupRequest("group1", properties));
+    controller.createResourceGroup(ctx);
+    verify(optimizerManager).createResourceGroup(any(ResourceGroup.class));
   }
 }

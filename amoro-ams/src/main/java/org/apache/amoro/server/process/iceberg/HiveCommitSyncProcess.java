@@ -16,69 +16,75 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.scheduler.inline;
+package org.apache.amoro.server.process.iceberg;
 
+import org.apache.amoro.Action;
+import org.apache.amoro.AmoroTable;
+import org.apache.amoro.IcebergActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.HiveMetaSynchronizer;
 import org.apache.amoro.hive.utils.TableTypeUtil;
-import org.apache.amoro.server.scheduler.PeriodicTableScheduler;
-import org.apache.amoro.server.table.TableService;
+import org.apache.amoro.process.ExecuteEngine;
+import org.apache.amoro.process.LocalProcess;
+import org.apache.amoro.process.TableProcess;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Map;
 
-public class HiveCommitSyncExecutor extends PeriodicTableScheduler {
-  private static final Logger LOG = LoggerFactory.getLogger(HiveCommitSyncExecutor.class);
+/** Local table process for syncing Iceberg metadata to Hive. */
+public class HiveCommitSyncProcess extends TableProcess implements LocalProcess {
 
-  // 10 minutes
-  private static final long INTERVAL = 10 * 60 * 1000L;
+  private static final Logger LOG = LoggerFactory.getLogger(HiveCommitSyncProcess.class);
 
-  public HiveCommitSyncExecutor(TableService tableService, int poolSize) {
-    super(tableService, poolSize);
+  public static void syncIcebergToHive(MixedTable mixedTable) {
+    HiveMetaSynchronizer.syncMixedTableDataToHive((SupportHive) mixedTable);
+  }
+
+  public HiveCommitSyncProcess(TableRuntime tableRuntime, ExecuteEngine engine) {
+    super(tableRuntime, engine);
   }
 
   @Override
-  protected long getNextExecutingTime(TableRuntime tableRuntime) {
-    return INTERVAL;
+  public String tag() {
+    return getAction().getName().toLowerCase();
   }
 
   @Override
-  protected boolean enabled(TableRuntime tableRuntime) {
-    return true;
-  }
-
-  @Override
-  protected long getExecutorDelay() {
-    return ThreadLocalRandom.current().nextLong(INTERVAL);
-  }
-
-  @Override
-  protected void execute(TableRuntime tableRuntime) {
-    long startTime = System.currentTimeMillis();
+  public void run() {
     ServerTableIdentifier tableIdentifier = tableRuntime.getTableIdentifier();
     try {
-      MixedTable mixedTable = (MixedTable) loadTable(tableRuntime).originalTable();
+      AmoroTable<?> amoroTable = tableRuntime.loadTable();
+      MixedTable mixedTable = (MixedTable) amoroTable.originalTable();
       if (!TableTypeUtil.isHive(mixedTable)) {
         LOG.debug("{} is not a support hive table", tableIdentifier);
         return;
       }
+
       LOG.info("{} start hive sync", tableIdentifier);
       syncIcebergToHive(mixedTable);
     } catch (Exception e) {
       LOG.error("{} hive sync failed", tableIdentifier, e);
-    } finally {
-      LOG.info(
-          "{} hive sync finished, cost {}ms",
-          tableIdentifier,
-          System.currentTimeMillis() - startTime);
+      throw new RuntimeException(e);
     }
   }
 
-  public static void syncIcebergToHive(MixedTable mixedTable) {
-    HiveMetaSynchronizer.syncMixedTableDataToHive((SupportHive) mixedTable);
+  @Override
+  public Action getAction() {
+    return IcebergActions.SYNC_HIVE_TABLES;
+  }
+
+  @Override
+  public Map<String, String> getProcessParameters() {
+    return Maps.newHashMap();
+  }
+
+  @Override
+  public Map<String, String> getSummary() {
+    return Maps.newHashMap();
   }
 }

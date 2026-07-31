@@ -34,6 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.client.program.rest.RestClusterClient;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.configuration.YamlParserUtils;
 import org.apache.flink.core.execution.RestoreMode;
 import org.apache.flink.runtime.messages.Acknowledge;
@@ -53,7 +54,6 @@ import org.apache.flink.runtime.webmonitor.handlers.JarUploadHeaders;
 import org.apache.flink.runtime.webmonitor.handlers.JarUploadResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -278,8 +278,8 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
       Map<String, Object> configDocument;
       Path flinkConfPath = Paths.get(flinkConfDir + FLINK_CONFIG_YAML);
       if (!Files.exists(flinkConfPath, LinkOption.NOFOLLOW_LINKS)) {
-        flinkConfPath = Paths.get(flinkConfDir + LEGACY_FLINK_CONFIG_YAML);
-        configDocument = new Yaml().load(Files.newInputStream(flinkConfPath));
+        configDocument = new HashMap<>();
+        configDocument.putAll(GlobalConfiguration.loadConfiguration(flinkConfDir).toMap());
       } else {
         configDocument = YamlParserUtils.loadYamlFile(new File(flinkConfPath.toUri()));
       }

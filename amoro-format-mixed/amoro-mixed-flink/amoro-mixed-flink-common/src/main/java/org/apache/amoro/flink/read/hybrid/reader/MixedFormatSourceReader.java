@@ -23,11 +23,9 @@ import org.apache.amoro.flink.read.hybrid.enumerator.InitializationFinishedEvent
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplit;
 import org.apache.amoro.flink.read.hybrid.split.MixedFormatSplitState;
 import org.apache.amoro.flink.read.hybrid.split.SplitRequestEvent;
-import org.apache.amoro.flink.util.FlinkClassReflectionUtil;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.flink.api.common.eventtime.Watermark;
-import org.apache.flink.api.common.eventtime.WatermarkOutputMultiplexer;
 import org.apache.flink.api.connector.source.ReaderOutput;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SourceOutput;
@@ -35,13 +33,13 @@ import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSourceReaderBase;
 import org.apache.flink.core.io.InputStatus;
-import org.apache.flink.streaming.api.operators.source.ProgressiveTimestampsAndWatermarks;
 import org.apache.flink.streaming.api.operators.source.SourceOutputWithWatermarks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -132,25 +130,21 @@ public class MixedFormatSourceReader<T>
     return new MixedFormatReaderOutput<>(output);
   }
 
-  /**
-   * There is a case that the watermark in {@link WatermarkOutputMultiplexer.OutputState} has been
-   * updated, but watermark has not been emitted for that when {@link
-   * WatermarkOutputMultiplexer#onPeriodicEmit} called, the outputState has been removed by {@link
-   * WatermarkOutputMultiplexer#unregisterOutput(String)} after split finished. Wrap {@link
-   * ReaderOutput} to call {@link
-   * ProgressiveTimestampsAndWatermarks.SplitLocalOutputs#emitPeriodicWatermark()} when split
-   * finishes.
-   */
+  /** Wrap split outputs so we can flush any pending periodic watermark before release. */
   static class MixedFormatReaderOutput<T> implements ReaderOutput<T> {
 
     private final ReaderOutput<T> internal;
+    private final SourceOutputWithWatermarks<T> watermarkOutput;
+    private final Map<String, SourceOutput<T>> splitOutputs = new HashMap<>();
 
+    @SuppressWarnings("unchecked")
     public MixedFormatReaderOutput(ReaderOutput<T> readerOutput) {
       Preconditions.checkArgument(
           readerOutput instanceof SourceOutputWithWatermarks,
           "readerOutput should be SourceOutputWithWatermarks, but was %s",
           readerOutput.getClass());
       this.internal = readerOutput;
+      this.watermarkOutput = (SourceOutputWithWatermarks<T>) readerOutput;
     }
 
     @Override
@@ -180,14 +174,28 @@ public class MixedFormatSourceReader<T>
 
     @Override
     public SourceOutput<T> createOutputForSplit(String splitId) {
-      return internal.createOutputForSplit(splitId);
+      SourceOutput<T> splitOutput = internal.createOutputForSplit(splitId);
+      splitOutputs.put(splitId, splitOutput);
+      return splitOutput;
     }
 
     @Override
     public void releaseOutputForSplit(String splitId) {
-      Object splitLocalOutput = FlinkClassReflectionUtil.getSplitLocalOutput(internal);
-      FlinkClassReflectionUtil.emitPeriodWatermark(splitLocalOutput);
+      emitPeriodicWatermark(splitOutputs.remove(splitId));
       internal.releaseOutputForSplit(splitId);
+    }
+
+    private void emitPeriodicWatermark(SourceOutput<T> splitOutput) {
+      if (splitOutput == null) {
+        return;
+      }
+
+      if (splitOutput instanceof SourceOutputWithWatermarks) {
+        ((SourceOutputWithWatermarks<T>) splitOutput).emitPeriodicWatermark();
+        return;
+      }
+
+      watermarkOutput.emitPeriodicWatermark();
     }
   }
 }

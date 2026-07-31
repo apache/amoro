@@ -33,9 +33,6 @@ ams:
   blocker:
     timeout: 120000 # 2min
 
-  auto-create-tags:
-    interval: 120000 # 2min
-
   terminal:
     session:
       timeout: 30 # 30min when version < 0.8

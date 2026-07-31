@@ -21,12 +21,19 @@ package org.apache.amoro.optimizer.standalone;
 import org.apache.amoro.optimizer.common.Optimizer;
 import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.apache.amoro.resource.Resource;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.util.ShutdownHookManager;
 import org.kohsuke.args4j.CmdLineException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.util.concurrent.TimeUnit;
 
 public class StandaloneOptimizer {
+
+  private static final Logger LOG = LoggerFactory.getLogger(StandaloneOptimizer.class);
 
   public static void main(String[] args) throws CmdLineException {
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
@@ -39,6 +46,23 @@ public class StandaloneOptimizer {
     RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
     String processId = runtimeMXBean.getName().split("@")[0];
     optimizer.getToucher().withRegisterProperty(Resource.PROPERTY_JOB_ID, processId);
+
+    // Register with Hadoop's ShutdownHookManager (priority > FS_CACHE) so that our hook
+    // runs to completion before Hadoop closes cached FileSystems. JVM Runtime shutdown
+    // hooks fire concurrently and lose this race, causing in-flight writers to hit
+    // ClosedChannelException during row-group flush.
+    // Pass an explicit timeout — the 2-arg overload uses hadoop.service.shutdown.timeout
+    // (default 30s), which would cancel our hook well before stopOptimizing's
+    // shutdownTimeoutMs deadline.
+    ShutdownHookManager.get()
+        .addShutdownHook(
+            () -> {
+              LOG.info("Received shutdown signal, initiating graceful shutdown...");
+              optimizer.stopOptimizing();
+            },
+            FileSystem.SHUTDOWN_HOOK_PRIORITY + 10,
+            optimizerConfig.getShutdownTimeoutMs() + 10_000L,
+            TimeUnit.MILLISECONDS);
     optimizer.startOptimizing();
   }
 }

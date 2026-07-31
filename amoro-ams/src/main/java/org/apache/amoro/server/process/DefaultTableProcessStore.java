@@ -363,19 +363,29 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
 
       switch (processEvent) {
         case SUBMIT_REQUESTED:
-          updateExternalProcessIdentifier(newStatus, externalProcessIdentifier);
+          if (isTerminal(newStatus)) {
+            // Process completed before we could record SUBMITTED status.
+            // Save summary now — COMPLETE_SUCCESS will be rejected by validTransition.
+            begin()
+                .updateTableProcessStatus(newStatus)
+                .updateExternalProcessIdentifier(externalProcessIdentifier)
+                .updateSummary(summary)
+                .commit();
+          } else {
+            updateExternalProcessIdentifier(newStatus, externalProcessIdentifier);
+          }
           break;
         case COMPLETE_SUCCESS:
-          updateTableProcessStatus(newStatus);
+          updateTableProcessStatus(newStatus, "", summary);
           break;
         case COMPLETE_FAILED:
-          updateTableProcessStatus(newStatus, reason);
+          updateTableProcessStatus(newStatus, reason, summary);
           break;
         case CANCEL_REQUESTED:
-          updateTableProcessStatus(newStatus, reason);
+          updateTableProcessStatus(newStatus, reason, summary);
           break;
         case KILL_REQUESTED:
-          updateTableProcessStatus(newStatus, reason);
+          updateTableProcessStatus(newStatus, reason, summary);
           break;
         case RETRY_REQUESTED:
           updateTableProcessRetryTimes(getRetryNumber() + 1);
@@ -390,21 +400,14 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
   }
 
   /**
-   * Update status and persist without message.
-   *
-   * @param status new status
-   */
-  private void updateTableProcessStatus(ProcessStatus status) {
-    updateTableProcessStatus(status, "");
-  }
-
-  /**
-   * Update status with message and persist.
+   * Update status with message and summary, then persist.
    *
    * @param status new status
    * @param message fail or info message
+   * @param summary summary map
    */
-  private void updateTableProcessStatus(ProcessStatus status, String message) {
+  private void updateTableProcessStatus(
+      ProcessStatus status, String message, Map<String, String> summary) {
     switch (status) {
       case SUBMITTED:
       case RUNNING:
@@ -418,6 +421,7 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
         begin()
             .updateTableProcessStatus(status)
             .updateFinishTime(System.currentTimeMillis())
+            .updateSummary(summary)
             .commit();
         break;
       case FAILED:
@@ -425,6 +429,7 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
             .updateTableProcessStatus(status)
             .updateTableProcessFailMessage(message)
             .updateFinishTime(System.currentTimeMillis())
+            .updateSummary(summary)
             .commit();
         break;
       default:
@@ -585,11 +590,13 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
      */
     @Override
     public TableProcessOperation updateSummary(Map<String, String> summary) {
-      operations.add(
-          () -> {
-            oldMeta.setSummary(summary);
-          });
-      metaOperation = true;
+      if (summary != null) {
+        operations.add(
+            () -> {
+              oldMeta.setSummary(summary);
+            });
+        metaOperation = true;
+      }
       return this;
     }
 
@@ -656,6 +663,7 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
         meta.setRetryNumber(oldMeta.getRetryNumber());
         meta.setCreateTime(oldMeta.getCreateTime());
         meta.setFinishTime(oldMeta.getFinishTime());
+        meta.setSummary(oldMeta.getSummary());
       }
     }
   }

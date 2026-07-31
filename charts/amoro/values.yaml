@@ -416,6 +416,54 @@ ingress:
   ##
   extraRules: [ ]
 
+httpRoute:
+  ## @param httpRoute.enabled Enable Gateway API HTTPRoute resource for Amoro Dashboard
+  ## This is an alternative to `ingress` for clusters using the Gateway API (https://gateway-api.sigs.k8s.io/).
+  ## It requires the Gateway API CRDs and a Gateway to be installed in the cluster.
+  ##
+  enabled: false
+  ## @param httpRoute.parentRefs The list of Gateways (and optional listener sections) this route attaches to
+  ## ref: https://gateway-api.sigs.k8s.io/api-types/httproute/#attaching-to-gateways
+  ## e.g:
+  ## parentRefs:
+  ##   - name: my-gateway
+  ##     namespace: gateway-system
+  ##     sectionName: https
+  ##
+  parentRefs: [ ]
+  ## @param httpRoute.hostname Default hostname for the HTTPRoute
+  ##
+  hostname: amoro.local
+  ## @param httpRoute.path The path to match for the main hostname
+  ##
+  path: /
+  ## @param httpRoute.pathType The Gateway API path match type. One of `PathPrefix`, `Exact` or `RegularExpression`
+  ## ref: https://gateway-api.sigs.k8s.io/api-types/httproute/#path-types
+  ##
+  pathType: PathPrefix
+  ## @param httpRoute.annotations Additional annotations for the HTTPRoute resource
+  ##
+  annotations: { }
+  ## @param httpRoute.extraHosts The list of additional hostnames to be covered with this route
+  ## e.g:
+  ## extraHosts:
+  ##   - amoro2.local
+  ##
+  extraHosts: [ ]
+  ## @param httpRoute.extraRules Additional rules to be covered with this route
+  ## ref: https://gateway-api.sigs.k8s.io/api-types/httproute/#httproute
+  ## e.g:
+  ## extraRules:
+  ##   - matches:
+  ##       - path:
+  ##           type: PathPrefix
+  ##           value: /api
+  ##     backendRefs:
+  ##       - name: another-svc
+  ##         port: 8080
+  ##
+  extraRules: [ ]
+
 ## Liveness probe
 ##
 livenessProbe:

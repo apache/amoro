@@ -37,7 +37,6 @@ import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
-import org.apache.amoro.server.table.cleanup.CleanupOperation;
 import org.apache.amoro.server.table.cleanup.TableRuntimeCleanupState;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
@@ -336,32 +335,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
             code ->
                 OptimizingStatus.ofOptimizingType(optimizingProcess.getOptimizingType()).getCode())
         .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
-        .commit();
-  }
-
-  public long getLastCleanTime(CleanupOperation operation) {
-    TableRuntimeCleanupState state = store().getState(CLEANUP_STATE_KEY);
-    switch (operation) {
-      case SNAPSHOTS_EXPIRING:
-        return state.getLastSnapshotsExpiringTime();
-      default:
-        return 0L;
-    }
-  }
-
-  public void updateLastCleanTime(CleanupOperation operation, long time) {
-    store()
-        .begin()
-        .updateState(
-            CLEANUP_STATE_KEY,
-            state -> {
-              switch (operation) {
-                case SNAPSHOTS_EXPIRING:
-                  state.setLastSnapshotsExpiringTime(time);
-                  break;
-              }
-              return state;
-            })
         .commit();
   }
 
