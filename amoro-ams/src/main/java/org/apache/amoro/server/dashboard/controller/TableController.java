@@ -50,7 +50,6 @@ import org.apache.amoro.server.dashboard.model.UpgradeStatus;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
-import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.process.TableProcessMeta;
@@ -628,20 +627,6 @@ public class TableController {
   public void getCatalogs(Context ctx) {
     List<CatalogMeta> catalogs = catalogManager.listCatalogMetas();
     ctx.json(OkResponse.of(catalogs));
-  }
-
-  /**
-   * get single page query token.
-   *
-   * @param ctx - context for handling the request and response
-   */
-  public void getTableDetailTabToken(Context ctx) {
-    String catalog = ctx.pathParam("catalog");
-    String db = ctx.pathParam("db");
-    String table = ctx.pathParam("table");
-
-    String signCal = CommonUtil.generateTablePageToken(catalog, db, table);
-    ctx.json(OkResponse.of(signCal));
   }
 
   public void getTableTags(Context ctx) {
