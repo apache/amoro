@@ -544,6 +544,9 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># change version in all pom files</span>
 </span></span><span style="display:flex;"><span>find .. -name <span style="color:#e6db74">&#39;pom.xml&#39;</span> -type f -exec perl -pi -e <span style="color:#e6db74">&#39;s#&lt;version&gt;&#39;</span><span style="color:#e6db74">&#34;</span>$OLD<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">&#39;&lt;/version&gt;#&lt;version&gt;&#39;</span><span style="color:#e6db74">&#34;</span>$NEW<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">&#39;&lt;/version&gt;#&#39;</span> <span style="color:#f92672">{}</span> <span style="color:#ae81ff">\;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># change application version in the Helm chart</span>
+</span></span><span style="display:flex;"><span>perl -pi -e <span style="color:#e6db74">&#39;s#^appVersion: &#34;&#39;</span><span style="color:#e6db74">&#34;</span>$OLD<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">&#39;&#34;$#appVersion: &#34;&#39;</span><span style="color:#e6db74">&#34;</span>$NEW<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">&#39;&#34;#&#39;</span> ../charts/amoro/Chart.yaml
 </span></span></code></pre></div><p>Then run the scripts and commit the change:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd tools
 </span></span><span style="display:flex;"><span>$ bash change-version.sh
