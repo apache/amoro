@@ -52,6 +52,42 @@ public final class LasIntegrationConfig {
           .noDefaultValue()
           .withDescription("IAM endpoint used to obtain short-lived workload credentials.");
 
+  public static final ConfigOption<String> IAM_BOOTSTRAP_ACCESS_KEY =
+      ConfigOptions.key(PREFIX + "iam.bootstrap-access-key")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("Access key of the AMS workload identity used to call AssumeRole.");
+
+  public static final ConfigOption<String> IAM_BOOTSTRAP_SECRET_KEY =
+      ConfigOptions.key(PREFIX + "iam.bootstrap-secret-key")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("Secret key of the AMS workload identity used to call AssumeRole.");
+
+  public static final ConfigOption<String> IAM_BOOTSTRAP_SESSION_TOKEN =
+      ConfigOptions.key(PREFIX + "iam.bootstrap-session-token")
+          .stringType()
+          .defaultValue("")
+          .withDescription("Optional session token of the AMS workload identity.");
+
+  public static final ConfigOption<String> IAM_ROLE_SESSION_NAME =
+      ConfigOptions.key(PREFIX + "iam.role-session-name")
+          .stringType()
+          .defaultValue("AmoroAssumeRoleSession")
+          .withDescription("IAM role session name used by AMS.");
+
+  public static final ConfigOption<Duration> IAM_ASSUME_ROLE_TTL =
+      ConfigOptions.key(PREFIX + "iam.assume-role-ttl")
+          .durationType()
+          .defaultValue(Duration.ofHours(1))
+          .withDescription("Lifetime of credentials returned by IAM AssumeRole.");
+
+  public static final ConfigOption<Integer> IAM_CREDENTIAL_CACHE_SIZE =
+      ConfigOptions.key(PREFIX + "iam.credential-cache-size")
+          .intType()
+          .defaultValue(1000)
+          .withDescription("Maximum number of role credentials cached by AMS.");
+
   public static final ConfigOption<String> EMR_SERVERLESS_ENDPOINT =
       ConfigOptions.key(PREFIX + "emr-serverless-endpoint")
           .stringType()
@@ -81,12 +117,6 @@ public final class LasIntegrationConfig {
           .durationType()
           .defaultValue(Duration.ofSeconds(30))
           .withDescription("Socket read timeout for LAS/EMR service clients.");
-
-  public static final ConfigOption<String> OPTIMIZER_JAR_URI =
-      ConfigOptions.key(PREFIX + "optimizer-jar-uri")
-          .stringType()
-          .noDefaultValue()
-          .withDescription("URI of the optimizer jar submitted to EMR Serverless.");
 
   public static final ConfigOption<Boolean> CROSS_VPC_ENABLED =
       ConfigOptions.key(PREFIX + "cross-vpc.enabled")

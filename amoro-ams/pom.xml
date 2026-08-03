@@ -86,6 +86,13 @@
             <groupId>com.volcengine.emr.serverless</groupId>
             <artifactId>serverless-sdk-query</artifactId>
             <version>${serverless-sdk-query.version}</version>
+            <exclusions>
+                <!-- SQLTask does not use the SDK's TOS upload path. TOS access is configured via Proton. -->
+                <exclusion>
+                    <groupId>com.volcengine</groupId>
+                    <artifactId>ve-tos-java-sdk</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>

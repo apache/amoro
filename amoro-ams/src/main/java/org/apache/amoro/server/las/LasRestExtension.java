@@ -37,14 +37,20 @@ public class LasRestExtension implements RestExtension {
   private static final Logger LOG = LoggerFactory.getLogger(LasRestExtension.class);
 
   private final LasIntegrationContext integrationContext;
+  private final LasHmsClient hmsClient;
+  private final ServerlessSparkSqlManager sparkSqlManager;
   private final CatalogManager catalogManager;
   private final TableManager tableManager;
 
   LasRestExtension(
       LasIntegrationContext integrationContext,
+      LasHmsClient hmsClient,
+      ServerlessSparkSqlManager sparkSqlManager,
       CatalogManager catalogManager,
       TableManager tableManager) {
     this.integrationContext = integrationContext;
+    this.hmsClient = hmsClient;
+    this.sparkSqlManager = sparkSqlManager;
     this.catalogManager = catalogManager;
     this.tableManager = tableManager;
     LOG.info("LAS/EMR integration initialized, enabled={}", integrationContext.enabled());
@@ -54,10 +60,11 @@ public class LasRestExtension implements RestExtension {
   public EndpointGroup endpoints() {
     return () -> {
       // Intentionally empty. Add management-plane routes here under /api/ams/v1/las when the
-      // OpenAPI contract is ready. Controllers should receive integrationContext, catalogManager,
-      // and tableManager from this extension instead of constructing HMS, TOS, IAM, or EMR clients
-      // themselves. Routes registered here automatically pass through the existing AMS REST
-      // authentication filter; do not add management-plane routes to the URL whitelist.
+      // OpenAPI contract is ready. Controllers should receive integrationContext, hmsClient,
+      // sparkSqlManager, catalogManager, and tableManager from this extension instead of
+      // constructing HMS, TOS, IAM, or EMR clients themselves. Routes registered here
+      // automatically pass through the existing AMS REST authentication filter; do not add
+      // management-plane routes to the URL whitelist.
     };
   }
 
@@ -77,6 +84,7 @@ public class LasRestExtension implements RestExtension {
     private Configurations serviceConfig;
     private CatalogManager catalogManager;
     private TableManager tableManager;
+    private LasIamClient iamClient;
 
     @Override
     public RestExtensionFactory withServiceConfig(Configurations serviceConfig) {
@@ -101,8 +109,16 @@ public class LasRestExtension implements RestExtension {
       Preconditions.checkNotNull(serviceConfig, "serviceConfig is required");
       Preconditions.checkNotNull(catalogManager, "catalogManager is required");
       Preconditions.checkNotNull(tableManager, "tableManager is required");
+      LasIntegrationContext context = LasIntegrationContext.initialize(serviceConfig);
+      LasHmsClient hmsClient = null;
+      ServerlessSparkSqlManager sparkSqlManager = null;
+      if (context.enabled()) {
+        iamClient = new LasIamClient(context);
+        hmsClient = new LasHmsClient(context);
+        sparkSqlManager = new ServerlessSparkSqlManager(context, iamClient);
+      }
       return new LasRestExtension(
-          LasIntegrationContext.initialize(serviceConfig), catalogManager, tableManager);
+          context, hmsClient, sparkSqlManager, catalogManager, tableManager);
     }
 
     @Override
@@ -112,6 +128,14 @@ public class LasRestExtension implements RestExtension {
 
     @Override
     public void close() {
+      if (iamClient != null) {
+        try {
+          iamClient.close();
+        } catch (Exception e) {
+          LOG.warn("Failed to close LAS IAM client", e);
+        }
+        iamClient = null;
+      }
       LOG.info("Closing LAS/EMR integration extension");
     }
 

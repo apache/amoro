@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.las;
 
+import bytedance.olap.iam.http.model.AssumeRoleResponse.Credentials;
 import org.apache.amoro.config.Configurations;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -45,8 +46,13 @@ public class TestLasIntegrationContext {
     Assertions.assertEquals("https://emr-serverless", context.emrServerlessEndpoint().toString());
     Assertions.assertEquals("cn-beijing", context.region());
     Assertions.assertNotNull(context.newHmsClientPool());
+    Credentials credentials = new Credentials();
+    credentials.setAccessKeyId("data-ak");
+    credentials.setSecretAccessKey("data-sk");
+    credentials.setSessionToken("data-token");
     Assertions.assertEquals(
-        "https://tos-cn-beijing.volces.com", context.newTosConfiguration().get("fs.tos.endpoint"));
+        "https://tos-cn-beijing.volces.com",
+        context.newTosConfiguration(credentials).get("fs.tos.endpoint"));
   }
 
   @Test
@@ -72,15 +78,15 @@ public class TestLasIntegrationContext {
         exception.getMessage().contains(LasIntegrationConfig.CROSS_VPC_ACCOUNT_ID.key()));
   }
 
-  private static Configurations validConfigurations() {
+  static Configurations validConfigurations() {
     Map<String, String> values = new HashMap<>();
     values.put(LasIntegrationConfig.ENABLED.key(), "true");
     values.put(LasIntegrationConfig.HMS_URI.key(), "thrift://hms-service:9083");
     values.put(LasIntegrationConfig.TOS_ENDPOINT.key(), "https://tos-cn-beijing.volces.com");
     values.put(LasIntegrationConfig.IAM_ENDPOINT.key(), "https://iam.volcengineapi.com");
     values.put(LasIntegrationConfig.EMR_SERVERLESS_ENDPOINT.key(), "https://emr-serverless");
-    values.put(
-        LasIntegrationConfig.OPTIMIZER_JAR_URI.key(), "tos://amoro-artifacts/amoro-optimizer.jar");
+    values.put(LasIntegrationConfig.IAM_BOOTSTRAP_ACCESS_KEY.key(), "bootstrap-ak");
+    values.put(LasIntegrationConfig.IAM_BOOTSTRAP_SECRET_KEY.key(), "bootstrap-sk");
     return Configurations.fromMap(values);
   }
 }

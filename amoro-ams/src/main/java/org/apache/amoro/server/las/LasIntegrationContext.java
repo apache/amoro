@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server.las;
 
+import bytedance.olap.iam.Credential;
+import bytedance.olap.iam.http.model.AssumeRoleResponse.Credentials;
 import org.apache.amoro.config.ConfigOption;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.hive.CachedHiveClientPool;
@@ -38,21 +40,19 @@ import java.util.Set;
 public final class LasIntegrationContext {
 
   private static final Set<String> HTTP_SCHEMES = new HashSet<>(Arrays.asList("http", "https"));
-  private static final Set<String> OPTIMIZER_JAR_SCHEMES =
-      new HashSet<>(Arrays.asList("tos", "http", "https"));
-
+  private final Configurations configurations;
   private final boolean enabled;
   private final URI hmsUri;
   private final URI tosEndpoint;
   private final URI iamEndpoint;
   private final URI emrServerlessEndpoint;
-  private final URI optimizerJarUri;
   private final String region;
   private final String emrServerlessService;
   private final Duration connectTimeout;
   private final Duration readTimeout;
 
   private LasIntegrationContext(Configurations configurations) {
+    this.configurations = configurations;
     this.enabled = configurations.getBoolean(LasIntegrationConfig.ENABLED);
     this.region = configurations.getString(LasIntegrationConfig.REGION);
     this.emrServerlessService =
@@ -65,7 +65,6 @@ public final class LasIntegrationContext {
       this.tosEndpoint = null;
       this.iamEndpoint = null;
       this.emrServerlessEndpoint = null;
-      this.optimizerJarUri = null;
       return;
     }
 
@@ -75,12 +74,18 @@ public final class LasIntegrationContext {
     this.iamEndpoint = requiredUri(configurations, LasIntegrationConfig.IAM_ENDPOINT, HTTP_SCHEMES);
     this.emrServerlessEndpoint =
         requiredUri(configurations, LasIntegrationConfig.EMR_SERVERLESS_ENDPOINT, HTTP_SCHEMES);
-    this.optimizerJarUri =
-        requiredUri(configurations, LasIntegrationConfig.OPTIMIZER_JAR_URI, OPTIMIZER_JAR_SCHEMES);
     requiredString(configurations, LasIntegrationConfig.REGION);
     requiredString(configurations, LasIntegrationConfig.EMR_SERVERLESS_SERVICE);
+    requiredString(configurations, LasIntegrationConfig.IAM_BOOTSTRAP_ACCESS_KEY);
+    requiredString(configurations, LasIntegrationConfig.IAM_BOOTSTRAP_SECRET_KEY);
+    requiredString(configurations, LasIntegrationConfig.IAM_ROLE_SESSION_NAME);
     positiveDuration(configurations, LasIntegrationConfig.CONNECT_TIMEOUT);
     positiveDuration(configurations, LasIntegrationConfig.READ_TIMEOUT);
+    positiveDuration(configurations, LasIntegrationConfig.IAM_ASSUME_ROLE_TTL);
+    if (configurations.getInteger(LasIntegrationConfig.IAM_CREDENTIAL_CACHE_SIZE) <= 0) {
+      throw new IllegalArgumentException(
+          LasIntegrationConfig.IAM_CREDENTIAL_CACHE_SIZE.key() + " must be greater than zero");
+    }
 
     if (configurations.getBoolean(LasIntegrationConfig.CROSS_VPC_ENABLED)) {
       requiredString(configurations, LasIntegrationConfig.CROSS_VPC_ACCOUNT_ID);
@@ -99,20 +104,50 @@ public final class LasIntegrationContext {
   }
 
   public CachedHiveClientPool newHmsClientPool() {
+    return newHmsClientPool(null);
+  }
+
+  public CachedHiveClientPool newHmsClientPool(String catalogName) {
     ensureEnabled();
     Configuration configuration = new Configuration();
     configuration.set("hive.metastore.uris", hmsUri.toString());
+    if (StringUtils.isNotBlank(catalogName)) {
+      configuration.set("metastore.catalog.default", catalogName);
+    }
     TableMetaStore metaStore = TableMetaStore.builder().withConfiguration(configuration).build();
     return new CachedHiveClientPool(metaStore, Maps.newHashMap());
   }
 
-  public Configuration newTosConfiguration() {
+  public Configuration newTosConfiguration(Credentials credentials) {
     ensureEnabled();
+    if (credentials == null) {
+      throw new IllegalArgumentException("TOS credentials are required");
+    }
     Configuration configuration = new Configuration(false);
     configuration.set("fs.AbstractFileSystem.tos.impl", "io.proton.fs.ProtonFS");
     configuration.set("fs.tos.impl", "io.proton.fs.ProtonFileSystem");
     configuration.set("fs.tos.endpoint", tosEndpoint.toString());
+    configuration.set("proton.cache.enable", "false");
+    configuration.set(
+        "mapreduce.outputcommitter.factory.class", "io.proton.commit.CommitterFactory");
+    configuration.set(
+        "fs.tos.credentials.provider", "io.proton.common.object.auth.SimpleCredentialsProvider");
+    configuration.set("fs.tos.access-key-id", credentials.getAccessKeyId());
+    configuration.set("fs.tos.secret-access-key", credentials.getSecretAccessKey());
+    configuration.set("fs.tos.session-token", credentials.getSessionToken());
+    configuration.set("fs.tos.http.maxConnections", "1024");
     return configuration;
+  }
+
+  public Credential bootstrapCredential() {
+    ensureEnabled();
+    String accessKey = configurations.getString(LasIntegrationConfig.IAM_BOOTSTRAP_ACCESS_KEY);
+    String secretKey = configurations.getString(LasIntegrationConfig.IAM_BOOTSTRAP_SECRET_KEY);
+    String sessionToken =
+        configurations.getString(LasIntegrationConfig.IAM_BOOTSTRAP_SESSION_TOKEN);
+    return StringUtils.isBlank(sessionToken)
+        ? new Credential(accessKey, secretKey)
+        : new Credential(accessKey, secretKey, sessionToken);
   }
 
   public URI hmsUri() {
@@ -130,11 +165,6 @@ public final class LasIntegrationContext {
     return emrServerlessEndpoint;
   }
 
-  public URI optimizerJarUri() {
-    ensureEnabled();
-    return optimizerJarUri;
-  }
-
   public String region() {
     return region;
   }
@@ -149,6 +179,42 @@ public final class LasIntegrationContext {
 
   public Duration readTimeout() {
     return readTimeout;
+  }
+
+  public String iamRoleSessionName() {
+    ensureEnabled();
+    return configurations.getString(LasIntegrationConfig.IAM_ROLE_SESSION_NAME);
+  }
+
+  public Duration iamAssumeRoleTtl() {
+    ensureEnabled();
+    return configurations.get(LasIntegrationConfig.IAM_ASSUME_ROLE_TTL);
+  }
+
+  public int iamCredentialCacheSize() {
+    ensureEnabled();
+    return configurations.getInteger(LasIntegrationConfig.IAM_CREDENTIAL_CACHE_SIZE);
+  }
+
+  public boolean crossVpcEnabled() {
+    ensureEnabled();
+    return configurations.getBoolean(LasIntegrationConfig.CROSS_VPC_ENABLED);
+  }
+
+  public String crossVpcAccountId() {
+    return configurations.getString(LasIntegrationConfig.CROSS_VPC_ACCOUNT_ID);
+  }
+
+  public String crossVpcVpcId() {
+    return configurations.getString(LasIntegrationConfig.CROSS_VPC_VPC_ID);
+  }
+
+  public String crossVpcSubnetIds() {
+    return configurations.getString(LasIntegrationConfig.CROSS_VPC_SUBNET_IDS);
+  }
+
+  public String crossVpcSecurityGroupId() {
+    return configurations.getString(LasIntegrationConfig.CROSS_VPC_SECURITY_GROUP_ID);
   }
 
   private void ensureEnabled() {

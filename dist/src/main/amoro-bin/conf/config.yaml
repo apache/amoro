@@ -75,6 +75,9 @@ ams:
   # Values may also be supplied through environment variables, for example:
   # AMS_LAS_INTEGRATION_ENABLED=true
   # AMS_LAS_INTEGRATION_HMS__URI=thrift://hms-service.<namespace>.svc.cluster.local:9083
+  # Keep IAM bootstrap credentials in secret-backed environment variables:
+  # AMS_LAS_INTEGRATION_IAM_BOOTSTRAP__ACCESS__KEY and
+  # AMS_LAS_INTEGRATION_IAM_BOOTSTRAP__SECRET__KEY.
   las:
     integration:
       enabled: false
@@ -82,11 +85,17 @@ ams:
       # tos-endpoint: https://tos-cn-beijing.volces.com
       # iam-endpoint: https://iam.volcengineapi.com
       # emr-serverless-endpoint: https://open.volcengineapi.com
-      # optimizer-jar-uri: tos://<bucket>/<path>/amoro-optimizer.jar
       region: cn-beijing
       emr-serverless-service: emr_serverless
       connect-timeout: 30s
       read-timeout: 30s
+      iam:
+        # bootstrap-access-key: supplied by a secret-backed environment variable
+        # bootstrap-secret-key: supplied by a secret-backed environment variable
+        # bootstrap-session-token: optional, supplied with temporary bootstrap credentials
+        role-session-name: AmoroAssumeRoleSession
+        assume-role-ttl: 1h
+        credential-cache-size: 1000
       cross-vpc:
         enabled: false
         # account-id: <account-id>
@@ -140,7 +149,7 @@ ams:
   # Support for encrypted sensitive configuration items
   shade:
     identifier: default # Built-in support for default/base64. Defaults to "default", indicating no encryption
-    sensitive-keywords: admin-password;database.password;http-server.authorization.ldap-role-mapping.bind-password
+    sensitive-keywords: admin-password;database.password;http-server.authorization.ldap-role-mapping.bind-password;las.integration.iam.bootstrap-access-key;las.integration.iam.bootstrap-secret-key;las.integration.iam.bootstrap-session-token
 
   overview-cache:
     refresh-interval: 3min          # 3 min

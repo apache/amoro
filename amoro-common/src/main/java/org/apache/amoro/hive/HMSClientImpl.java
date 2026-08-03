@@ -187,4 +187,9 @@ public class HMSClientImpl implements HMSClient {
       throws TException {
     return getClient().getTableObjectsByName(dbName, tableNames);
   }
+
+  @Override
+  public List<String> getCatalogs() throws TException {
+    return getClient().getCatalogs();
+  }
 }

@@ -88,4 +88,7 @@ public interface HMSClient {
           InvocationTargetException, ClassNotFoundException;
 
   List<Table> getTableObjectsByName(String dbName, List<String> tableNames) throws TException;
+
+  /** List catalogs exposed by HMS3. */
+  List<String> getCatalogs() throws TException;
 }
