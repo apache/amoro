@@ -64,6 +64,30 @@
             <artifactId>kubernetes-client</artifactId>
         </dependency>
 
+        <!-- LAS/EMR network integrations. Concrete clients are initialized lazily by AMS. -->
+        <dependency>
+            <groupId>io.proton</groupId>
+            <artifactId>proton-hadoop3-bundle</artifactId>
+            <version>${proton.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.bytedance.las</groupId>
+            <artifactId>iam</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.volcengine.emr.serverless</groupId>
+            <artifactId>serverless-sdk-query</artifactId>
+            <version>${serverless-sdk-query.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>

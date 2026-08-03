@@ -168,6 +168,9 @@
         <jcasbin.version>1.99.0</jcasbin.version>
         <fasterxml.jackson.version>2.14.2</fasterxml.jackson.version>
         <arrow.version>18.3.0</arrow.version>
+        <las-dependency.version>catalog-1.0.23-SNAPSHOT</las-dependency.version>
+        <proton.version>2.3.5</proton.version>
+        <serverless-sdk-query.version>1.0.2</serverless-sdk-query.version>
         <apache-directory-server.version>2.0.0-M15</apache-directory-server.version>
         <apache-directory-api-all.version>1.0.0-M20</apache-directory-api-all.version>
         <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
@@ -1324,6 +1327,14 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
                 <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.bytedance.las</groupId>
+                <artifactId>las-bom</artifactId>
+                <version>${las-dependency.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

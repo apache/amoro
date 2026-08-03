@@ -20,3 +20,7 @@
 rest-extensions:
   - name: iceberg-rest-catalog
     enabled: true
+  - name: las-integration
+    # This extension initializes the LAS/EMR integration context only. It intentionally exposes no
+    # HTTP endpoints until the management-plane API contract is implemented.
+    enabled: true

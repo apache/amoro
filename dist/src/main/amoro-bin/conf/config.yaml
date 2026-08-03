@@ -71,6 +71,29 @@ ams:
     #   set default-role: VIEWER only when you intentionally want authenticated
     #   users without a matched role mapping to receive read-only access.
 
+  # LAS/EMR integration bootstrap. The disabled default keeps existing deployments unchanged.
+  # Values may also be supplied through environment variables, for example:
+  # AMS_LAS_INTEGRATION_ENABLED=true
+  # AMS_LAS_INTEGRATION_HMS__URI=thrift://hms-service.<namespace>.svc.cluster.local:9083
+  las:
+    integration:
+      enabled: false
+      # hms-uri: thrift://hms-service.<namespace>.svc.cluster.local:9083
+      # tos-endpoint: https://tos-cn-beijing.volces.com
+      # iam-endpoint: https://iam.volcengineapi.com
+      # emr-serverless-endpoint: https://open.volcengineapi.com
+      # optimizer-jar-uri: tos://<bucket>/<path>/amoro-optimizer.jar
+      region: cn-beijing
+      emr-serverless-service: emr_serverless
+      connect-timeout: 30s
+      read-timeout: 30s
+      cross-vpc:
+        enabled: false
+        # account-id: <account-id>
+        # vpc-id: <vpc-id>
+        # subnet-ids: <subnet-id-1>,<subnet-id-2>
+        # security-group-id: <security-group-id>
+
   refresh-external-catalogs:
     interval: 3min # 180000
     thread-count: 10
