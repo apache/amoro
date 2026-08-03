@@ -172,8 +172,6 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
     ListTablesResponse response = namespace.listTables(request);
     if (response == null) {
       return Collections.emptyList();
-    } else {
-      response.getTables();
     }
 
     return new ArrayList<>(response.getTables());
