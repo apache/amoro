@@ -47,29 +47,19 @@
         <dependency>
             <groupId>org.lance</groupId>
             <artifactId>lance-core</artifactId>
-            <version>7.0.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.lance</groupId>
-                    <artifactId>lance-namespace-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.lance</groupId>
-                    <artifactId>lance-namespace-apache-client</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>8.0.0</version>
         </dependency>
 
         <!-- Lance namespace interfaces and models -->
         <dependency>
             <groupId>org.lance</groupId>
             <artifactId>lance-namespace-core</artifactId>
-            <version>0.8.0</version>
+            <version>0.7.7</version>
         </dependency>
         <dependency>
             <groupId>org.lance</groupId>
             <artifactId>lance-namespace-apache-client</artifactId>
-            <version>0.8.0</version>
+            <version>0.7.7</version>
         </dependency>
         <dependency>
             <groupId>org.apache.iceberg</groupId>
