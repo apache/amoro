@@ -32,6 +32,9 @@ import java.util.List;
 
 public class HMSClientImpl implements HMSClient {
 
+  private static final DynMethods.UnboundMethod GET_CATALOGS =
+      DynMethods.builder("getCatalogs").impl(HiveMetaStoreClient.class).orNoop().build();
+
   private final HiveMetaStoreClient client;
 
   public HMSClientImpl(HiveMetaStoreClient client) {
@@ -190,6 +193,18 @@ public class HMSClientImpl implements HMSClient {
 
   @Override
   public List<String> getCatalogs() throws TException {
-    return getClient().getCatalogs();
+    if (GET_CATALOGS.isNoop()) {
+      throw new MetaException("Listing HMS catalogs requires Hive Metastore 3 or later");
+    }
+
+    try {
+      return GET_CATALOGS.invokeChecked(getClient());
+    } catch (TException e) {
+      throw e;
+    } catch (Exception e) {
+      TException failure = new TException("Failed to list HMS catalogs");
+      failure.initCause(e);
+      throw failure;
+    }
   }
 }
