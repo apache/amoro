@@ -28,6 +28,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.spark.SparkInternalRowCastWrapper;
 import org.apache.amoro.spark.SparkInternalRowWrapper;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
@@ -38,6 +39,7 @@ import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.util.PropertyUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
 
 import java.io.IOException;
@@ -57,6 +59,9 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
   private final Schema schema;
   private final MixedTable table;
   private final SparkBaseTaskWriter writer;
+  private final double heapUsageRatioThreshold;
+  private final long recordsNumThreshold;
+  private final int heapFlushMinRecords;
   private final Map<PartitionKey, SortedPosDeleteWriter<InternalRow>> writerMap = new HashMap<>();
   private boolean closed = false;
 
@@ -73,6 +78,21 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
     this.format = format;
     this.schema = schema;
     this.writer = writer;
+    this.heapUsageRatioThreshold =
+        PropertyUtil.propertyAsDouble(
+            table.properties(),
+            TableProperties.POS_DELETE_FLUSH_HEAP_RATIO,
+            TableProperties.POS_DELETE_FLUSH_HEAP_RATIO_DEFAULT);
+    this.recordsNumThreshold =
+        PropertyUtil.propertyAsLong(
+            table.properties(),
+            TableProperties.POS_DELETE_FLUSH_RECORDS,
+            TableProperties.POS_DELETE_FLUSH_RECORDS_DEFAULT);
+    this.heapFlushMinRecords =
+        PropertyUtil.propertyAsInt(
+            table.properties(),
+            TableProperties.POS_DELETE_FLUSH_HEAP_MIN_RECORDS,
+            TableProperties.POS_DELETE_FLUSH_HEAP_MIN_RECORDS_DEFAULT);
   }
 
   @Override
@@ -90,7 +110,14 @@ public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
     if (writerMap.get(partitionKey) == null) {
       SortedPosDeleteWriter<InternalRow> writer =
           new SortedPosDeleteWriter<>(
-              appenderFactory, fileFactory, table.io(), format, partitionKey);
+              appenderFactory,
+              fileFactory,
+              table.io(),
+              format,
+              partitionKey,
+              recordsNumThreshold,
+              heapUsageRatioThreshold,
+              heapFlushMinRecords);
       writerMap.putIfAbsent(partitionKey, writer);
     }
     if (internalRow.getChangeAction() == ChangeAction.DELETE) {

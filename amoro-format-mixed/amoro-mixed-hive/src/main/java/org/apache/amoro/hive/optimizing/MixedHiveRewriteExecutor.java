@@ -65,7 +65,8 @@ public class MixedHiveRewriteExecutor extends AbstractRewriteFilesExecutor {
         encryptionManager(),
         getTransactionId(input.rePosDeletedDataFilesForMixed()),
         baseLocation(),
-        table.spec());
+        table.spec(),
+        table.properties());
   }
 
   @Override
