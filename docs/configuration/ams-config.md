@@ -46,7 +46,7 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | admin-username | admin | The administrator account name. |
 | blocker.timeout | 1 min | Session timeout. Default unit is milliseconds if not specified. |
 | catalog-meta-cache.expiration-interval | 1 min | TTL for catalog metadata. |
-| catalog.namespace-enabled | false | Whether catalogs are grouped by an optional namespace. |
+| catalog.namespace-enabled | true | Whether catalogs are grouped by an optional namespace. |
 | database.auto-create-tables | true | Auto init table schema when started |
 | database.connection-pool-max-idle | 16 | Max idle connect count of database connect pool. |
 | database.connection-pool-max-total | 20 | Max connect count of database connect pool. |
@@ -232,4 +232,3 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | ---  | ------- | ----------- |
 | shade.identifier | default | The identifier of the encryption method for decryption. Defaults to "default", indicating no encryption |
 | shade.sensitive-keywords | admin-password;database.password | A semicolon-separated list of keywords for the configuration items to be decrypted. |
-

@@ -58,8 +58,18 @@ public class TestDefaultCatalogManagerNamespaces {
   }
 
   @Test
-  public void testCommunityDefaultsRemainCompatible() {
+  public void testNamespaceSupportIsEnabledByDefault() {
     DefaultCatalogManager manager = new DefaultCatalogManager(new Configurations());
+
+    Assertions.assertTrue(manager.supportNamespace());
+    Assertions.assertTrue(manager.listNamespaces().isEmpty());
+  }
+
+  @Test
+  public void testDisabledNamespaceRemainsCompatible() {
+    Configurations configurations = new Configurations();
+    configurations.setBoolean(AmoroManagementConf.CATALOG_NAMESPACE_ENABLED, false);
+    DefaultCatalogManager manager = new DefaultCatalogManager(configurations);
 
     Assertions.assertFalse(manager.supportNamespace());
     Assertions.assertEquals(Collections.singletonList("default"), manager.listNamespaces());

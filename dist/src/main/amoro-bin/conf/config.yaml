@@ -148,10 +148,10 @@ ams:
   catalog-meta-cache:
     expiration-interval: 60s
 
-  # Optional namespace level for catalog browsing. LAS deployments enable this and typically set
-  # refresh-external-catalogs.interval to 10min; the community defaults remain unchanged.
+  # Optional namespace level for catalog browsing. Disable this to retain the legacy single-level
+  # catalog explorer. LAS deployments typically set refresh-external-catalogs.interval to 10min.
   catalog:
-    namespace-enabled: false
+    namespace-enabled: true
 
   # Support for encrypted sensitive configuration items
   shade:

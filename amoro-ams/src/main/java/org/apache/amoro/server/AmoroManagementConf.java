@@ -116,7 +116,7 @@ public class AmoroManagementConf {
   public static final ConfigOption<Boolean> CATALOG_NAMESPACE_ENABLED =
       ConfigOptions.key("catalog.namespace-enabled")
           .booleanType()
-          .defaultValue(false)
+          .defaultValue(true)
           .withDescription("Whether catalogs are grouped by an optional namespace.");
 
   public static final ConfigOption<Integer> TABLE_MANIFEST_IO_THREAD_COUNT =
