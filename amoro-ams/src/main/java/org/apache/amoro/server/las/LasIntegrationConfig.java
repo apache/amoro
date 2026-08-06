@@ -40,6 +40,12 @@ public final class LasIntegrationConfig {
           .noDefaultValue()
           .withDescription("HMS3 Thrift URI used as the metadata source of truth.");
 
+  public static final ConfigOption<Duration> CATALOG_SYNC_INTERVAL =
+      ConfigOptions.key(PREFIX + "catalog-sync-interval")
+          .durationType()
+          .defaultValue(Duration.ofMinutes(5))
+          .withDescription("Interval for synchronizing allowlisted HMS catalogs into AMS.");
+
   public static final ConfigOption<String> TOS_ENDPOINT =
       ConfigOptions.key(PREFIX + "tos-endpoint")
           .stringType()
@@ -87,6 +93,12 @@ public final class LasIntegrationConfig {
           .intType()
           .defaultValue(1000)
           .withDescription("Maximum number of role credentials cached by AMS.");
+
+  public static final ConfigOption<String> IAM_DATA_ROLE_NAME =
+      ConfigOptions.key(PREFIX + "iam.data-role-name")
+          .stringType()
+          .defaultValue("ServiceRoleForLAS")
+          .withDescription("Tenant IAM role name used by Proton to access TOS data.");
 
   public static final ConfigOption<String> EMR_SERVERLESS_ENDPOINT =
       ConfigOptions.key(PREFIX + "emr-serverless-endpoint")

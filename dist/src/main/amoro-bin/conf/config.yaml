@@ -82,6 +82,7 @@ ams:
     integration:
       enabled: false
       # hms-uri: thrift://hms-service.<namespace>.svc.cluster.local:9083
+      catalog-sync-interval: 5min
       # tos-endpoint: https://tos-cn-beijing.volces.com
       # iam-endpoint: https://iam.volcengineapi.com
       # emr-serverless-endpoint: https://open.volcengineapi.com
@@ -96,6 +97,7 @@ ams:
         role-session-name: AmoroAssumeRoleSession
         assume-role-ttl: 1h
         credential-cache-size: 1000
+        data-role-name: ServiceRoleForLAS
       cross-vpc:
         enabled: false
         # account-id: <account-id>
@@ -145,6 +147,11 @@ ams:
 
   catalog-meta-cache:
     expiration-interval: 60s
+
+  # Optional namespace level for catalog browsing. LAS deployments enable this and typically set
+  # refresh-external-catalogs.interval to 10min; the community defaults remain unchanged.
+  catalog:
+    namespace-enabled: false
 
   # Support for encrypted sensitive configuration items
   shade:

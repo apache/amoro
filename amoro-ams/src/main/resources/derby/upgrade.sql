@@ -14,3 +14,7 @@
 -- limitations under the License.
 
 ALTER TABLE database_metadata ADD COLUMN properties CLOB(64m);
+
+CREATE TABLE namespace_allowlist (
+  namespace VARCHAR(128) NOT NULL PRIMARY KEY
+);

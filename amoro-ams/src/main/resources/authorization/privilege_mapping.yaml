@@ -40,6 +40,21 @@ mappings:
     privilege: MANAGE_CATALOG
 
   - prefixes:
+      - /api/ams/v1/namespaces
+    methods:
+      - GET
+    resource-type: CATALOG
+    privilege: VIEW_CATALOG
+
+  - prefixes:
+      - /api/ams/v1/namespaces
+    methods:
+      - PUT
+      - DELETE
+    resource-type: CATALOG
+    privilege: MANAGE_CATALOG
+
+  - prefixes:
       - /api/ams/v1/tables
     methods:
       - GET

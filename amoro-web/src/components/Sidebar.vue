@@ -146,11 +146,18 @@ export default defineComponent({
         let catalog: string | undefined
         let db: string | undefined
         let tableName: string | undefined
+        let namespace: string | undefined
 
         try {
           const stored = localStorage.getItem('easylake-menu-catalog-db-table')
           if (stored) {
-            const parsed = JSON.parse(stored) as { catalog?: string; database?: string; tableName?: string }
+            const parsed = JSON.parse(stored) as {
+              namespace?: string
+              catalog?: string
+              database?: string
+              tableName?: string
+            }
+            namespace = parsed.namespace
             catalog = parsed.catalog
             db = parsed.database
             tableName = parsed.tableName
@@ -164,6 +171,7 @@ export default defineComponent({
           router.replace({
             path: '/tables',
             query: {
+              ...(namespace && namespace !== 'default' ? { namespace } : {}),
               catalog,
               db,
               table: tableName,

@@ -240,3 +240,7 @@ ALTER TABLE bucket_assignments ADD COLUMN node_heartbeat_ts BIGINT NOT NULL DEFA
 -- ADD properties to table database_metadata
 ALTER TABLE database_metadata ADD COLUMN properties text;
 COMMENT ON COLUMN database_metadata.properties IS 'Database properties';
+
+CREATE TABLE IF NOT EXISTS namespace_allowlist (
+  namespace VARCHAR(128) PRIMARY KEY
+);

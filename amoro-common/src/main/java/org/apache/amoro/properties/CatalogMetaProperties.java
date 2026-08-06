@@ -69,6 +69,9 @@ public class CatalogMetaProperties {
 
   public static final String TABLE_FORMATS = "table-formats";
 
+  /** Optional namespace used to group catalogs in namespace-aware deployments. */
+  public static final String NAMESPACE = "namespace";
+
   public static final String CLIENT_POOL_SIZE = "clients";
   public static final int CLIENT_POOL_SIZE_DEFAULT = 20;
 

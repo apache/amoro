@@ -178,3 +178,7 @@ ALTER TABLE `bucket_assignments` ADD COLUMN `node_heartbeat_ts` BIGINT NOT NULL 
 -- ADD properties to table database_metadata
 ALTER TABLE `database_metadata` ADD COLUMN `properties` MEDIUMTEXT COMMENT 'Database properties';
 
+CREATE TABLE IF NOT EXISTS `namespace_allowlist` (
+  `namespace` VARCHAR(128) NOT NULL COMMENT 'Catalog namespace allowed for synchronization',
+  PRIMARY KEY (`namespace`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Catalog namespace synchronization allowlist';

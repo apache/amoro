@@ -20,8 +20,14 @@
 import type { ICatalogItem, IMap } from '@/types/common.type'
 import request from '@/utils/request'
 
-export function getCatalogList(): Promise<ICatalogItem[]> {
-  return request.get('api/ams/v1/catalogs')
+export function getNamespaceList(): Promise<string[]> {
+  return request.get('api/ams/v1/namespaces')
+}
+
+export function getCatalogList(namespace?: string): Promise<ICatalogItem[]> {
+  return request.get('api/ams/v1/catalogs', {
+    params: namespace ? { namespace } : undefined,
+  })
 }
 export function getDatabaseList(params: {
   catalog: string

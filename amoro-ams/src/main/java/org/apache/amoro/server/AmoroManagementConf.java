@@ -113,6 +113,12 @@ public class AmoroManagementConf {
           .defaultValue(Duration.ofSeconds(60))
           .withDescription("TTL for catalog metadata.");
 
+  public static final ConfigOption<Boolean> CATALOG_NAMESPACE_ENABLED =
+      ConfigOptions.key("catalog.namespace-enabled")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("Whether catalogs are grouped by an optional namespace.");
+
   public static final ConfigOption<Integer> TABLE_MANIFEST_IO_THREAD_COUNT =
       ConfigOptions.key("table-manifest-io.thread-count")
           .intType()

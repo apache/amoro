@@ -85,6 +85,7 @@ public class LasRestExtension implements RestExtension {
     private CatalogManager catalogManager;
     private TableManager tableManager;
     private LasIamClient iamClient;
+    private LasCatalogSynchronizer catalogSynchronizer;
 
     @Override
     public RestExtensionFactory withServiceConfig(Configurations serviceConfig) {
@@ -116,6 +117,12 @@ public class LasRestExtension implements RestExtension {
         iamClient = new LasIamClient(context);
         hmsClient = new LasHmsClient(context);
         sparkSqlManager = new ServerlessSparkSqlManager(context, iamClient);
+        if (catalogManager.supportNamespace()) {
+          catalogSynchronizer = new LasCatalogSynchronizer(context, hmsClient, catalogManager);
+          catalogSynchronizer.start();
+        } else {
+          LOG.info("LAS HMS catalog synchronization is disabled because namespaces are disabled");
+        }
       }
       return new LasRestExtension(
           context, hmsClient, sparkSqlManager, catalogManager, tableManager);
@@ -128,6 +135,10 @@ public class LasRestExtension implements RestExtension {
 
     @Override
     public void close() {
+      if (catalogSynchronizer != null) {
+        catalogSynchronizer.close();
+        catalogSynchronizer = null;
+      }
       if (iamClient != null) {
         try {
           iamClient.close();

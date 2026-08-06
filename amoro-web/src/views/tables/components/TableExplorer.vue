@@ -19,7 +19,7 @@ limitations under the License.
 <script setup lang="ts">
 import { computed, onBeforeMount, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCatalogList, getDatabaseList, getTableList } from '@/services/table.service'
+import { getCatalogList, getDatabaseList, getNamespaceList, getTableList } from '@/services/table.service'
 import type { ICatalogItem } from '@/types/common.type'
 
 // Node types: Catalog / Database / Table
@@ -47,7 +47,7 @@ const router = useRouter()
 const route = useRoute()
 
 const storageTableKey = 'easylake-menu-catalog-db-table'
-const expandedKeysSessionKey = 'tables_expanded_keys'
+const expandedKeysSessionKeyPrefix = 'tables_expanded_keys'
 
 const state = reactive({
   loading: false,
@@ -56,16 +56,34 @@ const state = reactive({
   treeData: [] as TreeNode[],
   expandedKeys: [] as string[],
   selectedKeys: [] as string[],
+  namespaces: [] as string[],
+  selectedNamespace: '',
+  namespaceMode: false,
   // Cache
   catalogList: [] as string[],
   dbListByCatalog: {} as Record<string, string[]>,
   tablesByCatalogDb: {} as Record<string, TableItem[]>,
 })
 
+let namespaceGeneration = 0
+let initialized = false
+
+function expandedKeysSessionKey() {
+  return `${expandedKeysSessionKeyPrefix}:${state.selectedNamespace || 'default'}`
+}
+
+function catalogDisplayName(catalog: string) {
+  if (!state.namespaceMode || !state.selectedNamespace) {
+    return catalog
+  }
+  const prefix = `${state.selectedNamespace}@`
+  return catalog.startsWith(prefix) ? catalog.slice(prefix.length) : catalog
+}
+
 function buildCatalogNode(catalog: string): TreeNode {
   return {
     key: `catalog:${catalog}`,
-    title: catalog,
+    title: catalogDisplayName(catalog),
     isLeaf: false,
     nodeType: 'catalog',
     catalog,
@@ -114,16 +132,40 @@ function updateTreeNodeChildren(targetKey: string, children: TreeNode[]) {
 }
 
 async function initRootCatalogs() {
+  if (state.namespaceMode && !state.selectedNamespace) {
+    state.catalogList = []
+    state.treeData = []
+    return
+  }
+  const generation = namespaceGeneration
   state.loading = true
   try {
-    const res = await getCatalogList()
+    const res = await getCatalogList(state.namespaceMode ? state.selectedNamespace : undefined)
+    if (generation !== namespaceGeneration) {
+      return
+    }
     const catalogs = (res || []).map((item: ICatalogItem) => item.catalogName)
     state.catalogList = catalogs
     state.treeData = catalogs.map(catalog => buildCatalogNode(catalog))
   }
   finally {
-    state.loading = false
+    if (generation === namespaceGeneration) {
+      state.loading = false
+    }
   }
+}
+
+function clearExplorerState() {
+  namespaceGeneration += 1
+  state.loading = false
+  state.searchKey = ''
+  state.filterKey = ''
+  state.treeData = []
+  state.expandedKeys = []
+  state.selectedKeys = []
+  state.catalogList = []
+  state.dbListByCatalog = {}
+  state.tablesByCatalogDb = {}
 }
 
 async function loadChildren(node: any) {
@@ -133,6 +175,7 @@ async function loadChildren(node: any) {
   }
 
   const nodeType = data.nodeType as NodeType
+  const generation = namespaceGeneration
   if (nodeType === 'catalog') {
     const catalog = data.catalog as string
     if (!catalog || state.dbListByCatalog[catalog]) {
@@ -142,6 +185,9 @@ async function loadChildren(node: any) {
     state.loading = true
     try {
       const res = await getDatabaseList({ catalog, keywords: '' })
+      if (generation !== namespaceGeneration) {
+        return
+      }
       const dbs = (res || []) as string[]
       state.dbListByCatalog[catalog] = dbs
       if (!dbs.length) {
@@ -171,6 +217,9 @@ async function loadChildren(node: any) {
     state.loading = true
     try {
       const res = await getTableList({ catalog, db, keywords: '' })
+      if (generation !== namespaceGeneration) {
+        return
+      }
       const tables = (res || []) as TableItem[]
       state.tablesByCatalogDb[cacheKey] = tables
       if (!tables.length) {
@@ -217,7 +266,7 @@ async function expandPathBySelected(catalog: string, db: string) {
 
   state.expandedKeys = Array.from(nextExpandedKeys)
   try {
-    sessionStorage.setItem(expandedKeysSessionKey, JSON.stringify(state.expandedKeys))
+    sessionStorage.setItem(expandedKeysSessionKey(), JSON.stringify(state.expandedKeys))
   }
   catch (e) {
     // ignore sessionStorage write errors
@@ -231,16 +280,21 @@ function handleSelectTable(catalog: string, db: string, tableName: string, table
 
   const type = tableType || 'MIXED_ICEBERG'
 
-  localStorage.setItem(storageTableKey, JSON.stringify({
+  const namespace = state.namespaceMode ? state.selectedNamespace : 'default'
+  const storedSelection = JSON.stringify({
+    namespace,
     catalog,
     database: db,
     tableName,
-  }))
+  })
+  localStorage.setItem(`${storageTableKey}:${namespace}`, storedSelection)
+  localStorage.setItem(storageTableKey, storedSelection)
 
   const path = type === 'HIVE' ? '/hive-tables' : '/tables'
   const pathQuery = {
     path,
     query: {
+      ...(state.namespaceMode ? { namespace: state.selectedNamespace } : {}),
       catalog,
       db,
       table: tableName,
@@ -289,7 +343,7 @@ function handleTreeSelect(selectedKeys: (string | number)[], info: any) {
 async function handleTreeExpand(expandedKeys: (string | number)[], info: any) {
   state.expandedKeys = expandedKeys.map(key => String(key))
   try {
-    sessionStorage.setItem(expandedKeysSessionKey, JSON.stringify(state.expandedKeys))
+    sessionStorage.setItem(expandedKeysSessionKey(), JSON.stringify(state.expandedKeys))
   }
   catch (e) {
     // ignore sessionStorage write errors
@@ -320,7 +374,7 @@ async function toggleNodeExpand(dataRef: TreeNode) {
 
   state.expandedKeys = nextExpandedKeys
   try {
-    sessionStorage.setItem(expandedKeysSessionKey, JSON.stringify(state.expandedKeys))
+    sessionStorage.setItem(expandedKeysSessionKey(), JSON.stringify(state.expandedKeys))
   }
   catch (e) {
     // ignore sessionStorage write errors
@@ -455,10 +509,34 @@ watch(
 watch(
   () => route.query,
   async (value, oldValue) => {
-    const { catalog, db, table } = value as any
-    const { catalog: oldCatalog, db: oldDb, table: oldTable } = (oldValue || {}) as any
+    if (!initialized) {
+      return
+    }
 
-    if (`${catalog || ''}${db || ''}${table || ''}` === `${oldCatalog || ''}${oldDb || ''}${oldTable || ''}`) {
+    const { namespace, catalog, db, table } = value as any
+    const {
+      namespace: oldNamespace,
+      catalog: oldCatalog,
+      db: oldDb,
+      table: oldTable,
+    } = (oldValue || {}) as any
+
+    if (state.namespaceMode && namespace !== oldNamespace) {
+      const nextNamespace = state.namespaces.includes(namespace as string) ? namespace as string : ''
+      if (nextNamespace !== state.selectedNamespace) {
+        clearExplorerState()
+        state.selectedNamespace = nextNamespace
+        if (nextNamespace) {
+          await initRootCatalogs()
+          await restoreExpandedState()
+        }
+      }
+    }
+
+    if (
+      namespace === oldNamespace
+      && `${catalog || ''}${db || ''}${table || ''}` === `${oldCatalog || ''}${oldDb || ''}${oldTable || ''}`
+    ) {
       return
     }
 
@@ -496,13 +574,11 @@ const searchResult = computed(() => {
 const displayTreeData = computed(() => searchResult.value.tree)
 const displayExpandedKeys = computed(() => searchResult.value.expandedKeys)
 
-onBeforeMount(async () => {
-  await initRootCatalogs()
-
+async function restoreExpandedState() {
   let restoredExpandedKeys: string[] = []
 
   try {
-    const stored = sessionStorage.getItem(expandedKeysSessionKey)
+    const stored = sessionStorage.getItem(expandedKeysSessionKey())
     if (stored) {
       const parsed = JSON.parse(stored)
       if (Array.isArray(parsed)) {
@@ -538,7 +614,9 @@ onBeforeMount(async () => {
 
     state.expandedKeys = restoredExpandedKeys
   }
+}
 
+async function restoreRouteSelection() {
   const query = route.query || {}
   const queryCatalog = (query.catalog as string) || ''
   const queryDb = (query.db as string) || ''
@@ -551,12 +629,72 @@ onBeforeMount(async () => {
       state.selectedKeys = [tableKey]
     }
   }
+  else {
+    state.selectedKeys = []
+  }
+}
+
+async function initializeNamespaces() {
+  let namespaces: string[]
+  try {
+    namespaces = (await getNamespaceList()) || []
+  }
+  catch (e) {
+    // Fail closed: falling back to the legacy catalog endpoint could expose every namespace.
+    namespaces = []
+  }
+
+  state.namespaces = namespaces
+  state.namespaceMode = !(namespaces.length === 1 && namespaces[0] === 'default')
+  if (!state.namespaceMode) {
+    state.selectedNamespace = 'default'
+    return
+  }
+
+  const routeNamespace = (route.query.namespace as string) || ''
+  state.selectedNamespace = namespaces.includes(routeNamespace) ? routeNamespace : ''
+}
+
+async function handleNamespaceChange(namespace?: string) {
+  clearExplorerState()
+  state.selectedNamespace = namespace || ''
+
+  await router.replace({
+    path: route.path,
+    query: state.selectedNamespace ? { namespace: state.selectedNamespace } : {},
+  })
+
+  if (state.selectedNamespace) {
+    await initRootCatalogs()
+    await restoreExpandedState()
+  }
+}
+
+onBeforeMount(async () => {
+  await initializeNamespaces()
+  await initRootCatalogs()
+  await restoreExpandedState()
+  await restoreRouteSelection()
+  initialized = true
 })
 </script>
 
 <template>
   <div class="table-explorer">
     <div class="table-explorer-header">
+      <div class="namespace-selector">
+        <span class="namespace-label">Namespace:</span>
+        <a-select
+          v-if="state.namespaceMode"
+          :value="state.selectedNamespace || undefined"
+          :options="state.namespaces.map(namespace => ({ label: namespace, value: namespace }))"
+          placeholder="Select namespace"
+          class="namespace-select"
+          allow-clear
+          @change="handleNamespaceChange"
+        />
+        <span v-else class="namespace-default">default</span>
+      </div>
       <a-input
         v-model:value="state.searchKey"
         placeholder="Search catalog.database.table"
@@ -598,10 +736,10 @@ onBeforeMount(async () => {
         </template>
       </a-tree>
       <div v-else class="empty-placeholder">
-        <span>No results..</span>
+        <span v-if="state.namespaceMode && !state.selectedNamespace">Select a namespace to browse tables.</span>
+        <span v-else>No results.</span>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -620,6 +758,37 @@ onBeforeMount(async () => {
   .table-explorer-header {
     padding: 0 7px 0 8px;
     margin-bottom: 8px;
+
+    .namespace-selector {
+      display: flex;
+      align-items: center;
+      min-height: 24px;
+      margin-bottom: 8px;
+      font-size: 13px;
+
+      .namespace-label {
+        margin-right: 6px;
+        color: #666;
+      }
+
+      .namespace-default {
+        color: #262626;
+      }
+
+      .namespace-select {
+        flex: 1;
+        min-width: 0;
+
+        :deep(.ant-select-selector) {
+          height: 24px;
+        }
+
+        :deep(.ant-select-selection-item),
+        :deep(.ant-select-selection-placeholder) {
+          line-height: 22px;
+        }
+      }
+    }
 
     .search-input {
       width: 100%;

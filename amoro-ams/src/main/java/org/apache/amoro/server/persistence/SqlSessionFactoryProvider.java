@@ -28,6 +28,7 @@ import org.apache.amoro.server.persistence.mapper.ApiTokensMapper;
 import org.apache.amoro.server.persistence.mapper.BucketAssignMapper;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.server.persistence.mapper.HaLeaseMapper;
+import org.apache.amoro.server.persistence.mapper.NamespaceAllowlistMapper;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.PlatformFileMapper;
@@ -78,6 +79,7 @@ public class SqlSessionFactoryProvider {
     configuration.addMapper(TableRuntimeMapper.class);
     configuration.addMapper(HaLeaseMapper.class);
     configuration.addMapper(BucketAssignMapper.class);
+    configuration.addMapper(NamespaceAllowlistMapper.class);
 
     PageInterceptor interceptor = new PageInterceptor();
     Properties interceptorProperties = new Properties();

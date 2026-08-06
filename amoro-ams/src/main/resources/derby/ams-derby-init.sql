@@ -276,3 +276,7 @@ CREATE TABLE bucket_assignments (
   node_heartbeat_ts  BIGINT        NOT NULL DEFAULT 0,
   PRIMARY KEY (cluster_name, node_key)
 );
+
+CREATE TABLE namespace_allowlist (
+  namespace VARCHAR(128) NOT NULL PRIMARY KEY
+);

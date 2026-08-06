@@ -626,8 +626,39 @@ public class TableController {
    * @param ctx - context for handling the request and response
    */
   public void getCatalogs(Context ctx) {
-    List<CatalogMeta> catalogs = catalogManager.listCatalogMetas();
+    String namespace = ctx.queryParam("namespace");
+    List<CatalogMeta> catalogs =
+        StringUtils.isBlank(namespace)
+            ? catalogManager.listCatalogMetas()
+            : catalogManager.listCatalogMetas(namespace.trim());
     ctx.json(OkResponse.of(catalogs));
+  }
+
+  /** Lists the namespace level used by the catalog explorer. */
+  public void getNamespaces(Context ctx) {
+    ctx.json(OkResponse.of(catalogManager.listNamespaces()));
+  }
+
+  /** Adds a namespace to the synchronization allowlist. */
+  public void addNamespace(Context ctx) {
+    String namespace = validateNamespace(ctx.pathParam("namespace"));
+    catalogManager.addNamespace(namespace);
+    ctx.json(OkResponse.of(namespace));
+  }
+
+  /** Removes a namespace from the synchronization allowlist. */
+  public void removeNamespace(Context ctx) {
+    String namespace = validateNamespace(ctx.pathParam("namespace"));
+    catalogManager.removeNamespace(namespace);
+    ctx.json(OkResponse.of(namespace));
+  }
+
+  private static String validateNamespace(String namespace) {
+    String normalized = StringUtils.trimToEmpty(namespace);
+    Preconditions.checkArgument(!normalized.isEmpty(), "namespace cannot be empty");
+    Preconditions.checkArgument(normalized.length() <= 128, "namespace is too long");
+    Preconditions.checkArgument(!normalized.contains("@"), "namespace cannot contain @");
+    return normalized;
   }
 
   /**

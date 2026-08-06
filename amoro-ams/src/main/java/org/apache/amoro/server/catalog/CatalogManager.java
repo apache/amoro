@@ -22,6 +22,7 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.table.TableIdentifier;
 
+import java.util.Collections;
 import java.util.List;
 
 /** The CatalogManager interface defines the operations that can be performed on catalogs. */
@@ -32,6 +33,31 @@ public interface CatalogManager {
    * @return a List of CatalogMeta objects representing the catalog metas available.
    */
   List<CatalogMeta> listCatalogMetas();
+
+  /** Returns whether this catalog manager exposes a namespace level. */
+  default boolean supportNamespace() {
+    return false;
+  }
+
+  /** Lists namespaces, or the community-compatible default namespace when unsupported. */
+  default List<String> listNamespaces() {
+    return Collections.singletonList("default");
+  }
+
+  /** Lists catalogs in a namespace. Implementations without namespace support return all. */
+  default List<CatalogMeta> listCatalogMetas(String namespace) {
+    return listCatalogMetas();
+  }
+
+  /** Adds a namespace to the allowlist. */
+  default void addNamespace(String namespace) {
+    throw new UnsupportedOperationException("Catalog namespaces are not supported");
+  }
+
+  /** Removes a namespace from the allowlist. */
+  default void removeNamespace(String namespace) {
+    throw new UnsupportedOperationException("Catalog namespaces are not supported");
+  }
 
   /**
    * Gets the catalog metadata for the given catalog name.

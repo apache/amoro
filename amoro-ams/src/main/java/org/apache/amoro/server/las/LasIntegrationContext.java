@@ -79,9 +79,11 @@ public final class LasIntegrationContext {
     requiredString(configurations, LasIntegrationConfig.IAM_BOOTSTRAP_ACCESS_KEY);
     requiredString(configurations, LasIntegrationConfig.IAM_BOOTSTRAP_SECRET_KEY);
     requiredString(configurations, LasIntegrationConfig.IAM_ROLE_SESSION_NAME);
+    requiredString(configurations, LasIntegrationConfig.IAM_DATA_ROLE_NAME);
     positiveDuration(configurations, LasIntegrationConfig.CONNECT_TIMEOUT);
     positiveDuration(configurations, LasIntegrationConfig.READ_TIMEOUT);
     positiveDuration(configurations, LasIntegrationConfig.IAM_ASSUME_ROLE_TTL);
+    positiveDuration(configurations, LasIntegrationConfig.CATALOG_SYNC_INTERVAL);
     if (configurations.getInteger(LasIntegrationConfig.IAM_CREDENTIAL_CACHE_SIZE) <= 0) {
       throw new IllegalArgumentException(
           LasIntegrationConfig.IAM_CREDENTIAL_CACHE_SIZE.key() + " must be greater than zero");
@@ -155,6 +157,11 @@ public final class LasIntegrationContext {
     return hmsUri;
   }
 
+  public URI tosEndpoint() {
+    ensureEnabled();
+    return tosEndpoint;
+  }
+
   public URI iamEndpoint() {
     ensureEnabled();
     return iamEndpoint;
@@ -189,6 +196,16 @@ public final class LasIntegrationContext {
   public Duration iamAssumeRoleTtl() {
     ensureEnabled();
     return configurations.get(LasIntegrationConfig.IAM_ASSUME_ROLE_TTL);
+  }
+
+  public String iamDataRoleName() {
+    ensureEnabled();
+    return configurations.getString(LasIntegrationConfig.IAM_DATA_ROLE_NAME);
+  }
+
+  public Duration catalogSyncInterval() {
+    ensureEnabled();
+    return configurations.get(LasIntegrationConfig.CATALOG_SYNC_INTERVAL);
   }
 
   public int iamCredentialCacheSize() {

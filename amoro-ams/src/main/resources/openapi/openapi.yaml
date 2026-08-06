@@ -39,11 +39,69 @@ tags:
   - name: Overview
     description: Overview operations
 paths:
+  /api/ams/v1/namespaces:
+    get:
+      tags:
+        - Catalogs
+      summary: List catalog namespaces
+      description: Returns default when namespace support is disabled, otherwise the namespace allowlist.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        items:
+                          type: string
+  /api/ams/v1/namespaces/{namespace}:
+    parameters:
+      - name: namespace
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The namespace allowlist entry
+    put:
+      tags:
+        - Catalogs
+      summary: Add a namespace to the allowlist
+      responses:
+        '200':
+          description: Namespace was added or already existed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+    delete:
+      tags:
+        - Catalogs
+      summary: Remove a namespace from the allowlist
+      description: Stops future synchronization and hides its catalogs without treating them as deleted in HMS.
+      responses:
+        '200':
+          description: Namespace was removed or did not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
   /api/ams/v1/catalogs:
     get:
       tags:
         - Catalogs
       summary: Get list of catalogs
+      parameters:
+        - name: namespace
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional namespace filter. Omitting it preserves the legacy all-catalog response.
       responses:
         '200':
           description: Successful response

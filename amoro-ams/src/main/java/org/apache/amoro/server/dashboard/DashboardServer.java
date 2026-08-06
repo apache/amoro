@@ -301,6 +301,14 @@ public class DashboardServer {
           });
       get("/upgrade/properties", tableController::getUpgradeHiveTableProperties);
 
+      path(
+          "/namespaces",
+          () -> {
+            get("", tableController::getNamespaces);
+            put("/{namespace}", tableController::addNamespace);
+            delete("/{namespace}", tableController::removeNamespace);
+          });
+
       // catalog apis
       path(
           "/catalogs",

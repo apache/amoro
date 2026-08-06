@@ -29,12 +29,15 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.AlreadyExistsException;
 import org.apache.amoro.exception.IllegalMetadataException;
 import org.apache.amoro.exception.ObjectNotExistsException;
+import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
+import org.apache.amoro.server.persistence.mapper.NamespaceAllowlistMapper;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.cache.CacheBuilder;
 import org.apache.amoro.shade.guava32.com.google.common.cache.CacheLoader;
 import org.apache.amoro.shade.guava32.com.google.common.cache.LoadingCache;
@@ -46,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -102,6 +106,64 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
     return getAs(CatalogMetaMapper.class, CatalogMetaMapper::getCatalogs).stream()
         .peek(c -> metaCache.put(c.getCatalogName(), Optional.of(c)))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public boolean supportNamespace() {
+    return serverConfiguration.getBoolean(AmoroManagementConf.CATALOG_NAMESPACE_ENABLED);
+  }
+
+  @Override
+  public List<String> listNamespaces() {
+    if (!supportNamespace()) {
+      return Collections.singletonList("default");
+    }
+    return getAs(NamespaceAllowlistMapper.class, NamespaceAllowlistMapper::listNamespaces);
+  }
+
+  @Override
+  public List<CatalogMeta> listCatalogMetas(String namespace) {
+    if (namespace == null || namespace.trim().isEmpty()) {
+      return listCatalogMetas();
+    }
+    if (!supportNamespace()) {
+      return "default".equals(namespace) ? listCatalogMetas() : Collections.emptyList();
+    }
+    if (!listNamespaces().contains(namespace)) {
+      return Collections.emptyList();
+    }
+    return listCatalogMetas().stream()
+        .filter(
+            catalog ->
+                catalog.getCatalogProperties() != null
+                    && namespace.equals(
+                        catalog.getCatalogProperties().get(CatalogMetaProperties.NAMESPACE)))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public void addNamespace(String namespace) {
+    Preconditions.checkState(supportNamespace(), "Catalog namespaces are not enabled");
+    try {
+      doAs(
+          NamespaceAllowlistMapper.class,
+          mapper -> {
+            if (mapper.getNamespace(namespace) == null) {
+              mapper.insertNamespace(namespace);
+            }
+          });
+    } catch (PersistenceException e) {
+      // Another AMS node may have inserted the same namespace after our existence check.
+      if (getAs(NamespaceAllowlistMapper.class, mapper -> mapper.getNamespace(namespace)) == null) {
+        throw e;
+      }
+    }
+  }
+
+  @Override
+  public void removeNamespace(String namespace) {
+    Preconditions.checkState(supportNamespace(), "Catalog namespaces are not enabled");
+    doAs(NamespaceAllowlistMapper.class, mapper -> mapper.deleteNamespace(namespace));
   }
 
   @Override

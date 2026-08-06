@@ -477,3 +477,8 @@ COMMENT ON COLUMN server_info_json IS 'JSON encoded server info (AmsServerInfo)'
 COMMENT ON COLUMN lease_expire_ts IS 'Lease expiration timestamp (ms since epoch)';
 COMMENT ON COLUMN version IS 'Optimistic lock version of the lease row';
 COMMENT ON COLUMN updated_at IS 'Last update timestamp (ms since epoch)';
+
+CREATE TABLE IF NOT EXISTS namespace_allowlist (
+  namespace VARCHAR(128) PRIMARY KEY
+);
+COMMENT ON TABLE namespace_allowlist IS 'Catalog namespace synchronization allowlist';

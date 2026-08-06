@@ -17,7 +17,7 @@ limitations under the License.
 / -->
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, shallowReactive, watch } from 'vue'
+import { computed, reactive, shallowReactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import type { ColumnProps } from 'ant-design-vue/es/table'
@@ -27,13 +27,14 @@ import { dateFormat } from '@/utils'
 
 const emit = defineEmits<{
   (e: 'setBaseDetailInfo', data: IBaseDetailInfo): void
-  (e: 'tableNotFound', info: { catalog: string; db: string; table: string }): void
+  (e: 'tableNotFound', info: { catalog: string, db: string, table: string }): void
 }>()
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
 const STORAGE_TABLE_KEY = 'easylake-menu-catalog-db-table'
+let detailRequestGeneration = 0
 
 const params = computed(() => {
   return {
@@ -44,6 +45,7 @@ const params = computed(() => {
 watch(
   () => route.query,
   (val) => {
+    detailRequestGeneration += 1
     val?.catalog && route.path === '/tables' && getTableDetails()
   },
 )
@@ -72,7 +74,7 @@ const state = reactive({
     createTime: '',
     tableFormat: '',
     hasPartition: false, // Whether there is a partition, if there is no partition, the file list will be displayed
-    comment: ''
+    comment: '',
   } as IBaseDetailInfo,
   pkList: [] as DetailColumnItem[],
   partitionColumnList: [] as PartitionColumnItem[],
@@ -83,6 +85,7 @@ const state = reactive({
 })
 
 async function getTableDetails() {
+  const requestGeneration = ++detailRequestGeneration
   const requestParams = { ...params.value }
   const { catalog, db, table } = requestParams
   if (!catalog || !db || !table) {
@@ -93,6 +96,9 @@ async function getTableDetails() {
     const result = await getTableDetail({
       ...requestParams,
     })
+    if (requestGeneration !== detailRequestGeneration) {
+      return
+    }
     const { pkList = [], tableType, partitionColumnList = [], properties, changeMetrics, schema, createTime, tableIdentifier, baseMetrics, tableSummary, comment } = result
     state.baseDetailInfo = {
       ...tableSummary,
@@ -100,7 +106,7 @@ async function getTableDetails() {
       tableName: `${tableIdentifier?.catalog || ''}.${tableIdentifier?.database || ''}.${tableIdentifier?.tableName || ''}`,
       createTime: createTime ? dateFormat(createTime) : '',
       hasPartition: !!(partitionColumnList?.length),
-      comment: comment || ''
+      comment: comment || '',
     }
 
     state.pkList = pkList || []
@@ -129,10 +135,15 @@ async function getTableDetails() {
     setBaseDetailInfo()
   }
   catch (error) {
+    if (requestGeneration !== detailRequestGeneration) {
+      return
+    }
     const errorMessage = (error as Error)?.message || ''
     const isNotFoundError = /not exist|not found/i.test(errorMessage)
 
     if (isNotFoundError) {
+      const namespace = (route.query.namespace as string) || 'default'
+      localStorage.removeItem(`${STORAGE_TABLE_KEY}:${namespace}`)
       localStorage.removeItem(STORAGE_TABLE_KEY)
 
       emit('tableNotFound', {
@@ -141,11 +152,16 @@ async function getTableDetails() {
         table: table as string,
       })
 
-      router.replace({ path: '/tables', query: {} })
+      router.replace({
+        path: '/tables',
+        query: route.query.namespace ? { namespace: route.query.namespace } : {},
+      })
     }
   }
   finally {
-    state.detailLoading = false
+    if (requestGeneration === detailRequestGeneration) {
+      state.detailLoading = false
+    }
   }
 
   function setBaseDetailInfo() {
