@@ -33,6 +33,7 @@ public class TableConfiguration {
   private boolean cleanOrphanEnabled;
   private long orphanExistingMinutes;
   private boolean deleteDanglingDeleteFilesEnabled;
+  private boolean ignoreLocationConflictWhenCleanOrphan;
   private OptimizingConfig optimizingConfig;
   private DataExpirationConfig expiringDataConfig;
   private TagConfiguration tagConfiguration;
@@ -121,6 +122,16 @@ public class TableConfiguration {
     return this;
   }
 
+  public boolean isIgnoreLocationConflictWhenCleanOrphan() {
+    return ignoreLocationConflictWhenCleanOrphan;
+  }
+
+  public TableConfiguration setIgnoreLocationConflictWhenCleanOrphan(
+      boolean ignoreLocationConflictWhenCleanOrphan) {
+    this.ignoreLocationConflictWhenCleanOrphan = ignoreLocationConflictWhenCleanOrphan;
+    return this;
+  }
+
   public DataExpirationConfig getExpiringDataConfig() {
     return Optional.ofNullable(expiringDataConfig).orElse(new DataExpirationConfig());
   }
@@ -156,6 +167,7 @@ public class TableConfiguration {
         && cleanOrphanEnabled == that.cleanOrphanEnabled
         && orphanExistingMinutes == that.orphanExistingMinutes
         && deleteDanglingDeleteFilesEnabled == that.deleteDanglingDeleteFilesEnabled
+        && ignoreLocationConflictWhenCleanOrphan == that.ignoreLocationConflictWhenCleanOrphan
         && Objects.equal(optimizingConfig, that.optimizingConfig)
         && Objects.equal(expiringDataConfig, that.expiringDataConfig)
         && Objects.equal(tagConfiguration, that.tagConfiguration);
@@ -172,6 +184,7 @@ public class TableConfiguration {
         cleanOrphanEnabled,
         orphanExistingMinutes,
         deleteDanglingDeleteFilesEnabled,
+        ignoreLocationConflictWhenCleanOrphan,
         optimizingConfig,
         expiringDataConfig,
         tagConfiguration);
