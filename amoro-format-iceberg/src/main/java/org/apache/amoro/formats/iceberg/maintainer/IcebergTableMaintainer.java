@@ -31,6 +31,7 @@ import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.PathInfo;
 import org.apache.amoro.io.SupportsFileSystemOperations;
 import org.apache.amoro.maintainer.MaintainerMetrics;
+import org.apache.amoro.maintainer.MaintainerMetrics.CleanFailureReason;
 import org.apache.amoro.maintainer.OptimizingInfo;
 import org.apache.amoro.maintainer.TableMaintainer;
 import org.apache.amoro.maintainer.TableMaintainerContext;
@@ -135,6 +136,18 @@ public class IcebergTableMaintainer implements TableMaintainer {
     this.context = context;
   }
 
+  /** Outcome of the location-conflict check before orphan-file cleanup. */
+  private enum LocationConflictCheckResult {
+    /** The check was skipped (configured to ignore) — proceed normally. */
+    CONFLICT_CHECK_SKIPPED,
+    /** No conflict detected — proceed normally. */
+    NO_CONFLICT,
+    /** Another table uuid detected in the same location — skip cleanup. */
+    CONFLICT_DETECTED,
+    /** The check itself failed (e.g. FileIO doesn't support prefix ops) — skip cleanup. */
+    CONFLICT_CHECK_FAILED
+  }
+
   @Override
   public Map<String, String> cleanOrphanFiles() {
     TableConfiguration tableConfiguration = context.getTableConfiguration();
@@ -144,19 +157,39 @@ public class IcebergTableMaintainer implements TableMaintainer {
       return Maps.newHashMap();
     }
 
-    if (!shouldProceedOrphanCleanup(tableConfiguration)) {
-      return Maps.newHashMap();
+    LocationConflictCheckResult checkResult = checkLocationConflict(tableConfiguration);
+
+    switch (checkResult) {
+      case CONFLICT_DETECTED:
+        metrics.recordFailure(CleanFailureReason.LOCATION_CONFLICT);
+        return Maps.newHashMap();
+      case CONFLICT_CHECK_FAILED:
+        metrics.recordFailure(CleanFailureReason.LOCATION_CONFLICT_CHECK_FAILED);
+        return Maps.newHashMap();
+      default:
+        break;
     }
 
     long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
 
-    int dataDeleted = cleanContentFiles(System.currentTimeMillis() - keepTime, metrics);
+    int dataDeleted;
+    int metadataDeleted;
+    try {
+      dataDeleted = cleanContentFiles(System.currentTimeMillis() - keepTime, metrics);
 
-    // refresh
-    table.refresh();
+      // refresh
+      table.refresh();
 
-    // clear metadata files
-    int metadataDeleted = cleanMetadata(System.currentTimeMillis() - keepTime, metrics);
+      // clear metadata files
+      metadataDeleted = cleanMetadata(System.currentTimeMillis() - keepTime, metrics);
+
+      // cleanup completed — reset status to SUCCESS
+      metrics.recordSuccess();
+    } catch (Exception e) {
+      metrics.recordFailure(CleanFailureReason.EXECUTION_FAILED);
+      LOG.error("Failed to clean orphan files for table {}", table.name(), e);
+      throw e;
+    }
 
     Map<String, String> summary = Maps.newLinkedHashMap();
     summary.put("orphan-data-files-cleaned", String.valueOf(dataDeleted));
@@ -165,58 +198,41 @@ public class IcebergTableMaintainer implements TableMaintainer {
   }
 
   /**
-   * Inspects whether the table's location is shared with another table before cleaning orphan
-   * files.
+   * Checks whether the table's location is shared with another table before cleaning orphan files.
+   * All exceptions are handled internally — this method always returns a valid result.
    *
-   * @return {@code true} if the cleanup should proceed; {@code false} if it must be skipped to
-   *     avoid deleting files that may belong to another table.
+   * @return the location-conflict check result.
    */
-  private boolean shouldProceedOrphanCleanup(TableConfiguration tableConfiguration) {
-    boolean conflictDetected;
-    String conflictDetail = null;
-    try {
-      conflictDetected = IcebergTableUtil.hasOtherTableInLocation(table);
-    } catch (ValidationException e) {
-      // The shared-location check could not run (e.g. FileIO lacks prefix support).
-      conflictDetected = true;
-      conflictDetail = e.getMessage();
-    }
-
-    if (!conflictDetected) {
-      return true;
-    }
-
+  private LocationConflictCheckResult checkLocationConflict(TableConfiguration tableConfiguration) {
     if (tableConfiguration.isIgnoreLocationConflictWhenCleanOrphan()) {
-      // The user opted out of the conflict check, so proceed despite it.
       LOG.warn(
-          "Location conflict detected for table {} at '{}' ({}), but the table property {} is "
-              + "enabled; skipping the conflict check and proceeding with cleanup.",
-          table.name(),
-          table.location(),
-          conflictDetail != null
-              ? "unable to determine shared location: " + conflictDetail
-              : "another table shares this location",
-          TableProperties.IGNORE_LOCATION_CONFLICT_WHEN_CLEAN_ORPHAN);
-      return true;
-    }
-
-    if (conflictDetail != null) {
-      // Fail closed: skip cleanup instead of risking another table's files.
-      LOG.error(
-          "Unable to determine whether another table shares location '{}': {}. "
-              + "Skipping cleanup to avoid deleting files that may belong to another table. "
-              + "If you are certain this location is not shared, set {} to true to skip this check "
-              + "and proceed with cleanup.",
-          table.location(),
-          conflictDetail,
-          TableProperties.IGNORE_LOCATION_CONFLICT_WHEN_CLEAN_ORPHAN);
-    } else {
-      LOG.warn(
-          "Table {} has other table in location {}, skip clean orphan files",
+          "Table property {} is enabled for table {} at '{}'; skipping location-conflict check and proceeding with cleanup.",
+          TableProperties.IGNORE_LOCATION_CONFLICT_WHEN_CLEAN_ORPHAN,
           table.name(),
           table.location());
+      return LocationConflictCheckResult.CONFLICT_CHECK_SKIPPED;
     }
-    return false;
+
+    try {
+      if (IcebergTableUtil.hasOtherTableInLocation(table)) {
+        LOG.warn(
+            "Table {} has other table in location {}, skip clean orphan files",
+            table.name(),
+            table.location());
+        return LocationConflictCheckResult.CONFLICT_DETECTED;
+      } else {
+        return LocationConflictCheckResult.NO_CONFLICT;
+      }
+    } catch (Exception e) {
+      // Real IO failure (FileIO network timeout, S3/HDFS unreachable, …) — the system
+      // is unable to determine location-conflict safety, so skip the cleanup cycle.
+      LOG.warn(
+          "Location-conflict check failed for table {} at {}. Skipping orphan cleanup, exception is as follows: {}",
+          table.name(),
+          table.location(),
+          e);
+      return LocationConflictCheckResult.CONFLICT_CHECK_FAILED;
+    }
   }
 
   @Override

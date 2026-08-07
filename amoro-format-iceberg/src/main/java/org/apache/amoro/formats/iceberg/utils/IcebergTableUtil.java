@@ -244,12 +244,12 @@ public class IcebergTableUtil {
 
     FileIO io = table.io();
     if (!(io instanceof SupportsPrefixOperations)) {
-      throw new ValidationException(
-          "Cannot detect location conflicts: the table's FileIO (%s) does not support prefix "
-              + "operations, which are required to inspect the metadata directory '%s'. Use a FileIO "
-              + "that implements SupportsPrefixOperations, or let the caller skip the check if the "
-              + "storage backend is known to be used by a single table.",
-          io.getClass().getName(), metadataDir);
+      String msg =
+          String.format(
+              "Cannot detect location conflicts: the table's FileIO (%s) does not support prefix "
+                  + "operations, which are required to inspect the metadata directory '%s'.",
+              io.getClass().getName(), metadataDir);
+      throw new ValidationException(msg);
     }
 
     String prefix = metadataDir.toString();
@@ -284,7 +284,7 @@ public class IcebergTableUtil {
    * metadata ({@code .metadata.json.gz}). Returns {@code null} if the uuid cannot be determined
    * (legacy file without a uuid, corrupt file, or any read failure).
    */
-  public static String readTableUuid(Table table, String metadataLocation) {
+  private static String readTableUuid(Table table, String metadataLocation) {
     try {
       return TableMetadataParser.read(table.io(), metadataLocation).uuid();
     } catch (Exception e) {
