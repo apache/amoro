@@ -35,6 +35,7 @@ import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.time.Duration;
@@ -56,6 +57,9 @@ public class IcebergProcessFactory implements ProcessFactory {
       ConfigOptions.key("expire-snapshots.interval")
           .durationType()
           .defaultValue(Duration.ofHours(1));
+
+  public static final ConfigOption<Integer> SNAPSHOT_EXPIRE_PLAN_THREAD_COUNT =
+      ConfigOptions.key("expire-snapshots.plan-thread-count").intType().defaultValue(10);
 
   public static final ConfigOption<Boolean> ORPHAN_FILES_CLEANING_ENABLED =
       ConfigOptions.key("clean-orphan-files.enabled").booleanType().defaultValue(true);
@@ -183,6 +187,8 @@ public class IcebergProcessFactory implements ProcessFactory {
     }
     Configurations configs = Configurations.fromMap(properties);
     if (configs.getBoolean(SNAPSHOT_EXPIRE_ENABLED)) {
+      IcebergThreadPools.initSnapshotExpirationThreadPool(
+          configs.getInteger(SNAPSHOT_EXPIRE_PLAN_THREAD_COUNT));
       Duration interval = configs.getDuration(SNAPSHOT_EXPIRE_INTERVAL);
       this.actions.put(
           IcebergActions.EXPIRE_SNAPSHOTS, ProcessTriggerStrategy.triggerAtFixRate(interval));
