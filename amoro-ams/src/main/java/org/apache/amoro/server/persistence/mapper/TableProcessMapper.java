@@ -152,7 +152,9 @@ public interface TableProcessMapper {
   @Select(
       "SELECT process_id, table_id, external_process_identifier, status, process_type, process_stage, execution_engine, retry_number, "
           + "create_time, finish_time, fail_message, process_parameters, summary "
-          + "FROM table_process WHERE status in ('SUBMITTED', 'RUNNING')")
+          + "FROM table_process WHERE table_id in (#{tableIds::number[]}) "
+          + "AND status in ('SUBMITTED', 'RUNNING')")
+  @Lang(InListExtendedLanguageDriver.class)
   @ResultMap("tableProcessMap")
-  List<TableProcessMeta> selectAllActiveProcesses();
+  List<TableProcessMeta> selectActiveProcesses(@Param("tableIds") Collection<Long> tableIds);
 }

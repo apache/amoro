@@ -41,10 +41,13 @@ import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTe
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -59,7 +62,7 @@ public class ProcessService extends PersistentBase {
   private static final Logger LOG = LoggerFactory.getLogger(ProcessService.class);
   private final TableService tableService;
 
-  private final Map<String, ActionCoordinatorScheduler> actionCoordinators =
+  private final Map<String, List<ActionCoordinatorScheduler>> actionCoordinators =
       new ConcurrentHashMap<>();
   private final Map<String, ExecuteEngine> executeEngines = new ConcurrentHashMap<>();
 
@@ -71,6 +74,9 @@ public class ProcessService extends PersistentBase {
 
   private final Map<ServerTableIdentifier, Map<Long, TableProcessHolder>> activeTableProcess =
       new ConcurrentHashMap<>();
+  // Guards against concurrent recovery of the same processId (e.g. startup recovery racing with
+  // handleTableAdded).
+  private final Set<Long> recoveringProcessIds = ConcurrentHashMap.newKeySet();
 
   public ProcessService(TableService tableService) {
     this(tableService, Collections.emptyList(), new ExecuteEngineManager());
@@ -120,13 +126,70 @@ public class ProcessService extends PersistentBase {
     activeTableProcess.clear();
   }
 
+  /**
+   * Find the scheduler that supports the given table format for the specified action.
+   *
+   * @param actionName action name
+   * @param format table format
+   * @return matching scheduler, or null if not found
+   */
+  private ActionCoordinatorScheduler findScheduler(String actionName, TableFormat format) {
+    List<ActionCoordinatorScheduler> schedulers = actionCoordinators.get(actionName);
+    if (schedulers == null) {
+      return null;
+    }
+    for (ActionCoordinatorScheduler scheduler : schedulers) {
+      if (scheduler.formatSupported(format)) {
+        return scheduler;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Find all schedulers that support the given table format across all actions.
+   *
+   * @param format table format
+   * @return list of matching schedulers
+   */
+  private List<ActionCoordinatorScheduler> findSchedulersByFormat(TableFormat format) {
+    List<ActionCoordinatorScheduler> result = new ArrayList<>();
+    for (List<ActionCoordinatorScheduler> schedulers : actionCoordinators.values()) {
+      for (ActionCoordinatorScheduler scheduler : schedulers) {
+        if (scheduler.formatSupported(format)) {
+          result.add(scheduler);
+        }
+      }
+    }
+    return result;
+  }
+
   private void initialize(List<TableRuntime> tableRuntimes) {
     LOG.info("Initializing process service");
     // Pre-configured coordinators built from TableRuntimeFactory / ProcessFactory
     for (ActionCoordinator actionCoordinator : actionCoordinatorList) {
-      actionCoordinators.put(
-          actionCoordinator.action().getName(),
-          new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this));
+      ActionCoordinatorScheduler scheduler =
+          new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this);
+      List<ActionCoordinatorScheduler> schedulers =
+          actionCoordinators.computeIfAbsent(
+              actionCoordinator.action().getName(), k -> new CopyOnWriteArrayList<>());
+      // Validate (action, format) uniqueness: warn if a scheduler with overlapping format support
+      // already exists for the same action
+      for (ActionCoordinatorScheduler existing : schedulers) {
+        for (TableFormat format : TableFormat.values()) {
+          if (existing.getCoordinator().formatSupported(format)
+              && actionCoordinator.formatSupported(format)) {
+            LOG.warn(
+                "Duplicate ActionCoordinator for action {} and format {}: existing={}, new={}. "
+                    + "The later one will shadow the former in findScheduler.",
+                actionCoordinator.action().getName(),
+                format,
+                existing.getCoordinator().name(),
+                actionCoordinator.name());
+          }
+        }
+      }
+      schedulers.add(scheduler);
     }
     executeEngineManager
         .installedPlugins()
@@ -135,7 +198,7 @@ public class ProcessService extends PersistentBase {
               executeEngines.put(executeEngine.name(), executeEngine);
             });
     recoverProcesses(tableRuntimes);
-    actionCoordinators.values().forEach(s -> s.initialize(tableRuntimes));
+    actionCoordinators.values().forEach(list -> list.forEach(s -> s.initialize(tableRuntimes)));
   }
 
   /**
@@ -148,15 +211,35 @@ public class ProcessService extends PersistentBase {
     Map<Long, TableRuntime> tableIdToRuntimes =
         tableRuntimes.stream()
             .collect(Collectors.toMap(t -> t.getTableIdentifier().getId(), t -> t));
+    // InListExtendedLanguageDriver requires at least one value to produce a valid IN clause.
+    if (tableIdToRuntimes.isEmpty()) {
+      return;
+    }
     List<TableProcessMeta> activeProcesses =
-        getAs(TableProcessMapper.class, TableProcessMapper::selectAllActiveProcesses);
+        getAs(
+            TableProcessMapper.class,
+            mapper -> mapper.selectActiveProcesses(tableIdToRuntimes.keySet()));
     activeProcesses.forEach(
         processMeta -> {
           TableRuntime tableRuntime = tableIdToRuntimes.get(processMeta.getTableId());
-          ActionCoordinatorScheduler scheduler =
-              actionCoordinators.get(processMeta.getProcessType());
-          if (tableRuntime != null && scheduler != null) {
-            recoverProcess(tableRuntime, scheduler, processMeta);
+          if (tableRuntime != null) {
+            ActionCoordinatorScheduler scheduler =
+                findScheduler(processMeta.getProcessType(), tableRuntime.getFormat());
+            if (scheduler != null) {
+              recoverProcess(tableRuntime, scheduler, processMeta);
+            } else {
+              LOG.warn(
+                  "No ActionCoordinatorScheduler found for process {} (type={}, format={}), "
+                      + "skipping recovery. The process record will remain in its current state.",
+                  processMeta.getProcessId(),
+                  processMeta.getProcessType(),
+                  tableRuntime.getFormat());
+            }
+          } else {
+            LOG.warn(
+                "Table runtime not found for process {} (tableId={}), skipping recovery.",
+                processMeta.getProcessId(),
+                processMeta.getTableId());
           }
         });
   }
@@ -164,7 +247,7 @@ public class ProcessService extends PersistentBase {
   /**
    * Recover a single persisted process record. Any failure is contained here: the offending record
    * is marked {@link ProcessStatus#FAILED} and skipped, so that one un-recoverable process record
-   * cannot abort the whole AMS startup (see AMORO-4223). The affected maintenance action will be
+   * cannot abort process recovery (see AMORO-4223). The affected maintenance action will be
    * re-scheduled by its periodic scheduler.
    *
    * @param tableRuntime table runtime
@@ -175,32 +258,51 @@ public class ProcessService extends PersistentBase {
       TableRuntime tableRuntime,
       ActionCoordinatorScheduler scheduler,
       TableProcessMeta processMeta) {
-    DefaultTableProcessStore store =
-        new DefaultTableProcessStore(
-            processMeta.getProcessId(),
-            tableRuntime,
-            processMeta,
-            scheduler.getAction(),
-            processMeta.getRetryNumber());
+    long processId = processMeta.getProcessId();
+    if (!recoveringProcessIds.add(processId)) {
+      LOG.debug(
+          "Table process {} for table {} is already being recovered, skipping duplicate recovery.",
+          processId,
+          tableRuntime.getTableIdentifier());
+      return;
+    }
     try {
-      TableProcess process = scheduler.recover(tableRuntime, store);
-      trackTableProcess(tableRuntime.getTableIdentifier(), store, process);
-      executeOrTraceProcess(store, process);
-    } catch (Throwable t) {
-      LOG.error(
-          "Failed to recover table process {} (action {}) for table {}, marking it FAILED "
-              + "and skipping so AMS can continue to start up.",
-          processMeta.getProcessId(),
-          scheduler.getAction(),
-          tableRuntime.getTableIdentifier(),
-          t);
-      markRecoverFailed(store, t);
+      if (getTableProcessInstances(tableRuntime.getTableIdentifier()).containsKey(processId)) {
+        LOG.debug(
+            "Table process {} for table {} is already tracked, skipping duplicate recovery.",
+            processId,
+            tableRuntime.getTableIdentifier());
+        return;
+      }
+      DefaultTableProcessStore store =
+          new DefaultTableProcessStore(
+              processId,
+              tableRuntime,
+              processMeta,
+              scheduler.getAction(),
+              processMeta.getRetryNumber());
+      try {
+        TableProcess process = scheduler.recover(tableRuntime, store);
+        trackTableProcess(tableRuntime.getTableIdentifier(), store, process);
+        executeOrTraceProcess(store, process);
+      } catch (Throwable t) {
+        LOG.error(
+            "Failed to recover table process {} (action {}) for table {}, marking it FAILED "
+                + "and continuing recovery.",
+            processId,
+            scheduler.getAction(),
+            tableRuntime.getTableIdentifier(),
+            t);
+        markRecoverFailed(store, t);
+      }
+    } finally {
+      recoveringProcessIds.remove(processId);
     }
   }
 
   /**
    * Best-effort mark an un-recoverable process as {@link ProcessStatus#FAILED} so it is not picked
-   * up again on the next AMS restart. Never throws.
+   * up again by a later recovery attempt. Never throws.
    *
    * @param store process store
    * @param cause the recovery failure
@@ -211,13 +313,13 @@ public class ProcessService extends PersistentBase {
           ProcessStatus.FAILED,
           ProcessEvent.COMPLETE_FAILED,
           store.getExternalProcessIdentifier(),
-          "Failed to recover process on AMS startup: " + cause.getMessage(),
+          "Failed to recover process: " + cause.getMessage(),
           store.getProcessParameters(),
           store.getSummary());
     } catch (Throwable t) {
       LOG.error(
-          "Failed to mark un-recoverable table process {} as FAILED; it may be retried on the "
-              + "next AMS restart.",
+          "Failed to mark un-recoverable table process {} as FAILED; a later recovery attempt "
+              + "may retry it.",
           store.getProcessId(),
           t);
     }
@@ -250,8 +352,11 @@ public class ProcessService extends PersistentBase {
     TableProcessExecutor executor = new TableProcessExecutor(process, store, executeEngine);
     executor.onProcessFinished(
         () -> {
-          ActionCoordinatorScheduler scheduler =
-              actionCoordinators.get(store.getAction().getName());
+          ActionCoordinatorScheduler scheduler = null;
+          if (process.getTableRuntime() != null) {
+            scheduler =
+                findScheduler(store.getAction().getName(), process.getTableRuntime().getFormat());
+          }
           if (scheduler != null
               && store.getStatus() == ProcessStatus.FAILED
               && store.getRetryNumber() < ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER
@@ -265,6 +370,14 @@ public class ProcessService extends PersistentBase {
                 process.getSummary());
             executeOrTraceProcess(store, process);
           } else {
+            if (store.getStatus() == ProcessStatus.FAILED && process.getTableRuntime() != null) {
+              LOG.info(
+                  "FAILED process {} will not be retried: scheduler={}, retryNumber={}, maxRetry={}",
+                  store.getProcessId(),
+                  scheduler != null ? "found" : "not found",
+                  store.getRetryNumber(),
+                  ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER);
+            }
             untrackTableProcessInstance(
                 process.getTableRuntime().getTableIdentifier(), store.getProcessId());
           }
@@ -389,7 +502,7 @@ public class ProcessService extends PersistentBase {
    * @return coordinators map
    */
   @VisibleForTesting
-  public Map<String, ActionCoordinatorScheduler> getActionCoordinators() {
+  public Map<String, List<ActionCoordinatorScheduler>> getActionCoordinators() {
     return actionCoordinators;
   }
 
@@ -467,9 +580,26 @@ public class ProcessService extends PersistentBase {
 
   @VisibleForTesting
   public void installActionCoordinator(ActionCoordinator actionCoordinator) {
-    this.actionCoordinators.put(
-        actionCoordinator.action().getName(),
-        new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this));
+    ActionCoordinatorScheduler scheduler =
+        new ActionCoordinatorScheduler(actionCoordinator, tableService, ProcessService.this);
+    List<ActionCoordinatorScheduler> schedulers =
+        this.actionCoordinators.computeIfAbsent(
+            actionCoordinator.action().getName(), k -> new CopyOnWriteArrayList<>());
+    // Validate (action, format) uniqueness
+    for (ActionCoordinatorScheduler existing : schedulers) {
+      for (TableFormat format : TableFormat.values()) {
+        if (existing.getCoordinator().formatSupported(format)
+            && actionCoordinator.formatSupported(format)) {
+          LOG.warn(
+              "Duplicate ActionCoordinator for action {} and format {}: existing={}, new={}.",
+              actionCoordinator.action().getName(),
+              format,
+              existing.getCoordinator().name(),
+              actionCoordinator.name());
+        }
+      }
+    }
+    schedulers.add(scheduler);
   }
 
   @VisibleForTesting
@@ -509,7 +639,8 @@ public class ProcessService extends PersistentBase {
      */
     @Override
     protected void handleStatusChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
-      actionCoordinators.values().forEach(s -> s.handleStatusChanged(tableRuntime, originalStatus));
+      findSchedulersByFormat(tableRuntime.getFormat())
+          .forEach(s -> s.handleStatusChanged(tableRuntime, originalStatus));
     }
 
     /**
@@ -521,7 +652,8 @@ public class ProcessService extends PersistentBase {
     @Override
     protected void handleConfigChanged(
         TableRuntime tableRuntime, TableConfiguration originalConfig) {
-      actionCoordinators.values().forEach(s -> s.handleConfigChanged(tableRuntime, originalConfig));
+      findSchedulersByFormat(tableRuntime.getFormat())
+          .forEach(s -> s.handleConfigChanged(tableRuntime, originalConfig));
     }
 
     /**
@@ -532,7 +664,9 @@ public class ProcessService extends PersistentBase {
      */
     @Override
     protected void handleTableAdded(AmoroTable<?> table, TableRuntime tableRuntime) {
-      actionCoordinators.values().forEach(s -> s.handleTableAdded(table, tableRuntime));
+      recoverProcesses(Collections.singletonList(tableRuntime));
+      findSchedulersByFormat(tableRuntime.getFormat())
+          .forEach(s -> s.handleTableAdded(table, tableRuntime));
     }
 
     /**
@@ -542,7 +676,8 @@ public class ProcessService extends PersistentBase {
      */
     @Override
     protected void handleTableRemoved(TableRuntime tableRuntime) {
-      actionCoordinators.values().forEach(s -> s.handleTableRemoved(tableRuntime));
+      findSchedulersByFormat(tableRuntime.getFormat())
+          .forEach(s -> s.handleTableRemoved(tableRuntime));
       List<TableProcessHolder> processes =
           getTableProcessInstances(tableRuntime.getTableIdentifier()).values().stream()
               .collect(Collectors.toList());

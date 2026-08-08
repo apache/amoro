@@ -16,28 +16,37 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table.internal;
+package org.apache.amoro.server.catalog;
 
-import org.apache.amoro.server.table.TableMetadata;
+import java.util.Map;
 
-import java.io.Closeable;
+public class DatabaseMetadata {
 
-/** Interface to create an internal table. */
-public interface InternalTableCreator extends Closeable {
+  private String catalogName;
+  private String databaseName;
+  private Map<String, String> properties;
 
-  /** Build Iceberg metadata without writing files or registering the table. */
-  org.apache.iceberg.TableMetadata stage();
+  public String getCatalogName() {
+    return catalogName;
+  }
 
-  /** Write Iceberg metadata and prepare the {@link TableMetadata} for AMS. */
-  TableMetadata create();
+  public void setCatalogName(String catalogName) {
+    this.catalogName = catalogName;
+  }
 
-  /** Persist Iceberg metadata and prepare the table metadata for AMS. */
-  TableMetadata create(org.apache.iceberg.TableMetadata icebergMetadata);
+  public String getDatabaseName() {
+    return databaseName;
+  }
 
-  /** Remove files written during {@link #create()}. */
-  void rollback();
+  public void setDatabaseName(String databaseName) {
+    this.databaseName = databaseName;
+  }
 
-  /** Release resources such as {@link org.apache.iceberg.io.FileIO}. */
-  @Override
-  default void close() {}
+  public Map<String, String> getProperties() {
+    return properties;
+  }
+
+  public void setProperties(Map<String, String> properties) {
+    this.properties = properties;
+  }
 }
