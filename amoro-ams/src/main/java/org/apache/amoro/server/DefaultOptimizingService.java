@@ -728,7 +728,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
           }
         } catch (InterruptedException ignored) {
         } catch (Throwable t) {
-          LOG.error("{} has encountered a problem.", this.getClass().getSimpleName(), t);
+          if (!stopped) {
+            LOG.error("{} has encountered a problem.", this.getClass().getSimpleName(), t);
+          }
         }
       }
     }
