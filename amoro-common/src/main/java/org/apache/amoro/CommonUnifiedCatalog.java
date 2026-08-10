@@ -33,7 +33,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CommonUnifiedCatalog implements UnifiedCatalog {
+public class CommonUnifiedCatalog implements UnifiedCatalog, AutoCloseable {
 
   private final String catalogName;
   private final String metaStoreType;
@@ -116,12 +116,12 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   @Override
   public AmoroTable<?> loadTable(String database, String table) {
     return formatCatalogAsOrder(
+            TableFormat.LANCE,
             TableFormat.MIXED_HIVE,
             TableFormat.MIXED_ICEBERG,
             TableFormat.ICEBERG,
             TableFormat.PAIMON,
-            TableFormat.HUDI,
-            TableFormat.LANCE)
+            TableFormat.HUDI)
         .map(
             formatCatalog -> {
               try {
@@ -144,12 +144,12 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
   public List<TableIDWithFormat> listTables(String database) {
     TableFormat[] formats =
         new TableFormat[] {
+          TableFormat.LANCE,
           TableFormat.MIXED_HIVE,
           TableFormat.MIXED_ICEBERG,
           TableFormat.ICEBERG,
           TableFormat.PAIMON,
-          TableFormat.HUDI,
-          TableFormat.LANCE
+          TableFormat.HUDI
         };
 
     Map<String, TableFormat> tableNameToFormat = Maps.newHashMap();
@@ -206,19 +206,47 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
     ServiceLoader<FormatCatalogFactory> loader = ServiceLoader.load(FormatCatalogFactory.class);
     String normalizedMetastoreType = CatalogUtil.normalizeMetastoreType(metaStoreType);
     Set<TableFormat> formats = CatalogUtil.tableFormats(normalizedMetastoreType, catalogProperties);
-    Map<TableFormat, FormatCatalog> formatCatalogs = Maps.newConcurrentMap();
-    for (FormatCatalogFactory factory : loader) {
-      if (formats.contains(factory.format())) {
-        Map<String, String> formatCatalogProperties =
-            factory.convertCatalogProperties(
-                name(), normalizedMetastoreType, this.catalogProperties);
-        FormatCatalog catalog =
-            factory.create(
-                name(), normalizedMetastoreType, formatCatalogProperties, tableMetaStore);
-        formatCatalogs.put(factory.format(), catalog);
+    Map<TableFormat, FormatCatalog> newFormatCatalogs = Maps.newConcurrentMap();
+    try {
+      for (FormatCatalogFactory factory : loader) {
+        if (formats.contains(factory.format())) {
+          Map<String, String> formatCatalogProperties =
+              factory.convertCatalogProperties(
+                  name(), normalizedMetastoreType, this.catalogProperties);
+          FormatCatalog catalog =
+              factory.create(
+                  name(), normalizedMetastoreType, formatCatalogProperties, tableMetaStore);
+          newFormatCatalogs.put(factory.format(), catalog);
+        }
       }
+    } catch (RuntimeException e) {
+      closeFormatCatalogs(newFormatCatalogs);
+      throw e;
     }
-    this.formatCatalogs = formatCatalogs;
+    Map<TableFormat, FormatCatalog> oldFormatCatalogs = this.formatCatalogs;
+    this.formatCatalogs = newFormatCatalogs;
+    closeFormatCatalogs(oldFormatCatalogs);
+  }
+
+  @Override
+  public void close() {
+    Map<TableFormat, FormatCatalog> catalogs = this.formatCatalogs;
+    this.formatCatalogs = Maps.newHashMap();
+    closeFormatCatalogs(catalogs);
+  }
+
+  private static void closeFormatCatalogs(Map<TableFormat, FormatCatalog> catalogs) {
+    catalogs.values().stream()
+        .filter(AutoCloseable.class::isInstance)
+        .map(AutoCloseable.class::cast)
+        .forEach(
+            catalog -> {
+              try {
+                catalog.close();
+              } catch (Exception e) {
+                throw new IllegalStateException("Failed to close format catalog", e);
+              }
+            });
   }
 
   /** get format catalogs as given format order */

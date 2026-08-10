@@ -107,6 +107,26 @@ public class TestDefaultCatalogManagerNamespaces {
     Assertions.assertTrue(manager.listCatalogMetas("tenant-a").isEmpty());
   }
 
+  @Test
+  public void testDisabledAllowlistDiscoversNamespacesFromCatalogs() {
+    Configurations configurations = new Configurations();
+    configurations.setBoolean(AmoroManagementConf.CATALOG_NAMESPACE_ENABLED, true);
+    configurations.setBoolean(AmoroManagementConf.CATALOG_NAMESPACE_ALLOWLIST_ENABLED, false);
+    DefaultCatalogManager manager = new DefaultCatalogManager(configurations);
+
+    DB.insertCatalog(catalog("tenant-b@las", "tenant-b"));
+    DB.insertCatalog(catalog("tenant-a@las", "tenant-a"));
+
+    Assertions.assertTrue(manager.supportNamespace());
+    Assertions.assertFalse(manager.namespaceAllowlistEnabled());
+    Assertions.assertEquals(Arrays.asList("tenant-a", "tenant-b"), manager.listNamespaces());
+    Assertions.assertEquals(
+        Collections.singletonList("tenant-a@las"),
+        catalogNames(manager.listCatalogMetas("tenant-a")));
+    Assertions.assertTrue(manager.listCatalogMetas("unknown").isEmpty());
+    Assertions.assertThrows(IllegalStateException.class, () -> manager.addNamespace("tenant-c"));
+  }
+
   private static CatalogMeta catalog(String catalogName, String namespace) {
     HashMap<String, String> properties = new HashMap<>();
     properties.put(CatalogMetaProperties.NAMESPACE, namespace);

@@ -28,6 +28,7 @@ import UCleanup from './components/Cleanup.vue'
 import UProfiling from './components/Profiling.vue'
 import UHealthScore from './components/HealthScoreDetails.vue'
 import TableExplorer from './components/TableExplorer.vue'
+import HiveTableDetails from '@/views/hive-details/index.vue'
 import useStore from '@/store/index'
 import type { IBaseDetailInfo } from '@/types/common.type'
 import { usePageScroll } from '@/hooks/usePageScroll'
@@ -44,6 +45,7 @@ export default defineComponent({
     UProfiling,
     UHealthScore,
     TableExplorer,
+    HiveTableDetails,
   },
   setup() {
     const router = useRouter()
@@ -139,6 +141,10 @@ export default defineComponent({
       return state.baseInfo.tableType === 'ICEBERG'
     })
 
+    const isHiveTable = computed(() => {
+      return String(route.query?.type || '').toUpperCase() === 'HIVE'
+    })
+
     const hasSelectedTable = computed(() => !!(route.query?.catalog && route.query?.db && route.query?.table))
 
     const setBaseDetailInfo = (baseInfo: IBaseDetailInfo & { comment?: string }) => {
@@ -232,6 +238,7 @@ export default defineComponent({
       tabConfigs,
       store,
       isIceberg,
+      isHiveTable,
       hasSelectedTable,
       setBaseDetailInfo,
       handleTableNotFound,
@@ -246,7 +253,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="page-scroll" ref="pageScrollRef">
+  <div ref="pageScrollRef" class="page-scroll">
     <div class="tables-wrap">
       <div v-if="!isSecondaryNav" class="tables-content">
         <div
@@ -258,45 +265,48 @@ export default defineComponent({
         <div class="tables-divider" aria-hidden="true" @mousedown="startSidebarResize" />
         <div class="tables-main">
           <template v-if="hasSelectedTable">
-            <div class="tables-main-header g-flex-jsb">
-              <div class="g-flex-col">
-                <div class="g-flex">
-                  <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{ baseInfo.tableName }}</span>
-                </div>
-                <div v-if="baseInfo.comment" class="table-info g-flex-ac">
-                  <p>{{ $t('Comment') }}: <span class="text-color">{{ baseInfo.comment }}</span></p>
-                </div>
-                <div class="table-info g-flex-ac">
-                  <p>{{ $t('optimizingStatus') }}: <span class="text-color">{{ baseInfo.optimizingStatus }}</span></p>
-                  <a-divider type="vertical" />
-                  <p>{{ $t('records') }}: <span class="text-color">{{ baseInfo.records }}</span></p>
-                  <a-divider type="vertical" />
-                  <template v-if="!isIceberg">
-                    <p>{{ $t('createTime') }}: <span class="text-color">{{ baseInfo.createTime }}</span></p>
+            <HiveTableDetails v-if="isHiveTable" />
+            <template v-else>
+              <div class="tables-main-header g-flex-jsb">
+                <div class="g-flex-col">
+                  <div class="g-flex">
+                    <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{ baseInfo.tableName }}</span>
+                  </div>
+                  <div v-if="baseInfo.comment" class="table-info g-flex-ac">
+                    <p>{{ $t('Comment') }}: <span class="text-color">{{ baseInfo.comment }}</span></p>
+                  </div>
+                  <div class="table-info g-flex-ac">
+                    <p>{{ $t('optimizingStatus') }}: <span class="text-color">{{ baseInfo.optimizingStatus }}</span></p>
                     <a-divider type="vertical" />
-                  </template>
-                  <p>{{ $t('tableFormat') }}: <span class="text-color">{{ baseInfo.tableFormat }}</span></p>
-                  <a-divider type="vertical" />
-                  <p>
-                    {{ $t('healthScore') }}:
-                    <UHealthScore :base-info="baseInfo" />
-                  </p>
+                    <p>{{ $t('records') }}: <span class="text-color">{{ baseInfo.records }}</span></p>
+                    <a-divider type="vertical" />
+                    <template v-if="!isIceberg">
+                      <p>{{ $t('createTime') }}: <span class="text-color">{{ baseInfo.createTime }}</span></p>
+                      <a-divider type="vertical" />
+                    </template>
+                    <p>{{ $t('tableFormat') }}: <span class="text-color">{{ baseInfo.tableFormat }}</span></p>
+                    <a-divider type="vertical" />
+                    <p>
+                      {{ $t('healthScore') }}:
+                      <UHealthScore :base-info="baseInfo" />
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="tables-main-body">
-              <a-tabs v-model:activeKey="activeKey" destroy-inactive-tab-pane @change="onChangeTab">
-                <a-tab-pane key="Details" :tab="$t('details')" force-render>
-                  <UDetails ref="detailRef" @set-base-detail-info="setBaseDetailInfo" @table-not-found="handleTableNotFound" />
-                </a-tab-pane>
-                <a-tab-pane v-if="detailLoaded" key="Files" :tab="$t('files')">
-                  <UFiles :has-partition="baseInfo.hasPartition" />
-                </a-tab-pane>
-                <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="$t(tab.label)">
-                  <component :is="`U${tab.key}`" />
-                </a-tab-pane>
-              </a-tabs>
-            </div>
+              <div class="tables-main-body">
+                <a-tabs v-model:activeKey="activeKey" destroy-inactive-tab-pane @change="onChangeTab">
+                  <a-tab-pane key="Details" :tab="$t('details')" force-render>
+                    <UDetails ref="detailRef" @set-base-detail-info="setBaseDetailInfo" @table-not-found="handleTableNotFound" />
+                  </a-tab-pane>
+                  <a-tab-pane v-if="detailLoaded" key="Files" :tab="$t('files')">
+                    <UFiles :has-partition="baseInfo.hasPartition" />
+                  </a-tab-pane>
+                  <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="$t(tab.label)">
+                    <component :is="`U${tab.key}`" />
+                  </a-tab-pane>
+                </a-tabs>
+              </div>
+            </template>
           </template>
           <div v-else class="empty-page" />
         </div>

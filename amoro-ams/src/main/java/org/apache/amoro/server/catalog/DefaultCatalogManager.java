@@ -52,6 +52,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -114,9 +115,25 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
   }
 
   @Override
+  public boolean namespaceAllowlistEnabled() {
+    return serverConfiguration.getBoolean(AmoroManagementConf.CATALOG_NAMESPACE_ALLOWLIST_ENABLED);
+  }
+
+  @Override
   public List<String> listNamespaces() {
     if (!supportNamespace()) {
       return Collections.singletonList("default");
+    }
+    if (!namespaceAllowlistEnabled()) {
+      return listCatalogMetas().stream()
+          .map(CatalogMeta::getCatalogProperties)
+          .filter(Objects::nonNull)
+          .map(properties -> properties.get(CatalogMetaProperties.NAMESPACE))
+          .filter(Objects::nonNull)
+          .filter(namespace -> !namespace.trim().isEmpty())
+          .distinct()
+          .sorted()
+          .collect(Collectors.toList());
     }
     return getAs(NamespaceAllowlistMapper.class, NamespaceAllowlistMapper::listNamespaces);
   }
@@ -129,7 +146,7 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
     if (!supportNamespace()) {
       return "default".equals(namespace) ? listCatalogMetas() : Collections.emptyList();
     }
-    if (!listNamespaces().contains(namespace)) {
+    if (namespaceAllowlistEnabled() && !listNamespaces().contains(namespace)) {
       return Collections.emptyList();
     }
     return listCatalogMetas().stream()
@@ -144,6 +161,8 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
   @Override
   public void addNamespace(String namespace) {
     Preconditions.checkState(supportNamespace(), "Catalog namespaces are not enabled");
+    Preconditions.checkState(
+        namespaceAllowlistEnabled(), "Catalog namespace allowlist is not enabled");
     try {
       doAs(
           NamespaceAllowlistMapper.class,
@@ -163,6 +182,8 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
   @Override
   public void removeNamespace(String namespace) {
     Preconditions.checkState(supportNamespace(), "Catalog namespaces are not enabled");
+    Preconditions.checkState(
+        namespaceAllowlistEnabled(), "Catalog namespace allowlist is not enabled");
     doAs(NamespaceAllowlistMapper.class, mapper -> mapper.deleteNamespace(namespace));
   }
 

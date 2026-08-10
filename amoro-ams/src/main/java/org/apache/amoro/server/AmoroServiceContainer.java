@@ -575,6 +575,21 @@ public class AmoroServiceContainer {
         .build();
   }
 
+  @VisibleForTesting
+  static String redactEnvironmentValue(String key, String value) {
+    String normalizedKey = key.toUpperCase(Locale.ROOT);
+    if (normalizedKey.endsWith("_AK")
+        || normalizedKey.endsWith("_SK")
+        || normalizedKey.contains("ACCESS_KEY")
+        || normalizedKey.contains("SECRET")
+        || normalizedKey.contains("TOKEN")
+        || normalizedKey.contains("PASSWORD")
+        || normalizedKey.contains("CREDENTIAL")) {
+      return "<redacted>";
+    }
+    return value;
+  }
+
   private class ConfigurationHelper {
 
     private JsonNode yamlConfig;
@@ -614,7 +629,7 @@ public class AmoroServiceContainer {
     private Map<String, Object> initEnvConfig() {
       LOG.info("initializing system env configuration...");
       Map<String, String> envs = System.getenv();
-      envs.forEach((k, v) -> LOG.info("export {}={}", k, v));
+      envs.forEach((k, v) -> LOG.info("export {}={}", k, redactEnvironmentValue(k, v)));
       String prefix = AmoroManagementConf.SYSTEM_CONFIG.toUpperCase();
       return ConfigHelpers.convertConfigurationKeys(prefix, System.getenv());
     }

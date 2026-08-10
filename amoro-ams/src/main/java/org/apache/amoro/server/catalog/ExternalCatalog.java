@@ -129,6 +129,17 @@ public class ExternalCatalog extends ServerCatalog {
     return doAs(() -> unifiedCatalog.loadTable(database, tableName));
   }
 
+  @Override
+  public void dispose() {
+    if (unifiedCatalog instanceof AutoCloseable) {
+      try {
+        ((AutoCloseable) unifiedCatalog).close();
+      } catch (Exception e) {
+        throw new IllegalStateException("Failed to dispose external catalog " + name(), e);
+      }
+    }
+  }
+
   private void updateDatabaseFilter(CatalogMeta metadata) {
     String databaseFilter =
         metadata.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER);

@@ -39,6 +39,11 @@ public interface CatalogManager {
     return false;
   }
 
+  /** Returns whether namespace discovery is restricted to an explicit allowlist. */
+  default boolean namespaceAllowlistEnabled() {
+    return true;
+  }
+
   /** Lists namespaces, or the community-compatible default namespace when unsupported. */
   default List<String> listNamespaces() {
     return Collections.singletonList("default");

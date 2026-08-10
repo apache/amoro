@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
@@ -48,6 +49,8 @@ public class PaimonCatalogFactory implements FormatCatalogFactory {
   public static final String PAIMON_OSS_ACCESS_KEY = "fs.oss.accessKeyId";
   public static final String PAIMON_OSS_SECRET_KEY = "fs.oss.accessKeySecret";
   public static final String PAIMON_OSS_ENDPOINT = "fs.oss.endpoint";
+  static final String HMS_DEFAULT_CATALOG = "metastore.catalog.default";
+  static final String HMS_DEFAULT_CATALOG_CACHE_KEY = "conf:" + HMS_DEFAULT_CATALOG;
 
   @Override
   public PaimonCatalog create(
@@ -57,6 +60,7 @@ public class PaimonCatalogFactory implements FormatCatalogFactory {
     // if format table enabled, paimon will load hive orc/parquet/csv table to paimon table
     catalogProperties.put(CatalogOptions.FORMAT_TABLE_ENABLED.key(), "false");
     catalogProperties.putAll(properties);
+    configureHiveClientPoolCache(metastoreType, catalogProperties, metaStore.getConfiguration());
     hiveSiteLocation.ifPresent(
         url ->
             catalogProperties.put(
@@ -86,6 +90,30 @@ public class PaimonCatalogFactory implements FormatCatalogFactory {
     Options options = Options.fromMap(properties);
     CatalogContext catalogContext = CatalogContext.create(options, configuration);
     return CatalogFactory.createCatalog(catalogContext);
+  }
+
+  static void configureHiveClientPoolCache(
+      String metastoreType, Map<String, String> catalogProperties, Configuration configuration) {
+    if (!CatalogMetaProperties.CATALOG_TYPE_HIVE.equalsIgnoreCase(metastoreType)
+        || configuration.get(HMS_DEFAULT_CATALOG) == null) {
+      return;
+    }
+
+    String cacheKeys = catalogProperties.get(HiveCatalogOptions.CLIENT_POOL_CACHE_KEYS.key());
+    boolean alreadyConfigured =
+        cacheKeys != null
+            && Arrays.stream(cacheKeys.split(","))
+                .map(String::trim)
+                .anyMatch(HMS_DEFAULT_CATALOG_CACHE_KEY::equalsIgnoreCase);
+    if (alreadyConfigured) {
+      return;
+    }
+
+    catalogProperties.put(
+        HiveCatalogOptions.CLIENT_POOL_CACHE_KEYS.key(),
+        cacheKeys == null || cacheKeys.trim().isEmpty()
+            ? HMS_DEFAULT_CATALOG_CACHE_KEY
+            : cacheKeys + "," + HMS_DEFAULT_CATALOG_CACHE_KEY);
   }
 
   @Override

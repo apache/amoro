@@ -119,6 +119,14 @@ public class AmoroManagementConf {
           .defaultValue(true)
           .withDescription("Whether catalogs are grouped by an optional namespace.");
 
+  public static final ConfigOption<Boolean> CATALOG_NAMESPACE_ALLOWLIST_ENABLED =
+      ConfigOptions.key("catalog.namespace-allowlist-enabled")
+          .booleanType()
+          .defaultValue(true)
+          .withDescription(
+              "Whether namespace discovery and HMS catalog synchronization are restricted to the"
+                  + " namespace allowlist.");
+
   public static final ConfigOption<Integer> TABLE_MANIFEST_IO_THREAD_COUNT =
       ConfigOptions.key("table-manifest-io.thread-count")
           .intType()

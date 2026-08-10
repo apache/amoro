@@ -45,9 +45,11 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class TestLasCatalogSynchronizer {
 
@@ -72,6 +74,7 @@ public class TestLasCatalogSynchronizer {
         .thenReturn(
             Arrays.asList("tenant-a@las", "tenant-a@manual", "tenant-b@keep", "invalid-catalog"));
     CatalogManager catalogManager = mock(CatalogManager.class);
+    when(catalogManager.namespaceAllowlistEnabled()).thenReturn(true);
     when(catalogManager.listNamespaces()).thenReturn(Collections.singletonList("tenant-a"));
     CatalogMeta manual = catalog("tenant-a@manual", "tenant-a", false);
     CatalogMeta removedFromAllowlist = catalog("tenant-b@keep", "tenant-b", true);
@@ -131,6 +134,7 @@ public class TestLasCatalogSynchronizer {
     HMSClient hmsSdk = mock(HMSClient.class);
     when(hmsSdk.getCatalogs()).thenReturn(Collections.singletonList("tenant-a@las"));
     CatalogManager catalogManager = mock(CatalogManager.class);
+    when(catalogManager.namespaceAllowlistEnabled()).thenReturn(true);
     when(catalogManager.listNamespaces()).thenReturn(Collections.singletonList("tenant-a"));
     CatalogMeta existing = catalog("tenant-a@las", "tenant-a", true);
     existing.getCatalogProperties().put("preserved", "value");
@@ -143,7 +147,7 @@ public class TestLasCatalogSynchronizer {
     verify(catalogManager).updateCatalog(updated.capture());
     Assertions.assertEquals("value", updated.getValue().getCatalogProperties().get("preserved"));
     Assertions.assertEquals(
-        "ICEBERG,PAIMON",
+        "ICEBERG,PAIMON,LANCE",
         updated.getValue().getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS));
     when(catalogManager.listCatalogMetas())
         .thenReturn(Collections.singletonList(updated.getValue()));
@@ -162,6 +166,28 @@ public class TestLasCatalogSynchronizer {
 
     Assertions.assertThrows(TException.class, synchronizer::syncOnce);
     verifyNoInteractions(catalogManager);
+  }
+
+  @Test
+  public void testDisabledAllowlistSynchronizesAllValidCatalogs() throws Exception {
+    HMSClient hmsSdk = mock(HMSClient.class);
+    when(hmsSdk.getCatalogs())
+        .thenReturn(Arrays.asList("tenant-a@las", "tenant-b@hive", "invalid-catalog"));
+    CatalogManager catalogManager = mock(CatalogManager.class);
+    when(catalogManager.namespaceAllowlistEnabled()).thenReturn(false);
+    when(catalogManager.listCatalogMetas()).thenReturn(Collections.emptyList());
+
+    LasCatalogSynchronizer synchronizer = synchronizer(hmsSdk, catalogManager);
+    synchronizer.syncOnce();
+
+    ArgumentCaptor<CatalogMeta> created = ArgumentCaptor.forClass(CatalogMeta.class);
+    verify(catalogManager, times(2)).createCatalog(created.capture());
+    Assertions.assertEquals(
+        new HashSet<>(Arrays.asList("tenant-a@las", "tenant-b@hive")),
+        created.getAllValues().stream()
+            .map(CatalogMeta::getCatalogName)
+            .collect(Collectors.toSet()));
+    verify(catalogManager, never()).listNamespaces();
   }
 
   @Test

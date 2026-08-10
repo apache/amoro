@@ -41,6 +41,7 @@ interface TreeNode {
   db?: string
   table?: string
   tableType?: string
+  catalogNamespace?: string
 }
 
 const router = useRouter()
@@ -48,6 +49,7 @@ const route = useRoute()
 
 const storageTableKey = 'easylake-menu-catalog-db-table'
 const expandedKeysSessionKeyPrefix = 'tables_expanded_keys'
+const allNamespaceValue = '__all__'
 
 const state = reactive({
   loading: false,
@@ -58,12 +60,20 @@ const state = reactive({
   selectedKeys: [] as string[],
   namespaces: [] as string[],
   selectedNamespace: '',
+  selectedFormat: '',
   namespaceMode: false,
   // Cache
   catalogList: [] as string[],
   dbListByCatalog: {} as Record<string, string[]>,
   tablesByCatalogDb: {} as Record<string, TableItem[]>,
 })
+
+const formatOptions = [
+  { label: 'Iceberg', value: 'ICEBERG' },
+  { label: 'Paimon', value: 'PAIMON' },
+  { label: 'Hive', value: 'HIVE' },
+  { label: 'Hudi', value: 'HUDI' },
+]
 
 let namespaceGeneration = 0
 let initialized = false
@@ -72,21 +82,35 @@ function expandedKeysSessionKey() {
   return `${expandedKeysSessionKeyPrefix}:${state.selectedNamespace || 'default'}`
 }
 
-function catalogDisplayName(catalog: string) {
+function catalogPresentation(catalog: string) {
+  if (state.namespaceMode && state.selectedNamespace === allNamespaceValue) {
+    const separatorIndex = catalog.indexOf('@')
+    if (separatorIndex > 0 && separatorIndex < catalog.length - 1) {
+      return {
+        title: catalog.slice(separatorIndex + 1),
+        namespace: catalog.slice(0, separatorIndex),
+      }
+    }
+  }
+
   if (!state.namespaceMode || !state.selectedNamespace) {
-    return catalog
+    return { title: catalog }
   }
   const prefix = `${state.selectedNamespace}@`
-  return catalog.startsWith(prefix) ? catalog.slice(prefix.length) : catalog
+  return {
+    title: catalog.startsWith(prefix) ? catalog.slice(prefix.length) : catalog,
+  }
 }
 
 function buildCatalogNode(catalog: string): TreeNode {
+  const presentation = catalogPresentation(catalog)
   return {
     key: `catalog:${catalog}`,
-    title: catalogDisplayName(catalog),
+    title: presentation.title,
     isLeaf: false,
     nodeType: 'catalog',
     catalog,
+    catalogNamespace: presentation.namespace,
   }
 }
 
@@ -140,7 +164,10 @@ async function initRootCatalogs() {
   const generation = namespaceGeneration
   state.loading = true
   try {
-    const res = await getCatalogList(state.namespaceMode ? state.selectedNamespace : undefined)
+    const namespace = state.namespaceMode && state.selectedNamespace !== allNamespaceValue
+      ? state.selectedNamespace
+      : undefined
+    const res = await getCatalogList(namespace)
     if (generation !== namespaceGeneration) {
       return
     }
@@ -160,12 +187,17 @@ function clearExplorerState() {
   state.loading = false
   state.searchKey = ''
   state.filterKey = ''
+  state.selectedFormat = ''
   state.treeData = []
   state.expandedKeys = []
   state.selectedKeys = []
   state.catalogList = []
   state.dbListByCatalog = {}
   state.tablesByCatalogDb = {}
+}
+
+function handleFormatChange(format?: string) {
+  state.selectedFormat = format || ''
 }
 
 async function loadChildren(node: any) {
@@ -286,13 +318,13 @@ function handleSelectTable(catalog: string, db: string, tableName: string, table
     catalog,
     database: db,
     tableName,
+    type,
   })
   localStorage.setItem(`${storageTableKey}:${namespace}`, storedSelection)
   localStorage.setItem(storageTableKey, storedSelection)
 
-  const path = type === 'HIVE' ? '/hive-tables' : '/tables'
   const pathQuery = {
-    path,
+    path: '/tables',
     query: {
       ...(state.namespaceMode ? { namespace: state.selectedNamespace } : {}),
       catalog,
@@ -399,7 +431,10 @@ function filterBySingleKeyword(nodes: TreeNode[], keyword: string, expandedSet: 
   const result: TreeNode[] = []
 
   nodes.forEach((node) => {
-    const titleMatch = node.title.toLowerCase().includes(keyword)
+    const searchText = node.catalogNamespace
+      ? `${node.title} @${node.catalogNamespace}`
+      : node.title
+    const titleMatch = searchText.toLowerCase().includes(keyword)
     let childrenMatches: TreeNode[] = []
 
     if (node.children && node.children.length) {
@@ -427,7 +462,10 @@ function filterByHierarchical(nodes: TreeNode[], parts: string[], expandedSet: S
     if (catalogNode.nodeType !== 'catalog') {
       return
     }
-    if (!catalogNode.title.toLowerCase().includes(catalogPart)) {
+    const catalogSearchText = catalogNode.catalogNamespace
+      ? `${catalogNode.title} @${catalogNode.catalogNamespace}`
+      : catalogNode.title
+    if (!catalogSearchText.toLowerCase().includes(catalogPart)) {
       return
     }
 
@@ -492,6 +530,24 @@ function filterTree(source: TreeNode[], rawKeyword: string): { tree: TreeNode[],
   }
 }
 
+function filterTreeByFormat(source: TreeNode[], format: string): TreeNode[] {
+  return source.reduce<TreeNode[]>((result, node) => {
+    if (node.nodeType === 'table') {
+      const tableType = (node.tableType || '').toUpperCase()
+      if (tableType === format || tableType.endsWith(`_${format}`)) {
+        result.push(node)
+      }
+      return result
+    }
+
+    result.push({
+      ...node,
+      children: node.children ? filterTreeByFormat(node.children, format) : node.children,
+    })
+    return result
+  }, [])
+}
+
 let searchTimer: any = null
 
 watch(
@@ -522,7 +578,9 @@ watch(
     } = (oldValue || {}) as any
 
     if (state.namespaceMode && namespace !== oldNamespace) {
-      const nextNamespace = state.namespaces.includes(namespace as string) ? namespace as string : ''
+      const nextNamespace = namespace === allNamespaceValue || state.namespaces.includes(namespace as string)
+        ? namespace as string
+        : ''
       if (nextNamespace !== state.selectedNamespace) {
         clearExplorerState()
         state.selectedNamespace = nextNamespace
@@ -561,14 +619,17 @@ watch(
 )
 
 const searchResult = computed(() => {
+  const source = state.selectedFormat
+    ? filterTreeByFormat(state.treeData, state.selectedFormat)
+    : state.treeData
   const keyword = normalizeKeyword(state.filterKey)
   if (!keyword) {
     return {
-      tree: state.treeData,
+      tree: source,
       expandedKeys: state.expandedKeys,
     }
   }
-  return filterTree(state.treeData, keyword)
+  return filterTree(source, keyword)
 })
 
 const displayTreeData = computed(() => searchResult.value.tree)
@@ -652,7 +713,9 @@ async function initializeNamespaces() {
   }
 
   const routeNamespace = (route.query.namespace as string) || ''
-  state.selectedNamespace = namespaces.includes(routeNamespace) ? routeNamespace : ''
+  state.selectedNamespace = routeNamespace === allNamespaceValue || namespaces.includes(routeNamespace)
+    ? routeNamespace
+    : ''
 }
 
 async function handleNamespaceChange(namespace?: string) {
@@ -682,18 +745,29 @@ onBeforeMount(async () => {
 <template>
   <div class="table-explorer">
     <div class="table-explorer-header">
-      <div class="namespace-selector">
-        <span class="namespace-label">Namespace:</span>
+      <div class="explorer-filter-row">
         <a-select
-          v-if="state.namespaceMode"
-          :value="state.selectedNamespace || undefined"
-          :options="state.namespaces.map(namespace => ({ label: namespace, value: namespace }))"
-          placeholder="Select namespace"
-          class="namespace-select"
-          allow-clear
+          :value="state.namespaceMode ? (state.selectedNamespace || undefined) : 'default'"
+          :options="state.namespaceMode
+            ? [
+              { label: 'All', value: allNamespaceValue },
+              ...state.namespaces.map(namespace => ({ label: namespace, value: namespace })),
+            ]
+            : [{ label: 'default', value: 'default' }]"
+          :disabled="!state.namespaceMode"
+          :allow-clear="state.namespaceMode"
+          placeholder="Namespace"
+          class="explorer-filter-select namespace-filter-select"
           @change="handleNamespaceChange"
         />
-        <span v-else class="namespace-default">default</span>
+        <a-select
+          :value="state.selectedFormat || undefined"
+          :options="formatOptions"
+          placeholder="Format"
+          class="explorer-filter-select format-filter-select"
+          allow-clear
+          @change="handleFormatChange"
+        />
       </div>
       <a-input
         v-model:value="state.searchKey"
@@ -732,6 +806,9 @@ onBeforeMount(async () => {
             <span class="tree-node-text">
               {{ dataRef.title }}
             </span>
+            <span v-if="dataRef.catalogNamespace" class="catalog-namespace-label">
+              @{{ dataRef.catalogNamespace }}
+            </span>
           </span>
         </template>
       </a-tree>
@@ -759,43 +836,43 @@ onBeforeMount(async () => {
     padding: 0 7px 0 8px;
     margin-bottom: 8px;
 
-    .namespace-selector {
+    .explorer-filter-row {
       display: flex;
-      align-items: center;
-      min-height: 24px;
+      gap: 8px;
       margin-bottom: 8px;
-      font-size: 13px;
 
-      .namespace-label {
-        margin-right: 6px;
-        color: #666;
-      }
-
-      .namespace-default {
-        color: #262626;
-      }
-
-      .namespace-select {
-        flex: 1;
+      .explorer-filter-select {
         min-width: 0;
 
         :deep(.ant-select-selector) {
-          height: 24px;
+          height: 32px;
+          display: flex;
+          align-items: center;
         }
 
         :deep(.ant-select-selection-item),
         :deep(.ant-select-selection-placeholder) {
-          line-height: 22px;
+          line-height: 30px;
+          font-size: 14px;
         }
+
+        :deep(.ant-select-selection-placeholder) {
+          color: #ccc;
+        }
+      }
+
+      .namespace-filter-select {
+        flex: 3;
+      }
+
+      .format-filter-select {
+        flex: 2;
       }
     }
 
     .search-input {
       width: 100%;
-
-      :deep(.ant-input-affix-wrapper) {
-        height: 24px;
-      }
+      height: 32px;
 
       :deep(.ant-input-prefix) {
         display: flex;
@@ -806,11 +883,11 @@ onBeforeMount(async () => {
 
       :deep(.search-input-prefix-icon) {
         font-size: 16px;
-        line-height: 24px;
+        line-height: 30px;
       }
 
       :deep(.ant-input) {
-        line-height: 24px;
+        line-height: 30px;
         font-size: 14px;
 
         &::placeholder {
@@ -846,6 +923,13 @@ onBeforeMount(async () => {
 
       .tree-node-icon {
         margin-right: 6px;
+      }
+
+      .catalog-namespace-label {
+        margin-left: 4px;
+        color: #999;
+        font-size: 11px;
+        font-weight: normal;
       }
     }
 

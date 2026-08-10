@@ -28,6 +28,9 @@ public final class LasIntegrationConfig {
 
   private static final String PREFIX = "las.integration.";
 
+  public static final String LAS_SERVICE_ACCESS_KEY_ENV = "LAS_SERVICE_AK";
+  public static final String LAS_SERVICE_SECRET_KEY_ENV = "LAS_SERVICE_SK";
+
   public static final ConfigOption<Boolean> ENABLED =
       ConfigOptions.key(PREFIX + "enabled")
           .booleanType()
@@ -62,13 +65,19 @@ public final class LasIntegrationConfig {
       ConfigOptions.key(PREFIX + "iam.bootstrap-access-key")
           .stringType()
           .noDefaultValue()
-          .withDescription("Access key of the AMS workload identity used to call AssumeRole.");
+          .withDescription(
+              "Optional access key override for the AMS workload identity. LAS deployments use "
+                  + LAS_SERVICE_ACCESS_KEY_ENV
+                  + ".");
 
   public static final ConfigOption<String> IAM_BOOTSTRAP_SECRET_KEY =
       ConfigOptions.key(PREFIX + "iam.bootstrap-secret-key")
           .stringType()
           .noDefaultValue()
-          .withDescription("Secret key of the AMS workload identity used to call AssumeRole.");
+          .withDescription(
+              "Optional secret key override for the AMS workload identity. LAS deployments use "
+                  + LAS_SERVICE_SECRET_KEY_ENV
+                  + ".");
 
   public static final ConfigOption<String> IAM_BOOTSTRAP_SESSION_TOKEN =
       ConfigOptions.key(PREFIX + "iam.bootstrap-session-token")

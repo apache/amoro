@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-/** Periodically projects allowlisted HMS3 catalogs into AMS CatalogMeta records. */
+/** Periodically projects HMS3 catalogs into AMS CatalogMeta records. */
 public final class LasCatalogSynchronizer implements AutoCloseable {
 
   private static final Logger LOG = LoggerFactory.getLogger(LasCatalogSynchronizer.class);
@@ -106,7 +106,9 @@ public final class LasCatalogSynchronizer implements AutoCloseable {
     }
 
     Set<String> rawCatalogNames = new HashSet<>(discoveredCatalogs);
-    Set<String> allowlistedNamespaces = new HashSet<>(catalogManager.listNamespaces());
+    boolean allowlistEnabled = catalogManager.namespaceAllowlistEnabled();
+    Set<String> allowlistedNamespaces =
+        allowlistEnabled ? new HashSet<>(catalogManager.listNamespaces()) : Collections.emptySet();
     Map<String, CatalogMeta> existingCatalogs =
         catalogManager.listCatalogMetas().stream()
             .collect(Collectors.toMap(CatalogMeta::getCatalogName, catalog -> catalog));
@@ -116,7 +118,8 @@ public final class LasCatalogSynchronizer implements AutoCloseable {
     int removed = 0;
     for (String physicalCatalogName : rawCatalogNames) {
       Optional<String> namespace = parseNamespace(physicalCatalogName);
-      if (!namespace.isPresent() || !allowlistedNamespaces.contains(namespace.get())) {
+      if (!namespace.isPresent()
+          || (allowlistEnabled && !allowlistedNamespaces.contains(namespace.get()))) {
         continue;
       }
 
@@ -146,8 +149,10 @@ public final class LasCatalogSynchronizer implements AutoCloseable {
     }
 
     LOG.info(
-        "LAS HMS catalog synchronization completed: discovered={}, allowlistedNamespaces={}, created={}, updated={}, removed={}",
+        "LAS HMS catalog synchronization completed: discovered={}, allowlistEnabled={},"
+            + " allowlistedNamespaces={}, created={}, updated={}, removed={}",
         rawCatalogNames.size(),
+        allowlistEnabled,
         allowlistedNamespaces.size(),
         created,
         updated,
@@ -182,7 +187,11 @@ public final class LasCatalogSynchronizer implements AutoCloseable {
     Map<String, String> catalogProperties = new HashMap<>();
     catalogProperties.put(
         CatalogMetaProperties.TABLE_FORMATS,
-        TableFormat.ICEBERG.name() + "," + TableFormat.PAIMON.name());
+        TableFormat.ICEBERG.name()
+            + ","
+            + TableFormat.PAIMON.name()
+            + ","
+            + TableFormat.LANCE.name());
     catalogProperties.put(CatalogMetaProperties.NAMESPACE, namespace);
     catalogProperties.put(CATALOG_SOURCE, CATALOG_SOURCE_LAS_HMS);
     catalogProperties.put(

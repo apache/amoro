@@ -1456,6 +1456,18 @@
             <url>https://repository.apache.org/content/repositories/releases/</url>
         </repository>
 
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bytedance-releases</id>
+            <name>ByteDance Maven Releases</name>
+            <url>https://maven.byted.org/repository/releases/</url>
+        </repository>
+
         <!--
         Uncomment the following "repository" tag if your maven fails to download amoro-shade snapshot files.
         We comment these tags by default because downloading from apache repositories is very slow for both github and developers.

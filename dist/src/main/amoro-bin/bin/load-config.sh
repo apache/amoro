@@ -70,6 +70,16 @@ export JVM_EXTRA_CONFIG
 
 test -f ${AMORO_ENV_FILE} && source ${AMORO_ENV_FILE}
 
+# LAS deployments expose the existing service credential names. Proton's built-in
+# AssumeIamRoleCredentialProvider uses fixed environment names, so keep those as internal aliases
+# without requiring a second pair of K8S Secret keys.
+if [ -n "${LAS_SERVICE_AK}" ] && [ -z "${ASSUME_ROLE_ACCESS_KEY}" ]; then
+    export ASSUME_ROLE_ACCESS_KEY="${LAS_SERVICE_AK}"
+fi
+if [ -n "${LAS_SERVICE_SK}" ] && [ -z "${ASSUME_ROLE_SECRET_KEY}" ]; then
+    export ASSUME_ROLE_SECRET_KEY="${LAS_SERVICE_SK}"
+fi
+
 # set env variable amoro-addition-classpath if not exists
 if [ -z "${AMORO_ADDITION_CLASSPATH}" ]; then
     export AMORO_ADDITION_CLASSPATH=

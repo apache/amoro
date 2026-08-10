@@ -67,6 +67,36 @@ public class TestLasIntegrationContext {
   }
 
   @Test
+  public void testUsesExistingLasServiceCredentialEnvironmentNames() {
+    Configurations configurations = validConfigurations();
+    configurations.removeConfig(LasIntegrationConfig.IAM_BOOTSTRAP_ACCESS_KEY);
+    configurations.removeConfig(LasIntegrationConfig.IAM_BOOTSTRAP_SECRET_KEY);
+    Map<String, String> environment = new HashMap<>();
+    environment.put(LasIntegrationConfig.LAS_SERVICE_ACCESS_KEY_ENV, "las-service-ak");
+    environment.put(LasIntegrationConfig.LAS_SERVICE_SECRET_KEY_ENV, "las-service-sk");
+
+    LasIntegrationContext context = LasIntegrationContext.initialize(configurations, environment);
+    bytedance.olap.iam.Credential credential = context.bootstrapCredential();
+
+    Assertions.assertEquals("las-service-ak", credential.getAccessKeyId());
+    Assertions.assertEquals("las-service-sk", credential.getSecretAccessKey());
+  }
+
+  @Test
+  public void testExplicitCredentialConfigurationOverridesEnvironment() {
+    Map<String, String> environment = new HashMap<>();
+    environment.put(LasIntegrationConfig.LAS_SERVICE_ACCESS_KEY_ENV, "las-service-ak");
+    environment.put(LasIntegrationConfig.LAS_SERVICE_SECRET_KEY_ENV, "las-service-sk");
+
+    LasIntegrationContext context =
+        LasIntegrationContext.initialize(validConfigurations(), environment);
+    bytedance.olap.iam.Credential credential = context.bootstrapCredential();
+
+    Assertions.assertEquals("bootstrap-ak", credential.getAccessKeyId());
+    Assertions.assertEquals("bootstrap-sk", credential.getSecretAccessKey());
+  }
+
+  @Test
   public void testCrossVpcConfigurationIsAtomic() {
     Configurations configurations = validConfigurations();
     configurations.setBoolean(LasIntegrationConfig.CROSS_VPC_ENABLED, true);

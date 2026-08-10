@@ -65,7 +65,7 @@ function initSelectCatalog() {
     catalogName: '',
     catalogType: '',
   }
-  if (decodeURIComponent(catalogname as string) === NEW_CATALOG) {
+  if (catalogname === NEW_CATALOG) {
     addCatalog()
     return
   }
@@ -98,7 +98,7 @@ async function selectCatalog(item: ICatalogItem) {
   await router.replace({
     path: '/catalogs',
     query: {
-      catalogname: encodeURIComponent(curCatalog.catalogName),
+      catalogname: curCatalog.catalogName,
       type: curCatalog.catalogType,
     },
   })
@@ -138,7 +138,7 @@ function addCatalog() {
     addNewCatalog()
   }
 }
-  async function addNewCatalog() {
+async function addNewCatalog() {
   const item: ICatalogItem = {
     catalogName: NEW_CATALOG,
     catalogType: '',
@@ -174,7 +174,7 @@ onBeforeRouteLeave((_to, _form, next) => {
 </script>
 
 <template>
-  <div class="page-scroll" ref="pageScrollRef">
+  <div ref="pageScrollRef" class="page-scroll">
     <div class="catalogs-wrap g-flex">
       <div class="catalog-list-left">
         <div class="catalog-header">
@@ -202,12 +202,9 @@ onBeforeRouteLeave((_to, _form, next) => {
   height: 100%;
   overflow-y: auto;
 }
-
-
-
- .catalogs-wrap {
-   height: 100%;
-   padding: 16px 24px;
+.catalogs-wrap {
+  height: 100%;
+  padding: 16px 24px;
   .catalog-list-left {
     width: 200px;
     height: 100%;

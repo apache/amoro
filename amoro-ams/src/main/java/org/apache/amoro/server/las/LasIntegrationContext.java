@@ -34,6 +34,8 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /** Validated network configuration and client factories shared by future LAS OpenAPI handlers. */
@@ -50,15 +52,30 @@ public final class LasIntegrationContext {
   private final String emrServerlessService;
   private final Duration connectTimeout;
   private final Duration readTimeout;
+  private final String bootstrapAccessKey;
+  private final String bootstrapSecretKey;
+  private final String bootstrapSessionToken;
 
-  private LasIntegrationContext(Configurations configurations) {
+  private LasIntegrationContext(
+      Configurations configurations, Map<String, String> environmentVariables) {
     this.configurations = configurations;
+    Objects.requireNonNull(environmentVariables, "environmentVariables");
     this.enabled = configurations.getBoolean(LasIntegrationConfig.ENABLED);
     this.region = configurations.getString(LasIntegrationConfig.REGION);
     this.emrServerlessService =
         configurations.getString(LasIntegrationConfig.EMR_SERVERLESS_SERVICE);
     this.connectTimeout = configurations.get(LasIntegrationConfig.CONNECT_TIMEOUT);
     this.readTimeout = configurations.get(LasIntegrationConfig.READ_TIMEOUT);
+    this.bootstrapAccessKey =
+        firstNonBlank(
+            configurations.getString(LasIntegrationConfig.IAM_BOOTSTRAP_ACCESS_KEY),
+            environmentVariables.get(LasIntegrationConfig.LAS_SERVICE_ACCESS_KEY_ENV));
+    this.bootstrapSecretKey =
+        firstNonBlank(
+            configurations.getString(LasIntegrationConfig.IAM_BOOTSTRAP_SECRET_KEY),
+            environmentVariables.get(LasIntegrationConfig.LAS_SERVICE_SECRET_KEY_ENV));
+    this.bootstrapSessionToken =
+        configurations.getString(LasIntegrationConfig.IAM_BOOTSTRAP_SESSION_TOKEN);
 
     if (!enabled) {
       this.hmsUri = null;
@@ -76,8 +93,8 @@ public final class LasIntegrationContext {
         requiredUri(configurations, LasIntegrationConfig.EMR_SERVERLESS_ENDPOINT, HTTP_SCHEMES);
     requiredString(configurations, LasIntegrationConfig.REGION);
     requiredString(configurations, LasIntegrationConfig.EMR_SERVERLESS_SERVICE);
-    requiredString(configurations, LasIntegrationConfig.IAM_BOOTSTRAP_ACCESS_KEY);
-    requiredString(configurations, LasIntegrationConfig.IAM_BOOTSTRAP_SECRET_KEY);
+    requiredCredential(LasIntegrationConfig.LAS_SERVICE_ACCESS_KEY_ENV, bootstrapAccessKey);
+    requiredCredential(LasIntegrationConfig.LAS_SERVICE_SECRET_KEY_ENV, bootstrapSecretKey);
     requiredString(configurations, LasIntegrationConfig.IAM_ROLE_SESSION_NAME);
     requiredString(configurations, LasIntegrationConfig.IAM_DATA_ROLE_NAME);
     positiveDuration(configurations, LasIntegrationConfig.CONNECT_TIMEOUT);
@@ -98,7 +115,12 @@ public final class LasIntegrationContext {
   }
 
   public static LasIntegrationContext initialize(Configurations configurations) {
-    return new LasIntegrationContext(configurations);
+    return new LasIntegrationContext(configurations, System.getenv());
+  }
+
+  static LasIntegrationContext initialize(
+      Configurations configurations, Map<String, String> environmentVariables) {
+    return new LasIntegrationContext(configurations, environmentVariables);
   }
 
   public boolean enabled() {
@@ -143,13 +165,9 @@ public final class LasIntegrationContext {
 
   public Credential bootstrapCredential() {
     ensureEnabled();
-    String accessKey = configurations.getString(LasIntegrationConfig.IAM_BOOTSTRAP_ACCESS_KEY);
-    String secretKey = configurations.getString(LasIntegrationConfig.IAM_BOOTSTRAP_SECRET_KEY);
-    String sessionToken =
-        configurations.getString(LasIntegrationConfig.IAM_BOOTSTRAP_SESSION_TOKEN);
-    return StringUtils.isBlank(sessionToken)
-        ? new Credential(accessKey, secretKey)
-        : new Credential(accessKey, secretKey, sessionToken);
+    return StringUtils.isBlank(bootstrapSessionToken)
+        ? new Credential(bootstrapAccessKey, bootstrapSecretKey)
+        : new Credential(bootstrapAccessKey, bootstrapSecretKey, bootstrapSessionToken);
   }
 
   public URI hmsUri() {
@@ -261,6 +279,16 @@ public final class LasIntegrationContext {
       throw new IllegalArgumentException(option.key() + " must be configured");
     }
     return value;
+  }
+
+  private static String firstNonBlank(String preferred, String fallback) {
+    return StringUtils.isNotBlank(preferred) ? preferred : fallback;
+  }
+
+  private static void requiredCredential(String environmentVariable, String value) {
+    if (StringUtils.isBlank(value)) {
+      throw new IllegalArgumentException(environmentVariable + " must be configured");
+    }
   }
 
   private static Duration positiveDuration(

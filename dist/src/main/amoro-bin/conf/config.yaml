@@ -75,9 +75,8 @@ ams:
   # Values may also be supplied through environment variables, for example:
   # AMS_LAS_INTEGRATION_ENABLED=true
   # AMS_LAS_INTEGRATION_HMS__URI=thrift://hms-service.<namespace>.svc.cluster.local:9083
-  # Keep IAM bootstrap credentials in secret-backed environment variables:
-  # AMS_LAS_INTEGRATION_IAM_BOOTSTRAP__ACCESS__KEY and
-  # AMS_LAS_INTEGRATION_IAM_BOOTSTRAP__SECRET__KEY.
+  # Reuse the existing LAS service credential environment variables. Inject both from a K8S
+  # Secret; do not put their values in this file: LAS_SERVICE_AK and LAS_SERVICE_SK.
   las:
     integration:
       enabled: false
@@ -91,8 +90,9 @@ ams:
       connect-timeout: 30s
       read-timeout: 30s
       iam:
-        # bootstrap-access-key: supplied by a secret-backed environment variable
-        # bootstrap-secret-key: supplied by a secret-backed environment variable
+        # Optional explicit overrides. LAS deployments should use LAS_SERVICE_AK/LAS_SERVICE_SK.
+        # bootstrap-access-key: supplied by a secret-backed configuration
+        # bootstrap-secret-key: supplied by a secret-backed configuration
         # bootstrap-session-token: optional, supplied with temporary bootstrap credentials
         role-session-name: AmoroAssumeRoleSession
         assume-role-ttl: 1h
@@ -152,6 +152,7 @@ ams:
   # catalog explorer. LAS deployments typically set refresh-external-catalogs.interval to 10min.
   catalog:
     namespace-enabled: true
+    namespace-allowlist-enabled: true
 
   # Support for encrypted sensitive configuration items
   shade:

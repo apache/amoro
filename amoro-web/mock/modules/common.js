@@ -27,7 +27,8 @@ export default [
         "userName": "admin",
         "loginTime": "1703839452053",
         "role": "SERVICE_ADMIN",
-        "roles": ["SERVICE_ADMIN"]
+        "roles": ["SERVICE_ADMIN"],
+        "privileges": ["VIEW_SYSTEM", "VIEW_CATALOG", "VIEW_TABLE", "VIEW_OPTIMIZER", "MANAGE_CATALOG", "MANAGE_TABLE", "MANAGE_OPTIMIZER", "EXECUTE_SQL", "MANAGE_PLATFORM"]
       }
     }),
   },
@@ -41,7 +42,8 @@ export default [
         userName: 'admin',
         loginTime: '1703839452053',
         role: 'SERVICE_ADMIN',
-        roles: ['SERVICE_ADMIN']
+        roles: ['SERVICE_ADMIN'],
+        privileges: ['VIEW_SYSTEM', 'VIEW_CATALOG', 'VIEW_TABLE', 'VIEW_OPTIMIZER', 'MANAGE_CATALOG', 'MANAGE_TABLE', 'MANAGE_OPTIMIZER', 'EXECUTE_SQL', 'MANAGE_PLATFORM']
       }
     }),
   },

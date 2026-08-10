@@ -18,17 +18,17 @@
 
 export default [
   {
-    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/details',
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/details',
     method: 'get',
-    response: () => ({
+    response: ({ params }) => ({
       "message": "success",
       "code": 200,
       "result": {
         "tableType": "ICEBERG",
         "tableIdentifier": {
-          "catalog": "test_catalog",
-          "database": "db",
-          "tableName": "user"
+          "catalog": params.catalog,
+          "database": params.dbId,
+          "tableName": params.tableName
         },
         "schema": [
           {
@@ -91,7 +91,7 @@ export default [
     }),
   },
   {
-    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/partitions',
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/partitions',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -120,7 +120,7 @@ export default [
     }),
   },
   {
-    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/branches',
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/branches',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -141,12 +141,17 @@ export default [
     }),
   },
   {
-    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/tags',
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/tags',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
   },
   {
-    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/snapshots',
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/consumers',
+    method: 'get',
+    response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
+  },
+  {
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/snapshots',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -193,12 +198,12 @@ export default [
     }),
   },
   {
-    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/operations',
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/operations',
     method: 'get',
     response: () => ({ "message": "success", "code": 200, "result": { "list": [], "total": 0 } }),
   },
   {
-    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/partitions/:filter/files',
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/partitions/:filter/files',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -223,7 +228,7 @@ export default [
     }),
   },
   {
-    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/snapshots/:snapshotId/detail',
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/snapshots/:snapshotId/detail',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -260,7 +265,7 @@ export default [
     }),
   },
   {
-    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/optimizing-processes',
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/optimizing-processes',
     method: 'get',
     response: () => ({
       "message": "success",
@@ -307,7 +312,7 @@ export default [
     }),
   },
   {
-    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/process-types',
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/process-types',
     method: 'get',
     response: ({ query }) => {
       const processCategory = query?.processCategory || 'OPTIMIZING'
@@ -335,7 +340,7 @@ export default [
     },
   },
   {
-    url: '/mock/api/ams/v1/tables/catalogs/test_catalog/dbs/db/tables/user/operations',
+    url: '/mock/api/ams/v1/tables/catalogs/:catalog/dbs/:dbId/tables/:tableName/operations',
     method: 'get',
     response: () => ({
       "message": "success",

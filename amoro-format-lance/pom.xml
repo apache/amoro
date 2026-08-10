@@ -42,12 +42,19 @@
             <groupId>org.apache.arrow</groupId>
             <artifactId>arrow-vector</artifactId>
         </dependency>
+        <!-- Keep Arrow's Netty buffer and common classes on one version. Without this direct
+             dependency Hadoop's older transitive netty-common wins and RootAllocator fails. -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+            <version>${netty.version}</version>
+        </dependency>
 
         <!-- Lance format Java API -->
         <dependency>
             <groupId>org.lance</groupId>
             <artifactId>lance-core</artifactId>
-            <version>7.0.0</version>
+            <version>7.0.0-ve-6</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.lance</groupId>
@@ -70,6 +77,32 @@
             <groupId>org.lance</groupId>
             <artifactId>lance-namespace-apache-client</artifactId>
             <version>0.8.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lance</groupId>
+            <artifactId>lance-namespace-hive3</artifactId>
+            <version>0.4.1</version>
+            <scope>runtime</scope>
+            <exclusions>
+                <!-- Use the versions already managed by Amoro. Hive3-only calls are isolated
+                     behind reflection so the hadoop2 profile remains compilable. -->
+                <exclusion>
+                    <groupId>org.lance</groupId>
+                    <artifactId>lance-namespace-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.lance</groupId>
+                    <artifactId>lance-namespace-apache-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hive</groupId>
+                    <artifactId>hive-standalone-metastore</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hive</groupId>
+                    <artifactId>hive-exec</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.iceberg</groupId>

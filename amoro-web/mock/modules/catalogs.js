@@ -18,6 +18,15 @@
 
 export default [
   {
+    url: '/mock/api/ams/v1/namespaces',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": ["123456789", "987654321"]
+    }),
+  },
+  {
     url: '/mock/api/ams/v1/catalogs',
     method: 'get',
     response: () => ({
@@ -25,7 +34,7 @@ export default [
       "code": 200,
       "result": [
         {
-          "catalogName": "test_catalog",
+          "catalogName": "123456789@las",
           "catalogType": "hadoop",
           "storageConfigs": {
             "storage.type": "Hadoop",
@@ -62,17 +71,17 @@ export default [
   },
 
   {
-    url: '/mock/api/ams/v1/catalogs/test_catalog/databases',
+    url: '/mock/api/ams/v1/catalogs/123456789@las/databases',
     method: 'get',
     response: () => {
-      return { "message": "success", "code": 200, "result": ["db", "test", "acc"] }
+      return { "message": "success", "code": 200, "result": ["warehouse", "analytics", "index_demo"] }
     },
   },
   {
-    url: '/mock/api/ams/v1/catalogs/test_catalog/databases/db/tables',
+    url: '/mock/api/ams/v1/catalogs/123456789@las/databases/warehouse/tables',
     method: 'get',
     response: () => {
-      return { "message": "success", "code": 200, "result": [{ "name": "user", "type": "ICEBERG" },{ "name": "wf", "type": "ICEBERG" }, { "name": "xcvz", "type": "ICEBERG" }] };
+      return { "message": "success", "code": 200, "result": [{ "name": "jk_large_table", "type": "ICEBERG" }, { "name": "orders", "type": "ICEBERG" }, { "name": "events", "type": "PAIMON" }] };
     },
   },
   {
@@ -158,6 +167,24 @@ export default [
           "display": "Custom"
         }
       ]
+    }),
+  },
+  {
+    url: '/mock/api/ams/v1/catalogs/metastore/:type/table-formats',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": ["ICEBERG", "PAIMON"]
+    }),
+  },
+  {
+    url: '/mock/api/ams/v1/catalogs/metastore/:type/storage-types',
+    method: 'get',
+    response: () => ({
+      "message": "success",
+      "code": 200,
+      "result": ["Hadoop"]
     }),
   },
   {

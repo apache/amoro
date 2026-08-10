@@ -147,6 +147,7 @@ export default defineComponent({
         let db: string | undefined
         let tableName: string | undefined
         let namespace: string | undefined
+        let type: string | undefined
 
         try {
           const stored = localStorage.getItem('easylake-menu-catalog-db-table')
@@ -156,11 +157,13 @@ export default defineComponent({
               catalog?: string
               database?: string
               tableName?: string
+              type?: string
             }
             namespace = parsed.namespace
             catalog = parsed.catalog
             db = parsed.database
             tableName = parsed.tableName
+            type = parsed.type
           }
         }
         catch (e) {
@@ -175,6 +178,7 @@ export default defineComponent({
               catalog,
               db,
               table: tableName,
+              ...(type ? { type } : {}),
             },
           })
         }

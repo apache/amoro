@@ -153,7 +153,7 @@ export default defineComponent({
       () => route.query,
       (val, old) => {
         const { catalog, db, table } = val
-        if (route.path === '/hive-tables' && (catalog !== old.catalog || db !== old.db || table !== old.table)) {
+        if (!isSecondaryNav.value && (catalog !== old.catalog || db !== old.db || table !== old.table)) {
           init()
         }
       },
@@ -164,6 +164,15 @@ export default defineComponent({
     })
 
     onMounted(() => {
+      if (route.path === '/hive-tables') {
+        router.replace({
+          path: '/tables',
+          query: {
+            ...route.query,
+          },
+        })
+        return
+      }
       init()
     })
 
