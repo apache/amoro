@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server;
 
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_OPTIMIZER_INSTANCES;
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -38,10 +40,15 @@ import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.exception.PluginRetryAuthException;
 import org.apache.amoro.exception.TaskRuntimeException;
 import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.metrics.Gauge;
+import org.apache.amoro.metrics.MetricKey;
+import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
+import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
@@ -70,6 +77,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -181,6 +189,35 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
+  public void testPollTaskBlockedWhileDraining() {
+    // A draining optimizer receives no new assignments even though a task is available; in-flight
+    // completion paths (touch/ack/complete) are deliberately not blocked.
+    optimizingService().beginGracefulDrain(token, Long.MAX_VALUE);
+    Assertions.assertNull(optimizingService().pollTask(token, THREAD_ID));
+
+    optimizingService().cancelDrain(token);
+    Assertions.assertNotNull(optimizingService().pollTask(token, THREAD_ID));
+  }
+
+  @Test
+  public void testDrainStartedDuringPollHandsTaskBack() {
+    OptimizingTask polled = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(polled);
+    TaskRuntime<?> taskRuntime =
+        optimizingService().listTasks(defaultResourceGroup().getName()).stream()
+            .filter(t -> t.getStatus() == TaskRuntime.Status.SCHEDULED)
+            .findFirst()
+            .orElse(null);
+    Assertions.assertNotNull(taskRuntime);
+
+    // The drain begins while a long-poll is parked inside the queue: the entry check has already
+    // passed, so the post-poll guard must hand the fetched task back instead of assigning it.
+    optimizingService().beginGracefulDrain(token, Long.MAX_VALUE);
+    Assertions.assertNull(optimizingService().guardDrainedPoll(token, taskRuntime));
+    Assertions.assertEquals(TaskRuntime.Status.PLANNED, taskRuntime.getStatus());
+  }
+
+  @Test
   public void testPollTaskTwice() {
     // 1.poll task
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
@@ -263,6 +300,73 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     optimizingService().touch(token);
     OptimizerInstance optimizerAfterTouched = optimizerManager().listOptimizers().get(0);
     Assertions.assertTrue(optimizerAfterTouched.getTouchTime() > oldTouchTime);
+  }
+
+  @Test
+  public void testHeartbeatExpiryClearsDrainState() throws InterruptedException {
+    // An optimizer that dies mid-drain is unregistered by heartbeat expiry, a path that must
+    // clear the drain state too: the token can never be matched again, so a leftover entry would
+    // sit in the pending-removal set forever.
+    rebootWithHeartbeatTimeout(EXPIRATION_TEST_HEARTBEAT_TIMEOUT);
+    String drainingToken = token;
+    optimizingService().beginGracefulDrain(drainingToken, Long.MAX_VALUE);
+    toucher.stop();
+    toucher = null;
+    waitForOptimizerExpiration(drainingToken, ASYNC_WAIT_TIMEOUT_MS);
+    Assertions.assertThrows(
+        PluginRetryAuthException.class, () -> optimizingService().touch(drainingToken));
+    Assertions.assertFalse(
+        optimizingService().isDraining(drainingToken),
+        "unregistration must clear the drain state of a dead optimizer");
+  }
+
+  @Test
+  public void testUnregisterDoesNotFailWhenAuthenticationAlreadyRemoved() throws Exception {
+    toucher.stop();
+    toucher = null;
+    OptimizerInstance optimizer = optimizerManager().listOptimizers().get(0);
+    OptimizingQueue queue = (OptimizingQueue) optimizerState("optimizingQueueByToken").get(token);
+    // Simulate another unregister call having already claimed the authentication entry.
+    optimizerState("authOptimizers").remove(token);
+
+    try {
+      Assertions.assertDoesNotThrow(
+          () ->
+              optimizingService()
+                  .deleteOptimizer(optimizer.getGroupName(), optimizer.getResourceId()));
+    } finally {
+      queue.removeOptimizer(optimizer);
+    }
+  }
+
+  @Test
+  public void testUnregisterCleansMetricsWhenTokenQueueAlreadyRemoved() throws Exception {
+    toucher.stop();
+    toucher = null;
+    OptimizerInstance optimizer = optimizerManager().listOptimizers().get(0);
+    // Simulate another unregister call having already claimed the token-to-queue entry.
+    OptimizingQueue queue =
+        (OptimizingQueue) optimizerState("optimizingQueueByToken").remove(token);
+    Map<String, String> tagValues = Maps.newHashMap();
+    tagValues.put("group", optimizer.getGroupName());
+    MetricRegistry registry = MetricManager.getInstance().getGlobalRegistry();
+    Gauge<Integer> optimizerCountGauge =
+        (Gauge<Integer>)
+            registry
+                .getMetrics()
+                .get(new MetricKey(OPTIMIZER_GROUP_OPTIMIZER_INSTANCES, tagValues));
+    Gauge<Long> optimizerThreadsGauge =
+        (Gauge<Long>) registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_THREADS, tagValues));
+
+    Assertions.assertEquals(1, optimizerCountGauge.getValue());
+    Assertions.assertEquals(1L, optimizerThreadsGauge.getValue());
+    try {
+      optimizingService().deleteOptimizer(optimizer.getGroupName(), optimizer.getResourceId());
+      Assertions.assertEquals(0, optimizerCountGauge.getValue());
+      Assertions.assertEquals(0L, optimizerThreadsGauge.getValue());
+    } finally {
+      queue.removeOptimizer(optimizer);
+    }
   }
 
   @Test
@@ -726,6 +830,13 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     registerInfo.setResourceId("1");
     registerInfo.setStartTime(System.currentTimeMillis());
     return registerInfo;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, ?> optimizerState(String fieldName) throws Exception {
+    Field field = DefaultOptimizingService.class.getDeclaredField(fieldName);
+    field.setAccessible(true);
+    return (Map<String, ?>) field.get(optimizingService());
   }
 
   private OptimizingTaskResult buildOptimizingTaskResult(OptimizingTaskId taskId) {
