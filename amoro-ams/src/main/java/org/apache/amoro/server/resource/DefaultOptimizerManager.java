@@ -74,13 +74,17 @@ public class DefaultOptimizerManager extends PersistentBase implements Optimizer
   }
 
   @Override
-  public void deleteOptimizer(String group, String resourceId) {
-    List<OptimizerInstance> deleteOptimizers =
-        getAs(OptimizerMapper.class, mapper -> mapper.selectByResourceId(resourceId));
-    deleteOptimizers.forEach(
-        optimizer -> {
-          String token = optimizer.getToken();
-          unregisterOptimizer(token);
+  public void deleteOptimizerAndResource(String group, String resourceId) {
+    doAsTransaction(
+        () -> deleteResource(resourceId),
+        () -> {
+          List<OptimizerInstance> deleteOptimizers =
+              getAs(OptimizerMapper.class, mapper -> mapper.selectByResourceId(resourceId));
+          deleteOptimizers.forEach(
+              optimizer -> {
+                String token = optimizer.getToken();
+                unregisterOptimizer(token);
+              });
         });
   }
 
