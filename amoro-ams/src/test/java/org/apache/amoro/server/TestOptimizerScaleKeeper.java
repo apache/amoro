@@ -64,6 +64,7 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
   private volatile Function<org.apache.amoro.api.OptimizerRegisterInfo, String> optimizerRegistrar;
   private static boolean originIsInitialized = false;
   private String currentGroupName;
+  private TestOptimizerGroupKeeper.MockOptimizerContainer mockContainer;
 
   public TestOptimizerScaleKeeper(
       CatalogTestHelper catalogTestHelper, TableTestHelper tableTestHelper) {
@@ -120,7 +121,7 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
   }
 
   private void setupMockContainer(Supplier<String> targetGroupNameSupplier) throws Exception {
-    TestOptimizerGroupKeeper.MockOptimizerContainer mockContainer =
+    mockContainer =
         new TestOptimizerGroupKeeper.MockOptimizerContainer(
             resourceAvailable,
             scaleOutCallCount,
@@ -282,5 +283,251 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
     List<OptimizerInstance> optimizers = optimizerManager().listOptimizers(currentGroupName);
     Assertions.assertEquals(
         2, optimizers.size(), "runtime-enabled DRA group should reach its floor in K units");
+  }
+
+  private OptimizerInstance awaitSingleOptimizer(String groupName) throws InterruptedException {
+    Thread.sleep(500);
+    List<OptimizerInstance> optimizers = optimizerManager().listOptimizers(groupName);
+    Assertions.assertEquals(1, optimizers.size(), "floor of 1 should register one optimizer");
+    return optimizers.get(0);
+  }
+
+  /** Removal releases the container resource, deletes the persisted row, and unregisters. */
+  @Test
+  public void testExecuteRemovalReleasesResourceAndUnregisters() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildDraResourceGroup(TEST_GROUP_NAME + "-5", 1, 1);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    OptimizerInstance optimizer = awaitSingleOptimizer(group.getName());
+
+    // Keep the keeper from instantly re-filling the floor while we assert emptiness.
+    resourceAvailable.set(false);
+    optimizingService().executeRemoval(optimizer.getToken());
+
+    Assertions.assertTrue(optimizerManager().listOptimizers(group.getName()).isEmpty());
+    Assertions.assertNull(optimizerManager().getResource(optimizer.getResourceId()));
+    Assertions.assertTrue(
+        mockContainer.getReleasedResources().stream()
+            .anyMatch(r -> optimizer.getResourceId().equals(r.getResourceId())),
+        "the container resource must be released");
+  }
+
+  /**
+   * A registered optimizer whose resource row is missing (the pod self-registered after a persist
+   * failure, or a manual release raced the row away) must still be removable: the instance itself
+   * carries the container-side identity, so release through it and only skip the row delete.
+   */
+  @Test
+  public void testExecuteRemovalFallsBackWhenResourceRowMissing() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildDraResourceGroup(TEST_GROUP_NAME + "-6", 1, 1);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    OptimizerInstance optimizer = awaitSingleOptimizer(group.getName());
+
+    resourceAvailable.set(false);
+    optimizerManager().deleteResource(optimizer.getResourceId());
+    optimizingService().executeRemoval(optimizer.getToken());
+
+    Assertions.assertTrue(
+        optimizerManager().listOptimizers(group.getName()).isEmpty(),
+        "a row-less optimizer must not become an unremovable zombie");
+    Assertions.assertTrue(
+        mockContainer.getReleasedResources().stream()
+            .anyMatch(r -> optimizer.getResourceId().equals(r.getResourceId())),
+        "the container side must still be released via the instance");
+  }
+
+  /**
+   * A transient container release failure keeps the drain state so a later round retries the
+   * idempotent deletion; the optimizer must not be unregistered while its pod may still exist.
+   */
+  @Test
+  public void testExecuteRemovalKeepsDrainStateOnReleaseFailure() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildDraResourceGroup(TEST_GROUP_NAME + "-7", 1, 1);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    OptimizerInstance optimizer = awaitSingleOptimizer(group.getName());
+
+    resourceAvailable.set(false);
+    optimizingService().beginGracefulDrain(optimizer.getToken(), Long.MAX_VALUE);
+    mockContainer.setReleaseAvailable(false);
+    optimizingService().executeRemoval(optimizer.getToken());
+
+    Assertions.assertTrue(
+        optimizingService().isDraining(optimizer.getToken()),
+        "drain state must survive the failed release for a later retry");
+    Assertions.assertEquals(
+        1,
+        optimizerManager().listOptimizers(group.getName()).size(),
+        "the optimizer must stay registered while its pod may still exist");
+
+    mockContainer.setReleaseAvailable(true);
+    optimizingService().executeRemoval(optimizer.getToken());
+    Assertions.assertFalse(optimizingService().isDraining(optimizer.getToken()));
+    Assertions.assertTrue(optimizerManager().listOptimizers(group.getName()).isEmpty());
+  }
+
+  /**
+   * DRA group whose rounds are driven manually with injected times. The huge real cadence keeps the
+   * live keeper's own rounds from racing the injected ones on the per-group decision state
+   * (idle-timeout 1200s respects the sustained &le; idle/2 validation).
+   */
+  private ResourceGroup buildSlowDraResourceGroup(String groupName, int minParallelism) {
+    this.currentGroupName = groupName;
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED, "true");
+    properties.put(
+        OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM, String.valueOf(minParallelism));
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM, "8");
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM, "1");
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_SUSTAINED_BACKLOG_TIMEOUT, "600s");
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT, "1200s");
+    properties.put("memory", "1024");
+    return new ResourceGroup.Builder(groupName, MOCK_CONTAINER_NAME)
+        .addProperties(properties)
+        .build();
+  }
+
+  /** Register an optimizer the way a booted pod would: persisted resource row + self-register. */
+  private OptimizerInstance registerOptimizer(String groupName, int threadCount) {
+    org.apache.amoro.resource.Resource resource =
+        new org.apache.amoro.resource.Resource.Builder(
+                MOCK_CONTAINER_NAME, groupName, org.apache.amoro.resource.ResourceType.OPTIMIZER)
+            .setThreadCount(threadCount)
+            .build();
+    optimizerManager().createResource(resource);
+    org.apache.amoro.api.OptimizerRegisterInfo registerInfo =
+        new org.apache.amoro.api.OptimizerRegisterInfo();
+    Map<String, String> registerProperties = Maps.newHashMap();
+    registerProperties.put(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL, "100");
+    registerInfo.setProperties(registerProperties);
+    registerInfo.setThreadCount(threadCount);
+    registerInfo.setMemoryMb(1024);
+    registerInfo.setGroupName(groupName);
+    registerInfo.setResourceId(resource.getResourceId());
+    registerInfo.setStartTime(System.currentTimeMillis());
+    String token = optimizingService().authenticate(registerInfo);
+    return optimizerManager().listOptimizers(groupName).stream()
+        .filter(optimizer -> token.equals(optimizer.getToken()))
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException("registered optimizer not listed"));
+  }
+
+  /** An instance idle past executor-idle-timeout is drained and, being idle, removed in-round. */
+  @Test
+  public void testIdleOptimizerScaledDownViaInjectedRounds() {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-8", 0);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    OptimizerInstance optimizer = registerOptimizer(group.getName(), 1);
+
+    long t0 = System.currentTimeMillis();
+    optimizingService().evaluateDynamicAllocation(group.getName(), t0); // seeds the observation
+    Assertions.assertEquals(1, optimizerManager().listOptimizers(group.getName()).size());
+
+    optimizingService().evaluateDynamicAllocation(group.getName(), t0 + 1_300_000L);
+    Assertions.assertTrue(
+        optimizerManager().listOptimizers(group.getName()).isEmpty(),
+        "an idle instance past the timeout should be drained and removed in the same round");
+    Assertions.assertTrue(
+        mockContainer.getReleasedResources().stream()
+            .anyMatch(r -> optimizer.getResourceId().equals(r.getResourceId())));
+  }
+
+  /** The min-parallelism floor keeps the last instance no matter how long it idles. */
+  @Test
+  public void testScaleDownRespectsFloor() {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-9", 1);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    registerOptimizer(group.getName(), 1);
+
+    long t0 = System.currentTimeMillis();
+    optimizingService().evaluateDynamicAllocation(group.getName(), t0);
+    optimizingService().evaluateDynamicAllocation(group.getName(), t0 + 1_300_000L);
+
+    Assertions.assertEquals(
+        1,
+        optimizerManager().listOptimizers(group.getName()).size(),
+        "the floor must keep the last instance");
+  }
+
+  /** Removals proceed one instance per cooldown period, never in batches. */
+  @Test
+  public void testScaleDownRemovesOneInstancePerCooldown() {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-10", 0);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    registerOptimizer(group.getName(), 1);
+    registerOptimizer(group.getName(), 1);
+
+    long t0 = System.currentTimeMillis();
+    optimizingService().evaluateDynamicAllocation(group.getName(), t0);
+    long firstRemovalAt = t0 + 1_300_000L;
+    optimizingService().evaluateDynamicAllocation(group.getName(), firstRemovalAt);
+    Assertions.assertEquals(
+        1,
+        optimizerManager().listOptimizers(group.getName()).size(),
+        "only one instance per round may be removed");
+
+    // Inside the scale-down-cooldown window (default 1min): the second instance stays.
+    optimizingService().evaluateDynamicAllocation(group.getName(), firstRemovalAt + 30_000L);
+    Assertions.assertEquals(1, optimizerManager().listOptimizers(group.getName()).size());
+
+    optimizingService().evaluateDynamicAllocation(group.getName(), firstRemovalAt + 70_000L);
+    Assertions.assertTrue(
+        optimizerManager().listOptimizers(group.getName()).isEmpty(),
+        "the cooldown expiry should admit the next removal");
+  }
+
+  /**
+   * Disabling dynamic allocation mid-drain re-admits the draining pod to task assignment: once the
+   * legacy floor keeper resumes duty for the group, a leftover drain block would starve the pod
+   * forever.
+   */
+  @Test
+  public void testDisablingDraCancelsLingeringDrain() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildDraResourceGroup(TEST_GROUP_NAME + "-11", 0, 1);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    OptimizerInstance optimizer = registerOptimizer(group.getName(), 1);
+
+    // A drain that cannot complete (release keeps failing) lingers across keeper rounds.
+    mockContainer.setReleaseAvailable(false);
+    optimizingService().beginGracefulDrain(optimizer.getToken(), Long.MAX_VALUE);
+    Thread.sleep(200);
+    Assertions.assertTrue(optimizingService().isDraining(optimizer.getToken()));
+
+    Map<String, String> legacyProps = Maps.newHashMap();
+    legacyProps.put("memory", "1024");
+    ResourceGroup disabled =
+        new ResourceGroup.Builder(group.getName(), MOCK_CONTAINER_NAME)
+            .addProperties(legacyProps)
+            .build();
+    optimizerManager().updateResourceGroup(disabled);
+    optimizingService().updateResourceGroup(disabled);
+    Thread.sleep(500);
+
+    Assertions.assertFalse(
+        optimizingService().isDraining(optimizer.getToken()),
+        "unwatching a disabled group must lift its drain blocks");
+    Assertions.assertEquals(
+        1,
+        optimizerManager().listOptimizers(group.getName()).size(),
+        "the pod survives and resumes normal duty");
   }
 }

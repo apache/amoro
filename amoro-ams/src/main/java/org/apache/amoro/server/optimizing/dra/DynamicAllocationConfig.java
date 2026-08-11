@@ -338,6 +338,19 @@ public class DynamicAllocationConfig {
         OptimizerProperties.DYNAMIC_ALLOCATION_SUSTAINED_BACKLOG_TIMEOUT, sustainedBacklogTimeout);
     requirePositive(OptimizerProperties.DYNAMIC_ALLOCATION_SCALE_DOWN_COOLDOWN, scaleDownCooldown);
     requirePositive(OptimizerProperties.DYNAMIC_ALLOCATION_DRAIN_TIMEOUT, drainTimeout);
+    // The scale keeper evaluates each group at sustained-backlog-timeout cadence, which is also
+    // the idle observation resolution: sampling slower than half the idle timeout lets an
+    // instance that worked between samples be misjudged as continuously idle and drained.
+    if (sustainedBacklogTimeout.toMillis() * 2 > executorIdleTimeout.toMillis()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Resource group:%s '%s'(%s) must be <= half of '%s'(%s).",
+              groupName,
+              OptimizerProperties.DYNAMIC_ALLOCATION_SUSTAINED_BACKLOG_TIMEOUT,
+              sustainedBacklogTimeout,
+              OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT,
+              executorIdleTimeout));
+    }
   }
 
   private void requirePositive(String property, Duration value) {

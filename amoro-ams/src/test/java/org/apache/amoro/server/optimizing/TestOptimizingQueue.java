@@ -226,6 +226,71 @@ public class TestOptimizingQueue extends AMSTableTestBase {
   }
 
   @Test
+  public void testCollectDynamicAllocationLoadInFlightByToken() {
+    DefaultTableRuntime tableRuntime = initTableWithPartitionedFiles();
+    OptimizingQueue queue =
+        new OptimizingQueue(
+            CATALOG_MANAGER,
+            testResourceGroup(),
+            resourceGroup -> 2,
+            planExecutor,
+            Collections.singletonList(tableRuntime),
+            1);
+    OptimizerThread threadA =
+        new OptimizerThread(1, null) {
+          @Override
+          public String getToken() {
+            return "token-a";
+          }
+        };
+    OptimizerThread threadB =
+        new OptimizerThread(2, null) {
+          @Override
+          public String getToken() {
+            return "token-b";
+          }
+        };
+
+    // One task SCHEDULED on token-a while the rest stay PLANNED: only the occupying token is
+    // counted — PLANNED tasks carry no assignment and must not appear in the map.
+    TaskRuntime<?> task = queue.pollTask(threadA, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+    Assert.assertEquals(
+        ImmutableMap.of("token-a", 1), queue.collectDynamicAllocationLoad().getInFlightByToken());
+
+    // ACKED still occupies the thread, so the token stays counted.
+    queue.ackTask(task.getTaskId(), threadA);
+    Assert.assertEquals(
+        ImmutableMap.of("token-a", 1), queue.collectDynamicAllocationLoad().getInFlightByToken());
+
+    // A second optimizer polling the remaining task is aggregated under its own token.
+    TaskRuntime<?> task2 = queue.pollTask(threadB, MAX_POLLING_TIME, true);
+    Assert.assertNotNull(task2);
+    Assert.assertEquals(
+        ImmutableMap.of("token-a", 1, "token-b", 1),
+        queue.collectDynamicAllocationLoad().getInFlightByToken());
+    queue.dispose();
+  }
+
+  @Test
+  public void testCollectDynamicAllocationLoadRecoversTaskTokens() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+    Assert.assertEquals(TaskRuntime.Status.SCHEDULED, task.getStatus());
+    queue.dispose();
+
+    // Rebuild the queue from persistent state, as an AMS restart does: the recovered SCHEDULED
+    // task keeps its token, so the very first snapshot is accurate without any rebuild code.
+    OptimizingQueue restored = buildOptimizingGroupService(tableRuntime);
+    DynamicAllocationState.GroupLoad load = restored.collectDynamicAllocationLoad();
+    Assert.assertEquals(1, load.getBusyThreads());
+    Assert.assertEquals(ImmutableMap.of(optimizerThread.getToken(), 1), load.getInFlightByToken());
+    restored.dispose();
+  }
+
+  @Test
   public void testPollTaskWithOverQuotaDisabled() {
     DefaultTableRuntime tableRuntime = initTableWithPartitionedFiles();
     OptimizingQueue queue =
