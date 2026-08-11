@@ -1248,21 +1248,21 @@ contain several optimizers with the same container implementation to facilitate 
 					<td>All</td>
 					<td>No</td>
 					<td>5min</td>
-					<td>Idle duration before an optimizer becomes a scale-down candidate (minimum 30s). Scale-down lands in a later release.</td>
+					<td>Idle duration before an optimizer becomes a scale-down candidate (minimum 30s). Must be at least twice <code>dynamic-allocation.sustained-backlog-timeout</code>, since idle time is observed once per scale evaluation round. At most one optimizer is scaled down per round, and only while the group has no scale-up demand.</td>
 			</tr>
 			<tr>
 					<td>dynamic-allocation.scale-down-cooldown</td>
 					<td>All</td>
 					<td>No</td>
 					<td>1min</td>
-					<td>Minimum interval between scale-down removals. Scale-down lands in a later release.</td>
+					<td>Minimum interval between scale-down removals.</td>
 			</tr>
 			<tr>
 					<td>dynamic-allocation.drain-timeout</td>
 					<td>All</td>
 					<td>No</td>
 					<td>15min</td>
-					<td>Force-removal safety net for a draining optimizer during scale-down. Scale-down lands in a later release.</td>
+					<td>Force-removal safety net for a draining optimizer. A scaled-down optimizer is drained gracefully: it stops receiving new tasks and is removed once its in-flight tasks finish. If draining takes longer than this timeout, the optimizer is removed anyway and its remaining tasks are re-executed on other optimizers.</td>
 			</tr>
 			<tr>
 					<td>memory</td>
