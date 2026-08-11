@@ -45,7 +45,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -403,6 +405,8 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     private final AtomicInteger scaleOutCallCount;
     private final Function<OptimizerRegisterInfo, String> optimizerRegistrar;
     private final Supplier<String> targetGroupNameSupplier;
+    private final AtomicBoolean releaseAvailable = new AtomicBoolean(true);
+    private final List<Resource> releasedResources = new CopyOnWriteArrayList<>();
 
     public MockOptimizerContainer(
         AtomicBoolean resourceAvailable,
@@ -444,6 +448,19 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     }
 
     @Override
-    public void releaseResource(Resource resource) {}
+    public void releaseResource(Resource resource) {
+      if (!releaseAvailable.get()) {
+        throw new RuntimeException("release failed");
+      }
+      releasedResources.add(resource);
+    }
+
+    public void setReleaseAvailable(boolean available) {
+      releaseAvailable.set(available);
+    }
+
+    public List<Resource> getReleasedResources() {
+      return releasedResources;
+    }
   }
 }

@@ -196,6 +196,25 @@ public class TestDynamicAllocationConfig {
   }
 
   @Test
+  void sustainedBacklogTimeoutAboveHalfIdleTimeoutIsRejected() {
+    // The scale keeper's evaluation cadence is sustained-backlog-timeout, which is also the idle
+    // observation resolution: sampling slower than half the idle timeout lets an instance that
+    // worked between samples be misjudged as continuously idle and drained.
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_SUSTAINED_BACKLOG_TIMEOUT, "200s");
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT, "300s");
+    Assertions.assertThrows(IllegalArgumentException.class, () -> parseAndValidate(group(props)));
+  }
+
+  @Test
+  void sustainedBacklogTimeoutAtHalfIdleTimeoutIsAccepted() {
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_SUSTAINED_BACKLOG_TIMEOUT, "150s");
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT, "300s");
+    assertDoesNotThrow(() -> parseAndValidate(group(props)));
+  }
+
+  @Test
   void unparsableDurationIsRejected() {
     Map<String, String> props = enabledProps();
     props.put(OptimizerProperties.DYNAMIC_ALLOCATION_SCHEDULER_BACKLOG_TIMEOUT, "not-a-duration");

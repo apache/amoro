@@ -428,11 +428,13 @@ public class OptimizingQueue extends PersistentBase {
   public DynamicAllocationState.GroupLoad collectDynamicAllocationLoad() {
     Map<Long, Integer> plannedByTable = Maps.newHashMap();
     Map<Long, Integer> occupiedByTable = Maps.newHashMap();
+    Map<String, Integer> inFlightByToken = Maps.newHashMap();
     int busyThreads = 0;
     for (TaskRuntime<?> task : collectTasks()) {
       if (DynamicAllocationState.occupiesThread(task.getStatus())) {
         busyThreads++;
         occupiedByTable.merge(task.getTableId(), 1, Integer::sum);
+        inFlightByToken.merge(task.getToken(), 1, Integer::sum);
       } else if (task.getStatus() == Status.PLANNED) {
         plannedByTable.merge(task.getTableId(), 1, Integer::sum);
       }
@@ -457,7 +459,10 @@ public class OptimizingQueue extends PersistentBase {
                     targetQuotaByTable.getOrDefault(tableId, 1.0),
                     occupiedByTable.getOrDefault(tableId, 0))));
     return new DynamicAllocationState.GroupLoad(
-        busyThreads, DynamicAllocationState.serviceablePlannedCount(demands), pendingTables);
+        busyThreads,
+        DynamicAllocationState.serviceablePlannedCount(demands),
+        pendingTables,
+        inFlightByToken);
   }
 
   public void retryTask(TaskRuntime<?> taskRuntime) {
