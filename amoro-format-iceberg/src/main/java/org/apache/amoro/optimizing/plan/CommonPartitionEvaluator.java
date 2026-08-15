@@ -101,7 +101,7 @@ public class CommonPartitionEvaluator implements PartitionEvaluator {
     this.identifier = identifier;
     this.config = config;
     this.partition = partition;
-    this.fragmentSize = config.getTargetSize() / config.getFragmentRatio();
+    this.fragmentSize = config.maxFragmentSize();
     this.minTargetSize = (long) (config.getTargetSize() * config.getMinTargetSizeRatio());
     if (minTargetSize > config.getTargetSize() - fragmentSize) {
       LOG.warn(

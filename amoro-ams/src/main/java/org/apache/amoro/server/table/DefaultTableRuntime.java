@@ -228,8 +228,12 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
 
   public double calculateQuotaOccupy() {
     double targetQuota = getOptimizingConfig().getTargetQuota();
+    // Guard against a non-positive target quota (misconfigured property): a zero limit would
+    // turn the weight into Infinity/NaN and corrupt quota-based sorting.
     int targetQuotaLimit =
-        targetQuota > 1 ? (int) targetQuota : (int) Math.ceil(targetQuota * getThreadCount());
+        targetQuota > 1
+            ? (int) targetQuota
+            : (int) Math.max(1, Math.ceil(targetQuota * getThreadCount()));
     return (double) getQuotaTime() / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME / targetQuotaLimit;
   }
 
