@@ -53,6 +53,7 @@ import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableRuntimeMapper;
 import org.apache.amoro.server.process.TableProcessMeta;
@@ -171,6 +172,33 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     clear();
     Assertions.assertThrows(
         PluginRetryAuthException.class, () -> optimizingService().pollTask("whatever", THREAD_ID));
+  }
+
+  @Test
+  public void testOrphanedOptimizerRecordMustNotBreakInitialization() {
+    // An optimizer row whose resource group no longer exists (e.g. the group was dropped while
+    // AMS was down) must be cleaned up instead of failing initialization with an NPE.
+    OptimizerRegisterInfo registerInfo = buildRegisterInfo();
+    registerInfo.setGroupName("group-dropped-while-ams-down");
+    OptimizerInstance orphan = new OptimizerInstance(registerInfo, "local");
+    try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession(true)) {
+      session.getMapper(OptimizerMapper.class).insertOptimizer(orphan);
+    }
+
+    List<OptimizerInstance> recovered;
+    try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession(true)) {
+      recovered = session.getMapper(OptimizerMapper.class).selectAll();
+    }
+    // Must not throw even though the orphan's resource group does not exist.
+    optimizingService().registerOptimizers(recovered);
+
+    List<OptimizerInstance> remaining;
+    try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession(true)) {
+      remaining = session.getMapper(OptimizerMapper.class).selectAll();
+    }
+    Assertions.assertFalse(
+        remaining.stream().anyMatch(o -> o.getToken().equals(orphan.getToken())),
+        "orphaned optimizer record should be removed during initialization");
   }
 
   @Test

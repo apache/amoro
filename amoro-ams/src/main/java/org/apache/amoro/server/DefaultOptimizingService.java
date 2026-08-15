@@ -212,7 +212,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
           optimizerGroupKeeper.keepInTouch(groupName, 1);
           optimizerScaleKeeper.watch(group);
         });
-    optimizers.forEach(optimizer -> registerOptimizer(optimizer, false));
+    registerOptimizers(optimizers);
     // Avoid keeping the tables in processing/pending status forever in below cases:
     // 1) Resource group does not exist
     // 2) The AMS restarts after the tables disable self-optimizing but before the optimizing
@@ -248,6 +248,26 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue);
     optimizerKeeper.keepInTouch(optimizer);
     optimizerScaleKeeper.onOptimizerRegistered(optimizer);
+  }
+
+  /**
+   * Registers optimizers recovered from persistence at startup. An optimizer record referencing a
+   * resource group that no longer exists (e.g. the group was dropped while AMS was down) is removed
+   * instead of failing the whole initialization, mirroring the tolerant handling of the
+   * follower-sync path in {@code registerOptimizerWithoutPersist}.
+   */
+  void registerOptimizers(List<OptimizerInstance> optimizers) {
+    for (OptimizerInstance optimizer : optimizers) {
+      if (optimizingQueueByGroup.containsKey(optimizer.getGroupName())) {
+        registerOptimizer(optimizer, false);
+      } else {
+        LOG.warn(
+            "Remove orphan optimizer {}, its resource group {} does not exist",
+            optimizer.getToken(),
+            optimizer.getGroupName());
+        unregisterOptimizer(optimizer.getToken());
+      }
+    }
   }
 
   private void unregisterOptimizer(String token) {
