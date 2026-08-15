@@ -42,7 +42,6 @@ import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.server.dashboard.JavalinJsonMapper;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
-import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.ha.HighAvailabilityContainerFactory;
 import org.apache.amoro.server.manager.EventsManager;
@@ -419,15 +418,7 @@ public class AmoroServiceContainer {
           }
         });
 
-    httpServer.before(
-        ctx -> {
-          String token = ctx.queryParam("token");
-          if (StringUtils.isNotEmpty(token)) {
-            CommonUtil.checkSinglePageToken(ctx);
-          } else {
-            dashboardServer.preHandleRequest(ctx);
-          }
-        });
+    httpServer.before(dashboardServer::preHandleRequest);
     httpServer.exception(
         Exception.class,
         (e, ctx) -> {

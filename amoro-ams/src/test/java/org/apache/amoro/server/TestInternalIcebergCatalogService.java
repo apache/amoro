@@ -36,7 +36,9 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.catalog.Namespace;
@@ -51,6 +53,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +62,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -237,7 +242,9 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
 
     @AfterEach
     public void clean() {
-      nsCatalog.dropTable(identifier);
+      if (nsCatalog.tableExists(identifier)) {
+        nsCatalog.dropTable(identifier);
+      }
       if (serverCatalog.tableExists(database, table)) {
         serverCatalog.dropTable(database, table);
       }
@@ -282,6 +289,82 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
       Table created = nsCatalog.createTable(identifier, schema);
 
       Assertions.assertEquals(namespaceLocation + "/" + table, created.location());
+    }
+
+    @Test
+    public void testStagedCreate(@TempDir Path tempDir) {
+      Path tablePath = tempDir.resolve("staged-table");
+      String tableLocation = tablePath.toUri().toString();
+      Transaction transaction =
+          nsCatalog
+              .buildTable(identifier, schema)
+              .withLocation(tableLocation)
+              .withProperty("owner", "analytics")
+              .createTransaction();
+
+      Assertions.assertFalse(serverCatalog.tableExists(database, table));
+      Assertions.assertFalse(Files.exists(tablePath));
+
+      transaction.commitTransaction();
+
+      Assertions.assertTrue(serverCatalog.tableExists(database, table));
+      Assertions.assertTrue(Files.exists(tablePath.resolve("metadata")));
+      Table loaded = nsCatalog.loadTable(identifier);
+      Assertions.assertEquals(2, formatVersion(loaded));
+      Assertions.assertEquals(tableLocation, loaded.location());
+      Assertions.assertEquals("analytics", loaded.properties().get("owner"));
+    }
+
+    @Test
+    public void testStagedCreateWithFormatVersionOne(@TempDir Path tempDir) {
+      Path tablePath = tempDir.resolve("staged-v1-table");
+      Transaction transaction =
+          nsCatalog
+              .buildTable(identifier, schema)
+              .withLocation(tablePath.toUri().toString())
+              .withProperty(TableProperties.FORMAT_VERSION, "1")
+              .createTransaction();
+
+      Assertions.assertEquals(1, formatVersion(transaction.table()));
+
+      transaction.commitTransaction();
+
+      Assertions.assertEquals(1, formatVersion(nsCatalog.loadTable(identifier)));
+    }
+
+    @Test
+    public void testStagedCreateWithAppendFiles(@TempDir Path tempDir) throws IOException {
+      Path tablePath = tempDir.resolve("staged-ctas-table");
+      Transaction transaction =
+          nsCatalog
+              .buildTable(identifier, schema)
+              .withLocation(tablePath.toUri().toString())
+              .createTransaction();
+
+      Assertions.assertFalse(serverCatalog.tableExists(database, table));
+      Assertions.assertFalse(Files.exists(tablePath));
+
+      DataFile[] files = IcebergDataTestHelpers.insert(transaction.table(), newRecords).dataFiles();
+      AppendFiles appendFiles = transaction.newAppend();
+      Arrays.stream(files).forEach(appendFiles::appendFile);
+      appendFiles.commit();
+
+      Assertions.assertFalse(serverCatalog.tableExists(database, table));
+
+      transaction.commitTransaction();
+
+      Assertions.assertTrue(serverCatalog.tableExists(database, table));
+      Table loaded = nsCatalog.loadTable(identifier);
+      Assertions.assertNotNull(loaded.currentSnapshot());
+      Set<String> expectedPaths =
+          Arrays.stream(files)
+              .map(dataFile -> dataFile.path().toString())
+              .collect(Collectors.toSet());
+      Set<String> actualPaths =
+          Streams.stream(loaded.newScan().planFiles())
+              .map(scanTask -> scanTask.file().path().toString())
+              .collect(Collectors.toSet());
+      Assertions.assertEquals(expectedPaths, actualPaths);
     }
 
     @Test
@@ -352,6 +435,10 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
       List<Record> records =
           MixedDataTestHelpers.readBaseStore(mixedTable, reader, Expressions.alwaysTrue());
       Assertions.assertEquals(newRecords.size(), records.size());
+    }
+
+    private int formatVersion(Table icebergTable) {
+      return ((HasTableOperations) icebergTable).operations().current().formatVersion();
     }
   }
 }

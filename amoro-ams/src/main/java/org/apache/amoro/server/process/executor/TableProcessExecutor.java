@@ -86,13 +86,27 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
       validateIdentifier(externalProcessIdentifier);
 
       status = executeEngine.getStatus(externalProcessIdentifier);
-      store.tryTransitState(
-          status,
-          ProcessEvent.SUBMIT_REQUESTED,
-          externalProcessIdentifier,
-          "Complete Submitted.",
-          tableProcess.getProcessParameters(),
-          tableProcess.getSummary());
+
+      // If the engine returns UNKNOWN, the process was lost (e.g., AMS restart cleared
+      // LocalExecutionEngine's in-memory process map). Treat it as FAILED so the process
+      // is properly terminated and optionally retried, rather than being stuck in UNKNOWN.
+      if (status == ProcessStatus.UNKNOWN) {
+        LOG.warn(
+            "Table process {} got UNKNOWN status from engine (identifier={}), "
+                + "likely due to AMS restart or process loss, marking as FAILED",
+            store.getProcessId(),
+            externalProcessIdentifier);
+        status = ProcessStatus.FAILED;
+        message = "Process lost: engine returned UNKNOWN status";
+      } else {
+        store.tryTransitState(
+            status,
+            ProcessEvent.SUBMIT_REQUESTED,
+            externalProcessIdentifier,
+            "Complete Submitted.",
+            tableProcess.getProcessParameters(),
+            tableProcess.getSummary());
+      }
 
       while (isTableProcessExecuting(status)) {
         if (isTableProcessCanceling(store.getStatus())) {
