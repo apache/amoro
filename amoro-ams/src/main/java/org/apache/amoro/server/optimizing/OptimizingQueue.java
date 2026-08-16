@@ -243,6 +243,9 @@ public class OptimizingQueue extends PersistentBase {
       process.close(false);
       clearProcess(process);
     }
+    // Drop the per-table in-flight counter: the table left this queue, and keeping the entry
+    // leaks one map slot per table that ever had a polled task.
+    optimizingTasksMap.remove(tableRuntime.getTableIdentifier());
     LOG.info(
         "Release queue {} with table {}",
         optimizerGroup.getName(),
@@ -511,6 +514,7 @@ public class OptimizingQueue extends PersistentBase {
 
   public void dispose() {
     this.metrics.unregister();
+    this.optimizingTasksMap.clear();
   }
 
   private TableOptimizingProcess findProcess(OptimizingTaskId taskId) {
@@ -697,13 +701,18 @@ public class OptimizingQueue extends PersistentBase {
     private void acceptResult(TaskRuntime<?> taskRuntime) {
       lock.lock();
       try {
-        optimizingTasksMap.computeIfPresent(
+        optimizingTasksMap.compute(
             tableRuntime.getTableIdentifier(),
             (k, v) -> {
+              if (v == null) {
+                return null;
+              }
               if (v.get() > 0) {
                 v.decrementAndGet();
               }
-              return v;
+              // Remove the entry at zero instead of leaving an empty counter behind:
+              // every table with a polled task would otherwise occupy a slot forever.
+              return v.get() > 0 ? v : null;
             });
         try {
           tableRuntime.addTaskQuota(taskRuntime.getCurrentQuota());
