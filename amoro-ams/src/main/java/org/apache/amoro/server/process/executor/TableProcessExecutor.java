@@ -24,6 +24,7 @@ import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.persistence.PersistentBase;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,9 +37,11 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
   private static final Logger LOG = LoggerFactory.getLogger(TableProcessExecutor.class);
 
   private static final long DEFAULT_POLL_INTERVAL_MS = 5000L;
+  @VisibleForTesting static final int MAX_UNKNOWN_STATUS_POLLS = 3;
   public ExecuteEngine executeEngine;
   protected TableProcess tableProcess;
   private final TableProcessStore store;
+  private final long pollIntervalMs;
   private Runnable finishedCallback;
 
   /**
@@ -49,9 +52,19 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
    */
   public TableProcessExecutor(
       TableProcess tableProcess, TableProcessStore store, ExecuteEngine executeEngine) {
+    this(tableProcess, store, executeEngine, DEFAULT_POLL_INTERVAL_MS);
+  }
+
+  @VisibleForTesting
+  TableProcessExecutor(
+      TableProcess tableProcess,
+      TableProcessStore store,
+      ExecuteEngine executeEngine,
+      long pollIntervalMs) {
     this.tableProcess = tableProcess;
     this.executeEngine = executeEngine;
     this.store = store;
+    this.pollIntervalMs = pollIntervalMs;
   }
 
   /** Submit or recover the process to engine, poll status and update store. */
@@ -86,29 +99,49 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
       validateIdentifier(externalProcessIdentifier);
 
       status = executeEngine.getStatus(externalProcessIdentifier);
+      boolean submittedStatePersisted = false;
+      int consecutiveUnknownPolls = 0;
 
-      // If the engine returns UNKNOWN, the process was lost (e.g., AMS restart cleared
-      // LocalExecutionEngine's in-memory process map). Treat it as FAILED so the process
-      // is properly terminated and optionally retried, rather than being stuck in UNKNOWN.
-      if (status == ProcessStatus.UNKNOWN) {
-        LOG.warn(
-            "Table process {} got UNKNOWN status from engine (identifier={}), "
-                + "likely due to AMS restart or process loss, marking as FAILED",
-            store.getProcessId(),
-            externalProcessIdentifier);
-        status = ProcessStatus.FAILED;
-        message = "Process lost: engine returned UNKNOWN status";
-      } else {
-        store.tryTransitState(
-            status,
-            ProcessEvent.SUBMIT_REQUESTED,
-            externalProcessIdentifier,
-            "Complete Submitted.",
-            tableProcess.getProcessParameters(),
-            tableProcess.getSummary());
-      }
-
-      while (isTableProcessExecuting(status)) {
+      while (status == ProcessStatus.UNKNOWN || isTableProcessExecuting(status)) {
+        if (status == ProcessStatus.UNKNOWN) {
+          if (++consecutiveUnknownPolls > MAX_UNKNOWN_STATUS_POLLS) {
+            LOG.error(
+                "Table process {} (identifier {}) stayed UNKNOWN for {} consecutive polls, "
+                    + "cancelling best-effort",
+                store.getProcessId(),
+                externalProcessIdentifier,
+                consecutiveUnknownPolls);
+            try {
+              executeEngine.tryCancelTableProcess(tableProcess, externalProcessIdentifier);
+            } catch (Throwable cancelFailure) {
+              LOG.warn(
+                  "Failed to cancel persistently UNKNOWN process {}", store.getProcessId(), cancelFailure);
+            }
+            status = ProcessStatus.FAILED;
+            message =
+                String.format(
+                    "Engine reported UNKNOWN for %d consecutive polls", consecutiveUnknownPolls);
+            break;
+          }
+          LOG.warn(
+              "Table process {} (identifier {}) got UNKNOWN status, poll {} of {}, keep polling",
+              store.getProcessId(),
+              externalProcessIdentifier,
+              consecutiveUnknownPolls,
+              MAX_UNKNOWN_STATUS_POLLS);
+        } else {
+          consecutiveUnknownPolls = 0;
+          if (!submittedStatePersisted) {
+            store.tryTransitState(
+                status,
+                ProcessEvent.SUBMIT_REQUESTED,
+                externalProcessIdentifier,
+                "Complete Submitted.",
+                tableProcess.getProcessParameters(),
+                tableProcess.getSummary());
+            submittedStatePersisted = true;
+          }
+        }
         if (isTableProcessCanceling(store.getStatus())) {
           LOG.info(
               "Table process {} with identifier {} may have been in canceling, exit submit process.",
@@ -117,11 +150,21 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
           return;
         }
         try {
-          Thread.sleep(DEFAULT_POLL_INTERVAL_MS);
+          Thread.sleep(pollIntervalMs);
         } catch (InterruptedException e) {
           throw e;
         }
         status = executeEngine.getStatus(externalProcessIdentifier);
+      }
+
+      if (!submittedStatePersisted && status != ProcessStatus.FAILED) {
+        store.tryTransitState(
+            status,
+            ProcessEvent.SUBMIT_REQUESTED,
+            externalProcessIdentifier,
+            "Complete Submitted.",
+            tableProcess.getProcessParameters(),
+            tableProcess.getSummary());
       }
     } catch (Throwable t) {
       if (t instanceof InterruptedException) {
