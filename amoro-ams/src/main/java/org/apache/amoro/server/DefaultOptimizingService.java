@@ -279,7 +279,12 @@ public class DefaultOptimizingService extends StatedPersistentBase
   public void touch(String authToken) {
     OptimizerInstance optimizer = getAuthenticatedOptimizer(authToken).touch();
     LOG.debug("Optimizer {} touch time: {}", optimizer.getToken(), optimizer.getTouchTime());
-    doAs(OptimizerMapper.class, mapper -> mapper.updateTouchTime(optimizer.getToken()));
+    // Persist the JVM clock value: the keeper's expiry math and the follower/leader failover
+    // baseline compare touch_time against System.currentTimeMillis(), so mixing in the DB
+    // clock would skew expiry by the DB-AMS clock offset.
+    doAs(
+        OptimizerMapper.class,
+        mapper -> mapper.updateTouchTime(optimizer.getToken(), optimizer.getTouchTime()));
   }
 
   private OptimizerInstance getAuthenticatedOptimizer(String authToken) {
