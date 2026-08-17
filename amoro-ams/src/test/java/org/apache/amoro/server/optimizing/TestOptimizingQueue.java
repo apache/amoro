@@ -20,8 +20,10 @@ package org.apache.amoro.server.optimizing;
 
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.GROUP_TAG;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_COMMITTING_TABLES;
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_CONFIG_INVALID;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_EXECUTING_TASKS;
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_IDLE_OPTIMIZERS;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_IDLE_TABLES;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_MEMORY_BYTES_ALLOCATED;
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_OPTIMIZER_INSTANCES;
@@ -31,6 +33,7 @@ import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER
 import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
 
 import org.apache.amoro.BasicTableTestHelper;
+import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
@@ -58,6 +61,7 @@ import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
@@ -775,6 +779,63 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(0, optimizerCountGauge.getValue().longValue());
     Assert.assertEquals(0, optimizerMemoryGauge.getValue().longValue());
     Assert.assertEquals(0, optimizerThreadsGauge.getValue().longValue());
+    queue.dispose();
+  }
+
+  /** An optimizer is idle while it has no in-flight (SCHEDULED/ACKED) task. */
+  @Test
+  public void testIdleOptimizersMetric() {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+    MetricRegistry registry = MetricManager.getInstance().getGlobalRegistry();
+    Map<String, String> tagValues = ImmutableMap.of(GROUP_TAG, testResourceGroup().getName());
+    Gauge<Long> idleOptimizersGauge =
+        (Gauge<Long>)
+            registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_IDLE_OPTIMIZERS, tagValues));
+
+    OptimizerRegisterInfo registerInfo =
+        new OptimizerRegisterInfo(
+            2, 2048, System.currentTimeMillis(), testResourceGroup().getName());
+    final OptimizerInstance optimizer = new OptimizerInstance(registerInfo, "test_container");
+    queue.addOptimizer(optimizer);
+    Assert.assertEquals(1, idleOptimizersGauge.getValue().longValue());
+
+    OptimizerThread thread =
+        new OptimizerThread(1, null) {
+          @Override
+          public String getToken() {
+            return optimizer.getToken();
+          }
+        };
+    Assert.assertNotNull(queue.pollTask(thread, MAX_POLLING_TIME));
+    Assert.assertEquals(
+        "an optimizer holding an in-flight task is not idle",
+        0,
+        idleOptimizersGauge.getValue().longValue());
+
+    queue.removeOptimizer(optimizer);
+    queue.dispose();
+  }
+
+  /** The gauge flips when a config update leaves an opted-in group with an invalid DRA config. */
+  @Test
+  public void testConfigInvalidMetric() {
+    OptimizingQueue queue = buildOptimizingGroupService();
+    MetricRegistry registry = MetricManager.getInstance().getGlobalRegistry();
+    Map<String, String> tagValues = ImmutableMap.of(GROUP_TAG, testResourceGroup().getName());
+    Gauge<Integer> configInvalidGauge =
+        (Gauge<Integer>)
+            registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_CONFIG_INVALID, tagValues));
+    Assert.assertEquals(0, configInvalidGauge.getValue().intValue());
+
+    Map<String, String> props = Maps.newHashMap();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED, "true");
+    // Enabled without max-parallelism: invalid, running under the startup fail-safe fallback.
+    queue.updateOptimizerGroup(
+        new ResourceGroup.Builder(testResourceGroup().getName(), "local")
+            .addProperties(props)
+            .build());
+    Assert.assertEquals(1, configInvalidGauge.getValue().intValue());
     queue.dispose();
   }
 

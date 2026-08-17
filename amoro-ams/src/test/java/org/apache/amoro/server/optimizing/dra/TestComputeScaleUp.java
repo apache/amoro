@@ -82,6 +82,31 @@ public class TestComputeScaleUp {
     Assertions.assertEquals(0, state.computeScaleUp(8, 2, 3, 0, config(0, 100, 2), T0));
   }
 
+  // --- backlogDurationMs: read-side accessor for the backlog gauge ---
+
+  @Test
+  void backlogDurationIsZeroWithoutDemand() {
+    DynamicAllocationState state = new DynamicAllocationState();
+    Assertions.assertEquals(0, state.backlogDurationMs(T0));
+  }
+
+  @Test
+  void backlogDurationTracksSinceDemandFirstObserved() {
+    DynamicAllocationState state = new DynamicAllocationState();
+    DynamicAllocationConfig config = config(0, 100, 2);
+    state.computeScaleUp(2, 2, 5, 0, config, T0);
+    Assertions.assertEquals(BACKLOG_MS - 1, state.backlogDurationMs(T0 + BACKLOG_MS - 1));
+  }
+
+  @Test
+  void backlogDurationResetsWhenDemandClears() {
+    DynamicAllocationState state = new DynamicAllocationState();
+    DynamicAllocationConfig config = config(0, 100, 2);
+    state.computeScaleUp(2, 2, 5, 0, config, T0);
+    state.computeScaleUp(8, 2, 0, 0, config, T0 + 10_000);
+    Assertions.assertEquals(0, state.backlogDurationMs(T0 + 10_000));
+  }
+
   // --- immediate demand (Layer 1): backlog timer, ramp, clamp ---
 
   @Test
