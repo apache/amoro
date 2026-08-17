@@ -41,11 +41,13 @@ import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.manager.AbstractOptimizerContainer;
+import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.dra.DynamicAllocationConfig;
+import org.apache.amoro.server.optimizing.dra.DynamicAllocationMetrics;
 import org.apache.amoro.server.optimizing.dra.DynamicAllocationState;
 import org.apache.amoro.server.optimizing.dra.PendingRegistrations;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
@@ -1136,19 +1138,79 @@ public class DefaultOptimizingService extends StatedPersistentBase
         new ConcurrentHashMap<>();
     private final Set<String> watchedGroups = ConcurrentHashMap.newKeySet();
     private final Map<String, Integer> planningBoundStreaks = new ConcurrentHashMap<>();
+    private final Map<String, DynamicAllocationMetrics> metricsByGroup = new ConcurrentHashMap<>();
 
     public OptimizerScaleKeeper(String threadName) {
       super(threadName);
     }
 
-    /** Start watching a group if dynamic allocation is effectively enabled on it. Idempotent. */
-    public void watch(ResourceGroup resourceGroup) {
-      if (!DynamicAllocationConfig.isEffectivelyEnabled(resourceGroup)) {
+    /**
+     * Start watching a group if dynamic allocation is effectively enabled on it. Idempotent.
+     *
+     * <p>Watch and unwatch are serialized: metric registration is not idempotent (re-registering a
+     * live key throws), so an unlocked watch/unwatch interleaving could strand a registration that
+     * the other side never saw — after which every re-watch of the group throws before queueing its
+     * scale task, leaving it watched-but-dead until a restart. These are rare control-plane calls;
+     * the lock costs nothing on the scaling hot path.
+     */
+    public synchronized void watch(ResourceGroup resourceGroup) {
+      if (stopped) {
+        // A watch arriving after dispose — an in-flight config-sync run or the round's re-check
+        // racing a leader hand-off — must not register metrics from a dead service: the keys
+        // would outlive it in the global registry and fail the next leader's watch.
         return;
       }
-      if (watchedGroups.add(resourceGroup.getName())) {
+      if (!DynamicAllocationConfig.isEffectivelyEnabled(resourceGroup)) {
+        // Propagate a disable on the config-entry path itself: the round-driven unwatch runs on
+        // the leader only, so a follower relying on it would keep the group's drain blocks and
+        // exported metrics until failover.
+        unwatch(resourceGroup.getName());
+        return;
+      }
+      if (!watchedGroups.contains(resourceGroup.getName())) {
+        // Register metrics before marking the group watched: a failed registration must leave
+        // the group rewatchable, not watched-but-dead with every retry swallowed by the entry.
+        registerMetrics(resourceGroup.getName());
+        watchedGroups.add(resourceGroup.getName());
         suspendingQueue.add(new DraScaleTask(resourceGroup.getName(), 0));
       }
+    }
+
+    /**
+     * Register the group's DRA gauges and counters, keyed by the keeper's own state: unlike the
+     * queue-scoped {@code OptimizerGroupMetrics} they live with the watch, so a group handed back
+     * to the legacy floor keeper stops exporting scaling metrics it no longer produces.
+     */
+    private void registerMetrics(String groupName) {
+      DynamicAllocationMetrics metrics =
+          new DynamicAllocationMetrics(
+              groupName,
+              MetricManager.getInstance().getGlobalRegistry(),
+              new DynamicAllocationMetrics.Source() {
+                @Override
+                public int pendingRemovalOptimizers() {
+                  return (int)
+                      pendingRemovalTokens.stream()
+                          .map(authOptimizers::get)
+                          .filter(
+                              optimizer ->
+                                  optimizer != null && groupName.equals(optimizer.getGroupName()))
+                          .count();
+                }
+
+                @Override
+                public int effectiveThreads() {
+                  return getTotalQuota(groupName) + pendingThreads(groupName);
+                }
+
+                @Override
+                public long backlogDurationMs() {
+                  DynamicAllocationState state = scaleStates.get(groupName);
+                  return state == null ? 0 : state.backlogDurationMs(System.currentTimeMillis());
+                }
+              });
+      metrics.register();
+      metricsByGroup.put(groupName, metrics);
     }
 
     /** Clear the boot-window accounting of a registered optimizer (AMS-launched ones only). */
@@ -1162,10 +1224,14 @@ public class DefaultOptimizingService extends StatedPersistentBase
       }
     }
 
-    private void unwatch(String groupName) {
+    private synchronized void unwatch(String groupName) {
       watchedGroups.remove(groupName);
       scaleStates.remove(groupName);
       planningBoundStreaks.remove(groupName);
+      DynamicAllocationMetrics metrics = metricsByGroup.remove(groupName);
+      if (metrics != null) {
+        metrics.unregister();
+      }
       // A drain block left behind would starve the group's pods forever once the legacy floor
       // keeper resumes duty for the disabled group: re-admit them to task assignment.
       authOptimizers.values().stream()
@@ -1182,9 +1248,21 @@ public class DefaultOptimizingService extends StatedPersistentBase
      * must go too: leaving it would leak the entry and, if a group with the same name is created
      * before the next evaluation, suppress its scale-up with the old group's phantom capacity.
      */
-    public void onGroupDeleted(String groupName) {
+    public synchronized void onGroupDeleted(String groupName) {
       unwatch(groupName);
       pendingRegistrations.remove(groupName);
+    }
+
+    /**
+     * The global metric registry outlives this service: on a leader hand-off the next leader's
+     * fresh service watches the same groups, and any keys left behind here would make that watch
+     * throw, leaving the group watched-but-dead until a JVM restart.
+     */
+    @Override
+    public synchronized void dispose() {
+      super.dispose();
+      metricsByGroup.values().forEach(DynamicAllocationMetrics::unregister);
+      metricsByGroup.clear();
     }
 
     @Override
@@ -1303,6 +1381,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
       if (victim == null) {
         return;
       }
+      // The drain start is the scale-down action; the eventual removal only completes it.
+      DynamicAllocationMetrics metrics = metricsByGroup.get(groupName);
+      if (metrics != null) {
+        metrics.incScaleDown();
+      }
       beginGracefulDrain(victim, now + config.getDrainTimeout().toMillis());
       // Only a snapshot taken after the token entered the pending-removal set can prove idleness:
       // the pre-insert one may miss a task fetched by a long-poll racing the drain start.
@@ -1399,6 +1482,10 @@ public class DefaultOptimizingService extends StatedPersistentBase
               groupName, queue, state, config, registeredThreads, drainingThreads, now);
         }
         return;
+      }
+      DynamicAllocationMetrics metrics = metricsByGroup.get(groupName);
+      if (metrics != null) {
+        metrics.incScaleUp();
       }
       int threadsPerInstance = config.getExecutorParallelism();
       LOG.info(

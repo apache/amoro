@@ -32,13 +32,17 @@ import org.apache.amoro.metrics.Metric;
 import org.apache.amoro.metrics.MetricDefine;
 import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.metrics.MetricRegistry;
+import org.apache.amoro.server.optimizing.dra.DynamicAllocationConfig;
+import org.apache.amoro.server.optimizing.dra.DynamicAllocationState;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /** Metrics manager for an optimizer group. */
 public class OptimizerGroupMetrics {
@@ -101,6 +105,21 @@ public class OptimizerGroupMetrics {
   public static final MetricDefine OPTIMIZER_GROUP_THREADS =
       defineGauge("optimizer_group_threads")
           .withDescription("Number of total threads in optimizer group")
+          .withTags(GROUP_TAG)
+          .build();
+
+  public static final MetricDefine OPTIMIZER_GROUP_IDLE_OPTIMIZERS =
+      defineGauge("optimizer_group_idle_optimizers")
+          .withDescription(
+              "Number of optimizer instances with no in-flight task in optimizer group")
+          .withTags(GROUP_TAG)
+          .build();
+
+  public static final MetricDefine OPTIMIZER_GROUP_CONFIG_INVALID =
+      defineGauge("optimizer_group_config_invalid")
+          .withDescription(
+              "1 while the group's dynamic allocation configuration is invalid and the "
+                  + "fail-safe fallback is active, else 0")
           .withTags(GROUP_TAG)
           .build();
 
@@ -199,6 +218,29 @@ public class OptimizerGroupMetrics {
                 optimizerInstances.values().stream()
                     .mapToLong(OptimizerInstance::getThreadCount)
                     .sum());
+    registerMetric(
+        registry,
+        OPTIMIZER_GROUP_IDLE_OPTIMIZERS,
+        (Gauge<Long>)
+            () -> {
+              Set<String> busyTokens =
+                  optimizingQueue
+                      .collectTasks(task -> DynamicAllocationState.occupiesThread(task.getStatus()))
+                      .stream()
+                      .map(TaskRuntime::getToken)
+                      .collect(Collectors.toSet());
+              return optimizerInstances.keySet().stream()
+                  .filter(token -> !busyTokens.contains(token))
+                  .count();
+            });
+    registerMetric(
+        registry,
+        OPTIMIZER_GROUP_CONFIG_INVALID,
+        (Gauge<Integer>)
+            () ->
+                DynamicAllocationConfig.isConfigInvalid(optimizingQueue.getOptimizerGroup())
+                    ? 1
+                    : 0);
   }
 
   public void unregister() {
