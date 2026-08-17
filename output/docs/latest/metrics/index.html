@@ -908,6 +908,66 @@
 					<td>group</td>
 					<td>Number of total threads in optimizer group</td>
 			</tr>
+			<tr>
+					<td>optimizer_group_idle_optimizers</td>
+					<td>Gauge</td>
+					<td>group</td>
+					<td>Number of optimizer instances with no in-flight task in optimizer group</td>
+			</tr>
+			<tr>
+					<td>optimizer_group_config_invalid</td>
+					<td>Gauge</td>
+					<td>group</td>
+					<td>1 while the group&rsquo;s dynamic allocation configuration is invalid and the fail-safe fallback is active, else 0</td>
+			</tr>
+	</tbody>
+</table>
+<p>The following metrics are exported only while dynamic allocation is effectively enabled on the group
+(see <a href="../managing-optimizers/">Managing optimizers</a>); the counters count attempted scaling actions, so
+one scale-out round — whatever its instance count and whether its resource requests succeed — and one
+drain start each count 1. A rising <code>scale_up_total</code> without a matching rise of
+<code>optimizer_group_optimizer_instances</code>, sustained beyond the pod boot window, signals failing
+resource requests; short gaps are normal while requested pods are still booting.</p>
+<table>
+	<thead>
+			<tr>
+					<th>Metric Name</th>
+					<th>Type</th>
+					<th>Tags</th>
+					<th>Description</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>optimizer_group_pending_removal_optimizers</td>
+					<td>Gauge</td>
+					<td>group</td>
+					<td>Number of optimizer instances in graceful drain in optimizer group</td>
+			</tr>
+			<tr>
+					<td>optimizer_group_effective_threads</td>
+					<td>Gauge</td>
+					<td>group</td>
+					<td>Number of registered threads plus threads of optimizers pending registration in optimizer group</td>
+			</tr>
+			<tr>
+					<td>optimizer_group_backlog_duration_ms</td>
+					<td>Gauge</td>
+					<td>group</td>
+					<td>Duration in milliseconds since demand first exceeded capacity in optimizer group, 0 while there is no backlog</td>
+			</tr>
+			<tr>
+					<td>optimizer_group_scale_up_total</td>
+					<td>Counter</td>
+					<td>group</td>
+					<td>Cumulative count of attempted scale-up actions in optimizer group</td>
+			</tr>
+			<tr>
+					<td>optimizer_group_scale_down_total</td>
+					<td>Counter</td>
+					<td>group</td>
+					<td>Cumulative count of scale-down actions in optimizer group</td>
+			</tr>
 	</tbody>
 </table>
 <h2 id="orphan-files-cleaning-metrics">Orphan Files Cleaning metrics</h2>
