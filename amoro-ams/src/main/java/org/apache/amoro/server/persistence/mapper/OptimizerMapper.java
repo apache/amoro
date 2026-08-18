@@ -52,6 +52,13 @@ public interface OptimizerMapper {
   @Delete("DELETE FROM optimizer WHERE token = #{token}")
   void deleteOptimizer(@Param("token") String token);
 
+  @Delete(
+      "DELETE FROM optimizer WHERE token = #{token}"
+          + " AND (optimizer.group_name IS NULL OR optimizer.group_name = ''"
+          + " OR NOT EXISTS (SELECT 1 FROM resource_group"
+          + " WHERE resource_group.group_name = optimizer.group_name))")
+  int deleteOptimizerIfResourceGroupAbsent(@Param("token") String token);
+
   @Select(
       "SELECT token, resource_id, group_name, container_name, start_time, touch_time,"
           + "thread_count, total_memory, properties FROM optimizer")
