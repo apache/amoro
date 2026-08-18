@@ -193,10 +193,13 @@ public class InternalCatalogImpl extends InternalCatalog {
       throw new AlreadyExistsException(
           "Table " + name() + "." + database + "." + tableName + " already exists.");
     }
+    String namespaceLocation = getDatabaseProperties(database).get("location");
     if (TableFormat.ICEBERG.equals(format)) {
-      return new InternalIcebergCreator(getMetadata(), database, tableName, creatorArguments);
+      return new InternalIcebergCreator(
+          getMetadata(), database, tableName, creatorArguments, namespaceLocation);
     } else if (TableFormat.MIXED_ICEBERG.equals(format)) {
-      return new InternalMixedIcebergCreator(getMetadata(), database, tableName, creatorArguments);
+      return new InternalMixedIcebergCreator(
+          getMetadata(), database, tableName, creatorArguments, namespaceLocation);
     } else {
       throw new IllegalArgumentException("Unsupported table format:" + format);
     }

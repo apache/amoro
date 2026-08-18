@@ -42,6 +42,7 @@ public class InternalIcebergCreator implements InternalTableCreator {
   protected final AuthenticatedFileIO io;
   protected final CreateTableRequest request;
   private final CatalogMeta catalogMeta;
+  private final String namespaceLocation;
   protected final String database;
   protected final String tableName;
   private boolean closed = false;
@@ -51,8 +52,18 @@ public class InternalIcebergCreator implements InternalTableCreator {
 
   public InternalIcebergCreator(
       CatalogMeta catalog, String database, String tableName, CreateTableRequest request) {
+    this(catalog, database, tableName, request, null);
+  }
+
+  public InternalIcebergCreator(
+      CatalogMeta catalog,
+      String database,
+      String tableName,
+      CreateTableRequest request,
+      String namespaceLocation) {
     this.io = InternalTableUtil.newIcebergFileIo(catalog);
     this.catalogMeta = catalog;
+    this.namespaceLocation = namespaceLocation;
     this.database = database;
     this.tableName = tableName;
     this.request = request;
@@ -70,14 +81,25 @@ public class InternalIcebergCreator implements InternalTableCreator {
   }
 
   @Override
+  public org.apache.iceberg.TableMetadata stage() {
+    checkClosed();
+    return icebergMetadata;
+  }
+
+  @Override
   public TableMetadata create() {
+    return create(icebergMetadata);
+  }
+
+  @Override
+  public TableMetadata create(org.apache.iceberg.TableMetadata metadata) {
     checkClosed();
 
     String icebergMetadataFileLocation =
-        InternalTableUtil.genNewMetadataFileLocation(null, icebergMetadata);
+        InternalTableUtil.genNewMetadataFileLocation(null, metadata);
     TableMeta meta = new TableMeta();
-    meta.putToLocations(MetaTableProperties.LOCATION_KEY_TABLE, icebergMetadata.location());
-    meta.putToLocations(MetaTableProperties.LOCATION_KEY_BASE, icebergMetadata.location());
+    meta.putToLocations(MetaTableProperties.LOCATION_KEY_TABLE, metadata.location());
+    meta.putToLocations(MetaTableProperties.LOCATION_KEY_BASE, metadata.location());
     meta.setFormat(format().name());
     meta.putToProperties(
         InternalTableConstants.PROPERTIES_METADATA_LOCATION, icebergMetadataFileLocation);
@@ -85,10 +107,9 @@ public class InternalIcebergCreator implements InternalTableCreator {
     ServerTableIdentifier serverTableIdentifier =
         ServerTableIdentifier.of(catalogMeta.getCatalogName(), database, tableName, format());
     meta.setTableIdentifier(serverTableIdentifier.getIdentifier().buildTableIdentifier());
-    // write metadata file.
     OutputFile outputFile = io.newOutputFile(icebergMetadataFileLocation);
     this.metadataFileLocation = icebergMetadataFileLocation;
-    TableMetadataParser.overwrite(icebergMetadata, outputFile);
+    TableMetadataParser.overwrite(metadata, outputFile);
     return new TableMetadata(serverTableIdentifier, meta, catalogMeta);
   }
 
@@ -127,12 +148,16 @@ public class InternalIcebergCreator implements InternalTableCreator {
   private String tableLocation() {
     String location = this.request.location();
     if (StringUtils.isBlank(location)) {
-      String warehouse =
-          catalogMeta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
-      Preconditions.checkState(
-          StringUtils.isNotBlank(warehouse), "catalog warehouse is not configured");
-      warehouse = LocationUtil.stripTrailingSlash(warehouse);
-      location = warehouse + "/" + database + "/" + tableName;
+      if (StringUtils.isNotBlank(namespaceLocation)) {
+        location = LocationUtil.stripTrailingSlash(namespaceLocation) + "/" + tableName;
+      } else {
+        String warehouse =
+            catalogMeta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
+        Preconditions.checkState(
+            StringUtils.isNotBlank(warehouse), "catalog warehouse is not configured");
+        warehouse = LocationUtil.stripTrailingSlash(warehouse);
+        location = warehouse + "/" + database + "/" + tableName;
+      }
     } else {
       location = LocationUtil.stripTrailingSlash(location);
     }

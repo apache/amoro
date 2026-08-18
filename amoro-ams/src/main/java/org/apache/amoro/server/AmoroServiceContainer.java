@@ -42,7 +42,6 @@ import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.server.dashboard.JavalinJsonMapper;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
-import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.ha.HighAvailabilityContainerFactory;
 import org.apache.amoro.server.manager.EventsManager;
@@ -84,7 +83,7 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.transport.layered.TFramed
 import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.JacksonUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.SystemProperties;
+import org.apache.iceberg.SystemConfigs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -419,15 +418,7 @@ public class AmoroServiceContainer {
           }
         });
 
-    httpServer.before(
-        ctx -> {
-          String token = ctx.queryParam("token");
-          if (StringUtils.isNotEmpty(token)) {
-            CommonUtil.checkSinglePageToken(ctx);
-          } else {
-            dashboardServer.preHandleRequest(ctx);
-          }
-        });
+    httpServer.before(dashboardServer::preHandleRequest);
     httpServer.exception(
         Exception.class,
         (e, ctx) -> {
@@ -582,7 +573,7 @@ public class AmoroServiceContainer {
     public void init() throws Exception {
       Map<String, Object> envConfig = initEnvConfig();
       initServiceConfig(envConfig);
-      setIcebergSystemProperties();
+      initIcebergThreadPools();
       initContainerConfig();
     }
 
@@ -619,14 +610,15 @@ public class AmoroServiceContainer {
       return ConfigHelpers.convertConfigurationKeys(prefix, System.getenv());
     }
 
-    /** Override the value of {@link SystemProperties}. */
-    private void setIcebergSystemProperties() {
+    /** Configures Iceberg's global worker pool and initializes Amoro Iceberg I/O pools. */
+    private void initIcebergThreadPools() {
       int workerThreadPoolSize =
           Math.max(
               Runtime.getRuntime().availableProcessors() / 2,
               serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_THREAD_COUNT));
       System.setProperty(
-          SystemProperties.WORKER_THREAD_POOL_SIZE_PROP, String.valueOf(workerThreadPoolSize));
+          SystemConfigs.WORKER_THREAD_POOL_SIZE.propertyKey(),
+          String.valueOf(workerThreadPoolSize));
       int planningThreadPoolSize =
           Math.max(
               Runtime.getRuntime().availableProcessors() / 2,
@@ -636,7 +628,10 @@ public class AmoroServiceContainer {
           Math.max(
               Runtime.getRuntime().availableProcessors() / 2,
               serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_COMMIT_THREAD_COUNT));
+      int maintenanceThreadPoolSize =
+          serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_MAINTENANCE_THREAD_COUNT);
       IcebergThreadPools.init(planningThreadPoolSize, commitThreadPoolSize);
+      IcebergThreadPools.initMaintenanceThreadPool(maintenanceThreadPoolSize);
     }
 
     private void initContainerConfig() {

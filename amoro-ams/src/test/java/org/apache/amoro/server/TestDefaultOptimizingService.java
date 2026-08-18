@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server;
 
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_OPTIMIZER_INSTANCES;
+import static org.apache.amoro.server.optimizing.OptimizerGroupMetrics.OPTIMIZER_GROUP_THREADS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -35,13 +37,18 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
-import org.apache.amoro.exception.IllegalTaskStateException;
 import org.apache.amoro.exception.PluginRetryAuthException;
+import org.apache.amoro.exception.TaskRuntimeException;
 import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.metrics.Gauge;
+import org.apache.amoro.metrics.MetricKey;
+import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.optimizing.RewriteFilesOutput;
 import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
+import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
@@ -70,6 +77,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -77,9 +86,14 @@ import java.util.Map;
 @RunWith(Parameterized.class)
 public class TestDefaultOptimizingService extends AMSTableTestBase {
 
+  private static final Duration EXPIRATION_TEST_HEARTBEAT_TIMEOUT = Duration.ofMillis(800);
+  private static final long OPTIMIZER_HEARTBEAT_INTERVAL_MS = 100;
+  private static final long ASYNC_WAIT_TIMEOUT_MS = 10000;
+
   private final int THREAD_ID = 0;
   private String token;
   private Toucher toucher;
+  private boolean customHeartbeatTimeout;
 
   @Parameterized.Parameters(name = "{0}, {1}")
   public static Object[] parameters() {
@@ -121,6 +135,12 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
       dropDatabase();
     } catch (Exception e) {
       // ignore
+    } finally {
+      if (customHeartbeatTimeout) {
+        disposeTableService();
+        initTableService();
+        customHeartbeatTimeout = false;
+      }
     }
   }
 
@@ -166,6 +186,35 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         optimizingService().listTasks(defaultResourceGroup().getName()).get(0);
     optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
     assertTaskCompleted(taskRuntime);
+  }
+
+  @Test
+  public void testPollTaskBlockedWhileDraining() {
+    // A draining optimizer receives no new assignments even though a task is available; in-flight
+    // completion paths (touch/ack/complete) are deliberately not blocked.
+    optimizingService().beginGracefulDrain(token, Long.MAX_VALUE);
+    Assertions.assertNull(optimizingService().pollTask(token, THREAD_ID));
+
+    optimizingService().cancelDrain(token);
+    Assertions.assertNotNull(optimizingService().pollTask(token, THREAD_ID));
+  }
+
+  @Test
+  public void testDrainStartedDuringPollHandsTaskBack() {
+    OptimizingTask polled = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(polled);
+    TaskRuntime<?> taskRuntime =
+        optimizingService().listTasks(defaultResourceGroup().getName()).stream()
+            .filter(t -> t.getStatus() == TaskRuntime.Status.SCHEDULED)
+            .findFirst()
+            .orElse(null);
+    Assertions.assertNotNull(taskRuntime);
+
+    // The drain begins while a long-poll is parked inside the queue: the entry check has already
+    // passed, so the post-poll guard must hand the fetched task back instead of assigning it.
+    optimizingService().beginGracefulDrain(token, Long.MAX_VALUE);
+    Assertions.assertNull(optimizingService().guardDrainedPoll(token, taskRuntime));
+    Assertions.assertEquals(TaskRuntime.Status.PLANNED, taskRuntime.getStatus());
   }
 
   @Test
@@ -254,21 +303,90 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   @Test
-  public void testTouchTimeout() throws InterruptedException {
-    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
-    Assertions.assertNotNull(task);
+  public void testHeartbeatExpiryClearsDrainState() throws InterruptedException {
+    // An optimizer that dies mid-drain is unregistered by heartbeat expiry, a path that must
+    // clear the drain state too: the token can never be matched again, so a leftover entry would
+    // sit in the pending-removal set forever.
+    rebootWithHeartbeatTimeout(EXPIRATION_TEST_HEARTBEAT_TIMEOUT);
+    String drainingToken = token;
+    optimizingService().beginGracefulDrain(drainingToken, Long.MAX_VALUE);
     toucher.stop();
     toucher = null;
-    Thread.sleep(1000);
-    Assertions.assertThrows(PluginRetryAuthException.class, () -> optimizingService().touch(token));
+    waitForOptimizerExpiration(drainingToken, ASYNC_WAIT_TIMEOUT_MS);
     Assertions.assertThrows(
-        PluginRetryAuthException.class, () -> optimizingService().pollTask(token, THREAD_ID));
+        PluginRetryAuthException.class, () -> optimizingService().touch(drainingToken));
+    Assertions.assertFalse(
+        optimizingService().isDraining(drainingToken),
+        "unregistration must clear the drain state of a dead optimizer");
+  }
+
+  @Test
+  public void testUnregisterDoesNotFailWhenAuthenticationAlreadyRemoved() throws Exception {
+    toucher.stop();
+    toucher = null;
+    OptimizerInstance optimizer = optimizerManager().listOptimizers().get(0);
+    OptimizingQueue queue = (OptimizingQueue) optimizerState("optimizingQueueByToken").get(token);
+    // Simulate another unregister call having already claimed the authentication entry.
+    optimizerState("authOptimizers").remove(token);
+
+    try {
+      Assertions.assertDoesNotThrow(
+          () ->
+              optimizingService()
+                  .deleteOptimizer(optimizer.getGroupName(), optimizer.getResourceId()));
+    } finally {
+      queue.removeOptimizer(optimizer);
+    }
+  }
+
+  @Test
+  public void testUnregisterCleansMetricsWhenTokenQueueAlreadyRemoved() throws Exception {
+    toucher.stop();
+    toucher = null;
+    OptimizerInstance optimizer = optimizerManager().listOptimizers().get(0);
+    // Simulate another unregister call having already claimed the token-to-queue entry.
+    OptimizingQueue queue =
+        (OptimizingQueue) optimizerState("optimizingQueueByToken").remove(token);
+    Map<String, String> tagValues = Maps.newHashMap();
+    tagValues.put("group", optimizer.getGroupName());
+    MetricRegistry registry = MetricManager.getInstance().getGlobalRegistry();
+    Gauge<Integer> optimizerCountGauge =
+        (Gauge<Integer>)
+            registry
+                .getMetrics()
+                .get(new MetricKey(OPTIMIZER_GROUP_OPTIMIZER_INSTANCES, tagValues));
+    Gauge<Long> optimizerThreadsGauge =
+        (Gauge<Long>) registry.getMetrics().get(new MetricKey(OPTIMIZER_GROUP_THREADS, tagValues));
+
+    Assertions.assertEquals(1, optimizerCountGauge.getValue());
+    Assertions.assertEquals(1L, optimizerThreadsGauge.getValue());
+    try {
+      optimizingService().deleteOptimizer(optimizer.getGroupName(), optimizer.getResourceId());
+      Assertions.assertEquals(0, optimizerCountGauge.getValue());
+      Assertions.assertEquals(0L, optimizerThreadsGauge.getValue());
+    } finally {
+      queue.removeOptimizer(optimizer);
+    }
+  }
+
+  @Test
+  public void testTouchTimeout() throws InterruptedException {
+    rebootWithHeartbeatTimeout(EXPIRATION_TEST_HEARTBEAT_TIMEOUT);
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+    String expiredToken = token;
+    toucher.stop();
+    toucher = null;
+    waitForOptimizerExpiration(expiredToken, ASYNC_WAIT_TIMEOUT_MS);
+    Assertions.assertThrows(
+        PluginRetryAuthException.class, () -> optimizingService().touch(expiredToken));
+    Assertions.assertThrows(
+        PluginRetryAuthException.class,
+        () -> optimizingService().pollTask(expiredToken, THREAD_ID));
     // After optimizer expires, its tasks are immediately reset to PLANNED
     // because unregister happens before task scan in OptimizerKeeper
-    assertTaskStatus(TaskRuntime.Status.PLANNED);
-    token = optimizingService().authenticate(buildRegisterInfo());
+    waitForTaskStatus(TaskRuntime.Status.PLANNED, ASYNC_WAIT_TIMEOUT_MS);
     toucher = new Toucher();
-    Thread.sleep(1000);
     assertTaskStatus(TaskRuntime.Status.PLANNED);
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
@@ -283,11 +401,10 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   public void testRebootAndPoll() throws InterruptedException {
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
-    reboot();
+    rebootWithHeartbeatTimeout(EXPIRATION_TEST_HEARTBEAT_TIMEOUT);
 
     // wait for last optimizer expiring
-    Thread.sleep(1000);
-    assertTaskStatus(TaskRuntime.Status.PLANNED);
+    waitForTaskStatus(TaskRuntime.Status.PLANNED, ASYNC_WAIT_TIMEOUT_MS);
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task2);
     Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
@@ -302,9 +419,12 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   public void testAckAndCompleteTask() {
     OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task);
-    Assertions.assertThrows(
-        IllegalTaskStateException.class,
-        () -> optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId())));
+    // Completing before ack is now treated as a stale response and absorbed silently (see
+    // TaskRuntime#complete): the result cannot be told apart from a stale completion for a task
+    // that
+    // was reset and re-scheduled to the same thread, so the task simply stays SCHEDULED.
+    optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
+    assertTaskStatus(TaskRuntime.Status.SCHEDULED);
 
     optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
 
@@ -312,6 +432,29 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         optimizingService().listTasks(defaultResourceGroup().getName()).get(0);
     optimizingService().completeTask(token, buildOptimizingTaskResult(task.getTaskId()));
     assertTaskCompleted(taskRuntime);
+  }
+
+  // Reproduces the EXACT path of issue #4235 end-to-end with the real OptimizerKeeper: a live
+  // optimizer (the Toucher keeps heartbeating) polls a task but its ack is delayed past
+  // OPTIMIZER_TASK_ACK_TIMEOUT (5s in tests). The keeper, via the SCHEDULED + ackTimeout branch of
+  // buildSuspendingPredication, resets the still-owned task to PLANNED. The late ack then arrives
+  // and is rejected -- this is the "Task has been reset or not yet scheduled" from the issue log,
+  // produced without any artificial retryTask() call.
+  @Test
+  public void testAckTimeoutResetThenLateAckRejected() throws InterruptedException {
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+    assertTaskStatus(TaskRuntime.Status.SCHEDULED); // polled but NOT acked
+
+    // the optimizer stays alive, so waiting past the ack timeout hits
+    // the SCHEDULED + ackTimeout branch rather than the optimizer-expired branch: the keeper resets
+    // the task out from under the live optimizer
+    waitForTaskStatus(TaskRuntime.Status.PLANNED, 20000);
+
+    // the delayed ack arrives for the now-reset task -> rejected, exactly like the issue
+    Assertions.assertThrows(
+        TaskRuntimeException.class,
+        () -> optimizingService().ackTask(token, THREAD_ID, task.getTaskId()));
   }
 
   @Test
@@ -325,11 +468,8 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         optimizingService().listTasks(defaultResourceGroup().getName()).get(0);
     assertTaskStatus(TaskRuntime.Status.ACKED);
 
-    // In this test, OPTIMIZER_TASK_EXECUTE_TIMEOUT is set to 30 seconds, so after waiting 45
-    // seconds the task will be considered suspended and retried
-    Thread.sleep(45000);
-
-    assertTaskStatus(TaskRuntime.Status.PLANNED);
+    // In this test, OPTIMIZER_TASK_EXECUTE_TIMEOUT is set to 30 seconds.
+    waitForTaskStatus(TaskRuntime.Status.PLANNED, 60000);
     OptimizingTask task2 = optimizingService().pollTask(token, THREAD_ID);
     Assertions.assertNotNull(task2);
     Assertions.assertEquals(task2.getTaskId(), task.getTaskId());
@@ -680,7 +820,9 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   private OptimizerRegisterInfo buildRegisterInfo() {
     OptimizerRegisterInfo registerInfo = new OptimizerRegisterInfo();
     Map<String, String> registerProperties = Maps.newHashMap();
-    registerProperties.put(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL, "100");
+    registerProperties.put(
+        OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL,
+        String.valueOf(OPTIMIZER_HEARTBEAT_INTERVAL_MS));
     registerInfo.setProperties(registerProperties);
     registerInfo.setThreadCount(1);
     registerInfo.setMemoryMb(1024);
@@ -688,6 +830,13 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     registerInfo.setResourceId("1");
     registerInfo.setStartTime(System.currentTimeMillis());
     return registerInfo;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, ?> optimizerState(String fieldName) throws Exception {
+    Field field = DefaultOptimizingService.class.getDeclaredField(fieldName);
+    field.setAccessible(true);
+    return (Map<String, ?>) field.get(optimizingService());
   }
 
   private OptimizingTaskResult buildOptimizingTaskResult(OptimizingTaskId taskId) {
@@ -746,6 +895,36 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
         optimizingService().listTasks(defaultResourceGroup().getName()).get(0).getStatus());
   }
 
+  private void waitForTaskStatus(TaskRuntime.Status expectedStatus, long timeoutMs)
+      throws InterruptedException {
+    long deadline = System.currentTimeMillis() + timeoutMs;
+    while (System.currentTimeMillis() < deadline) {
+      if (expectedStatus
+          == optimizingService().listTasks(defaultResourceGroup().getName()).get(0).getStatus()) {
+        return;
+      }
+      Thread.sleep(100);
+    }
+    assertTaskStatus(expectedStatus);
+  }
+
+  private void waitForOptimizerExpiration(String optimizerToken, long timeoutMs)
+      throws InterruptedException {
+    long deadline = System.currentTimeMillis() + timeoutMs;
+    while (System.currentTimeMillis() < deadline) {
+      boolean optimizerExists =
+          optimizerManager().listOptimizers().stream()
+              .anyMatch(optimizer -> optimizerToken.equals(optimizer.getToken()));
+      boolean optimizerAuthenticated =
+          optimizingService().getTotalQuota(defaultResourceGroup().getName()) > 0;
+      if (!optimizerExists && !optimizerAuthenticated) {
+        return;
+      }
+      Thread.sleep(100);
+    }
+    Assertions.fail("Optimizer did not expire within " + timeoutMs + " ms");
+  }
+
   private void assertTaskCompleted(TaskRuntime<?> taskRuntime) {
     if (taskRuntime != null) {
       Assertions.assertEquals(TaskRuntime.Status.SUCCESS, taskRuntime.getStatus());
@@ -759,17 +938,18 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
   }
 
   protected void reload() {
-    disposeTableService();
     toucher.suspend();
+    disposeTableService();
     initTableService();
     toucher.goOn();
   }
 
-  protected void reboot() throws InterruptedException {
-    disposeTableService();
+  protected void rebootWithHeartbeatTimeout(Duration heartbeatTimeout) throws InterruptedException {
     toucher.stop();
     toucher = null;
-    initTableService();
+    disposeTableService();
+    customHeartbeatTimeout = true;
+    initTableService(heartbeatTimeout);
     toucher = new Toucher();
   }
 
@@ -816,7 +996,7 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     public void run() {
       while (!stop) {
         try {
-          Thread.sleep(300);
+          Thread.sleep(OPTIMIZER_HEARTBEAT_INTERVAL_MS);
           synchronized (this) {
             if (!suspend) {
               optimizingService().touch(token);

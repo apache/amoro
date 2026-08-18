@@ -41,6 +41,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.ContentScanTask;
@@ -223,6 +224,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
             .retainLast(Math.max(minCount, 1))
             .expireOlderThan(olderThan)
             .deleteWith(expiredFileCleaner::addFile)
+            .planWith(IcebergThreadPools.getMaintenanceExecutor())
             .cleanExpiredFiles(
                 true) /* enable clean only for collecting the expired files, will delete them later */;
     // iceberg auto-selects IncrementalFileCleanup for single-ref tables. That strategy walks the

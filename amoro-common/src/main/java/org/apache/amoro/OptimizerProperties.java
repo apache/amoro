@@ -79,6 +79,12 @@ public class OptimizerProperties {
   public static final int DYNAMIC_ALLOCATION_MAX_PARALLELISM_LIMIT = 1024;
 
   /** @since 0.9.0 */
+  public static final String DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM =
+      "dynamic-allocation.executor-parallelism";
+
+  public static final int DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM_DEFAULT = 1;
+
+  /** @since 0.9.0 */
   public static final String DYNAMIC_ALLOCATION_SCHEDULER_BACKLOG_TIMEOUT =
       "dynamic-allocation.scheduler-backlog-timeout";
 

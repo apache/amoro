@@ -55,20 +55,25 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.TablePropertyUtil;
+import org.apache.iceberg.MetadataUpdate;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableOperations;
+import org.apache.iceberg.UpdateRequirement;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.exceptions.BadRequestException;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.exceptions.UnprocessableEntityException;
 import org.apache.iceberg.rest.RESTResponse;
 import org.apache.iceberg.rest.RESTSerializers;
 import org.apache.iceberg.rest.requests.CreateNamespaceRequest;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 import org.apache.iceberg.rest.requests.ReportMetricsRequest;
 import org.apache.iceberg.rest.requests.ReportMetricsRequestParser;
+import org.apache.iceberg.rest.requests.UpdateNamespacePropertiesRequest;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
 import org.apache.iceberg.rest.responses.ConfigResponse;
 import org.apache.iceberg.rest.responses.CreateNamespaceResponse;
@@ -77,6 +82,7 @@ import org.apache.iceberg.rest.responses.GetNamespaceResponse;
 import org.apache.iceberg.rest.responses.ListNamespacesResponse;
 import org.apache.iceberg.rest.responses.ListTablesResponse;
 import org.apache.iceberg.rest.responses.LoadTableResponse;
+import org.apache.iceberg.rest.responses.UpdateNamespacePropertiesResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,7 +137,9 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
             post("/v1/catalogs/{catalog}/namespaces", this::createNamespace);
             get("/v1/catalogs/{catalog}/namespaces/{namespace}", this::getNamespace);
             delete("/v1/catalogs/{catalog}/namespaces/{namespace}", this::dropNamespace);
-            post("/v1/catalogs/{catalog}/namespaces/{namespace}", this::setNamespaceProperties);
+            post(
+                "/v1/catalogs/{catalog}/namespaces/{namespace}/properties",
+                this::setNamespaceProperties);
             get(
                 "/v1/catalogs/{catalog}/namespaces/{namespace}/tables",
                 this::listTablesInNamespace);
@@ -229,12 +237,16 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
         ctx,
         catalog -> {
           CreateNamespaceRequest request = bodyAsClass(ctx, CreateNamespaceRequest.class);
+          request.validate();
           Namespace ns = request.namespace();
           checkUnsupported(ns.length() == 1, "multi-level namespace is not supported now");
           String database = ns.level(0);
           checkAlreadyExists(!catalog.databaseExists(database), "Database", database);
-          catalog.createDatabase(database);
-          return CreateNamespaceResponse.builder().withNamespace(Namespace.of(database)).build();
+          catalog.createDatabase(database, request.properties());
+          return CreateNamespaceResponse.builder()
+              .withNamespace(Namespace.of(database))
+              .setProperties(catalog.getDatabaseProperties(database))
+              .build();
         });
   }
 
@@ -243,7 +255,10 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
     handleNamespace(
         ctx,
         (catalog, database) ->
-            GetNamespaceResponse.builder().withNamespace(Namespace.of(database)).build());
+            GetNamespaceResponse.builder()
+                .withNamespace(Namespace.of(database))
+                .setProperties(catalog.getDatabaseProperties(database))
+                .build());
   }
 
   /** DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace} */
@@ -258,7 +273,30 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   /** POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/properties */
   public void setNamespaceProperties(Context ctx) {
-    throw new UnsupportedOperationException("namespace properties is not supported");
+    handleNamespace(
+        ctx,
+        (catalog, database) -> {
+          UpdateNamespacePropertiesRequest request =
+              bodyAsClass(ctx, UpdateNamespacePropertiesRequest.class);
+          request.validate();
+
+          Map<String, String> properties =
+              catalog.applyDatabasePropertiesUpdate(
+                  database, request.updates(), request.removals());
+          List<String> removed =
+              request.removals().stream()
+                  .filter(properties::containsKey)
+                  .collect(Collectors.toList());
+          List<String> missing =
+              request.removals().stream()
+                  .filter(key -> !properties.containsKey(key))
+                  .collect(Collectors.toList());
+          return UpdateNamespacePropertiesResponse.builder()
+              .addUpdated(request.updates().keySet())
+              .addRemoved(removed)
+              .addMissing(missing)
+              .build();
+        });
   }
 
   /** GET PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables */
@@ -281,6 +319,7 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
         ctx,
         (catalog, database) -> {
           CreateTableRequest request = bodyAsClass(ctx, CreateTableRequest.class);
+          request.validate();
           String tableName = request.name();
           TableFormat format =
               TablePropertyUtil.isBaseStore(request.properties(), TableFormat.MIXED_ICEBERG)
@@ -289,6 +328,11 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
           try (InternalTableCreator creator =
               catalog.newTableCreator(database, tableName, format, request)) {
+            if (request.stageCreate()) {
+              checkAlreadyExists(!catalog.tableExists(database, tableName), "Table", tableName);
+              return LoadTableResponse.builder().withTableMetadata(creator.stage()).build();
+            }
+
             try {
               org.apache.amoro.server.table.TableMetadata metadata = creator.create();
               tableManager.createTable(catalog.name(), metadata);
@@ -322,25 +366,105 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   /** POST PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table} */
   public void commitTable(Context ctx) {
-    handleTable(
-        ctx,
-        handler -> {
-          UpdateTableRequest request = bodyAsClass(ctx, UpdateTableRequest.class);
-          TableOperations ops = handler.newTableOperator();
-          TableMetadata base = ops.current();
-          if (base == null) {
-            throw new CommitFailedException("table metadata lost.");
-          }
+    UpdateTableRequest request = bodyAsClass(ctx, UpdateTableRequest.class);
+    request.validate();
+    if (isCreate(request)) {
+      handleNamespace(
+          ctx,
+          (catalog, database) -> {
+            String tableName = ctx.pathParam("table");
+            Preconditions.checkNotNull(tableName, "table name is null");
+            return commitCreateTable(catalog, database, tableName, request);
+          });
+    } else {
+      handleTable(
+          ctx,
+          handler -> {
+            TableOperations ops = handler.newTableOperator();
+            TableMetadata base = ops.current();
+            if (base == null) {
+              throw new CommitFailedException("table metadata lost.");
+            }
 
-          TableMetadata.Builder builder = TableMetadata.buildFrom(base);
-          request.requirements().forEach(r -> r.validate(base));
-          request.updates().forEach(u -> u.applyTo(builder));
-          TableMetadata newMetadata = builder.build();
+            TableMetadata.Builder builder = TableMetadata.buildFrom(base);
+            request.requirements().forEach(r -> r.validate(base));
+            request.updates().forEach(u -> u.applyTo(builder));
+            TableMetadata newMetadata = builder.build();
 
-          ops.commit(base, newMetadata);
-          TableMetadata current = ops.current();
-          return LoadTableResponse.builder().withTableMetadata(current).build();
-        });
+            ops.commit(base, newMetadata);
+            TableMetadata current = ops.current();
+            return LoadTableResponse.builder().withTableMetadata(current).build();
+          });
+    }
+  }
+
+  private LoadTableResponse commitCreateTable(
+      InternalCatalog catalog, String database, String tableName, UpdateTableRequest request) {
+    request.requirements().forEach(requirement -> requirement.validate((TableMetadata) null));
+
+    Optional<Integer> formatVersion =
+        request.updates().stream()
+            .filter(MetadataUpdate.UpgradeFormatVersion.class::isInstance)
+            .map(MetadataUpdate.UpgradeFormatVersion.class::cast)
+            .map(MetadataUpdate.UpgradeFormatVersion::formatVersion)
+            .findFirst();
+    TableMetadata.Builder builder =
+        formatVersion.isPresent()
+            ? TableMetadata.buildFromEmpty(formatVersion.get())
+            : TableMetadata.buildFromEmpty();
+    request.updates().forEach(update -> update.applyTo(builder));
+    TableMetadata icebergMetadata = builder.build();
+
+    // InternalTableCreator currently requires a CreateTableRequest for initialization. The
+    // metadata reconstructed above is passed to create(...) and is the metadata that is persisted.
+    CreateTableRequest createRequest =
+        CreateTableRequest.builder()
+            .withName(tableName)
+            .withSchema(icebergMetadata.schema())
+            .withPartitionSpec(icebergMetadata.spec())
+            .withWriteOrder(icebergMetadata.sortOrder())
+            .withLocation(icebergMetadata.location())
+            .setProperties(icebergMetadata.properties())
+            .build();
+    TableFormat format =
+        TablePropertyUtil.isBaseStore(createRequest.properties(), TableFormat.MIXED_ICEBERG)
+            ? TableFormat.MIXED_ICEBERG
+            : TableFormat.ICEBERG;
+
+    try (InternalTableCreator creator =
+        catalog.newTableCreator(database, tableName, format, createRequest)) {
+      try {
+        org.apache.amoro.server.table.TableMetadata metadata = creator.create(icebergMetadata);
+        tableManager.createTable(catalog.name(), metadata);
+      } catch (RuntimeException e) {
+        creator.rollback();
+        throw e;
+      }
+    }
+
+    try (InternalTableHandler<TableOperations> handler =
+        catalog.newTableHandler(database, tableName)) {
+      return LoadTableResponse.builder()
+          .withTableMetadata(handler.newTableOperator().current())
+          .build();
+    }
+  }
+
+  private static boolean isCreate(UpdateTableRequest request) {
+    boolean create =
+        request.requirements().stream()
+            .anyMatch(UpdateRequirement.AssertTableDoesNotExist.class::isInstance);
+    if (create) {
+      List<UpdateRequirement> invalidRequirements =
+          request.requirements().stream()
+              .filter(
+                  requirement ->
+                      !(requirement instanceof UpdateRequirement.AssertTableDoesNotExist))
+              .collect(Collectors.toList());
+      Preconditions.checkArgument(
+          invalidRequirements.isEmpty(), "Invalid create requirements: %s", invalidRequirements);
+    }
+    return create;
   }
 
   /** DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace}/tables/{table} */
@@ -488,6 +612,7 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
     AuthenticationTimeout(419),
     NotFound(404),
     Conflict(409),
+    UnprocessableEntity(422),
     InternalServerError(500),
     ServiceUnavailable(503);
     public final int code;
@@ -497,7 +622,11 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
     }
 
     public static IcebergRestErrorCode exceptionToCode(Exception e) {
-      if (e instanceof UnsupportedOperationException) {
+      if (e instanceof BadRequestException || e instanceof IllegalArgumentException) {
+        return BadRequest;
+      } else if (e instanceof UnprocessableEntityException) {
+        return UnprocessableEntity;
+      } else if (e instanceof UnsupportedOperationException) {
         return UnsupportedOperation;
       } else if (e instanceof ObjectNotExistsException) {
         return NotFound;
