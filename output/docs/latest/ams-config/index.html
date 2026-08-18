@@ -1070,6 +1070,11 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 					<td>The exposed host of the server.</td>
 			</tr>
 			<tr>
+					<td>table-manifest-io.maintenance-thread-count</td>
+					<td>10</td>
+					<td>Sets the size of the worker pool used for manifest I/O across best-effort table maintenance operations.</td>
+			</tr>
+			<tr>
 					<td>table-manifest-io.thread-count</td>
 					<td>20</td>
 					<td>Sets the size of the worker pool. The worker pool limits the number of tasks concurrently processing manifests in the base table implementation across all concurrent planning or commit operations.</td>
