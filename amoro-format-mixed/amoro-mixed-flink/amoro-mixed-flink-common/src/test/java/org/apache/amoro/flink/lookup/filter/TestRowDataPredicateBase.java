@@ -41,7 +41,6 @@ import org.junit.Before;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.TimeZone;
 
 public abstract class TestRowDataPredicateBase {
   public static StreamExecutionEnvironment env;
@@ -67,13 +66,13 @@ public abstract class TestRowDataPredicateBase {
     RowType sourceType = (RowType) schema.toSourceRowDataType().getLogicalType();
     ClassLoader classLoader = tEnv.getClass().getClassLoader();
     FlinkTypeFactory typeFactory = new FlinkTypeFactory(classLoader, FlinkTypeSystem.INSTANCE);
+    // The session time zone parameter was removed from the converter in Flink 1.20.
     RexNodeToExpressionConverter converter =
         new RexNodeToExpressionConverter(
             new RexBuilder(typeFactory),
             sourceType.getFieldNames().toArray(new String[0]),
             funCat,
-            catMan,
-            TimeZone.getTimeZone(tEnv.getConfig().getLocalTimeZone()));
+            catMan);
 
     RexNodeExpression rexExp =
         (RexNodeExpression) tbImpl.getParser().parseSqlExpression(sqlExp, sourceType, null);
