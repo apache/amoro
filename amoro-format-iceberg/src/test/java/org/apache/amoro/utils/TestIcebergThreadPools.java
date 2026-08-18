@@ -41,17 +41,17 @@ public class TestIcebergThreadPools {
     Assert.assertSame(registeredPool, IcebergThreadPools.getThreadPool("registered-test-pool"));
 
     IcebergThreadPools.init(1, 1);
+    IcebergThreadPools.initMaintenanceThreadPool(1);
 
     ExecutorService planningPool = IcebergThreadPools.getPlanningExecutor();
     ExecutorService commitPool = IcebergThreadPools.getCommitExecutor();
-    IcebergThreadPools.initSnapshotExpirationThreadPool(1);
-    ExecutorService snapshotExpirationPool = IcebergThreadPools.getSnapshotExpirationExecutor();
+    ExecutorService maintenancePool = IcebergThreadPools.getMaintenanceExecutor();
     Assert.assertNotSame(workerPool, planningPool);
     Assert.assertNotSame(workerPool, commitPool);
-    Assert.assertNotSame(workerPool, snapshotExpirationPool);
+    Assert.assertNotSame(workerPool, maintenancePool);
     Assert.assertNotSame(planningPool, commitPool);
-    Assert.assertNotSame(planningPool, snapshotExpirationPool);
-    Assert.assertNotSame(commitPool, snapshotExpirationPool);
+    Assert.assertNotSame(planningPool, maintenancePool);
+    Assert.assertNotSame(commitPool, maintenancePool);
     Assert.assertTrue(
         planningPool
             .submit(() -> Thread.currentThread().getName())
@@ -63,15 +63,17 @@ public class TestIcebergThreadPools {
             .get(10, TimeUnit.SECONDS)
             .startsWith("iceberg-commit-pool-"));
     Assert.assertTrue(
-        snapshotExpirationPool
+        maintenancePool
             .submit(() -> Thread.currentThread().getName())
             .get(10, TimeUnit.SECONDS)
-            .startsWith("iceberg-snapshot-expiration-planning-pool-"));
+            .startsWith("iceberg-maintenance-pool-"));
 
     IcebergThreadPools.init(2, 2);
-    IcebergThreadPools.initSnapshotExpirationThreadPool(2);
+    IcebergThreadPools.initMaintenanceThreadPool(2);
     Assert.assertSame(planningPool, IcebergThreadPools.getPlanningExecutor());
     Assert.assertSame(commitPool, IcebergThreadPools.getCommitExecutor());
-    Assert.assertSame(snapshotExpirationPool, IcebergThreadPools.getSnapshotExpirationExecutor());
+    Assert.assertSame(maintenancePool, IcebergThreadPools.getMaintenanceExecutor());
+    Assert.assertThrows(
+        IllegalArgumentException.class, () -> IcebergThreadPools.initMaintenanceThreadPool(0));
   }
 }

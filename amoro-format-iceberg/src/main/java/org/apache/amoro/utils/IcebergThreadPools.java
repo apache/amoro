@@ -33,8 +33,7 @@ public class IcebergThreadPools {
 
   private static final String PLANNING_POOL_NAME_PREFIX = "iceberg-planning-pool";
   private static final String COMMIT_POOL_NAME_PREFIX = "iceberg-commit-pool";
-  private static final String SNAPSHOT_EXPIRATION_POOL_NAME_PREFIX =
-      "iceberg-snapshot-expiration-planning-pool";
+  private static final String MAINTENANCE_POOL_NAME_PREFIX = "iceberg-maintenance-pool";
 
   private static final Map<String, Integer> POOL_SIZES = new ConcurrentHashMap<>();
   private static final Map<String, ExecutorService> POOLS = new ConcurrentHashMap<>();
@@ -93,32 +92,32 @@ public class IcebergThreadPools {
   }
 
   /**
-   * Initializes the process-wide Iceberg planning pool used by snapshot expiration.
+   * Initializes the process-wide Iceberg pool for best-effort table maintenance.
    *
    * <p>Repeated initialization is ignored because existing pools cannot be resized.
    *
    * @param poolSize number of worker threads
    */
-  public static void initSnapshotExpirationThreadPool(int poolSize) {
-    newThreadPool(SNAPSHOT_EXPIRATION_POOL_NAME_PREFIX, poolSize);
+  public static void initMaintenanceThreadPool(int poolSize) {
+    newThreadPool(MAINTENANCE_POOL_NAME_PREFIX, poolSize);
   }
 
   /**
-   * Return an {@link ExecutorService} that plans snapshot expiration file cleanup.
+   * Return an {@link ExecutorService} for best-effort Iceberg table maintenance.
    *
-   * <p>This pool isolates snapshot expiration from Iceberg's global worker pool and the
-   * self-optimizing planning and commit pools.
+   * <p>Snapshot expiration planning is the first consumer of this shared maintenance pool. Other
+   * maintenance operations can migrate to it as their Iceberg APIs expose executor hooks.
    *
-   * <p>The size of this pool is controlled by the Iceberg process configuration {@code
-   * expire-snapshots.plan-thread-count}.
+   * <p>The size of this pool is controlled by the AMS configuration {@code
+   * table-manifest-io.maintenance-thread-count}.
    *
    * <p>Before the dedicated pool is initialized, this returns Iceberg's global worker pool.
    *
-   * @return the snapshot expiration planning pool, or Iceberg's global worker pool if the dedicated
-   *     pool has not been initialized
+   * @return the maintenance pool, or Iceberg's global worker pool if the dedicated pool has not
+   *     been initialized
    */
-  public static ExecutorService getSnapshotExpirationExecutor() {
-    return getThreadPool(SNAPSHOT_EXPIRATION_POOL_NAME_PREFIX);
+  public static ExecutorService getMaintenanceExecutor() {
+    return getThreadPool(MAINTENANCE_POOL_NAME_PREFIX);
   }
 
   /**

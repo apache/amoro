@@ -224,7 +224,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
             .retainLast(Math.max(minCount, 1))
             .expireOlderThan(olderThan)
             .deleteWith(expiredFileCleaner::addFile)
-            .planWith(IcebergThreadPools.getSnapshotExpirationExecutor())
+            .planWith(IcebergThreadPools.getMaintenanceExecutor())
             .cleanExpiredFiles(
                 true) /* enable clean only for collecting the expired files, will delete them later */;
     // iceberg auto-selects IncrementalFileCleanup for single-ref tables. That strategy walks the

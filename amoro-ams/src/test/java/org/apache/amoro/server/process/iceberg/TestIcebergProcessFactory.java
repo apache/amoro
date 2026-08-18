@@ -35,8 +35,6 @@ import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.cleanup.TableRuntimeCleanupState;
-import org.apache.amoro.utils.IcebergThreadPools;
-import org.apache.iceberg.util.ThreadPools;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -46,8 +44,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class TestIcebergProcessFactory {
 
@@ -59,35 +55,6 @@ public class TestIcebergProcessFactory {
         "clean-dangling-delete-files", IcebergActions.CLEAN_DANGLING_DELETE, Duration.ofHours(24));
     assertSupportedAction("expire-data", IcebergActions.EXPIRE_DATA, Duration.ofHours(24));
     assertSupportedAction("sync-hive-tables", IcebergActions.SYNC_HIVE_TABLES, Duration.ofHours(1));
-  }
-
-  @Test
-  public void testOpenInitializesSnapshotExpirationThreadPool() throws Exception {
-    IcebergProcessFactory factory = new IcebergProcessFactory();
-    Map<String, String> properties = new HashMap<>();
-    properties.put("expire-snapshots.enabled", "true");
-    properties.put("expire-snapshots.interval", "1h");
-    properties.put("expire-snapshots.plan-thread-count", "10");
-
-    factory.open(properties);
-
-    ExecutorService snapshotExpirationPool = IcebergThreadPools.getSnapshotExpirationExecutor();
-    Assert.assertNotSame(ThreadPools.getWorkerPool(), snapshotExpirationPool);
-    Assert.assertTrue(
-        snapshotExpirationPool
-            .submit(() -> Thread.currentThread().getName())
-            .get(10, TimeUnit.SECONDS)
-            .startsWith("iceberg-snapshot-expiration-planning-pool-"));
-  }
-
-  @Test
-  public void testOpenRejectsInvalidSnapshotExpirationThreadCount() {
-    IcebergProcessFactory factory = new IcebergProcessFactory();
-    Map<String, String> properties = new HashMap<>();
-    properties.put("expire-snapshots.enabled", "true");
-    properties.put("expire-snapshots.plan-thread-count", "0");
-
-    Assert.assertThrows(IllegalArgumentException.class, () -> factory.open(properties));
   }
 
   @Test

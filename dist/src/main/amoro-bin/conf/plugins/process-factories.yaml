@@ -22,7 +22,6 @@ process-factories:
     properties:
       expire-snapshots.enabled: "true"
       expire-snapshots.interval: "1h"
-      expire-snapshots.plan-thread-count: "10"
       clean-orphan-files.enabled: "true"
       clean-orphan-files.interval: "1d"
       clean-dangling-delete-files.enabled: "true"

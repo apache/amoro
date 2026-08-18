@@ -34,8 +34,8 @@ import org.junit.jupiter.api.Test;
 class TestIcebergTableMaintainer {
 
   @Test
-  void testExpireSnapshotsUsesDedicatedPlanningPool() {
-    IcebergThreadPools.initSnapshotExpirationThreadPool(1);
+  void testExpireSnapshotsUsesMaintenancePool() {
+    IcebergThreadPools.initMaintenanceThreadPool(1);
 
     Table table = mock(Table.class);
     ExpireSnapshots expireSnapshots = mock(ExpireSnapshots.class);
@@ -56,7 +56,7 @@ class TestIcebergTableMaintainer {
 
     tableMaintainer.expireSnapshots(100L, 1);
 
-    verify(expireSnapshots).planWith(IcebergThreadPools.getSnapshotExpirationExecutor());
+    verify(expireSnapshots).planWith(IcebergThreadPools.getMaintenanceExecutor());
     verify(expireSnapshots).commit();
   }
 }
