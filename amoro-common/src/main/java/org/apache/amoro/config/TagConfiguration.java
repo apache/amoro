@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
 
 /** Configuration for auto creating tags. */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -67,6 +68,21 @@ public class TagConfiguration {
       public LocalDateTime getTagTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
         return checkTime.minusMinutes(triggerOffsetMinutes).truncatedTo(ChronoUnit.HOURS);
       }
+    },
+
+    MONTHLY("monthly") {
+      @Override
+      protected TemporalAmount periodDuration() {
+        return java.time.Period.ofMonths(1);
+      }
+
+      @Override
+      public LocalDateTime getTagTime(LocalDateTime checkTime, int triggerOffsetMinutes) {
+        return checkTime
+            .minusMinutes(triggerOffsetMinutes)
+            .withDayOfMonth(1)
+            .truncatedTo(ChronoUnit.DAYS);
+      }
     };
 
     private final String propertyName;
@@ -79,7 +95,7 @@ public class TagConfiguration {
       return propertyName;
     }
 
-    protected abstract Duration periodDuration();
+    protected abstract TemporalAmount periodDuration();
 
     /**
      * Obtain the tag time for creating a tag, which is the ideal time of the last tag before the

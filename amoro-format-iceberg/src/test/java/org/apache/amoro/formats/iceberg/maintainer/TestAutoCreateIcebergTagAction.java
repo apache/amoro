@@ -111,6 +111,58 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
   }
 
   @Test
+  public void testCreateMonthlyTag() {
+    Table table = getMixedTable().asUnkeyedTable();
+    table
+        .updateProperties()
+        .set(TableProperties.ENABLE_AUTO_CREATE_TAG, "true")
+        .set(TableProperties.AUTO_CREATE_TAG_MAX_DELAY_MINUTES, "0")
+        .set(TableProperties.AUTO_CREATE_TAG_TRIGGER_PERIOD, "monthly")
+        .commit();
+    table.newAppend().commit();
+    checkSnapshots(table, 1);
+    checkNoTag(table);
+
+    Snapshot snapshot = table.currentSnapshot();
+    LocalDateTime now = fromEpochMillis(snapshot.timestampMillis());
+    newAutoCreateIcebergTagAction(table, now).execute();
+    checkTagCount(table, 1);
+    checkTag(table, "tag-" + formatMonth(now.minusMonths(1)), snapshot);
+
+    // should not recreate tag
+    newAutoCreateIcebergTagAction(table, now).execute();
+    checkTagCount(table, 1);
+  }
+
+  /**
+   * A calendar month is not a fixed-length duration, so the tag name must be derived with {@link
+   * java.time.Period}. Deriving it with a fixed {@code Duration.ofDays(30)} would name both the
+   * January and the February tag {@code tag-202601}, and the February tag would then never be
+   * created because {@code tagExist()} finds the January one.
+   */
+  @Test
+  public void testMonthlyTagNameAcrossMonthBoundary() {
+    Assert.assertEquals(
+        "tag-202601",
+        TagConfiguration.Period.MONTHLY.generateTagName(
+            LocalDateTime.parse("2026-02-01T00:00:00"), "'tag-'yyyyMM"));
+    Assert.assertEquals(
+        "tag-202602",
+        TagConfiguration.Period.MONTHLY.generateTagName(
+            LocalDateTime.parse("2026-03-01T00:00:00"), "'tag-'yyyyMM"));
+    // leap year
+    Assert.assertEquals(
+        "tag-202402",
+        TagConfiguration.Period.MONTHLY.generateTagName(
+            LocalDateTime.parse("2024-03-01T00:00:00"), "'tag-'yyyyMM"));
+    // year boundary
+    Assert.assertEquals(
+        "tag-202612",
+        TagConfiguration.Period.MONTHLY.generateTagName(
+            LocalDateTime.parse("2027-01-01T00:00:00"), "'tag-'yyyyMM"));
+  }
+
+  @Test
   public void testCreateDailyOffsetTag() {
     Table table = getMixedTable().asUnkeyedTable();
     table
@@ -274,6 +326,14 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     testTagTimePeriodDaily("2022-08-08T03:40:00", 30, "2022-08-08T00:00:00");
     testTagTimePeriodDaily("2022-08-08T23:40:00", 15, "2022-08-08T00:00:00");
     testTagTimePeriodDaily("2022-08-09T00:10:00", 30, "2022-08-08T00:00:00");
+
+    testTagTimePeriodMonthly("2022-08-08T03:40:00", 30, "2022-08-01T00:00:00");
+    testTagTimePeriodMonthly("2022-08-31T23:40:00", 15, "2022-08-01T00:00:00");
+    // the offset keeps the tag time on the previous month right after the month boundary
+    testTagTimePeriodMonthly("2022-08-01T00:10:00", 30, "2022-07-01T00:00:00");
+    // February has 28 days in 2022, 29 in 2024
+    testTagTimePeriodMonthly("2022-03-01T00:10:00", 30, "2022-02-01T00:00:00");
+    testTagTimePeriodMonthly("2024-03-01T00:10:00", 30, "2024-02-01T00:00:00");
   }
 
   @Test
@@ -349,6 +409,27 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
     Assert.assertEquals(expectedTriggerTime, actualTriggerTime);
   }
 
+  private void testTagTimePeriodMonthly(
+      String checkTimeStr, int offsetMinutes, String expectedResultStr) {
+    LocalDateTime checkTime = LocalDateTime.parse(checkTimeStr);
+    Long expectedTriggerTime =
+        (expectedResultStr == null)
+            ? null
+            : LocalDateTime.parse(expectedResultStr)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli();
+
+    Long actualTriggerTime =
+        TagConfiguration.Period.MONTHLY
+            .getTagTime(checkTime, offsetMinutes)
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli();
+
+    Assert.assertEquals(expectedTriggerTime, actualTriggerTime);
+  }
+
   /**
    * Parse tag configuration from table properties. This is a test helper method that replicates the
    * logic from TableConfigurations to avoid AMS dependency.
@@ -375,6 +456,9 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
         break;
       case HOURLY:
         defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_HOURLY_DEFAULT;
+        break;
+      case MONTHLY:
+        defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_MONTHLY_DEFAULT;
         break;
       default:
         throw new IllegalArgumentException(
@@ -423,6 +507,10 @@ public class TestAutoCreateIcebergTagAction extends TableTestBase {
 
   private String formatDateTime(LocalDateTime localDateTime) {
     return localDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHH"));
+  }
+
+  private String formatMonth(LocalDateTime localDateTime) {
+    return localDateTime.format(DateTimeFormatter.ofPattern("yyyyMM"));
   }
 
   private void checkNoTag(Table table) {
