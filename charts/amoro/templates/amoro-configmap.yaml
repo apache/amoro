@@ -101,6 +101,7 @@ data:
       # optional features
       table-manifest-io:
         thread-count: 20
+        maintenance-thread-count: 10
 
       database:
         type: {{ .Values.amoroConf.database.type }}
