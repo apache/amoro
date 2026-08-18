@@ -458,15 +458,25 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
             .anyMatch(r -> optimizer.getResourceId().equals(r.getResourceId())));
   }
 
-  /** The min-parallelism floor keeps the last instance no matter how long it idles. */
+  /**
+   * The min-parallelism floor keeps the last instance no matter how long it idles.
+   *
+   * <p>The floor is raised only once the instance is registered: a group created with its floor
+   * already unmet would have the live keeper satisfy it in the delay-0 round that its watch queues,
+   * and that second instance races the injected rounds below. The floor path is deliberately
+   * ungated, so unlike the demand path it cannot be held back by this group's slow cadence.
+   */
   @Test
   public void testScaleDownRespectsFloor() {
     resourceAvailable.set(true);
     scaleOutCallCount.set(0);
-    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-9", 1);
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-9", 0);
     optimizerManager().createResourceGroup(group);
     optimizingService().createResourceGroup(group);
     registerOptimizer(group.getName(), 1);
+    ResourceGroup withFloor = buildSlowDraResourceGroup(group.getName(), 1);
+    optimizerManager().updateResourceGroup(withFloor);
+    optimizingService().updateResourceGroup(withFloor);
 
     long t0 = System.currentTimeMillis();
     optimizingService().evaluateDynamicAllocation(group.getName(), t0);
@@ -476,6 +486,10 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
         1,
         optimizerManager().listOptimizers(group.getName()).size(),
         "the floor must keep the last instance");
+    Assertions.assertEquals(
+        0,
+        scaleOutCallCount.get(),
+        "a floor satisfied before it is raised leaves the live keeper nothing to scale out");
   }
 
   /** Removals proceed one instance per cooldown period, never in batches. */
