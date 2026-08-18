@@ -219,6 +219,31 @@ public class DynamicAllocationConfig {
   }
 
   /**
+   * Whether the group opted into dynamic allocation but its configuration does not hold, i.e. the
+   * fail-safe fallback of {@link #isEffectivelyEnabled(ResourceGroup)} is active. Read side of the
+   * config-invalid gauge. A group that never opted in is not invalid, whatever its other properties
+   * parse to — its leftover values are inert and must not alarm.
+   */
+  public static boolean isConfigInvalid(ResourceGroup group) {
+    boolean enabled =
+        PropertyUtil.propertyAsBoolean(
+            group.getProperties(),
+            OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED,
+            OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED_DEFAULT);
+    if (!enabled) {
+      return false;
+    }
+    try {
+      parse(group).validate();
+      return false;
+    } catch (RuntimeException e) {
+      // Not just IllegalArgumentException: duration parsing can throw ArithmeticException on
+      // overflow, and a gauge read must never propagate — it would abort the whole scrape.
+      return true;
+    }
+  }
+
+  /**
    * The min-parallelism property key that {@link #resolveMinParallelism(ResourceGroup)} actually
    * reads for this group. Writers updating the effective value (e.g. the keeper's auto-reset) must
    * target this key; writing the deprecated flat key while the namespaced one is present would be

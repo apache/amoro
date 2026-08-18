@@ -24,12 +24,20 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
+import org.apache.amoro.config.Configurations;
+import org.apache.amoro.metrics.Counter;
+import org.apache.amoro.metrics.Metric;
+import org.apache.amoro.metrics.MetricDefine;
+import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.resource.ResourceContainer;
 import org.apache.amoro.resource.ResourceGroup;
+import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.optimizing.dra.DynamicAllocationMetrics;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.AMSTableTestBase;
+import org.apache.amoro.shade.guava32.com.google.common.collect.ImmutableMap;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.iceberg.common.DynFields;
 import org.junit.After;
@@ -233,6 +241,14 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
         2,
         scaleOutCallCount.get(),
         "the deficit must be requested exactly once while the pods are still booting");
+    @SuppressWarnings("unchecked")
+    org.apache.amoro.metrics.Gauge<Integer> effectiveThreads =
+        (org.apache.amoro.metrics.Gauge<Integer>)
+            draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_EFFECTIVE_THREADS, group.getName());
+    Assertions.assertEquals(
+        2,
+        effectiveThreads.getValue().intValue(),
+        "requested-but-unregistered threads must count as effective");
   }
 
   /**
@@ -442,15 +458,25 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
             .anyMatch(r -> optimizer.getResourceId().equals(r.getResourceId())));
   }
 
-  /** The min-parallelism floor keeps the last instance no matter how long it idles. */
+  /**
+   * The min-parallelism floor keeps the last instance no matter how long it idles.
+   *
+   * <p>The floor is raised only once the instance is registered: a group created with its floor
+   * already unmet would have the live keeper satisfy it in the delay-0 round that its watch queues,
+   * and that second instance races the injected rounds below. The floor path is deliberately
+   * ungated, so unlike the demand path it cannot be held back by this group's slow cadence.
+   */
   @Test
   public void testScaleDownRespectsFloor() {
     resourceAvailable.set(true);
     scaleOutCallCount.set(0);
-    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-9", 1);
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-9", 0);
     optimizerManager().createResourceGroup(group);
     optimizingService().createResourceGroup(group);
     registerOptimizer(group.getName(), 1);
+    ResourceGroup withFloor = buildSlowDraResourceGroup(group.getName(), 1);
+    optimizerManager().updateResourceGroup(withFloor);
+    optimizingService().updateResourceGroup(withFloor);
 
     long t0 = System.currentTimeMillis();
     optimizingService().evaluateDynamicAllocation(group.getName(), t0);
@@ -460,6 +486,10 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
         1,
         optimizerManager().listOptimizers(group.getName()).size(),
         "the floor must keep the last instance");
+    Assertions.assertEquals(
+        0,
+        scaleOutCallCount.get(),
+        "a floor satisfied before it is raised leaves the live keeper nothing to scale out");
   }
 
   /** Removals proceed one instance per cooldown period, never in batches. */
@@ -490,6 +520,272 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
     Assertions.assertTrue(
         optimizerManager().listOptimizers(group.getName()).isEmpty(),
         "the cooldown expiry should admit the next removal");
+  }
+
+  private Metric draMetric(MetricDefine define, String groupName) {
+    return MetricManager.getInstance()
+        .getGlobalRegistry()
+        .getMetrics()
+        .get(new MetricKey(define, ImmutableMap.of("group", groupName)));
+  }
+
+  /**
+   * The keeper owns the DRA metric lifecycle: watching a group registers its gauges and counters,
+   * and a disable — which hands the group back to the legacy floor keeper — removes them.
+   */
+  @Test
+  public void testDraMetricsRegisteredOnWatchAndRemovedOnDisable() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildDraResourceGroup(TEST_GROUP_NAME + "-12", 0, 1);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+
+    Assertions.assertNotNull(
+        draMetric(
+            DynamicAllocationMetrics.OPTIMIZER_GROUP_PENDING_REMOVAL_OPTIMIZERS, group.getName()));
+    Assertions.assertNotNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_EFFECTIVE_THREADS, group.getName()));
+    Assertions.assertNotNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_BACKLOG_DURATION_MS, group.getName()));
+    Assertions.assertNotNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName()));
+    Assertions.assertNotNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_DOWN_TOTAL, group.getName()));
+
+    Map<String, String> legacyProps = Maps.newHashMap();
+    legacyProps.put("memory", "1024");
+    ResourceGroup disabled =
+        new ResourceGroup.Builder(group.getName(), MOCK_CONTAINER_NAME)
+            .addProperties(legacyProps)
+            .build();
+    optimizerManager().updateResourceGroup(disabled);
+    optimizingService().updateResourceGroup(disabled);
+    Thread.sleep(500);
+
+    Assertions.assertNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_EFFECTIVE_THREADS, group.getName()),
+        "a disabled group's DRA metrics must go with its watch");
+    Assertions.assertNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName()));
+  }
+
+  /**
+   * A disable unwatches on the config-entry path itself, not on the keeper's next round: the
+   * round-driven unwatch runs on the leader only, so without this a follower would keep exporting
+   * the group's DRA metrics until failover.
+   */
+  @Test
+  public void testDisableUnwatchesOnUpdatePathWithoutKeeperRound() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-15", 0);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    Assertions.assertNotNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName()));
+    // Let the delay-0 first round pass; the next one is minutes away (600s cadence), so any
+    // removal observed below must come from the update path, not from a keeper round.
+    Thread.sleep(200);
+
+    Map<String, String> legacyProps = Maps.newHashMap();
+    legacyProps.put("memory", "1024");
+    ResourceGroup disabled =
+        new ResourceGroup.Builder(group.getName(), MOCK_CONTAINER_NAME)
+            .addProperties(legacyProps)
+            .build();
+    optimizerManager().updateResourceGroup(disabled);
+    optimizingService().updateResourceGroup(disabled);
+
+    Assertions.assertNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName()),
+        "the update path must unwatch a disabled group on every node");
+  }
+
+  /** A scale-out round counts as one scale-up action, and the gauges read the keeper's state. */
+  @Test
+  public void testScaleUpRoundIncrementsCounterAndGaugesReadState() throws InterruptedException {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildDraResourceGroup(TEST_GROUP_NAME + "-13", 2, 1);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    Thread.sleep(500);
+
+    Counter scaleUp =
+        (Counter)
+            draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName());
+    Assertions.assertEquals(
+        1, scaleUp.getCount(), "one floor-deficit round is exactly one scale-up action");
+    @SuppressWarnings("unchecked")
+    org.apache.amoro.metrics.Gauge<Integer> effectiveThreads =
+        (org.apache.amoro.metrics.Gauge<Integer>)
+            draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_EFFECTIVE_THREADS, group.getName());
+    Assertions.assertEquals(
+        2,
+        effectiveThreads.getValue().intValue(),
+        "registered floor capacity should be visible as effective threads");
+  }
+
+  /** The pending-removal gauge tracks instances through drain start, retry, and removal. */
+  @Test
+  public void testPendingRemovalGaugeCountsDrainingInstances() {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-16", 0);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    OptimizerInstance optimizer = registerOptimizer(group.getName(), 1);
+    @SuppressWarnings("unchecked")
+    org.apache.amoro.metrics.Gauge<Integer> pendingRemoval =
+        (org.apache.amoro.metrics.Gauge<Integer>)
+            draMetric(
+                DynamicAllocationMetrics.OPTIMIZER_GROUP_PENDING_REMOVAL_OPTIMIZERS,
+                group.getName());
+    Assertions.assertEquals(0, pendingRemoval.getValue().intValue());
+
+    // A failing release keeps the instance draining, exactly the stuck state the gauge is for.
+    mockContainer.setReleaseAvailable(false);
+    optimizingService().beginGracefulDrain(optimizer.getToken(), Long.MAX_VALUE);
+    optimizingService().executeRemoval(optimizer.getToken());
+    Assertions.assertEquals(1, pendingRemoval.getValue().intValue());
+
+    mockContainer.setReleaseAvailable(true);
+    optimizingService().executeRemoval(optimizer.getToken());
+    Assertions.assertEquals(0, pendingRemoval.getValue().intValue());
+  }
+
+  /** Starting a drain counts as one scale-down action. */
+  @Test
+  public void testScaleDownIncrementsCounter() {
+    resourceAvailable.set(true);
+    scaleOutCallCount.set(0);
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-14", 0);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    registerOptimizer(group.getName(), 1);
+
+    long t0 = System.currentTimeMillis();
+    optimizingService().evaluateDynamicAllocation(group.getName(), t0);
+    Counter scaleDown =
+        (Counter)
+            draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_DOWN_TOTAL, group.getName());
+    Assertions.assertEquals(0, scaleDown.getCount());
+
+    optimizingService().evaluateDynamicAllocation(group.getName(), t0 + 1_300_000L);
+    Assertions.assertEquals(
+        1, scaleDown.getCount(), "the drain start is the scale-down action, counted once");
+  }
+
+  /**
+   * A watch whose metric registration fails must leave no residue: the group stays unwatched, so
+   * the next config pass can watch it again instead of finding a watched-but-dead entry that
+   * swallows every retry until a restart.
+   */
+  @Test
+  public void testWatchFailureLeavesGroupRewatchable() {
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-17", 0);
+    optimizerManager().createResourceGroup(group);
+    // Occupy one of the group's DRA keys so the watch's registration fails midway.
+    MetricKey conflict =
+        MetricManager.getInstance()
+            .getGlobalRegistry()
+            .register(
+                DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL,
+                ImmutableMap.of("group", group.getName()),
+                new Counter());
+    Assertions.assertThrows(
+        RuntimeException.class, () -> optimizingService().createResourceGroup(group));
+    Assertions.assertNull(
+        draMetric(
+            DynamicAllocationMetrics.OPTIMIZER_GROUP_PENDING_REMOVAL_OPTIMIZERS, group.getName()),
+        "a failed watch must roll back the metrics it managed to register");
+    MetricManager.getInstance().getGlobalRegistry().unregister(conflict);
+
+    optimizingService().updateResourceGroup(group);
+    Assertions.assertNotNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName()),
+        "the group must be rewatchable after a failed watch");
+    Assertions.assertNotNull(
+        draMetric(
+            DynamicAllocationMetrics.OPTIMIZER_GROUP_PENDING_REMOVAL_OPTIMIZERS, group.getName()));
+  }
+
+  /**
+   * The global metric registry outlives the service on a leader hand-off: a disposed service must
+   * unregister its DRA metrics, or the next leader's watch of the same group throws on the leftover
+   * keys and the group goes watched-but-dead until a JVM restart.
+   */
+  @Test
+  public void testDisposeUnregistersDraMetrics() {
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-18", 0);
+    optimizerManager().createResourceGroup(group);
+    DefaultOptimizingService formerLeader =
+        new DefaultOptimizingService(
+            new Configurations(), catalogManager(), optimizerManager(), tableService(), null, null);
+    formerLeader.createResourceGroup(group);
+    Assertions.assertNotNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName()));
+
+    formerLeader.dispose();
+    Assertions.assertNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName()),
+        "a disposed service must not leave DRA metrics behind for the next leader");
+
+    // The next leader takes over the group without colliding with leftover keys.
+    optimizingService().createResourceGroup(group);
+    Assertions.assertNotNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName()));
+  }
+
+  /**
+   * A watch arriving after dispose — an in-flight config-sync run or the keeper round's re-check
+   * racing a leader hand-off — must not register metrics from the dead service: the keys would
+   * outlive it in the global registry and fail the next leader's watch. Only never-watched groups
+   * are exposed (a watched group's entry survives in watchedGroups and swallows the call), which is
+   * exactly the racing paths' state: a new or re-enabled group, or one the round just unwatched.
+   */
+  @Test
+  public void testWatchAfterDisposeDoesNotRegisterMetrics() {
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-19", 0);
+    DefaultOptimizingService formerLeader =
+        new DefaultOptimizingService(
+            new Configurations(), catalogManager(), optimizerManager(), tableService(), null, null);
+    formerLeader.dispose();
+
+    formerLeader.updateResourceGroup(group);
+    Assertions.assertNull(
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName()),
+        "a watch arriving after dispose must not register metrics from a dead service");
+  }
+
+  /**
+   * watch() is documented as idempotent: an update of an already-watched group with a still-enabled
+   * config — routine property tuning — must re-enter watch() as a no-op instead of colliding with
+   * the group's live metric keys.
+   */
+  @Test
+  public void testEnabledUpdateReentersWatchIdempotently() {
+    ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-20", 0);
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    Metric before =
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName());
+    Assertions.assertNotNull(before);
+
+    Map<String, String> properties = Maps.newHashMap(group.getProperties());
+    properties.put(OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM, "6");
+    ResourceGroup updated =
+        new ResourceGroup.Builder(group.getName(), MOCK_CONTAINER_NAME)
+            .addProperties(properties)
+            .build();
+    optimizerManager().updateResourceGroup(updated);
+    optimizingService().updateResourceGroup(updated);
+
+    Assertions.assertSame(
+        before,
+        draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName()),
+        "an enabled-to-enabled update must keep the group's live metrics, not re-register them");
   }
 
   /**
