@@ -610,9 +610,7 @@ public class AmoroServiceContainer {
       return ConfigHelpers.convertConfigurationKeys(prefix, System.getenv());
     }
 
-    /**
-     * Configures Iceberg's global worker pool and initializes self-optimizing Iceberg I/O pools.
-     */
+    /** Configures Iceberg's global worker pool and initializes Amoro Iceberg I/O pools. */
     private void initIcebergThreadPools() {
       int workerThreadPoolSize =
           Math.max(
@@ -630,7 +628,10 @@ public class AmoroServiceContainer {
           Math.max(
               Runtime.getRuntime().availableProcessors() / 2,
               serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_COMMIT_THREAD_COUNT));
+      int maintenanceThreadPoolSize =
+          serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_MAINTENANCE_THREAD_COUNT);
       IcebergThreadPools.init(planningThreadPoolSize, commitThreadPoolSize);
+      IcebergThreadPools.initMaintenanceThreadPool(maintenanceThreadPoolSize);
     }
 
     private void initContainerConfig() {
