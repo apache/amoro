@@ -127,11 +127,11 @@ public class AmoroServiceContainer {
   private AmsServiceMetrics amsServiceMetrics;
   private HAState haState = HAState.INITIALIZING;
   private AmsAssignService amsAssignService;
+  private BucketAssignStore bucketAssignStore;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
     haContainer = HighAvailabilityContainerFactory.create(serviceConfig);
-    haContainer.registerAndElect();
   }
 
   public static void main(String[] args) {
@@ -220,7 +220,13 @@ public class AmoroServiceContainer {
   public void startBaseServices() throws Exception {
     startRestServices();
     if (IS_MASTER_SLAVE_MODE) {
+      bucketAssignStore = BucketAssignStoreFactory.create(serviceConfig);
       startOptimizingService();
+      // Register this node so AmsAssignService (leader) can discover it and assign buckets.
+      if (haContainer != null) {
+        bucketAssignStore.registerNode(haContainer.getOptimizingServiceServerInfo());
+        LOG.info("Registered this node to BucketAssignStore");
+      }
     }
   }
 
@@ -240,11 +246,6 @@ public class AmoroServiceContainer {
 
     DefaultTableRuntimeFactory defaultRuntimeFactory = new DefaultTableRuntimeFactory();
     defaultRuntimeFactory.initialize(processFactories);
-
-    BucketAssignStore bucketAssignStore = null;
-    if (IS_MASTER_SLAVE_MODE && haContainer != null) {
-      bucketAssignStore = BucketAssignStoreFactory.create(haContainer, serviceConfig);
-    }
 
     List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
 
@@ -293,9 +294,7 @@ public class AmoroServiceContainer {
       // call (leader re-election); recreate it if needed.
       if (amsAssignService == null && haContainer != null) {
         try {
-          BucketAssignStore bucketAssignStore =
-              BucketAssignStoreFactory.create(haContainer, serviceConfig);
-          amsAssignService = new AmsAssignService(haContainer, serviceConfig, bucketAssignStore);
+          amsAssignService = new AmsAssignService(serviceConfig, bucketAssignStore);
         } catch (Exception e) {
           LOG.error("Failed to recreate AmsAssignService", e);
         }
@@ -330,6 +329,27 @@ public class AmoroServiceContainer {
       disposeOptimizingService();
     }
     haState = HAState.FOLLOWER;
+  }
+
+  public void stopBaseServices() {
+    disposeRestService();
+    if (IS_MASTER_SLAVE_MODE) {
+      if (bucketAssignStore != null && haContainer != null) {
+        try {
+          bucketAssignStore.removeNode(haContainer.getOptimizingServiceServerInfo());
+          LOG.info("Unregistered this node from BucketAssignStore");
+        } catch (Exception e) {
+          LOG.warn("Failed to unregister node from BucketAssignStore", e);
+        }
+        try {
+          bucketAssignStore.close();
+        } catch (Exception e) {
+          LOG.warn("Failed to close BucketAssignStore", e);
+        }
+        bucketAssignStore = null;
+      }
+      disposeOptimizingService();
+    }
   }
 
   private void addHandlerChain(RuntimeHandlerChain chain) {
@@ -388,8 +408,7 @@ public class AmoroServiceContainer {
 
   public void dispose() {
     stopLeaderServices();
-    disposeOptimizingService();
-    disposeRestService();
+    stopBaseServices();
   }
 
   private void initConfig() throws Exception {

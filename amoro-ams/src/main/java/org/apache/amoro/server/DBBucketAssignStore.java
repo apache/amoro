@@ -119,6 +119,44 @@ public class DBBucketAssignStore extends PersistentBase implements BucketAssignS
   }
 
   @Override
+  public void registerNode(AmsServerInfo serverInfo) throws BucketAssignStoreException {
+    String nodeKey = getNodeKey(serverInfo);
+    String serverInfoJson = JacksonUtil.toJSONString(serverInfo);
+    long now = System.currentTimeMillis();
+    try {
+      int updated =
+          updateAs(
+                  BucketAssignMapper.class,
+                  mapper -> mapper.updateNodeHeartbeat(clusterName, nodeKey, now))
+              .intValue();
+      if (updated == 0) {
+        doAs(
+            BucketAssignMapper.class,
+            mapper ->
+                mapper.insert(
+                    new BucketAssignmentMeta(
+                        clusterName, nodeKey, serverInfoJson, null, now, now)));
+      }
+      LOG.debug("Registered node {} in bucket_assignments", nodeKey);
+    } catch (Exception e) {
+      LOG.error("Failed to register node {}", nodeKey, e);
+      throw new BucketAssignStoreException("Failed to register node " + nodeKey, e);
+    }
+  }
+
+  @Override
+  public void removeNode(AmsServerInfo serverInfo) throws BucketAssignStoreException {
+    String nodeKey = getNodeKey(serverInfo);
+    try {
+      doAs(BucketAssignMapper.class, mapper -> mapper.deleteByNode(clusterName, nodeKey));
+      LOG.debug("Removed node {} from bucket_assignments", nodeKey);
+    } catch (Exception e) {
+      LOG.error("Failed to remove node {}", nodeKey, e);
+      throw new BucketAssignStoreException("Failed to remove node " + nodeKey, e);
+    }
+  }
+
+  @Override
   public Map<AmsServerInfo, List<String>> getAllAssignments() throws BucketAssignStoreException {
     try {
       List<BucketAssignmentMeta> rows =
@@ -235,5 +273,10 @@ public class DBBucketAssignStore extends PersistentBase implements BucketAssignS
     nodeInfo.setHost(parts[0]);
     nodeInfo.setThriftBindPort(Integer.parseInt(parts[1]));
     return nodeInfo;
+  }
+
+  @Override
+  public void close() {
+    // No resources to release — DataSource is shared and managed globally.
   }
 }
