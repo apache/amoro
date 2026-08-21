@@ -89,6 +89,14 @@ public class TestAmoroManagementConf {
   }
 
   @Test
+  void testMaintenanceManifestIoThreadCountDefault() {
+    Configurations serviceConfig = new Configurations();
+    Assertions.assertEquals(
+        10,
+        serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_MAINTENANCE_THREAD_COUNT));
+  }
+
+  @Test
   void testDeprecatedIntegerConfigDefaults() {
     Configurations serviceConfig = new Configurations();
     Assertions.assertEquals(
