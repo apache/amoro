@@ -124,4 +124,27 @@ public class TestDefaultCatalogManagerRecovery extends AMSManagerTestBase {
         "http://localhost:2/also-unreachable", readMeta.getCatalogProperties().get("uri"));
     Assert.assertEquals("new-value", readMeta.getCatalogProperties().get("new-property"));
   }
+
+  /**
+   * Verifies that updating a REST catalog to combine Lance with another table format is rejected
+   * before the update is persisted — the same invariant CatalogBuilder enforces at creation time.
+   */
+  @Test
+  public void testUpdateCatalogRejectsLanceWithOtherFormats() {
+    // use iceberg with REST catalog
+    DB.insertCatalog(buildUnreachableRestCatalog());
+    Assert.assertTrue(CATALOG_MANAGER.catalogExist(TEST_CATALOG_NAME));
+
+    CatalogMeta updatedMeta = CATALOG_MANAGER.getCatalogMeta(TEST_CATALOG_NAME);
+    updatedMeta.getCatalogProperties().put(CatalogMetaProperties.TABLE_FORMATS, "LANCE,ICEBERG");
+
+    Assert.assertThrows(
+        IllegalStateException.class, () -> CATALOG_MANAGER.updateCatalog(updatedMeta));
+
+    // The invalid update must not be persisted
+    CatalogMeta readMeta = CATALOG_MANAGER.getCatalogMeta(TEST_CATALOG_NAME);
+    Assert.assertEquals(
+        TableFormat.ICEBERG.name(),
+        readMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS));
+  }
 }
