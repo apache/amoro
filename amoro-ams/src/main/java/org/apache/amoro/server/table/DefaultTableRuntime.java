@@ -40,6 +40,7 @@ import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.table.cleanup.TableRuntimeCleanupState;
 import org.apache.amoro.server.utils.IcebergTableUtil;
 import org.apache.amoro.server.utils.SnowflakeIdGenerator;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.BaseTable;
 import org.apache.amoro.table.ChangeTable;
@@ -55,13 +56,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 /** Default table runtime implementation. */
 public class DefaultTableRuntime extends AbstractTableRuntime {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultTableRuntime.class);
+
+  @VisibleForTesting static final long THREAD_COUNT_CACHE_TTL_MS = 5_000L;
+
+  @VisibleForTesting
+  private static final ConcurrentHashMap<String, Integer> groupThreadCountCache =
+      new ConcurrentHashMap<>();
+
+  @VisibleForTesting private static final AtomicLong threadCountCacheTime = new AtomicLong(0);
 
   private static final StateKey<TableRuntimeOptimizingState> OPTIMIZING_STATE_KEY =
       StateKey.stateKey("optimizing_state")
@@ -455,7 +466,8 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
     return TableBlocker.conflict(operation, tableBlockers);
   }
 
-  private long getQuotaTime() {
+  @VisibleForTesting
+  long getQuotaTime() {
     long calculatingEndTime = System.currentTimeMillis();
     long calculatingStartTime = calculatingEndTime - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
     taskQuotas.removeIf(task -> task.checkExpired(calculatingStartTime));
@@ -470,11 +482,21 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
   }
 
   private int getThreadCount() {
+    String groupName = getGroupName();
+    long now = System.currentTimeMillis();
+    long cachedAt = threadCountCacheTime.get();
+    if (now - cachedAt > THREAD_COUNT_CACHE_TTL_MS
+        && threadCountCacheTime.compareAndSet(cachedAt, now)) {
+      groupThreadCountCache.clear();
+    }
+    return groupThreadCountCache.computeIfAbsent(groupName, this::queryGroupThreadCount);
+  }
+
+  private int queryGroupThreadCount(String groupName) {
     List<OptimizerInstance> instances = getAs(OptimizerMapper.class, OptimizerMapper::selectAll);
     if (instances == null || instances.isEmpty()) {
       return 1;
     }
-    String groupName = getGroupName();
     return Math.max(
         instances.stream()
             .filter(instance -> Objects.equals(groupName, instance.getGroupName()))
