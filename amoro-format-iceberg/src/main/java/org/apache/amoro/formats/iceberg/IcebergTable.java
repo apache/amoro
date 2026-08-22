@@ -28,6 +28,7 @@ import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.MixedFormatCatalogUtil;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 
@@ -49,14 +50,38 @@ public class IcebergTable implements AmoroTable<UnkeyedTable> {
       Table icebergTable,
       TableMetaStore metaStore,
       Map<String, String> catalogProperties) {
-    AuthenticatedFileIO io =
-        AuthenticatedFileIOs.buildAdaptIcebergFileIO(metaStore, icebergTable.io());
+    return newIcebergTable(
+        identifier,
+        icebergTable,
+        metaStore,
+        catalogProperties,
+        icebergTable.properties().get(org.apache.amoro.table.TableProperties.OWNER));
+  }
 
+  public static IcebergTable newIcebergTable(
+      TableIdentifier identifier,
+      Table icebergTable,
+      TableMetaStore metaStore,
+      Map<String, String> catalogProperties,
+      String tableOwner) {
+    AuthenticatedFileIO io =
+        AuthenticatedFileIOs.buildAdaptIcebergFileIO(
+            metaStore, icebergTable.io(), icebergTable.properties(), catalogProperties, tableOwner);
+    return newIcebergTable(
+        identifier, icebergTable, io, metaStore.getConfiguration(), catalogProperties);
+  }
+
+  public static IcebergTable newIcebergTable(
+      TableIdentifier identifier,
+      Table icebergTable,
+      AuthenticatedFileIO io,
+      Configuration configuration,
+      Map<String, String> catalogProperties) {
     UnkeyedTable wrapped =
         new BasicUnkeyedTable(
             identifier,
             MixedFormatCatalogUtil.useMixedTableOperations(
-                icebergTable, icebergTable.location(), io, metaStore.getConfiguration()),
+                icebergTable, icebergTable.location(), io, configuration),
             io,
             catalogProperties) {
           @Override

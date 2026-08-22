@@ -27,6 +27,7 @@ import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.exception.OptimizingClosedException;
 import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.exception.TaskNotFoundException;
+import org.apache.amoro.io.AuthenticatedFileIOs;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
@@ -912,10 +913,12 @@ public class OptimizingQueue extends PersistentBase {
 
     private UnKeyedTableCommit buildCommit() {
       MixedTable table =
-          (MixedTable)
-              catalogManager
-                  .loadTable(tableRuntime.getTableIdentifier().getIdentifier())
-                  .originalTable();
+          AuthenticatedFileIOs.withOptimizingCommitImpersonation(
+              () ->
+                  (MixedTable)
+                      catalogManager
+                          .loadTable(tableRuntime.getTableIdentifier().getIdentifier())
+                          .originalTable());
       if (table.isUnkeyedTable()) {
         return new UnKeyedTableCommit(targetSnapshotId, table, taskMap.values());
       } else {

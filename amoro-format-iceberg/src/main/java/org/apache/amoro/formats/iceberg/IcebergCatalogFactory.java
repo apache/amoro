@@ -42,7 +42,7 @@ public class IcebergCatalogFactory implements FormatCatalogFactory {
 
     Catalog icebergCatalog =
         CatalogUtil.buildIcebergCatalog(name, properties, metaStore.getConfiguration());
-    return new IcebergCatalog(icebergCatalog, properties, metaStore);
+    return new IcebergCatalog(icebergCatalog, metastoreType, properties, metaStore);
   }
 
   @Override

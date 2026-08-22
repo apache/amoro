@@ -20,6 +20,7 @@ package org.apache.amoro.formats.iceberg;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.FormatCatalog;
+import org.apache.amoro.io.TableOwnerResolver;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedFormatCatalogUtil;
 import org.apache.iceberg.Table;
@@ -39,14 +40,24 @@ public class IcebergCatalog implements FormatCatalog {
   private final Catalog icebergCatalog;
   private final TableMetaStore metaStore;
   private final Map<String, String> properties;
+  private final String metastoreType;
 
   public IcebergCatalog(Catalog catalog, Map<String, String> properties, TableMetaStore metaStore) {
+    this(catalog, null, properties, metaStore);
+  }
+
+  public IcebergCatalog(
+      Catalog catalog,
+      String metastoreType,
+      Map<String, String> properties,
+      TableMetaStore metaStore) {
     this.icebergCatalog = MixedFormatCatalogUtil.buildCacheCatalog(catalog, properties);
     if (catalog instanceof SupportsNamespaces) {
       this.asNamespaceCatalog = (SupportsNamespaces) catalog;
     }
     this.metaStore = metaStore;
     this.properties = properties;
+    this.metastoreType = metastoreType;
   }
 
   @Override
@@ -102,11 +113,13 @@ public class IcebergCatalog implements FormatCatalog {
         () -> {
           try {
             Table icebergTable = icebergCatalog.loadTable(TableIdentifier.of(database, table));
+            org.apache.amoro.table.TableIdentifier identifier =
+                org.apache.amoro.table.TableIdentifier.of(icebergCatalog.name(), database, table);
+            String tableOwner =
+                TableOwnerResolver.resolve(
+                    metastoreType, identifier, icebergTable, properties, metaStore);
             return IcebergTable.newIcebergTable(
-                org.apache.amoro.table.TableIdentifier.of(icebergCatalog.name(), database, table),
-                icebergTable,
-                metaStore,
-                properties);
+                identifier, icebergTable, metaStore, properties, tableOwner);
           } catch (NoSuchTableException e) {
             throw new org.apache.amoro.NoSuchTableException(e);
           }

@@ -30,6 +30,7 @@ import org.apache.amoro.io.AuthenticatedHadoopFileIO;
 import org.apache.amoro.io.TableTrashManagers;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.properties.MetaTableProperties;
+import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.ChangeTable;
@@ -77,6 +78,17 @@ public class MixedHiveTables {
     this.hiveClientPool = new CachedHiveClientPool(getTableMetaStore(), catalogProperties);
   }
 
+  @VisibleForTesting
+  MixedHiveTables(
+      Map<String, String> catalogProperties,
+      TableMetaStore metaStore,
+      CachedHiveClientPool hiveClientPool) {
+    this.tableMetaStore = metaStore;
+    this.catalogProperties = catalogProperties;
+    this.tables = new HadoopTables(tableMetaStore.getConfiguration());
+    this.hiveClientPool = Preconditions.checkNotNull(hiveClientPool);
+  }
+
   protected TableMetaStore getTableMetaStore() {
     return tableMetaStore;
   }
@@ -104,6 +116,7 @@ public class MixedHiveTables {
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
+    String tableOwner = loadHiveTableOwnerIfNeeded(tableIdentifier, tableMeta.getProperties());
 
     AuthenticatedHadoopFileIO fileIO =
         AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
@@ -111,9 +124,10 @@ public class MixedHiveTables {
             tableLocation,
             tableMeta.getProperties(),
             tableMetaStore,
-            catalogProperties);
+            catalogProperties,
+            tableOwner);
     checkPrivilege(fileIO, baseLocation);
-    Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
+    Table baseIcebergTable = fileIO.doAs(() -> tables.load(baseLocation));
     UnkeyedHiveTable baseTable =
         new KeyedHiveTable.HiveBaseInternalTable(
             tableIdentifier,
@@ -125,7 +139,7 @@ public class MixedHiveTables {
             catalogProperties,
             false);
 
-    Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
+    Table changeIcebergTable = fileIO.doAs(() -> tables.load(changeLocation));
     ChangeTable changeTable =
         new KeyedHiveTable.HiveChangeInternalTable(
             tableIdentifier,
@@ -156,15 +170,17 @@ public class MixedHiveTables {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
+    String tableOwner = loadHiveTableOwnerIfNeeded(tableIdentifier, tableMeta.getProperties());
     AuthenticatedHadoopFileIO fileIO =
         AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
             tableIdentifier,
             tableLocation,
             tableMeta.getProperties(),
             tableMetaStore,
-            catalogProperties);
+            catalogProperties,
+            tableOwner);
     checkPrivilege(fileIO, baseLocation);
-    Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
+    Table table = fileIO.doAs(() -> tables.load(baseLocation));
     return new UnkeyedHiveTable(
         tableIdentifier,
         MixedFormatCatalogUtil.useMixedTableOperations(
@@ -553,6 +569,31 @@ public class MixedHiveTables {
     String allowStringValue =
         tableMeta.getProperties().remove(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED);
     return Boolean.parseBoolean(allowStringValue);
+  }
+
+  @VisibleForTesting
+  String loadHiveTableOwnerIfNeeded(
+      TableIdentifier tableIdentifier, Map<String, String> tableProperties) {
+    if (!AuthenticatedFileIOs.isHdfsImpersonationEnabledForOptimizingCommit(
+        tableProperties, catalogProperties)) {
+      return null;
+    }
+    return loadHiveTableOwner(tableIdentifier);
+  }
+
+  private String loadHiveTableOwner(TableIdentifier tableIdentifier) {
+    try {
+      return hiveClientPool.run(
+          client ->
+              client
+                  .getTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName())
+                  .getOwner());
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Failed to load Hive owner for table " + tableIdentifier, e);
+    } catch (TException e) {
+      throw new IllegalStateException("Failed to load Hive owner for table " + tableIdentifier, e);
+    }
   }
 
   public MixedTable createTableByMeta(

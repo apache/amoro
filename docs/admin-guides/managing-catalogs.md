@@ -76,6 +76,27 @@ Common properties include:
 ### Configure table properties
 If you want to add the same table properties to all tables under a catalog, you can add these table properties here on the catalog level. If you also configure this property on the table level, the property on the table will take effect.
 
+### HDFS owner impersonation
+
+For Hadoop-backed Iceberg, Mixed-Iceberg, and Mixed-Hive tables, AMS can run HDFS FileIO used by optimizing commits as the table owner instead of the catalog service user. This includes file operations performed while committing and commit-time cleanup. This is disabled by default. Enable it with the catalog property `hdfs.impersonation.enabled=true`, or set the same property on an individual table. An explicit table value overrides the catalog value.
+
+This setting applies only to AMS-side optimizing commits. Optimizer task writes and other maintenance operations continue to use their existing identities. For Hive Metastore catalogs, AMS reads the current table owner from Hive Metastore. For other Iceberg and Mixed-Iceberg catalogs, including internal catalogs, it reads the `owner` property from the current Iceberg table metadata. The table must have a non-empty owner and the catalog must use SIMPLE or KERBEROS authentication with Hadoop FileIO. Amoro fails the commit instead of falling back to the catalog service user when these requirements are not met.
+
+The Hadoop cluster must authorize the catalog login user to create proxy users. Amoro does not special-case owner names, including the conventional `hdfs` superuser, so proxy-user rules must exclude identities that the catalog service must not assume. Hadoop proxy authorization failures are propagated and never cause a fallback to the catalog service user. For example, if the Kerberos principal has the short name `amoro`, configure appropriately restricted values in `core-site.xml`:
+
+```xml
+<property>
+  <name>hadoop.proxyuser.amoro.hosts</name>
+  <value>trusted-amoro-hosts</value>
+</property>
+<property>
+  <name>hadoop.proxyuser.amoro.users</name>
+  <value>allowed-table-owners</value>
+</property>
+```
+
+You can use `hadoop.proxyuser.amoro.groups` instead of, or together with, the users setting. Avoid wildcard values unless they are explicitly required by your security policy. See the [Hadoop proxy user documentation](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/Superusers.html) for the authorization rules. HDFS and Ranger authorization still apply to the effective table owner.
+
 ## REST Catalog
 When a user needs to create a Iceberg REST Catalog, they can choose **External Catalog Type**、**Custom Metastore Type**、**Iceberg Table Format**, configure properties include:
 **catalog-impl=org.apache.iceberg.rest.RESTCatalog**, **uri=$restCatalog_uri**.

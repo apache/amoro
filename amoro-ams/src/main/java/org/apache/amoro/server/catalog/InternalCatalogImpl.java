@@ -30,6 +30,7 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.formats.iceberg.IcebergTable;
 import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.io.AuthenticatedFileIOs;
 import org.apache.amoro.mixed.InternalMixedIcebergCatalog;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.RestCatalogService;
@@ -55,6 +56,8 @@ import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.rest.RESTCatalog;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
+
+import java.util.Map;
 
 public class InternalCatalogImpl extends InternalCatalog {
 
@@ -117,23 +120,28 @@ public class InternalCatalogImpl extends InternalCatalog {
       String database, String tableName, InternalTableHandler<TableOperations> handler) {
     TableMetadata tableMetadata = handler.tableMetadata();
     TableOperations ops = handler.newTableOperator();
-
-    BaseTable table =
-        new BaseTable(
-            ops,
-            TableIdentifier.of(
-                    tableMetadata.getTableIdentifier().getDatabase(),
-                    tableMetadata.getTableIdentifier().getTableName())
-                .toString());
+    BaseTable table = newBaseTable(tableMetadata, ops);
+    CatalogMeta catalogMeta = getMetadata();
+    Map<String, String> catalogProperties = catalogMeta.getCatalogProperties();
+    Map<String, String> tableProperties = table.properties();
+    AuthenticatedFileIO fileIO = (AuthenticatedFileIO) ops.io();
+    if (AuthenticatedFileIOs.isHdfsImpersonationEnabledForOptimizingCommit(
+        tableProperties, catalogProperties)) {
+      handler.close();
+      fileIO = InternalTableUtil.newIcebergFileIo(catalogMeta, tableProperties);
+      ops = new InternalIcebergHandler(tableMetadata, fileIO).newTableOperator();
+      table = newBaseTable(tableMetadata, ops);
+    }
     org.apache.amoro.table.TableIdentifier tableIdentifier =
         org.apache.amoro.table.TableIdentifier.of(name(), database, tableName);
     AmoroTable<?> amoroTable =
         IcebergTable.newIcebergTable(
             tableIdentifier,
             table,
-            CatalogUtil.buildMetaStore(getMetadata()),
-            getMetadata().getCatalogProperties());
-    fileIOCloser.put(amoroTable, ops.io());
+            fileIO,
+            CatalogUtil.buildMetaStore(catalogMeta).getConfiguration(),
+            catalogProperties);
+    fileIOCloser.put(amoroTable, fileIO);
     return amoroTable;
   }
 
@@ -142,12 +150,22 @@ public class InternalCatalogImpl extends InternalCatalog {
     TableMetadata tableMetadata = handler.tableMetadata();
     org.apache.amoro.table.TableIdentifier tableIdentifier =
         org.apache.amoro.table.TableIdentifier.of(name(), database, tableName);
-    AuthenticatedFileIO fileIO = InternalTableUtil.newIcebergFileIo(getMetadata());
+    CatalogMeta catalogMeta = getMetadata();
+    Map<String, String> catalogProperties = catalogMeta.getCatalogProperties();
+    TableOperations baseOps = handler.newTableOperator();
+    BaseTable baseTable = newBaseTable(tableMetadata, baseOps);
+    Map<String, String> tableProperties = baseTable.properties();
+    AuthenticatedFileIO fileIO = (AuthenticatedFileIO) baseOps.io();
+    if (AuthenticatedFileIOs.isHdfsImpersonationEnabledForOptimizingCommit(
+        tableProperties, catalogProperties)) {
+      handler.close();
+      fileIO = InternalTableUtil.newIcebergFileIo(catalogMeta, tableProperties);
+      baseTable = loadTableStore(tableMetadata, false, fileIO);
+    }
     MixedTable mixedIcebergTable;
 
-    BaseTable baseTable = loadTableStore(tableMetadata, false);
     if (InternalTableUtil.isKeyedMixedTable(tableMetadata)) {
-      BaseTable changeTable = loadTableStore(tableMetadata, true);
+      BaseTable changeTable = loadTableStore(tableMetadata, true, fileIO);
 
       PrimaryKeySpec.Builder keySpecBuilder = PrimaryKeySpec.builderFor(baseTable.schema());
       tableMetadata.buildTableMeta().getKeySpec().getFields().forEach(keySpecBuilder::addColumn);
@@ -158,13 +176,12 @@ public class InternalCatalogImpl extends InternalCatalog {
               tableMetadata.getTableLocation(),
               keySpec,
               new BasicKeyedTable.BaseInternalTable(
-                  tableIdentifier, baseTable, fileIO, getMetadata().getCatalogProperties()),
+                  tableIdentifier, baseTable, fileIO, catalogProperties),
               new BasicKeyedTable.ChangeInternalTable(
-                  tableIdentifier, changeTable, fileIO, getMetadata().getCatalogProperties()));
+                  tableIdentifier, changeTable, fileIO, catalogProperties));
     } else {
       mixedIcebergTable =
-          new BasicUnkeyedTable(
-              tableIdentifier, baseTable, fileIO, getMetadata().getCatalogProperties());
+          new BasicUnkeyedTable(tableIdentifier, baseTable, fileIO, catalogProperties);
     }
     AmoroTable<?> amoroTable =
         new org.apache.amoro.formats.mixed.MixedTable(mixedIcebergTable, TableFormat.MIXED_ICEBERG);
@@ -172,8 +189,14 @@ public class InternalCatalogImpl extends InternalCatalog {
     return amoroTable;
   }
 
-  private BaseTable loadTableStore(TableMetadata tableMetadata, boolean isChangeStore) {
-    TableOperations ops = newTableStoreHandler(tableMetadata, isChangeStore).newTableOperator();
+  private BaseTable loadTableStore(
+      TableMetadata tableMetadata, boolean isChangeStore, AuthenticatedFileIO fileIO) {
+    TableOperations ops =
+        newTableStoreHandler(tableMetadata, isChangeStore, fileIO).newTableOperator();
+    return newBaseTable(tableMetadata, ops);
+  }
+
+  private BaseTable newBaseTable(TableMetadata tableMetadata, TableOperations ops) {
     return new BaseTable(
         ops,
         TableIdentifier.of(
@@ -246,6 +269,11 @@ public class InternalCatalogImpl extends InternalCatalog {
   private InternalTableHandler<TableOperations> newTableStoreHandler(
       TableMetadata metadata, boolean isChangeStore) {
     return new InternalMixedIcebergHandler(getMetadata(), metadata, isChangeStore);
+  }
+
+  private InternalTableHandler<TableOperations> newTableStoreHandler(
+      TableMetadata metadata, boolean isChangeStore, AuthenticatedFileIO fileIO) {
+    return new InternalMixedIcebergHandler(getMetadata(), metadata, isChangeStore, fileIO);
   }
 
   private Cache<AmoroTable<?>, FileIO> newFileIOCloser() {
