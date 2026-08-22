@@ -46,8 +46,11 @@ public interface OptimizerMapper {
           + " #{optimizer.properties, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter})")
   void insertOptimizer(@Param("optimizer") OptimizerInstance optimizer);
 
-  @Update("UPDATE optimizer SET touch_time = CURRENT_TIMESTAMP WHERE token = #{token}")
-  void updateTouchTime(@Param("token") String token);
+  @Update(
+      "UPDATE optimizer SET touch_time = #{touchTime,"
+          + " typeHandler=org.apache.amoro.server.persistence.converter.Long2TsConverter}"
+          + " WHERE token = #{token}")
+  void updateTouchTime(@Param("token") String token, @Param("touchTime") long touchTime);
 
   @Delete("DELETE FROM optimizer WHERE token = #{token}")
   void deleteOptimizer(@Param("token") String token);
