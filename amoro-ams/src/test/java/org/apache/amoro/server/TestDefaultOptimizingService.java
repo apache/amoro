@@ -37,6 +37,7 @@ import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.exception.PluginRetryAuthException;
 import org.apache.amoro.exception.TaskRuntimeException;
 import org.apache.amoro.io.MixedDataTestHelpers;
@@ -53,6 +54,7 @@ import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableRuntimeMapper;
 import org.apache.amoro.server.process.TableProcessMeta;
@@ -171,6 +173,100 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     clear();
     Assertions.assertThrows(
         PluginRetryAuthException.class, () -> optimizingService().pollTask("whatever", THREAD_ID));
+  }
+
+  @Test
+  public void testOrphanedOptimizerRecordMustNotBreakInitialization() {
+    // An optimizer row whose resource group no longer exists (e.g. the group was dropped while
+    // AMS was down) must be cleaned up instead of failing initialization with an NPE.
+    OptimizerRegisterInfo registerInfo = buildRegisterInfo();
+    registerInfo.setGroupName("group-dropped-while-ams-down");
+    OptimizerInstance orphan = new OptimizerInstance(registerInfo, "local");
+    OptimizerRegisterInfo emptyGroupRegisterInfo = buildRegisterInfo();
+    emptyGroupRegisterInfo.setGroupName("");
+    emptyGroupRegisterInfo.setResourceId("resource-with-empty-group");
+    OptimizerInstance emptyGroupOrphan = new OptimizerInstance(emptyGroupRegisterInfo, "local");
+    optimizerManager().createResourceGroup(new ResourceGroup.Builder("", "local").build());
+    try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession(true)) {
+      session.getMapper(OptimizerMapper.class).insertOptimizer(orphan);
+      session.getMapper(OptimizerMapper.class).insertOptimizer(emptyGroupOrphan);
+    }
+
+    try {
+      // Exercise the production startup path rather than calling the recovery helper directly.
+      Assertions.assertDoesNotThrow(this::reload);
+
+      List<OptimizerInstance> remaining;
+      try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession(true)) {
+        remaining = session.getMapper(OptimizerMapper.class).selectAll();
+      }
+      Assertions.assertFalse(
+          remaining.stream().anyMatch(o -> o.getToken().equals(orphan.getToken())),
+          "orphaned optimizer record should be removed during initialization");
+      Assertions.assertFalse(
+          remaining.stream().anyMatch(o -> o.getToken().equals(emptyGroupOrphan.getToken())),
+          "an optimizer record with an empty group should always be removed");
+    } finally {
+      optimizingService().deleteOptimizer("", emptyGroupOrphan.getResourceId());
+      optimizingService().deleteResourceGroup("");
+      optimizerManager().deleteResourceGroup("");
+    }
+  }
+
+  @Test
+  public void testValidOptimizerRecordMustSurviveStaleQueueSnapshot() {
+    String groupName = "group-created-by-another-ams";
+    ResourceGroup group = new ResourceGroup.Builder(groupName, "local").build();
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    // Simulate a startup snapshot taken before another AMS created the persisted group.
+    optimizingService().deleteResourceGroup(groupName);
+
+    OptimizerRegisterInfo registerInfo = buildRegisterInfo();
+    registerInfo.setGroupName(groupName);
+    registerInfo.setResourceId("resource-created-by-another-ams");
+    OptimizerInstance optimizer = new OptimizerInstance(registerInfo, "local");
+    insertOptimizer(optimizer);
+
+    try {
+      optimizingService().registerOptimizers(Lists.newArrayList(optimizer));
+
+      Assertions.assertTrue(
+          optimizerExists(optimizer.getToken()),
+          "a stale local queue snapshot must not delete a valid shared optimizer record");
+    } finally {
+      deleteOptimizerRecord(optimizer.getToken());
+      optimizerManager().deleteResourceGroup(groupName);
+    }
+  }
+
+  @Test
+  public void testAuthenticateMustRejectStaleLocalQueueAfterGroupDeletion() {
+    String groupName = "group-deleted-by-another-ams";
+    ResourceGroup group = new ResourceGroup.Builder(groupName, "local").build();
+    optimizerManager().createResourceGroup(group);
+    optimizingService().createResourceGroup(group);
+    // Keep the local queue but remove the shared database row, as can happen before watcher sync.
+    optimizerManager().deleteResourceGroup(groupName);
+
+    OptimizerRegisterInfo registerInfo = buildRegisterInfo();
+    registerInfo.setGroupName(groupName);
+    registerInfo.setResourceId("resource-for-deleted-group");
+
+    try {
+      Assertions.assertThrows(
+          ObjectNotExistsException.class, () -> optimizingService().authenticate(registerInfo));
+      Assertions.assertFalse(
+          optimizerManager().listOptimizers().stream()
+              .anyMatch(optimizer -> groupName.equals(optimizer.getGroupName())),
+          "authentication must not persist an optimizer for a deleted resource group");
+    } finally {
+      optimizerManager().listOptimizers().stream()
+          .filter(optimizer -> groupName.equals(optimizer.getGroupName()))
+          .map(OptimizerInstance::getToken)
+          .forEach(this::deleteOptimizerRecord);
+      optimizingService().deleteResourceGroup(groupName);
+    }
   }
 
   @Test
@@ -830,6 +926,23 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     registerInfo.setResourceId("1");
     registerInfo.setStartTime(System.currentTimeMillis());
     return registerInfo;
+  }
+
+  private void insertOptimizer(OptimizerInstance optimizer) {
+    try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession(true)) {
+      session.getMapper(OptimizerMapper.class).insertOptimizer(optimizer);
+    }
+  }
+
+  private boolean optimizerExists(String optimizerToken) {
+    return optimizerManager().listOptimizers().stream()
+        .anyMatch(optimizer -> optimizerToken.equals(optimizer.getToken()));
+  }
+
+  private void deleteOptimizerRecord(String optimizerToken) {
+    try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession(true)) {
+      session.getMapper(OptimizerMapper.class).deleteOptimizer(optimizerToken);
+    }
   }
 
   @SuppressWarnings("unchecked")

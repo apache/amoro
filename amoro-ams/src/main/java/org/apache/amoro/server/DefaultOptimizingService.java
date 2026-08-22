@@ -212,7 +212,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
           optimizerGroupKeeper.keepInTouch(groupName, 1);
           optimizerScaleKeeper.watch(group);
         });
-    optimizers.forEach(optimizer -> registerOptimizer(optimizer, false));
+    registerOptimizers(optimizers);
     // Avoid keeping the tables in processing/pending status forever in below cases:
     // 1) Resource group does not exist
     // 2) The AMS restarts after the tables disable self-optimizing but before the optimizing
@@ -239,7 +239,17 @@ public class DefaultOptimizingService extends StatedPersistentBase
 
   private void registerOptimizer(OptimizerInstance optimizer, boolean needPersistent) {
     if (needPersistent) {
-      doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
+      doAsTransaction(
+          () -> {
+            String groupName =
+                getAs(
+                    ResourceMapper.class,
+                    mapper -> mapper.selectResourceGroupNameForUpdate(optimizer.getGroupName()));
+            if (groupName == null) {
+              throw new ObjectNotExistsException("Optimizer group " + optimizer.getGroupName());
+            }
+            doAs(OptimizerMapper.class, mapper -> mapper.insertOptimizer(optimizer));
+          });
     }
 
     OptimizingQueue optimizingQueue = optimizingQueueByGroup.get(optimizer.getGroupName());
@@ -248,6 +258,40 @@ public class DefaultOptimizingService extends StatedPersistentBase
     optimizingQueueByToken.put(optimizer.getToken(), optimizingQueue);
     optimizerKeeper.keepInTouch(optimizer);
     optimizerScaleKeeper.onOptimizerRegistered(optimizer);
+  }
+
+  /**
+   * Registers optimizers recovered from persistence at startup. A missing local queue may be a
+   * stale snapshot in an HA deployment, so a non-empty optimizer group is removed only when its
+   * persisted resource group is also absent. Empty group names are always treated as orphaned.
+   */
+  void registerOptimizers(List<OptimizerInstance> optimizers) {
+    for (OptimizerInstance optimizer : optimizers) {
+      String groupName = optimizer.getGroupName();
+      if (groupName != null
+          && !groupName.isEmpty()
+          && optimizingQueueByGroup.containsKey(groupName)) {
+        registerOptimizer(optimizer, false);
+      } else {
+        long deleted =
+            updateAs(
+                OptimizerMapper.class,
+                mapper -> mapper.deleteOptimizerIfResourceGroupAbsent(optimizer.getToken()));
+        if (deleted == 1) {
+          LOG.warn(
+              "Remove orphan optimizer {}, its resource group {} does not exist",
+              optimizer.getToken(),
+              groupName);
+        } else {
+          LOG.warn(
+              "Skip recovering optimizer {} due to a stale local resource group snapshot:"
+                  + " group {} is unavailable locally, but keep its shared record because the"
+                  + " resource group still exists",
+              optimizer.getToken(),
+              groupName);
+        }
+      }
+    }
   }
 
   private void unregisterOptimizer(String token) {
