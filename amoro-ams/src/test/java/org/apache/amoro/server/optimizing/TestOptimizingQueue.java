@@ -858,6 +858,8 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     // Close process without success (simulates group change / forced termination)
     process.close(false);
 
+    Assert.assertTrue(process.isClosed());
+
     // lastOptimizedSnapshotId and lastOptimizedChangeSnapshotId should NOT be updated
     Assert.assertEquals(snapshotIdBeforePlanning, tableRuntime.getLastOptimizedSnapshotId());
     Assert.assertEquals(
