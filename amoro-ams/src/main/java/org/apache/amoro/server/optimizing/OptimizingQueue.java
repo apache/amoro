@@ -775,7 +775,10 @@ public class OptimizingQueue extends PersistentBase {
 
     @Override
     public boolean isClosed() {
-      return status == ProcessStatus.KILLED;
+      // close() sets CLOSED (KILLED is reserved for kill flows); checking only KILLED made
+      // this predicate permanently false, so the acceptResult guard against late results on a
+      // closed process could never fire.
+      return status == ProcessStatus.CLOSED || status == ProcessStatus.KILLED;
     }
 
     @Override
