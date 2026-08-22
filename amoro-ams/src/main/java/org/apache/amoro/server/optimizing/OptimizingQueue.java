@@ -622,9 +622,11 @@ public class OptimizingQueue extends PersistentBase {
 
     private int getQuotaLimit() {
       double targetQuota = tableRuntime.getOptimizingConfig().getTargetQuota();
+      // A non-positive target quota must not starve the table to zero schedulable slots;
+      // clamp to 1 like getAvailableCore does for the group quota.
       return targetQuota > 1
           ? (int) targetQuota
-          : (int) Math.ceil(targetQuota * getAvailableCore());
+          : (int) Math.max(1, Math.ceil(targetQuota * getAvailableCore()));
     }
 
     @Override
