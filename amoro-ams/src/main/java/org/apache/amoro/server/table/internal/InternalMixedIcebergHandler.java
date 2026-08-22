@@ -21,6 +21,7 @@ package org.apache.amoro.server.table.internal;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.TableMeta;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.op.MixedHadoopTableOperations;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.utils.InternalTableUtil;
@@ -43,7 +44,15 @@ public class InternalMixedIcebergHandler extends InternalIcebergHandler {
 
   public InternalMixedIcebergHandler(
       CatalogMeta catalogMeta, TableMetadata metadata, boolean changeStore) {
-    super(catalogMeta, metadata);
+    this(catalogMeta, metadata, changeStore, InternalTableUtil.newIcebergFileIo(catalogMeta));
+  }
+
+  public InternalMixedIcebergHandler(
+      CatalogMeta catalogMeta,
+      TableMetadata metadata,
+      boolean changeStore,
+      AuthenticatedFileIO io) {
+    super(metadata, io);
     this.changeStore = changeStore;
     this.catalogMeta = catalogMeta;
   }

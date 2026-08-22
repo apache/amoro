@@ -23,6 +23,7 @@ import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 import org.apache.amoro.AmsClient;
 import org.apache.amoro.PooledAmsClient;
 import org.apache.amoro.io.AuthenticatedFileIO;
+import org.apache.amoro.io.TableOwnerResolver;
 import org.apache.amoro.io.TableTrashManagers;
 import org.apache.amoro.op.CreateTableTransaction;
 import org.apache.amoro.properties.CatalogMetaProperties;
@@ -66,6 +67,7 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
   private MixedTables tables;
   private SupportsNamespaces asNamespaceCatalog;
   private String separator;
+  private String metastoreType;
 
   @Override
   public String name() {
@@ -86,6 +88,7 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
     org.apache.iceberg.catalog.Catalog catalog =
         buildIcebergCatalog(name, icebergCatalogProperties, metaStore.getConfiguration());
     this.name = name;
+    this.metastoreType = metastoreType;
     this.tableMetaStore = metaStore;
     this.icebergCatalog =
         MixedFormatCatalogUtil.buildCacheCatalog(catalog, icebergCatalogProperties);
@@ -160,7 +163,10 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
     if (!tables.isBaseStore(base)) {
       throw new NoSuchTableException("table " + base.name() + " is not a mixed iceberg table");
     }
-    return tables.loadTable(base, tableIdentifier);
+    String tableOwner =
+        TableOwnerResolver.resolve(
+            metastoreType, tableIdentifier, base, catalogProperties, tableMetaStore);
+    return tables.loadTable(base, tableIdentifier, tableOwner);
   }
 
   @Override

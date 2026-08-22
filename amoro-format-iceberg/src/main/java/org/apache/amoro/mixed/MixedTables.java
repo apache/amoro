@@ -103,8 +103,15 @@ public class MixedTables {
    * @return mixed format table instance.
    */
   public MixedTable loadTable(Table base, org.apache.amoro.table.TableIdentifier tableIdentifier) {
+    return loadTable(
+        base, tableIdentifier, base.properties().get(org.apache.amoro.table.TableProperties.OWNER));
+  }
+
+  public MixedTable loadTable(
+      Table base, org.apache.amoro.table.TableIdentifier tableIdentifier, String tableOwner) {
     AuthenticatedFileIO io =
-        AuthenticatedFileIOs.buildAdaptIcebergFileIO(this.tableMetaStore, base.io());
+        AuthenticatedFileIOs.buildAdaptIcebergFileIO(
+            this.tableMetaStore, base.io(), base.properties(), catalogProperties, tableOwner);
     PrimaryKeySpec keySpec =
         TablePropertyUtil.parsePrimaryKeySpec(base.schema(), base.properties());
     if (!keySpec.primaryKeyExisted()) {

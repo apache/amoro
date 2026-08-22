@@ -98,6 +98,8 @@ public class CatalogMetaProperties {
   public static final String DATA_EXPIRATION_PREFIX = "data-expire.";
   public static final String TABLE_TRASH_PREFIX = "table-trash.";
   public static final String AUTO_CREATE_TAG_PREFIX = "tag.auto-create.";
+  public static final String HDFS_IMPERSONATION_PREFIX = "hdfs.impersonation.";
+  public static final String HDFS_IMPERSONATION_ENABLED = HDFS_IMPERSONATION_PREFIX + "enabled";
 
   // mixed-format properties
   public static final String MIXED_FORMAT_TABLE_STORE_SEPARATOR =
