@@ -42,7 +42,6 @@ public class LanceCatalogFactory implements FormatCatalogFactory {
     if (CatalogMetaProperties.CATALOG_TYPE_REST.equals(metastoreType)) {
       return new LanceRestCatalog(catalogName, properties);
     }
-
     return new LanceDirectoryV1Catalog(catalogName, properties);
   }
 
