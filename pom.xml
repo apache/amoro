@@ -679,29 +679,6 @@
                 <version>${log4j.version}</version>
             </dependency>
 
-            <!-- log4j-to-slf4j reverses log4j-slf4j2-impl, causing a logging loop -->
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-to-slf4j</artifactId>
-                <version>${log4j.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <!-- SLF4J 1.x bindings — must not coexist with log4j-slf4j2-impl -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>${slf4j.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-slf4j-impl</artifactId>
-                <version>${log4j.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
             <dependency>
                 <groupId>args4j</groupId>
                 <artifactId>args4j</artifactId>
@@ -1823,6 +1800,36 @@
         </pluginManagement>
 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>ban-conflicting-logging-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <!-- Reverses log4j-slf4j2-impl, causing a logging loop -->
+                                        <exclude>org.apache.logging.log4j:log4j-to-slf4j</exclude>
+                                        <!-- SLF4J 1.x bindings — must not coexist with log4j-slf4j2-impl -->
+                                        <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                        <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
+                                        <exclude>org.slf4j:slf4j-simple</exclude>
+                                        <exclude>org.slf4j:slf4j-nop</exclude>
+                                        <exclude>org.slf4j:slf4j-jdk14</exclude>
+                                    </excludes>
+                                    <message>These logging dependencies conflict with log4j-slf4j2-impl. Exclude them at the source.</message>
+                                </bannedDependencies>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
