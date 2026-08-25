@@ -35,6 +35,9 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
   private transient TokenChangeListener tokenChangeListener;
   private final Map<String, String> registerProperties = Maps.newHashMap();
   private final long startTime;
+  private transient volatile Thread runnerThread;
+  private volatile boolean draining = false;
+  private transient boolean drainTokenLossLogged = false;
 
   public OptimizerToucher(OptimizerConfig config) {
     super(config);
@@ -54,21 +57,59 @@ public class OptimizerToucher extends AbstractOptimizerOperator {
 
   public void start() {
     LOG.info("Starting optimizer toucher with configuration:{}", getConfig());
-    while (isStarted()) {
-      try {
-        if (checkToken()) {
-          touch();
+    runnerThread = Thread.currentThread();
+    try {
+      while (isStarted()) {
+        try {
+          if (checkToken()) {
+            touch();
+          }
+          waitAShortTime(getConfig().getHeartBeat());
+        } catch (Throwable t) {
+          LOG.error("Optimizer toucher got an unexpected error", t);
         }
-        waitAShortTime(getConfig().getHeartBeat());
-      } catch (Throwable t) {
-        LOG.error("Optimizer toucher got an unexpected error", t);
       }
+    } finally {
+      runnerThread = null;
     }
     LOG.info("Optimizer toucher stopped");
   }
 
+  /**
+   * Enters drain mode: keep heartbeating with the current token but never re-register. During
+   * graceful shutdown AMS may have already unregistered this optimizer (a scale-down releases the
+   * resource before the pod receives SIGTERM); re-registering on the resulting auth error would
+   * create a ghost optimizer AMS never asked for and rotate the executors' token, so their final
+   * completeTask would be rejected as coming from the wrong optimizer.
+   */
+  public void enterDrainMode() {
+    this.draining = true;
+  }
+
+  @Override
+  public void stop() {
+    super.stop();
+    // Wake the runner immediately if it is sleeping in waitAShortTime, so the heartbeat
+    // loop terminates without waiting up to one full heartbeat interval. waitAShortTime
+    // preserves the interrupt flag so the loop exits cleanly on its next isStarted() check.
+    Thread t = runnerThread;
+    if (t != null) {
+      t.interrupt();
+    }
+  }
+
   private boolean checkToken() {
     if (!tokenIsReady()) {
+      if (draining) {
+        if (!drainTokenLossLogged) {
+          drainTokenLossLogged = true;
+          LOG.warn(
+              "Optimizer token became invalid while draining; skip re-registering to AMS {} "
+                  + "to avoid creating a ghost optimizer",
+              getConfig().getAmsUrl());
+        }
+        return false;
+      }
       LOG.info(
           "Registering optimizer to AMS {} (group: {}, mode: {}, threads: {}, memory: {}MB) ...",
           getConfig().getAmsUrl(),

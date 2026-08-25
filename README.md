@@ -82,7 +82,7 @@ Amoro support multiple processing engines for Mixed format as below:
 
 | Processing Engine | Version                | Batch Read  | Batch Write | Batch Overwrite | Streaming Read | Streaming Write | Create Table | Alter Table |
 |-------------------|------------------------|-------------|-------------|-----------------|----------------|-----------------|--------------|-------------|
-| Flink             | 1.18.x, 1.19.x          |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |
+| Flink             | 1.18.x, 1.19.x, 1.20.x |  &#x2714;   |   &#x2714;   |       &#x2716;   |      &#x2714;   |       &#x2714;   |    &#x2714;   |   &#x2716;   |
 | Spark             | 3.3, 3.4, 3.5          |  &#x2714;   |   &#x2714;   |       &#x2714;   |      &#x2716;   |       &#x2716;   |    &#x2714;   |   &#x2714;   |
 | Hive              | 2.x, 3.x               |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
 | Trino             | 406                    |  &#x2714;  |   &#x2716;  |       &#x2714;  |      &#x2716;  |       &#x2716;  |    &#x2716;  |   &#x2714;  |
@@ -116,7 +116,7 @@ Amoro contains modules as below:
 
 ## Building
 
-Amoro is built using Maven with JDK 8, 11 and 17(required for `amoro-format-mixed/amoro-mixed-trino` module).
+Amoro is built using Maven with JDK 11 and 17(required for `amoro-format-mixed/amoro-mixed-trino` module, experimental for other modules).
 
 * Build all modules without `amoro-mixed-trino`: `./mvnw clean package`
 * Build and skip tests: `./mvnw clean package -DskipTests`
@@ -182,4 +182,4 @@ Made with [contrib.rocks](https://contrib.rocks).
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=apache/amoro&type=Date)](https://star-history.com/#apache/amoro&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=apache/amoro&type=Date)](https://star-history.dera.page/#apache/amoro&Date)

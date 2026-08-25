@@ -34,7 +34,10 @@ import org.apache.amoro.server.table.internal.InternalTableHandler;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -56,6 +59,12 @@ public abstract class InternalCatalog extends ServerCatalog {
   }
 
   public void createDatabase(String databaseName) {
+    createDatabase(databaseName, Collections.emptyMap());
+  }
+
+  public void createDatabase(String databaseName, Map<String, String> properties) {
+    Map<String, String> databaseProperties =
+        properties == null ? Collections.emptyMap() : new HashMap<>(properties);
     if (!databaseExists(databaseName)) {
       doAsTransaction(
           // make sure catalog existed in database
@@ -67,11 +76,58 @@ public abstract class InternalCatalog extends ServerCatalog {
           () ->
               doAs(
                   TableMetaMapper.class,
-                  mapper -> mapper.insertDatabase(getMetadata().getCatalogName(), databaseName)),
+                  mapper ->
+                      mapper.insertDatabase(
+                          getMetadata().getCatalogName(), databaseName, databaseProperties)),
           () -> createDatabaseInternal(databaseName));
     } else {
       throw new AlreadyExistsException("Database " + databaseName);
     }
+  }
+
+  public Map<String, String> getDatabaseProperties(String databaseName) {
+    DatabaseMetadata databaseMetadata =
+        getAs(TableMetaMapper.class, mapper -> mapper.selectDatabaseMetadata(name(), databaseName));
+    if (databaseMetadata == null) {
+      throw new ObjectNotExistsException(getDatabaseDesc(databaseName));
+    }
+
+    Map<String, String> properties = databaseMetadata.getProperties();
+    return properties == null ? new HashMap<>() : new HashMap<>(properties);
+  }
+
+  public Map<String, String> applyDatabasePropertiesUpdate(
+      String databaseName, Map<String, String> updates, List<String> removals) {
+    Map<String, String> requestedUpdates =
+        updates == null ? Collections.emptyMap() : new HashMap<>(updates);
+    List<String> requestedRemovals =
+        removals == null ? Collections.emptyList() : List.copyOf(removals);
+    Map<String, String> previousProperties = new HashMap<>();
+
+    doAsTransaction(
+        () -> {
+          DatabaseMetadata metadata =
+              getAs(
+                  TableMetaMapper.class,
+                  mapper -> mapper.selectDatabaseMetadataForUpdate(name(), databaseName));
+          if (metadata == null) {
+            throw new ObjectNotExistsException(getDatabaseDesc(databaseName));
+          }
+
+          Map<String, String> properties =
+              metadata.getProperties() == null
+                  ? new HashMap<>()
+                  : new HashMap<>(metadata.getProperties());
+          previousProperties.putAll(properties);
+          requestedRemovals.forEach(properties::remove);
+          properties.putAll(requestedUpdates);
+          doAsExisted(
+              TableMetaMapper.class,
+              mapper -> mapper.updateDatabaseProperties(name(), databaseName, properties),
+              () -> new ObjectNotExistsException(getDatabaseDesc(databaseName)));
+        });
+
+    return previousProperties;
   }
 
   public void dropDatabase(String databaseName) {

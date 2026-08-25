@@ -33,18 +33,29 @@ import org.junit.BeforeClass;
 import java.time.Duration;
 
 public abstract class AMSServiceTestBase extends AMSManagerTestBase {
+  // Normal optimizer tests may block in pollTask for 3 seconds. Keep the heartbeat timeout well
+  // outside that window so CI scheduling delays do not turn unrelated tests into expiry tests.
+  private static final Duration DEFAULT_OPTIMIZER_HEARTBEAT_TIMEOUT = Duration.ofSeconds(10);
+
   private static DefaultTableService TABLE_SERVICE = null;
   private static DefaultOptimizingService OPTIMIZING_SERVICE = null;
   private static ProcessService PROCESS_SERVICE = null;
 
   @BeforeClass
   public static void initTableService() {
+    initTableService(DEFAULT_OPTIMIZER_HEARTBEAT_TIMEOUT);
+  }
+
+  protected static void initTableService(Duration optimizerHeartbeatTimeout) {
     DefaultTableRuntimeFactory runtimeFactory = new DefaultTableRuntimeFactory();
     try {
       Configurations configurations = new Configurations();
-      configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, Duration.ofMillis(800L));
+      configurations.set(AmoroManagementConf.OPTIMIZER_HB_TIMEOUT, optimizerHeartbeatTimeout);
       configurations.set(
           AmoroManagementConf.OPTIMIZER_TASK_EXECUTE_TIMEOUT, Duration.ofMillis(30000L));
+      // must stay above OPTIMIZER_POLLING_TIMEOUT (3s): a blocking pollTask waiting out its full
+      // timeout would otherwise pick up the task the keeper reset by ack-timeout in the meantime
+      configurations.set(AmoroManagementConf.OPTIMIZER_TASK_ACK_TIMEOUT, Duration.ofMillis(5000L));
       configurations.set(
           AmoroManagementConf.OPTIMIZER_GROUP_MIN_PARALLELISM_CHECK_INTERVAL,
           Duration.ofMillis(10L));
@@ -75,6 +86,8 @@ public abstract class AMSServiceTestBase extends AMSManagerTestBase {
   @AfterClass
   public static void disposeTableService() {
     TABLE_SERVICE.dispose();
+    OPTIMIZING_SERVICE.dispose();
+    PROCESS_SERVICE.dispose();
     MetricManager.dispose();
     EventsManager.dispose();
   }

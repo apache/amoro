@@ -130,6 +130,7 @@ public class TestKubernetesOptimizerContainer {
     String groupName = argsList.get("groupName").toString();
     String resourceId = argsList.get("resourceId").toString();
     String startUpArgs = argsList.get("startUpArgs").toString();
+    long terminationGraceSeconds = (long) argsList.get("terminationGraceSeconds");
 
     Deployment deployment =
         kubernetesOptimizerContainer.initPodTemplateFromFrontEnd(
@@ -141,7 +142,8 @@ public class TestKubernetesOptimizerContainer {
             resourceId,
             startUpArgs,
             memory,
-            imagePullSecretsList);
+            imagePullSecretsList,
+            terminationGraceSeconds);
 
     Assert.assertEquals(1, deployment.getSpec().getReplicas().intValue());
     Assert.assertNotEquals(
@@ -217,6 +219,8 @@ public class TestKubernetesOptimizerContainer {
 
     String resourceId = resource.getResourceId();
     String groupName = resource.getGroupName();
+    long terminationGraceSeconds =
+        KubernetesOptimizerContainer.resolveTerminationGracePeriodSeconds(groupProperties);
 
     Assert.assertEquals(1, podTemplate.getTemplate().getSpec().getContainers().size());
 
@@ -234,7 +238,8 @@ public class TestKubernetesOptimizerContainer {
             resourceId,
             startUpArgs,
             memory,
-            imagePullSecretsList);
+            imagePullSecretsList,
+            terminationGraceSeconds);
 
     Assert.assertEquals("amoro-optimizer-" + resourceId, deployment.getMetadata().getName());
     Assert.assertEquals(
@@ -276,6 +281,269 @@ public class TestKubernetesOptimizerContainer {
             .getLimits()
             .get("memory")
             .toString());
+  }
+
+  @Test
+  public void testContainerCommandUsesExecForSignalForwarding() {
+    ResourceType resourceType = ResourceType.OPTIMIZER;
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put("memory", "1024");
+    Resource resource =
+        new Resource.Builder("KubernetesContainer", "k8s", resourceType)
+            .setMemoryMb(1024)
+            .setThreadCount(1)
+            .setProperties(properties)
+            .build();
+    groupProperties.putAll(resource.getProperties());
+
+    Map<String, Object> argsList =
+        kubernetesOptimizerContainer.generatePodStartArgs(resource, groupProperties);
+    String image = argsList.get(IMAGE).toString();
+    String pullPolicy = argsList.get(PULL_POLICY).toString();
+    List<LocalObjectReference> imagePullSecretsList =
+        (List<LocalObjectReference>) argsList.get(PULL_SECRETS);
+    int cpuLimit = (int) argsList.get("cpuLimit");
+    long memory = (long) argsList.get(MEMORY_PROPERTY);
+    String groupName = argsList.get("groupName").toString();
+    String resourceId = argsList.get("resourceId").toString();
+    String startUpArgs = argsList.get("startUpArgs").toString();
+    long terminationGraceSeconds = (long) argsList.get("terminationGraceSeconds");
+
+    Deployment deployment =
+        kubernetesOptimizerContainer.initPodTemplateWithoutConfig(
+            image,
+            pullPolicy,
+            cpuLimit,
+            groupName,
+            resourceId,
+            startUpArgs,
+            memory,
+            imagePullSecretsList,
+            terminationGraceSeconds);
+
+    List<String> command =
+        deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getCommand();
+    Assert.assertEquals(Arrays.asList("sh", "-c", "exec " + startUpArgs), command);
+  }
+
+  @Test
+  public void testContainerCommandUsesExecWithPodTemplate() {
+    PodTemplate podTemplate =
+        kubernetesOptimizerContainer.initPodTemplateFromLocal(groupProperties);
+
+    ResourceType resourceType = ResourceType.OPTIMIZER;
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put("memory", "1024");
+    Resource resource =
+        new Resource.Builder("KubernetesContainer", "k8s", resourceType)
+            .setMemoryMb(1024)
+            .setThreadCount(1)
+            .setProperties(properties)
+            .build();
+    groupProperties.putAll(resource.getProperties());
+
+    Map<String, Object> argsList =
+        kubernetesOptimizerContainer.generatePodStartArgs(resource, groupProperties);
+    String image = argsList.get(IMAGE).toString();
+    String pullPolicy = argsList.get(PULL_POLICY).toString();
+    List<LocalObjectReference> imagePullSecretsList =
+        (List<LocalObjectReference>) argsList.get(PULL_SECRETS);
+    int cpuLimit = (int) argsList.get("cpuLimit");
+    long memory = (long) argsList.get(MEMORY_PROPERTY);
+    String groupName = argsList.get("groupName").toString();
+    String resourceId = argsList.get("resourceId").toString();
+    String startUpArgs = argsList.get("startUpArgs").toString();
+    long terminationGraceSeconds = (long) argsList.get("terminationGraceSeconds");
+
+    Deployment deployment =
+        kubernetesOptimizerContainer.initPodTemplateFromFrontEnd(
+            podTemplate,
+            image,
+            pullPolicy,
+            cpuLimit,
+            groupName,
+            resourceId,
+            startUpArgs,
+            memory,
+            imagePullSecretsList,
+            terminationGraceSeconds);
+
+    List<String> command =
+        deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getCommand();
+    Assert.assertEquals(Arrays.asList("sh", "-c", "exec " + startUpArgs), command);
+  }
+
+  @Test
+  public void testTerminationGracePeriodFromDefaultShutdownTimeout() {
+    ResourceType resourceType = ResourceType.OPTIMIZER;
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put("memory", "1024");
+    Resource resource =
+        new Resource.Builder("KubernetesContainer", "k8s", resourceType)
+            .setMemoryMb(1024)
+            .setThreadCount(1)
+            .setProperties(properties)
+            .build();
+    groupProperties.putAll(resource.getProperties());
+
+    Map<String, Object> argsList =
+        kubernetesOptimizerContainer.generatePodStartArgs(resource, groupProperties);
+    String image = argsList.get(IMAGE).toString();
+    String pullPolicy = argsList.get(PULL_POLICY).toString();
+    List<LocalObjectReference> imagePullSecretsList =
+        (List<LocalObjectReference>) argsList.get(PULL_SECRETS);
+    int cpuLimit = (int) argsList.get("cpuLimit");
+    long memory = (long) argsList.get(MEMORY_PROPERTY);
+    String groupName = argsList.get("groupName").toString();
+    String resourceId = argsList.get("resourceId").toString();
+    String startUpArgs = argsList.get("startUpArgs").toString();
+    long terminationGraceSeconds = (long) argsList.get("terminationGraceSeconds");
+
+    Assert.assertFalse(
+        "startUpArgs should not contain the -st flag when the property is unset, but was: "
+            + startUpArgs,
+        startUpArgs.contains(" -st "));
+
+    Deployment deployment =
+        kubernetesOptimizerContainer.initPodTemplateWithoutConfig(
+            image,
+            pullPolicy,
+            cpuLimit,
+            groupName,
+            resourceId,
+            startUpArgs,
+            memory,
+            imagePullSecretsList,
+            terminationGraceSeconds);
+
+    Long grace = deployment.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds();
+    Assert.assertNotNull(grace);
+    // default shutdown-timeout = 600_000ms → 600s + 30s buffer
+    Assert.assertEquals(630L, grace.longValue());
+  }
+
+  @Test
+  public void testShutdownTimeoutPropertyWiredToStartupArgsAndGracePeriod() {
+    ResourceType resourceType = ResourceType.OPTIMIZER;
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put("memory", "1024");
+    properties.put(OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS, "120000");
+    Resource resource =
+        new Resource.Builder("KubernetesContainer", "k8s", resourceType)
+            .setMemoryMb(1024)
+            .setThreadCount(1)
+            .setProperties(properties)
+            .build();
+    groupProperties.putAll(resource.getProperties());
+
+    Map<String, Object> argsList =
+        kubernetesOptimizerContainer.generatePodStartArgs(resource, groupProperties);
+    String image = argsList.get(IMAGE).toString();
+    String pullPolicy = argsList.get(PULL_POLICY).toString();
+    List<LocalObjectReference> imagePullSecretsList =
+        (List<LocalObjectReference>) argsList.get(PULL_SECRETS);
+    int cpuLimit = (int) argsList.get("cpuLimit");
+    long memory = (long) argsList.get(MEMORY_PROPERTY);
+    String groupName = argsList.get("groupName").toString();
+    String resourceId = argsList.get("resourceId").toString();
+    String startUpArgs = argsList.get("startUpArgs").toString();
+    long terminationGraceSeconds = (long) argsList.get("terminationGraceSeconds");
+
+    Assert.assertTrue(
+        "startUpArgs should contain the -st flag, but was: " + startUpArgs,
+        startUpArgs.contains(" -st 120000"));
+
+    Deployment deployment =
+        kubernetesOptimizerContainer.initPodTemplateWithoutConfig(
+            image,
+            pullPolicy,
+            cpuLimit,
+            groupName,
+            resourceId,
+            startUpArgs,
+            memory,
+            imagePullSecretsList,
+            terminationGraceSeconds);
+
+    Long grace = deployment.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds();
+    // 120_000ms → 120s + 30s buffer
+    Assert.assertEquals(Long.valueOf(150L), grace);
+  }
+
+  @Test
+  public void testContainerLevelShutdownTimeoutDoesNotDesyncGracePeriod() {
+    ResourceType resourceType = ResourceType.OPTIMIZER;
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put("memory", "1024");
+    Resource resource =
+        new Resource.Builder("KubernetesContainer", "k8s", resourceType)
+            .setMemoryMb(1024)
+            .setThreadCount(1)
+            .setProperties(properties)
+            .build();
+    groupProperties.putAll(resource.getProperties());
+    // Simulate a container-level property: present in the merged group properties but NOT in
+    // the resource properties that drive the -st startup arg. The grace period must stay in
+    // sync with the arg (i.e. keep the default), not silently shrink below the JVM's timeout.
+    groupProperties.put(OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS, "120000");
+
+    Map<String, Object> argsList =
+        kubernetesOptimizerContainer.generatePodStartArgs(resource, groupProperties);
+    String startUpArgs = argsList.get("startUpArgs").toString();
+    long terminationGraceSeconds = (long) argsList.get("terminationGraceSeconds");
+
+    Assert.assertFalse(
+        "startUpArgs should not contain -st for a container-level property: " + startUpArgs,
+        startUpArgs.contains(" -st "));
+    // 600_000ms default → 600s + 30s buffer, consistent with the args the pod receives
+    Assert.assertEquals(630L, terminationGraceSeconds);
+  }
+
+  @Test
+  public void testTerminationGracePeriodFromUserPodTemplateRespected() {
+    PodTemplate podTemplate =
+        kubernetesOptimizerContainer.initPodTemplateFromLocal(groupProperties);
+    podTemplate.getTemplate().getSpec().setTerminationGracePeriodSeconds(900L);
+
+    ResourceType resourceType = ResourceType.OPTIMIZER;
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put("memory", "1024");
+    Resource resource =
+        new Resource.Builder("KubernetesContainer", "k8s", resourceType)
+            .setMemoryMb(1024)
+            .setThreadCount(1)
+            .setProperties(properties)
+            .build();
+    groupProperties.putAll(resource.getProperties());
+
+    Map<String, Object> argsList =
+        kubernetesOptimizerContainer.generatePodStartArgs(resource, groupProperties);
+    String image = argsList.get(IMAGE).toString();
+    String pullPolicy = argsList.get(PULL_POLICY).toString();
+    List<LocalObjectReference> imagePullSecretsList =
+        (List<LocalObjectReference>) argsList.get(PULL_SECRETS);
+    int cpuLimit = (int) argsList.get("cpuLimit");
+    long memory = (long) argsList.get(MEMORY_PROPERTY);
+    String groupName = argsList.get("groupName").toString();
+    String resourceId = argsList.get("resourceId").toString();
+    String startUpArgs = argsList.get("startUpArgs").toString();
+    long terminationGraceSeconds = (long) argsList.get("terminationGraceSeconds");
+
+    Deployment deployment =
+        kubernetesOptimizerContainer.initPodTemplateFromFrontEnd(
+            podTemplate,
+            image,
+            pullPolicy,
+            cpuLimit,
+            groupName,
+            resourceId,
+            startUpArgs,
+            memory,
+            imagePullSecretsList,
+            terminationGraceSeconds);
+
+    Long grace = deployment.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds();
+    Assert.assertEquals(Long.valueOf(900L), grace);
   }
 
   @Test
@@ -325,6 +593,8 @@ public class TestKubernetesOptimizerContainer {
 
     String resourceId = resource.getResourceId();
     String groupName = resource.getGroupName();
+    long terminationGraceSeconds =
+        KubernetesOptimizerContainer.resolveTerminationGracePeriodSeconds(groupProperties);
 
     Assert.assertEquals(1, podTemplate.getTemplate().getSpec().getContainers().size());
     Assert.assertEquals(
@@ -340,7 +610,8 @@ public class TestKubernetesOptimizerContainer {
             resourceId,
             startUpArgs,
             memory,
-            imagePullSecretsList);
+            imagePullSecretsList,
+            terminationGraceSeconds);
 
     // Assert the Deployment
     Assert.assertEquals("amoro-optimizer-" + resourceId, deployment.getMetadata().getName());

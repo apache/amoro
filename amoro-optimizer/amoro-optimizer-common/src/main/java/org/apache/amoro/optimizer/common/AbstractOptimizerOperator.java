@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 
 public class AbstractOptimizerOperator implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(AbstractOptimizerOperator.class);
@@ -219,11 +220,44 @@ public class AbstractOptimizerOperator implements Serializable {
    */
   protected <T> T callAuthenticatedAms(String amsUrl, AmsAuthenticatedCallOperation<T> operation)
       throws TException {
+    return callAuthenticatedAms(amsUrl, operation, this::isStarted);
+  }
+
+  /**
+   * Variant for the shutdown drain: keeps the retry loop alive for a bounded window even after
+   * stop(), so a result produced by an in-flight task is not dropped on the first transient error
+   * or because stop() landed between the caller's check and the retry loop. The window is anchored
+   * at the moment stop() is first observed, not at call entry — a call that already spent time
+   * retrying while running still gets the full drain window once shutdown begins. Aborts early when
+   * the calling thread is force-interrupted by the shutdown deadline.
+   */
+  protected <T> T callAuthenticatedAmsWithDrain(
+      String amsUrl, AmsAuthenticatedCallOperation<T> operation, long drainTimeoutMs)
+      throws TException {
+    long[] drainDeadline = {-1};
+    return callAuthenticatedAms(
+        amsUrl,
+        operation,
+        () -> {
+          if (isStarted()) {
+            return true;
+          }
+          if (drainDeadline[0] < 0) {
+            drainDeadline[0] = System.currentTimeMillis() + drainTimeoutMs;
+          }
+          return System.currentTimeMillis() < drainDeadline[0]
+              && !Thread.currentThread().isInterrupted();
+        });
+  }
+
+  private <T> T callAuthenticatedAms(
+      String amsUrl, AmsAuthenticatedCallOperation<T> operation, BooleanSupplier proceed)
+      throws TException {
     // Per-node retry budget: in master-slave mode, limit consecutive shouldRetryLater retries so
     // that a permanently unreachable node does not block the multi-node polling loop indefinitely.
     int consecutiveRetries = 0;
 
-    while (isStarted()) {
+    while (proceed.getAsBoolean()) {
       if (tokenIsReady()) {
         String token = getToken();
         try {
@@ -345,7 +379,13 @@ public class AbstractOptimizerOperator implements Serializable {
     try {
       TimeUnit.MILLISECONDS.sleep(waitTime);
     } catch (InterruptedException e) {
-      // ignore
+      // Preserve the flag only when stopping, so the shutdown path skips residual sleeps.
+      // While still running, swallow a stray interrupt as before: no caller loop clears
+      // the flag, so preserving it would turn every later sleep into an instant return
+      // and the poll/retry loops into a busy spin.
+      if (!isStarted()) {
+        Thread.currentThread().interrupt();
+      }
     }
   }
 

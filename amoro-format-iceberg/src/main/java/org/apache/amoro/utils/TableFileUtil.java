@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -75,16 +76,32 @@ public class TableFileUtil {
     return filePath.substring(0, lastSlash);
   }
 
+  public static void deleteEmptyDirectory(
+      AuthenticatedFileIO io, String directoryPath, Set<String> exclude) {
+    deleteEmptyDirectory(io, directoryPath, exclude, new HashSet<>());
+  }
+
   /**
    * Try to recursiveDelete the empty directory
    *
    * @param io mixed-format file io
    * @param directoryPath directory location
    * @param exclude the directory will not be deleted
+   * @param directoriesToBeDeleted: all the directories that need to be deleted directories that
+   *     need to be deleted
    */
   public static void deleteEmptyDirectory(
-      AuthenticatedFileIO io, String directoryPath, Set<String> exclude) {
+      AuthenticatedFileIO io,
+      String directoryPath,
+      Set<String> exclude,
+      Set<String> directoriesToBeDeleted) {
     if (directoryPath == null || directoryPath.isEmpty()) {
+      return;
+    }
+    // Object stores (S3FileIO / OSSFileIO / GCSFileIO ...) have no real directory concept.
+    // They are exposed via AuthenticatedFileIOAdapter whose supportFileSystemOperations() is
+    // false, so calling asFileSystemIO() would fail the precondition. Skip silently in that case.
+    if (!io.supportFileSystemOperations()) {
       return;
     }
     if (!io.exists(directoryPath)) {
@@ -102,7 +119,10 @@ public class TableFileUtil {
     if (io.asFileSystemIO().isEmptyDirectory(directoryPath)) {
       io.asFileSystemIO().deletePrefix(directoryPath);
       LOG.debug("success delete empty directory {}", directoryPath);
-      deleteEmptyDirectory(io, parent, exclude);
+      // for parent must be deleted after the sub-directory
+      if (directoriesToBeDeleted == null || !directoriesToBeDeleted.contains(parent)) {
+        deleteEmptyDirectory(io, parent, exclude);
+      }
     }
   }
 

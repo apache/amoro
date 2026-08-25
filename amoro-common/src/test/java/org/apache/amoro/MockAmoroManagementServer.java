@@ -412,6 +412,15 @@ public class MockAmoroManagementServer implements Runnable {
         new ConcurrentHashMap<>();
     private final Map<String, List<OptimizingTaskResult>> completedTasks =
         new ConcurrentHashMap<>();
+    private final AtomicInteger completeTaskFailures = new AtomicInteger(0);
+
+    /**
+     * Injects transient failures: the next {@code count} completeTask calls throw a retryable
+     * error.
+     */
+    public void failNextCompleteTasks(int count) {
+      completeTaskFailures.set(count);
+    }
 
     public void cleanUp() {}
 
@@ -449,6 +458,12 @@ public class MockAmoroManagementServer implements Runnable {
     @Override
     public void completeTask(String authToken, OptimizingTaskResult taskResult) throws TException {
       checkToken(authToken);
+      if (completeTaskFailures.getAndUpdate(c -> c > 0 ? c - 1 : 0) > 0) {
+        throw new AmoroException(
+            ErrorCodes.PERSISTENCE_ERROR_CODE,
+            "InjectedTransientError",
+            "injected transient error for testing");
+      }
       executingTasks.get(authToken).remove(taskResult.getThreadId());
       if (!completedTasks.containsKey(authToken)) {
         completedTasks.putIfAbsent(authToken, new CopyOnWriteArrayList<>());

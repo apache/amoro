@@ -29,3 +29,6 @@ fi
 
 # change version in all pom files
 find .. -name 'pom.xml' -type f -exec perl -pi -e 's#<version>'"$OLD"'</version>#<version>'"$NEW"'</version>#' {} \;
+
+# change application version in the Helm chart
+perl -pi -e 's#^appVersion: "'"$OLD"'"$#appVersion: "'"$NEW"'"#' ../charts/amoro/Chart.yaml

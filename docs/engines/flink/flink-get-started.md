@@ -59,7 +59,7 @@ The Amoro project can be self-compiled to obtain the runtime jar.
 The Flink Runtime Jar is located in the `amoro-format-mixed/amoro-mixed-flink/v1.18/amoro-mixed-flink-runtime-1.18/target` directory.
 
 ## Environment preparation
-Download Flink and related dependencies, and download Flink 1.18/1.19 as needed. Taking Flink 1.18 as an example:
+Download Flink and related dependencies, and download Flink 1.18/1.19/1.20 as needed. Taking Flink 1.18 as an example:
 ```shell
 # Replace version value with the latest Amoro version if needed
 AMORO_VERSION=0.9.0-incubating

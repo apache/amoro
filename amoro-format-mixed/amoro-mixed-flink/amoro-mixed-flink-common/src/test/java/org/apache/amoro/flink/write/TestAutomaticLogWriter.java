@@ -80,6 +80,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -172,26 +173,27 @@ public class TestAutomaticLogWriter extends FlinkTestBase {
           LocalDateTime.parse("2022-06-18 10:10:11", dtf)
         });
     List<Object[]> catchUpExpects = new LinkedList<>();
+    LocalDateTime catchUpBaseTime = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
     catchUpExpects.add(
         new Object[] {
           1000014,
           "d",
-          LocalDateTime.now().minusSeconds(3).toEpochSecond(ZoneOffset.UTC),
-          LocalDateTime.now().minusSeconds(3)
+          catchUpBaseTime.minusSeconds(3).toEpochSecond(ZoneOffset.UTC),
+          catchUpBaseTime.minusSeconds(3)
         });
     catchUpExpects.add(
         new Object[] {
           1000021,
           "d",
-          LocalDateTime.now().minusSeconds(2).toEpochSecond(ZoneOffset.UTC),
-          LocalDateTime.now().minusSeconds(2)
+          catchUpBaseTime.minusSeconds(2).toEpochSecond(ZoneOffset.UTC),
+          catchUpBaseTime.minusSeconds(2)
         });
     catchUpExpects.add(
         new Object[] {
           1000015,
           "e",
-          LocalDateTime.now().minusSeconds(1).toEpochSecond(ZoneOffset.UTC),
-          LocalDateTime.now().minusSeconds(1)
+          catchUpBaseTime.minusSeconds(1).toEpochSecond(ZoneOffset.UTC),
+          catchUpBaseTime.minusSeconds(1)
         });
     expects.addAll(catchUpExpects);
 

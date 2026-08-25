@@ -31,6 +31,7 @@ import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.PropertiesUtil;
 import org.apache.amoro.server.manager.AbstractOptimizerContainer;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
+import org.apache.amoro.server.optimizing.dra.DynamicAllocationConfig;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.OptimizerInstance;
@@ -242,7 +243,9 @@ public class OptimizerGroupController {
     validateGroupName(name);
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
-    optimizerManager.createResourceGroup(builder.build());
+    ResourceGroup resourceGroup = builder.build();
+    validateDynamicAllocation(resourceGroup);
+    optimizerManager.createResourceGroup(resourceGroup);
     ctx.json(OkResponse.of("The optimizer group has been successfully created."));
   }
 
@@ -257,7 +260,9 @@ public class OptimizerGroupController {
     Map<String, String> properties = PropertiesUtil.sanitizeProperties((Map) map.get("properties"));
     ResourceGroup.Builder builder = new ResourceGroup.Builder(name, container);
     builder.addProperties(properties);
-    optimizerManager.updateResourceGroup(builder.build());
+    ResourceGroup resourceGroup = builder.build();
+    validateDynamicAllocation(resourceGroup);
+    optimizerManager.updateResourceGroup(resourceGroup);
     ctx.json(OkResponse.of("The optimizer group has been successfully updated."));
   }
 
@@ -281,6 +286,15 @@ public class OptimizerGroupController {
             Containers.getMetadataList().stream()
                 .map(ContainerMetadata::getName)
                 .collect(Collectors.toList())));
+  }
+
+  private void validateDynamicAllocation(ResourceGroup resourceGroup) {
+    DynamicAllocationConfig.warnDeprecatedMinParallelism(resourceGroup);
+    try {
+      DynamicAllocationConfig.parse(resourceGroup).validate();
+    } catch (IllegalArgumentException e) {
+      throw new BadRequestException(e.getMessage());
+    }
   }
 
   private void validateGroupName(String groupName) {

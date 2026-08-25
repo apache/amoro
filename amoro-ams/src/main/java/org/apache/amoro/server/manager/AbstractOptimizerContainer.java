@@ -92,6 +92,11 @@ public abstract class AbstractOptimizerContainer implements InternalResourceCont
           .append(" -hb ")
           .append(resource.getProperties().get(OptimizerProperties.OPTIMIZER_HEART_BEAT_INTERVAL));
     }
+    if (resource.getProperties().containsKey(OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS)) {
+      stringBuilder
+          .append(" -st ")
+          .append(resource.getProperties().get(OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS));
+    }
     if (PropertyUtil.propertyAsBoolean(
         resource.getProperties(),
         OptimizerProperties.OPTIMIZER_EXTEND_DISK_STORAGE,

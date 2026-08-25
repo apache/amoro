@@ -16,11 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.util;
+package org.apache.amoro.formats.iceberg.utils;
 
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.AuthenticatedFileIOAdapter;
-import org.apache.amoro.server.utils.RollingFileCleaner;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.iceberg.inmemory.InMemoryFileIO;
 import org.junit.jupiter.api.Assertions;

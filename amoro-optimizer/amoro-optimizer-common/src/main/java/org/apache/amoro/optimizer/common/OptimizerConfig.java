@@ -109,6 +109,15 @@ public class OptimizerConfig implements Serializable {
       usage = "Enable master-slave mode")
   private boolean masterSlaveMode = false;
 
+  @Option(
+      name = "-st",
+      aliases = "--" + OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS,
+      usage =
+          "Graceful shutdown timeout(ms) — wait this long for in-progress tasks before "
+              + "force-interrupting. Default 600000 (10min). Align with K8s "
+              + "terminationGracePeriodSeconds in containerized deployments.")
+  private long shutdownTimeoutMs = OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS_DEFAULT;
+
   public OptimizerConfig() {}
 
   public OptimizerConfig(String[] args) throws CmdLineException {
@@ -228,6 +237,14 @@ public class OptimizerConfig implements Serializable {
     this.masterSlaveMode = masterSlaveMode;
   }
 
+  public long getShutdownTimeoutMs() {
+    return shutdownTimeoutMs;
+  }
+
+  public void setShutdownTimeoutMs(long shutdownTimeoutMs) {
+    this.shutdownTimeoutMs = shutdownTimeoutMs;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
@@ -245,6 +262,7 @@ public class OptimizerConfig implements Serializable {
         .add("cacheMaxEntrySize", cacheMaxEntrySize)
         .add("cacheTimeout", cacheTimeout)
         .add("masterSlaveMode", masterSlaveMode)
+        .add("shutdownTimeoutMs", shutdownTimeoutMs)
         .toString();
   }
 }

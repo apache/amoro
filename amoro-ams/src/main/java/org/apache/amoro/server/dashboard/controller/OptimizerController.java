@@ -70,8 +70,7 @@ public class OptimizerController {
         resource.getContainerName());
     ((AbstractOptimizerContainer) rc).releaseResource(resource);
 
-    optimizerManager.deleteResource(resourceId);
-    optimizerManager.deleteOptimizer(resource.getGroupName(), resourceId);
+    optimizerManager.deleteOptimizerAndResource(resource.getGroupName(), resourceId);
     ctx.json(OkResponse.of("Success to release optimizer"));
   }
 

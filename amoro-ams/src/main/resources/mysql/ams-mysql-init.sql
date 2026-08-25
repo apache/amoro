@@ -31,6 +31,7 @@ CREATE TABLE `database_metadata`
 (
     `catalog_name`           varchar(64) NOT NULL COMMENT 'catalog name',
     `db_name`                varchar(128) NOT NULL COMMENT 'database name',
+    `properties`             mediumtext COMMENT 'Database properties',
     `table_count`            int(11) NOT NULL default 0,
     PRIMARY KEY (`catalog_name`, `db_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'database metadata';

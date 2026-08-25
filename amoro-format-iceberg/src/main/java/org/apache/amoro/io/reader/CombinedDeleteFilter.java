@@ -415,7 +415,7 @@ public abstract class CombinedDeleteFilter<T extends StructLike> {
     return structLikeForDelete -> {
       Roaring64Bitmap posSet = positionMap.get(structLikeForDelete.filePath());
 
-      if (posSet == null || posSet.isEmpty()) {
+      if (posSet == null) {
         return false;
       }
       return posSet.contains(structLikeForDelete.getPosition());
