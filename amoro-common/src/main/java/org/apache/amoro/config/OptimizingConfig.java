@@ -212,7 +212,7 @@ public class OptimizingConfig {
   }
 
   public OptimizingConfig setFragmentRatio(int fragmentRatio) {
-    this.fragmentRatio = fragmentRatio;
+    this.fragmentRatio = Math.max(1, fragmentRatio);
     return this;
   }
 

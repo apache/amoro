@@ -76,6 +76,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -956,6 +957,23 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     Assert.assertEquals(OptimizingStatus.IDLE, tableRuntime.getOptimizingStatus());
   }
 
+  @Test
+  public void testInFlightCounterEntryRemovedAfterTaskCompletes() throws Exception {
+    DefaultTableRuntime tableRuntime = initTableWithFiles();
+    OptimizingQueue queue = buildOptimizingGroupService(tableRuntime);
+    TaskRuntime<?> task = queue.pollTask(optimizerThread, MAX_POLLING_TIME);
+    Assert.assertNotNull(task);
+    Assert.assertEquals(1, readOptimizingTasksMapSize(queue));
+
+    queue.ackTask(task.getTaskId(), optimizerThread);
+    queue.completeTask(
+        optimizerThread,
+        buildOptimizingTaskResult(task.getTaskId(), optimizerThread.getThreadId()));
+
+    Assert.assertEquals(0, readOptimizingTasksMapSize(queue));
+    queue.dispose();
+  }
+
   protected DefaultTableRuntime initTableWithFiles() {
     MixedTable mixedTable =
         (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
@@ -1063,6 +1081,12 @@ public class TestOptimizingQueue extends AMSTableTestBase {
     OptimizingTaskResult optimizingTaskResult = new OptimizingTaskResult(taskId, threadId);
     optimizingTaskResult.setTaskOutput(SerializationUtil.simpleSerialize(output));
     return optimizingTaskResult;
+  }
+
+  private int readOptimizingTasksMapSize(OptimizingQueue queue) throws Exception {
+    Field field = OptimizingQueue.class.getDeclaredField("optimizingTasksMap");
+    field.setAccessible(true);
+    return ((Map<?, ?>) field.get(queue)).size();
   }
 
   /**
