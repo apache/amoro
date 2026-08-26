@@ -225,8 +225,8 @@ public class AmoroServiceContainer {
   }
 
   /**
-   * Create optimizing service objects, register handler chains, initialize table service, and
-   * start the Thrift servers.
+   * Create optimizing service objects, register handler chains, initialize table service, and start
+   * the Thrift servers.
    */
   private void startOptimizingService() throws Exception {
     // Load process factories and build action coordinators from default table runtime factory.
