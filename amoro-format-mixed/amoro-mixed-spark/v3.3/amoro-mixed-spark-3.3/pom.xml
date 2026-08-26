@@ -391,6 +391,15 @@
             <classifier>core</classifier>
             <scope>test</scope>
         </dependency>
+
+        <!-- Spark 3.3's Logging trait directly references org.slf4j.impl.StaticLoggerBinder
+             (hard bytecode dependency, fixed in Spark 3.4+ via reflection). This SLF4J 1.x
+             binding is inert for SLF4J 2.x code paths but provides the class Spark needs. -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

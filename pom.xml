@@ -660,6 +660,13 @@
                 <version>${log4j.version}</version>
             </dependency>
 
+            <!-- SLF4J 1.x binding, only needed by modules running Spark 3.3 (test scope) -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
@@ -1816,9 +1823,11 @@
                                     <excludes>
                                         <!-- Reverses log4j-slf4j2-impl, causing a logging loop -->
                                         <exclude>org.apache.logging.log4j:log4j-to-slf4j</exclude>
-                                        <!-- SLF4J 1.x bindings — must not coexist with log4j-slf4j2-impl -->
+                                        <!-- SLF4J 1.x bindings — must not coexist with log4j-slf4j2-impl.
+                                             Note: log4j-slf4j-impl is NOT banned because Spark 3.3's
+                                             Logging trait hard-references org.slf4j.impl.StaticLoggerBinder;
+                                             modules running Spark 3.3 may opt in with test scope. -->
                                         <exclude>org.slf4j:slf4j-log4j12</exclude>
-                                        <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
                                         <exclude>org.slf4j:slf4j-simple</exclude>
                                         <exclude>org.slf4j:slf4j-nop</exclude>
                                         <exclude>org.slf4j:slf4j-jdk14</exclude>
