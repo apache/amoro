@@ -1806,10 +1806,10 @@
                 <executions>
                     <execution>
                         <id>ban-conflicting-logging-dependencies</id>
-                        <phase>verify</phase>
                         <goals>
                             <goal>enforce</goal>
                         </goals>
+                        <phase>verify</phase>
                         <configuration>
                             <rules>
                                 <bannedDependencies>
