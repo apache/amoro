@@ -103,7 +103,7 @@
         <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
         <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
 
-        <iceberg.version>1.7.2</iceberg.version>
+        <iceberg.version>1.8.1</iceberg.version>
         <paimon.version>1.2.0</paimon.version>
         <hive.version>3.1.3</hive.version>
         <hadoop.version>3.4.3</hadoop.version>
@@ -654,6 +654,13 @@
                 <version>${slf4j.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j2-impl</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+
+            <!-- SLF4J 1.x binding, only needed by modules running Spark 3.3 (test scope) -->
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-slf4j-impl</artifactId>
@@ -1384,7 +1391,7 @@
         <!-- tests will have log4j as the default logging framework available -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -1800,6 +1807,39 @@
         </pluginManagement>
 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>ban-conflicting-logging-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <phase>verify</phase>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <!-- Reverses log4j-slf4j2-impl, causing a logging loop -->
+                                        <exclude>org.apache.logging.log4j:log4j-to-slf4j</exclude>
+                                        <!-- SLF4J 1.x bindings — must not coexist with log4j-slf4j2-impl.
+                                             Note: log4j-slf4j-impl is NOT banned because Spark 3.3's
+                                             Logging trait hard-references org.slf4j.impl.StaticLoggerBinder;
+                                             modules running Spark 3.3 may opt in with test scope. -->
+                                        <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                        <exclude>org.slf4j:slf4j-simple</exclude>
+                                        <exclude>org.slf4j:slf4j-nop</exclude>
+                                        <exclude>org.slf4j:slf4j-jdk14</exclude>
+                                    </excludes>
+                                    <message>These logging dependencies conflict with log4j-slf4j2-impl. Exclude them at the source.</message>
+                                </bannedDependencies>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

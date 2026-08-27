@@ -121,6 +121,13 @@ public class CatalogUtil {
 
   /** Build {@link TableMetaStore} from catalog meta. */
   public static TableMetaStore buildMetaStore(CatalogMeta catalogMeta) {
+    // REST + Lance manages storage/auth server-side, so a client-side TableMetaStore is
+    // unnecessary. Set a local configuration so build() returns a disabled-auth store.
+    if (CatalogMetaProperties.CATALOG_TYPE_REST.equalsIgnoreCase(catalogMeta.getCatalogType())
+        && isLanceOnly(catalogMeta)) {
+      return TableMetaStore.builder().withConfiguration(new Configuration()).build();
+    }
+
     // load storage configs
     TableMetaStore.Builder builder = TableMetaStore.builder();
     boolean isLocalStorage = false;
@@ -213,6 +220,11 @@ public class CatalogUtil {
       }
     }
     return builder.build();
+  }
+
+  private static boolean isLanceOnly(CatalogMeta catalogMeta) {
+    Set<TableFormat> formats = tableFormats(catalogMeta);
+    return formats.size() == 1 && formats.contains(TableFormat.LANCE);
   }
 
   public static TableIdentifier tableId(TableMeta tableMeta) {

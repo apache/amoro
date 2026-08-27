@@ -18,26 +18,13 @@
 
 package org.apache.amoro.formats.lance;
 
-import org.apache.amoro.AmoroTable;
-import org.apache.amoro.FormatCatalog;
-import org.apache.amoro.NoSuchDatabaseException;
-import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.properties.CatalogMetaProperties;
-import org.apache.amoro.table.TableIdentifier;
-import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.util.Preconditions;
 import org.apache.iceberg.aliyun.AliyunProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
-import org.lance.Dataset;
 import org.lance.namespace.LanceNamespace;
-import org.lance.namespace.errors.TableNotFoundException;
-import org.lance.namespace.model.DropTableRequest;
-import org.lance.namespace.model.ListTablesRequest;
-import org.lance.namespace.model.ListTablesResponse;
-import org.lance.namespace.model.TableExistsRequest;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -50,22 +37,22 @@ import java.util.Map;
  * root directory, each immediate subdirectory whose name ends with ".lance" is treated as a Lance
  * dataset. All tables live in a single logical database named "default".
  */
-public class LanceDirectoryV1Catalog implements FormatCatalog {
+public class LanceDirectoryV1Catalog extends AbstractLanceCatalog {
 
   private static final String DEFAULT_DATABASE = "default";
   private static final String STORAGE_ACCESS_KEY_ID = "storage.access_key_id";
   private static final String STORAGE_SECRET_ACCESS_KEY = "storage.secret_access_key";
   private static final String STORAGE_ENDPOINT = "storage.endpoint";
-  private final String catalogName;
-  private final Map<String, String> namespaceProperties;
-  private final LanceNamespace namespace;
 
   public LanceDirectoryV1Catalog(String catalogName, Map<String, String> catalogProperties) {
+    super(catalogName, buildNamespace(catalogProperties));
+  }
+
+  private static LanceNamespace buildNamespace(Map<String, String> catalogProperties) {
     Preconditions.checkArgument(
         catalogProperties != null && !catalogProperties.isEmpty(),
         "Catalog properties must be set.");
-    this.catalogName = catalogName;
-    this.namespaceProperties = new HashMap<>(catalogProperties);
+    Map<String, String> namespaceProperties = new HashMap<>(catalogProperties);
     String root = namespaceProperties.remove(CatalogMetaProperties.KEY_WAREHOUSE);
     String storageAccessKey =
         removeFirstNonNull(
@@ -80,17 +67,27 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
 
     Preconditions.checkArgument(
         root != null && !root.isEmpty(), "Warehouse must be set in catalogProperties.");
-    this.namespaceProperties.put("manifest_enabled", "false");
-    this.namespaceProperties.put("vend_input_storage_options", "true");
-    this.namespaceProperties.put("root", root);
+    namespaceProperties.put("manifest_enabled", "false");
+    namespaceProperties.put("vend_input_storage_options", "true");
+    namespaceProperties.put("root", root);
     if (storageAccessKey != null) {
-      this.namespaceProperties.put(STORAGE_ACCESS_KEY_ID, storageAccessKey);
+      namespaceProperties.put(STORAGE_ACCESS_KEY_ID, storageAccessKey);
     }
     if (storageSecretKey != null) {
-      this.namespaceProperties.put(STORAGE_SECRET_ACCESS_KEY, storageSecretKey);
+      namespaceProperties.put(STORAGE_SECRET_ACCESS_KEY, storageSecretKey);
     }
     putStorageEndpointIfPresent(namespaceProperties);
-    this.namespace = initializeNamespace(new RootAllocator(Long.MAX_VALUE));
+    return LanceNamespace.connect("dir", namespaceProperties, new RootAllocator(Long.MAX_VALUE));
+  }
+
+  @Override
+  protected List<String> tableId(String database, String table) {
+    return Collections.singletonList(table);
+  }
+
+  @Override
+  protected List<String> tableIdForListTables(String database) {
+    return Collections.emptyList();
   }
 
   @Override
@@ -104,21 +101,6 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
   }
 
   @Override
-  public boolean tableExists(String database, String table) {
-    if (!databaseExists(database)) {
-      return false;
-    }
-
-    try {
-      TableExistsRequest request = new TableExistsRequest().id(Collections.singletonList(table));
-      namespace.tableExists(request);
-      return true;
-    } catch (TableNotFoundException e) {
-      return false;
-    }
-  }
-
-  @Override
   public void createDatabase(String database) {
     throw new UnsupportedOperationException("Creating Lance databases is not supported.");
   }
@@ -126,59 +108,6 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
   @Override
   public void dropDatabase(String database) {
     throw new UnsupportedOperationException("Dropping Lance databases is not supported.");
-  }
-
-  @Override
-  public AmoroTable<?> loadTable(String database, String tableName) {
-    if (!databaseExists(database) || !tableExists(database, tableName)) {
-      throw new NoSuchTableException("Table: " + database + "." + tableName + " does not exist");
-    }
-
-    TableIdentifier identifier = TableIdentifier.of(catalogName, database, tableName);
-    Dataset dataset =
-        Dataset.open()
-            .namespaceClient(namespace)
-            .tableId(Collections.singletonList(tableName))
-            .build();
-    return new LanceTable(identifier, dataset, Collections.emptyMap());
-  }
-
-  @Override
-  public boolean dropTable(String database, String table, boolean purge) {
-    validateDatabase(database);
-
-    try {
-      namespace.dropTable(new DropTableRequest().id(Collections.singletonList(table)));
-      return true;
-    } catch (TableNotFoundException e) {
-      return false;
-    }
-  }
-
-  @Override
-  public List<String> listTables(String database) {
-    if (!databaseExists(database)) {
-      return Collections.emptyList();
-    }
-    return listTablesFromNamespace();
-  }
-
-  private List<String> listTablesFromNamespace() {
-    if (namespace == null) {
-      return Collections.emptyList();
-    }
-
-    ListTablesRequest request = new ListTablesRequest().id(Collections.emptyList());
-    ListTablesResponse response = namespace.listTables(request);
-    if (response == null) {
-      return Collections.emptyList();
-    }
-
-    return new ArrayList<>(response.getTables());
-  }
-
-  private LanceNamespace initializeNamespace(BufferAllocator allocator) {
-    return LanceNamespace.connect("dir", namespaceProperties, allocator);
   }
 
   private static String removeFirstNonNull(Map<String, String> properties, String... keys) {
@@ -203,12 +132,6 @@ public class LanceDirectoryV1Catalog implements FormatCatalog {
     }
     if (endpoint != null) {
       properties.put(STORAGE_ENDPOINT, endpoint);
-    }
-  }
-
-  private void validateDatabase(String database) {
-    if (!databaseExists(database)) {
-      throw new NoSuchDatabaseException("Database: " + database + " does not exist");
     }
   }
 }

@@ -119,6 +119,7 @@ const tableFormatMap = {
   MIXED_ICEBERG: 'MIXED_ICEBERG',
   PAIMON: 'PAIMON',
   HUDI: 'HUDI',
+  LANCE: 'LANCE',
 }
 
 const tableFormatText = {
@@ -127,6 +128,7 @@ const tableFormatText = {
   [tableFormatMap.MIXED_ICEBERG]: 'Mixed Iceberg',
   [tableFormatMap.PAIMON]: 'Paimon',
   [tableFormatMap.HUDI]: 'Hudi',
+  [tableFormatMap.LANCE]: 'Lance',
 }
 
 const storageConfigFileNameMap = {
@@ -248,7 +250,12 @@ async function loadMetastoreCapabilities(loadTableFormats: boolean) {
   const options = (formats || []) as string[]
   tableFormatOptions.value = options
   if (loadTableFormats) {
-    formState.tableFormatList = [...options]
+    // REST catalog: Lance and Iceberg use different protocols (one protocol per uri),
+    // so they can't coexist. Default to Iceberg family; Lance stays unchecked (opt-in).
+    const defaultFormats = type === 'rest'
+      ? options.filter(format => format !== tableFormatMap.LANCE)
+      : options
+    formState.tableFormatList = defaultFormats.length > 0 ? [...defaultFormats] : [...options]
   }
   const storageTypes = await getMetastoreStorageTypes(type)
   storageTypeOptions.value = (storageTypes || []).map((val: string) => ({
@@ -394,6 +401,11 @@ const authTypeOptions = computed(() => {
 
 const isAuthDisabled = computed(() => formState.storageConfig['storage.type'] === 'Local')
 
+// REST + Lance needs no client-side object storage/auth; storage is server-managed.
+const isRestLance = computed(() => {
+  return formState.catalog.type === 'rest' && formState.tableFormatList.includes(tableFormatMap.LANCE)
+})
+
 watch(
   () => formState.storageConfig['storage.type'],
   (storageType) => {
@@ -409,7 +421,37 @@ watch(
         formState.authConfig[simpleUsernameKey] = 'local'
       }
     }
-  }
+  },
+)
+
+watch(
+  () => formState.tableFormatList,
+  (formats, oldFormats) => {
+    const isRest = formState.catalog.type === 'rest'
+    const hasLance = formats.includes(tableFormatMap.LANCE)
+
+    if (isRest && hasLance && formats.length > 1) {
+      // If Lance was just added, keep only Lance; otherwise the user switched away from Lance.
+      const hadLance = oldFormats?.includes(tableFormatMap.LANCE)
+      formState.tableFormatList = hadLance
+        ? formats.filter(format => format !== tableFormatMap.LANCE)
+        : [tableFormatMap.LANCE]
+      return
+    }
+
+    // REST + Lance needs no client-side storage/auth; drop them on selection .
+    if (isRest && hasLance) {
+      Object.keys(formState.storageConfig).forEach((key) => {
+        delete formState.storageConfig[key]
+      })
+      Object.keys(formState.authConfig).forEach((key) => {
+        delete formState.authConfig[key]
+      })
+    }
+    else if (isRest && !formState.storageConfig['storage.type']) {
+      formState.storageConfig['storage.type'] = 'S3'
+    }
+  },
 )
 
 async function changeMetastore() {
@@ -488,7 +530,7 @@ function handleSave() {
   formRef.value
     .validateFields()
     .then(async () => {
-      const { catalog, tableFormatList, storageConfig, authConfig } = formState
+      const { catalog, tableFormatList } = formState
       const properties = await propertiesRef.value.getProperties()
       const tableProperties = await tablePropertiesRef.value.getProperties()
       if (!properties) {
@@ -500,6 +542,14 @@ function handleSave() {
       loading.value = true
       const catalogParams = catalog
       getFileIdParams()
+      let storageConfig = formState.storageConfig
+      let authConfig = formState.authConfig
+      if (isRestLance.value) {
+        // Lance REST manages storage server-side; send a neutral S3 storage type
+        // (accepted by the backend REST+S3+LANCE whitelist) and no auth config.
+        storageConfig = { 'storage.type': 'S3' }
+        authConfig = {}
+      }
       await saveCatalogsSetting({
         isCreate: isNewCatalog.value,
         ...catalogParams,
@@ -641,126 +691,128 @@ onMounted(() => {
             />
             <span v-else>{{ formState.catalog.optimizerGroup }}</span>
           </a-form-item>
-          <a-form-item>
-            <p class="header">
-              {{ $t('storageConfigName') }}
-            </p>
-          </a-form-item>
-          <a-form-item :label="$t('type')" :name="['storageConfig', 'storage.type']" :rules="[{ required: isEdit }]">
-            <a-select
-              v-if="isEdit" v-model:value="formState.storageConfig['storage.type']"
-              :placeholder="placeholder.selectPh" :options="storageTypeOptions"
-            />
-            <span v-else class="config-value">{{ formState.storageConfig['storage.type'] }}</span>
-          </a-form-item>
-          <a-form-item
-            v-if="formState.storageConfig['storage.type'] === 'S3'" :label="$t('endpoint')"
-            :name="['storageConfig', 'storage.s3.endpoint']" :rules="[{ required: false }]"
-          >
-            <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.endpoint']" />
-            <span v-else class="config-value">{{ formState.storageConfig['storage.s3.endpoint'] }}</span>
-          </a-form-item>
-          <a-form-item
-            v-if="formState.storageConfig['storage.type'] === 'S3'" :label="$t('region')"
-            :name="['storageConfig', 'storage.s3.region']" :rules="[{ required: false }]"
-          >
-            <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.region']" />
-            <span v-else class="config-value">{{ formState.storageConfig['storage.s3.region'] }}</span>
-          </a-form-item>
-          <a-form-item
+          <template v-if="!isRestLance">
+            <a-form-item>
+              <p class="header">
+                {{ $t('storageConfigName') }}
+              </p>
+            </a-form-item>
+            <a-form-item :label="$t('type')" :name="['storageConfig', 'storage.type']" :rules="[{ required: isEdit }]">
+              <a-select
+                v-if="isEdit" v-model:value="formState.storageConfig['storage.type']"
+                :placeholder="placeholder.selectPh" :options="storageTypeOptions"
+              />
+              <span v-else class="config-value">{{ formState.storageConfig['storage.type'] }}</span>
+            </a-form-item>
+            <a-form-item
+              v-if="formState.storageConfig['storage.type'] === 'S3'" :label="$t('endpoint')"
+              :name="['storageConfig', 'storage.s3.endpoint']" :rules="[{ required: false }]"
+            >
+              <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.endpoint']" />
+              <span v-else class="config-value">{{ formState.storageConfig['storage.s3.endpoint'] }}</span>
+            </a-form-item>
+            <a-form-item
+              v-if="formState.storageConfig['storage.type'] === 'S3'" :label="$t('region')"
+              :name="['storageConfig', 'storage.s3.region']" :rules="[{ required: false }]"
+            >
+              <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.s3.region']" />
+              <span v-else class="config-value">{{ formState.storageConfig['storage.s3.region'] }}</span>
+            </a-form-item>
+            <a-form-item
               v-if="formState.storageConfig['storage.type'] === 'OSS'" :label="$t('endpoint')"
               :name="['storageConfig', 'storage.oss.endpoint']" :rules="[{ required: false }]"
-          >
-            <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.oss.endpoint']" />
-            <span v-else class="config-value">{{ formState.storageConfig['storage.oss.endpoint'] }}</span>
-          </a-form-item>
-          <div v-if="formState.storageConfig['storage.type'] === 'Hadoop'">
-            <a-form-item
-              v-for="config in formState.storageConfigArray" :key="config.label" :label="config.label"
-              class="g-flex-ac"
             >
-              <a-upload
-                v-if="isEdit" v-model:file-list="config.fileList" name="file" accept=".xml"
-                :show-upload-list="false" :action="uploadUrl" :disabled="config.uploadLoading"
-                :headers="uploadHeaders"
-                @change="(args: UploadChangeParam<UploadFile<any>>) => uploadFile(args, config, 'STORAGE')"
-              >
-                <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">
-                  {{ $t('upload')
-                  }}
-                </a-button>
-              </a-upload>
-              <span
-                v-if="config.isSuccess || config.fileName" class="config-value"
-                :class="{ 'view-active': !!config.fileUrl }" @click="viewFileDetail(config.fileUrl, config.fileName)"
-              >{{ config.fileName
-              }}</span>
+              <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage.oss.endpoint']" />
+              <span v-else class="config-value">{{ formState.storageConfig['storage.oss.endpoint'] }}</span>
             </a-form-item>
-          </div>
-          <a-form-item>
-            <p class="header">
-              {{ $t('authenticationConfig') }}
-            </p>
-          </a-form-item>
-          <a-form-item :label="$t('type')" :name="['authConfig', 'auth.type']" :rules="[{ required: isEdit && !isAuthDisabled }]">
-            <a-select
-              v-if="isEdit" v-model:value="formState.authConfig['auth.type']"
-              :placeholder="placeholder.selectPh" :options="authTypeOptions" :disabled="isAuthDisabled"
-            />
-            <span v-else class="config-value">{{ formState.authConfig['auth.type'] }}</span>
-          </a-form-item>
-          <a-form-item
-            v-if="formState.authConfig['auth.type'] === 'SIMPLE'" :label="$t('hadoopUsername')"
-            :name="['authConfig', 'auth.simple.hadoop_username']" :rules="[{ required: isEdit && !isAuthDisabled }]"
-          >
-            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.simple.hadoop_username']" :disabled="isAuthDisabled" />
-            <span v-else class="config-value">{{ formState.authConfig['auth.simple.hadoop_username'] }}</span>
-          </a-form-item>
-          <a-form-item
-            v-if="formState.authConfig['auth.type'] === 'KERBEROS'" :label="$t('kerberosPrincipal')"
-            :name="['authConfig', 'auth.kerberos.principal']" :rules="[{ required: isEdit && !isAuthDisabled }]"
-          >
-            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.kerberos.principal']" :disabled="isAuthDisabled" />
-            <span v-else class="config-value">{{ formState.authConfig['auth.kerberos.principal'] }}</span>
-          </a-form-item>
-          <div v-if="formState.authConfig['auth.type'] === 'KERBEROS'">
+            <div v-if="formState.storageConfig['storage.type'] === 'Hadoop'">
+              <a-form-item
+                v-for="config in formState.storageConfigArray" :key="config.label" :label="config.label"
+                class="g-flex-ac"
+              >
+                <a-upload
+                  v-if="isEdit" v-model:file-list="config.fileList" name="file" accept=".xml"
+                  :show-upload-list="false" :action="uploadUrl" :disabled="config.uploadLoading"
+                  :headers="uploadHeaders"
+                  @change="(args: UploadChangeParam<UploadFile<any>>) => uploadFile(args, config, 'STORAGE')"
+                >
+                  <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">
+                    {{ $t('upload')
+                    }}
+                  </a-button>
+                </a-upload>
+                <span
+                  v-if="config.isSuccess || config.fileName" class="config-value"
+                  :class="{ 'view-active': !!config.fileUrl }" @click="viewFileDetail(config.fileUrl, config.fileName)"
+                >{{ config.fileName
+                }}</span>
+              </a-form-item>
+            </div>
+            <a-form-item>
+              <p class="header">
+                {{ $t('authenticationConfig') }}
+              </p>
+            </a-form-item>
+            <a-form-item :label="$t('type')" :name="['authConfig', 'auth.type']" :rules="[{ required: isEdit && !isAuthDisabled }]">
+              <a-select
+                v-if="isEdit" v-model:value="formState.authConfig['auth.type']"
+                :placeholder="placeholder.selectPh" :options="authTypeOptions" :disabled="isAuthDisabled"
+              />
+              <span v-else class="config-value">{{ formState.authConfig['auth.type'] }}</span>
+            </a-form-item>
             <a-form-item
-              v-for="config in formState.authConfigArray" :key="config.label" :label="config.label"
-              class="g-flex-ac"
+              v-if="formState.authConfig['auth.type'] === 'SIMPLE'" :label="$t('hadoopUsername')"
+              :name="['authConfig', 'auth.simple.hadoop_username']" :rules="[{ required: isEdit && !isAuthDisabled }]"
             >
-              <a-upload
-                v-if="isEdit" v-model:file-list="config.fileList" name="file"
-                :accept="config.key === 'auth.kerberos.keytab' ? '.keytab' : '.conf'" :show-upload-list="false"
-                :action="uploadUrl" :disabled="config.uploadLoading"
-                :headers="uploadHeaders"
-                @change="(args: UploadChangeParam<UploadFile<any>>) => uploadFile(args, config)"
-              >
-                <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">
-                  {{ $t('upload')
-                  }}
-                </a-button>
-              </a-upload>
-              <span
-                v-if="config.isSuccess || config.fileName" class="config-value auth-filename"
-                :class="{ 'view-active': !!config.fileUrl }" :title="config.fileName"
-                @click="viewFileDetail(config.fileUrl, config.fileName)"
-              >{{ config.fileName }}</span>
+              <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.simple.hadoop_username']" :disabled="isAuthDisabled" />
+              <span v-else class="config-value">{{ formState.authConfig['auth.simple.hadoop_username'] }}</span>
             </a-form-item>
-          </div>
-          <a-form-item
-            v-if="formState.authConfig['auth.type'] === 'AK/SK'" :label="$t('accessKey')"
-            :name="['authConfig', 'auth.ak_sk.access_key']" :rules="[{ required: isEdit && !isAuthDisabled }]"
-          >
-            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.access_key']" :disabled="isAuthDisabled" />
-            <span v-else class="config-value">{{ formState.authConfig['auth.ak_sk.access_key'] }}</span>
-          </a-form-item>
-          <a-form-item
-            v-if="formState.authConfig['auth.type'] === 'AK/SK'" :label="$t('secretKey')"
-            :name="['authConfig', 'auth.ak_sk.secret_key']" :rules="[{ required: isEdit && !isAuthDisabled }]"
-          >
-            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.secret_key']" :disabled="isAuthDisabled" />
-            <span v-else class="config-value">{{ formState.authConfig['auth.ak_sk.secret_key'] }}</span>
-          </a-form-item>
+            <a-form-item
+              v-if="formState.authConfig['auth.type'] === 'KERBEROS'" :label="$t('kerberosPrincipal')"
+              :name="['authConfig', 'auth.kerberos.principal']" :rules="[{ required: isEdit && !isAuthDisabled }]"
+            >
+              <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.kerberos.principal']" :disabled="isAuthDisabled" />
+              <span v-else class="config-value">{{ formState.authConfig['auth.kerberos.principal'] }}</span>
+            </a-form-item>
+            <div v-if="formState.authConfig['auth.type'] === 'KERBEROS'">
+              <a-form-item
+                v-for="config in formState.authConfigArray" :key="config.label" :label="config.label"
+                class="g-flex-ac"
+              >
+                <a-upload
+                  v-if="isEdit" v-model:file-list="config.fileList" name="file"
+                  :accept="config.key === 'auth.kerberos.keytab' ? '.keytab' : '.conf'" :show-upload-list="false"
+                  :action="uploadUrl" :disabled="config.uploadLoading"
+                  :headers="uploadHeaders"
+                  @change="(args: UploadChangeParam<UploadFile<any>>) => uploadFile(args, config)"
+                >
+                  <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">
+                    {{ $t('upload')
+                    }}
+                  </a-button>
+                </a-upload>
+                <span
+                  v-if="config.isSuccess || config.fileName" class="config-value auth-filename"
+                  :class="{ 'view-active': !!config.fileUrl }" :title="config.fileName"
+                  @click="viewFileDetail(config.fileUrl, config.fileName)"
+                >{{ config.fileName }}</span>
+              </a-form-item>
+            </div>
+            <a-form-item
+              v-if="formState.authConfig['auth.type'] === 'AK/SK'" :label="$t('accessKey')"
+              :name="['authConfig', 'auth.ak_sk.access_key']" :rules="[{ required: isEdit && !isAuthDisabled }]"
+            >
+              <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.access_key']" :disabled="isAuthDisabled" />
+              <span v-else class="config-value">{{ formState.authConfig['auth.ak_sk.access_key'] }}</span>
+            </a-form-item>
+            <a-form-item
+              v-if="formState.authConfig['auth.type'] === 'AK/SK'" :label="$t('secretKey')"
+              :name="['authConfig', 'auth.ak_sk.secret_key']" :rules="[{ required: isEdit && !isAuthDisabled }]"
+            >
+              <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.ak_sk.secret_key']" :disabled="isAuthDisabled" />
+              <span v-else class="config-value">{{ formState.authConfig['auth.ak_sk.secret_key'] }}</span>
+            </a-form-item>
+          </template>
           <a-form-item>
             <p class="header">
               {{ $t('properties') }}
