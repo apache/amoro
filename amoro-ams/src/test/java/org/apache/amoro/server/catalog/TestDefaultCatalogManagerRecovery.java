@@ -135,6 +135,7 @@ public class TestDefaultCatalogManagerRecovery extends AMSManagerTestBase {
     DB.insertCatalog(buildUnreachableRestCatalog());
     Assert.assertTrue(CATALOG_MANAGER.catalogExist(TEST_CATALOG_NAME));
 
+    // add lance format is invalid
     CatalogMeta updatedMeta = CATALOG_MANAGER.getCatalogMeta(TEST_CATALOG_NAME);
     updatedMeta.getCatalogProperties().put(CatalogMetaProperties.TABLE_FORMATS, "LANCE,ICEBERG");
 
