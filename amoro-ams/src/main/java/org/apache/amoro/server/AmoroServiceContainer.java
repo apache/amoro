@@ -387,6 +387,7 @@ public class AmoroServiceContainer {
   }
 
   public void dispose() {
+    stopLeaderServices();
     disposeOptimizingService();
     disposeRestService();
   }
