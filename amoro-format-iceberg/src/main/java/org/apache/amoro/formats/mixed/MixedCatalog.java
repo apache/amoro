@@ -25,6 +25,7 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.mixed.MixedFormatCatalog;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.iceberg.exceptions.NoSuchNamespaceException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 
 import java.util.List;
@@ -81,8 +82,8 @@ public class MixedCatalog implements FormatCatalog {
       return catalog.listTables(database).stream()
           .map(TableIdentifier::getTableName)
           .collect(Collectors.toList());
-    } catch (Exception e) {
-      throw new NoSuchDatabaseException("Database: " + database + " is not exists", e);
+    } catch (NoSuchNamespaceException e) {
+      throw new NoSuchDatabaseException(e, "Database: %s does not exist", database);
     }
   }
 
