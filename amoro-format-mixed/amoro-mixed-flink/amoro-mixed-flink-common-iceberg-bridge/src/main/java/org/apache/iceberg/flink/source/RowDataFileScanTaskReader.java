@@ -36,8 +36,8 @@ import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.FlinkSourceFilter;
 import org.apache.iceberg.flink.RowDataWrapper;
 import org.apache.iceberg.flink.data.AdaptHiveFlinkParquetReaders;
-import org.apache.iceberg.flink.data.FlinkAvroReader;
 import org.apache.iceberg.flink.data.FlinkOrcReader;
+import org.apache.iceberg.flink.data.FlinkPlannedAvroReader;
 import org.apache.iceberg.flink.data.RowDataProjection;
 import org.apache.iceberg.flink.data.RowDataUtil;
 import org.apache.iceberg.io.CloseableIterable;
@@ -156,7 +156,7 @@ public class RowDataFileScanTaskReader implements FileScanTaskReader<RowData> {
             .reuseContainers()
             .project(schema)
             .split(task.start(), task.length())
-            .createReaderFunc(readSchema -> new FlinkAvroReader(schema, readSchema, idToConstant));
+            .createReaderFunc(readSchema -> FlinkPlannedAvroReader.create(schema, idToConstant));
 
     if (nameMapping != null) {
       builder.withNameMapping(NameMappingParser.fromJson(nameMapping));
@@ -224,7 +224,7 @@ public class RowDataFileScanTaskReader implements FileScanTaskReader<RowData> {
         Schema tableSchema,
         Schema requestedSchema,
         InputFilesDecryptor inputFilesDecryptor) {
-      super(task.file().path().toString(), task.deletes(), tableSchema, requestedSchema);
+      super(task.file().location(), task.deletes(), tableSchema, requestedSchema);
       this.requiredRowType = FlinkSchemaUtil.convert(requiredSchema());
       this.asStructLike = new RowDataWrapper(requiredRowType, requiredSchema().asStruct());
       this.inputFilesDecryptor = inputFilesDecryptor;

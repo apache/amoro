@@ -309,11 +309,21 @@ public class ProcessService extends PersistentBase {
    */
   private void markRecoverFailed(DefaultTableProcessStore store, Throwable cause) {
     try {
+      String failMessage =
+          String.format(
+              "Failed to recover process: %s (processId=%s, tableId=%s, action=%s, engine=%s, "
+                  + "externalIdentifier=%s)",
+              cause.getMessage(),
+              store.getProcessId(),
+              store.getTableId(),
+              store.getAction(),
+              store.getExecutionEngine(),
+              store.getExternalProcessIdentifier());
       store.tryTransitState(
           ProcessStatus.FAILED,
           ProcessEvent.COMPLETE_FAILED,
           store.getExternalProcessIdentifier(),
-          "Failed to recover process: " + cause.getMessage(),
+          failMessage,
           store.getProcessParameters(),
           store.getSummary());
     } catch (Throwable t) {

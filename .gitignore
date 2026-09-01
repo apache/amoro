@@ -24,6 +24,7 @@ gradle/wrapper/gradle-wrapper.jar
 
 __pycache__/
 *.py[cod]
+.venv/
 .eggs/
 .tox/
 env/
@@ -47,6 +48,8 @@ metastore_db/
 
 # Python stuff
 python/.mypy_cache/
+.mypy_cache/
+.ruff_cache/
 
 # logs
 logs/

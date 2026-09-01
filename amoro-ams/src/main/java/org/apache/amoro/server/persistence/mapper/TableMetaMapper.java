@@ -19,6 +19,7 @@
 package org.apache.amoro.server.persistence.mapper;
 
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.server.catalog.DatabaseMetadata;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
 import org.apache.amoro.server.persistence.converter.TableFormatConverter;
 import org.apache.amoro.server.persistence.extension.InListExtendedLanguageDriver;
@@ -29,16 +30,24 @@ import org.apache.ibatis.annotations.Lang;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.ResultMap;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
+import java.util.Map;
 
 public interface TableMetaMapper {
 
-  @Insert("INSERT INTO database_metadata(catalog_name, db_name) VALUES( #{catalogName}, #{dbName})")
-  void insertDatabase(@Param("catalogName") String catalogName, @Param("dbName") String dbName);
+  @Insert(
+      "INSERT INTO database_metadata(catalog_name, db_name, properties)"
+          + " VALUES(#{catalogName}, #{dbName},"
+          + " #{properties, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter})")
+  void insertDatabase(
+      @Param("catalogName") String catalogName,
+      @Param("dbName") String dbName,
+      @Param("properties") Map<String, String> properties);
 
   @Select("SELECT db_name FROM database_metadata WHERE catalog_name = #{catalogName}")
   List<String> selectDatabases(@Param("catalogName") String catalogName);
@@ -46,6 +55,41 @@ public interface TableMetaMapper {
   @Select(
       "SELECT db_name FROM database_metadata WHERE catalog_name = #{catalogName} AND db_name=#{dbName}")
   String selectDatabase(@Param("catalogName") String catalogName, @Param("dbName") String dbName);
+
+  @Select(
+      "SELECT catalog_name, db_name, properties FROM database_metadata"
+          + " WHERE catalog_name = #{catalogName} AND db_name = #{dbName}")
+  @Results(
+      id = "databaseMetadata",
+      value = {
+        @Result(property = "catalogName", column = "catalog_name"),
+        @Result(property = "databaseName", column = "db_name"),
+        @Result(
+            property = "properties",
+            column = "properties",
+            typeHandler = Map2StringConverter.class)
+      })
+  DatabaseMetadata selectDatabaseMetadata(
+      @Param("catalogName") String catalogName, @Param("dbName") String dbName);
+
+  @Select(
+      "<script>"
+          + "SELECT catalog_name, db_name, properties FROM database_metadata"
+          + " WHERE catalog_name = #{catalogName} AND db_name = #{dbName} FOR UPDATE"
+          + "<if test=\"_databaseId == 'derby'\"> WITH RS</if>"
+          + "</script>")
+  @ResultMap("databaseMetadata")
+  DatabaseMetadata selectDatabaseMetadataForUpdate(
+      @Param("catalogName") String catalogName, @Param("dbName") String dbName);
+
+  @Update(
+      "UPDATE database_metadata SET properties ="
+          + " #{properties, typeHandler=org.apache.amoro.server.persistence.converter.Map2StringConverter}"
+          + " WHERE catalog_name = #{catalogName} AND db_name = #{dbName}")
+  Integer updateDatabaseProperties(
+      @Param("catalogName") String catalogName,
+      @Param("dbName") String dbName,
+      @Param("properties") Map<String, String> properties);
 
   @Delete(
       "DELETE FROM database_metadata WHERE catalog_name = #{catalogName} AND db_name = #{dbName}"

@@ -45,7 +45,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -274,6 +276,37 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
             + ":min-parallelism should be reset to 0 when no resources available and no optimizer exists");
   }
 
+  @Test
+  public void testUnknownContainerKeepsGroupWatchedAndResetsMinParallelism()
+      throws InterruptedException {
+    // Containers.get throws for an unknown container name. The lookup used to sit outside the
+    // try/finally, so the exception skipped keepInTouch and silently removed the group from
+    // scale-out monitoring forever. The keeper must keep watching and eventually reset
+    // min-parallelism like any other permanently-failing scale-out.
+    scaleOutCallCount.set(0);
+    String groupName = TEST_GROUP_NAME + "-7";
+    this.currentGroupName = groupName;
+    Map<String, String> properties = Maps.newHashMap();
+    properties.put(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM, "2");
+    properties.put("memory", "1024");
+    ResourceGroup resourceGroup =
+        new ResourceGroup.Builder(groupName, "unknown-container-x")
+            .addProperties(properties)
+            .build();
+
+    optimizerManager().createResourceGroup(resourceGroup);
+    optimizingService().createResourceGroup(resourceGroup);
+
+    Thread.sleep(300);
+
+    ResourceGroup updatedGroup = optimizerManager().getResourceGroup(groupName);
+    Assertions.assertEquals(
+        "0",
+        updatedGroup.getProperties().get(OptimizerProperties.OPTIMIZER_GROUP_MIN_PARALLELISM),
+        groupName
+            + ":keeper must keep watching an unknown-container group and reset min-parallelism");
+  }
+
   /**
    * Test scenario 4: When no resources but has optimizer, min-parallelism will be reset to
    * optimizer's executionParallel.
@@ -403,6 +436,8 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     private final AtomicInteger scaleOutCallCount;
     private final Function<OptimizerRegisterInfo, String> optimizerRegistrar;
     private final Supplier<String> targetGroupNameSupplier;
+    private final AtomicBoolean releaseAvailable = new AtomicBoolean(true);
+    private final List<Resource> releasedResources = new CopyOnWriteArrayList<>();
 
     public MockOptimizerContainer(
         AtomicBoolean resourceAvailable,
@@ -444,6 +479,19 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     }
 
     @Override
-    public void releaseResource(Resource resource) {}
+    public void releaseResource(Resource resource) {
+      if (!releaseAvailable.get()) {
+        throw new RuntimeException("release failed");
+      }
+      releasedResources.add(resource);
+    }
+
+    public void setReleaseAvailable(boolean available) {
+      releaseAvailable.set(available);
+    }
+
+    public List<Resource> getReleasedResources() {
+      return releasedResources;
+    }
   }
 }

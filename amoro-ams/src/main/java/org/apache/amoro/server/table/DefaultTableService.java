@@ -854,6 +854,13 @@ public class DefaultTableService extends PersistentBase implements TableService 
     }
 
     Map<String, String> properties = table.properties();
+    if (!tableRuntimeFactory.accept(serverTableIdentifier, properties).isPresent()) {
+      LOG.debug(
+          "Skip creating table runtime for table {} because its format is not supported",
+          serverTableIdentifier);
+      return false;
+    }
+
     TableRuntimeMeta meta = new TableRuntimeMeta();
     meta.setTableId(serverTableIdentifier.getId());
     meta.setTableConfig(properties);
