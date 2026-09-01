@@ -24,6 +24,7 @@ import org.apache.hadoop.hive.metastore.api.EnvironmentContext;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.metastore.api.TableMeta;
 import org.apache.thrift.TException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -88,4 +89,18 @@ public interface HMSClient {
           InvocationTargetException, ClassNotFoundException;
 
   List<Table> getTableObjectsByName(String dbName, List<String> tableNames) throws TException;
+
+  /**
+   * Returns lightweight table metadata matching the database, table, and table type patterns.
+   *
+   * @param databasePattern Hive database name or pattern
+   * @param tablePattern Hive table name or pattern
+   * @param tableTypes Hive table types to include
+   * @return matching lightweight table metadata
+   * @throws UnsupportedOperationException if the client implementation does not support this API
+   */
+  default List<TableMeta> getTableMeta(
+      String databasePattern, String tablePattern, List<String> tableTypes) throws TException {
+    throw new UnsupportedOperationException("Getting Hive table metadata is not supported");
+  }
 }

@@ -33,6 +33,7 @@ import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClient;
 import org.apache.amoro.hive.HMSClientPool;
+import org.apache.amoro.hive.HiveTableTypeUtil;
 import org.apache.amoro.hive.utils.CompatibleHivePropertyUtil;
 import org.apache.amoro.hive.utils.HiveSchemaUtil;
 import org.apache.amoro.hive.utils.HiveTableUtil;
@@ -183,14 +184,21 @@ public class MixedHiveCatalog implements MixedFormatCatalog {
       throw new NoSuchTableException("load table failed %s.", identifier);
     }
 
-    Map<String, String> hiveParameters = hiveTable.getParameters();
+    if (HiveTableTypeUtil.isView(hiveTable)) {
+      throw new NoSuchTableException("%s is a Hive view, not a Mixed Hive table.", identifier);
+    }
 
-    String mixedTableRootLocation = hiveParameters.get(MIXED_TABLE_ROOT_LOCATION);
+    Map<String, String> hiveParameters = hiveTable.getParameters();
+    String mixedTableRootLocation =
+        hiveParameters == null ? null : hiveParameters.get(MIXED_TABLE_ROOT_LOCATION);
     if (mixedTableRootLocation == null) {
       // if hive location ends with /hive, then it's a mixed-hive table. we need to remove /hive to
       // get root location.
       // if hive location doesn't end with /hive, then it's a pure-hive table. we can use the
       // location as root location.
+      if (hiveTable.getSd() == null || StringUtils.isBlank(hiveTable.getSd().getLocation())) {
+        throw new NoSuchTableException("table %s does not have a storage location.", identifier);
+      }
       String hiveRootLocation = hiveTable.getSd().getLocation();
       if (hiveRootLocation.endsWith("/hive")) {
         mixedTableRootLocation = hiveRootLocation.substring(0, hiveRootLocation.length() - 5);
@@ -305,7 +313,8 @@ public class MixedHiveCatalog implements MixedFormatCatalog {
                   hiveTables.stream()
                       .filter(
                           table ->
-                              table.getParameters() != null
+                              !HiveTableTypeUtil.isView(table)
+                                  && table.getParameters() != null
                                   && CompatibleHivePropertyUtil.propertyAsBoolean(
                                       table.getParameters(),
                                       HiveTableProperties.MIXED_TABLE_FLAG,
@@ -327,8 +336,11 @@ public class MixedHiveCatalog implements MixedFormatCatalog {
           });
     } catch (NoSuchObjectException e) {
       // pass
-    } catch (TException | InterruptedException e) {
+    } catch (TException e) {
       throw new RuntimeException("Failed to listTables of database :" + database, e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted while listing tables of database: " + database, e);
     }
     return result;
   }
