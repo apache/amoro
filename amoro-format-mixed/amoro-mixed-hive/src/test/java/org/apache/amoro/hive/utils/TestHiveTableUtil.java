@@ -84,7 +84,7 @@ public class TestHiveTableUtil {
         .thenReturn(
             Arrays.asList(
                 table("physical_table", TableType.EXTERNAL_TABLE),
-                table("hive_view", TableType.MATERIALIZED_VIEW)));
+                table("hive_view", "MATERIALIZED_VIEW")));
 
     List<String> tableNames =
         HiveTableUtil.getAllHiveTables(new TestingHMSClientPool(client), "database");
@@ -117,10 +117,14 @@ public class TestHiveTableUtil {
   }
 
   private static Table table(String name, TableType tableType) {
+    return table(name, tableType.name());
+  }
+
+  private static Table table(String name, String tableType) {
     Table table = new Table();
     table.setDbName("database");
     table.setTableName(name);
-    table.setTableType(tableType.name());
+    table.setTableType(tableType);
     return table;
   }
 

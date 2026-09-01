@@ -18,7 +18,6 @@
 
 package org.apache.amoro.hive;
 
-import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.metastore.api.TableMeta;
 import org.apache.thrift.TException;
@@ -34,9 +33,10 @@ import java.util.stream.Collectors;
 /** Utilities for classifying Hive Metastore table objects. */
 public final class HiveTableTypeUtil {
 
+  private static final String VIRTUAL_VIEW_TYPE = "VIRTUAL_VIEW";
+  private static final String MATERIALIZED_VIEW_TYPE = "MATERIALIZED_VIEW";
   private static final List<String> VIEW_TYPES =
-      Collections.unmodifiableList(
-          Arrays.asList(TableType.VIRTUAL_VIEW.name(), TableType.MATERIALIZED_VIEW.name()));
+      Collections.unmodifiableList(Arrays.asList(VIRTUAL_VIEW_TYPE, MATERIALIZED_VIEW_TYPE));
 
   private HiveTableTypeUtil() {}
 
@@ -106,7 +106,7 @@ public final class HiveTableTypeUtil {
   }
 
   private static boolean isViewType(String tableType) {
-    return TableType.VIRTUAL_VIEW.name().equalsIgnoreCase(tableType)
-        || TableType.MATERIALIZED_VIEW.name().equalsIgnoreCase(tableType);
+    return VIRTUAL_VIEW_TYPE.equalsIgnoreCase(tableType)
+        || MATERIALIZED_VIEW_TYPE.equalsIgnoreCase(tableType);
   }
 }

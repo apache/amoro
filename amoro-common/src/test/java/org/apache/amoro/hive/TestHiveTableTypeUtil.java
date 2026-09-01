@@ -31,7 +31,7 @@ public class TestHiveTableTypeUtil {
   @Test
   public void testViewTypes() {
     assertTrue(HiveTableTypeUtil.isView(tableWithType(TableType.VIRTUAL_VIEW.name())));
-    assertTrue(HiveTableTypeUtil.isView(tableWithType(TableType.MATERIALIZED_VIEW.name())));
+    assertTrue(HiveTableTypeUtil.isView(tableWithType("MATERIALIZED_VIEW")));
     assertFalse(HiveTableTypeUtil.isView(tableWithType(TableType.EXTERNAL_TABLE.name())));
     assertFalse(HiveTableTypeUtil.isView(tableWithType(null)));
     assertTrue(
