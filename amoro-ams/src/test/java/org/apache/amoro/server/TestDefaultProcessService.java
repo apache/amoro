@@ -48,8 +48,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -430,24 +428,14 @@ public class TestDefaultProcessService extends AMSTableTestBase {
     }
   }
 
-  /** Execute engine whose processes always fail immediately after submission. */
+  /** Execute engine whose submissions always fail. */
   private static class AlwaysFailingExecuteEngine extends MockExecuteEngine {
     private final AtomicInteger submitAttempts = new AtomicInteger();
-    private final Set<String> failedIdentifiers = ConcurrentHashMap.newKeySet();
 
     @Override
     public String submitTableProcess(org.apache.amoro.process.TableProcess tableProcess) {
-      String identifier = "failing-" + submitAttempts.incrementAndGet();
-      failedIdentifiers.add(identifier);
-      return identifier;
-    }
-
-    @Override
-    public ProcessStatus getStatus(String processIdentifier) {
-      if (failedIdentifiers.contains(processIdentifier)) {
-        return ProcessStatus.FAILED;
-      }
-      return super.getStatus(processIdentifier);
+      submitAttempts.incrementAndGet();
+      throw new IllegalStateException("Submission failure");
     }
 
     private int getSubmitAttempts() {
