@@ -608,6 +608,33 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Strip shaded SLF4J 1.x classes from kyuubi-hive-jdbc-shaded to prevent
+                 it from overriding slf4j-api 2.x at runtime (StaticLoggerBinder conflict). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>${maven-antrun-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>strip-kyuubi-shaded-slf4j</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <target>
+                                <zip destfile="${project.build.directory}/amoro-ams-dependency/lib/kyuubi-hive-jdbc-shaded-stripped.jar">
+                                    <zipfileset src="${project.build.directory}/amoro-ams-dependency/lib/kyuubi-hive-jdbc-shaded-${kyuubi-hive-jdbc-shaded.version}.jar">
+                                        <exclude name="org/slf4j/**"></exclude>
+                                    </zipfileset>
+                                </zip>
+                                <delete file="${project.build.directory}/amoro-ams-dependency/lib/kyuubi-hive-jdbc-shaded-${kyuubi-hive-jdbc-shaded.version}.jar"></delete>
+                                <move file="${project.build.directory}/amoro-ams-dependency/lib/kyuubi-hive-jdbc-shaded-stripped.jar" tofile="${project.build.directory}/amoro-ams-dependency/lib/kyuubi-hive-jdbc-shaded-${kyuubi-hive-jdbc-shaded.version}.jar"></move>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
