@@ -71,6 +71,41 @@
             <artifactId>lance-namespace-apache-client</artifactId>
             <version>0.8.0</version>
         </dependency>
+
+        <!-- Lance namespace Hive 3.x metastore implementation -->
+        <dependency>
+            <groupId>org.lance</groupId>
+            <artifactId>lance-namespace-hive3</artifactId>
+            <version>0.4.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.lance</groupId>
+                    <artifactId>lance-namespace-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-all</artifactId>
+                </exclusion>
+                <!-- amoro-common already provides orc 1.9.7 (nohive) and hadoop-client-api, whose
+                     unshaded 1.5.1 / 2.x counterparts only add duplicate org.apache.hadoop classes. -->
+                <exclusion>
+                    <groupId>org.apache.orc</groupId>
+                    <artifactId>orc-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-common</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-hdfs</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-aws</artifactId>

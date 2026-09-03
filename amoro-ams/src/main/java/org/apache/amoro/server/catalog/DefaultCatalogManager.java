@@ -276,11 +276,10 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
       throw new IllegalMetadataException("Cannot update catalog type");
     }
 
-    // A REST catalog serves a single protocol per uri, so Lance cannot be combined with other
-    // table formats. Reject the update before it is persisted.
+    // Lance cannot mix with other table formats in REST/Hive catalogs; reject before persisting.
     String type = newMeta.getCatalogType();
     Set<TableFormat> tableFormats = CatalogUtil.tableFormats(newMeta);
-    CatalogBuilder.checkRestLanceExclusivity(type, tableFormats);
+    CatalogBuilder.checkLanceExclusivity(type, tableFormats);
   }
 
   private void disposeCatalog(String name) {
