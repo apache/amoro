@@ -76,6 +76,20 @@ Common properties include:
 ### Configure table properties
 If you want to add the same table properties to all tables under a catalog, you can add these table properties here on the catalog level. If you also configure this property on the table level, the property on the table will take effect.
 
+{{< hint info >}}
+When configuring table-level properties on a catalog, you **must prefix the key with `table.`**. The prefix will be automatically stripped when the property is applied to tables. For example, to set the default `self-optimizing.group` for all tables under the catalog, you need to configure `table.self-optimizing.group` instead of `self-optimizing.group`. Properties without the `table.` prefix will not be recognized as table-level defaults and will be treated as catalog-level properties only.
+{{< /hint >}}
+
+The following table lists some examples:
+
+| Catalog property key                        | Effective table property key              | Description                                              |
+|---------------------------------------------|-------------------------------------------|----------------------------------------------------------|
+| `table.self-optimizing.enabled`             | `self-optimizing.enabled`                 | Enable/disable self-optimizing for all tables            |
+| `table.self-optimizing.group`               | `self-optimizing.group`                   | Set the default optimizer group for all tables           |
+| `table.table-expire.enabled`                | `table-expire.enabled`                    | Enable/disable table expiration for all tables           |
+| `table.clean-orphan-file.enabled`           | `clean-orphan-file.enabled`               | Enable/disable orphan file cleaning for all tables       |
+| `table.log-store.enabled`                   | `log-store.enabled`                       | Enable/disable LogStore for all tables                   |
+
 ## REST Catalog
 When a user needs to create a Iceberg REST Catalog, they can choose **External Catalog Type**、**Custom Metastore Type**、**Iceberg Table Format**, configure properties include:
 **catalog-impl=org.apache.iceberg.rest.RESTCatalog**, **uri=$restCatalog_uri**.
