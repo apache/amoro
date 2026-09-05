@@ -321,6 +321,7 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
           CreateTableRequest request = bodyAsClass(ctx, CreateTableRequest.class);
           request.validate();
           String tableName = request.name();
+          checkAlreadyExists(!catalog.tableExists(database, tableName), "Table", tableName);
           TableFormat format =
               TablePropertyUtil.isBaseStore(request.properties(), TableFormat.MIXED_ICEBERG)
                   ? TableFormat.MIXED_ICEBERG
@@ -329,7 +330,6 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
           try (InternalTableCreator creator =
               catalog.newTableCreator(database, tableName, format, request)) {
             if (request.stageCreate()) {
-              checkAlreadyExists(!catalog.tableExists(database, tableName), "Table", tableName);
               return LoadTableResponse.builder().withTableMetadata(creator.stage()).build();
             }
 
@@ -400,6 +400,7 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
 
   private LoadTableResponse commitCreateTable(
       InternalCatalog catalog, String database, String tableName, UpdateTableRequest request) {
+    checkAlreadyExists(!catalog.tableExists(database, tableName), "Table", tableName);
     request.requirements().forEach(requirement -> requirement.validate((TableMetadata) null));
 
     Optional<Integer> formatVersion =
@@ -636,8 +637,12 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
         return NotFound;
       } else if (e instanceof NoSuchNamespaceException) {
         return NotFound;
-      } else if (e instanceof AlreadyExistsException) {
+      } else if (e instanceof AlreadyExistsException
+          || e instanceof org.apache.amoro.exception.AlreadyExistsException
+          || e instanceof org.apache.amoro.exception.BlockerConflictException) {
         return Conflict;
+      } else if (e instanceof org.apache.amoro.exception.ForbiddenException) {
+        return Forbidden;
       }
       return InternalServerError;
     }
