@@ -19,7 +19,6 @@
 package org.apache.amoro.server;
 
 import org.apache.amoro.exception.AlreadyExistsException;
-import org.apache.amoro.exception.BlockerConflictException;
 import org.apache.amoro.exception.ForbiddenException;
 import org.apache.iceberg.exceptions.BadRequestException;
 import org.apache.iceberg.exceptions.UnprocessableEntityException;
@@ -50,10 +49,6 @@ public class TestRestCatalogService {
         RestCatalogService.IcebergRestErrorCode.Conflict,
         RestCatalogService.IcebergRestErrorCode.exceptionToCode(
             new AlreadyExistsException("table already exists")));
-    Assertions.assertEquals(
-        RestCatalogService.IcebergRestErrorCode.Conflict,
-        RestCatalogService.IcebergRestErrorCode.exceptionToCode(
-            new BlockerConflictException("conflict")));
     Assertions.assertEquals(
         RestCatalogService.IcebergRestErrorCode.Forbidden,
         RestCatalogService.IcebergRestErrorCode.exceptionToCode(

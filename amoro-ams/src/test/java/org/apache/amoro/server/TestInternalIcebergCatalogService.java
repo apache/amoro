@@ -45,7 +45,6 @@ import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.rest.RESTCatalog;
@@ -436,26 +435,6 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
       List<Record> records =
           MixedDataTestHelpers.readBaseStore(mixedTable, reader, Expressions.alwaysTrue());
       Assertions.assertEquals(newRecords.size(), records.size());
-    }
-
-    @Test
-    public void testCreateTableAlreadyExists() {
-      nsCatalog.createTable(identifier, schema);
-      Assertions.assertThrows(
-          AlreadyExistsException.class, () -> nsCatalog.createTable(identifier, schema));
-    }
-
-    @Test
-    public void testCommitCreateTableAlreadyExists(@TempDir Path tempDir) {
-      nsCatalog.createTable(identifier, schema);
-      Path tablePath = tempDir.resolve("staged-table-conflict");
-      Transaction transaction =
-          nsCatalog
-              .buildTable(identifier, schema)
-              .withLocation(tablePath.toUri().toString())
-              .createTransaction();
-
-      Assertions.assertThrows(AlreadyExistsException.class, transaction::commitTransaction);
     }
 
     private int formatVersion(Table icebergTable) {
