@@ -636,8 +636,11 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
         return NotFound;
       } else if (e instanceof NoSuchNamespaceException) {
         return NotFound;
-      } else if (e instanceof AlreadyExistsException) {
+      } else if (e instanceof AlreadyExistsException
+          || e instanceof org.apache.amoro.exception.AlreadyExistsException) {
         return Conflict;
+      } else if (e instanceof org.apache.amoro.exception.ForbiddenException) {
+        return Forbidden;
       }
       return InternalServerError;
     }
