@@ -19,8 +19,11 @@
 package org.apache.amoro.process;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.apache.amoro.Action;
+import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -150,6 +153,27 @@ public class TestLocalExecutionEngine {
     Assertions.assertEquals(ProcessStatus.UNKNOWN, engine.getStatus(null));
     Assertions.assertEquals(ProcessStatus.UNKNOWN, engine.getStatus(""));
     Assertions.assertEquals(ProcessStatus.UNKNOWN, engine.getStatus("not-exist"));
+  }
+
+  @Test
+  public void testEngineTypeToString() {
+    Assertions.assertEquals("local", EngineType.of("local").toString());
+  }
+
+  @Test
+  public void testTableProcessToString() {
+    TableRuntime tableRuntime = mock(TableRuntime.class);
+    when(tableRuntime.getTableIdentifier())
+        .thenReturn(
+            ServerTableIdentifier.of(1L, "catalog", "database", "table", TableFormat.ICEBERG));
+
+    TableProcess process =
+        new LocalProcessTableProcess(tableRuntime, new LocalExecutionEngine(), "default", () -> {});
+
+    Assertions.assertEquals(
+        "LocalProcessTableProcess{tableIdentifier=catalog.database.table(tableId=1), "
+            + "action=TEST, processStage=default, executionEngine=local}",
+        process.toString());
   }
 
   private LocalExecutionEngine createEngineWithTtl(String ttl) {

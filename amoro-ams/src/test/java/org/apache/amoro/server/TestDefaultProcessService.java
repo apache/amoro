@@ -30,6 +30,7 @@ import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.ActionCoordinatorScheduler;
 import org.apache.amoro.server.process.MockActionCoordinator;
 import org.apache.amoro.server.process.MockExecuteEngine;
 import org.apache.amoro.server.process.ProcessService;
@@ -389,6 +390,56 @@ public class TestDefaultProcessService extends AMSTableTestBase {
       dropTable();
     } catch (Throwable t) {
       throw new RuntimeException(t);
+    }
+  }
+
+  /**
+   * Verify that a process which keeps failing is retried a bounded number of times and then
+   * dropped, instead of being resubmitted in an infinite loop. The process store must be created
+   * with the retry limit rather than the current retry count, otherwise a FAILED process is treated
+   * as terminal immediately (retryNumber >= maxRetryTime), every RETRY_REQUESTED transition is
+   * rejected, retryNumber never increases and the process is resubmitted forever.
+   */
+  @Test(timeout = 60_000)
+  public void testFailedProcessRetryIsBounded() throws InterruptedException {
+    AlwaysFailingExecuteEngine failingEngine = new AlwaysFailingExecuteEngine();
+    processServiceService().unInstallAllExecuteEngines();
+    processServiceService().installExecuteEngine(failingEngine);
+    processServiceService().unInstallAllActionCoordinators();
+    processServiceService().installActionCoordinator(new MockActionCoordinator(failingEngine));
+    try {
+      createTable();
+
+      // Wait until the failing process has been submitted at least once.
+      awaitCondition(() -> failingEngine.getSubmitAttempts() >= 1, WAIT_TIMEOUT_MS, 100L);
+
+      // The process must exhaust its bounded retries and be untracked. With the infinite
+      // retry loop, the active process map never empties and this wait times out.
+      awaitCondition(
+          () -> processServiceService().getActiveTableProcess().isEmpty(), 15_000L, 100L);
+
+      Assert.assertEquals(
+          1 + ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER,
+          failingEngine.getSubmitAttempts());
+
+      dropTable();
+    } catch (Throwable t) {
+      throw new RuntimeException(t);
+    }
+  }
+
+  /** Execute engine whose submissions always fail. */
+  private static class AlwaysFailingExecuteEngine extends MockExecuteEngine {
+    private final AtomicInteger submitAttempts = new AtomicInteger();
+
+    @Override
+    public String submitTableProcess(org.apache.amoro.process.TableProcess tableProcess) {
+      submitAttempts.incrementAndGet();
+      throw new IllegalStateException("Submission failure");
+    }
+
+    private int getSubmitAttempts() {
+      return submitAttempts.get();
     }
   }
 

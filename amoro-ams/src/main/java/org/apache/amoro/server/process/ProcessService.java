@@ -280,7 +280,7 @@ public class ProcessService extends PersistentBase {
               tableRuntime,
               processMeta,
               scheduler.getAction(),
-              processMeta.getRetryNumber());
+              ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER);
       try {
         TableProcess process = scheduler.recover(tableRuntime, store);
         trackTableProcess(tableRuntime.getTableIdentifier(), store, process);
@@ -367,17 +367,24 @@ public class ProcessService extends PersistentBase {
             scheduler =
                 findScheduler(store.getAction().getName(), process.getTableRuntime().getFormat());
           }
+          boolean retryScheduled = false;
           if (scheduler != null
               && store.getStatus() == ProcessStatus.FAILED
               && store.getRetryNumber() < ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER
               && process.getTableRuntime() != null) {
-            store.tryTransitState(
-                ProcessStatus.PENDING,
-                ProcessEvent.RETRY_REQUESTED,
-                store.getExternalProcessIdentifier(),
-                "Regular Retry.",
-                process.getProcessParameters(),
-                process.getSummary());
+            // Only resubmit when the retry transition is accepted; resubmitting a process whose
+            // transition was rejected (e.g. already terminal) would loop forever without ever
+            // increasing the retry number.
+            retryScheduled =
+                store.tryTransitState(
+                    ProcessStatus.PENDING,
+                    ProcessEvent.RETRY_REQUESTED,
+                    store.getExternalProcessIdentifier(),
+                    "Regular Retry.",
+                    process.getProcessParameters(),
+                    process.getSummary());
+          }
+          if (retryScheduled) {
             executeOrTraceProcess(store, process);
           } else {
             if (store.getStatus() == ProcessStatus.FAILED && process.getTableRuntime() != null) {
@@ -503,7 +510,7 @@ public class ProcessService extends PersistentBase {
         process.getTableRuntime(),
         processMeta,
         process.getAction(),
-        processMeta.getRetryNumber());
+        ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER);
   }
 
   /**
