@@ -18,6 +18,8 @@
 
 package org.apache.amoro.server;
 
+import org.apache.amoro.exception.AlreadyExistsException;
+import org.apache.amoro.exception.ForbiddenException;
 import org.apache.iceberg.exceptions.BadRequestException;
 import org.apache.iceberg.exceptions.UnprocessableEntityException;
 import org.junit.jupiter.api.Assertions;
@@ -39,5 +41,17 @@ public class TestRestCatalogService {
         RestCatalogService.IcebergRestErrorCode.UnprocessableEntity,
         RestCatalogService.IcebergRestErrorCode.exceptionToCode(
             new UnprocessableEntityException("conflicting property changes")));
+    Assertions.assertEquals(
+        RestCatalogService.IcebergRestErrorCode.Conflict,
+        RestCatalogService.IcebergRestErrorCode.exceptionToCode(
+            new org.apache.iceberg.exceptions.AlreadyExistsException("table already exists")));
+    Assertions.assertEquals(
+        RestCatalogService.IcebergRestErrorCode.Conflict,
+        RestCatalogService.IcebergRestErrorCode.exceptionToCode(
+            new AlreadyExistsException("table already exists")));
+    Assertions.assertEquals(
+        RestCatalogService.IcebergRestErrorCode.Forbidden,
+        RestCatalogService.IcebergRestErrorCode.exceptionToCode(
+            new ForbiddenException("forbidden")));
   }
 }
