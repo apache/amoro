@@ -146,6 +146,15 @@ public final class DynamicAllocationState {
   }
 
   /**
+   * How long demand has exceeded capacity as of {@code nowMs}, or {@code 0} while there is no
+   * backlog. Read side of the backlog-duration gauge: derived at scrape time rather than pushed by
+   * the keeper, whose rounds are seconds apart.
+   */
+  public long backlogDurationMs(long nowMs) {
+    return backlogSinceMs < 0 ? 0 : nowMs - backlogSinceMs;
+  }
+
+  /**
    * Update per-token idle observations from this round's snapshot. A token with in-flight tasks has
    * its busy timestamp refreshed; a token seen for the first time is seeded with {@code nowMs}
    * (idle from first sight, see {@link #lastBusyMs}); tokens no longer registered are pruned, so a

@@ -28,7 +28,9 @@ public class OptimizerInstance extends Resource {
 
   private String token;
   private long startTime;
-  private long touchTime;
+  // Written by thrift heartbeat threads (touch) and read by the keeper thread for expiry
+  // detection without a shared lock; volatile guarantees the keeper observes fresh heartbeats.
+  private volatile long touchTime;
 
   public OptimizerInstance() {}
 

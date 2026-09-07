@@ -59,7 +59,7 @@ public class CatalogBuilder {
           CATALOG_TYPE_GLUE,
           Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
           CATALOG_TYPE_REST,
-          Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
+          Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG, TableFormat.LANCE),
           CATALOG_TYPE_CUSTOM,
           Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG),
           CATALOG_TYPE_HIVE,
@@ -86,6 +86,13 @@ public class CatalogBuilder {
         "Table format %s is not supported for metastore type: %s",
         tableFormats,
         type);
+    Preconditions.checkState(
+        !(CATALOG_TYPE_REST.equals(type)
+            && tableFormats.contains(TableFormat.LANCE)
+            && tableFormats.size() > 1),
+        "REST catalog serves a single protocol per uri,"
+            + " Lance cannot be combined with other table formats: %s",
+        tableFormats);
 
     switch (type) {
       case CATALOG_TYPE_HADOOP:

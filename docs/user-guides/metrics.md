@@ -77,6 +77,23 @@ Amoro has supported built-in metrics to measure status of table self-optimizing 
 | optimizer_group_optimizer_instances     | Gauge  | group | Number of optimizer instances in optimizer group |
 | optimizer_group_memory_bytes_allocated  | Gauge  | group | Memory bytes allocated in optimizer group        |
 | optimizer_group_threads                 | Gauge  | group | Number of total threads in optimizer group       |
+| optimizer_group_idle_optimizers         | Gauge  | group | Number of optimizer instances with no in-flight task in optimizer group |
+| optimizer_group_config_invalid          | Gauge  | group | 1 while the group's dynamic allocation configuration is invalid and the fail-safe fallback is active, else 0 |
+
+The following metrics are exported only while dynamic allocation is effectively enabled on the group
+(see [Managing optimizers](../managing-optimizers/)); the counters count attempted scaling actions, so
+one scale-out round — whatever its instance count and whether its resource requests succeed — and one
+drain start each count 1. A rising `scale_up_total` without a matching rise of
+`optimizer_group_optimizer_instances`, sustained beyond the pod boot window, signals failing
+resource requests; short gaps are normal while requested pods are still booting.
+
+| Metric Name                               | Type    | Tags  | Description                                        |
+|-------------------------------------------|---------|-------|----------------------------------------------------|
+| optimizer_group_pending_removal_optimizers | Gauge  | group | Number of optimizer instances in graceful drain in optimizer group |
+| optimizer_group_effective_threads         | Gauge   | group | Number of registered threads plus threads of optimizers pending registration in optimizer group |
+| optimizer_group_backlog_duration_ms       | Gauge   | group | Duration in milliseconds since demand first exceeded capacity in optimizer group, 0 while there is no backlog |
+| optimizer_group_scale_up_total            | Counter | group | Cumulative count of attempted scale-up actions in optimizer group |
+| optimizer_group_scale_down_total          | Counter | group | Cumulative count of scale-down actions in optimizer group |
 
 ## Orphan Files Cleaning metrics
 

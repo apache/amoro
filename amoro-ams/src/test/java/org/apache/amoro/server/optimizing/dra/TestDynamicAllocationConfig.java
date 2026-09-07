@@ -304,6 +304,53 @@ public class TestDynamicAllocationConfig {
     Assertions.assertFalse(DynamicAllocationConfig.isEffectivelyEnabled(group(props)));
   }
 
+  // --- isConfigInvalid: read side of the optimizer_group_config_invalid gauge ---
+
+  @Test
+  void validEnabledConfigIsNotInvalid() {
+    Assertions.assertFalse(DynamicAllocationConfig.isConfigInvalid(group(enabledProps())));
+  }
+
+  @Test
+  void groupThatNeverOptedInIsNotInvalid() {
+    Assertions.assertFalse(DynamicAllocationConfig.isConfigInvalid(group(new HashMap<>())));
+  }
+
+  @Test
+  void enabledConfigFailingValidationIsInvalid() {
+    Map<String, String> props = new HashMap<>();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED, "true");
+    // Enabled without max-parallelism: the startup fail-safe silently disables DRA, so this is
+    // exactly the state the gauge must surface.
+    Assertions.assertTrue(DynamicAllocationConfig.isConfigInvalid(group(props)));
+  }
+
+  @Test
+  void enabledConfigFailingParseIsInvalid() {
+    Map<String, String> props = enabledProps();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_DRAIN_TIMEOUT, "not-a-duration");
+    Assertions.assertTrue(DynamicAllocationConfig.isConfigInvalid(group(props)));
+  }
+
+  @Test
+  void enabledConfigOverflowingDurationIsInvalid() {
+    Map<String, String> props = enabledProps();
+    // Duration parsing multiplies the unit out (Math.multiplyExact), so an absurd value throws
+    // ArithmeticException instead of IllegalArgumentException. The gauge read must report it as
+    // invalid, not propagate: a gauge exception aborts the whole metrics scrape.
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_DRAIN_TIMEOUT, Long.MAX_VALUE + "min");
+    Assertions.assertTrue(DynamicAllocationConfig.isConfigInvalid(group(props)));
+  }
+
+  @Test
+  void disabledGroupWithMalformedPropertiesIsNotInvalid() {
+    Map<String, String> props = new HashMap<>();
+    props.put(OptimizerProperties.DYNAMIC_ALLOCATION_DRAIN_TIMEOUT, "not-a-duration");
+    // Whatever its leftover properties parse to, a group that has not opted in is not in the
+    // fail-safe fallback and must not alarm.
+    Assertions.assertFalse(DynamicAllocationConfig.isConfigInvalid(group(props)));
+  }
+
   @Test
   void effectiveMinParallelismKeyPrefersNamespacedWhenPresent() {
     Map<String, String> props = new HashMap<>();

@@ -87,4 +87,9 @@ public final class EngineType {
   public int hashCode() {
     return Objects.hash(engineName);
   }
+
+  @Override
+  public String toString() {
+    return engineName;
+  }
 }
