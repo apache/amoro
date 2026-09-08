@@ -23,6 +23,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.ha.ZkHighAvailabilityContainer;
@@ -84,28 +85,74 @@ public class TestHighAvailabilityContainer {
     haContainer = new ZkHighAvailabilityContainer(serviceConfig);
   }
 
+  @Test
+  public void testGetTableServiceServerInfo() throws Exception {
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
+    mockLeaderLatch = createMockLeaderLatch(true);
+    haContainer = createContainerWithMockZk();
+
+    AmsServerInfo tableServiceInfo = haContainer.getTableServiceServerInfo();
+    Assert.assertEquals("127.0.0.1", tableServiceInfo.getHost());
+    Assert.assertEquals(Integer.valueOf(1260), tableServiceInfo.getThriftBindPort());
+  }
+
+  @Test
+  public void testGetOptimizingServiceServerInfo() throws Exception {
+    serviceConfig.setBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE, true);
+    mockLeaderLatch = createMockLeaderLatch(true);
+    haContainer = createContainerWithMockZk();
+
+    AmsServerInfo optimizingServiceInfo = haContainer.getOptimizingServiceServerInfo();
+    Assert.assertEquals("127.0.0.1", optimizingServiceInfo.getHost());
+    Assert.assertEquals(Integer.valueOf(1261), optimizingServiceInfo.getThriftBindPort());
+  }
+
   /** Create HighAvailabilityContainer with mocked ZK components using reflection. */
   private HighAvailabilityContainer createContainerWithMockZk() throws Exception {
-    HighAvailabilityContainer container = createContainerWithoutZk();
+    // Build with HA disabled to avoid real ZK connection, then inject mocks via reflection
+    Configurations tempConfig = new Configurations(serviceConfig);
+    tempConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
+    HighAvailabilityContainer container = new ZkHighAvailabilityContainer(tempConfig);
 
+    // Inject mock ZK client
     java.lang.reflect.Field zkClientField =
         ZkHighAvailabilityContainer.class.getDeclaredField("zkClient");
     zkClientField.setAccessible(true);
     zkClientField.set(container, mockZkClient);
 
+    // Inject mock leader latch
     java.lang.reflect.Field leaderLatchField =
         ZkHighAvailabilityContainer.class.getDeclaredField("leaderLatch");
     leaderLatchField.setAccessible(true);
     leaderLatchField.set(container, mockLeaderLatch);
 
+    // Inject server info (null when HA disabled, but tests need it)
+    AmsServerInfo tableServiceInfo = new AmsServerInfo();
+    tableServiceInfo.setHost(serviceConfig.getString(AmoroManagementConf.SERVER_EXPOSE_HOST));
+    tableServiceInfo.setThriftBindPort(
+        serviceConfig.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT));
+    tableServiceInfo.setRestBindPort(
+        serviceConfig.getInteger(AmoroManagementConf.HTTP_SERVER_PORT));
+
+    AmsServerInfo optimizingServiceInfo = new AmsServerInfo();
+    optimizingServiceInfo.setHost(
+        serviceConfig.getString(AmoroManagementConf.SERVER_EXPOSE_HOST));
+    optimizingServiceInfo.setThriftBindPort(
+        serviceConfig.getInteger(AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT));
+    optimizingServiceInfo.setRestBindPort(
+        serviceConfig.getInteger(AmoroManagementConf.HTTP_SERVER_PORT));
+
+    java.lang.reflect.Field tableServiceField =
+        ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceServerInfo");
+    tableServiceField.setAccessible(true);
+    tableServiceField.set(container, tableServiceInfo);
+
+    java.lang.reflect.Field optimizingServiceField =
+        ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceServerInfo");
+    optimizingServiceField.setAccessible(true);
+    optimizingServiceField.set(container, optimizingServiceInfo);
+
     return container;
-  }
-
-  private HighAvailabilityContainer createContainerWithoutZk() throws Exception {
-    Configurations tempConfig = new Configurations(serviceConfig);
-    tempConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
-
-    return new ZkHighAvailabilityContainer(tempConfig);
   }
 
   @SuppressWarnings("unchecked")
