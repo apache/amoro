@@ -19,10 +19,13 @@
 package org.apache.amoro.server.table;
 
 import static org.apache.amoro.metrics.MetricDefine.defineCounter;
+import static org.apache.amoro.metrics.MetricDefine.defineGauge;
 
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.maintainer.MaintainerMetrics;
+import org.apache.amoro.maintainer.MaintainerMetrics.CleanFailureReason;
 import org.apache.amoro.metrics.Counter;
+import org.apache.amoro.metrics.Gauge;
 import org.apache.amoro.metrics.MetricDefine;
 import org.apache.amoro.metrics.MetricRegistry;
 
@@ -34,6 +37,13 @@ public class TableOrphanFilesCleaningMetrics extends AbstractTableMetrics
 
   private final Counter orphanMetadataFilesCount = new Counter();
   private final Counter expectedOrphanMetadataFilesCount = new Counter();
+
+  // ---- last-value gauges ----
+  private volatile int lastStatus = STATUS_SUCCESS;
+  private volatile long lastFailureTimestampMs = 0L;
+
+  // --- status constants ---
+  public static final int STATUS_SUCCESS = 0;
 
   public TableOrphanFilesCleaningMetrics(ServerTableIdentifier identifier) {
     super(identifier);
@@ -65,6 +75,24 @@ public class TableOrphanFilesCleaningMetrics extends AbstractTableMetrics
           .withTags("catalog", "database", "table")
           .build();
 
+  // ---- new orphan-file-cleaning status metrics ----
+
+  public static final MetricDefine TABLE_ORPHAN_FILE_CLEANING_LAST_STATUS =
+      defineGauge("table_orphan_file_cleaning_last_status")
+          .withDescription(
+              "Status of the most recent orphan-file-cleaning attempt; "
+                  + "see MaintainerMetrics.CleanFailureReason: "
+                  + "0=SUCCESS, 1=LOCATION_CONFLICT, 2=LOCATION_CONFLICT_CHECK_FAILED, "
+                  + "3=EXECUTION_FAILED")
+          .withTags("catalog", "database", "table")
+          .build();
+
+  public static final MetricDefine TABLE_ORPHAN_FILE_CLEANING_LAST_FAILURE_TIMESTAMP_MS =
+      defineGauge("table_orphan_file_cleaning_last_failure_timestamp_ms")
+          .withDescription("Epoch millis of the last real orphan-file-cleaning failure")
+          .withTags("catalog", "database", "table")
+          .build();
+
   @Override
   public void registerMetrics(MetricRegistry registry) {
     if (globalRegistry == null) {
@@ -78,6 +106,15 @@ public class TableOrphanFilesCleaningMetrics extends AbstractTableMetrics
           registry,
           TABLE_EXPECTED_ORPHAN_METADATA_FILE_CLEANING_COUNT,
           expectedOrphanMetadataFilesCount);
+
+      // new gauges
+      registerMetric(
+          registry, TABLE_ORPHAN_FILE_CLEANING_LAST_STATUS, (Gauge<Integer>) () -> lastStatus);
+      registerMetric(
+          registry,
+          TABLE_ORPHAN_FILE_CLEANING_LAST_FAILURE_TIMESTAMP_MS,
+          (Gauge<Long>) () -> lastFailureTimestampMs);
+
       globalRegistry = registry;
     }
   }
@@ -100,5 +137,41 @@ public class TableOrphanFilesCleaningMetrics extends AbstractTableMetrics
   @Override
   public void recordOrphanMetadataFilesCleaned(int expected, int cleaned) {
     completeOrphanMetadataFiles(expected, cleaned);
+  }
+
+  // ---- public mutation API ----
+
+  /**
+   * Record a successful orphan-file-cleaning run. Resets {@code last_status} to {@link
+   * #STATUS_SUCCESS}.
+   *
+   * <p>Note: {@code lastFailureTimestampMs} is intentionally preserved across success runs. It
+   * tracks the time of the most recent real failure and is needed by monitoring to alert on
+   * stale-failure windows. Only an actual failure (via {@link #recordFailure(CleanFailureReason)})
+   * refreshes it; a success run is independent.
+   */
+  @Override
+  public void recordSuccess() {
+    this.lastStatus = STATUS_SUCCESS;
+  }
+
+  /**
+   * Record a failure event. Updates {@code last_status} to the failure reason and refreshes {@code
+   * lastFailureTimestampMs}.
+   */
+  @Override
+  public void recordFailure(CleanFailureReason reason) {
+    this.lastStatus = reason.statusCode();
+    this.lastFailureTimestampMs = System.currentTimeMillis();
+  }
+
+  // ---- package-private / test-visible accessors ----
+
+  int getLastStatus() {
+    return lastStatus;
+  }
+
+  long getLastFailureTimestampMs() {
+    return lastFailureTimestampMs;
   }
 }
