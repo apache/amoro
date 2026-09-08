@@ -100,21 +100,10 @@ public class TestZkHighAvailabilityContainer {
   }
 
   private HighAvailabilityContainer createContainerWithoutZk() throws Exception {
-    java.lang.reflect.Constructor<ZkHighAvailabilityContainer> constructor =
-        ZkHighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
-
     Configurations tempConfig = new Configurations(serviceConfig);
     tempConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
 
-    HighAvailabilityContainer container = constructor.newInstance(tempConfig);
-
-    java.lang.reflect.Field isMasterSlaveModeField =
-        ZkHighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
-    isMasterSlaveModeField.setAccessible(true);
-    isMasterSlaveModeField.set(
-        container, serviceConfig.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE));
-
-    return container;
+    return new ZkHighAvailabilityContainer(tempConfig);
   }
 
   @SuppressWarnings("unchecked")

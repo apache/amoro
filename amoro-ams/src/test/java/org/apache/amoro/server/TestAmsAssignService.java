@@ -382,64 +382,11 @@ public class TestAmsAssignService {
   /** Create a HighAvailabilityContainer without initializing ZK connection. */
   private HighAvailabilityContainer createContainerWithoutZk(Configurations config)
       throws Exception {
-    java.lang.reflect.Constructor<ZkHighAvailabilityContainer> constructor =
-        ZkHighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
-
     // Create a minimal config that disables HA to avoid ZK connection
     Configurations tempConfig = new Configurations(config);
     tempConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
 
-    HighAvailabilityContainer container = constructor.newInstance(tempConfig);
-
-    // Now set all required fields using reflection
-    java.lang.reflect.Field isMasterSlaveModeField =
-        ZkHighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
-    isMasterSlaveModeField.setAccessible(true);
-    isMasterSlaveModeField.set(
-        container, config.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE));
-
-    if (config.getBoolean(AmoroManagementConf.HA_ENABLE)) {
-      String haClusterName = config.getString(AmoroManagementConf.HA_CLUSTER_NAME);
-
-      java.lang.reflect.Field tableServiceMasterPathField =
-          ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceMasterPath");
-      tableServiceMasterPathField.setAccessible(true);
-      tableServiceMasterPathField.set(
-          container, AmsHAProperties.getTableServiceMasterPath(haClusterName));
-
-      java.lang.reflect.Field optimizingServiceMasterPathField =
-          ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceMasterPath");
-      optimizingServiceMasterPathField.setAccessible(true);
-      optimizingServiceMasterPathField.set(
-          container, AmsHAProperties.getOptimizingServiceMasterPath(haClusterName));
-
-      java.lang.reflect.Field nodesPathField =
-          ZkHighAvailabilityContainer.class.getDeclaredField("nodesPath");
-      nodesPathField.setAccessible(true);
-      nodesPathField.set(container, AmsHAProperties.getNodesPath(haClusterName));
-
-      java.lang.reflect.Field tableServiceServerInfoField =
-          ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceServerInfo");
-      tableServiceServerInfoField.setAccessible(true);
-      AmsServerInfo tableServiceServerInfo =
-          buildServerInfo(
-              config.getString(AmoroManagementConf.SERVER_EXPOSE_HOST),
-              config.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT),
-              config.getInteger(AmoroManagementConf.HTTP_SERVER_PORT));
-      tableServiceServerInfoField.set(container, tableServiceServerInfo);
-
-      java.lang.reflect.Field optimizingServiceServerInfoField =
-          ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceServerInfo");
-      optimizingServiceServerInfoField.setAccessible(true);
-      AmsServerInfo optimizingServiceServerInfo =
-          buildServerInfo(
-              config.getString(AmoroManagementConf.SERVER_EXPOSE_HOST),
-              config.getInteger(AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT),
-              config.getInteger(AmoroManagementConf.HTTP_SERVER_PORT));
-      optimizingServiceServerInfoField.set(container, optimizingServiceServerInfo);
-    }
-
-    return container;
+    return new ZkHighAvailabilityContainer(tempConfig);
   }
 
   /** Helper method to build AmsServerInfo. */
