@@ -135,8 +135,7 @@ public class TestHighAvailabilityContainer {
         serviceConfig.getInteger(AmoroManagementConf.HTTP_SERVER_PORT));
 
     AmsServerInfo optimizingServiceInfo = new AmsServerInfo();
-    optimizingServiceInfo.setHost(
-        serviceConfig.getString(AmoroManagementConf.SERVER_EXPOSE_HOST));
+    optimizingServiceInfo.setHost(serviceConfig.getString(AmoroManagementConf.SERVER_EXPOSE_HOST));
     optimizingServiceInfo.setThriftBindPort(
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT));
     optimizingServiceInfo.setRestBindPort(
