@@ -28,6 +28,7 @@ import org.apache.amoro.hive.HiveTableTypeUtil;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedFormatCatalogUtil;
+import org.apache.amoro.utils.PropertyUtil;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
@@ -43,6 +44,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class IcebergCatalog implements FormatCatalog {
+
+  // Matches HiveCatalog without a compile-time dependency on iceberg-hive-metastore.
+  private static final String LIST_ALL_TABLES = "list-all-tables";
 
   private SupportsNamespaces asNamespaceCatalog;
   private final Catalog icebergCatalog;
@@ -74,6 +78,7 @@ public class IcebergCatalog implements FormatCatalog {
     this.properties = properties;
     this.hiveClientPool =
         CatalogMetaProperties.CATALOG_TYPE_HIVE.equalsIgnoreCase(metastoreType)
+                && PropertyUtil.propertyAsBoolean(properties, LIST_ALL_TABLES, false)
             ? new CachedHiveClientPool(metaStore, properties)
             : null;
   }

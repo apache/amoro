@@ -23,7 +23,6 @@ import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.iceberg.CatalogProperties;
-import org.apache.iceberg.hive.HiveCatalog;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,8 +43,6 @@ public class IcebergHiveCatalogTestHelper extends IcebergHadoopCatalogTestHelper
   }
 
   public static IcebergHiveCatalogTestHelper defaultHelper() {
-    Map<String, String> properties = new HashMap<>();
-    properties.put(HiveCatalog.LIST_ALL_TABLES, Boolean.TRUE.toString());
-    return new IcebergHiveCatalogTestHelper("test_iceberg_catalog", properties);
+    return new IcebergHiveCatalogTestHelper("test_iceberg_catalog", new HashMap<>());
   }
 }

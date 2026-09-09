@@ -26,6 +26,7 @@ import org.apache.amoro.hive.TestHMS;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.hive.HiveCatalog;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -47,7 +49,15 @@ public class TestIcebergHiveAmoroCatalog extends TestIcebergAmoroCatalog {
 
   @Parameterized.Parameters(name = "{0}")
   public static Object[] parameters() {
-    return new Object[] {IcebergHiveCatalogTestHelper.defaultHelper()};
+    return new Object[] {
+      IcebergHiveCatalogTestHelper.defaultHelper(),
+      new IcebergHiveCatalogTestHelper(
+          "test_iceberg_catalog_list_all_false",
+          new HashMap<>(Collections.singletonMap(HiveCatalog.LIST_ALL_TABLES, "false"))),
+      new IcebergHiveCatalogTestHelper(
+          "test_iceberg_catalog_list_all_true",
+          new HashMap<>(Collections.singletonMap(HiveCatalog.LIST_ALL_TABLES, "true")))
+    };
   }
 
   @Override
@@ -68,7 +78,14 @@ public class TestIcebergHiveAmoroCatalog extends TestIcebergAmoroCatalog {
     try {
       List<TableIdentifier> unfilteredTables =
           ((Catalog) originalCatalog).listTables(Namespace.of(database));
-      Assert.assertTrue(
+      boolean listAllTables =
+          Boolean.parseBoolean(
+              catalogTestHelper
+                  .getCatalogMeta()
+                  .getCatalogProperties()
+                  .getOrDefault(HiveCatalog.LIST_ALL_TABLES, HiveCatalog.LIST_ALL_TABLES_DEFAULT));
+      Assert.assertEquals(
+          listAllTables,
           unfilteredTables.stream().map(TableIdentifier::name).anyMatch(viewName::equals));
 
       List<String> tableNames = ((FormatCatalog) amoroCatalog).listTables(database);

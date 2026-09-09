@@ -97,10 +97,7 @@ public interface HMSClient {
    * @param tablePattern Hive table name or pattern
    * @param tableTypes Hive table types to include
    * @return matching lightweight table metadata
-   * @throws UnsupportedOperationException if the client implementation does not support this API
    */
-  default List<TableMeta> getTableMeta(
-      String databasePattern, String tablePattern, List<String> tableTypes) throws TException {
-    throw new UnsupportedOperationException("Getting Hive table metadata is not supported");
-  }
+  List<TableMeta> getTableMeta(String databasePattern, String tablePattern, List<String> tableTypes)
+      throws TException;
 }

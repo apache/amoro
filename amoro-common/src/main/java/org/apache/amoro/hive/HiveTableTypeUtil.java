@@ -58,9 +58,6 @@ public final class HiveTableTypeUtil {
   /**
    * Returns the normalized names of Hive views among the candidate tables.
    *
-   * <p>The lightweight table metadata API is preferred. Clients that do not implement that API fall
-   * back to loading the candidate table objects.
-   *
    * @param client Hive Metastore client
    * @param database database containing the candidate tables
    * @param candidateTableNames table names to inspect
@@ -72,34 +69,14 @@ public final class HiveTableTypeUtil {
       return Collections.emptySet();
     }
 
-    List<TableMeta> views;
-    try {
-      views = client.getTableMeta(database, "*", viewTypes());
-    } catch (UnsupportedOperationException e) {
-      return listViewNamesFromTables(client, database, candidateTableNames);
-    }
-
+    List<TableMeta> views = client.getTableMeta(database, "*", viewTypes());
     if (views == null) {
-      return listViewNamesFromTables(client, database, candidateTableNames);
+      throw new IllegalStateException(
+          "Hive Metastore returned null while loading table metadata from database: " + database);
     }
     return views.stream()
         .filter(HiveTableTypeUtil::isView)
         .map(TableMeta::getTableName)
-        .filter(name -> name != null)
-        .map(name -> name.toLowerCase(Locale.ROOT))
-        .collect(Collectors.toCollection(HashSet::new));
-  }
-
-  private static Set<String> listViewNamesFromTables(
-      HMSClient client, String database, List<String> candidateTableNames) throws TException {
-    List<Table> tables = client.getTableObjectsByName(database, candidateTableNames);
-    if (tables == null) {
-      throw new IllegalStateException(
-          "Hive Metastore returned null while loading table objects from database: " + database);
-    }
-    return tables.stream()
-        .filter(HiveTableTypeUtil::isView)
-        .map(Table::getTableName)
         .filter(name -> name != null)
         .map(name -> name.toLowerCase(Locale.ROOT))
         .collect(Collectors.toCollection(HashSet::new));

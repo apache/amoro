@@ -19,10 +19,13 @@
 package org.apache.amoro.hive.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.apache.amoro.NoSuchTableException;
@@ -58,38 +61,35 @@ public class TestHiveTableUtil {
   }
 
   @Test
-  public void testGetAllHiveTablesFallsBackWhenTableMetaIsUnsupported() throws Exception {
+  public void testGetAllHiveTablesPropagatesTableMetaFailure() throws Exception {
     HMSClient client = mock(HMSClient.class);
     when(client.getAllTables("database")).thenReturn(Arrays.asList("physical_table", "hive_view"));
-    when(client.getTableMeta(eq("database"), eq("*"), anyList()))
-        .thenThrow(new UnsupportedOperationException("not supported"));
-    when(client.getTableObjectsByName(eq("database"), anyList()))
-        .thenReturn(
-            Arrays.asList(
-                table("physical_table", TableType.EXTERNAL_TABLE),
-                table("hive_view", TableType.VIRTUAL_VIEW)));
+    TException failure = new TException("Failed to get table metadata");
+    when(client.getTableMeta(eq("database"), eq("*"), anyList())).thenThrow(failure);
 
-    List<String> tableNames =
-        HiveTableUtil.getAllHiveTables(new TestingHMSClientPool(client), "database");
+    RuntimeException exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> HiveTableUtil.getAllHiveTables(new TestingHMSClientPool(client), "database"));
 
-    assertEquals(Collections.singletonList("physical_table"), tableNames);
+    assertSame(failure, exception.getCause());
+    verify(client, never()).getTableObjectsByName(eq("database"), anyList());
   }
 
   @Test
-  public void testGetAllHiveTablesFallsBackWhenTableMetaIsNull() throws Exception {
+  public void testGetAllHiveTablesRejectsNullTableMeta() throws Exception {
     HMSClient client = mock(HMSClient.class);
     when(client.getAllTables("database")).thenReturn(Arrays.asList("physical_table", "hive_view"));
     when(client.getTableMeta(eq("database"), eq("*"), anyList())).thenReturn(null);
-    when(client.getTableObjectsByName(eq("database"), anyList()))
-        .thenReturn(
-            Arrays.asList(
-                table("physical_table", TableType.EXTERNAL_TABLE),
-                table("hive_view", "MATERIALIZED_VIEW")));
+    IllegalStateException exception =
+        assertThrows(
+            IllegalStateException.class,
+            () -> HiveTableUtil.getAllHiveTables(new TestingHMSClientPool(client), "database"));
 
-    List<String> tableNames =
-        HiveTableUtil.getAllHiveTables(new TestingHMSClientPool(client), "database");
-
-    assertEquals(Collections.singletonList("physical_table"), tableNames);
+    assertEquals(
+        "Hive Metastore returned null while loading table metadata from database: database",
+        exception.getMessage());
+    verify(client, never()).getTableObjectsByName(eq("database"), anyList());
   }
 
   @Test
@@ -117,14 +117,10 @@ public class TestHiveTableUtil {
   }
 
   private static Table table(String name, TableType tableType) {
-    return table(name, tableType.name());
-  }
-
-  private static Table table(String name, String tableType) {
     Table table = new Table();
     table.setDbName("database");
     table.setTableName(name);
-    table.setTableType(tableType);
+    table.setTableType(tableType.name());
     return table;
   }
 
