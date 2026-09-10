@@ -37,8 +37,12 @@ public class InternalIcebergHandler implements InternalTableHandler<TableOperati
   private final TableMetadata tableMetadata;
 
   public InternalIcebergHandler(CatalogMeta catalogMeta, TableMetadata metadata) {
+    this(metadata, InternalTableUtil.newIcebergFileIo(catalogMeta));
+  }
+
+  public InternalIcebergHandler(TableMetadata metadata, AuthenticatedFileIO io) {
     this.tableMetadata = metadata;
-    this.io = InternalTableUtil.newIcebergFileIo(catalogMeta);
+    this.io = io;
   }
 
   @Override

@@ -47,30 +47,36 @@ public class AuthenticatedHadoopFileIO extends HadoopFileIO
     implements AuthenticatedFileIO, SupportsPrefixOperations, SupportsFileSystemOperations {
 
   private final TableMetaStore tableMetaStore;
+  private final String proxyUser;
 
   AuthenticatedHadoopFileIO(TableMetaStore tableMetaStore) {
+    this(tableMetaStore, null);
+  }
+
+  AuthenticatedHadoopFileIO(TableMetaStore tableMetaStore, String proxyUser) {
     super(tableMetaStore.getConfiguration());
     this.tableMetaStore = tableMetaStore;
+    this.proxyUser = proxyUser;
   }
 
   @Override
   public InputFile newInputFile(String path) {
-    return tableMetaStore.doAs(() -> super.newInputFile(path));
+    return doAs(() -> super.newInputFile(path));
   }
 
   @Override
   public InputFile newInputFile(String path, long length) {
-    return tableMetaStore.doAs(() -> super.newInputFile(path, length));
+    return doAs(() -> super.newInputFile(path, length));
   }
 
   @Override
   public OutputFile newOutputFile(String path) {
-    return tableMetaStore.doAs(() -> super.newOutputFile(path));
+    return doAs(() -> super.newOutputFile(path));
   }
 
   @Override
   public void deleteFile(String path) {
-    tableMetaStore.doAs(
+    doAs(
         () -> {
           Path toDelete = new Path(path);
           FileSystem fs = getFs(toDelete);
@@ -86,7 +92,7 @@ public class AuthenticatedHadoopFileIO extends HadoopFileIO
 
   @Override
   public Iterable<PathInfo> listDirectory(String location) {
-    return tableMetaStore.doAs(
+    return doAs(
         () -> {
           Path path = new Path(location);
           FileSystem fs = getFs(path);
@@ -123,7 +129,7 @@ public class AuthenticatedHadoopFileIO extends HadoopFileIO
 
   @Override
   public void makeDirectories(String path) {
-    tableMetaStore.doAs(
+    doAs(
         () -> {
           Path filePath = new Path(path);
           FileSystem fs = getFs(filePath);
@@ -143,7 +149,7 @@ public class AuthenticatedHadoopFileIO extends HadoopFileIO
 
   @Override
   public boolean isDirectory(String location) {
-    return tableMetaStore.doAs(
+    return doAs(
         () -> {
           Path path = new Path(location);
           FileSystem fs = getFs(path);
@@ -160,7 +166,7 @@ public class AuthenticatedHadoopFileIO extends HadoopFileIO
   public boolean isEmptyDirectory(String location) {
     Preconditions.checkArgument(
         isDirectory(location), "the target location %s is not a directory", location);
-    return tableMetaStore.doAs(
+    return doAs(
         () -> {
           Path path = new Path(location);
           FileSystem fs = getFs(path);
@@ -175,7 +181,7 @@ public class AuthenticatedHadoopFileIO extends HadoopFileIO
 
   @Override
   public void rename(String src, String dts) {
-    tableMetaStore.doAs(
+    doAs(
         () -> {
           Path srcPath = new Path(src);
           Path dtsPath = new Path(dts);
@@ -198,12 +204,15 @@ public class AuthenticatedHadoopFileIO extends HadoopFileIO
 
   @Override
   public <T> T doAs(Callable<T> callable) {
-    return tableMetaStore.doAs(callable);
+    if (proxyUser == null) {
+      return tableMetaStore.doAs(callable);
+    }
+    return tableMetaStore.doAsImpersonating(proxyUser, callable);
   }
 
   @Override
   public boolean exists(String path) {
-    return tableMetaStore.doAs(
+    return doAs(
         () -> {
           Path filePath = new Path(path);
           FileSystem fs = getFs(filePath);
@@ -217,12 +226,12 @@ public class AuthenticatedHadoopFileIO extends HadoopFileIO
 
   @Override
   public Iterable<FileInfo> listPrefix(String prefix) {
-    return tableMetaStore.doAs(() -> super.listPrefix(prefix));
+    return doAs(() -> super.listPrefix(prefix));
   }
 
   @Override
   public void deletePrefix(String prefix) {
-    tableMetaStore.doAs(
+    doAs(
         () -> {
           Path prefixToDelete = new Path(prefix);
           FileSystem fs = getFs(prefixToDelete);
@@ -236,7 +245,7 @@ public class AuthenticatedHadoopFileIO extends HadoopFileIO
 
   @Override
   public void deleteFiles(Iterable<String> pathsToDelete) throws BulkDeletionFailureException {
-    tableMetaStore.doAs(
+    doAs(
         () -> {
           super.deleteFiles(pathsToDelete);
           return null;

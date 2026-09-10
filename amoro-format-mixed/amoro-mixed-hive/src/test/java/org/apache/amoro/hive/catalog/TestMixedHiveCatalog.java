@@ -23,15 +23,22 @@ import static org.apache.amoro.properties.HiveTableProperties.MIXED_TABLE_ROOT_L
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
+import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.catalog.TestMixedCatalog;
 import org.apache.amoro.hive.TestHMS;
+import org.apache.amoro.io.AuthenticatedFileIOs;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableProperties;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Table;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -74,6 +81,43 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
   protected void validateCreatedTable(MixedTable table, boolean withKey) throws Exception {
     super.validateCreatedTable(table, withKey);
     validateMixedHiveTableProperties(table.id());
+  }
+
+  @Test
+  public void testHdfsImpersonationUsesHiveOwner() throws Exception {
+    String ownerInHms = "hms-owner";
+    getMixedFormatCatalog().createDatabase(BasicTableTestHelper.TEST_DB_NAME);
+
+    CatalogMeta catalogMeta =
+        TEST_AMS.getAmsHandler().getCatalog(CatalogTestHelper.TEST_CATALOG_NAME);
+    TEST_AMS
+        .getAmsHandler()
+        .updateMeta(catalogMeta, CatalogMetaProperties.HDFS_IMPERSONATION_ENABLED, "true");
+    refreshMixedFormatCatalog();
+
+    createTestTableBuilder(false).withProperty(TableProperties.OWNER, "create-owner").create();
+
+    org.apache.hadoop.hive.metastore.api.Table hiveTable =
+        TEST_HMS
+            .getHiveClient()
+            .getTable(
+                BasicTableTestHelper.TEST_TABLE_ID.getDatabase(),
+                BasicTableTestHelper.TEST_TABLE_ID.getTableName());
+    hiveTable.setOwner(ownerInHms);
+    TEST_HMS
+        .getHiveClient()
+        .alter_table(
+            BasicTableTestHelper.TEST_TABLE_ID.getDatabase(),
+            BasicTableTestHelper.TEST_TABLE_ID.getTableName(),
+            hiveTable);
+
+    refreshMixedFormatCatalog();
+    MixedTable loadedTable =
+        AuthenticatedFileIOs.withOptimizingCommitImpersonation(
+            () -> getMixedFormatCatalog().loadTable(BasicTableTestHelper.TEST_TABLE_ID));
+    Assert.assertEquals(
+        ownerInHms,
+        loadedTable.io().doAs(() -> UserGroupInformation.getCurrentUser().getShortUserName()));
   }
 
   @Override

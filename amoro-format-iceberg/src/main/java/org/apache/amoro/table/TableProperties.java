@@ -357,6 +357,10 @@ public class TableProperties {
 
   public static final String OWNER = "owner";
 
+  public static final String HDFS_IMPERSONATION_ENABLED =
+      CatalogMetaProperties.HDFS_IMPERSONATION_ENABLED;
+  public static final boolean HDFS_IMPERSONATION_ENABLED_DEFAULT = false;
+
   /** table format related properties */
   public static final String TABLE_FORMAT = "table-format";
 
@@ -407,6 +411,7 @@ public class TableProperties {
           CatalogMetaProperties.DATA_EXPIRATION_PREFIX,
           CatalogMetaProperties.TABLE_TRASH_PREFIX,
           CatalogMetaProperties.AUTO_CREATE_TAG_PREFIX,
+          CatalogMetaProperties.HDFS_IMPERSONATION_PREFIX,
           // mixed format reading config keys
           TableProperties.SPLIT_OPEN_FILE_COST,
           TableProperties.SPLIT_LOOKBACK,

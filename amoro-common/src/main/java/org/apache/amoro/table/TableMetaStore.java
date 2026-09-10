@@ -231,6 +231,12 @@ public class TableMetaStore implements Serializable {
     return AUTH_METHOD_KERBEROS.equalsIgnoreCase(authMethod);
   }
 
+  /** Returns whether this meta store uses an authentication mode that supports proxy users. */
+  public boolean supportsHadoopImpersonation() {
+    return AUTH_METHOD_SIMPLE.equalsIgnoreCase(authMethod)
+        || AUTH_METHOD_KERBEROS.equalsIgnoreCase(authMethod);
+  }
+
   public String getHadoopUsername() {
     return hadoopUsername;
   }

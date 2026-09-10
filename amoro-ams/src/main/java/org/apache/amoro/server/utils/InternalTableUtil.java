@@ -83,6 +83,18 @@ public class InternalTableUtil {
    * @return iceberg file io
    */
   public static AuthenticatedFileIO newIcebergFileIo(CatalogMeta meta) {
+    return newIcebergFileIo(meta, null);
+  }
+
+  /**
+   * Create an Iceberg FileIO that honors owner impersonation while loading an optimizing commit.
+   *
+   * @param meta catalog meta
+   * @param tableProperties table properties used to resolve the owner and table-level override
+   * @return iceberg file io
+   */
+  public static AuthenticatedFileIO newIcebergFileIo(
+      CatalogMeta meta, Map<String, String> tableProperties) {
     Map<String, String> catalogProperties = meta.getCatalogProperties();
     TableMetaStore store = CatalogUtil.buildMetaStore(meta);
     Configuration conf = store.getConfiguration();
@@ -95,7 +107,11 @@ public class InternalTableUtil {
     }
     String ioImpl = catalogProperties.getOrDefault(CatalogProperties.FILE_IO_IMPL, defaultImpl);
     FileIO fileIO = org.apache.iceberg.CatalogUtil.loadFileIO(ioImpl, catalogProperties, conf);
-    return AuthenticatedFileIOs.buildAdaptIcebergFileIO(store, fileIO);
+    if (tableProperties == null) {
+      return AuthenticatedFileIOs.buildAdaptIcebergFileIO(store, fileIO);
+    }
+    return AuthenticatedFileIOs.buildAdaptIcebergFileIO(
+        store, fileIO, tableProperties, catalogProperties);
   }
 
   /**

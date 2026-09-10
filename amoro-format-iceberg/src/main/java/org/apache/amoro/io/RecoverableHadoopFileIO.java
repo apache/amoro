@@ -42,7 +42,15 @@ public class RecoverableHadoopFileIO extends AuthenticatedHadoopFileIO
 
   RecoverableHadoopFileIO(
       TableMetaStore tableMetaStore, TableTrashManager trashManager, String trashFilePattern) {
-    super(tableMetaStore);
+    this(tableMetaStore, trashManager, trashFilePattern, null);
+  }
+
+  RecoverableHadoopFileIO(
+      TableMetaStore tableMetaStore,
+      TableTrashManager trashManager,
+      String trashFilePattern,
+      String proxyUser) {
+    super(tableMetaStore, proxyUser);
     this.trashManager = trashManager;
     this.trashFilePattern = trashFilePattern;
     this.pattern =
