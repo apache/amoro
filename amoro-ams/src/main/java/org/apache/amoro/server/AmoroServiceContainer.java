@@ -28,6 +28,7 @@ import org.apache.amoro.Constants;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.api.AmoroTableMetastore;
 import org.apache.amoro.api.OptimizingService;
+import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.ConfigHelpers;
 import org.apache.amoro.config.ConfigurationException;
 import org.apache.amoro.config.Configurations;
@@ -127,11 +128,11 @@ public class AmoroServiceContainer {
   private AmsServiceMetrics amsServiceMetrics;
   private HAState haState = HAState.INITIALIZING;
   private AmsAssignService amsAssignService;
+  private BucketAssignStore bucketAssignStore;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
     haContainer = HighAvailabilityContainerFactory.create(serviceConfig);
-    haContainer.registerAndElect();
   }
 
   public static void main(String[] args) {
@@ -220,7 +221,14 @@ public class AmoroServiceContainer {
   public void startBaseServices() throws Exception {
     startRestServices();
     if (IS_MASTER_SLAVE_MODE) {
+      bucketAssignStore = BucketAssignStoreFactory.create(serviceConfig);
       startOptimizingService();
+      // Register this node so AmsAssignService (leader) can discover it and assign buckets.
+      if (haContainer != null) {
+        AmsServerInfo amsServerInfo = haContainer.getOptimizingServiceServerInfo();
+        bucketAssignStore.registerNode(amsServerInfo);
+        LOG.info("Registered node {} to bucket assignment store", amsServerInfo);
+      }
     }
   }
 
@@ -240,11 +248,6 @@ public class AmoroServiceContainer {
 
     DefaultTableRuntimeFactory defaultRuntimeFactory = new DefaultTableRuntimeFactory();
     defaultRuntimeFactory.initialize(processFactories);
-
-    BucketAssignStore bucketAssignStore = null;
-    if (IS_MASTER_SLAVE_MODE && haContainer != null) {
-      bucketAssignStore = BucketAssignStoreFactory.create(haContainer, serviceConfig);
-    }
 
     List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
 
@@ -293,16 +296,14 @@ public class AmoroServiceContainer {
       // call (leader re-election); recreate it if needed.
       if (amsAssignService == null && haContainer != null) {
         try {
-          BucketAssignStore bucketAssignStore =
-              BucketAssignStoreFactory.create(haContainer, serviceConfig);
-          amsAssignService = new AmsAssignService(haContainer, serviceConfig, bucketAssignStore);
+          amsAssignService = new AmsAssignService(serviceConfig, bucketAssignStore);
         } catch (Exception e) {
-          LOG.error("Failed to recreate AmsAssignService", e);
+          LOG.error("Failed to recreate Ams assign service", e);
         }
       }
       if (amsAssignService != null) {
         amsAssignService.start();
-        LOG.info("AmsAssignService started");
+        LOG.info("Ams assign service started");
       }
     } else {
       startOptimizingService();
@@ -322,7 +323,7 @@ public class AmoroServiceContainer {
     }
     if (IS_MASTER_SLAVE_MODE) {
       if (amsAssignService != null) {
-        LOG.info("Stopping AmsAssignService...");
+        LOG.info("Stopping Ams assign service...");
         amsAssignService.stop();
         amsAssignService = null;
       }
@@ -330,6 +331,27 @@ public class AmoroServiceContainer {
       disposeOptimizingService();
     }
     haState = HAState.FOLLOWER;
+  }
+
+  public void stopBaseServices() {
+    disposeRestService();
+    if (IS_MASTER_SLAVE_MODE) {
+      if (bucketAssignStore != null && haContainer != null) {
+        try {
+          bucketAssignStore.removeNode(haContainer.getOptimizingServiceServerInfo());
+          LOG.info("Unregistered this node from bucket assignment store");
+        } catch (Exception e) {
+          LOG.warn("Failed to unregister node from bucket assignment store", e);
+        }
+        try {
+          bucketAssignStore.close();
+        } catch (Exception e) {
+          LOG.warn("Failed to close bucket assignment store", e);
+        }
+        bucketAssignStore = null;
+      }
+      disposeOptimizingService();
+    }
   }
 
   private void addHandlerChain(RuntimeHandlerChain chain) {
@@ -388,12 +410,11 @@ public class AmoroServiceContainer {
 
   public void dispose() {
     stopLeaderServices();
-    disposeOptimizingService();
-    disposeRestService();
+    stopBaseServices();
   }
 
   private void initConfig() throws Exception {
-    LOG.info("initializing configurations...");
+    LOG.info("Initializing configurations...");
     new ConfigurationHelper().init();
     IS_MASTER_SLAVE_MODE = serviceConfig.getBoolean(HA_USE_MASTER_SLAVE_MODE);
   }
@@ -606,9 +627,9 @@ public class AmoroServiceContainer {
     }
 
     private void initServiceConfig(Map<String, Object> envConfig) throws Exception {
-      LOG.info("initializing service configuration...");
+      LOG.info("Initializing service configuration...");
       String configPath = Environments.getConfigPath() + "/" + SERVER_CONFIG_FILENAME;
-      LOG.info("load config from path: {}", configPath);
+      LOG.info("Loaded config from path: {}", configPath);
       yamlConfig =
           JacksonUtil.fromObjects(
               new Yaml().loadAs(Files.newInputStream(Paths.get(configPath)), Map.class));
@@ -631,7 +652,7 @@ public class AmoroServiceContainer {
     }
 
     private Map<String, Object> initEnvConfig() {
-      LOG.info("initializing system env configuration...");
+      LOG.info("Initializing system env configuration...");
       Map<String, String> envs = System.getenv();
       envs.forEach((k, v) -> LOG.info("export {}={}", k, v));
       String prefix = AmoroManagementConf.SYSTEM_CONFIG.toUpperCase();
@@ -663,7 +684,7 @@ public class AmoroServiceContainer {
     }
 
     private void initContainerConfig() {
-      LOG.info("initializing container configuration...");
+      LOG.info("Initializing container configuration...");
       JsonNode containers = yamlConfig.get(AmoroManagementConf.CONTAINER_LIST);
       List<ContainerMetadata> containerList = new ArrayList<>();
       if (containers != null && containers.isArray()) {
