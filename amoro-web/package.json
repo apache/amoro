@@ -5,46 +5,49 @@
   "scripts": {
     "dev": "vite",
     "dev:mock": "vite --mode mock",
-    "build": "vite build",
+    "build": "node ./scripts/preload-error-recovery.test.mjs && vite build",
+    "typecheck": "vue-tsc --noEmit",
     "gen:license": "node ./license.node.js",
     "preview": "vite preview",
+    "test:preload-recovery": "node ./scripts/preload-error-recovery.test.mjs",
     "lint": "eslint ./src",
     "format": "eslint ./src --fix"
   },
   "dependencies": {
     "@ant-design/icons-vue": "7.0.1",
-    "ant-design-vue": "^4.2.3",
-    "axios": "^1.7.2",
-    "dayjs": "^1.11.11",
-    "echarts": "^5.5.0",
-    "pinia": "^2.1.7",
-    "swagger-ui": "^5.17.14",
-    "swagger-ui-dist": "^5.17.14",
-    "vue": "^3.4.27",
+    "@vue/devtools-api": "^8.2.1",
+    "ant-design-vue": "^4.2.6",
+    "axios": "^1.19.0",
+    "dayjs": "^1.11.23",
+    "echarts": "^6.1.0",
+    "pinia": "^4.0.3",
+    "swagger-ui": "^5.32.14",
+    "swagger-ui-dist": "^5.32.14",
+    "vue": "^3.5.41",
     "vue-clipboard3": "^2.0.0",
-    "vue-i18n": "^9.13.1",
-    "vue-router": "^4.3.3",
-    "vue-virtual-scroller": "2.0.0-beta.8"
+    "vue-i18n": "^11.4.9",
+    "vue-router": "^5.2.0",
+    "vue-virtual-scroller": "^3.0.5"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^2.21.1",
     "@types/node": "^20.14.8",
-    "@vitejs/plugin-vue": "^5.0.5",
+    "@vitejs/plugin-vue": "^6.0.8",
     "eslint": "^9.4.0",
     "less": "4.2.0",
     "mockjs": "^1.1.0",
-    "monaco-editor": "^0.49.0",
+    "monaco-editor": "^0.56.0",
     "qs": "^6.12.1",
     "sql-formatter": "^15.3.1",
-    "typescript": "^5.4.5",
+    "typescript": "~5.9.3",
     "unplugin-vue-components": "^0.27.0",
-    "vite": "^5.2.13",
+    "vite": "^8.2.2",
     "vite-plugin-fake-server": "^2.1.1",
     "vite-plugin-svg-icons": "^2.0.1",
-    "vite-plugin-vue-devtools": "^7.6.7",
-    "vue-tsc": "^2.0.21"
+    "vite-plugin-vue-devtools": "^8.2.1",
+    "vue-tsc": "^3.3.11"
   },
   "engines": {
-    "node": ">=18.18.0"
+    "node": ">=22.12.0"
   }
 }

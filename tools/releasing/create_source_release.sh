@@ -64,7 +64,7 @@ cd ${CLONE_DIR}
 
 rsync -a \
   --exclude ".git" --exclude ".gitignore" \
-  --exclude ".github" --exclude "target" \
+  --exclude ".github" --exclude "/site/" --exclude "target" \
   --exclude ".idea" --exclude "*.iml" --exclude ".DS_Store" \
   --exclude "*/dependency-reduced-pom.xml" \
   . amoro-$RELEASE_VERSION

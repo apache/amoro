@@ -1125,8 +1125,11 @@ public class DefaultOptimizingService extends StatedPersistentBase
               .setProperties(resourceGroup.getProperties())
               .setThreadCount(requiredCores)
               .build();
-      ResourceContainer rc = Containers.get(resource.getContainerName());
       try {
+        // Containers.get throws for an unknown container name; it must stay inside the try so
+        // the finally-block keepInTouch still re-queues the group - otherwise a single lookup
+        // failure silently removes the group from scale-out monitoring until restart.
+        ResourceContainer rc = Containers.get(resource.getContainerName());
         ((AbstractOptimizerContainer) rc).requestResource(resource);
         optimizerManager.createResource(resource);
       } finally {

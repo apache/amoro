@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
@@ -100,6 +101,11 @@ public class DefaultTableRuntimeStore extends PersistentBase implements TableRun
   @Override
   public int getStatusCode() {
     return this.meta.getStatusCode();
+  }
+
+  /** @return the persisted timestamp when the status code was last updated. */
+  public long getStatusCodeUpdateTime() {
+    return this.meta.getStatusCodeUpdateTime();
   }
 
   @Override
@@ -216,11 +222,16 @@ public class DefaultTableRuntimeStore extends PersistentBase implements TableRun
     public TableRuntimeOperation updateStatusCode(Function<Integer, Integer> updater) {
       operations.add(
           () -> {
-            Integer newStatusCode = updater.apply(oldMeta.getStatusCode());
+            Integer originalStatusCode = oldMeta.getStatusCode();
+            Integer newStatusCode = updater.apply(originalStatusCode);
+            if (Objects.equals(originalStatusCode, newStatusCode)) {
+              return;
+            }
             oldMeta.setStatusCode(newStatusCode);
+            OptimizingStatus originalStatus = OptimizingStatus.ofCode(originalStatusCode);
+            handlerCallback.add(
+                handler -> handler.handleTableChanged(tableRuntime, originalStatus));
           });
-      OptimizingStatus status = OptimizingStatus.ofCode(oldMeta.getStatusCode());
-      handlerCallback.add(handler -> handler.handleTableChanged(tableRuntime, status));
       metaOperation = true;
       return this;
     }

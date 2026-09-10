@@ -18,6 +18,10 @@
 
 // Introduce on demand
 import * as echarts from 'echarts/core'
+// echarts 6 changes the default theme (legend moves to the bottom, etc.);
+// register the official v5 compatibility theme to keep the current appearance
+// Source: https://echarts.apache.org/handbook/en/basics/release-note/v6-upgrade-guide/
+import 'echarts/theme/v5'
 import type {
   // define suffix: SeriesOption
   BarSeriesOption,

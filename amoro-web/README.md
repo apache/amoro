@@ -20,7 +20,7 @@ This is the Dashboard frontend for Amoro Management Service (AMS).
 
 ## Requirements
 
-- node >= `18.18.0`
+- node >= `22.12.0`
 - pnpm
 
 ## Installing Dependencies
@@ -41,7 +41,7 @@ In the `amoro-web` directory, run `pnpm dev:mock` to start a development server 
 
 ### Configure the ams Server to connect to
 
-1. open the `vite.config.ts` under the folder `amoro-web`
+1. open the `vite.config.mts` under the folder `amoro-web`
 
 2. find the `proxy` configuration then unpack annotations and change the `target` to you server location
 
@@ -98,6 +98,6 @@ amoro-web
   - [src/services](amoro-web/src/services): The services for the feature component to communicate with ams server.
   - [src/utils](amoro-web/src/utils): The utility functions in this project.
   - [src/App.vue](amoro-web/src/main.tsx): The entrance of this project.
-- [vite.config.ts](/amoro-web/vite.config.ts): The configuration file of vue3.
+- [vite.config.mts](/amoro-web/vite.config.mts): The configuration file of vue3.
 - [package.json](amoro-web/package.json): The project build files and package management, it defines the scripts/tasks and the dependent packages for this project.
 - [pnpm-lock.yaml](amoro-web/pnpm-lock.yaml): The package management pnpm lock file.
