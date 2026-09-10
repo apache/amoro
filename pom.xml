@@ -78,7 +78,7 @@
         <maven.version>3.9.11</maven.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.build.outputTimestamp>2024-06-27T08:00:00Z</project.build.outputTimestamp>
+        <project.build.outputTimestamp>2026-09-08T00:00:00Z</project.build.outputTimestamp>
         <root.dir>${project.basedir}</root.dir>
         <jacoco.flink.skip>false</jacoco.flink.skip>
 
@@ -738,6 +738,12 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>sts</artifactId>
+                <version>${awssdk.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>secretsmanager</artifactId>
                 <version>${awssdk.version}</version>
             </dependency>
 

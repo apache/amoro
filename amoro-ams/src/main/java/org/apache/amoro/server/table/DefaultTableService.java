@@ -192,6 +192,9 @@ public class DefaultTableService extends PersistentBase implements TableService 
 
   @Override
   public void handleTableChanged(TableRuntime tableRuntime, OptimizingStatus originalStatus) {
+    if (tableRuntime instanceof DefaultTableRuntime) {
+      ((DefaultTableRuntime) tableRuntime).onStatusPersisted(originalStatus);
+    }
     if (headHandler != null) {
       headHandler.fireStatusChanged(tableRuntime, originalStatus);
     }

@@ -86,13 +86,7 @@ public class CatalogBuilder {
         "Table format %s is not supported for metastore type: %s",
         tableFormats,
         type);
-    Preconditions.checkState(
-        !(CATALOG_TYPE_REST.equals(type)
-            && tableFormats.contains(TableFormat.LANCE)
-            && tableFormats.size() > 1),
-        "REST catalog serves a single protocol per uri,"
-            + " Lance cannot be combined with other table formats: %s",
-        tableFormats);
+    checkRestLanceExclusivity(type, tableFormats);
 
     switch (type) {
       case CATALOG_TYPE_HADOOP:
@@ -107,5 +101,16 @@ public class CatalogBuilder {
       default:
         throw new IllegalStateException("unsupported catalog type:" + type);
     }
+  }
+
+  /** Enforced on both catalog creation and metadata updates. */
+  static void checkRestLanceExclusivity(String type, Set<TableFormat> tableFormats) {
+    Preconditions.checkState(
+        !(CATALOG_TYPE_REST.equals(type)
+            && tableFormats.contains(TableFormat.LANCE)
+            && tableFormats.size() > 1),
+        "REST catalog serves a single protocol per uri,"
+            + " Lance cannot be combined with other table formats: %s",
+        tableFormats);
   }
 }
