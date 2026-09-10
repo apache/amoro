@@ -40,6 +40,12 @@ interface ILogResult {
   logs: string[]
 }
 
+interface SqlEditorExpose {
+  executeCommand: (command: string) => void
+  updateOptions: (options: { readOnly: boolean }) => void
+  getSelection: () => string
+}
+
 export default defineComponent({
   name: 'Terminal',
   components: {
@@ -50,7 +56,8 @@ export default defineComponent({
   setup() {
     const placeholder = reactive(usePlaceholder())
     const loading = ref<boolean>(false)
-    const sqlEditorRef = ref<any>(null)
+    const sqlEditorRef = ref<SqlEditorExpose | null>(null)
+    const editorReady = ref<boolean>(false)
     const sqlLogRef = ref<any>(null)
     const { pageScrollRef } = usePageScroll()
     const readOnly = ref<boolean>(false)
@@ -74,12 +81,9 @@ export default defineComponent({
     const storageSqlSourceKey = 'easylake-sql-source'
     const storageUseCatalogKey = 'easylake-use-catalog'
 
-    watch(
-      () => readOnly,
-      () => {
-        sqlEditorRef.value.updateOptions({ readOnly })
-      },
-    )
+    watch(readOnly, (value) => {
+      sqlEditorRef.value?.updateOptions({ readOnly: value })
+    })
 
     function handleIconClick(action: string) {
       if (action === 'debug') {
@@ -93,6 +97,15 @@ export default defineComponent({
       if (action === 'pause') {
         stopDebug()
       }
+    }
+
+    function handleEditorReady() {
+      editorReady.value = true
+    }
+
+    function handleEditorLoadError(error: Error) {
+      editorReady.value = false
+      message.error(error.message || 'Failed to load SQL editor')
     }
 
     async function getCatalogOps() {
@@ -136,6 +149,10 @@ export default defineComponent({
         message.error('ReadOnly user cannot execute SQL')
         return
       }
+      if (!editorReady.value) {
+        message.warning('SQL editor is still loading')
+        return
+      }
       try {
         if (!curCatalog.value) {
           message.error(placeholder.selectClPh)
@@ -145,7 +162,7 @@ export default defineComponent({
         resetResult()
         runStatus.value = 'Running'
 
-        const sqlToExecute = sqlEditorRef.value.getSelection() || sqlSource.value
+        const sqlToExecute = sqlEditorRef.value?.getSelection() || sqlSource.value
 
         const res: ISessionInfo = await executeSql({
           catalog: curCatalog.value,
@@ -328,6 +345,7 @@ export default defineComponent({
       bgcMap,
       sqlLogRef,
       sqlEditorRef,
+      editorReady,
       fullscreen,
       resultFullscreen,
       operationActive,
@@ -337,6 +355,8 @@ export default defineComponent({
       curCatalog,
       catalogOptions,
       handleIconClick,
+      handleEditorReady,
+      handleEditorLoadError,
       handleFull,
       resultFull,
       showDebug,
@@ -349,13 +369,13 @@ export default defineComponent({
       dragMounseDown,
       changeUseCatalog,
       pageScrollRef,
-     }
-   },
- })
+    }
+  },
+})
 </script>
 
 <template>
-  <div class="page-scroll" ref="pageScrollRef">
+  <div ref="pageScrollRef" class="page-scroll">
     <div class="console-wrap">
       <div class="console-content" :class="{ fullscreen }">
         <div :style="{ height: `${sqlResultHeight}px` }" class="sql-wrap">
@@ -377,13 +397,13 @@ export default defineComponent({
                 </a-tooltip>
                 <a-tooltip v-else :title="$t('run')" placement="bottom">
                   <svg-icon
-                    class-name="icon-svg" icon-class="sqldebug" class="g-mr-12" :disabled="readOnly || !writable"
+                    class-name="icon-svg" icon-class="sqldebug" class="g-mr-12" :disabled="readOnly || !writable || !editorReady"
                     @click="handleIconClick('debug')"
                   />
                 </a-tooltip>
                 <a-tooltip :title="$t('format')" placement="bottom">
                   <svg-icon
-                    class-name="icon-svg" :is-stroke="true" icon-class="format" :disabled="readOnly"
+                    class-name="icon-svg" :is-stroke="true" icon-class="format" :disabled="readOnly || !editorReady"
                     @click="handleIconClick('format')"
                   />
                 </a-tooltip>
@@ -408,6 +428,8 @@ export default defineComponent({
                     readOnly,
                     minimap: { enabled: false },
                   }"
+                  @ready="handleEditorReady"
+                  @load-error="handleEditorLoadError"
                 />
               </div>
             </div>

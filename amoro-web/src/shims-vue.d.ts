@@ -28,4 +28,21 @@ declare module "*.png" {
 }
 
 declare module 'sql-formatter'
-declare module 'vue-virtual-scroller'
+
+// monaco-editor 0.56 on-demand side-effect imports: the submodules below
+// only have runtime side effects (feature/style registration) and ship no
+// .d.ts in the package; declare them as empty modules for vue-tsc
+// (their values are unused, so no types are needed)
+declare module 'monaco-editor/languages/definitions/sql/register.js'
+declare module 'monaco-editor/editor/browser/coreCommands.js'
+declare module 'monaco-editor/editor/contrib/suggest/browser/suggestController.js'
+declare module 'monaco-editor/editor/contrib/format/browser/formatActions.js'
+declare module 'monaco-editor/features/find/register.js'
+declare module 'monaco-editor/editor/contrib/contextmenu/browser/contextmenu.js'
+declare module 'monaco-editor/editor/contrib/clipboard/browser/clipboard.js'
+declare module 'monaco-editor/editor/contrib/folding/browser/folding.js'
+declare module 'monaco-editor/editor/contrib/bracketMatching/browser/bracketMatching.js'
+declare module 'monaco-editor/editor/contrib/linesOperations/browser/linesOperations.js'
+declare module 'monaco-editor/editor/contrib/wordOperations/browser/wordOperations.js'
+declare module 'monaco-editor/editor/contrib/comment/browser/comment.js'
+declare module 'monaco-editor/features/codicon/register.js'

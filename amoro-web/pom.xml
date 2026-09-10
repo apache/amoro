@@ -32,7 +32,8 @@
     <url>https://amoro.apache.org</url>
 
     <properties>
-        <node.version>v18.18.0</node.version>
+        <!-- Vite 8 requires Node ^20.19.0 || >=22.12.0; pin the latest 22.x LTS -->
+        <node.version>v22.23.2</node.version>
         <pnpm.version>9.6.0</pnpm.version>
         <maven-frontend-plugin.version>1.12.0</maven-frontend-plugin.version>
     </properties>
