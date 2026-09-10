@@ -99,6 +99,13 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
     super(store);
     this.optimizingMetrics =
         new TableOptimizingMetrics(store.getTableIdentifier(), store.getGroupName());
+    if (store instanceof DefaultTableRuntimeStore) {
+      DefaultTableRuntimeStore runtimeStore = (DefaultTableRuntimeStore) store;
+      OptimizingStatus initialStatus = OptimizingStatus.ofCode(runtimeStore.getStatusCode());
+      if (initialStatus != null) {
+        this.optimizingMetrics.statusChanged(initialStatus, runtimeStore.getStatusCodeUpdateTime());
+      }
+    }
     this.orphanFilesCleaningMetrics =
         new TableOrphanFilesCleaningMetrics(store.getTableIdentifier());
     this.tableSummaryMetrics = new TableSummaryMetrics(store.getTableIdentifier());
@@ -161,6 +168,26 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
 
   public OptimizingStatus getOptimizingStatus() {
     return OptimizingStatus.ofCode(getStatusCode());
+  }
+
+  /**
+   * Notifies the optimizing metrics after a status-code update has been committed to the store.
+   * Invoked from the store's status-change handler callback; no-op when the committed update didn't
+   * actually change the status.
+   *
+   * @param originalStatus the status before the committed update.
+   */
+  void onStatusPersisted(OptimizingStatus originalStatus) {
+    OptimizingStatus currentStatus = getOptimizingStatus();
+    if (currentStatus == null || currentStatus == originalStatus) {
+      return;
+    }
+    TableRuntimeStore store = store();
+    long updateTime =
+        store instanceof DefaultTableRuntimeStore
+            ? ((DefaultTableRuntimeStore) store).getStatusCodeUpdateTime()
+            : System.currentTimeMillis();
+    optimizingMetrics.statusChanged(currentStatus, updateTime);
   }
 
   public long getLastMajorOptimizingTime() {
@@ -228,8 +255,12 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
 
   public double calculateQuotaOccupy() {
     double targetQuota = getOptimizingConfig().getTargetQuota();
+    // Guard against a non-positive target quota (misconfigured property): a zero limit would
+    // turn the weight into Infinity/NaN and corrupt quota-based sorting.
     int targetQuotaLimit =
-        targetQuota > 1 ? (int) targetQuota : (int) Math.ceil(targetQuota * getThreadCount());
+        targetQuota > 1
+            ? (int) targetQuota
+            : (int) Math.max(1, Math.ceil(targetQuota * getThreadCount()));
     return (double) getQuotaTime() / AmoroServiceConstants.QUOTA_LOOK_BACK_TIME / targetQuotaLimit;
   }
 
@@ -315,17 +346,14 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
   }
 
   public void beginPlanning() {
-    OptimizingStatus originalStatus = getOptimizingStatus();
     store().begin().updateStatusCode(code -> OptimizingStatus.PLANNING.getCode()).commit();
   }
 
   public void planFailed() {
-    OptimizingStatus originalStatus = getOptimizingStatus();
     store().begin().updateStatusCode(code -> OptimizingStatus.PENDING.getCode()).commit();
   }
 
   public void beginProcess(OptimizingProcess optimizingProcess) {
-    OptimizingStatus originalStatus = getOptimizingStatus();
     this.optimizingProcess = optimizingProcess;
 
     store()
@@ -339,7 +367,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
   }
 
   public void completeProcess(boolean success) {
-    OptimizingStatus originalStatus = getOptimizingStatus();
     OptimizingType processType = optimizingProcess.getOptimizingType();
 
     store()
@@ -409,7 +436,6 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
   }
 
   public void beginCommitting() {
-    OptimizingStatus originalStatus = getOptimizingStatus();
     store().begin().updateStatusCode(code -> OptimizingStatus.COMMITTING.getCode()).commit();
   }
 

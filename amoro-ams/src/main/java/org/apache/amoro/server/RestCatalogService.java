@@ -136,6 +136,7 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
             get("/v1/catalogs/{catalog}/namespaces", this::listNamespaces);
             post("/v1/catalogs/{catalog}/namespaces", this::createNamespace);
             get("/v1/catalogs/{catalog}/namespaces/{namespace}", this::getNamespace);
+            head("/v1/catalogs/{catalog}/namespaces/{namespace}", this::namespaceExists);
             delete("/v1/catalogs/{catalog}/namespaces/{namespace}", this::dropNamespace);
             post(
                 "/v1/catalogs/{catalog}/namespaces/{namespace}/properties",
@@ -259,6 +260,11 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
                 .withNamespace(Namespace.of(database))
                 .setProperties(catalog.getDatabaseProperties(database))
                 .build());
+  }
+
+  /** HEAD PREFIX/v1/catalogs/{catalog}/namespaces/{namespace} */
+  public void namespaceExists(Context ctx) {
+    handleNamespace(ctx, (catalog, database) -> null);
   }
 
   /** DELETE PREFIX/v1/catalogs/{catalog}/namespaces/{namespace} */
@@ -636,8 +642,11 @@ public class RestCatalogService extends PersistentBase implements RestExtension 
         return NotFound;
       } else if (e instanceof NoSuchNamespaceException) {
         return NotFound;
-      } else if (e instanceof AlreadyExistsException) {
+      } else if (e instanceof AlreadyExistsException
+          || e instanceof org.apache.amoro.exception.AlreadyExistsException) {
         return Conflict;
+      } else if (e instanceof org.apache.amoro.exception.ForbiddenException) {
+        return Forbidden;
       }
       return InternalServerError;
     }

@@ -21,6 +21,7 @@ package org.apache.amoro.formats.lance;
 import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.FormatCatalogFactory;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.table.TableMetaStore;
 
 import java.util.HashMap;
@@ -38,6 +39,9 @@ public class LanceCatalogFactory implements FormatCatalogFactory {
       String metastoreType,
       Map<String, String> properties,
       TableMetaStore metaStore) {
+    if (CatalogMetaProperties.CATALOG_TYPE_REST.equals(metastoreType)) {
+      return new LanceRestCatalog(catalogName, properties);
+    }
     return new LanceDirectoryV1Catalog(catalogName, properties);
   }
 

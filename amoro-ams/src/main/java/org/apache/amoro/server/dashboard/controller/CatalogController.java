@@ -208,6 +208,15 @@ public class CatalogController {
         CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_OSS, ICEBERG));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_OSS, MIXED_ICEBERG));
+
+    // Lance REST is a data proxy: the client never talks to object storage, so the storage config
+    // is not consumed, but it still reuses the standard REST storage types.
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_S3, LANCE));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, LANCE));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_OSS, LANCE));
   }
 
   private final PlatformFileManager platformFileInfoService;
@@ -473,8 +482,11 @@ public class CatalogController {
       catalogMeta.putToCatalogProperties(
           CatalogProperties.CATALOG_IMPL, GlueCatalog.class.getName());
     } else if (CatalogMetaProperties.CATALOG_TYPE_REST.equals(metastoreType)) {
-      catalogMeta.putToCatalogProperties(
-          CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
+      // Only the Iceberg-family formats need the Iceberg RESTCatalog implementation.
+      if (!info.getTableFormatList().contains(LANCE.name())) {
+        catalogMeta.putToCatalogProperties(
+            CatalogProperties.CATALOG_IMPL, RESTCatalog.class.getName());
+      }
     }
 
     catalogMeta.putToCatalogProperties(
