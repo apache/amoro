@@ -80,7 +80,7 @@ If you want to add the same table properties to all tables under a catalog, you 
 When configuring table-level properties on a catalog, you **must prefix the key with `table.`**. The prefix will be automatically stripped when the property is applied to tables. For example, to set the default `self-optimizing.group` for all tables under the catalog, you need to configure `table.self-optimizing.group` instead of `self-optimizing.group`. Properties without the `table.` prefix will not be recognized as table-level defaults and will be treated as catalog-level properties only.
 {{< /hint >}}
 
-The following table lists some examples:
+The following table lists some examples. For the full list of available table properties, see [Table configurations](../user-guides/configurations.md).
 
 | Catalog property key                        | Effective table property key              | Description                                              |
 |---------------------------------------------|-------------------------------------------|----------------------------------------------------------|
