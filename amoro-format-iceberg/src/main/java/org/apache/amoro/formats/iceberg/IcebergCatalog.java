@@ -18,35 +18,69 @@
 
 package org.apache.amoro.formats.iceberg;
 
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
+
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.FormatCatalog;
+import org.apache.amoro.hive.CachedHiveClientPool;
+import org.apache.amoro.hive.HMSClientPool;
+import org.apache.amoro.hive.HiveTableTypeUtil;
+import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.utils.MixedFormatCatalogUtil;
+import org.apache.amoro.utils.PropertyUtil;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.thrift.TException;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class IcebergCatalog implements FormatCatalog {
+
+  // Matches HiveCatalog without a compile-time dependency on iceberg-hive-metastore.
+  private static final String LIST_ALL_TABLES = "list-all-tables";
 
   private SupportsNamespaces asNamespaceCatalog;
   private final Catalog icebergCatalog;
   private final TableMetaStore metaStore;
   private final Map<String, String> properties;
+  private final HMSClientPool hiveClientPool;
 
+  /**
+   * Creates an Iceberg format catalog.
+   *
+   * <p>For a Hive-backed catalog, {@code properties} must contain {@code type=hive}. Production
+   * callers should normally use {@link IcebergCatalogFactory}, which supplies the metastore type
+   * explicitly.
+   */
   public IcebergCatalog(Catalog catalog, Map<String, String> properties, TableMetaStore metaStore) {
+    this(catalog, properties.get(ICEBERG_CATALOG_TYPE), properties, metaStore);
+  }
+
+  IcebergCatalog(
+      Catalog catalog,
+      String metastoreType,
+      Map<String, String> properties,
+      TableMetaStore metaStore) {
     this.icebergCatalog = MixedFormatCatalogUtil.buildCacheCatalog(catalog, properties);
     if (catalog instanceof SupportsNamespaces) {
       this.asNamespaceCatalog = (SupportsNamespaces) catalog;
     }
     this.metaStore = metaStore;
     this.properties = properties;
+    this.hiveClientPool =
+        CatalogMetaProperties.CATALOG_TYPE_HIVE.equalsIgnoreCase(metastoreType)
+                && PropertyUtil.propertyAsBoolean(properties, LIST_ALL_TABLES, false)
+            ? new CachedHiveClientPool(metaStore, properties)
+            : null;
   }
 
   @Override
@@ -89,11 +123,32 @@ public class IcebergCatalog implements FormatCatalog {
 
   @Override
   public List<String> listTables(String database) {
-    return metaStore.doAs(
-        () ->
-            icebergCatalog.listTables(Namespace.of(database)).stream()
-                .map(TableIdentifier::name)
-                .collect(Collectors.toList()));
+    List<String> tableNames =
+        metaStore.doAs(
+            () ->
+                icebergCatalog.listTables(Namespace.of(database)).stream()
+                    .map(TableIdentifier::name)
+                    .collect(Collectors.toList()));
+    if (hiveClientPool == null || tableNames.isEmpty()) {
+      return tableNames;
+    }
+
+    Set<String> viewNames = listHiveViewNames(database, tableNames);
+    return tableNames.stream()
+        .filter(tableName -> !viewNames.contains(tableName.toLowerCase(Locale.ROOT)))
+        .collect(Collectors.toList());
+  }
+
+  private Set<String> listHiveViewNames(String database, List<String> tableNames) {
+    try {
+      return hiveClientPool.run(
+          client -> HiveTableTypeUtil.listViewNames(client, database, tableNames));
+    } catch (TException e) {
+      throw new RuntimeException("Failed to identify Hive views in database: " + database, e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted while identifying Hive views", e);
+    }
   }
 
   @Override
