@@ -44,6 +44,8 @@ public class SettingController {
   static {
     MASK_CONFIGURATION_SET.add(AmoroManagementConf.DB_PASSWORD.key());
     MASK_CONFIGURATION_SET.add(AmoroManagementConf.ADMIN_PASSWORD.key());
+    MASK_CONFIGURATION_SET.add(
+        AmoroManagementConf.AUTHORIZATION_LDAP_ROLE_MAPPING_BIND_PASSWORD.key());
   }
 
   private final OptimizerManager optimizerManager;
