@@ -20,14 +20,47 @@ package org.apache.amoro.formats.iceberg.utils;
 
 import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.AuthenticatedFileIOAdapter;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.inmemory.InMemoryFileIO;
+import org.apache.iceberg.io.BulkDeletionFailureException;
+import org.apache.iceberg.io.SupportsBulkOperations;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class TestRollingFileCleaner {
+
+  static class MockBulkFileIO extends InMemoryFileIO implements SupportsBulkOperations {
+    private final Set<String> physicallyDeletedFiles = Sets.newConcurrentHashSet();
+
+    @Override
+    public void deleteFiles(Iterable<String> pathsToDelete) throws BulkDeletionFailureException {
+      List<String> toDelete = Lists.newArrayList(pathsToDelete);
+      try {
+        // Simulate network latency during remote bulk deletion
+        Thread.sleep(10);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+      for (String path : toDelete) {
+        physicallyDeletedFiles.add(path);
+        try {
+          deleteFile(path);
+        } catch (NotFoundException ignored) {
+          // S3 bulk delete ignores already deleted / non-existent keys
+        }
+      }
+    }
+  }
 
   @Test
   void testCleanFiles() {
@@ -48,5 +81,60 @@ public class TestRollingFileCleaner {
     Assertions.assertEquals(5000, fileCleaner.cleanedFileCount());
     fileCleaner.clear();
     Assertions.assertEquals(5050, fileCleaner.cleanedFileCount());
+  }
+
+  @Test
+  void testConcurrentCleanFiles() throws Exception {
+    MockBulkFileIO io = new MockBulkFileIO();
+    AuthenticatedFileIO fileIO = new AuthenticatedFileIOAdapter(io);
+    RollingFileCleaner fileCleaner = new RollingFileCleaner(fileIO, Sets.newHashSet());
+
+    int threadCount = 10;
+    int filesPerThread = 300;
+    int totalFiles = threadCount * filesPerThread;
+
+    Set<String> allFiles = Sets.newConcurrentHashSet();
+    for (int t = 0; t < threadCount; t++) {
+      for (int i = 0; i < filesPerThread; i++) {
+        String filePath =
+            "file://bucket/warehouse/date=2025-01-01/thread_" + t + "_file_" + i + ".txt";
+        io.addFile(filePath, ("content_" + t + "_" + i).getBytes());
+        allFiles.add(filePath);
+      }
+    }
+
+    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+    List<Future<?>> futures = new ArrayList<>();
+    for (int t = 0; t < threadCount; t++) {
+      final int threadId = t;
+      futures.add(
+          executor.submit(
+              () -> {
+                for (int i = 0; i < filesPerThread; i++) {
+                  String filePath =
+                      "file://bucket/warehouse/date=2025-01-01/thread_"
+                          + threadId
+                          + "_file_"
+                          + i
+                          + ".txt";
+                  fileCleaner.addFile(filePath);
+                }
+              }));
+    }
+
+    for (Future<?> future : futures) {
+      future.get(30, TimeUnit.SECONDS);
+    }
+    executor.shutdown();
+
+    Assertions.assertEquals(totalFiles, fileCleaner.fileCount());
+
+    fileCleaner.clear();
+
+    Assertions.assertEquals(totalFiles, fileCleaner.cleanedFileCount());
+    Assertions.assertEquals(totalFiles, io.physicallyDeletedFiles.size());
+    for (String file : allFiles) {
+      Assertions.assertFalse(io.fileExists(file), "File was leaked: " + file);
+    }
   }
 }
