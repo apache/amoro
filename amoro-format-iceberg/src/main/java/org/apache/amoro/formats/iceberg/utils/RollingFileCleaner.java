@@ -30,12 +30,14 @@ import java.net.URI;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /** Rolling file cleaner for Iceberg table maintenance operations. */
 public class RollingFileCleaner {
-  private final Set<String> collectedFiles = Sets.newConcurrentHashSet();
+  private final BlockingQueue<String> collectedFiles = new LinkedBlockingQueue<>();
   private final Set<String> excludeFiles;
   private final Set<String> parentDirectories = Sets.newConcurrentHashSet();
 
@@ -90,34 +92,36 @@ public class RollingFileCleaner {
     return excludeFiles.contains(parentPath);
   }
 
-  private void doCleanFiles() {
+  private synchronized void doCleanFiles() {
     if (collectedFiles.isEmpty()) {
       return;
     }
 
-    try {
-      if (fileIO.supportBulkOperations()) {
+    Set<String> toClean = Sets.newHashSet();
+    collectedFiles.drainTo(toClean);
+    if (toClean.isEmpty()) {
+      return;
+    }
+
+    if (fileIO.supportBulkOperations()) {
+      try {
+        fileIO.asBulkFileIO().deleteFiles(toClean);
+        cleanedFileCounter.addAndGet(toClean.size());
+      } catch (BulkDeletionFailureException e) {
+        LOG.warn("Failed to delete {} expired files in bulk", e.numberFailedObjects());
+      }
+    } else {
+      for (String filePath : toClean) {
         try {
-          fileIO.asBulkFileIO().deleteFiles(collectedFiles);
-          cleanedFileCounter.addAndGet(collectedFiles.size());
-        } catch (BulkDeletionFailureException e) {
-          LOG.warn("Failed to delete {} expired files in bulk", e.numberFailedObjects());
-        }
-      } else {
-        for (String filePath : collectedFiles) {
-          try {
-            fileIO.deleteFile(filePath);
-            cleanedFileCounter.incrementAndGet();
-          } catch (Exception e) {
-            LOG.warn("Failed to delete expired file: {}", filePath, e);
-          }
+          fileIO.deleteFile(filePath);
+          cleanedFileCounter.incrementAndGet();
+        } catch (Exception e) {
+          LOG.warn("Failed to delete expired file: {}", filePath, e);
         }
       }
-
-      LOG.debug("Cleaned expired a file group, total files: {}", collectedFiles.size());
-    } finally {
-      collectedFiles.clear();
     }
+
+    LOG.debug("Cleaned expired a file group, total files: {}", toClean.size());
   }
 
   private void doCleanParentDirectory() {
@@ -149,7 +153,7 @@ public class RollingFileCleaner {
     return cleanedFileCounter.get();
   }
 
-  public void clear() {
+  public synchronized void clear() {
     if (!collectedFiles.isEmpty()) {
       doCleanFiles();
     }
