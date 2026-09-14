@@ -30,6 +30,9 @@ public interface OptimizingProcess {
 
   void close(boolean needCommit);
 
+  /** Close without committing and persist the reason in the process history. */
+  void close(String reason);
+
   boolean isClosed();
 
   long getTargetSnapshotId();

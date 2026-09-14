@@ -24,6 +24,8 @@ import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.config.DataExpirationConfig;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.config.TagConfiguration;
+import org.apache.amoro.formats.iceberg.IcebergMaintenanceCompatibility;
+import org.apache.amoro.formats.iceberg.IcebergMaintenanceCompatibility.UnsupportedTableException;
 import org.apache.amoro.formats.iceberg.utils.IcebergTableUtil;
 import org.apache.amoro.formats.iceberg.utils.RollingFileCleaner;
 import org.apache.amoro.iceberg.Constants;
@@ -143,6 +145,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (!tableConfiguration.isCleanOrphanEnabled()) {
       return Maps.newHashMap();
     }
+    table.refresh();
+    IcebergMaintenanceCompatibility.checkSupported(table);
 
     long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
 
@@ -166,6 +170,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
       return Maps.newHashMap();
     }
+    table = IcebergMaintenanceCompatibility.forUpdate(table);
 
     Snapshot currentSnapshot = table.currentSnapshot();
     if (currentSnapshot == null) {
@@ -191,6 +196,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (!expireSnapshotEnabled()) {
       return Maps.newHashMap();
     }
+    table = IcebergMaintenanceCompatibility.forUpdate(table);
     int cleaned =
         expireSnapshots(
             mustOlderThan(System.currentTimeMillis()),
@@ -281,6 +287,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   @Override
   public Map<String, String> expireData() {
+    table = IcebergMaintenanceCompatibility.forUpdate(table);
     DataExpirationConfig expirationConfig = context.getTableConfiguration().getExpiringDataConfig();
     try {
       Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
@@ -289,6 +296,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
       }
 
       return expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
+    } catch (UnsupportedTableException e) {
+      throw e;
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableIdentifier, t);
       return Maps.newHashMap();
@@ -357,6 +366,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   @Override
   public void autoCreateTags() {
+    table = IcebergMaintenanceCompatibility.forUpdate(table);
     TagConfiguration tagConfiguration = context.getTableConfiguration().getTagConfiguration();
     new AutoCreateIcebergTagAction(table, tagConfiguration, LocalDateTime.now()).execute();
   }
