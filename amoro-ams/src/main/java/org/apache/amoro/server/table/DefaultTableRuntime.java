@@ -353,6 +353,15 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
     store().begin().updateStatusCode(code -> OptimizingStatus.PENDING.getCode()).commit();
   }
 
+  /** Stop scheduling unsupported metadata without marking its snapshot as optimized. */
+  public void suspendUnsupportedOptimizing() {
+    store()
+        .begin()
+        .updateStatusCode(code -> OptimizingStatus.IDLE.getCode())
+        .updateState(PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
+        .commit();
+  }
+
   public void beginProcess(OptimizingProcess optimizingProcess) {
     this.optimizingProcess = optimizingProcess;
 

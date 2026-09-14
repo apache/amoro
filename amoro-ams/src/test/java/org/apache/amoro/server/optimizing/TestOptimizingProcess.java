@@ -18,44 +18,30 @@
 
 package org.apache.amoro.server.optimizing;
 
-import org.apache.amoro.optimizing.MetricsSummary;
-import org.apache.amoro.optimizing.OptimizingType;
-import org.apache.amoro.process.ProcessStatus;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
-public interface OptimizingProcess {
+import org.junit.jupiter.api.Test;
 
-  long getTableId();
+class TestOptimizingProcess {
+  @Test
+  void testCloseWithCommitPreference() {
+    OptimizingProcess process = mock(OptimizingProcess.class, CALLS_REAL_METHODS);
 
-  long getProcessId();
+    process.close(true);
+    verify(process).close(true, null);
 
-  void close(boolean needCommit, String reason);
-
-  default void close(boolean needCommit) {
-    close(needCommit, null);
+    process.close(false);
+    verify(process).close(false, null);
   }
 
-  /** Close without committing and persist the reason in the process history. */
-  default void close(String reason) {
-    close(false, reason);
+  @Test
+  void testCloseWithReasonDoesNotCommit() {
+    OptimizingProcess process = mock(OptimizingProcess.class, CALLS_REAL_METHODS);
+
+    process.close("Unsupported Iceberg format version: 3");
+
+    verify(process).close(false, "Unsupported Iceberg format version: 3");
   }
-
-  boolean isClosed();
-
-  long getTargetSnapshotId();
-
-  long getTargetChangeSnapshotId();
-
-  long getPlanTime();
-
-  long getDuration();
-
-  OptimizingType getOptimizingType();
-
-  ProcessStatus getStatus();
-
-  long getRunningQuotaTime(long calculatingStartTime, long calculatingEndTime);
-
-  void commit();
-
-  MetricsSummary getSummary();
 }

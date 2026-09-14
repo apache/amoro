@@ -18,13 +18,40 @@
 
 import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
+import type { Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { vitePluginFakeServer } from 'vite-plugin-fake-server'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import ViteComponents from 'unplugin-vue-components/vite'
 import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
 import vueDevTools from 'vite-plugin-vue-devtools'
+
+/**
+ * The transform graph of monaco-editor's editor.api makes Vite emit
+ * standalone bundles for the ts/css/html/json language-service workers
+ * (~9.3 MB total) that end up referenced by no chunk at all. This
+ * project only uses basic SQL syntax and a custom logLanguage, neither
+ * of which uses language-service workers (same as before the upgrade:
+ * previous builds had no worker files either), so drop these orphans.
+ */
+function dropOrphanMonacoWorkers(): Plugin {
+  return {
+    name: 'drop-orphan-monaco-workers',
+    generateBundle(_, bundle) {
+      for (const name of Object.keys(bundle)) {
+        if (!/(?:^|\/)(?:ts|css|html|json)\.worker-[\w-]+\.js$/.test(name))
+          continue
+        const referenced = Object.values(bundle).some(
+          item => item.type === 'chunk' && item.code.includes(name),
+        )
+        if (!referenced)
+          delete bundle[name]
+      }
+    },
+  }
+}
 
 const css = {
   preprocessorOptions: {
@@ -54,23 +81,31 @@ export default defineConfig({
   base: './',
   build: {
     outDir: './src/main/resources/static',
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          vue: ['vue', 'vue-i18n', 'vue-router', 'vue-virtual-scroller'],
-          dayjs: ['dayjs'],
-          axios: ['axios'],
-          antd: ['ant-design-vue', '@ant-design/icons-vue'],
-          pinia: ['pinia'],
-          echarts: ['echarts'],
-          monaco: ['monaco-editor'],
-          sql: ['sql-formatter'],
+        // Vite 8 (Rolldown): the object form of manualChunks is removed,
+        // replaced by codeSplitting.groups
+        // Source: https://rolldown.rs/in-depth/manual-code-splitting
+        // Groups match the previous 8 manualChunks groups; regexes match
+        // node_modules module paths
+        codeSplitting: {
+          groups: [
+            { name: 'vue', test: /node_modules[\\/](?:@vue|vue|vue-i18n|vue-router|vue-virtual-scroller)[\\/]/ },
+            { name: 'dayjs', test: /node_modules[\\/]dayjs[\\/]/ },
+            { name: 'axios', test: /node_modules[\\/]axios[\\/]/ },
+            { name: 'antd', test: /node_modules[\\/](?:ant-design-vue|@ant-design)[\\/]/ },
+            { name: 'pinia', test: /node_modules[\\/]pinia[\\/]/ },
+            { name: 'echarts', test: /node_modules[\\/]echarts[\\/]/ },
+            { name: 'monaco', test: /node_modules[\\/]monaco-editor[\\/]/, includeDependenciesRecursively: false },
+            { name: 'sql', test: /node_modules[\\/]sql-formatter[\\/]/ },
+          ],
         },
       },
     },
   },
   plugins: [
     vue(),
+    dropOrphanMonacoWorkers(),
     vitePluginFakeServer({
       logger: false,
       include: 'mock',
@@ -133,7 +168,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'), // Path alias
+      '@': fileURLToPath(new URL('./src', import.meta.url)), // Path alias
     },
   },
 })

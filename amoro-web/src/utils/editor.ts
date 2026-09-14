@@ -18,12 +18,65 @@
 
 /**
  * Keywords and formatting configuration in sql editor
+ *
+ * On-demand monaco entry: loads only editor.api, the SQL language
+ * definition and the editor features used by this page, instead of the
+ * full 'monaco-editor' entry (which bundles ~90 languages and all
+ * contribs). The feature subset is trimmed against the monaco-editor
+ * 0.56 full entry (esm/vs/index.js): completion (suggestController),
+ * formatting (formatActions), find, context menu, clipboard, folding,
+ * bracket matching, line/word operations, comment, core commands and
+ * codicons.
+ *
+ * Loading: setupMonaco() is called (dynamic import) when the editor
+ * component first mounts; the app startup path (main.ts) no longer
+ * imports monaco statically.
  */
-import * as monaco from 'monaco-editor'
+import type * as Monaco from 'monaco-editor'
 import * as sqlFormatter from 'sql-formatter'
 import { language as sqlLanguage } from './sql'
 
-function registerSql() {
+/** Module type of the editor.api entry (runtime on-demand subset, compatible with the full 'monaco-editor' types) */
+export type MonacoApi = typeof import('monaco-editor/editor/editor.api.js')
+
+let setupPromise: Promise<MonacoApi> | null = null
+
+export function setupMonaco(): Promise<MonacoApi> {
+  // clear the cache on failure so the next mount can retry
+  // (a transient network error must not break the editor for the whole session)
+  setupPromise ??= doSetup().catch((err) => {
+    setupPromise = null
+    throw err
+  })
+  return setupPromise
+}
+
+async function doSetup(): Promise<MonacoApi> {
+  const [monaco] = await Promise.all([
+    import('monaco-editor/editor/editor.api.js'),
+    // SQL language registration (the Monarch lexer is lazy-loaded by the loader)
+    import('monaco-editor/languages/definitions/sql/register.js'),
+    import('monaco-editor/editor/browser/coreCommands.js'),
+    import('monaco-editor/editor/contrib/suggest/browser/suggestController.js'),
+    import('monaco-editor/editor/contrib/format/browser/formatActions.js'),
+    import('monaco-editor/features/find/register.js'),
+    import('monaco-editor/editor/contrib/contextmenu/browser/contextmenu.js'),
+    import('monaco-editor/editor/contrib/clipboard/browser/clipboard.js'),
+    import('monaco-editor/editor/contrib/folding/browser/folding.js'),
+    import('monaco-editor/editor/contrib/bracketMatching/browser/bracketMatching.js'),
+    import('monaco-editor/editor/contrib/linesOperations/browser/linesOperations.js'),
+    import('monaco-editor/editor/contrib/wordOperations/browser/wordOperations.js'),
+    import('monaco-editor/editor/contrib/comment/browser/comment.js'),
+    // codicon icon styles (this register module relatively imports codicon.css,
+    // working around the package exports map which only exposes .js subpaths)
+    import('monaco-editor/features/codicon/register.js'),
+  ])
+  registerSql(monaco)
+  registerLogLanguage(monaco)
+  return monaco
+}
+
+function registerSql(monaco: MonacoApi) {
   // SQL keyword hints
   monaco.languages.registerCompletionItemProvider('sql', {
     provideCompletionItems: (model, position) => {
@@ -34,7 +87,7 @@ function registerSql() {
         endColumn: position.column,
       })
       const match = textUntilPosition.match(/(\S+)$/)
-      const suggestions: monaco.languages.CompletionItem[] = []
+      const suggestions: Monaco.languages.CompletionItem[] = []
       if (match) {
         const matchStr = match[0].toUpperCase()
         sqlLanguage.keywords.forEach((item: string) => {
@@ -43,7 +96,7 @@ function registerSql() {
               label: item,
               kind: monaco.languages.CompletionItemKind.Keyword,
               insertText: item,
-            } as monaco.languages.CompletionItem)
+            } as Monaco.languages.CompletionItem)
           }
         })
         sqlLanguage.operators.forEach((item: string) => {
@@ -52,7 +105,7 @@ function registerSql() {
               label: item,
               kind: monaco.languages.CompletionItemKind.Operator,
               insertText: item,
-            } as monaco.languages.CompletionItem)
+            } as Monaco.languages.CompletionItem)
           }
         })
         sqlLanguage.builtinFunctions.forEach((item: string) => {
@@ -61,7 +114,7 @@ function registerSql() {
               label: item,
               kind: monaco.languages.CompletionItemKind.Function,
               insertText: item,
-            } as monaco.languages.CompletionItem)
+            } as Monaco.languages.CompletionItem)
           }
         })
       }
@@ -123,7 +176,7 @@ function registerSql() {
   monaco.editor.defineTheme('arcticSql', themeData)
 }
 
-function registerLogLanguage() {
+function registerLogLanguage(monaco: MonacoApi) {
   monaco.languages.register({ id: 'logLanguage' })
 
   monaco.languages.setMonarchTokensProvider('logLanguage', {
@@ -138,7 +191,7 @@ function registerLogLanguage() {
     },
   })
 
-  const themeData: monaco.editor.IStandaloneThemeData = {
+  const themeData: Monaco.editor.IStandaloneThemeData = {
     base: 'vs',
     inherit: false,
     colors: {
@@ -155,6 +208,3 @@ function registerLogLanguage() {
   }
   monaco.editor.defineTheme('logTheme', themeData)
 }
-
-registerSql()
-registerLogLanguage()

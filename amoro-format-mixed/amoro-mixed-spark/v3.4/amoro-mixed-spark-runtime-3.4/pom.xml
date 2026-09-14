@@ -128,9 +128,7 @@
                                         <exclude>META-INF/*.RSA</exclude>
                                         <exclude>**/log4j.properties</exclude>
                                         <exclude>META-INF/DEPENDENCIES</exclude>
-                                        <exclude>META-INF/*LICENSE*</exclude>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
-                                        <exclude>META-INF/*NOTICE*</exclude>
                                         <exclude>META-INF/**/module-info.class</exclude>
                                         <exclude>LICENSE.txt</exclude>
                                         <exclude>NOTICE.txt</exclude>
