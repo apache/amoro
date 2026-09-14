@@ -306,14 +306,8 @@ public class AmoroServiceContainer {
           }
           if (amsAssignService != null) {
             amsAssignService.start();
-            LOG.info("AmsAssignService started");
+            LOG.info("Ams assign service started");
           }
-        } else {
-          startOptimizingService();
-        }
-        if (amsAssignService != null) {
-          amsAssignService.start();
-          LOG.info("Ams assign service started");
         }
       } else {
         startOptimizingService();
