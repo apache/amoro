@@ -299,15 +299,11 @@ public class AmoroServiceContainer {
         // AmsAssignService may have been stopped and set to null by a previous stopLeaderServices
         // call (leader re-election); recreate it if needed.
         if (amsAssignService == null && haContainer != null) {
-          try {
-            amsAssignService = new AmsAssignService(serviceConfig, bucketAssignStore);
-          } catch (Exception e) {
-            LOG.error("Failed to recreate Ams assign service", e);
-          }
-          if (amsAssignService != null) {
-            amsAssignService.start();
-            LOG.info("Ams assign service started");
-          }
+          amsAssignService = new AmsAssignService(serviceConfig, bucketAssignStore);
+        }
+        if (amsAssignService != null) {
+          amsAssignService.start();
+          LOG.info("Ams assign service started");
         }
       } else {
         startOptimizingService();
