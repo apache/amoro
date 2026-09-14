@@ -688,16 +688,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     @Override
-    public void close(boolean needCommit) {
-      close(needCommit, null);
-    }
-
-    @Override
-    public void close(String reason) {
-      close(false, reason);
-    }
-
-    private void close(boolean needCommit, String reason) {
+    public void close(boolean needCommit, String reason) {
       lock.lock();
       try {
         if (this.status != ProcessStatus.RUNNING) {
