@@ -32,7 +32,7 @@ import java.util.List;
 public interface ApiTokensMapper {
   String TABLE_NAME = "api_tokens";
 
-  @Select("SELECT id, apikey, apply_time FROM " + TABLE_NAME)
+  @Select("SELECT id, apikey, secret, apply_time FROM " + TABLE_NAME)
   @Results({
     @Result(property = "id", column = "id"),
     @Result(property = "apikey", column = "apikey"),
