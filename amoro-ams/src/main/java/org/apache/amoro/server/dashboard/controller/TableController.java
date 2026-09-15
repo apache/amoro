@@ -199,7 +199,12 @@ public class TableController {
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     HiveTableInfo hiveTableInfo;
-    Table hiveTable = HiveTableUtil.loadHmsTable(hmsClientPool, tableIdentifier);
+    Table hiveTable = HiveTableUtil.loadPhysicalHmsTable(hmsClientPool, tableIdentifier);
+    Preconditions.checkState(
+        hiveTable.getSd() != null,
+        "Hive table %s.%s does not have a storage descriptor",
+        db,
+        table);
     List<AMSColumnInfo> schema = transformHiveSchemaToAMSColumnInfo(hiveTable.getSd().getCols());
     List<AMSColumnInfo> partitionColumnInfos =
         transformHiveSchemaToAMSColumnInfo(hiveTable.getPartitionKeys());
@@ -727,6 +732,9 @@ public class TableController {
   }
 
   private List<AMSColumnInfo> transformHiveSchemaToAMSColumnInfo(List<FieldSchema> fields) {
+    if (fields == null) {
+      return Collections.emptyList();
+    }
     return fields.stream()
         .map(
             f -> {
