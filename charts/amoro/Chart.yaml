@@ -26,7 +26,7 @@ version: 0.1.0
 
 # Application version (the version of Amoro being deployed)
 # Should match the actual Amoro release version
-appVersion: "0.9-SNAPSHOT"
+appVersion: "0.9.0-incubating"
 home: https://amoro.apache.org/
 icon: https://amoro.apache.org/img/amoro-logo-icon.png
 sources:
