@@ -23,18 +23,22 @@ import static org.apache.amoro.properties.HiveTableProperties.MIXED_TABLE_ROOT_L
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.TestMixedCatalog;
 import org.apache.amoro.hive.TestHMS;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.util.Collections;
 import java.util.Map;
 
 @RunWith(JUnit4.class)
@@ -57,6 +61,24 @@ public class TestMixedHiveCatalog extends TestMixedCatalog {
   @Override
   protected PartitionSpec getCreateTableSpec() {
     return IDENTIFY_SPEC;
+  }
+
+  @Test
+  public void testHiveViewIsNotLoadableAsMixedHiveTable() throws Exception {
+    String database = TableTestHelper.TEST_DB_NAME;
+    String viewName = "test_hive_view";
+    getMixedFormatCatalog().createDatabase(database);
+    TEST_HMS.createView(database, viewName, Collections.singletonMap(MIXED_TABLE_FLAG, "true"));
+    TableIdentifier viewIdentifier =
+        TableIdentifier.of(getCatalogMeta().getCatalogName(), database, viewName);
+
+    try {
+      Assert.assertFalse(getMixedFormatCatalog().listTables(database).contains(viewIdentifier));
+      Assert.assertThrows(
+          NoSuchTableException.class, () -> getMixedFormatCatalog().loadTable(viewIdentifier));
+    } finally {
+      TEST_HMS.getHiveClient().dropTable(database, viewName, false, true);
+    }
   }
 
   private void validateMixedHiveTableProperties(TableIdentifier tableIdentifier) throws TException {
