@@ -20,11 +20,14 @@ package org.apache.amoro.formats.iceberg.utils;
 
 import org.apache.amoro.IcebergFileEntry;
 import org.apache.amoro.iceberg.Constants;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.scan.TableEntriesScan;
 import org.apache.amoro.shade.guava32.com.google.common.base.Predicate;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.utils.TableFileUtil;
+import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.DeleteFile;
@@ -37,9 +40,15 @@ import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableMetadata;
+import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.TableScan;
+import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.FileIO;
+import org.apache.iceberg.io.FileInfo;
+import org.apache.iceberg.io.SupportsPrefixOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -192,5 +201,96 @@ public class IcebergTableUtil {
     }
 
     return allManifestFiles;
+  }
+
+  private static boolean isMetadataJson(String name) {
+    return name.endsWith(".metadata.json") || name.endsWith(".metadata.json.gz");
+  }
+
+  /**
+   * Returns {@code true} if another Iceberg table appears to share the same metadata location as
+   * the given table.
+   *
+   * <p>Lists the table's metadata directory via its own (storage-agnostic) {@link FileIO} and, for
+   * every {@code metadata.json} not in this table's own history (current + {@code
+   * previousFiles()}), reads its {@code table-uuid}:
+   *
+   * <ul>
+   *   <li>same uuid &rarr; older version of this table, ignored;
+   *   <li>different uuid &rarr; another table shares the location, returns {@code true};
+   *   <li>uuid missing/unreadable (legacy, corrupt, or compressed) &rarr; treated as a conflict,
+   *       returns {@code true} (fail-safe).
+   * </ul>
+   *
+   * <p>Requires {@link SupportsPrefixOperations} for FileIO; otherwise a {@link
+   * ValidationException} is thrown. The caller may choose to skip the check when the storage
+   * backend is known to be used by a single table. On the no-conflict path only a single listing is
+   * done and no metadata file is read.
+   *
+   * @param table the table whose location is about to be cleaned
+   * @throws ValidationException if the table's {@code FileIO} does not support prefix operations
+   */
+  public static boolean hasOtherTableInLocation(Table table) {
+    TableOperations ops = ((HasTableOperations) table).operations();
+    TableMetadata current = ops.current();
+
+    String myUuid = current.uuid();
+    Set<String> myMetadataFiles = Sets.newHashSet();
+    myMetadataFiles.add(new Path(current.metadataFileLocation()).getName());
+    for (TableMetadata.MetadataLogEntry entry : current.previousFiles()) {
+      myMetadataFiles.add(new Path(entry.file()).getName());
+    }
+
+    Path metadataDir = new Path(current.metadataFileLocation()).getParent();
+
+    AuthenticatedFileIO io = (AuthenticatedFileIO) table.io();
+    if (!io.supportPrefixOperations()) {
+      String msg =
+          String.format(
+              "Cannot detect location conflicts: the table's FileIO (%s) does not support prefix "
+                  + "operations, which are required to inspect the metadata directory '%s'.",
+              io.getClass().getName(), metadataDir);
+      throw new ValidationException(msg);
+    }
+
+    String prefix = metadataDir.toString();
+    if (!prefix.endsWith("/")) {
+      prefix = prefix + "/";
+    }
+
+    SupportsPrefixOperations prefixIo = (SupportsPrefixOperations) io;
+    for (FileInfo info : prefixIo.listPrefix(prefix)) {
+      String name = new Path(info.location()).getName();
+      if (!isMetadataJson(name) || myMetadataFiles.contains(name)) {
+        continue;
+      }
+
+      String otherUuid = readTableUuid(table, info.location());
+      if (otherUuid == null || !otherUuid.equals(myUuid)) {
+        LOG.warn(
+            "Another table (uuid={}) belonging to metadata file {} shares the metadata location with this table (uuid={}); "
+                + "treating the location as conflicting.",
+            otherUuid,
+            info.location(),
+            myUuid);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Reads the {@code table-uuid} from a metadata file, transparently handling gzip-compressed
+   * metadata ({@code .metadata.json.gz}). Returns {@code null} if the uuid cannot be determined
+   * (legacy file without a uuid, corrupt file, or any read failure).
+   */
+  private static String readTableUuid(Table table, String metadataLocation) {
+    try {
+      return TableMetadataParser.read(table.io(), metadataLocation).uuid();
+    } catch (Exception e) {
+      LOG.warn("Failed to read table-uuid from {}; treating as unreadable", metadataLocation, e);
+      return null;
+    }
   }
 }
