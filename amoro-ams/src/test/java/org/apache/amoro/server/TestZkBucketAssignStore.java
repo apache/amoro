@@ -219,6 +219,57 @@ public class TestZkBucketAssignStore {
     Assert.assertEquals("Should have 2 nodes", 2, allAssignments.size());
   }
 
+  @Test
+  public void testRegisterNode() throws Exception {
+    assignStore.registerNode(node1);
+
+    List<AmsServerInfo> aliveNodes = assignStore.getAliveNodes();
+    Assert.assertEquals("Should have 1 alive node", 1, aliveNodes.size());
+    Assert.assertEquals(node1.getHost(), aliveNodes.get(0).getHost());
+    Assert.assertEquals(node1.getThriftBindPort(), aliveNodes.get(0).getThriftBindPort());
+  }
+
+  @Test
+  public void testRegisterMultipleNodes() throws Exception {
+    assignStore.registerNode(node1);
+    assignStore.registerNode(node2);
+
+    List<AmsServerInfo> aliveNodes = assignStore.getAliveNodes();
+    Assert.assertEquals("Should have 2 alive nodes", 2, aliveNodes.size());
+  }
+
+  @Test
+  public void testRegisterNodeIdempotent() throws Exception {
+    assignStore.registerNode(node1);
+    assignStore.registerNode(node1); // duplicate should not throw
+
+    List<AmsServerInfo> aliveNodes = assignStore.getAliveNodes();
+    Assert.assertEquals("Should still have 1 alive node", 1, aliveNodes.size());
+  }
+
+  @Test
+  public void testGetAliveNodesEmpty() throws Exception {
+    List<AmsServerInfo> aliveNodes = assignStore.getAliveNodes();
+    Assert.assertNotNull("Should return empty list", aliveNodes);
+    Assert.assertTrue("Should be empty", aliveNodes.isEmpty());
+  }
+
+  @Test
+  public void testRemoveNode() throws Exception {
+    assignStore.registerNode(node1);
+    Assert.assertEquals(1, assignStore.getAliveNodes().size());
+
+    assignStore.removeNode(node1);
+    Assert.assertEquals(0, assignStore.getAliveNodes().size());
+  }
+
+  @Test
+  public void testRemoveNodeNotRegistered() throws Exception {
+    // Should not throw
+    assignStore.removeNode(node1);
+    Assert.assertEquals(0, assignStore.getAliveNodes().size());
+  }
+
   /** Create a mock CuratorFramework that uses MockZkState for storage. */
   @SuppressWarnings("unchecked")
   private CuratorFramework createMockZkClient() throws Exception {

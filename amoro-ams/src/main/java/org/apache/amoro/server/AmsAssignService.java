@@ -21,7 +21,6 @@ package org.apache.amoro.server;
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.BucketAssignStoreException;
-import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
@@ -54,9 +53,7 @@ public class AmsAssignService {
               .setDaemon(true)
               .build());
 
-  private final HighAvailabilityContainer haContainer;
   private final BucketAssignStore assignStore;
-  private final Configurations serviceConfig;
   private final int bucketIdTotalCount;
   private final long nodeOfflineTimeoutMs;
   private final long assignIntervalSeconds;
@@ -66,21 +63,11 @@ public class AmsAssignService {
     return running;
   }
 
-  public AmsAssignService(HighAvailabilityContainer haContainer, Configurations serviceConfig) {
-    this(haContainer, serviceConfig, null);
-  }
-
   /**
    * @param assignStore if non-null, used as the bucket assignment store; otherwise one is created
-   *     via {@link BucketAssignStoreFactory} (same instance can be shared with {@code
-   *     DefaultTableService}).
+   *     via {@link BucketAssignStoreFactory}.
    */
-  public AmsAssignService(
-      HighAvailabilityContainer haContainer,
-      Configurations serviceConfig,
-      BucketAssignStore assignStore) {
-    this.haContainer = haContainer;
-    this.serviceConfig = serviceConfig;
+  public AmsAssignService(Configurations serviceConfig, BucketAssignStore assignStore) {
     this.bucketIdTotalCount =
         serviceConfig.getInteger(AmoroManagementConf.HA_BUCKET_ID_TOTAL_COUNT);
     this.nodeOfflineTimeoutMs =
@@ -88,19 +75,13 @@ public class AmsAssignService {
     this.assignIntervalSeconds =
         serviceConfig.get(AmoroManagementConf.HA_ASSIGN_INTERVAL).getSeconds();
     this.assignStore =
-        assignStore != null
-            ? assignStore
-            : BucketAssignStoreFactory.create(haContainer, serviceConfig);
+        assignStore != null ? assignStore : BucketAssignStoreFactory.create(serviceConfig);
   }
 
   /**
    * Start the assignment service. Only works in master-slave mode and when current node is leader.
    */
   public void start() {
-    if (!serviceConfig.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE)) {
-      LOG.info("Master-slave mode is not enabled, skip starting bucket assignment service");
-      return;
-    }
     if (running) {
       LOG.warn("Bucket assignment service is already running");
       return;
@@ -132,12 +113,7 @@ public class AmsAssignService {
   @VisibleForTesting
   public void doAssign() {
     try {
-      if (!haContainer.hasLeadership()) {
-        LOG.debug("Current node is not leader, skip bucket assignment");
-        return;
-      }
-
-      List<AmsServerInfo> aliveNodes = haContainer.getAliveNodes();
+      List<AmsServerInfo> aliveNodes = assignStore.getAliveNodes();
       if (aliveNodes.isEmpty()) {
         LOG.debug("No alive nodes found, skip bucket assignment");
         return;
@@ -161,6 +137,8 @@ public class AmsAssignService {
           Map<AmsServerInfo, List<String>> newAssignments =
               buildNewAssignments(aliveNodes, new HashSet<>(), normalized.assignments);
           rebalanceExistingAssignments(aliveNodes, allBuckets, newAssignments);
+          // Remove assignments for nodes that are no longer alive
+          removeStaleAssignments(aliveNodes, currentAssignments);
           persistAssignments(newAssignments);
         } else {
           refreshLastUpdateTime(aliveNodes);
@@ -175,6 +153,15 @@ public class AmsAssignService {
 
       List<String> bucketsToRedistribute =
           handleOfflineNodes(change.offlineNodes, currentAssignments);
+      // Remove assignments for offline nodes so they don't linger in the store.
+      for (AmsServerInfo offlineNode : change.offlineNodes) {
+        try {
+          assignStore.removeAssignments(offlineNode);
+          LOG.info("Removed assignments for offline node {}", offlineNode);
+        } catch (Exception e) {
+          LOG.warn("Failed to remove assignments for offline node {}", offlineNode, e);
+        }
+      }
       List<String> allBuckets = generateBucketIds();
       Map<AmsServerInfo, List<String>> newAssignments =
           buildNewAssignments(aliveNodes, change.offlineNodes, normalized.assignments);
@@ -672,6 +659,30 @@ public class AmsAssignService {
             entry.getValue());
       } catch (BucketAssignStoreException e) {
         LOG.error("Failed to save assignments for node {}", entry.getKey(), e);
+      }
+    }
+  }
+
+  /**
+   * Remove assignments for nodes that are no longer in the alive list. This prevents stale
+   * assignments from lingering in the store when a node goes offline but its lastUpdateTime hasn't
+   * expired yet (so it wasn't detected as offline by detectNodeChanges).
+   */
+  private void removeStaleAssignments(
+      List<AmsServerInfo> aliveNodes, Map<AmsServerInfo, List<String>> currentAssignments) {
+    Set<String> aliveNodeKeys = new HashSet<>();
+    for (AmsServerInfo node : aliveNodes) {
+      aliveNodeKeys.add(getNodeKey(node));
+    }
+    for (AmsServerInfo assignedNode : currentAssignments.keySet()) {
+      String nodeKey = getNodeKey(assignedNode);
+      if (!aliveNodeKeys.contains(nodeKey)) {
+        try {
+          assignStore.removeAssignments(assignedNode);
+          LOG.info("Removed stale assignments for node {}", assignedNode);
+        } catch (Exception e) {
+          LOG.warn("Failed to remove stale assignments for node {}", assignedNode, e);
+        }
       }
     }
   }

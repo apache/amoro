@@ -35,12 +35,12 @@ public interface BucketAssignMapper {
 
   @Insert(
       "INSERT INTO bucket_assignments (cluster_name, node_key, server_info_json, assignments_json, last_update_time, node_heartbeat_ts) "
-          + "VALUES (#{meta.clusterName}, #{meta.nodeKey}, #{meta.serverInfoJson}, #{meta.assignmentsJson}, #{meta.lastUpdateTime}, #{meta.nodeHeartbeatTs})")
+          + "VALUES (#{meta.clusterName, jdbcType=VARCHAR}, #{meta.nodeKey, jdbcType=VARCHAR}, #{meta.serverInfoJson, jdbcType=VARCHAR}, #{meta.assignmentsJson, jdbcType=VARCHAR}, #{meta.lastUpdateTime}, #{meta.nodeHeartbeatTs})")
   int insert(@Param("meta") BucketAssignmentMeta meta);
 
   @Update(
-      "UPDATE bucket_assignments SET server_info_json = #{serverInfoJson}, assignments_json = #{assignmentsJson}, last_update_time = #{lastUpdateTime} "
-          + "WHERE cluster_name = #{clusterName} AND node_key = #{nodeKey}")
+      "UPDATE bucket_assignments SET server_info_json = #{serverInfoJson, jdbcType=VARCHAR}, assignments_json = #{assignmentsJson, jdbcType=VARCHAR}, last_update_time = #{lastUpdateTime} "
+          + "WHERE cluster_name = #{clusterName, jdbcType=VARCHAR} AND node_key = #{nodeKey, jdbcType=VARCHAR}")
   int update(
       @Param("clusterName") String clusterName,
       @Param("nodeKey") String nodeKey,
