@@ -170,6 +170,21 @@ public class GenericTaskWriters {
           org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX
               + MetadataColumns.DELETE_FILE_POS.name(),
           MetricsModes.Full.get().toString());
+      double heapUsageRatioThreshold =
+          PropertyUtil.propertyAsDouble(
+              table.properties(),
+              TableProperties.POS_DELETE_FLUSH_HEAP_RATIO,
+              TableProperties.POS_DELETE_FLUSH_HEAP_RATIO_DEFAULT);
+      long recordsNumThreshold =
+          PropertyUtil.propertyAsLong(
+              table.properties(),
+              TableProperties.POS_DELETE_FLUSH_RECORDS,
+              TableProperties.POS_DELETE_FLUSH_RECORDS_DEFAULT);
+      int heapFlushMinRecords =
+          PropertyUtil.propertyAsInt(
+              table.properties(),
+              TableProperties.POS_DELETE_FLUSH_HEAP_MIN_RECORDS,
+              TableProperties.POS_DELETE_FLUSH_HEAP_MIN_RECORDS_DEFAULT);
       return new SortedPosDeleteWriter<>(
           appenderFactory,
           new CommonOutputFileFactory(
@@ -185,7 +200,10 @@ public class GenericTaskWriters {
           fileFormat,
           mask,
           index,
-          partitionKey);
+          partitionKey,
+          recordsNumThreshold,
+          heapUsageRatioThreshold,
+          heapFlushMinRecords);
     }
 
     public GenericChangeTaskWriter buildChangeWriter() {
