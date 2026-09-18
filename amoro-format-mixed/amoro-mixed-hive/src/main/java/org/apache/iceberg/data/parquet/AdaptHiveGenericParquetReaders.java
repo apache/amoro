@@ -57,7 +57,7 @@ public class AdaptHiveGenericParquetReaders extends AdaptHiveBaseParquetReaders<
     private final StructType structType;
 
     RecordReader(List<Type> types, List<ParquetValueReader<?>> readers, StructType struct) {
-      super(types, readers);
+      super(readers);
       this.structType = struct;
     }
 

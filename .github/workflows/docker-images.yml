@@ -84,7 +84,7 @@ jobs:
       - name: Set Maven Build Properties
         if: ${{ matrix.hadoop == 'v2' }}
         run: |
-          echo "MVN_HADOOP=-Phadoop2" >> $GITHUB_ENV
+          echo "MVN_HADOOP=-Phadoop2,spark-3.5" >> $GITHUB_ENV
 
       - name: Build dist module with Maven
         run: ./mvnw clean package -pl 'dist' -am -e ${MVN_HADOOP} -DskipTests -B -ntp -Psupport-all-formats -Pno-extended-disk-storage -Pno-plugin-bin
