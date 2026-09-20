@@ -17,6 +17,18 @@
 # limitations under the License.
 #
 
+get_java_major_version() {
+    local version=$(java -version 2>&1 | head -1 | cut -d'"' -f2)
+    if [[ "$version" == 1.* ]]; then
+        # JDK 8- 1.8.0_xxx → 8
+        echo "$version" | cut -d'.' -f2
+    else
+        # JDK 9+：11.0.x → 11, 17.0.x → 17
+        echo "$version" | cut -d'.' -f1
+    fi
+}
+
+JAVA_MAJOR=$(get_java_major_version)
 
 CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 AMORO_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"

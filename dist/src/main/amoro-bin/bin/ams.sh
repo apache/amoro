@@ -43,6 +43,11 @@ JAVA_OPTS="-server -XX:+UseG1GC -XX:MaxGCPauseMillis=200 \
 --add-opens=java.base/sun.util.calendar=ALL-UNNAMED \
 "
 
+# add krb5 module when jdk > 17
+if [ "$JAVA_MAJOR" -ge 17 ] 2>/dev/null; then
+    JAVA_OPTS="$JAVA_OPTS --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED"
+fi
+
 if [ -n "$JMX_REMOTE_PORT_CONFIG" ];then
   JAVA_OPTS="${JAVA_OPTS} -Dcom.sun.management.jmxremote.port=${JMX_REMOTE_PORT_CONFIG} \
   -Dcom.sun.management.jmxremote \
