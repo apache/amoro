@@ -73,12 +73,12 @@ import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.DateTimeUtil;
+import org.apache.iceberg.util.LocationUtil;
 import org.apache.iceberg.util.SerializableFunction;
 import org.apache.iceberg.util.SnapshotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.Instant;
@@ -442,7 +442,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   private int clearInternalTableContentsFiles(
       long lastTime, Set<String> exclude, MaintainerMetrics metrics) {
-    String dataLocation = table.location() + File.separator + DATA_FOLDER_NAME;
+    String dataLocation =
+        String.format("%s/%s", LocationUtil.stripTrailingSlash(table.location()), DATA_FOLDER_NAME);
     int expected = 0, deleted = 0;
 
     AuthenticatedFileIO io = fileIO();
@@ -492,7 +493,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
         "Exclude metadata files with name pattern {} for table {}",
         excludeFileNameRegex,
         table.name());
-    String metadataLocation = table.location() + File.separator + METADATA_FOLDER_NAME;
+    String metadataLocation =
+        String.format(
+            "%s/%s", LocationUtil.stripTrailingSlash(table.location()), METADATA_FOLDER_NAME);
     LOG.info("start orphan files clean in {}", metadataLocation);
 
     AuthenticatedFileIO io = fileIO();
