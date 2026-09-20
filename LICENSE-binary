@@ -211,14 +211,21 @@ org.apache.arrow:arrow-*
 org.apache.avro:avro-*
 org.apache.commons:commons-*
 org.apache.curator:curator-*
+org.apache.datasketches:datasketches-*
 org.apache.flink:flink-*
 org.apache.hadoop:hadoop-*
 org.apache.hive:hive-*
+org.apache.hive.shims:hive-shims-*
 org.apache.iceberg:iceberg-*
+org.apache.kerby:kerb-*
 org.apache.kerby:kerby-*
+org.apache.kerby:token-provider
 org.apache.logging.log4j:log4j-*
+org.apache.orc:orc-*
 org.apache.paimon:paimon-*
+org.apache.parquet:parquet-*
 org.apache.spark:spark-*
+org.apache.xbean:xbean-asm9-shaded
 org.apache.derby:derby
 org.apache.httpcomponents:httpclient
 org.apache.httpcomponents:httpcore
@@ -295,10 +302,21 @@ net.bytebuddy:byte-buddy-agent
 net.sf.jpam
 net.sf.opencsv:opencsv
 org.apiguardian:apiguardian-api
+org.casbin:jcasbin
+org.datanucleus:datanucleus-api-jdo
 org.datanucleus:datanucleus-core
+org.datanucleus:datanucleus-rdbms
+org.datanucleus:javax.jdo
 org.eclipse.jetty:jetty-*
-org.glassfish.jersey.containers:jersey-*
+org.eclipse.jetty.websocket:websocket-*
 org.json4s:json4s-*
+org.webjars:swagger-ui
+com.github.jsqlparser:jsqlparser
+dev.failsafe:failsafe
+io.github.aviatorscript:aviator
+io.vertx:vertx-*
+software.amazon.s3.analyticsaccelerator:analyticsaccelerator-s3
+tools.profiler:async-profiler
 software.amazon.eventstream:eventstream
 software.amazon.awssdk:annotations
 software.amazon.awssdk:apache-client
@@ -327,6 +345,7 @@ software.amazon.awssdk:profiles
 software.amazon.awssdk:protocol-core
 software.amazon.awssdk:regions
 software.amazon.awssdk:s3
+software.amazon.awssdk:s3-transfer-manager
 software.amazon.awssdk:sdk-core
 software.amazon.awssdk:sts
 software.amazon.awssdk:third-party-jackson-core
@@ -359,7 +378,8 @@ javolution:javolution
 org.antlr:antlr-runtime
 org.antlr:antlr4
 org.antlr:antlr4-runtime
-org.codehaus.janino:commons-compile
+org.antlr:ST4
+org.codehaus.janino:commons-compiler
 org.codehaus.janino:janino
 org.codehaus.woodstox:stax2-api
 org.javassist:javassist
@@ -379,6 +399,7 @@ BSD 3-Clause License
 --------------------
 com.esotericsoftware:kryo
 com.esotericsoftware:kryo-shaded
+com.esotericsoftware.kryo:kryo
 com.google.protobuf:protobuf-java
 org.abego.treelayout:org.abego.treelayout.core
 org.fusesource.leveldbjni:leveldbjni-all
@@ -409,6 +430,9 @@ org.glassfish.hk2:hk2-*
 org.glassfish.hk2:osgi-resource-locator
 org.glassfish.hk2.external:aopalliance-repackaged
 org.glassfish.hk2.external:jakarta.inject
+org.glassfish.jersey.containers:jersey-*
+org.glassfish.jersey.core:jersey-*
+org.glassfish.jersey.inject:jersey-hk2
 
 MIT License
 -----------
@@ -417,6 +441,17 @@ org.slf4j:slf4j-api
 net.razorvine:pickle
 org.checkerframework:checker-qual
 org.codehaus.mojo:animal-sniffer-annotations
+com.github.pagehelper:pagehelper
+
+Common Development and Distribution License (CDDL) 1.0
+------------------------------------------------------
+javax.activation:activation
+javax.annotation:javax.annotation-api
+javax.servlet:javax.servlet-api
+
+Common Development and Distribution License (CDDL) 1.1
+------------------------------------------------------
+org.glassfish:javax.json
 
 The Go license
 --------------
