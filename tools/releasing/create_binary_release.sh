@@ -83,4 +83,3 @@ make_binary_release() {
 }
 
 make_binary_release "hadoop3"
-make_binary_release "hadoop2"

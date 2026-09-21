@@ -56,7 +56,7 @@ function check_diff() {
     fi
 }
 
-HADOOP_SPARK_PROFILES=('hadoop2,spark-3.5' 'spark-3.5')
+HADOOP_SPARK_PROFILES=('spark-3.5')
 for HADOOP_SPARK_PROFILE in "${HADOOP_SPARK_PROFILES[@]}";
 do
   HADOOP_MAJOR_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.version -P"$HADOOP_SPARK_PROFILE" 2>/dev/null \
