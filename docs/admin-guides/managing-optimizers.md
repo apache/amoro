@@ -290,7 +290,7 @@ The optimizer group supports the following properties:
 | cache-timeout                  | All            | No       | 10min                                                                                 | Timeout in optimizer cache.                                                                                                                                                                                                                                                                                                                                                                                      |
 | min-parallelism                | All            | No       | 0                                                                                     | Deprecated since 0.9.0 in favor of `dynamic-allocation.min-parallelism`; still honored as a fallback. The minimum total parallelism (CPU cores) that the optimizer group should maintain. When the total cores of running optimizers fall below this value, `OptimizerGroupKeeper` will automatically scale out new optimizers. Set to `0` to disable auto-scaling. Note: The behavior of the auto-scaling mechanism is controlled by the AMS-level configurations `optimizer-group.min-parallelism-check-interval` and `optimizer-group.max-keeping-attempts`. For groups with dynamic allocation enabled, the floor is maintained by the dynamic allocation scale keeper instead. |
 | shutdown-timeout-ms            | All            | No       | 600000(10min)                                                                         | Graceful shutdown timeout in milliseconds. On shutdown the optimizer waits up to this long for in-progress tasks to complete before force-interrupting them. For Kubernetes optimizers, the pod's `terminationGracePeriodSeconds` is derived from this value plus a 30s buffer. For Flink optimizers, the effective wait is additionally capped below `task.cancellation.timeout`.                               |
-| dynamic-allocation.enabled     | All            | No       | false                                                                                 | Whether to enable dynamic resource allocation (AIP-5) for this group: the group then grows its optimizer count automatically in response to optimizing demand, bounded by `dynamic-allocation.max-parallelism`. Not supported on externally-registered optimizers. Manual optimizer operations (scale-out/release via the dashboard) are not recommended on groups with dynamic allocation enabled.              |
+| dynamic-allocation.enabled     | All            | No       | false                                                                                 | Whether to enable dynamic resource allocation for this group: the group then grows its optimizer count automatically in response to optimizing demand, bounded by `dynamic-allocation.max-parallelism`. Not supported on externally-registered optimizers. Manual optimizer operations (scale-out/release via the dashboard) are not recommended on groups with dynamic allocation enabled.              |
 | dynamic-allocation.min-parallelism | All        | No       | 0                                                                                     | Lower bound on the group's total optimizer threads under dynamic allocation. Supersedes the deprecated flat `min-parallelism`.                                                                                                                                                                                                                                                                                   |
 | dynamic-allocation.max-parallelism | All        | Yes (when enabled) | N/A                                                                         | Upper bound on the group's total optimizer threads under dynamic allocation; must not exceed 1024. Also configure Kubernetes `ResourceQuota`/`LimitRange` as the authoritative cluster-side limit.                                                                                                                                                                                                               |
 | dynamic-allocation.executor-parallelism | All   | No       | 1                                                                                     | Threads per optimizer instance created by dynamic allocation (the scaling unit, like Spark's `spark.executor.cores`). The floor and the cap must be reachable in units of this size. For Kubernetes groups a value of 4–8 is recommended so per-pod JVM overhead is shared across threads.                                                                                                                        |
@@ -310,6 +310,34 @@ To better utilize the resources of Flink Optimizer, it is recommended to add the
 * Set `flink-conf.taskmanager.memory.network.min` to `32mb` as there is no need for communication between operators in Flink Optimizer.
 * When using `shutdown-timeout-ms` with a Flink Optimizer, also raise `flink-conf.task.cancellation.timeout` (default 180000) accordingly — the graceful drain on job cancellation is capped below Flink's cancellation watchdog, which otherwise fails the whole TaskManager.
 {{< /hint >}}
+
+### Dynamic resource allocation
+
+Dynamic resource allocation (DRA) lets a group grow and shrink its optimizer count automatically based on optimizing demand, instead of running a fixed number of optimizers. Enable it by setting `dynamic-allocation.enabled` to `true` on the group; once enabled, `dynamic-allocation.min-parallelism` and `dynamic-allocation.max-parallelism` take over from the deprecated flat `min-parallelism`.
+
+**Scale-up**: when optimizing demand (queued tasks) persists for `dynamic-allocation.scheduler-backlog-timeout`, the group scales out for the first time. While demand keeps persisting, it scales out again every `dynamic-allocation.sustained-backlog-timeout`, up to `dynamic-allocation.max-parallelism`.
+
+**Scale-down**: an optimizer that has been idle for `dynamic-allocation.executor-idle-timeout` becomes a scale-down candidate. At most one optimizer is removed per evaluation round, and only while the group has no scale-up demand, with at least `dynamic-allocation.scale-down-cooldown` between removals. A scaled-down optimizer is drained gracefully — it stops receiving new tasks and is removed once its in-flight tasks finish; if draining exceeds `dynamic-allocation.drain-timeout`, it is force-removed and its remaining tasks are re-executed on other optimizers.
+
+{{< hint info >}}
+* DRA is not supported for externally-registered optimizers.
+* Avoid manual scale-out/release from the dashboard on a group with DRA enabled — it fights with the auto scaler.
+* `dynamic-allocation.min-parallelism` and `dynamic-allocation.max-parallelism` must both be reachable as multiples of `dynamic-allocation.executor-parallelism`, the number of threads added or removed per scaling step.
+{{< /hint >}}
+
+An example enabling DRA on a Kubernetes optimizer group, entered in the group's `properties`:
+
+```yaml
+dynamic-allocation.enabled: true                          # Turn on dynamic resource allocation
+dynamic-allocation.min-parallelism: 8                      # Keep at least 1 optimizer (executor-parallelism=8) running
+dynamic-allocation.max-parallelism: 64                     # Scale out to at most 8 optimizers
+dynamic-allocation.executor-parallelism: 8                 # Threads per optimizer pod; 4-8 is recommended on Kubernetes
+dynamic-allocation.scheduler-backlog-timeout: 1min          # Wait 1 min of sustained backlog before the first scale-out
+dynamic-allocation.sustained-backlog-timeout: 30s           # Re-evaluate and scale out every 30s while backlog persists
+dynamic-allocation.executor-idle-timeout: 10min             # Consider an optimizer idle after 10 min without tasks
+dynamic-allocation.scale-down-cooldown: 1min                 # Wait at least 1 min between scale-down removals
+dynamic-allocation.drain-timeout: 15min                      # Force-remove a draining optimizer after 15 min
+```
 
 ### Edit optimizer group
 
