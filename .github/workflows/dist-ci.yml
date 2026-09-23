@@ -16,32 +16,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      changed: ${{ steps.filter.outputs.changed }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - id: filter
-        name: Detect distribution changes
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
-            echo "changed=true" >> "${GITHUB_OUTPUT}"
-          elif bash dev/ci/has-changes.sh \
-            "${{ github.event.pull_request.base.sha }}" \
-            "${{ github.event.pull_request.head.sha }}" \
-            '^dist/|^amoro-(ams|common|metrics|optimizer|web)/|^amoro-format-|^pom\.xml$|^tools/maven/|^dev/ci/|^\.github/workflows/dist-ci\.yml$'; then
-            echo "changed=true" >> "${GITHUB_OUTPUT}"
-          else
-            echo "changed=false" >> "${GITHUB_OUTPUT}"
-          fi
-
   build:
-    needs: changes
-    if: needs.changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
     name: Dist / Spark 3.5 / Hadoop 3 / JDK 17
     steps:
@@ -83,13 +58,10 @@ jobs:
   gate:
     name: CI / Dist
     if: always()
-    needs:
-      - changes
-      - build
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Check results
         shell: bash
         run: |
-          [[ "${{ needs.changes.result }}" == "success" ]]
-          [[ "${{ needs.build.result }}" == "success" || "${{ needs.build.result }}" == "skipped" ]]
+          [[ "${{ needs.build.result }}" == "success" ]]
