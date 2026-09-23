@@ -1,4 +1,4 @@
-name: Trino Mixed Format Connector
+name: Site Validation
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,7 +25,7 @@ jobs:
         with:
           fetch-depth: 0
       - id: filter
-        name: Detect Trino connector changes
+        name: Detect site changes
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
@@ -33,7 +33,7 @@ jobs:
           elif bash dev/ci/has-changes.sh \
             "${{ github.event.pull_request.base.sha }}" \
             "${{ github.event.pull_request.head.sha }}" \
-            '^amoro-common/|^amoro-format-iceberg/|^amoro-format-mixed/amoro-mixed-(hive|trino)/|^pom\.xml$|^tools/maven/|^dev/ci/|^\.github/workflows/trino-ci\.yml$'; then
+            '^site/|^docs/|^dev/ci/|^\.github/workflows/site-ci\.yml$'; then
             echo "changed=true" >> "${GITHUB_OUTPUT}"
           else
             echo "changed=false" >> "${GITHUB_OUTPUT}"
@@ -43,34 +43,19 @@ jobs:
     needs: changes
     if: needs.changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - hadoop: '2'
-            profiles: hadoop2,java17,format-mixed-format-trino,build-mixed-format-trino
-          - hadoop: '3'
-            profiles: java17,format-mixed-format-trino,build-mixed-format-trino
-    name: Trino 406 / Hadoop ${{ matrix.hadoop }} / JDK 17
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: peaceiris/actions-hugo@v2
         with:
-          java-version: '17'
-          distribution: temurin
-          cache: maven
-      - name: Verify Trino mixed-format connector
-        run: >-
-          ./mvnw -B -ntp verify
-          -pl amoro-format-mixed/amoro-mixed-trino
-          -am -P${{ matrix.profiles }}
-      - name: Upload Trino coverage
-        uses: codecov/codecov-action@v5
-        with:
-          flags: trino
+          hugo-version: latest
+          extended: true
+      - name: Build project site
+        run: hugo --source site/amoro-site --minify
+      - name: Build documentation site
+        run: hugo --source site/amoro-docs --minify
 
   gate:
-    name: CI / Trino Mixed Format Connector
+    name: CI / Site Validation
     if: always()
     needs:
       - changes
