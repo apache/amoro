@@ -19,9 +19,12 @@
 package org.apache.amoro.server.scheduler.inline;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.config.OptimizingConfig;
 import org.apache.amoro.config.TableConfiguration;
+import org.apache.amoro.formats.iceberg.IcebergMaintenanceCompatibility;
+import org.apache.amoro.formats.iceberg.IcebergMaintenanceCompatibility.UnsupportedTableException;
 import org.apache.amoro.optimizing.evaluation.MetadataBasedEvaluationEvent;
 import org.apache.amoro.optimizing.plan.AbstractOptimizingEvaluator;
 import org.apache.amoro.process.ProcessStatus;
@@ -156,6 +159,24 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
       AmoroTable<?> table = loadTable(tableRuntime);
       defaultTableRuntime.refresh(table);
       MixedTable mixedTable = (MixedTable) table.originalTable();
+      if (table.format() == TableFormat.ICEBERG) {
+        try {
+          IcebergMaintenanceCompatibility.checkSupported(mixedTable.asUnkeyedTable());
+        } catch (UnsupportedTableException e) {
+          OptimizingProcess process = defaultTableRuntime.getOptimizingProcess();
+          if (process != null && process.getStatus() == ProcessStatus.RUNNING) {
+            process.close(e.getMessage());
+          }
+          defaultTableRuntime.suspendUnsupportedOptimizing();
+          defaultTableRuntime.setLatestEvaluatedNeedOptimizing(false);
+          logger.warn("Skipping automatic optimizing: {}", e.getMessage());
+          OptimizingConfig config = defaultTableRuntime.getOptimizingConfig();
+          if (!config.isEnabled() && config.isTableSummaryEnabled()) {
+            tryEvaluatingPendingInput(defaultTableRuntime, mixedTable);
+          }
+          return;
+        }
+      }
       boolean snapshotChanged =
           (mixedTable.isKeyedTable()
                   && (lastOptimizedSnapshotId != defaultTableRuntime.getCurrentSnapshotId()

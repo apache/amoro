@@ -24,6 +24,7 @@ import static org.apache.amoro.hive.op.UpdateHiveFiles.SYNC_DATA_TO_HIVE;
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.data.FileNameRules;
 import org.apache.amoro.exception.OptimizingCommitException;
+import org.apache.amoro.formats.iceberg.IcebergMaintenanceCompatibility;
 import org.apache.amoro.hive.HMSClientPool;
 import org.apache.amoro.hive.table.SupportHive;
 import org.apache.amoro.hive.utils.HivePartitionUtil;
@@ -250,7 +251,8 @@ public class UnKeyedTableCommit {
               }
             });
     try {
-      Transaction transaction = table.asUnkeyedTable().newTransaction();
+      Transaction transaction =
+          IcebergMaintenanceCompatibility.forUpdate(table.asUnkeyedTable()).newTransaction();
       if (removedDeleteFiles.isEmpty() && !addedDeleteFiles.isEmpty()) {
         /* In order to avoid the validation in
         {@link org.apache.iceberg.BaseRewriteFiles#validateReplacedAndAddedFiles} which will throw

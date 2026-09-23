@@ -21,12 +21,15 @@ package org.apache.amoro.server.optimizing;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.exception.OptimizingClosedException;
 import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.exception.TaskNotFoundException;
+import org.apache.amoro.formats.iceberg.IcebergMaintenanceCompatibility;
+import org.apache.amoro.formats.iceberg.IcebergMaintenanceCompatibility.UnsupportedTableException;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
@@ -64,6 +67,7 @@ import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,6 +140,29 @@ public class OptimizingQueue extends PersistentBase {
       if (!tableRuntime.getOptimizingConfig().isEnabled()) {
         closeProcessIfRunning(process);
         return;
+      }
+
+      if (process != null && tableRuntime.getFormat() == TableFormat.ICEBERG) {
+        AmoroTable<?> table = null;
+        try {
+          table = catalogManager.loadTable(tableRuntime.getTableIdentifier().getIdentifier());
+        } catch (Exception e) {
+          // Catalog availability must not prevent recovery. The writer checks again at commit.
+          LOG.warn(
+              "Cannot check table version during recovery of {}; continuing recovery",
+              tableRuntime.getTableIdentifier(),
+              e);
+        }
+        if (table != null) {
+          try {
+            IcebergMaintenanceCompatibility.checkSupported((Table) table.originalTable());
+          } catch (UnsupportedTableException e) {
+            process.close(e.getMessage());
+            tableRuntime.suspendUnsupportedOptimizing();
+            LOG.warn("Not resuming automatic optimizing: {}", e.getMessage());
+            return;
+          }
+        }
       }
 
       tableRuntime.resetTaskQuotas(
@@ -382,6 +409,9 @@ public class OptimizingQueue extends PersistentBase {
     try {
       ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
       AmoroTable<?> table = catalogManager.loadTable(identifier.getIdentifier());
+      if (table.format() == TableFormat.ICEBERG) {
+        IcebergMaintenanceCompatibility.checkSupported((Table) table.originalTable());
+      }
       AbstractOptimizingPlanner planner =
           IcebergTableUtil.createOptimizingPlanner(
               tableRuntime.refresh(table),
@@ -394,6 +424,10 @@ public class OptimizingQueue extends PersistentBase {
         tableRuntime.completeEmptyProcess();
         return null;
       }
+    } catch (UnsupportedTableException e) {
+      tableRuntime.suspendUnsupportedOptimizing();
+      LOG.warn("Skipping automatic optimizing: {}", e.getMessage());
+      return null;
     } catch (Throwable throwable) {
       tableRuntime.planFailed();
       LOG.error("Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
@@ -654,7 +688,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     @Override
-    public void close(boolean needCommit) {
+    public void close(boolean needCommit, String reason) {
       lock.lock();
       try {
         if (this.status != ProcessStatus.RUNNING) {
@@ -663,6 +697,9 @@ public class OptimizingQueue extends PersistentBase {
         if (tableRuntime.isAllowPartialCommit() && needCommit) {
           tableRuntime.beginCommitting();
         } else {
+          if (reason != null) {
+            this.failedReason = reason;
+          }
           this.status = ProcessStatus.CLOSED;
           this.endTime = System.currentTimeMillis();
           persistAndSetCompleted(false);

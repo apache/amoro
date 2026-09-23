@@ -45,7 +45,8 @@ export default defineComponent({
     const echart = ref()
 
     const echartsInit = () => {
-      echartsInst = echarts.init(echart.value)
+      // pass the 'v5' compatibility theme registered by echarts/theme/v5
+      echartsInst = echarts.init(echart.value, 'v5')
       echartsInst.setOption({
         ...options.value,
       })

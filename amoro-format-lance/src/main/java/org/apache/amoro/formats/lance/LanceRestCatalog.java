@@ -21,6 +21,7 @@ package org.apache.amoro.formats.lance;
 import org.apache.amoro.AlreadyExistsException;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.util.Preconditions;
+import org.apache.commons.lang3.StringUtils;
 import org.lance.namespace.LanceNamespace;
 import org.lance.namespace.errors.NamespaceAlreadyExistsException;
 import org.lance.namespace.errors.NamespaceNotFoundException;
@@ -28,13 +29,17 @@ import org.lance.namespace.model.CreateNamespaceRequest;
 import org.lance.namespace.model.DropNamespaceRequest;
 import org.lance.namespace.model.ListNamespacesRequest;
 import org.lance.namespace.model.ListNamespacesResponse;
+import org.lance.namespace.model.ListTablesRequest;
+import org.lance.namespace.model.ListTablesResponse;
 import org.lance.namespace.model.NamespaceExistsRequest;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * REST catalog implementation for Lance.
@@ -95,14 +100,57 @@ public class LanceRestCatalog extends AbstractLanceCatalog {
     return id;
   }
 
+  /**
+   * Lists the tables of a database. The REST service pages results via pageToken, so follow the
+   * token until it is empty to avoid silently missing tables on large catalogs.
+   */
+  @Override
+  public List<String> listTables(String database) {
+    validateDatabase(database);
+
+    Set<String> tables = new LinkedHashSet<>();
+    String pageToken = null;
+    do {
+      ListTablesRequest request = new ListTablesRequest().id(tableIdForListTables(database));
+      if (pageToken != null) {
+        request.pageToken(pageToken);
+      }
+      ListTablesResponse response = namespace.listTables(request);
+      if (response == null) {
+        break;
+      }
+      if (response.getTables() != null) {
+        tables.addAll(response.getTables());
+      }
+
+      pageToken = response.getPageToken();
+    } while (StringUtils.isNotEmpty(pageToken));
+
+    return new ArrayList<>(tables);
+  }
+
+  /** Lists the schemas under the catalog, following the REST pageToken until it is empty. */
   @Override
   public List<String> listDatabases() {
-    ListNamespacesRequest request = new ListNamespacesRequest().id(catalogPrefix);
-    ListNamespacesResponse response = namespace.listNamespaces(request);
-    if (response == null) {
-      return Collections.emptyList();
-    }
-    return new ArrayList<>(response.getNamespaces());
+    Set<String> namespaces = new LinkedHashSet<>();
+    String pageToken = null;
+    do {
+      ListNamespacesRequest request = new ListNamespacesRequest().id(catalogPrefix);
+      if (pageToken != null) {
+        request.pageToken(pageToken);
+      }
+      ListNamespacesResponse response = namespace.listNamespaces(request);
+      if (response == null) {
+        break;
+      }
+      if (response.getNamespaces() != null) {
+        namespaces.addAll(response.getNamespaces());
+      }
+
+      pageToken = response.getPageToken();
+    } while (StringUtils.isNotEmpty(pageToken));
+
+    return new ArrayList<>(namespaces);
   }
 
   @Override

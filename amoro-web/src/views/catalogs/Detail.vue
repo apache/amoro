@@ -436,20 +436,6 @@ watch(
       formState.tableFormatList = hadLance
         ? formats.filter(format => format !== tableFormatMap.LANCE)
         : [tableFormatMap.LANCE]
-      return
-    }
-
-    // REST + Lance needs no client-side storage/auth; drop them on selection .
-    if (isRest && hasLance) {
-      Object.keys(formState.storageConfig).forEach((key) => {
-        delete formState.storageConfig[key]
-      })
-      Object.keys(formState.authConfig).forEach((key) => {
-        delete formState.authConfig[key]
-      })
-    }
-    else if (isRest && !formState.storageConfig['storage.type']) {
-      formState.storageConfig['storage.type'] = 'S3'
     }
   },
 )
