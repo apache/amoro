@@ -309,6 +309,7 @@ org.datanucleus:datanucleus-rdbms
 org.datanucleus:javax.jdo
 org.eclipse.jetty:jetty-*
 org.eclipse.jetty.websocket:websocket-*
+org.javassist:javassist
 org.json4s:json4s-*
 org.webjars:swagger-ui
 com.github.jsqlparser:jsqlparser
@@ -383,7 +384,6 @@ org.antlr:ST4
 org.codehaus.janino:commons-compiler
 org.codehaus.janino:janino
 org.codehaus.woodstox:stax2-api
-org.javassist:javassist
 org.jboss.logging:jboss-logging
 org.jboss.threads:jboss-threads
 org.jboss.xnio:xnio-api
@@ -449,9 +449,11 @@ Common Development and Distribution License (CDDL) 1.0
 javax.activation:activation
 javax.annotation:javax.annotation-api
 javax.servlet:javax.servlet-api
+javax.transaction:jta
 
 Common Development and Distribution License (CDDL) 1.1
 ------------------------------------------------------
+javax.xml.bind:jaxb-api
 org.glassfish:javax.json
 
 The Go license
