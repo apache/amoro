@@ -1,0 +1,67 @@
+name: Dist
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - "master"
+      - "[0-9]+.**"
+  pull_request:
+    branches:
+      - "master"
+      - "[0-9]+.**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Dist / Spark 3.5 / Hadoop 3 / JDK 11
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: temurin
+          cache: maven
+      - name: Verify distribution
+        run: ./mvnw -B -ntp verify -pl dist -am -Pjava11,spark-3.5
+      - name: Verify archive contents
+        shell: bash
+        run: |
+          archive=$(find dist/target -maxdepth 1 -name '*-bin.tar.gz' -print -quit)
+          test -n "${archive}"
+          extract_dir="${RUNNER_TEMP}/amoro-dist"
+          mkdir -p "${extract_dir}"
+          tar -xzf "${archive}" -C "${extract_dir}"
+
+          test -n "$(find "${extract_dir}" -name 'amoro-ams-*.jar' -print -quit)"
+          test -n "$(find "${extract_dir}" -path '*/plugin/optimizer/flink/optimizer-job.jar' -print -quit)"
+          test -n "$(find "${extract_dir}" -path '*/plugin/optimizer/spark/optimizer-job.jar' -print -quit)"
+
+          while IFS= read -r script; do
+            bash -n "${script}"
+          done < <(find "${extract_dir}" -path '*/bin/*.sh' -type f)
+
+          web_jar=$(find "${extract_dir}" -name 'amoro-web-*.jar' -print -quit)
+          test -n "${web_jar}"
+          jar tf "${web_jar}" > "${RUNNER_TEMP}/amoro-web-contents.txt"
+          grep -q '^static/' "${RUNNER_TEMP}/amoro-web-contents.txt"
+
+          if find "${extract_dir}" -iname '*flink-shaded-hadoop-2-uber*' -print -quit | grep -q .; then
+            echo "Hadoop 2 shaded runtime must not be packaged in the Hadoop 3 distribution" >&2
+            exit 1
+          fi
+
+  gate:
+    name: CI / Dist
+    if: always()
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        shell: bash
+        run: |
+          [[ "${{ needs.build.result }}" == "success" ]]

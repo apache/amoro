@@ -1,4 +1,4 @@
-name: Trino Mixed Format Connector
+name: Maven Static Checks
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,7 +25,7 @@ jobs:
         with:
           fetch-depth: 0
       - id: filter
-        name: Detect Trino connector changes
+        name: Detect Maven source changes
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
@@ -33,52 +33,37 @@ jobs:
           elif bash dev/ci/has-changes.sh \
             "${{ github.event.pull_request.base.sha }}" \
             "${{ github.event.pull_request.head.sha }}" \
-            '^amoro-common/|^amoro-format-iceberg/|^amoro-format-mixed/amoro-mixed-(hive|trino)/|^pom\.xml$|^tools/maven/|^dev/ci/|^\.github/workflows/trino-ci\.yml$'; then
+            '(^|/)pom\.xml$|\.java$|^tools/maven/|^dev/ci/|^\.github/workflows/'; then
             echo "changed=true" >> "${GITHUB_OUTPUT}"
           else
             echo "changed=false" >> "${GITHUB_OUTPUT}"
           fi
 
-  build:
+  validate:
     needs: changes
     if: needs.changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - hadoop: '2'
-            profiles: hadoop2,java17,format-mixed-format-trino,build-mixed-format-trino
-          - hadoop: '3'
-            profiles: java17,format-mixed-format-trino,build-mixed-format-trino
-    name: Trino 406 / Hadoop ${{ matrix.hadoop }} / JDK 17
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '11'
           distribution: temurin
           cache: maven
-      - name: Verify Trino mixed-format connector
-        run: >-
-          ./mvnw -B -ntp verify
-          -pl amoro-format-mixed/amoro-mixed-trino
-          -am -P${{ matrix.profiles }}
-      - name: Upload Trino coverage
-        uses: codecov/codecov-action@v5
-        with:
-          flags: trino
+      - name: Validate Maven project
+        run: ./mvnw -B -ntp validate -Pjava11
 
   gate:
-    name: CI / Trino Mixed Format Connector
+    name: CI / Maven Static Checks
     if: always()
     needs:
       - changes
-      - build
+      - validate
     runs-on: ubuntu-latest
     steps:
       - name: Check results
         shell: bash
         run: |
           [[ "${{ needs.changes.result }}" == "success" ]]
-          [[ "${{ needs.build.result }}" == "success" || "${{ needs.build.result }}" == "skipped" ]]
+          [[ "${{ needs.validate.result }}" == "success" || "${{ needs.validate.result }}" == "skipped" ]]
