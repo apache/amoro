@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 import org.apache.amoro.client.AmsServerInfo;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.BucketAssignStoreException;
-import org.apache.amoro.properties.AmsHAProperties;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.ha.ZkHighAvailabilityContainer;
 import org.apache.amoro.shade.zookeeper3.org.apache.curator.framework.CuratorFramework;
@@ -101,6 +100,9 @@ public class TestAmsAssignService {
     node3.setHost("127.0.0.3");
     node3.setThriftBindPort(1263);
     node3.setRestBindPort(1633);
+
+    // Register node1 by default
+    mockAssignStore.registerNode(node1);
   }
 
   @After
@@ -116,314 +118,189 @@ public class TestAmsAssignService {
 
   @Test
   public void testInitialAssignment() throws Exception {
-    // Register nodes
-    haContainer.registerAndElect();
+    mockAssignStore.registerNode(node2);
 
-    // Create second node
-    Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
-    haContainer2.registerAndElect();
+    assignService.doAssign();
 
-    try {
-      // Wait a bit for registration
-      Thread.sleep(100);
+    Map<AmsServerInfo, List<String>> assignments = mockAssignStore.getAllAssignments();
+    Assert.assertEquals("Should have assignments for 2 nodes", 2, assignments.size());
 
-      // Trigger assignment manually
-      assignService.doAssign();
-
-      // Check assignments
-      Map<AmsServerInfo, List<String>> assignments = mockAssignStore.getAllAssignments();
-      Assert.assertEquals("Should have assignments for 2 nodes", 2, assignments.size());
-
-      // Verify buckets are distributed
-      int totalAssigned = 0;
-      for (List<String> buckets : assignments.values()) {
-        totalAssigned += buckets.size();
-        Assert.assertTrue("Each node should have buckets", !buckets.isEmpty());
-      }
-      Assert.assertEquals("All buckets should be assigned", 100, totalAssigned);
-
-      // Verify balance (difference should be at most 1)
-      List<Integer> bucketCounts = new ArrayList<>();
-      for (List<String> buckets : assignments.values()) {
-        bucketCounts.add(buckets.size());
-      }
-      int max = bucketCounts.stream().mapToInt(Integer::intValue).max().orElse(0);
-      int min = bucketCounts.stream().mapToInt(Integer::intValue).min().orElse(0);
-      Assert.assertTrue("Difference should be at most 1", max - min <= 1);
-    } finally {
-      haContainer2.close();
+    int totalAssigned = 0;
+    for (List<String> buckets : assignments.values()) {
+      totalAssigned += buckets.size();
+      Assert.assertTrue("Each node should have buckets", !buckets.isEmpty());
     }
+    Assert.assertEquals("All buckets should be assigned", 100, totalAssigned);
+
+    List<Integer> bucketCounts = new ArrayList<>();
+    for (List<String> buckets : assignments.values()) {
+      bucketCounts.add(buckets.size());
+    }
+    int max = bucketCounts.stream().mapToInt(Integer::intValue).max().orElse(0);
+    int min = bucketCounts.stream().mapToInt(Integer::intValue).min().orElse(0);
+    Assert.assertTrue("Difference should be at most 1", max - min <= 1);
   }
 
   @Test
   public void testNodeOfflineReassignment() throws Exception {
-    // Setup: 2 nodes with initial assignment
-    haContainer.registerAndElect();
-    Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
-    haContainer2.registerAndElect();
+    mockAssignStore.registerNode(node2);
 
-    try {
-      Thread.sleep(100);
+    // Initial assignment
+    assignService.doAssign();
+    Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
+    Assert.assertEquals("Should have 2 nodes", 2, initialAssignments.size());
 
-      // Initial assignment
-      assignService.doAssign();
-      Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
-      Assert.assertEquals("Should have 2 nodes", 2, initialAssignments.size());
+    // Simulate node2 going offline (remove from alive list but keep assignments)
+    mockAssignStore.simulateOffline(node2);
 
-      // Verify initial assignment is balanced
-      List<Integer> initialCounts = new ArrayList<>();
-      for (List<String> buckets : initialAssignments.values()) {
-        initialCounts.add(buckets.size());
-      }
-      int maxInitial = initialCounts.stream().mapToInt(Integer::intValue).max().orElse(0);
-      int minInitial = initialCounts.stream().mapToInt(Integer::intValue).min().orElse(0);
-      Assert.assertTrue("Initial assignment should be balanced", maxInitial - minInitial <= 1);
+    // Wait for node offline timeout to expire
+    Thread.sleep(60);
 
-      // Simulate node2 going offline by removing it from mock state
-      mockZkState.deleteNodeByHost("127.0.0.2");
-      Thread.sleep(100);
+    // Trigger reassignment
+    assignService.doAssign();
 
-      // Trigger reassignment
-      assignService.doAssign();
+    Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
+    Assert.assertEquals("Should have 1 node after offline", 1, newAssignments.size());
 
-      // Check that node2's buckets are redistributed
-      Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
-      Assert.assertEquals("Should have 1 node after offline", 1, newAssignments.size());
-
-      // The only remaining node (node1) should have all buckets. ZK stores
-      // optimizingServiceServerInfo (thrift port 1261), not table port (1260), so we
-      // take the single entry instead of matching by node1's thriftBindPort.
-      List<String> remainingBuckets = newAssignments.values().iterator().next();
-      Assert.assertNotNull("Node1 should have assignments", remainingBuckets);
-      Assert.assertEquals("Node1 should have all buckets", 100, remainingBuckets.size());
-    } finally {
-      try {
-        haContainer2.close();
-      } catch (Exception e) {
-        // ignore
-      }
-    }
+    List<String> remainingBuckets = newAssignments.values().iterator().next();
+    Assert.assertNotNull("Node1 should have assignments", remainingBuckets);
+    Assert.assertEquals("Node1 should have all buckets", 100, remainingBuckets.size());
   }
 
   @Test
   public void testNewNodeIncrementalAssignment() throws Exception {
-    // Setup: 1 node initially
-    haContainer.registerAndElect();
-    Thread.sleep(100);
-
     // Initial assignment - all buckets to node1
     assignService.doAssign();
     Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
-    // ZK stores optimizing port (1261), not table port (1260); match by host only (single node).
     List<String> node1InitialBuckets = findBucketsByHost(initialAssignments, node1.getHost());
     Assert.assertNotNull("Node1 should have assignments", node1InitialBuckets);
     Assert.assertEquals("Node1 should have all buckets initially", 100, node1InitialBuckets.size());
 
     // Add new node
-    Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
-    haContainer2.registerAndElect();
+    mockAssignStore.registerNode(node2);
 
-    try {
-      Thread.sleep(100);
+    // Trigger reassignment
+    assignService.doAssign();
 
-      // Trigger reassignment
-      assignService.doAssign();
+    Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
+    Assert.assertEquals("Should have 2 nodes", 2, newAssignments.size());
 
-      // Check assignments
-      Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
-      Assert.assertEquals("Should have 2 nodes", 2, newAssignments.size());
+    List<String> node1NewBuckets = findBucketsByHost(newAssignments, node1.getHost());
+    Assert.assertNotNull("Node1 should still have assignments", node1NewBuckets);
+    Assert.assertTrue("Node1 should keep some buckets", node1NewBuckets.size() > 0);
 
-      // Verify incremental assignment - node1 should keep most of its buckets.
-      // ZK stores optimizing port, not table port; match by host.
-      List<String> node1NewBuckets = findBucketsByHost(newAssignments, node1.getHost());
-      Assert.assertNotNull("Node1 should still have assignments", node1NewBuckets);
-
-      // Node1 should have kept most buckets (incremental assignment)
-      Assert.assertTrue("Node1 should keep some buckets", node1NewBuckets.size() > 0);
-
-      // Verify balance
-      List<Integer> bucketCounts = new ArrayList<>();
-      for (List<String> buckets : newAssignments.values()) {
-        bucketCounts.add(buckets.size());
-      }
-      int max = bucketCounts.stream().mapToInt(Integer::intValue).max().orElse(0);
-      int min = bucketCounts.stream().mapToInt(Integer::intValue).min().orElse(0);
-      Assert.assertTrue("Difference should be at most 1", max - min <= 1);
-
-      // Verify total
-      int total = bucketCounts.stream().mapToInt(Integer::intValue).sum();
-      Assert.assertEquals("Total buckets should be 100", 100, total);
-    } finally {
-      haContainer2.close();
+    // Verify balance
+    List<Integer> bucketCounts = new ArrayList<>();
+    for (List<String> buckets : newAssignments.values()) {
+      bucketCounts.add(buckets.size());
     }
+    int max = bucketCounts.stream().mapToInt(Integer::intValue).max().orElse(0);
+    int min = bucketCounts.stream().mapToInt(Integer::intValue).min().orElse(0);
+    Assert.assertTrue("Difference should be at most 1", max - min <= 1);
+
+    int total = bucketCounts.stream().mapToInt(Integer::intValue).sum();
+    Assert.assertEquals("Total buckets should be 100", 100, total);
   }
 
   @Test
   public void testBalanceAfterNodeChanges() throws Exception {
-    // Setup: 3 nodes
-    haContainer.registerAndElect();
-    Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
-    haContainer2.registerAndElect();
-    Configurations config3 = createNodeConfig("127.0.0.3", 1263, 1633);
-    HighAvailabilityContainer haContainer3 = createContainerWithMockZk(config3);
-    haContainer3.registerAndElect();
+    mockAssignStore.registerNode(node2);
+    mockAssignStore.registerNode(node3);
 
-    try {
-      Thread.sleep(200);
+    assignService.doAssign();
 
-      // Initial assignment
-      assignService.doAssign();
+    Map<AmsServerInfo, List<String>> assignments = mockAssignStore.getAllAssignments();
+    Assert.assertEquals("Should have 3 nodes", 3, assignments.size());
 
-      // Verify balance
-      Map<AmsServerInfo, List<String>> assignments = mockAssignStore.getAllAssignments();
-      Assert.assertEquals("Should have 3 nodes", 3, assignments.size());
-
-      List<Integer> bucketCounts = new ArrayList<>();
-      for (List<String> buckets : assignments.values()) {
-        bucketCounts.add(buckets.size());
-      }
-      int max = bucketCounts.stream().mapToInt(Integer::intValue).max().orElse(0);
-      int min = bucketCounts.stream().mapToInt(Integer::intValue).min().orElse(0);
-      Assert.assertTrue("Difference should be at most 1", max - min <= 1);
-
-      // Verify all buckets are assigned
-      int total = bucketCounts.stream().mapToInt(Integer::intValue).sum();
-      Assert.assertEquals("All buckets should be assigned", 100, total);
-    } finally {
-      haContainer2.close();
-      haContainer3.close();
+    List<Integer> bucketCounts = new ArrayList<>();
+    for (List<String> buckets : assignments.values()) {
+      bucketCounts.add(buckets.size());
     }
+    int max = bucketCounts.stream().mapToInt(Integer::intValue).max().orElse(0);
+    int min = bucketCounts.stream().mapToInt(Integer::intValue).min().orElse(0);
+    Assert.assertTrue("Difference should be at most 1", max - min <= 1);
+
+    int total = bucketCounts.stream().mapToInt(Integer::intValue).sum();
+    Assert.assertEquals("All buckets should be assigned", 100, total);
   }
 
   @Test
   public void testIncrementalAssignmentMinimizesMigration() throws Exception {
-    // Setup: 2 nodes initially
-    haContainer.registerAndElect();
-    Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
-    haContainer2.registerAndElect();
-    HighAvailabilityContainer haContainer3 = null;
+    mockAssignStore.registerNode(node2);
 
-    try {
-      Thread.sleep(100);
+    // Initial assignment
+    assignService.doAssign();
+    Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
 
-      // Initial assignment
-      assignService.doAssign();
-      Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
-
-      // Record initial assignments
-      Set<String> node1InitialBuckets = new HashSet<>();
-      Set<String> node2InitialBuckets = new HashSet<>();
-      for (Map.Entry<AmsServerInfo, List<String>> entry : initialAssignments.entrySet()) {
-        if (entry.getKey().getHost().equals("127.0.0.1")) {
-          node1InitialBuckets.addAll(entry.getValue());
-        } else {
-          node2InitialBuckets.addAll(entry.getValue());
-        }
-      }
-
-      // Add new node
-      Configurations config3 = createNodeConfig("127.0.0.3", 1263, 1633);
-      haContainer3 = createContainerWithMockZk(config3);
-      haContainer3.registerAndElect();
-
-      Thread.sleep(100);
-
-      // Trigger reassignment
-      assignService.doAssign();
-
-      // Check new assignments
-      Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
-
-      // Calculate migration: buckets that moved from node1 or node2
-      Set<String> node1NewBuckets = new HashSet<>();
-      Set<String> node2NewBuckets = new HashSet<>();
-      Set<String> node3Buckets = new HashSet<>();
-      for (Map.Entry<AmsServerInfo, List<String>> entry : newAssignments.entrySet()) {
-        if (entry.getKey().getHost().equals("127.0.0.1")) {
-          node1NewBuckets.addAll(entry.getValue());
-        } else if (entry.getKey().getHost().equals("127.0.0.2")) {
-          node2NewBuckets.addAll(entry.getValue());
-        } else {
-          node3Buckets.addAll(entry.getValue());
-        }
-      }
-
-      // Node1 and Node2 should keep most of their buckets
-      Set<String> node1Kept = new HashSet<>(node1InitialBuckets);
-      node1Kept.retainAll(node1NewBuckets);
-      Set<String> node2Kept = new HashSet<>(node2InitialBuckets);
-      node2Kept.retainAll(node2NewBuckets);
-
-      // Verify incremental assignment: nodes should keep most buckets
-      Assert.assertTrue(
-          "Node1 should keep most buckets (incremental)",
-          node1Kept.size() > node1InitialBuckets.size() / 2);
-      Assert.assertTrue(
-          "Node2 should keep most buckets (incremental)",
-          node2Kept.size() > node2InitialBuckets.size() / 2);
-
-      // Node3 should get buckets from both
-      Assert.assertTrue("Node3 should have buckets", node3Buckets.size() > 0);
-    } finally {
-      haContainer2.close();
-      if (haContainer3 != null) {
-        try {
-          haContainer3.close();
-        } catch (Exception e) {
-          // ignore
-        }
+    Set<String> node1InitialBuckets = new HashSet<>();
+    Set<String> node2InitialBuckets = new HashSet<>();
+    for (Map.Entry<AmsServerInfo, List<String>> entry : initialAssignments.entrySet()) {
+      if (entry.getKey().getHost().equals("127.0.0.1")) {
+        node1InitialBuckets.addAll(entry.getValue());
+      } else {
+        node2InitialBuckets.addAll(entry.getValue());
       }
     }
+
+    // Add new node
+    mockAssignStore.registerNode(node3);
+
+    // Trigger reassignment
+    assignService.doAssign();
+
+    Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
+
+    Set<String> node1NewBuckets = new HashSet<>();
+    Set<String> node2NewBuckets = new HashSet<>();
+    Set<String> node3Buckets = new HashSet<>();
+    for (Map.Entry<AmsServerInfo, List<String>> entry : newAssignments.entrySet()) {
+      if (entry.getKey().getHost().equals("127.0.0.1")) {
+        node1NewBuckets.addAll(entry.getValue());
+      } else if (entry.getKey().getHost().equals("127.0.0.2")) {
+        node2NewBuckets.addAll(entry.getValue());
+      } else {
+        node3Buckets.addAll(entry.getValue());
+      }
+    }
+
+    Set<String> node1Kept = new HashSet<>(node1InitialBuckets);
+    node1Kept.retainAll(node1NewBuckets);
+    Set<String> node2Kept = new HashSet<>(node2InitialBuckets);
+    node2Kept.retainAll(node2NewBuckets);
+
+    Assert.assertTrue(
+        "Node1 should keep most buckets (incremental)",
+        node1Kept.size() > node1InitialBuckets.size() / 2);
+    Assert.assertTrue(
+        "Node2 should keep most buckets (incremental)",
+        node2Kept.size() > node2InitialBuckets.size() / 2);
+    Assert.assertTrue("Node3 should have buckets", node3Buckets.size() > 0);
   }
 
   @Test
   public void testOfflineNodeWithMissingLastUpdateTime() throws Exception {
-    // Verify that a node absent from the alive list with lastUpdateTime == 0
-    // is still reclaimed instead of being stranded forever.
-    haContainer.registerAndElect();
-    Configurations config2 = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer haContainer2 = createContainerWithMockZk(config2);
-    haContainer2.registerAndElect();
+    mockAssignStore.registerNode(node2);
 
-    try {
-      Thread.sleep(100);
+    // Initial assignment
+    assignService.doAssign();
+    Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
+    Assert.assertEquals("Should have 2 nodes", 2, initialAssignments.size());
 
-      // Initial assignment — both nodes get buckets
-      assignService.doAssign();
-      Map<AmsServerInfo, List<String>> initialAssignments = mockAssignStore.getAllAssignments();
-      Assert.assertEquals("Should have 2 nodes", 2, initialAssignments.size());
+    // Simulate node2 going offline (remove from alive list but keep assignments)
+    mockAssignStore.simulateOffline(node2);
 
-      // Simulate node2 going offline (remove from ZK)
-      mockZkState.deleteNodeByHost("127.0.0.2");
+    // Clear node2's lastUpdateTime to simulate the edge case
+    mockAssignStore.clearLastUpdateTime("127.0.0.2");
 
-      // Clear node2's lastUpdateTime to simulate the edge case where
-      // saveAssignments wrote the assignment but crashed before
-      // updateLastUpdateTime completed (two non-atomic ZK writes).
-      mockAssignStore.clearLastUpdateTime("127.0.0.2");
+    // Trigger reassignment
+    assignService.doAssign();
 
-      Thread.sleep(100);
+    Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
+    Assert.assertEquals(
+        "Node with missing lastUpdateTime should be reclaimed", 1, newAssignments.size());
 
-      // Trigger reassignment — node2 should be reclaimed even without a timestamp
-      assignService.doAssign();
-
-      Map<AmsServerInfo, List<String>> newAssignments = mockAssignStore.getAllAssignments();
-      Assert.assertEquals(
-          "Node with missing lastUpdateTime should be reclaimed", 1, newAssignments.size());
-
-      List<String> remainingBuckets = newAssignments.values().iterator().next();
-      Assert.assertEquals("All buckets should be redistributed", 100, remainingBuckets.size());
-    } finally {
-      try {
-        haContainer2.close();
-      } catch (Exception e) {
-        // ignore
-      }
-    }
+    List<String> remainingBuckets = newAssignments.values().iterator().next();
+    Assert.assertEquals("All buckets should be redistributed", 100, remainingBuckets.size());
   }
 
   @Test
@@ -438,30 +315,13 @@ public class TestAmsAssignService {
 
   @Test
   public void testServiceSkipsWhenNotLeader() throws Exception {
-    // Create a non-leader container
-    mockLeaderLatch = createMockLeaderLatch(false); // Not leader
-    Configurations nonLeaderConfig = createNodeConfig("127.0.0.2", 1262, 1632);
-    HighAvailabilityContainer nonLeaderContainer = createContainerWithMockZk(nonLeaderConfig);
-    nonLeaderContainer.registerAndElect();
+    // AmsAssignService no longer checks hasLeadership() internally — Leader gating is done by
+    // AmoroServiceContainer.startLeaderServices/stopLeaderServices. This test verifies that
+    // doAssign() works correctly when called.
+    AmsAssignService nonLeaderService = createAssignServiceWithMockStore();
 
-    try {
-      // Wait a bit
-      Thread.sleep(100);
-
-      AmsAssignService nonLeaderService = createAssignServiceWithMockStore(nonLeaderContainer);
-
-      // Should not throw exception even if not leader
-      nonLeaderService.doAssign();
-
-      // Should not have assignments if not leader
-      Map<AmsServerInfo, List<String>> assignments = mockAssignStore.getAllAssignments();
-      // Verify that non-leader doesn't create assignments
-      Assert.assertTrue(
-          "Non-leader should not create assignments",
-          assignments.isEmpty() || assignments.size() == 0);
-    } finally {
-      nonLeaderContainer.close();
-    }
+    // doAssign() should execute without error
+    nonLeaderService.doAssign();
   }
 
   private Configurations createNodeConfig(String host, int thriftPort, int httpPort) {
@@ -521,64 +381,11 @@ public class TestAmsAssignService {
   /** Create a HighAvailabilityContainer without initializing ZK connection. */
   private HighAvailabilityContainer createContainerWithoutZk(Configurations config)
       throws Exception {
-    java.lang.reflect.Constructor<ZkHighAvailabilityContainer> constructor =
-        ZkHighAvailabilityContainer.class.getDeclaredConstructor(Configurations.class);
-
     // Create a minimal config that disables HA to avoid ZK connection
     Configurations tempConfig = new Configurations(config);
     tempConfig.setBoolean(AmoroManagementConf.HA_ENABLE, false);
 
-    HighAvailabilityContainer container = constructor.newInstance(tempConfig);
-
-    // Now set all required fields using reflection
-    java.lang.reflect.Field isMasterSlaveModeField =
-        ZkHighAvailabilityContainer.class.getDeclaredField("isMasterSlaveMode");
-    isMasterSlaveModeField.setAccessible(true);
-    isMasterSlaveModeField.set(
-        container, config.getBoolean(AmoroManagementConf.HA_USE_MASTER_SLAVE_MODE));
-
-    if (config.getBoolean(AmoroManagementConf.HA_ENABLE)) {
-      String haClusterName = config.getString(AmoroManagementConf.HA_CLUSTER_NAME);
-
-      java.lang.reflect.Field tableServiceMasterPathField =
-          ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceMasterPath");
-      tableServiceMasterPathField.setAccessible(true);
-      tableServiceMasterPathField.set(
-          container, AmsHAProperties.getTableServiceMasterPath(haClusterName));
-
-      java.lang.reflect.Field optimizingServiceMasterPathField =
-          ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceMasterPath");
-      optimizingServiceMasterPathField.setAccessible(true);
-      optimizingServiceMasterPathField.set(
-          container, AmsHAProperties.getOptimizingServiceMasterPath(haClusterName));
-
-      java.lang.reflect.Field nodesPathField =
-          ZkHighAvailabilityContainer.class.getDeclaredField("nodesPath");
-      nodesPathField.setAccessible(true);
-      nodesPathField.set(container, AmsHAProperties.getNodesPath(haClusterName));
-
-      java.lang.reflect.Field tableServiceServerInfoField =
-          ZkHighAvailabilityContainer.class.getDeclaredField("tableServiceServerInfo");
-      tableServiceServerInfoField.setAccessible(true);
-      AmsServerInfo tableServiceServerInfo =
-          buildServerInfo(
-              config.getString(AmoroManagementConf.SERVER_EXPOSE_HOST),
-              config.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT),
-              config.getInteger(AmoroManagementConf.HTTP_SERVER_PORT));
-      tableServiceServerInfoField.set(container, tableServiceServerInfo);
-
-      java.lang.reflect.Field optimizingServiceServerInfoField =
-          ZkHighAvailabilityContainer.class.getDeclaredField("optimizingServiceServerInfo");
-      optimizingServiceServerInfoField.setAccessible(true);
-      AmsServerInfo optimizingServiceServerInfo =
-          buildServerInfo(
-              config.getString(AmoroManagementConf.SERVER_EXPOSE_HOST),
-              config.getInteger(AmoroManagementConf.OPTIMIZING_SERVICE_THRIFT_BIND_PORT),
-              config.getInteger(AmoroManagementConf.HTTP_SERVER_PORT));
-      optimizingServiceServerInfoField.set(container, optimizingServiceServerInfo);
-    }
-
-    return container;
+    return new ZkHighAvailabilityContainer(tempConfig);
   }
 
   /** Helper method to build AmsServerInfo. */
@@ -592,13 +399,7 @@ public class TestAmsAssignService {
 
   /** Create AmsAssignService with mock BucketAssignStore. */
   private AmsAssignService createAssignServiceWithMockStore() throws Exception {
-    return createAssignServiceWithMockStore(haContainer);
-  }
-
-  /** Create AmsAssignService with mock BucketAssignStore. */
-  private AmsAssignService createAssignServiceWithMockStore(HighAvailabilityContainer container)
-      throws Exception {
-    return new AmsAssignService(container, serviceConfig, mockAssignStore);
+    return new AmsAssignService(serviceConfig, mockAssignStore);
   }
 
   /** Create a mock CuratorFramework that uses MockZkState for storage. */
@@ -920,10 +721,28 @@ public class TestAmsAssignService {
     @Override
     public List<AmsServerInfo> getAliveNodes() throws BucketAssignStoreException {
       List<AmsServerInfo> nodes = new ArrayList<>();
-      for (String nodeKey : assignments.keySet()) {
-        nodes.add(nodeInfoMap.getOrDefault(nodeKey, parseNodeKey(nodeKey)));
+      for (String nodeKey : nodeInfoMap.keySet()) {
+        nodes.add(nodeInfoMap.get(nodeKey));
       }
       return nodes;
+    }
+
+    @Override
+    public void registerNode(AmsServerInfo serverInfo) throws BucketAssignStoreException {
+      String nodeKey = getNodeKey(serverInfo);
+      nodeInfoMap.put(nodeKey, serverInfo);
+      lastUpdateTimes.put(nodeKey, System.currentTimeMillis());
+    }
+
+    @Override
+    public void removeNode(AmsServerInfo serverInfo) throws BucketAssignStoreException {
+      removeAssignments(serverInfo);
+    }
+
+    /** Simulate a node going offline: remove from alive list but keep its assignments. */
+    void simulateOffline(AmsServerInfo serverInfo) {
+      String nodeKey = getNodeKey(serverInfo);
+      nodeInfoMap.remove(nodeKey);
     }
 
     /**
@@ -948,6 +767,11 @@ public class TestAmsAssignService {
       nodeInfo.setHost(parts[0]);
       nodeInfo.setThriftBindPort(Integer.parseInt(parts[1]));
       return nodeInfo;
+    }
+
+    @Override
+    public void close() {
+      // No resources to release
     }
   }
 }

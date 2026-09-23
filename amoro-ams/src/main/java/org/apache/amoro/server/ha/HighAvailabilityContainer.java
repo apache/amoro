@@ -20,8 +20,6 @@ package org.apache.amoro.server.ha;
 
 import org.apache.amoro.client.AmsServerInfo;
 
-import java.util.List;
-
 /**
  * Common interface for high availability (HA) containers.
  *
@@ -46,21 +44,6 @@ public interface HighAvailabilityContainer {
 
   /** Closes the container and releases resources. */
   void close();
-
-  /**
-   * In master-slave mode, this is used for AMS nodes to register and participate in the master
-   * election process.
-   *
-   * @throws Exception If registration fails or participation in the primary election fails.
-   */
-  void registerAndElect() throws Exception;
-
-  /**
-   * Used in master-slave mode to obtain information about all currently registered AMS nodes.
-   *
-   * @return List<AmsServerInfo>
-   */
-  List<AmsServerInfo> getAliveNodes();
 
   /**
    * Used to determine whether the current AMS node is the primary node.
