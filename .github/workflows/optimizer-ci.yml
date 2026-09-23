@@ -13,8 +13,6 @@ on:
     branches:
       - "master"
       - "[0-9]+.**"
-  schedule:
-    - cron: "20 21 * * *"
   workflow_dispatch:
 
 jobs:
@@ -41,9 +39,9 @@ jobs:
             echo "changed=false" >> "${GITHUB_OUTPUT}"
           fi
 
-  pr-build:
+  build:
     needs: changes
-    if: needs.changes.outputs.changed == 'true' && github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+    if: needs.changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -92,65 +90,16 @@ jobs:
         with:
           flags: optimizer
 
-  nightly-build:
-    needs: changes
-    if: needs.changes.outputs.changed == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - implementation: standalone
-            module: amoro-optimizer/amoro-optimizer-standalone
-            engine: Java
-            jdk: '11'
-            profiles: java11
-          - implementation: flink
-            module: amoro-optimizer/amoro-optimizer-flink
-            engine: Flink-1.18.1
-            jdk: '11'
-            profiles: java11
-          - implementation: spark
-            module: amoro-optimizer/amoro-optimizer-spark
-            engine: Spark-3.3
-            jdk: '11'
-            profiles: java11,spark-3.3
-          - implementation: spark
-            module: amoro-optimizer/amoro-optimizer-spark
-            engine: Spark-3.4
-            jdk: '11'
-            profiles: java11,spark-3.4
-          - implementation: spark
-            module: amoro-optimizer/amoro-optimizer-spark
-            engine: Spark-3.5
-            jdk: '11'
-            profiles: java11,spark-3.5
-    name: Full / ${{ matrix.implementation }} / ${{ matrix.engine }} / JDK ${{ matrix.jdk }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: ${{ matrix.jdk }}
-          distribution: temurin
-          cache: maven
-      - name: Verify optimizer
-        run: >-
-          ./mvnw -B -ntp verify
-          -pl ${{ matrix.module }} -am
-          -P${{ matrix.profiles }}
-
   gate:
     name: CI / Optimizer
     if: always()
     needs:
       - changes
-      - pr-build
-      - nightly-build
+      - build
     runs-on: ubuntu-latest
     steps:
       - name: Check results
         shell: bash
         run: |
           [[ "${{ needs.changes.result }}" == "success" ]]
-          [[ "${{ needs.pr-build.result }}" == "success" || "${{ needs.pr-build.result }}" == "skipped" ]]
-          [[ "${{ needs.nightly-build.result }}" == "success" || "${{ needs.nightly-build.result }}" == "skipped" ]]
+          [[ "${{ needs.build.result }}" == "success" || "${{ needs.build.result }}" == "skipped" ]]

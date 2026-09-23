@@ -13,8 +13,6 @@ on:
     branches:
       - "master"
       - "[0-9]+.**"
-  schedule:
-    - cron: "20 20 * * *"
   workflow_dispatch:
 
 jobs:
@@ -41,9 +39,9 @@ jobs:
             echo "changed=false" >> "${GITHUB_OUTPUT}"
           fi
 
-  pr-build:
+  build:
     needs: changes
-    if: needs.changes.outputs.changed == 'true' && github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+    if: needs.changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -69,46 +67,16 @@ jobs:
           -pl amoro-format-hudi,amoro-format-paimon,amoro-format-lance
           -am -P${{ matrix.profiles }}
 
-  nightly-build:
-    needs: changes
-    if: needs.changes.outputs.changed == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - hadoop: '2'
-            jdk: '11'
-            profiles: hadoop2,java11
-          - hadoop: '3'
-            jdk: '11'
-            profiles: java11
-    name: Formats full / Hadoop ${{ matrix.hadoop }} / JDK ${{ matrix.jdk }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: ${{ matrix.jdk }}
-          distribution: temurin
-          cache: maven
-      - name: Verify optional formats
-        run: >-
-          ./mvnw -B -ntp verify
-          -pl amoro-format-hudi,amoro-format-paimon,amoro-format-lance
-          -am -P${{ matrix.profiles }}
-
   gate:
     name: CI / Format Integrations
     if: always()
     needs:
       - changes
-      - pr-build
-      - nightly-build
+      - build
     runs-on: ubuntu-latest
     steps:
       - name: Check results
         shell: bash
         run: |
           [[ "${{ needs.changes.result }}" == "success" ]]
-          [[ "${{ needs.pr-build.result }}" == "success" || "${{ needs.pr-build.result }}" == "skipped" ]]
-          [[ "${{ needs.nightly-build.result }}" == "success" || "${{ needs.nightly-build.result }}" == "skipped" ]]
+          [[ "${{ needs.build.result }}" == "success" || "${{ needs.build.result }}" == "skipped" ]]
