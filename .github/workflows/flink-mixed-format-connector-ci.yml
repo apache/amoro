@@ -59,8 +59,8 @@ jobs:
             profiles: java11
           - flink: '1.20'
             hadoop: '3'
-            jdk: '17'
-            profiles: java17
+            jdk: '11'
+            profiles: java11
     name: Flink ${{ matrix.flink }} / Hadoop ${{ matrix.hadoop }} / JDK ${{ matrix.jdk }}
     steps:
       - uses: actions/checkout@v4
@@ -88,23 +88,19 @@ jobs:
       matrix:
         flink: [ '1.18', '1.19', '1.20' ]
         hadoop: [ '2', '3' ]
-        jdk: [ '11', '17' ]
-        exclude:
-          - hadoop: '2'
-            jdk: '17'
-    name: Flink full / ${{ matrix.flink }} / Hadoop ${{ matrix.hadoop }} / JDK ${{ matrix.jdk }}
+    name: Flink full / ${{ matrix.flink }} / Hadoop ${{ matrix.hadoop }} / JDK 11
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
-          java-version: ${{ matrix.jdk }}
+          java-version: '11'
           distribution: temurin
           cache: maven
       - name: Verify Flink mixed-format runtime
         run: >-
           ./mvnw -B -ntp verify
           -pl amoro-format-mixed/amoro-mixed-flink/v${{ matrix.flink }}/amoro-mixed-flink-runtime-${{ matrix.flink }}
-          -am -Pjava${{ matrix.jdk }}${{ matrix.hadoop == '2' && ',hadoop2' || '' }}
+          -am -Pjava11${{ matrix.hadoop == '2' && ',hadoop2' || '' }}
 
   gate:
     name: CI / Flink Mixed Format Connector

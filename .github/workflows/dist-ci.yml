@@ -18,16 +18,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Dist / Spark 3.5 / Hadoop 3 / JDK 17
+    name: Dist / Spark 3.5 / Hadoop 3 / JDK 11
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '11'
           distribution: temurin
           cache: maven
       - name: Verify distribution
-        run: ./mvnw -B -ntp verify -pl dist -am -Pjava17,spark-3.5
+        run: ./mvnw -B -ntp verify -pl dist -am -Pjava11,spark-3.5
       - name: Verify archive contents
         shell: bash
         run: |

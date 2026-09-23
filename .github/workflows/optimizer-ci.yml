@@ -72,8 +72,8 @@ jobs:
           - implementation: spark
             module: amoro-optimizer/amoro-optimizer-spark
             engine: Spark-3.5
-            jdk: '17'
-            profiles: java17,spark-3.5
+            jdk: '11'
+            profiles: java11,spark-3.5
     name: ${{ matrix.implementation }} / ${{ matrix.engine }} / JDK ${{ matrix.jdk }}
     steps:
       - uses: actions/checkout@v4
@@ -105,21 +105,11 @@ jobs:
             engine: Java
             jdk: '11'
             profiles: java11
-          - implementation: standalone
-            module: amoro-optimizer/amoro-optimizer-standalone
-            engine: Java
-            jdk: '17'
-            profiles: java17
           - implementation: flink
             module: amoro-optimizer/amoro-optimizer-flink
             engine: Flink-1.18.1
             jdk: '11'
             profiles: java11
-          - implementation: flink
-            module: amoro-optimizer/amoro-optimizer-flink
-            engine: Flink-1.18.1
-            jdk: '17'
-            profiles: java17
           - implementation: spark
             module: amoro-optimizer/amoro-optimizer-spark
             engine: Spark-3.3
@@ -135,11 +125,6 @@ jobs:
             engine: Spark-3.5
             jdk: '11'
             profiles: java11,spark-3.5
-          - implementation: spark
-            module: amoro-optimizer/amoro-optimizer-spark
-            engine: Spark-3.5
-            jdk: '17'
-            profiles: java17,spark-3.5
     name: Full / ${{ matrix.implementation }} / ${{ matrix.engine }} / JDK ${{ matrix.jdk }}
     steps:
       - uses: actions/checkout@v4

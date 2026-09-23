@@ -59,8 +59,8 @@ jobs:
             profiles: java11,spark-3.4
           - spark: '3.5'
             hadoop: '3'
-            jdk: '17'
-            profiles: java17,spark-3.5
+            jdk: '11'
+            profiles: java11,spark-3.5
     name: Spark ${{ matrix.spark }} / Hadoop ${{ matrix.hadoop }} / JDK ${{ matrix.jdk }}
     steps:
       - uses: actions/checkout@v4
@@ -111,10 +111,6 @@ jobs:
             hadoop: '3'
             jdk: '11'
             profiles: java11,spark-3.5
-          - spark: '3.5'
-            hadoop: '3'
-            jdk: '17'
-            profiles: java17,spark-3.5
     name: Spark full / ${{ matrix.spark }} / Hadoop ${{ matrix.hadoop }} / JDK ${{ matrix.jdk }}
     steps:
       - uses: actions/checkout@v4

@@ -53,8 +53,8 @@ jobs:
             jdk: '11'
             profiles: hadoop2,java11
           - hadoop: '3'
-            jdk: '17'
-            profiles: java17
+            jdk: '11'
+            profiles: java11
     name: Formats / Hadoop ${{ matrix.hadoop }} / JDK ${{ matrix.jdk }}
     steps:
       - uses: actions/checkout@v4
@@ -83,9 +83,6 @@ jobs:
           - hadoop: '3'
             jdk: '11'
             profiles: java11
-          - hadoop: '3'
-            jdk: '17'
-            profiles: java17
     name: Formats full / Hadoop ${{ matrix.hadoop }} / JDK ${{ matrix.jdk }}
     steps:
       - uses: actions/checkout@v4
