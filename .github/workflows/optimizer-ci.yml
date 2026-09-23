@@ -8,11 +8,11 @@ on:
   push:
     branches:
       - "master"
-      - "0.**"
+      - "[0-9]+.**"
   pull_request:
     branches:
       - "master"
-      - "0.**"
+      - "[0-9]+.**"
   schedule:
     - cron: "20 21 * * *"
   workflow_dispatch:
