@@ -459,3 +459,7 @@ org.glassfish:javax.json
 The Go license
 --------------
 com.google.re2j
+
+ICU License (ICU 58 and later)
+------------------------------
+com.ibm.icu:icu4j
