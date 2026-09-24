@@ -356,6 +356,25 @@ public class ProcessService extends PersistentBase {
           store.getExecutionEngine(),
           store.getAction(),
           process.getTableIdentifier());
+      // Leaving the PENDING process tracked blocks this action forever (hasAliveTableProcess
+      // gates every later tick, and a restart repeats the same failure). Mark it FAILED so the
+      // record is visible, then untrack so the table can be scheduled again.
+      try {
+        store.tryTransitState(
+            ProcessStatus.FAILED,
+            ProcessEvent.COMPLETE_FAILED,
+            store.getExternalProcessIdentifier(),
+            String.format(
+                "Execution engine not found: %s (action=%s)",
+                store.getExecutionEngine(), store.getAction()),
+            store.getProcessParameters(),
+            store.getSummary());
+      } catch (Throwable t) {
+        LOG.error(
+            "Failed to mark process {} as FAILED for missing engine", store.getProcessId(), t);
+      }
+      untrackTableProcessInstance(
+          process.getTableRuntime().getTableIdentifier(), store.getProcessId());
       return;
     }
 
