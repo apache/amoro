@@ -36,13 +36,9 @@ import java.util.concurrent.atomic.AtomicReference;
 /** Tests for {@link TableProcessExecutor}. */
 public class TestTableProcessExecutor {
 
-  /**
-   * When a recovered process has a non-empty externalProcessIdentifier and the engine returns
-   * UNKNOWN (simulating AMS restart where LocalExecutionEngine's in-memory process map is cleared),
-   * the executor should mark the process as FAILED instead of leaving it stuck in UNKNOWN.
-   */
+  /** A persistent UNKNOWN must eventually fail and trigger best-effort cancellation. */
   @Test
-  public void testUnknownStatusFromEngineMarksAsFailed() {
+  public void testPersistentUnknownStatusMarksAsFailed() {
     // Mock store: simulate a recovered process with RUNNING status and a stale identifier
     TableProcessStore store = Mockito.mock(TableProcessStore.class);
     when(store.getStatus()).thenReturn(ProcessStatus.RUNNING);
@@ -87,14 +83,55 @@ public class TestTableProcessExecutor {
               return true;
             });
 
-    TableProcessExecutor executor = new TableProcessExecutor(process, store, engine);
+    TableProcessExecutor executor = new TableProcessExecutor(process, store, engine, 1L);
     executor.run();
 
-    // Verify the process was marked as FAILED, not left as UNKNOWN
     assertEquals(
         ProcessStatus.FAILED,
         finalStatus.get(),
-        "Process should be marked FAILED when engine returns UNKNOWN");
+        "Process should fail after the configured UNKNOWN tolerance is exhausted");
+    Mockito.verify(engine)
+        .tryCancelTableProcess(process, "stale-identifier-from-before-restart");
+  }
+
+  /** A single transient UNKNOWN must not abandon a job that becomes visible on the next poll. */
+  @Test
+  public void testTransientUnknownStatusContinuesUntilSuccess() {
+    TableProcessStore store = Mockito.mock(TableProcessStore.class);
+    when(store.getStatus()).thenReturn(ProcessStatus.RUNNING);
+    when(store.getExternalProcessIdentifier()).thenReturn("recovering-identifier");
+    when(store.getProcessId()).thenReturn(3L);
+
+    ExecuteEngine engine = Mockito.mock(ExecuteEngine.class);
+    when(engine.getStatus("recovering-identifier"))
+        .thenReturn(ProcessStatus.UNKNOWN, ProcessStatus.SUCCESS);
+
+    TableProcess process = Mockito.mock(TableProcess.class);
+    when(process.getProcessParameters()).thenReturn(java.util.Collections.emptyMap());
+    when(process.getSummary()).thenReturn(java.util.Collections.emptyMap());
+
+    AtomicReference<ProcessStatus> finalStatus = new AtomicReference<>();
+    when(store.tryTransitState(
+            any(ProcessStatus.class),
+            any(ProcessEvent.class),
+            anyString(),
+            anyString(),
+            any(),
+            any()))
+        .thenAnswer(
+            invocation -> {
+              ProcessStatus status = invocation.getArgument(0);
+              if (status == ProcessStatus.SUCCESS || status == ProcessStatus.FAILED) {
+                finalStatus.set(status);
+              }
+              return true;
+            });
+
+    new TableProcessExecutor(process, store, engine, 1L).run();
+
+    assertEquals(ProcessStatus.SUCCESS, finalStatus.get());
+    Mockito.verify(engine, Mockito.times(2)).getStatus("recovering-identifier");
+    Mockito.verify(engine, Mockito.never()).tryCancelTableProcess(Mockito.any(), Mockito.anyString());
   }
 
   /**
