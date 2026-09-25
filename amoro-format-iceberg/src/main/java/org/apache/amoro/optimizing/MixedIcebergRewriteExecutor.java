@@ -55,7 +55,8 @@ public class MixedIcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
         encryptionManager(),
         getTransactionId(input.rePosDeletedDataFilesForMixed()),
         baseLocation(),
-        table.spec());
+        table.spec(),
+        table.properties());
   }
 
   @Override
