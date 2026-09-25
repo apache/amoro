@@ -206,6 +206,17 @@ public class TableProperties {
       "clean-orphan-file.min-existing-time-minutes";
   public static final long MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = 2880; // 2 Days
 
+  /**
+   * When true, ignore the shared-location conflict check and proceed cleaning orphan files even if
+   * the table location appears shared with another table. Warning: if the location is actually
+   * shared with another table, this may delete its files and corrupt that table. Default false
+   * skips cleanup.
+   */
+  public static final String IGNORE_LOCATION_CONFLICT_WHEN_CLEAN_ORPHAN =
+      "clean-orphan-file.ignore-location-conflict";
+
+  public static final boolean IGNORE_LOCATION_CONFLICT_WHEN_CLEAN_ORPHAN_DEFAULT = false;
+
   public static final String ENABLE_DANGLING_DELETE_FILES_CLEAN =
       "clean-dangling-delete-files.enabled";
   public static final boolean ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT = true;

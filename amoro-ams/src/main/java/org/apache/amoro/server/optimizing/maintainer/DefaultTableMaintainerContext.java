@@ -67,6 +67,16 @@ public class DefaultTableMaintainerContext implements TableMaintainerContext {
       public void recordOrphanMetadataFilesCleaned(int expected, int cleaned) {
         metrics.completeOrphanMetadataFiles(expected, cleaned);
       }
+
+      @Override
+      public void recordSuccess() {
+        metrics.recordSuccess();
+      }
+
+      @Override
+      public void recordFailure(MaintainerMetrics.CleanFailureReason reason) {
+        metrics.recordFailure(reason);
+      }
     };
   }
 
