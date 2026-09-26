@@ -40,9 +40,15 @@
 
     <properties>
         <iceberg.version>${maintenance-iceberg.version}</iceberg.version>
+        <avro.version>1.12.1</avro.version>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>${avro.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-avro</artifactId>
