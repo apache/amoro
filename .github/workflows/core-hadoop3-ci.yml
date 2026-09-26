@@ -60,7 +60,12 @@ jobs:
         run: ./mvnw validate
 
       - name: Build all modules with Maven
+        if: matrix.spark != '3.3'
         run: ./mvnw clean install -Djacoco.flink.skip=true -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
+
+      - name: Build Spark 3.3 connectors and optimizers
+        if: matrix.spark == '3.3'
+        run: ./mvnw clean install -pl '!amoro-ams,!dist' -Djacoco.flink.skip=true -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

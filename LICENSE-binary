@@ -459,3 +459,7 @@ org.glassfish:javax.json
 The Go license
 --------------
 com.google.re2j
+
+Eclipse Distribution License (EDL) 1.0
+-------------------------------------
+org.locationtech.jts:jts-core
