@@ -34,7 +34,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,8 +43,12 @@ public class AmsThriftUrl {
   public static final String ZOOKEEPER_FLAG = "zookeeper";
   public static final String THRIFT_URL_FORMAT = "thrift://%s:%d/%s%s";
   public static final int MAX_RETRIES = 3;
+  private static final String THRIFT_SCHEME = "thrift";
+  private static final String ZOOKEEPER_SCHEME_PREFIX = ZOOKEEPER_FLAG + ":";
+  private static final int MAX_PORT = 65535;
   private static final Logger logger = LoggerFactory.getLogger(AmsThriftUrl.class);
-  private static final Pattern PATTERN = Pattern.compile("zookeeper://(\\S+)/([\\w-]+)");
+  private static final Pattern PATTERN =
+      Pattern.compile("zookeeper://(\\S+)/([\\w-]+)", Pattern.CASE_INSENSITIVE);
   private final String schema;
   private final String host;
   private final int port;
@@ -77,7 +80,7 @@ public class AmsThriftUrl {
     if (url == null) {
       throw new IllegalArgumentException("thrift url is null");
     }
-    if (url.startsWith(ZOOKEEPER_FLAG)) {
+    if (url.regionMatches(true, 0, ZOOKEEPER_SCHEME_PREFIX, 0, ZOOKEEPER_SCHEME_PREFIX.length())) {
       return parserZookeeperUrl(url, serviceName);
     } else {
       return parserThriftUrl(url);
@@ -85,31 +88,57 @@ public class AmsThriftUrl {
   }
 
   private static AmsThriftUrl parserThriftUrl(String url) {
-    int socketTimeout = DEFAULT_SOCKET_TIMEOUT;
     try {
-      URI uri = new URI(url.toLowerCase(Locale.ROOT));
+      URI uri = new URI(url);
       String schema = uri.getScheme();
+      if (!THRIFT_SCHEME.equalsIgnoreCase(schema)) {
+        throw new IllegalArgumentException(
+            String.format("Unsupported thrift URL scheme '%s' in URL: %s", schema, url));
+      }
+
+      uri = uri.parseServerAuthority();
       String host = uri.getHost();
+      if (host == null || host.isEmpty()) {
+        throw new IllegalArgumentException(String.format("Missing host in thrift URL: %s", url));
+      }
+
       int port = uri.getPort();
+      if (port == -1) {
+        throw new IllegalArgumentException(String.format("Missing port in thrift URL: %s", url));
+      } else if (port <= 0 || port > MAX_PORT) {
+        throw new IllegalArgumentException(
+            String.format("Invalid port in thrift URL, expected 1-%d: %s", MAX_PORT, url));
+      }
+
       String path = uri.getPath();
       if (path != null && path.startsWith("/")) {
         path = path.substring(1);
       }
-      if (uri.getQuery() != null) {
-        for (String paramExpression : uri.getQuery().split("&")) {
-          String[] paramSplit = paramExpression.split("=");
-          if (paramSplit.length == 2) {
-            if (paramSplit[0].equalsIgnoreCase(PARAM_SOCKET_TIMEOUT)) {
-              socketTimeout = Integer.parseInt(paramSplit[1]);
-            }
+      String catalogName = path;
+      return new AmsThriftUrl(
+          THRIFT_SCHEME, host, port, catalogName, parseSocketTimeout(uri.getQuery()), url);
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException(
+          String.format("Invalid thrift URL '%s': %s", url, e.getMessage()), e);
+    }
+  }
+
+  private static int parseSocketTimeout(String query) {
+    int socketTimeout = DEFAULT_SOCKET_TIMEOUT;
+    if (query != null) {
+      for (String paramExpression : query.split("&")) {
+        String[] paramSplit = paramExpression.split("=");
+        if (paramSplit.length == 2 && paramSplit[0].equalsIgnoreCase(PARAM_SOCKET_TIMEOUT)) {
+          try {
+            socketTimeout = Integer.parseInt(paramSplit[1]);
+          } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                String.format("Invalid socketTimeout value '%s'", paramSplit[1]), e);
           }
         }
       }
-      String catalogName = path;
-      return new AmsThriftUrl(schema, host, port, catalogName, socketTimeout, url);
-    } catch (URISyntaxException e) {
-      throw new IllegalArgumentException("parse metastore url failed", e);
     }
+    return socketTimeout;
   }
 
   private static AmsThriftUrl parserZookeeperUrl(String url, String serviceName) {
@@ -132,33 +161,25 @@ public class AmsThriftUrl {
         zkServerAddress = m.group(1);
         cluster = m.group(2);
       }
+      int socketTimeout = parseSocketTimeout(query.replace("?", ""));
       int retryCount = 0;
       while (retryCount < MAX_RETRIES) {
         try {
           AmsServerInfo serverInfo = findAmsServerInfo(serviceName, zkServerAddress, cluster);
-          url =
+          String resolvedUrl =
               String.format(
                   THRIFT_URL_FORMAT,
                   serverInfo.getHost(),
                   serverInfo.getThriftBindPort(),
                   catalog,
                   query);
-          int socketTimeout = DEFAULT_SOCKET_TIMEOUT;
-          for (String paramExpression : query.replace("?", "").split("&")) {
-            String[] paramSplit = paramExpression.split("=");
-            if (paramSplit.length == 2) {
-              if (paramSplit[0].equalsIgnoreCase(PARAM_SOCKET_TIMEOUT)) {
-                socketTimeout = Integer.parseInt(paramSplit[1]);
-              }
-            }
-          }
           return new AmsThriftUrl(
-              "thrift",
+              THRIFT_SCHEME,
               serverInfo.getHost(),
               serverInfo.getThriftBindPort(),
-              catalog.toLowerCase(),
+              catalog,
               socketTimeout,
-              url);
+              resolvedUrl);
         } catch (KeeperException.AuthFailedException authFailedException) {
           // If kerberos authentication is not enabled on the zk,
           // an error occurs when the thread carrying kerberos authentication information accesses
@@ -182,11 +203,14 @@ public class AmsThriftUrl {
           retryCount++;
           logger.error(
               String.format("Caught exception, retrying... (retry count: %s)", retryCount), e);
-          throw new RuntimeException(String.format("invalid ams url %s", url));
+          throw new RuntimeException(
+              String.format("Failed to resolve AMS URL from ZooKeeper URL: %s", url), e);
         }
       }
     } else {
-      throw new RuntimeException(String.format("invalid ams url %s", url));
+      throw new IllegalArgumentException(
+          String.format(
+              "Invalid ZooKeeper URL, expected zookeeper://host:port/cluster[/catalog]: %s", url));
     }
     return null;
   }
@@ -217,7 +241,7 @@ public class AmsThriftUrl {
   }
 
   private static List<AmsServerInfo> parserZookeeperUrlListForMasterSlaveMode(String url) {
-    if (!url.startsWith(ZOOKEEPER_FLAG)) {
+    if (!url.regionMatches(true, 0, ZOOKEEPER_SCHEME_PREFIX, 0, ZOOKEEPER_SCHEME_PREFIX.length())) {
       throw new IllegalArgumentException(
           "parseMasterSlaveAmsNodes only supports ZooKeeper URL format: zookeeper://host:port/cluster");
     }
@@ -227,7 +251,8 @@ public class AmsThriftUrl {
     }
     Matcher m = PATTERN.matcher(thriftUrl);
     if (!m.matches()) {
-      throw new RuntimeException(String.format("invalid ams url %s", url));
+      throw new IllegalArgumentException(
+          String.format("Invalid ZooKeeper URL, expected zookeeper://host:port/cluster: %s", url));
     }
     String zkServerAddress;
     String cluster;
