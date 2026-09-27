@@ -190,6 +190,27 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-image-hadoop-dependencies</id>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <includeGroupIds>org.apache.hadoop</includeGroupIds>
+                            <includeArtifactIds>hadoop-client-api,hadoop-client-runtime</includeArtifactIds>
+                            <includeScope>runtime</includeScope>
+                            <outputDirectory>${project.build.directory}/docker-hadoop</outputDirectory>
+                            <stripVersion>true</stripVersion>
+                            <overWriteReleases>true</overWriteReleases>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${maven-assembly-plugin.version}</version>
                 <configuration>

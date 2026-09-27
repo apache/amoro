@@ -139,7 +139,7 @@ jobs:
       - name: Set optimizer flink version
         run: |
           OPTIMIZER_FLINK=${{ matrix.flink }} && \
-          echo "OPTIMIZER_FLINK=-Dflink-optimizer.flink-version${OPTIMIZER_FLINK}" >> $GITHUB_ENV
+          echo "OPTIMIZER_FLINK=-Dflink-optimizer.flink-version=${OPTIMIZER_FLINK}" >> $GITHUB_ENV
           if [[ "$OPTIMIZER_FLINK" < "1.15" ]]; then
             echo "Adding -Pflink-optimizer-pre-1.15 for Flink version less than 1.15"
             echo "OPTIMIZER_FLINK=-Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=${OPTIMIZER_FLINK}" >> $GITHUB_ENV
