@@ -44,6 +44,7 @@ import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.persistence.PersistentBase;
+import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
@@ -60,6 +61,7 @@ import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.SerializationUtil;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.DeleteFile;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -69,23 +71,43 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.nio.file.Path;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 class TestIcebergV3OptimizingPlanning extends PersistentBase {
   @TempDir private Path temp;
 
+  // Preserve standalone execution without loading DerbyPersistence when the shared AMS test
+  // environment has already initialized persistence. Loading it would truncate the shared DB.
+  @SuppressWarnings("unused")
+  private final DerbyPersistence standalonePersistence = initializePersistence();
+
   private final TestPersistence persistence = new TestPersistence();
   private final CatalogManager catalogManager = mock(CatalogManager.class);
+  private final Set<Long> tableIds = new HashSet<>();
   private OptimizingQueue queue;
+
+  private static DerbyPersistence initializePersistence() {
+    try {
+      SqlSessionFactoryProvider.getInstance().get();
+      return null;
+    } catch (IllegalStateException e) {
+      return new DerbyPersistence();
+    }
+  }
 
   @AfterEach
   void cleanUp() {
     if (queue != null) {
       queue.dispose();
     }
-    persistence.cleanUp();
+    persistence.cleanUp(tableIds);
+    tableIds.clear();
   }
 
   @Test
@@ -394,6 +416,7 @@ class TestIcebergV3OptimizingPlanning extends PersistentBase {
     meta.setGroupName("default");
     meta.setStatusCode(initialStatus.getCode());
     doAs(TableMetaMapper.class, mapper -> mapper.insertTable(identifier));
+    tableIds.add(identifier.getId());
     meta.setTableId(identifier.getId());
     doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
     DefaultTableRuntimeStore store =
@@ -437,9 +460,40 @@ class TestIcebergV3OptimizingPlanning extends PersistentBase {
     };
   }
 
-  private static class TestPersistence extends DerbyPersistence {
-    void cleanUp() {
-      super.after();
+  private static class TestPersistence {
+    private static final String[] TABLES_WITH_TABLE_ID = {
+      "task_runtime",
+      "optimizing_task_quota",
+      "optimizing_process_state",
+      "table_process_state",
+      "table_process",
+      "table_runtime_state",
+      "table_runtime",
+      "table_metadata",
+      "table_identifier"
+    };
+
+    void cleanUp(Set<Long> tableIds) {
+      if (tableIds.isEmpty()) {
+        return;
+      }
+
+      try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession(true)) {
+        for (String table : TABLES_WITH_TABLE_ID) {
+          try (PreparedStatement statement =
+              session
+                  .getConnection()
+                  .prepareStatement("DELETE FROM " + table + " WHERE table_id = ?")) {
+            for (Long tableId : tableIds) {
+              statement.setLong(1, tableId);
+              statement.addBatch();
+            }
+            statement.executeBatch();
+          }
+        }
+      } catch (SQLException e) {
+        throw new RuntimeException("Failed to clean up optimizing planning test data", e);
+      }
     }
   }
 }
