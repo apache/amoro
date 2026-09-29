@@ -34,6 +34,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableBuilder;
+import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.CatalogUtil;
 import org.apache.amoro.utils.MixedTableUtil;
@@ -140,6 +141,26 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
   @BeforeEach
   public void setMixedCatalog() {
     catalog = loadMixedIcebergCatalog();
+    // The AMS instance is shared, so drop anything a previous test left behind.
+    dropTestDatabaseIfExists(catalog);
+  }
+
+  private void dropTestDatabaseIfExists(MixedFormatCatalog target) {
+    try {
+      if (!target.listDatabases().contains(database)) {
+        return;
+      }
+      for (TableIdentifier identifier : target.listTables(database)) {
+        try {
+          target.dropTable(identifier, true);
+        } catch (Exception e) {
+          LOG.warn("Failed to drop residual table {}", identifier, e);
+        }
+      }
+      target.dropDatabase(database);
+    } catch (Exception e) {
+      LOG.warn("Failed to drop residual database {}", database, e);
+    }
   }
 
   @Override
@@ -165,16 +186,16 @@ public class TestInternalMixedCatalogService extends RestCatalogServiceTestBase 
       MixedFormatCatalog catalog = loadMixedIcebergCatalog();
       Assertions.assertEquals(
           InternalMixedIcebergCatalog.class.getName(), catalog.getClass().getName());
-      Assertions.assertTrue(catalog.listDatabases().isEmpty());
+      Assertions.assertFalse(catalog.listDatabases().contains(database));
 
       catalog.createDatabase(database);
-      Assertions.assertEquals(1, catalog.listDatabases().size());
       Assertions.assertTrue(catalog.listDatabases().contains(database));
-      Assertions.assertEquals(1, nsCatalog.listNamespaces(Namespace.of()).size());
+      Assertions.assertTrue(
+          nsCatalog.listNamespaces(Namespace.of()).contains(Namespace.of(database)));
 
       catalog.dropDatabase(database);
-      Assertions.assertTrue(catalog.listDatabases().isEmpty());
-      Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
+      Assertions.assertFalse(catalog.listDatabases().contains(database));
+      Assertions.assertFalse(nsCatalog.listNamespaces().contains(Namespace.of(database)));
     }
   }
 
