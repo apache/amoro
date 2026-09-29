@@ -50,7 +50,6 @@ import org.apache.amoro.server.dashboard.model.UpgradeStatus;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
-import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.process.TableProcessMeta;
@@ -200,7 +199,12 @@ public class TableController {
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     HiveTableInfo hiveTableInfo;
-    Table hiveTable = HiveTableUtil.loadHmsTable(hmsClientPool, tableIdentifier);
+    Table hiveTable = HiveTableUtil.loadPhysicalHmsTable(hmsClientPool, tableIdentifier);
+    Preconditions.checkState(
+        hiveTable.getSd() != null,
+        "Hive table %s.%s does not have a storage descriptor",
+        db,
+        table);
     List<AMSColumnInfo> schema = transformHiveSchemaToAMSColumnInfo(hiveTable.getSd().getCols());
     List<AMSColumnInfo> partitionColumnInfos =
         transformHiveSchemaToAMSColumnInfo(hiveTable.getPartitionKeys());
@@ -630,20 +634,6 @@ public class TableController {
     ctx.json(OkResponse.of(catalogs));
   }
 
-  /**
-   * get single page query token.
-   *
-   * @param ctx - context for handling the request and response
-   */
-  public void getTableDetailTabToken(Context ctx) {
-    String catalog = ctx.pathParam("catalog");
-    String db = ctx.pathParam("db");
-    String table = ctx.pathParam("table");
-
-    String signCal = CommonUtil.generateTablePageToken(catalog, db, table);
-    ctx.json(OkResponse.of(signCal));
-  }
-
   public void getTableTags(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
@@ -742,6 +732,9 @@ public class TableController {
   }
 
   private List<AMSColumnInfo> transformHiveSchemaToAMSColumnInfo(List<FieldSchema> fields) {
+    if (fields == null) {
+      return Collections.emptyList();
+    }
     return fields.stream()
         .map(
             f -> {

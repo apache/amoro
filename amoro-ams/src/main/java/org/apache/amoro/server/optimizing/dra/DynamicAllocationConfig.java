@@ -42,6 +42,7 @@ public class DynamicAllocationConfig {
   private final boolean enabled;
   private final Integer minParallelism;
   private final Integer maxParallelism;
+  private final int executorParallelism;
   private final Duration schedulerBacklogTimeout;
   private final Duration sustainedBacklogTimeout;
   private final Duration executorIdleTimeout;
@@ -54,6 +55,7 @@ public class DynamicAllocationConfig {
       boolean enabled,
       Integer minParallelism,
       Integer maxParallelism,
+      int executorParallelism,
       Duration schedulerBacklogTimeout,
       Duration sustainedBacklogTimeout,
       Duration executorIdleTimeout,
@@ -64,6 +66,7 @@ public class DynamicAllocationConfig {
     this.enabled = enabled;
     this.minParallelism = minParallelism;
     this.maxParallelism = maxParallelism;
+    this.executorParallelism = executorParallelism;
     this.schedulerBacklogTimeout = schedulerBacklogTimeout;
     this.sustainedBacklogTimeout = sustainedBacklogTimeout;
     this.executorIdleTimeout = executorIdleTimeout;
@@ -88,12 +91,19 @@ public class DynamicAllocationConfig {
         PropertyUtil.propertyAsNullableInt(
             properties, OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM);
 
+    int executorParallelism =
+        PropertyUtil.propertyAsInt(
+            properties,
+            OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM,
+            OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM_DEFAULT);
+
     return new DynamicAllocationConfig(
         group.getName(),
         group.getContainer(),
         enabled,
         minParallelism,
         maxParallelism,
+        executorParallelism,
         parseDuration(
             properties,
             OptimizerProperties.DYNAMIC_ALLOCATION_SCHEDULER_BACKLOG_TIMEOUT,
@@ -209,6 +219,31 @@ public class DynamicAllocationConfig {
   }
 
   /**
+   * Whether the group opted into dynamic allocation but its configuration does not hold, i.e. the
+   * fail-safe fallback of {@link #isEffectivelyEnabled(ResourceGroup)} is active. Read side of the
+   * config-invalid gauge. A group that never opted in is not invalid, whatever its other properties
+   * parse to — its leftover values are inert and must not alarm.
+   */
+  public static boolean isConfigInvalid(ResourceGroup group) {
+    boolean enabled =
+        PropertyUtil.propertyAsBoolean(
+            group.getProperties(),
+            OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED,
+            OptimizerProperties.DYNAMIC_ALLOCATION_ENABLED_DEFAULT);
+    if (!enabled) {
+      return false;
+    }
+    try {
+      parse(group).validate();
+      return false;
+    } catch (RuntimeException e) {
+      // Not just IllegalArgumentException: duration parsing can throw ArithmeticException on
+      // overflow, and a gauge read must never propagate — it would abort the whole scrape.
+      return true;
+    }
+  }
+
+  /**
    * The min-parallelism property key that {@link #resolveMinParallelism(ResourceGroup)} actually
    * reads for this group. Writers updating the effective value (e.g. the keeper's auto-reset) must
    * target this key; writing the deprecated flat key while the namespaced one is present would be
@@ -269,6 +304,44 @@ public class DynamicAllocationConfig {
               maxParallelism,
               OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM_LIMIT));
     }
+    if (executorParallelism < 1) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Resource group:%s '%s'(%d) must be >= 1.",
+              groupName,
+              OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM,
+              executorParallelism));
+    }
+    // A single executorParallelism-thread instance is the scaling unit; if it alone exceeds
+    // max-parallelism, scale-up could never create anything, leaving a silent no-op group.
+    if (executorParallelism > maxParallelism) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Resource group:%s '%s'(%d) must not exceed '%s'(%d).",
+              groupName,
+              OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM,
+              executorParallelism,
+              OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM,
+              maxParallelism));
+    }
+    // The floor is satisfied in executor-parallelism-thread instance units; if covering it would
+    // already exceed max-parallelism, the group would silently sit below its floor forever.
+    int floorThreads =
+        (minParallelism + executorParallelism - 1) / executorParallelism * executorParallelism;
+    if (floorThreads > maxParallelism) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Resource group:%s '%s'(%d) is not reachable in '%s'(%d) units: covering the floor "
+                  + "requires %d threads, exceeding '%s'(%d).",
+              groupName,
+              OptimizerProperties.DYNAMIC_ALLOCATION_MIN_PARALLELISM,
+              minParallelism,
+              OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_PARALLELISM,
+              executorParallelism,
+              floorThreads,
+              OptimizerProperties.DYNAMIC_ALLOCATION_MAX_PARALLELISM,
+              maxParallelism));
+    }
     Duration idleMin =
         ConfigHelpers.TimeUtils.parseDuration(
             OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT_MIN);
@@ -290,6 +363,19 @@ public class DynamicAllocationConfig {
         OptimizerProperties.DYNAMIC_ALLOCATION_SUSTAINED_BACKLOG_TIMEOUT, sustainedBacklogTimeout);
     requirePositive(OptimizerProperties.DYNAMIC_ALLOCATION_SCALE_DOWN_COOLDOWN, scaleDownCooldown);
     requirePositive(OptimizerProperties.DYNAMIC_ALLOCATION_DRAIN_TIMEOUT, drainTimeout);
+    // The scale keeper evaluates each group at sustained-backlog-timeout cadence, which is also
+    // the idle observation resolution: sampling slower than half the idle timeout lets an
+    // instance that worked between samples be misjudged as continuously idle and drained.
+    if (sustainedBacklogTimeout.toMillis() * 2 > executorIdleTimeout.toMillis()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Resource group:%s '%s'(%s) must be <= half of '%s'(%s).",
+              groupName,
+              OptimizerProperties.DYNAMIC_ALLOCATION_SUSTAINED_BACKLOG_TIMEOUT,
+              sustainedBacklogTimeout,
+              OptimizerProperties.DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT,
+              executorIdleTimeout));
+    }
   }
 
   private void requirePositive(String property, Duration value) {
@@ -338,6 +424,10 @@ public class DynamicAllocationConfig {
    */
   public int getMaxParallelism() {
     return maxParallelism;
+  }
+
+  public int getExecutorParallelism() {
+    return executorParallelism;
   }
 
   public Duration getSchedulerBacklogTimeout() {

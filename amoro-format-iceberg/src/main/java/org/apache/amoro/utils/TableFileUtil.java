@@ -22,12 +22,13 @@ import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.io.BulkDeletionFailureException;
+import org.apache.iceberg.util.LocationUtil;
 import org.apache.iceberg.util.Tasks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -75,15 +76,25 @@ public class TableFileUtil {
     return filePath.substring(0, lastSlash);
   }
 
+  public static void deleteEmptyDirectory(
+      AuthenticatedFileIO io, String directoryPath, Set<String> exclude) {
+    deleteEmptyDirectory(io, directoryPath, exclude, new HashSet<>());
+  }
+
   /**
    * Try to recursiveDelete the empty directory
    *
    * @param io mixed-format file io
    * @param directoryPath directory location
    * @param exclude the directory will not be deleted
+   * @param directoriesToBeDeleted: all the directories that need to be deleted directories that
+   *     need to be deleted
    */
   public static void deleteEmptyDirectory(
-      AuthenticatedFileIO io, String directoryPath, Set<String> exclude) {
+      AuthenticatedFileIO io,
+      String directoryPath,
+      Set<String> exclude,
+      Set<String> directoriesToBeDeleted) {
     if (directoryPath == null || directoryPath.isEmpty()) {
       return;
     }
@@ -108,7 +119,10 @@ public class TableFileUtil {
     if (io.asFileSystemIO().isEmptyDirectory(directoryPath)) {
       io.asFileSystemIO().deletePrefix(directoryPath);
       LOG.debug("success delete empty directory {}", directoryPath);
-      deleteEmptyDirectory(io, parent, exclude);
+      // for parent must be deleted after the sub-directory
+      if (directoriesToBeDeleted == null || !directoriesToBeDeleted.contains(parent)) {
+        deleteEmptyDirectory(io, parent, exclude);
+      }
     }
   }
 
@@ -197,7 +211,8 @@ public class TableFileUtil {
    * @return new file path
    */
   public static String getNewFilePath(String newDirectory, String filePath) {
-    return newDirectory + File.separator + getFileName(filePath);
+    return String.format(
+        "%s/%s", LocationUtil.stripTrailingSlash(newDirectory), getFileName(filePath));
   }
 
   /**

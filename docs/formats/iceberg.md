@@ -37,7 +37,26 @@ However, as data and delete files are written, the read performance and availabi
 Starting from Amoro v0.4, Iceberg format including v1 and v2 is supported. Users only need to register Iceberg's catalog in Amoro to host the table for Amoro maintenance. For detailed operation steps, please refer to [Managing Catalogs](../managing-catalogs/).
 Amoro maintains the performance and economic availability of Iceberg tables with minimal read/write costs through means such as small file merging, eq-delete file conversion to pos-delete files, duplicate data elimination, and file cleaning, and Amoro has no intrusive impact on the functionality of Iceberg.
 
-Iceberg format has full upward and downward compatibility features, and in general, users do not have to worry about the compatibility of the Iceberg version used by the engine client with the Iceberg version on which Amoro depends.
+### Format version compatibility
+
+Amoro automatic maintenance supports Iceberg format versions 1 and 2. Format version 3
+is not supported by the bundled Iceberg writer: a metadata commit can omit fields required
+by newer V3 readers and make the table inaccessible to those readers.
+
+Amoro skips optimizing evaluation and planning for V3 tables and rejects their maintenance
+and optimizing commits. This also applies to a table upgraded while a transaction is committing.
+Recovery checks the table version before resuming optimizing jobs. If the catalog lookup fails,
+recovery continues with a warning; the writer still checks compatibility before committing.
+Snapshot expiration, dangling delete cleanup, data expiration, automatic tags, and orphan file
+cleanup are all blocked for unsupported tables.
+
+The compatibility guard does not block catalog discovery or metadata reads and does not
+change the table's maintenance settings. Read-only table summary collection remains available
+when optimizing is disabled and table summary collection is enabled. Loading and reading still
+depend on the features supported by the bundled Iceberg reader. The table name, unsupported
+version, and supported versions are reported in AMS logs; rejected maintenance and optimizing
+processes closed by the guard also use the existing failure or closure reporting. This protection
+does not repair metadata already written without required V3 fields.
 
 Amoro supports all catalog types supported by Iceberg, including but not limited to: Hadoop, Hive, Glue, JDBC, Nessie, Snowflake, and so on.
 

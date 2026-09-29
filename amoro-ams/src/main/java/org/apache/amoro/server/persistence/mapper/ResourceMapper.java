@@ -59,6 +59,13 @@ public interface ResourceMapper {
   ResourceGroup selectResourceGroup(@Param("resourceGroup") String groupName);
 
   @Select(
+      "<script>"
+          + "SELECT group_name FROM resource_group WHERE group_name = #{resourceGroup} FOR UPDATE"
+          + "<if test=\"_databaseId == 'derby'\"> WITH RS</if>"
+          + "</script>")
+  String selectResourceGroupNameForUpdate(@Param("resourceGroup") String groupName);
+
+  @Select(
       "SELECT resource_id, group_name, container_name, thread_count, total_memory, properties"
           + " FROM resource WHERE group_name = #{resourceGroup}")
   @Results({

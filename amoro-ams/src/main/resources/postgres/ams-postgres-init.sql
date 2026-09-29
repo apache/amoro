@@ -38,12 +38,14 @@ CREATE TABLE database_metadata
 (
     catalog_name varchar(64) NOT NULL,
     db_name varchar(128) NOT NULL,
+    properties text,
     table_count integer NOT NULL DEFAULT 0,
     PRIMARY KEY (catalog_name, db_name)
 );
 COMMENT ON TABLE database_metadata IS 'Database metadata';
 COMMENT ON COLUMN database_metadata.catalog_name IS 'Catalog name';
 COMMENT ON COLUMN database_metadata.db_name IS 'Database name';
+COMMENT ON COLUMN database_metadata.properties IS 'Database properties';
 COMMENT ON COLUMN database_metadata.table_count IS 'Number of tables in the database';
 
 CREATE TABLE optimizer

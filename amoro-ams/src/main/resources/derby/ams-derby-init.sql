@@ -29,6 +29,7 @@ CREATE TABLE catalog_metadata (
 CREATE TABLE database_metadata (
     catalog_name           VARCHAR(64) NOT NULL,
     db_name                VARCHAR(128) NOT NULL,
+    properties             CLOB(64m),
     table_count            INT NOT NULL DEFAULT 0,
     PRIMARY KEY (catalog_name, db_name)
 );

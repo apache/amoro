@@ -25,16 +25,19 @@ import java.io.Closeable;
 /** Interface to create an internal table. */
 public interface InternalTableCreator extends Closeable {
 
-  /**
-   * Do all things about create an internal table, and prepare the {@link TableMetadata} for {@link
-   * InternalTableManager#createTable(java.lang.String, TableMetadata)}
-   */
+  /** Build Iceberg metadata without writing files or registering the table. */
+  org.apache.iceberg.TableMetadata stage();
+
+  /** Write Iceberg metadata and prepare the {@link TableMetadata} for AMS. */
   TableMetadata create();
 
-  /** Rollback all resource created during {@link #create()} */
+  /** Persist Iceberg metadata and prepare the table metadata for AMS. */
+  TableMetadata create(org.apache.iceberg.TableMetadata icebergMetadata);
+
+  /** Remove files written during {@link #create()}. */
   void rollback();
 
-  /** Release resource like {@link org.apache.iceberg.io.FileIO} */
+  /** Release resources such as {@link org.apache.iceberg.io.FileIO}. */
   @Override
   default void close() {}
 }

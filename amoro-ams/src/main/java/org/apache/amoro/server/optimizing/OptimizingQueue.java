@@ -21,12 +21,15 @@ package org.apache.amoro.server.optimizing;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.ServerTableIdentifier;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.BlockableOperation;
 import org.apache.amoro.api.OptimizingTaskId;
 import org.apache.amoro.api.OptimizingTaskResult;
 import org.apache.amoro.exception.OptimizingClosedException;
 import org.apache.amoro.exception.PersistenceException;
 import org.apache.amoro.exception.TaskNotFoundException;
+import org.apache.amoro.formats.iceberg.IcebergMaintenanceCompatibility;
+import org.apache.amoro.formats.iceberg.IcebergMaintenanceCompatibility.UnsupportedTableException;
 import org.apache.amoro.optimizing.MetricsSummary;
 import org.apache.amoro.optimizing.OptimizingType;
 import org.apache.amoro.optimizing.RewriteFilesInput;
@@ -38,6 +41,7 @@ import org.apache.amoro.server.AmoroServiceConstants;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.TaskRuntime.Status;
+import org.apache.amoro.server.optimizing.dra.DynamicAllocationState;
 import org.apache.amoro.server.persistence.OptimizingProcessState;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TaskFilesPersistence;
@@ -63,6 +67,7 @@ import org.apache.amoro.utils.MixedDataFiles;
 import org.apache.amoro.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,6 +140,29 @@ public class OptimizingQueue extends PersistentBase {
       if (!tableRuntime.getOptimizingConfig().isEnabled()) {
         closeProcessIfRunning(process);
         return;
+      }
+
+      if (process != null && tableRuntime.getFormat() == TableFormat.ICEBERG) {
+        AmoroTable<?> table = null;
+        try {
+          table = catalogManager.loadTable(tableRuntime.getTableIdentifier().getIdentifier());
+        } catch (Exception e) {
+          // Catalog availability must not prevent recovery. The writer checks again at commit.
+          LOG.warn(
+              "Cannot check table version during recovery of {}; continuing recovery",
+              tableRuntime.getTableIdentifier(),
+              e);
+        }
+        if (table != null) {
+          try {
+            IcebergMaintenanceCompatibility.checkSupported((Table) table.originalTable());
+          } catch (UnsupportedTableException e) {
+            process.close(e.getMessage());
+            tableRuntime.suspendUnsupportedOptimizing();
+            LOG.warn("Not resuming automatic optimizing: {}", e.getMessage());
+            return;
+          }
+        }
       }
 
       tableRuntime.resetTaskQuotas(
@@ -242,6 +270,9 @@ public class OptimizingQueue extends PersistentBase {
       process.close(false);
       clearProcess(process);
     }
+    // Drop the per-table in-flight counter: the table left this queue, and keeping the entry
+    // leaks one map slot per table that ever had a polled task.
+    optimizingTasksMap.remove(tableRuntime.getTableIdentifier());
     LOG.info(
         "Release queue {} with table {}",
         optimizerGroup.getName(),
@@ -378,6 +409,9 @@ public class OptimizingQueue extends PersistentBase {
     try {
       ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
       AmoroTable<?> table = catalogManager.loadTable(identifier.getIdentifier());
+      if (table.format() == TableFormat.ICEBERG) {
+        IcebergMaintenanceCompatibility.checkSupported((Table) table.originalTable());
+      }
       AbstractOptimizingPlanner planner =
           IcebergTableUtil.createOptimizingPlanner(
               tableRuntime.refresh(table),
@@ -390,6 +424,10 @@ public class OptimizingQueue extends PersistentBase {
         tableRuntime.completeEmptyProcess();
         return null;
       }
+    } catch (UnsupportedTableException e) {
+      tableRuntime.suspendUnsupportedOptimizing();
+      LOG.warn("Skipping automatic optimizing: {}", e.getMessage());
+      return null;
     } catch (Throwable throwable) {
       tableRuntime.planFailed();
       LOG.error("Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
@@ -416,6 +454,52 @@ public class OptimizingQueue extends PersistentBase {
         .flatMap(p -> p.getTaskMap().values().stream())
         .filter(predicate)
         .collect(Collectors.toList());
+  }
+
+  /**
+   * Snapshot the demand-side load of this queue for dynamic allocation: busy threads, serviceable
+   * PLANNED tasks (quota-mode aware, see {@link DynamicAllocationState#serviceablePlannedCount}),
+   * and PENDING tables. PENDING tables are observable with zero optimizers, which makes them the
+   * only scale-up signal on a cold group where nothing polls and planning never runs.
+   */
+  public DynamicAllocationState.GroupLoad collectDynamicAllocationLoad() {
+    Map<Long, Integer> plannedByTable = Maps.newHashMap();
+    Map<Long, Integer> occupiedByTable = Maps.newHashMap();
+    Map<String, Integer> inFlightByToken = Maps.newHashMap();
+    int busyThreads = 0;
+    for (TaskRuntime<?> task : collectTasks()) {
+      if (DynamicAllocationState.occupiesThread(task.getStatus())) {
+        busyThreads++;
+        occupiedByTable.merge(task.getTableId(), 1, Integer::sum);
+        inFlightByToken.merge(task.getToken(), 1, Integer::sum);
+      } else if (task.getStatus() == Status.PLANNED) {
+        plannedByTable.merge(task.getTableId(), 1, Integer::sum);
+      }
+    }
+    Map<Long, Double> targetQuotaByTable = Maps.newHashMap();
+    int pendingTables = 0;
+    for (DefaultTableRuntime tableRuntime : scheduler.snapshotTableRuntimes()) {
+      targetQuotaByTable.put(
+          tableRuntime.getTableIdentifier().getId(),
+          tableRuntime.getOptimizingConfig().getTargetQuota());
+      if (tableRuntime.getOptimizingStatus() == OptimizingStatus.PENDING) {
+        pendingTables++;
+      }
+    }
+    List<DynamicAllocationState.TableDemand> demands = Lists.newArrayList();
+    plannedByTable.forEach(
+        (tableId, planned) ->
+            demands.add(
+                new DynamicAllocationState.TableDemand(
+                    planned,
+                    // Unknown table (racing removal): default to proportional, counting in full.
+                    targetQuotaByTable.getOrDefault(tableId, 1.0),
+                    occupiedByTable.getOrDefault(tableId, 0))));
+    return new DynamicAllocationState.GroupLoad(
+        busyThreads,
+        DynamicAllocationState.serviceablePlannedCount(demands),
+        pendingTables,
+        inFlightByToken);
   }
 
   public void retryTask(TaskRuntime<?> taskRuntime) {
@@ -464,6 +548,7 @@ public class OptimizingQueue extends PersistentBase {
 
   public void dispose() {
     this.metrics.unregister();
+    this.optimizingTasksMap.clear();
   }
 
   private TableOptimizingProcess findProcess(OptimizingTaskId taskId) {
@@ -575,9 +660,11 @@ public class OptimizingQueue extends PersistentBase {
 
     private int getQuotaLimit() {
       double targetQuota = tableRuntime.getOptimizingConfig().getTargetQuota();
+      // A non-positive target quota must not starve the table to zero schedulable slots;
+      // clamp to 1 like getAvailableCore does for the group quota.
       return targetQuota > 1
           ? (int) targetQuota
-          : (int) Math.ceil(targetQuota * getAvailableCore());
+          : (int) Math.max(1, Math.ceil(targetQuota * getAvailableCore()));
     }
 
     @Override
@@ -601,7 +688,7 @@ public class OptimizingQueue extends PersistentBase {
     }
 
     @Override
-    public void close(boolean needCommit) {
+    public void close(boolean needCommit, String reason) {
       lock.lock();
       try {
         if (this.status != ProcessStatus.RUNNING) {
@@ -610,6 +697,9 @@ public class OptimizingQueue extends PersistentBase {
         if (tableRuntime.isAllowPartialCommit() && needCommit) {
           tableRuntime.beginCommitting();
         } else {
+          if (reason != null) {
+            this.failedReason = reason;
+          }
           this.status = ProcessStatus.CLOSED;
           this.endTime = System.currentTimeMillis();
           persistAndSetCompleted(false);
@@ -650,13 +740,18 @@ public class OptimizingQueue extends PersistentBase {
     private void acceptResult(TaskRuntime<?> taskRuntime) {
       lock.lock();
       try {
-        optimizingTasksMap.computeIfPresent(
+        optimizingTasksMap.compute(
             tableRuntime.getTableIdentifier(),
             (k, v) -> {
+              if (v == null) {
+                return null;
+              }
               if (v.get() > 0) {
                 v.decrementAndGet();
               }
-              return v;
+              // Remove the entry at zero instead of leaving an empty counter behind:
+              // every table with a polled task would otherwise occupy a slot forever.
+              return v.get() > 0 ? v : null;
             });
         try {
           tableRuntime.addTaskQuota(taskRuntime.getCurrentQuota());
@@ -728,7 +823,10 @@ public class OptimizingQueue extends PersistentBase {
 
     @Override
     public boolean isClosed() {
-      return status == ProcessStatus.KILLED;
+      // close() sets CLOSED (KILLED is reserved for kill flows); checking only KILLED made
+      // this predicate permanently false, so the acceptResult guard against late results on a
+      // closed process could never fire.
+      return status == ProcessStatus.CLOSED || status == ProcessStatus.KILLED;
     }
 
     @Override

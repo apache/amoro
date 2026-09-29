@@ -28,7 +28,16 @@ public interface OptimizingProcess {
 
   long getProcessId();
 
-  void close(boolean needCommit);
+  void close(boolean needCommit, String reason);
+
+  default void close(boolean needCommit) {
+    close(needCommit, null);
+  }
+
+  /** Close without committing and persist the reason in the process history. */
+  default void close(String reason) {
+    close(false, reason);
+  }
 
   boolean isClosed();
 

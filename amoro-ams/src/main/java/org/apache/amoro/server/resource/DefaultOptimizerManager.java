@@ -33,6 +33,7 @@ import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.table.TableProperties;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -74,13 +75,17 @@ public class DefaultOptimizerManager extends PersistentBase implements Optimizer
   }
 
   @Override
-  public void deleteOptimizer(String group, String resourceId) {
-    List<OptimizerInstance> deleteOptimizers =
-        getAs(OptimizerMapper.class, mapper -> mapper.selectByResourceId(resourceId));
-    deleteOptimizers.forEach(
-        optimizer -> {
-          String token = optimizer.getToken();
-          unregisterOptimizer(token);
+  public void deleteOptimizerAndResource(String group, String resourceId) {
+    doAsTransaction(
+        () -> deleteResource(resourceId),
+        () -> {
+          List<OptimizerInstance> deleteOptimizers =
+              getAs(OptimizerMapper.class, mapper -> mapper.selectByResourceId(resourceId));
+          deleteOptimizers.forEach(
+              optimizer -> {
+                String token = optimizer.getToken();
+                unregisterOptimizer(token);
+              });
         });
   }
 
@@ -91,9 +96,25 @@ public class DefaultOptimizerManager extends PersistentBase implements Optimizer
 
   @Override
   public void deleteResourceGroup(String groupName) {
-    if (canDeleteResourceGroup(groupName)) {
-      doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
-    } else {
+    AtomicBoolean groupInUse = new AtomicBoolean(false);
+    doAsTransaction(
+        () -> {
+          String lockedGroupName =
+              getAs(
+                  ResourceMapper.class,
+                  mapper -> mapper.selectResourceGroupNameForUpdate(groupName));
+          if (lockedGroupName == null) {
+            return;
+          }
+
+          if (!canDeleteResourceGroup(groupName)) {
+            groupInUse.set(true);
+            return;
+          }
+          doAs(ResourceMapper.class, mapper -> mapper.deleteResourceGroup(groupName));
+        });
+    // Keep the existing exception type instead of letting the transaction helper wrap it.
+    if (groupInUse.get()) {
       throw new RuntimeException(
           String.format(
               "The resource group %s cannot be deleted because it is currently in use.",

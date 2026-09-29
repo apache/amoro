@@ -17,10 +17,11 @@
  / -->
 
 <script lang="ts" setup>
-import * as monaco from 'monaco-editor'
-import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
+import type * as Monaco from 'monaco-editor'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import { EDITOR_OPTIONS } from './editor-config'
+import { type MonacoApi, setupMonaco } from '@/utils/editor'
 
 interface EditorCommand {
   [commandName: string]: string | null
@@ -32,8 +33,11 @@ const emit = defineEmits<{
   (e: 'save'): void
   (e: 'update:value', val: any): void
   (e: 'change', val: any): void
+  (e: 'ready'): void
+  (e: 'loadError', error: Error): void
 }>()
-let editor: monaco.editor.IStandaloneCodeEditor
+const editorElement = ref<HTMLElement>()
+let editor: Monaco.editor.IStandaloneCodeEditor | undefined
 // @Component
 // export default class MSqlEditor extends Vue {
 // @Model('change', { type: String })
@@ -82,6 +86,9 @@ defineExpose({
     editor && editor.updateOptions(options)
   },
   getSelection() {
+    if (!editor) {
+      return ''
+    }
     const selection = editor.getSelection()
     const model = editor.getModel()
     if (selection && model) {
@@ -92,25 +99,42 @@ defineExpose({
 
 })
 
+// setupMonaco loads asynchronously: unmount may happen while waiting,
+// used to abandon a stale editor creation
+let disposed = false
+
 onBeforeUnmount(() => {
+  disposed = true
   window.removeEventListener('resize', resize)
   editor && editor.dispose()
 })
 
 onMounted(() => {
-  const el: any = document.getElementsByClassName('m-sql-editor')[0]
-  nextTick(() => {
-    const newEditor = (editor = monaco.editor.create(el, { ...EDITOR_OPTIONS, ...props.options }))
-    addCommand()
+  nextTick(async () => {
+    try {
+      const monaco = await setupMonaco()
+      if (disposed || !editorElement.value)
+        return
+      const newEditor = (editor = monaco.editor.create(editorElement.value, { ...EDITOR_OPTIONS, ...props.options }))
+      addCommand(monaco)
 
-    newEditor.setValue(props.sqlValue || '')
+      newEditor.setValue(props.sqlValue || '')
 
-    newEditor.onDidChangeModelContent(() => {
-      const val = editor.getValue()
-      emit('update:value', val)
-      emit('change', val)
-      oldValue = val
-    })
+      newEditor.onDidChangeModelContent(() => {
+        const val = newEditor.getValue()
+        emit('update:value', val)
+        emit('change', val)
+        oldValue = val
+      })
+      emit('ready')
+    }
+    catch (error) {
+      editor?.dispose()
+      editor = undefined
+      if (!disposed) {
+        emit('loadError', error instanceof Error ? error : new Error(String(error)))
+      }
+    }
   })
 })
 /**
@@ -119,7 +143,7 @@ onMounted(() => {
  * config： https://microsoft.github.io/monaco-editor/api/interfaces/monaco.editor.ieditoroptions.html
  */
 
-function addCommand() {
+function addCommand(monaco: MonacoApi) {
   if (editor) {
     const saveBinding = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       emit('save')
@@ -139,7 +163,7 @@ function formatSql() {
 </script>
 
 <template>
-  <div class="m-sql-editor" :class="{ disabled: readOnly }" style="height: 100%; width: 100%;" />
+  <div ref="editorElement" class="m-sql-editor" :class="{ disabled: readOnly }" style="height: 100%; width: 100%;" />
 </template>
 
 <style lang="less" scoped>

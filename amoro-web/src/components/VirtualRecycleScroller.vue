@@ -18,8 +18,11 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import type { PropType } from 'vue'
 import { RecycleScroller } from 'vue-virtual-scroller'
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
+// since v3 the CSS entry moved from dist/vue-virtual-scroller.css to index.css
+// Source: https://vue-virtual-scroller.netlify.app/guide/
+import 'vue-virtual-scroller/index.css'
 import { Empty as AEmpty } from 'ant-design-vue'
 import type { IMap } from '@/types/common.type'
 import { tableTypeIconMap } from '@/types/common.type'
@@ -30,7 +33,7 @@ export default defineComponent ({
   },
   props: {
     items: {
-      type: Array,
+      type: Array as PropType<IMap<string>[]>,
       default: () => [],
     },
     activeItem: {

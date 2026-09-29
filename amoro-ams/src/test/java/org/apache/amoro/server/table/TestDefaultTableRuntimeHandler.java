@@ -30,6 +30,11 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.hive.catalog.HiveCatalogTestHelper;
 import org.apache.amoro.hive.catalog.HiveTableTestHelper;
+import org.apache.amoro.metrics.Gauge;
+import org.apache.amoro.metrics.Metric;
+import org.apache.amoro.metrics.MetricDefine;
+import org.apache.amoro.metrics.MetricKey;
+import org.apache.amoro.metrics.MetricRegistry;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
@@ -43,6 +48,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.List;
+import java.util.Map;
 
 @RunWith(Parameterized.class)
 public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
@@ -164,6 +170,85 @@ public class TestDefaultTableRuntimeHandler extends AMSTableTestBase {
     MetricManager.dispose();
     EventsManager.dispose();
     tableService = null;
+  }
+
+  @Test
+  public void testStatusChangeMetricsWiring() throws Exception {
+    tableService = new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactory);
+    tableService.addHandlerChain(new TestHandler());
+    tableService.initialize();
+    if (!(catalogTestHelper().tableFormat().equals(TableFormat.MIXED_HIVE)
+        && TEST_HMS.getHiveClient().getDatabase(TableTestHelper.TEST_DB_NAME) != null)) {
+      createDatabase();
+    }
+    createTable();
+    ServerTableIdentifier tableId = tableManager().listManagedTables().get(0);
+    DefaultTableRuntime runtime = getDefaultTableRuntime(tableId.getId());
+
+    // a brand-new table reports idle in the status gauges
+    Assert.assertEquals(OptimizingStatus.IDLE, runtime.getOptimizingStatus());
+    Assert.assertEquals(1L, gaugeValue(TableOptimizingMetrics.TABLE_OPTIMIZING_STATUS_IN_IDLE));
+    Assert.assertEquals(0L, gaugeValue(TableOptimizingMetrics.TABLE_OPTIMIZING_STATUS_IN_PLANNING));
+
+    // IDLE -> PLANNING notifies the metrics via the status-change handler callback
+    runtime.beginPlanning();
+    Assert.assertEquals(OptimizingStatus.PLANNING, runtime.getOptimizingStatus());
+    Assert.assertEquals(1L, gaugeValue(TableOptimizingMetrics.TABLE_OPTIMIZING_STATUS_IN_PLANNING));
+    Assert.assertEquals(0L, gaugeValue(TableOptimizingMetrics.TABLE_OPTIMIZING_STATUS_IN_IDLE));
+    Thread.sleep(50);
+    Assert.assertTrue(
+        gaugeValue(TableOptimizingMetrics.TABLE_OPTIMIZING_STATUS_PLANNING_DURATION) > 0);
+
+    // PLANNING -> PENDING resets the planning duration and moves the pending gauges
+    runtime.planFailed();
+    Assert.assertEquals(OptimizingStatus.PENDING, runtime.getOptimizingStatus());
+    Assert.assertEquals(1L, gaugeValue(TableOptimizingMetrics.TABLE_OPTIMIZING_STATUS_IN_PENDING));
+    Assert.assertEquals(0L, gaugeValue(TableOptimizingMetrics.TABLE_OPTIMIZING_STATUS_IN_PLANNING));
+    Assert.assertEquals(
+        0L, gaugeValue(TableOptimizingMetrics.TABLE_OPTIMIZING_STATUS_PLANNING_DURATION));
+    Thread.sleep(50);
+    long pendingDurationBeforeRestart =
+        gaugeValue(TableOptimizingMetrics.TABLE_OPTIMIZING_STATUS_PENDING_DURATION);
+    Assert.assertTrue(pendingDurationBeforeRestart > 0);
+
+    // A same-status write must not restart the persisted duration clock used after a restart.
+    DefaultTableRuntimeStore runtimeStore = (DefaultTableRuntimeStore) runtime.store();
+    long pendingStatusUpdateTime = runtimeStore.getStatusCodeUpdateTime();
+    runtime.store().begin().updateStatusCode(status -> status).commit();
+    Assert.assertEquals(pendingStatusUpdateTime, runtimeStore.getStatusCodeUpdateTime());
+
+    // metrics survive a restart: the restored runtime is seeded from the persisted status
+    tableService.dispose();
+    MetricManager.dispose();
+    EventsManager.dispose();
+    tableService = new DefaultTableService(new Configurations(), CATALOG_MANAGER, runtimeFactory);
+    tableService.addHandlerChain(new TestHandler());
+    tableService.initialize();
+    DefaultTableRuntime restoredRuntime = getDefaultTableRuntime(tableId.getId());
+    Assert.assertEquals(OptimizingStatus.PENDING, restoredRuntime.getOptimizingStatus());
+    Assert.assertEquals(1L, gaugeValue(TableOptimizingMetrics.TABLE_OPTIMIZING_STATUS_IN_PENDING));
+    Assert.assertTrue(
+        gaugeValue(TableOptimizingMetrics.TABLE_OPTIMIZING_STATUS_PENDING_DURATION)
+            >= pendingDurationBeforeRestart);
+
+    dropTable();
+    dropDatabase();
+    tableService.dispose();
+    MetricManager.dispose();
+    EventsManager.dispose();
+    tableService = null;
+  }
+
+  private long gaugeValue(MetricDefine define) {
+    MetricRegistry registry = MetricManager.getInstance().getGlobalRegistry();
+    for (Map.Entry<MetricKey, Metric> entry : registry.getMetrics().entrySet()) {
+      MetricKey key = entry.getKey();
+      if (define.equals(key.getDefine())
+          && TableTestHelper.TEST_TABLE_NAME.equals(key.valueOfTag("table"))) {
+        return ((Gauge<? extends Number>) entry.getValue()).getValue().longValue();
+      }
+    }
+    throw new AssertionError("Gauge not registered for " + define.getName());
   }
 
   protected DefaultTableService tableService() {

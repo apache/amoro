@@ -48,6 +48,9 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.exceptions.NotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -56,6 +59,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
+
+  private static final Logger LOG = LoggerFactory.getLogger(BasicMixedIcebergCatalog.class);
 
   private org.apache.iceberg.catalog.Catalog icebergCatalog;
   private TableMetaStore tableMetaStore;
@@ -138,7 +143,16 @@ public class BasicMixedIcebergCatalog implements MixedFormatCatalog {
       if (visited.contains(identifier)) {
         continue;
       }
-      Table table = tableMetaStore.doAs(() -> icebergCatalog().loadTable(identifier));
+      Table table;
+      try {
+        table = tableMetaStore.doAs(() -> icebergCatalog().loadTable(identifier));
+      } catch (NoSuchTableException | NotFoundException e) {
+        LOG.warn(
+            "Skipping table {} during mixed-format discovery because it could not be loaded: {}",
+            identifier,
+            e.toString());
+        continue;
+      }
       if (tables.isBaseStore(table)) {
         mixedTables.add(TableIdentifier.of(name(), database, identifier.name()));
         visited.add(identifier);

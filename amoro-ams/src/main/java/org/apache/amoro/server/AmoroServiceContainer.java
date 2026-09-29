@@ -42,7 +42,6 @@ import org.apache.amoro.server.dashboard.DashboardServer;
 import org.apache.amoro.server.dashboard.JavalinJsonMapper;
 import org.apache.amoro.server.dashboard.response.ErrorResponse;
 import org.apache.amoro.server.dashboard.utils.AmsUtil;
-import org.apache.amoro.server.dashboard.utils.CommonUtil;
 import org.apache.amoro.server.ha.HighAvailabilityContainer;
 import org.apache.amoro.server.ha.HighAvailabilityContainerFactory;
 import org.apache.amoro.server.manager.EventsManager;
@@ -132,6 +131,7 @@ public class AmoroServiceContainer {
   public AmoroServiceContainer() throws Exception {
     initConfig();
     haContainer = HighAvailabilityContainerFactory.create(serviceConfig);
+    haContainer.registerAndElect();
   }
 
   public static void main(String[] args) {
@@ -145,38 +145,27 @@ public class AmoroServiceContainer {
                     service.dispose();
                     LOG.info("AMS service has been shut down");
                   }));
-      service.startRestServices();
-      if (IS_MASTER_SLAVE_MODE) {
-        // Even if one does not become the master, it cannot block the subsequent logic.
-        service.registAndElect();
-        // Regardless of whether tp becomes the master, the service needs to be activated.
-        service.startOptimizingService();
-      } else {
-        while (true) {
-          try {
-            // Used to block AMS instances that have not acquired leadership
-            service.waitLeaderShip();
-            service.transitionToLeader();
-            // Used to block AMS instances that have acquired leadership
-            service.waitFollowerShip();
-          } catch (ConfigurationException e) {
-            LOG.error("AMS will exit...", e);
-            System.exit(1);
-          } catch (Exception e) {
-            LOG.error("AMS start error", e);
-          } finally {
-            service.transitionToFollower();
-          }
+
+      service.startBaseServices();
+
+      while (true) {
+        try {
+          service.waitLeaderShip();
+          service.startLeaderServices();
+          service.waitFollowerShip();
+        } catch (ConfigurationException e) {
+          LOG.error("AMS will exit...", e);
+          System.exit(1);
+        } catch (Exception e) {
+          LOG.error("AMS start error", e);
+        } finally {
+          service.stopLeaderServices();
         }
       }
     } catch (Throwable t) {
       LOG.error("AMS encountered an unknown exception, will exit...", t);
       System.exit(1);
     }
-  }
-
-  public void registAndElect() throws Exception {
-    haContainer.registerAndElect();
   }
 
   public enum HAState {
@@ -221,24 +210,28 @@ public class AmoroServiceContainer {
     registerAmsServiceMetric();
   }
 
-  public void transitionToLeader() throws Exception {
-    if (haState == HAState.LEADER) {
-      return;
+  /**
+   * Start base services that every AMS node needs regardless of HA mode: REST/HTTP and
+   * catalog/table managers. In master-slave mode, also starts the optimizing service (including
+   * Thrift), because non-leader nodes must serve optimizer requests. In active-standby mode, the
+   * optimizing service is deferred to {@link #startLeaderServices} since the standby node does not
+   * serve any requests.
+   */
+  public void startBaseServices() throws Exception {
+    startRestServices();
+    if (IS_MASTER_SLAVE_MODE) {
+      startOptimizingService();
     }
-    startOptimizingService();
-    haState = HAState.LEADER;
+    if (haState == HAState.INITIALIZING) {
+      haState = HAState.FOLLOWER;
+    }
   }
 
-  public void transitionToFollower() {
-    if (haState == HAState.FOLLOWER) {
-      return;
-    }
-    haState = HAState.FOLLOWER;
-    disposeOptimizingService();
-  }
-
-  public void startOptimizingService() throws Exception {
-
+  /**
+   * Create optimizing service objects, register handler chains, initialize table service, and start
+   * the Thrift servers.
+   */
+  private void startOptimizingService() throws Exception {
     // Load process factories and build action coordinators from default table runtime factory.
     TableProcessFactoryManager tableProcessFactoryManager = new TableProcessFactoryManager();
     tableProcessFactoryManager.initialize();
@@ -254,20 +247,6 @@ public class AmoroServiceContainer {
     BucketAssignStore bucketAssignStore = null;
     if (IS_MASTER_SLAVE_MODE && haContainer != null) {
       bucketAssignStore = BucketAssignStoreFactory.create(haContainer, serviceConfig);
-    }
-
-    // In master-slave mode, create AmsAssignService for bucket assignment (shares BucketAssignStore
-    // with DefaultTableService).
-    if (IS_MASTER_SLAVE_MODE && haContainer != null && bucketAssignStore != null) {
-      try {
-        amsAssignService = new AmsAssignService(haContainer, serviceConfig, bucketAssignStore);
-        amsAssignService.start();
-        LOG.info("AmsAssignService started for master-slave mode");
-      } catch (UnsupportedOperationException e) {
-        LOG.info("Skip AmsAssignService: {}", e.getMessage());
-      } catch (Exception e) {
-        LOG.error("Failed to start AmsAssignService", e);
-      }
     }
 
     List<ActionCoordinator> actionCoordinators = defaultRuntimeFactory.supportedCoordinators();
@@ -301,6 +280,67 @@ public class AmoroServiceContainer {
     startThriftService();
   }
 
+  /**
+   * Start leader-exclusive services. In active-standby mode this starts the optimizing service
+   * (including Thrift) since only the leader serves requests. In master-slave mode the optimizing
+   * service is already started in {@link #startBaseServices} because non-leader nodes also serve
+   * optimizer requests; here only the leader-exclusive schedulers (e.g. AmsAssignService) are
+   * started.
+   */
+  public void startLeaderServices() throws Exception {
+    if (haState == HAState.LEADER) {
+      return;
+    }
+    try {
+      if (IS_MASTER_SLAVE_MODE) {
+        // AmsAssignService may have been stopped and set to null by a previous stopLeaderServices
+        // call (leader re-election); recreate it if needed.
+        if (amsAssignService == null && haContainer != null) {
+          try {
+            BucketAssignStore bucketAssignStore =
+                BucketAssignStoreFactory.create(haContainer, serviceConfig);
+            amsAssignService = new AmsAssignService(haContainer, serviceConfig, bucketAssignStore);
+          } catch (Exception e) {
+            LOG.error("Failed to recreate AmsAssignService", e);
+          }
+        }
+        if (amsAssignService != null) {
+          amsAssignService.start();
+          LOG.info("AmsAssignService started");
+        }
+      } else {
+        startOptimizingService();
+      }
+      haState = HAState.LEADER;
+    } catch (Exception e) {
+      haState = HAState.INITIALIZING;
+      stopLeaderServices();
+      throw e;
+    }
+  }
+
+  /**
+   * Stop leader-exclusive services. In active-standby mode this disposes the entire optimizing
+   * service (including Thrift and service objects), since the standby node does not serve any
+   * requests. In master-slave mode only the leader-exclusive schedulers are stopped; Thrift stays
+   * running so the node can continue serving optimizer requests.
+   */
+  public void stopLeaderServices() {
+    if (haState == HAState.FOLLOWER) {
+      return;
+    }
+    if (IS_MASTER_SLAVE_MODE) {
+      if (amsAssignService != null) {
+        LOG.info("Stopping AmsAssignService...");
+        amsAssignService.stop();
+        amsAssignService = null;
+      }
+    } else {
+      disposeOptimizingService();
+    }
+    haState = HAState.FOLLOWER;
+  }
+
   private void addHandlerChain(RuntimeHandlerChain chain) {
     if (chain != null) {
       tableService.addHandlerChain(chain);
@@ -316,11 +356,6 @@ public class AmoroServiceContainer {
     if (optimizingServiceServer != null) {
       LOG.info("Stopping optimizing server[serving:{}] ...", optimizingServiceServer.isServing());
       optimizingServiceServer.stop();
-    }
-    if (amsAssignService != null) {
-      LOG.info("Stopping AmsAssignService...");
-      amsAssignService.stop();
-      amsAssignService = null;
     }
     if (tableService != null) {
       LOG.info("Stopping table service...");
@@ -361,6 +396,7 @@ public class AmoroServiceContainer {
   }
 
   public void dispose() {
+    stopLeaderServices();
     disposeOptimizingService();
     disposeRestService();
   }
@@ -419,15 +455,7 @@ public class AmoroServiceContainer {
           }
         });
 
-    httpServer.before(
-        ctx -> {
-          String token = ctx.queryParam("token");
-          if (StringUtils.isNotEmpty(token)) {
-            CommonUtil.checkSinglePageToken(ctx);
-          } else {
-            dashboardServer.preHandleRequest(ctx);
-          }
-        });
+    httpServer.before(dashboardServer::preHandleRequest);
     httpServer.exception(
         Exception.class,
         (e, ctx) -> {
@@ -619,9 +647,7 @@ public class AmoroServiceContainer {
       return ConfigHelpers.convertConfigurationKeys(prefix, System.getenv());
     }
 
-    /**
-     * Configures Iceberg's global worker pool and initializes self-optimizing Iceberg I/O pools.
-     */
+    /** Configures Iceberg's global worker pool and initializes Amoro Iceberg I/O pools. */
     private void initIcebergThreadPools() {
       int workerThreadPoolSize =
           Math.max(
@@ -639,7 +665,10 @@ public class AmoroServiceContainer {
           Math.max(
               Runtime.getRuntime().availableProcessors() / 2,
               serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_COMMIT_THREAD_COUNT));
+      int maintenanceThreadPoolSize =
+          serviceConfig.getInteger(AmoroManagementConf.TABLE_MANIFEST_IO_MAINTENANCE_THREAD_COUNT);
       IcebergThreadPools.init(planningThreadPoolSize, commitThreadPoolSize);
+      IcebergThreadPools.initMaintenanceThreadPool(maintenanceThreadPoolSize);
     }
 
     private void initContainerConfig() {

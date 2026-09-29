@@ -269,6 +269,7 @@ public class TableProperties {
   public static final String AUTO_CREATE_TAG_FORMAT = "tag.auto-create.tag-format";
   public static final String AUTO_CREATE_TAG_FORMAT_DAILY_DEFAULT = "'tag-'yyyyMMdd";
   public static final String AUTO_CREATE_TAG_FORMAT_HOURLY_DEFAULT = "'tag-'yyyyMMddHH";
+  public static final String AUTO_CREATE_TAG_FORMAT_MONTHLY_DEFAULT = "'tag-'yyyyMM";
 
   /** table write related properties */
   public static final String FILE_FORMAT_PARQUET = "parquet";

@@ -175,3 +175,6 @@ CREATE TABLE IF NOT EXISTS bucket_assignments (
 -- ADD node_heartbeat_ts to table bucket_assignments
 ALTER TABLE `bucket_assignments` ADD COLUMN `node_heartbeat_ts` BIGINT NOT NULL DEFAULT 0 COMMENT 'Per-node heartbeat timestamp updated only by the owning node (ms since epoch)';
 
+-- ADD properties to table database_metadata
+ALTER TABLE `database_metadata` ADD COLUMN `properties` MEDIUMTEXT COMMENT 'Database properties';
+

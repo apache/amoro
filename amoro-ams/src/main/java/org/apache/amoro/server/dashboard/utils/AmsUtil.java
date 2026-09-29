@@ -124,7 +124,11 @@ public class AmsUtil {
   }
 
   public static String getAMSThriftAddress(Configurations conf, String serviceName) {
-    if (conf.getBoolean(AmoroManagementConf.HA_ENABLE)) {
+    boolean zkHaEnabled =
+        conf.getBoolean(AmoroManagementConf.HA_ENABLE)
+            && AmoroManagementConf.HA_TYPE_ZK.equalsIgnoreCase(
+                conf.getString(AmoroManagementConf.HA_TYPE));
+    if (zkHaEnabled) {
       return String.format(
           ZOOKEEPER_ADDRESS_FORMAT,
           conf.getString(AmoroManagementConf.HA_ZOOKEEPER_ADDRESS),

@@ -28,9 +28,11 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -145,5 +147,19 @@ public class SchedulingPolicy {
   @VisibleForTesting
   Map<ServerTableIdentifier, DefaultTableRuntime> getTableRuntimeMap() {
     return tableRuntimeMap;
+  }
+
+  /**
+   * Copy the current table runtimes under {@code tableLock}. {@code tableRuntimeMap} is a plain
+   * {@link HashMap} whose canonical accesses all hold the lock, so callers on other threads (e.g.
+   * the dynamic-allocation scale keeper) must iterate a snapshot instead of the live map.
+   */
+  public List<DefaultTableRuntime> snapshotTableRuntimes() {
+    tableLock.lock();
+    try {
+      return new ArrayList<>(tableRuntimeMap.values());
+    } finally {
+      tableLock.unlock();
+    }
   }
 }

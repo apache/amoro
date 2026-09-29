@@ -389,6 +389,9 @@ public class TableConfigurations {
       case HOURLY:
         defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_HOURLY_DEFAULT;
         break;
+      case MONTHLY:
+        defaultFormat = TableProperties.AUTO_CREATE_TAG_FORMAT_MONTHLY_DEFAULT;
+        break;
       default:
         throw new IllegalArgumentException(
             "Unsupported trigger period: " + tagConfig.getTriggerPeriod());

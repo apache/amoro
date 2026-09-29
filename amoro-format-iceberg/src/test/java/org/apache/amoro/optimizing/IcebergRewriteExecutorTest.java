@@ -80,7 +80,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
   private RewriteFilesInput dataScanTask;
 
   private final Schema posSchema =
-      new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
+      new Schema(MetadataColumns.DELETE_FILE_PATH, MetadataColumns.DELETE_FILE_POS);
 
   public IcebergRewriteExecutorTest(boolean hasPartition, FileFormat fileFormat) {
     super(

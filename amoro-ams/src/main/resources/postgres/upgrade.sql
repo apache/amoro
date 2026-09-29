@@ -236,3 +236,7 @@ CREATE INDEX IF NOT EXISTS idx_bucket_assignments_cluster ON bucket_assignments 
 
 -- ADD node_heartbeat_ts to table bucket_assignments
 ALTER TABLE bucket_assignments ADD COLUMN node_heartbeat_ts BIGINT NOT NULL DEFAULT 0;
+
+-- ADD properties to table database_metadata
+ALTER TABLE database_metadata ADD COLUMN properties text;
+COMMENT ON COLUMN database_metadata.properties IS 'Database properties';

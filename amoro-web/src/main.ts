@@ -19,7 +19,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
-import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
 import App from './App.vue'
 import router from './router'
 import useStore from './store'
@@ -28,7 +27,6 @@ import VueI18n from './language/i18n'
 import RegisterComponents from './components/register'
 
 import './styles/index.less'
-import './utils/editor'
 import './assets/icons'
 import loginService from './services/login.service'
 import { getQueryString } from './utils'
@@ -87,74 +85,64 @@ RegisterComponents(app);
   }
   finally {
     const store = useStore()
-    router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
+    router.beforeEach((to, from) => {
       store.setHistoryPath({
         path: from.path,
         query: from.query,
       })
       if (to.path === '/login') {
         resetLoginTip()
-        next()
-        return
+        return true
       }
       if (!store.userInfo.userName && to.path !== '/login') {
-        next({
+        return {
           path: '/login',
-        })
-        return
+        }
       }
       if (
         to.path === '/settings'
         && !canManagePlatform()
       ) {
-        next({
+        return {
           path: getDefaultRoute(),
-        })
-        return
+        }
       }
-      if (to.path === '/hive-tables/upgrade' && !canManageTable()) {
-        next({
+      if ((to.path === '/hive-tables/upgrade' || to.path === '/tables/hive-upgrade') && !canManageTable()) {
+        return {
           path: getDefaultRoute(),
-        })
-        return
+        }
       }
       if (to.path === '/overview' && !canViewSystem()) {
-        next({
+        return {
           path: getDefaultRoute(),
-        })
-        return
+        }
       }
       if (to.path === '/terminal' && !canExecuteSql()) {
-        next({
+        return {
           path: getDefaultRoute(),
-        })
-        return
+        }
       }
       if (to.path === '/catalogs' && !canViewCatalog()) {
-        next({
+        return {
           path: getDefaultRoute(),
-        })
-        return
+        }
       }
       if (to.path === '/optimizing' && !canViewOptimizer()) {
-        next({
+        return {
           path: getDefaultRoute(),
-        })
-        return
+        }
       }
       if ((to.path === '/tables' || to.path.startsWith('/tables/')) && !canViewTable()) {
-        next({
+        return {
           path: getDefaultRoute(),
-        })
-        return
+        }
       }
       if (to.path.startsWith('/hive-tables') && !canViewTable()) {
-        next({
+        return {
           path: getDefaultRoute(),
-        })
-        return
+        }
       }
-      next()
+      return true
     })
 
     app.use(router)

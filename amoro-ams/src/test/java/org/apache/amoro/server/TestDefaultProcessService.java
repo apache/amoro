@@ -21,14 +21,20 @@ package org.apache.amoro.server;
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.TableRuntime;
 import org.apache.amoro.TableTestHelper;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.CatalogTestHelper;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
+import org.apache.amoro.server.persistence.PersistentBase;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.ActionCoordinatorScheduler;
 import org.apache.amoro.server.process.MockActionCoordinator;
 import org.apache.amoro.server.process.MockExecuteEngine;
 import org.apache.amoro.server.process.ProcessService;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.process.ThrowingRecoverActionCoordinator;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.junit.After;
@@ -41,7 +47,13 @@ import org.junit.runners.Parameterized;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -53,6 +65,7 @@ public class TestDefaultProcessService extends AMSTableTestBase {
 
   private static final long WAIT_TIMEOUT_MS = 60_000L;
   private static final long POLL_INTERVAL_MS = 3_000L;
+  private static final Persistence PERSISTENCE = new Persistence();
 
   /**
    * Parameterization for catalog and table helpers.
@@ -177,7 +190,7 @@ public class TestDefaultProcessService extends AMSTableTestBase {
 
       ProcessService.TableProcessHolder holder = getAnyActiveTableProcessHolder();
       TableProcessStore store = holder.getStore();
-      org.apache.amoro.TableRuntime tableRuntime = holder.getProcess().getTableRuntime();
+      TableRuntime tableRuntime = holder.getProcess().getTableRuntime();
 
       awaitEngineStatus(executeEngine, store.getExternalProcessIdentifier(), ProcessStatus.RUNNING);
       Assert.assertEquals(ProcessStatus.RUNNING, store.getStatus());
@@ -219,6 +232,121 @@ public class TestDefaultProcessService extends AMSTableTestBase {
     }
   }
 
+  /** Verify active processes are recovered when table ownership moves to this AMS. */
+  @Test(timeout = 60_000)
+  public void testRecoverTableProcessWhenTableAdded() {
+    MockExecuteEngine executeEngine = getExecuteEngine();
+    ExecutorService recoveryExecutor = Executors.newSingleThreadExecutor();
+    BlockingRecoverActionCoordinator coordinator =
+        new BlockingRecoverActionCoordinator(executeEngine);
+    try {
+      // Start a process as the old table owner and capture its persisted identity.
+      createTable();
+      awaitActiveInstances(executeEngine);
+
+      ProcessService.TableProcessHolder originalHolder = getAnyActiveTableProcessHolder();
+      TableProcessStore originalStore = originalHolder.getStore();
+      TableRuntime tableRuntime = originalHolder.getProcess().getTableRuntime();
+      long processId = originalStore.getProcessId();
+      String originalExternalId = originalStore.getExternalProcessIdentifier();
+
+      // Simulate losing the old owner: stop its external process and wait until the local active
+      // process entry has been removed.
+      executeEngine.tryCancelTableProcess(originalHolder.getProcess(), originalExternalId);
+      awaitCondition(
+          () -> originalStore.getStatus() == ProcessStatus.CANCELED,
+          WAIT_TIMEOUT_MS,
+          POLL_INTERVAL_MS);
+      awaitCondition(
+          () ->
+              processServiceService()
+                  .getTableProcessInstances(tableRuntime.getTableIdentifier())
+                  .isEmpty(),
+          WAIT_TIMEOUT_MS,
+          POLL_INTERVAL_MS);
+      Assert.assertFalse(
+          processServiceService()
+              .getTableProcessInstances(tableRuntime.getTableIdentifier())
+              .containsValue(originalHolder));
+
+      // Recreate the database state observed after an abrupt owner loss. The process remains
+      // RUNNING, but its external identifier is unavailable to the new owner.
+      markProcessRunningWithoutExternalIdentifier(processId);
+      processServiceService().unInstallAllActionCoordinators();
+      processServiceService().installActionCoordinator(coordinator);
+
+      // Hold the first table-added recovery inside the coordinator, then deliver the same event
+      // again. The second event MUST see the atomic recovery reservation and return without
+      // recovering the process a second time.
+      Future<?> firstRecovery =
+          recoveryExecutor.submit(
+              () ->
+                  processServiceService()
+                      .getTableHandlerChain()
+                      .fireTableAdded(
+                          tableService().loadTable(tableRuntime.getTableIdentifier()),
+                          tableRuntime));
+      coordinator.awaitRecoveryStarted();
+
+      processServiceService()
+          .getTableHandlerChain()
+          .fireTableAdded(
+              tableService().loadTable(tableRuntime.getTableIdentifier()), tableRuntime);
+      Assert.assertEquals(1, coordinator.getRecoveryCount());
+
+      coordinator.releaseRecovery();
+      firstRecovery.get(WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+      // The new owner MUST track the same persisted process ID with a newly submitted external
+      // process. The old store must not remain in the active-process map.
+      awaitCondition(
+          () ->
+              processServiceService()
+                  .getTableProcessInstances(tableRuntime.getTableIdentifier())
+                  .containsKey(processId),
+          WAIT_TIMEOUT_MS,
+          POLL_INTERVAL_MS);
+
+      ProcessService.TableProcessHolder recoveredHolder =
+          processServiceService()
+              .getTableProcessInstances(tableRuntime.getTableIdentifier())
+              .get(processId);
+      awaitCondition(
+          () ->
+              recoveredHolder.getStore().getStatus() == ProcessStatus.RUNNING
+                  && !recoveredHolder.getStore().getExternalProcessIdentifier().isEmpty(),
+          WAIT_TIMEOUT_MS,
+          POLL_INTERVAL_MS);
+
+      String recoveredExternalId = recoveredHolder.getStore().getExternalProcessIdentifier();
+      Assert.assertNotEquals(originalExternalId, recoveredExternalId);
+      Assert.assertNotSame(originalStore, recoveredHolder.getStore());
+      Assert.assertEquals(
+          1,
+          processServiceService()
+              .getTableProcessInstances(tableRuntime.getTableIdentifier())
+              .size());
+      Assert.assertEquals(1, executeEngine.getActiveInstances().size());
+
+      // handleTableAdded also starts the periodic scheduler. Wait until it actually triggers and
+      // verify that the recovered RUNNING process prevents a second process from being submitted.
+      coordinator.awaitSchedulerTriggered();
+      Assert.assertEquals(1, executeEngine.getActiveInstances().size());
+      Assert.assertEquals(
+          1,
+          processServiceService()
+              .getTableProcessInstances(tableRuntime.getTableIdentifier())
+              .size());
+
+      dropTable();
+    } catch (Throwable t) {
+      throw new RuntimeException(t);
+    } finally {
+      coordinator.releaseRecovery();
+      recoveryExecutor.shutdownNow();
+    }
+  }
+
   /**
    * Verify that a single un-recoverable process record does not abort AMS startup: {@code
    * recoverProcesses} must not propagate the failure, the bad record is skipped and persisted as
@@ -234,7 +362,7 @@ public class TestDefaultProcessService extends AMSTableTestBase {
 
       ProcessService.TableProcessHolder holder = getAnyActiveTableProcessHolder();
       TableProcessStore store = holder.getStore();
-      org.apache.amoro.TableRuntime tableRuntime = holder.getProcess().getTableRuntime();
+      TableRuntime tableRuntime = holder.getProcess().getTableRuntime();
 
       awaitEngineStatus(executeEngine, store.getExternalProcessIdentifier(), ProcessStatus.RUNNING);
       Assert.assertEquals(ProcessStatus.RUNNING, store.getStatus());
@@ -262,6 +390,56 @@ public class TestDefaultProcessService extends AMSTableTestBase {
       dropTable();
     } catch (Throwable t) {
       throw new RuntimeException(t);
+    }
+  }
+
+  /**
+   * Verify that a process which keeps failing is retried a bounded number of times and then
+   * dropped, instead of being resubmitted in an infinite loop. The process store must be created
+   * with the retry limit rather than the current retry count, otherwise a FAILED process is treated
+   * as terminal immediately (retryNumber >= maxRetryTime), every RETRY_REQUESTED transition is
+   * rejected, retryNumber never increases and the process is resubmitted forever.
+   */
+  @Test(timeout = 60_000)
+  public void testFailedProcessRetryIsBounded() throws InterruptedException {
+    AlwaysFailingExecuteEngine failingEngine = new AlwaysFailingExecuteEngine();
+    processServiceService().unInstallAllExecuteEngines();
+    processServiceService().installExecuteEngine(failingEngine);
+    processServiceService().unInstallAllActionCoordinators();
+    processServiceService().installActionCoordinator(new MockActionCoordinator(failingEngine));
+    try {
+      createTable();
+
+      // Wait until the failing process has been submitted at least once.
+      awaitCondition(() -> failingEngine.getSubmitAttempts() >= 1, WAIT_TIMEOUT_MS, 100L);
+
+      // The process must exhaust its bounded retries and be untracked. With the infinite
+      // retry loop, the active process map never empties and this wait times out.
+      awaitCondition(
+          () -> processServiceService().getActiveTableProcess().isEmpty(), 15_000L, 100L);
+
+      Assert.assertEquals(
+          1 + ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER,
+          failingEngine.getSubmitAttempts());
+
+      dropTable();
+    } catch (Throwable t) {
+      throw new RuntimeException(t);
+    }
+  }
+
+  /** Execute engine whose submissions always fail. */
+  private static class AlwaysFailingExecuteEngine extends MockExecuteEngine {
+    private final AtomicInteger submitAttempts = new AtomicInteger();
+
+    @Override
+    public String submitTableProcess(org.apache.amoro.process.TableProcess tableProcess) {
+      submitAttempts.incrementAndGet();
+      throw new IllegalStateException("Submission failure");
+    }
+
+    private int getSubmitAttempts() {
+      return submitAttempts.get();
     }
   }
 
@@ -327,6 +505,84 @@ public class TestDefaultProcessService extends AMSTableTestBase {
 
   private TableProcessStore getAnyActiveTableProcess() {
     return getAnyActiveTableProcessHolder().getStore();
+  }
+
+  private void markProcessRunningWithoutExternalIdentifier(long processId) {
+    PERSISTENCE.markProcessRunningWithoutExternalIdentifier(processId);
+  }
+
+  private static class Persistence extends PersistentBase {
+    private void markProcessRunningWithoutExternalIdentifier(long processId) {
+      doAs(
+          TableProcessMapper.class,
+          mapper -> {
+            TableProcessMeta meta = mapper.getProcessMeta(processId);
+            mapper.updateProcess(
+                meta.getTableId(),
+                processId,
+                "",
+                ProcessStatus.RUNNING,
+                meta.getProcessStage(),
+                meta.getRetryNumber(),
+                0L,
+                "",
+                meta.getProcessParameters(),
+                meta.getSummary());
+          });
+    }
+  }
+
+  private static class BlockingRecoverActionCoordinator extends MockActionCoordinator {
+    private final CountDownLatch recoveryStarted = new CountDownLatch(1);
+    private final CountDownLatch releaseRecovery = new CountDownLatch(1);
+    private final CountDownLatch schedulerTriggered = new CountDownLatch(1);
+    private final AtomicInteger recoveryCount = new AtomicInteger();
+
+    private BlockingRecoverActionCoordinator(MockExecuteEngine executeEngine) {
+      super(executeEngine);
+    }
+
+    @Override
+    public TableProcess recoverTableProcess(
+        TableRuntime tableRuntime, TableProcessStore processStore) {
+      recoveryCount.incrementAndGet();
+      recoveryStarted.countDown();
+      try {
+        if (!releaseRecovery.await(WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+          throw new AssertionError("Timed out waiting to release process recovery");
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new RuntimeException("Interrupted while waiting to recover process", e);
+      }
+      return super.recoverTableProcess(tableRuntime, processStore);
+    }
+
+    @Override
+    public Optional<TableProcess> trigger(TableRuntime tableRuntime) {
+      schedulerTriggered.countDown();
+      return super.trigger(tableRuntime);
+    }
+
+    private void awaitRecoveryStarted() throws InterruptedException {
+      if (!recoveryStarted.await(WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+        throw new AssertionError("Process recovery did not start");
+      }
+    }
+
+    private void releaseRecovery() {
+      releaseRecovery.countDown();
+    }
+
+    private void awaitSchedulerTriggered() throws InterruptedException {
+      if (!schedulerTriggered.await(WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+        throw new AssertionError("Table scheduler did not trigger");
+      }
+    }
+
+    private int getRecoveryCount() {
+      return recoveryCount.get();
+    }
   }
 
   /** Wait until the given externalProcessIdentifier reaches the specified status. */

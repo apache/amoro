@@ -24,6 +24,8 @@ import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.config.DataExpirationConfig;
 import org.apache.amoro.config.TableConfiguration;
 import org.apache.amoro.config.TagConfiguration;
+import org.apache.amoro.formats.iceberg.IcebergMaintenanceCompatibility;
+import org.apache.amoro.formats.iceberg.IcebergMaintenanceCompatibility.UnsupportedTableException;
 import org.apache.amoro.formats.iceberg.utils.IcebergTableUtil;
 import org.apache.amoro.formats.iceberg.utils.RollingFileCleaner;
 import org.apache.amoro.iceberg.Constants;
@@ -41,6 +43,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.ContentScanTask;
@@ -72,12 +75,12 @@ import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.DateTimeUtil;
+import org.apache.iceberg.util.LocationUtil;
 import org.apache.iceberg.util.SerializableFunction;
 import org.apache.iceberg.util.SnapshotUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.Instant;
@@ -142,6 +145,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (!tableConfiguration.isCleanOrphanEnabled()) {
       return Maps.newHashMap();
     }
+    table.refresh();
+    IcebergMaintenanceCompatibility.checkSupported(table);
 
     long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
 
@@ -165,6 +170,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (!tableConfiguration.isDeleteDanglingDeleteFilesEnabled()) {
       return Maps.newHashMap();
     }
+    table = IcebergMaintenanceCompatibility.forUpdate(table);
 
     Snapshot currentSnapshot = table.currentSnapshot();
     if (currentSnapshot == null) {
@@ -190,6 +196,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
     if (!expireSnapshotEnabled()) {
       return Maps.newHashMap();
     }
+    table = IcebergMaintenanceCompatibility.forUpdate(table);
     int cleaned =
         expireSnapshots(
             mustOlderThan(System.currentTimeMillis()),
@@ -223,6 +230,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
             .retainLast(Math.max(minCount, 1))
             .expireOlderThan(olderThan)
             .deleteWith(expiredFileCleaner::addFile)
+            .planWith(IcebergThreadPools.getMaintenanceExecutor())
             .cleanExpiredFiles(
                 true) /* enable clean only for collecting the expired files, will delete them later */;
     // iceberg auto-selects IncrementalFileCleanup for single-ref tables. That strategy walks the
@@ -279,6 +287,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   @Override
   public Map<String, String> expireData() {
+    table = IcebergMaintenanceCompatibility.forUpdate(table);
     DataExpirationConfig expirationConfig = context.getTableConfiguration().getExpiringDataConfig();
     try {
       Types.NestedField field = table.schema().findField(expirationConfig.getExpirationField());
@@ -287,6 +296,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
       }
 
       return expireDataFrom(expirationConfig, expireBaseOnRule(expirationConfig, field));
+    } catch (UnsupportedTableException e) {
+      throw e;
     } catch (Throwable t) {
       LOG.error("Unexpected purge error for table {} ", tableIdentifier, t);
       return Maps.newHashMap();
@@ -355,6 +366,7 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   @Override
   public void autoCreateTags() {
+    table = IcebergMaintenanceCompatibility.forUpdate(table);
     TagConfiguration tagConfiguration = context.getTableConfiguration().getTagConfiguration();
     new AutoCreateIcebergTagAction(table, tagConfiguration, LocalDateTime.now()).execute();
   }
@@ -440,7 +452,8 @@ public class IcebergTableMaintainer implements TableMaintainer {
 
   private int clearInternalTableContentsFiles(
       long lastTime, Set<String> exclude, MaintainerMetrics metrics) {
-    String dataLocation = table.location() + File.separator + DATA_FOLDER_NAME;
+    String dataLocation =
+        String.format("%s/%s", LocationUtil.stripTrailingSlash(table.location()), DATA_FOLDER_NAME);
     int expected = 0, deleted = 0;
 
     AuthenticatedFileIO io = fileIO();
@@ -490,7 +503,9 @@ public class IcebergTableMaintainer implements TableMaintainer {
         "Exclude metadata files with name pattern {} for table {}",
         excludeFileNameRegex,
         table.name());
-    String metadataLocation = table.location() + File.separator + METADATA_FOLDER_NAME;
+    String metadataLocation =
+        String.format(
+            "%s/%s", LocationUtil.stripTrailingSlash(table.location()), METADATA_FOLDER_NAME);
     LOG.info("start orphan files clean in {}", metadataLocation);
 
     AuthenticatedFileIO io = fileIO();

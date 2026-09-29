@@ -32,6 +32,8 @@ import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.io.OutputFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
@@ -40,6 +42,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /** Iceberg table operations {@link TableOperations} */
 public class IcebergInternalTableOperations extends PersistentBase implements TableOperations {
+
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergInternalTableOperations.class);
 
   private final ServerTableIdentifier identifier;
 
@@ -104,7 +108,13 @@ public class IcebergInternalTableOperations extends PersistentBase implements Ta
       org.apache.amoro.server.table.TableMetadata updatedMetadata = doCommit();
       checkCommitSuccess(updatedMetadata, newMetadataFileLocation);
     } catch (Exception e) {
-      io.deleteFile(newMetadataFileLocation);
+      LOG.error("Commit internal iceberg table failed, try to delete the staged metadata files", e);
+      try {
+        io.deleteFile(newMetadataFileLocation);
+      } catch (Exception cleanupException) {
+        LOG.warn("Delete staged metadata files failed, ignore it", cleanupException);
+      }
+      throw new CommitFailedException(e);
     } finally {
       this.tableMetadata = null;
     }
