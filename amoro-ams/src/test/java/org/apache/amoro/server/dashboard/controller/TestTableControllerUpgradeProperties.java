@@ -29,12 +29,8 @@ import org.mockito.Mockito;
 import java.util.Arrays;
 import java.util.Map;
 
-/** Tests the properties returned by the hive table upgrade API. */
 public class TestTableControllerUpgradeProperties {
 
-  // Invokes the real getUpgradeHiveTableProperties with a mocked Context and returns the
-  // payload of its single ctx.json(...) call. This endpoint does not use the controller's
-  // dependencies, so null arguments are safe for this isolated method.
   @SuppressWarnings("unchecked")
   private static Map<String, String> upgradeProperties() throws IllegalAccessException {
     TableController controller = new TableController(null, null, null, null);
@@ -54,9 +50,6 @@ public class TestTableControllerUpgradeProperties {
   public void testWriteProtectedPropertiesAreNotUpgradable() throws IllegalAccessException {
     Map<String, String> properties = upgradeProperties();
 
-    // Write-protected properties, and the rest of the hidden properties, must not be offered
-    // to users. watermark.table and watermark.base leaked because the whole Set#toString() of
-    // the write-protected properties was hidden instead of the elements of the set.
     for (String hidden :
         Arrays.asList(
             "watermark.table",
@@ -74,9 +67,7 @@ public class TestTableControllerUpgradeProperties {
           properties.containsKey(hidden), "hidden property leaked to the API: " + hidden);
     }
 
-    // Regression guard: the property browser reflects every static field of TableProperties and
-    // uses each reflected value as an option key, so the write-protected Set also shows up under
-    // its Set#toString() form. Hiding only the elements exposed that synthetic option.
+    // Reflection also exposes the set itself as a property option.
     String reflectedSetKey = TableProperties.WRITE_PROTECTED_PROPERTIES.toString();
     Assertions.assertFalse(
         properties.containsKey(reflectedSetKey),
@@ -87,7 +78,6 @@ public class TestTableControllerUpgradeProperties {
   public void testUserEditablePropertiesAreStillUpgradable() throws IllegalAccessException {
     Map<String, String> properties = upgradeProperties();
 
-    // legitimate settings must survive the filtering with their defaults unchanged
     Assertions.assertEquals("true", properties.get("self-optimizing.enabled"));
     Assertions.assertEquals("false", properties.get("base.hive.auto-sync-data-write"));
     Assertions.assertEquals("true", properties.get("base.hive.auto-sync-schema-change"));
