@@ -126,12 +126,42 @@ public class TestOptimizerGroupPagination {
   @Test
   void getOptimizerTablesPassesPageAndSizeAsLimitAndOffset() {
     stubEmptyTableQuery();
-    usePagination("2", "2");
+    usePagination("3", "2");
 
     controller.getOptimizerTables(ctx);
 
     verify(tableManager)
-        .queryTableOptimizingInfo(isNull(), isNull(), isNull(), isNull(), eq(2), eq(2));
+        .queryTableOptimizingInfo(isNull(), isNull(), isNull(), isNull(), eq(2), eq(4));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"2,2147483647,2147483647,2147483647", "2147483647,1,1,2147483646"})
+  void getOptimizerTablesAcceptsBoundaryPagination(
+      String page, String pageSize, int expectedLimit, int expectedOffset) {
+    stubEmptyTableQuery();
+    usePagination(page, pageSize);
+
+    controller.getOptimizerTables(ctx);
+
+    verify(tableManager)
+        .queryTableOptimizingInfo(
+            isNull(), isNull(), isNull(), isNull(), eq(expectedLimit), eq(expectedOffset));
+    PageResult<?> pageResult = responsePageResult();
+    assertEquals(0, pageResult.getTotal());
+    assertTrue(pageResult.getList().isEmpty());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"2,2147483647", "2147483647,1"})
+  void getOptimizersAcceptsBoundaryPagination(String page, String pageSize) {
+    when(optimizerManager.listOptimizers()).thenReturn(Collections.emptyList());
+    usePagination(page, pageSize);
+
+    controller.getOptimizers(ctx);
+
+    PageResult<?> pageResult = responsePageResult();
+    assertEquals(0, pageResult.getTotal());
+    assertTrue(pageResult.getList().isEmpty());
   }
 
   @ParameterizedTest
