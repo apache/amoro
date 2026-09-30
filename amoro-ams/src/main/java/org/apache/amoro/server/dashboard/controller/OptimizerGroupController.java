@@ -83,8 +83,17 @@ public class OptimizerGroupController {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
     String dbFilterStr = ctx.queryParam("dbSearchInput");
     String tableFilterStr = ctx.queryParam("tableSearchInput");
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer pageSize =
+        ctx.queryParamAsClass("pageSize", Integer.class)
+            .check(size -> size >= 1, "pageSize must be greater than 0")
+            .getOrDefault(20);
+    Integer page =
+        ctx.queryParamAsClass("page", Integer.class)
+            .check(value -> value >= 1, "page must be greater than 0")
+            .check(
+                value -> ((long) value - 1) * pageSize <= Integer.MAX_VALUE,
+                "page offset exceeds int range")
+            .getOrDefault(1);
     Set<String> actionFilter = new HashSet<>(ctx.queryParams("actions[]"));
     int offset = (page - 1) * pageSize;
 
@@ -120,8 +129,17 @@ public class OptimizerGroupController {
   /** get optimizers. */
   public void getOptimizers(Context ctx) {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer pageSize =
+        ctx.queryParamAsClass("pageSize", Integer.class)
+            .check(size -> size >= 1, "pageSize must be greater than 0")
+            .getOrDefault(20);
+    Integer page =
+        ctx.queryParamAsClass("page", Integer.class)
+            .check(value -> value >= 1, "page must be greater than 0")
+            .check(
+                value -> ((long) value - 1) * pageSize <= Integer.MAX_VALUE,
+                "page offset exceeds int range")
+            .getOrDefault(1);
 
     int offset = (page - 1) * pageSize;
     List<OptimizerInstance> optimizers;
