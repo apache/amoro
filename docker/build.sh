@@ -32,8 +32,6 @@ DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
 FLINK_OPTIMIZER_JOB_PATH=amoro-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${AMORO_VERSION}-jar-with-dependencies.jar
 FLINK_OPTIMIZER_JOB=${PROJECT_HOME}/${FLINK_OPTIMIZER_JOB_PATH}
-SPARK_OPTIMIZER_JOB_PATH=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${AMORO_VERSION}-jar-with-dependencies.jar
-SPARK_OPTIMIZER_JOB=${PROJECT_HOME}/${SPARK_OPTIMIZER_JOB_PATH}
 AMORO_TAG=$AMORO_VERSION
 MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 
@@ -133,11 +131,25 @@ done
 FLINK_MAJOR_VERSION=${FLINK_VERSION%.*}
 SPARK_MAJOR_VERSION=${SPARK_VERSION%.*}
 
+if [ "${SPARK_MAJOR_VERSION}" = "4.1" ]; then
+  SPARK_OPTIMIZER_SCALA_BINARY_VERSION=2.13
+  SPARK_OPTIMIZER_PROFILE=optimizer-spark-4.1
+  SPARK_AWS_VERSION=2.29.52
+else
+  SPARK_OPTIMIZER_SCALA_BINARY_VERSION=2.12
+  SPARK_OPTIMIZER_PROFILE=spark-${SPARK_MAJOR_VERSION}
+  SPARK_AWS_VERSION=2.24.12
+fi
+
+SPARK_OPTIMIZER_JOB_PATH=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${SPARK_MAJOR_VERSION}_${SPARK_OPTIMIZER_SCALA_BINARY_VERSION}-${AMORO_VERSION}-jar-with-dependencies.jar
+SPARK_OPTIMIZER_JOB=${PROJECT_HOME}/${SPARK_OPTIMIZER_JOB_PATH}
+
 function print_env() {
   echo "SET FLINK_VERSION=${FLINK_VERSION}"
   echo "SET FLINK_MAJOR_VERSION=${FLINK_MAJOR_VERSION}"
   echo "SET SPARK_VERSION=${SPARK_VERSION}"
   echo "SET SPARK_MAJOR_VERSION=${SPARK_MAJOR_VERSION}"
+  echo "SET SPARK_OPTIMIZER_SCALA_BINARY_VERSION=${SPARK_OPTIMIZER_SCALA_BINARY_VERSION}"
   echo "SET APACHE_ARCHIVE=${APACHE_ARCHIVE}"
   echo "SET DEBIAN_MIRROR=${DEBIAN_MIRROR}"
   echo "SET AMORO_VERSION=${AMORO_VERSION}"
@@ -185,7 +197,7 @@ function build_optimizer_spark() {
     OPTIMIZER_JOB=${SPARK_OPTIMIZER_JOB}
 
     if [ ! -f "${OPTIMIZER_JOB}" ]; then
-      BUILD_CMD="$MVN clean package -pl amoro-optimizer/amoro-optimizer-spark -am -e -DskipTests -Pspark-${SPARK_MAJOR_VERSION}"
+      BUILD_CMD="$MVN clean package -pl amoro-optimizer/amoro-optimizer-spark -am -e -DskipTests -P${SPARK_OPTIMIZER_PROFILE} -Doptimizer.spark.version=${SPARK_VERSION}"
       echo "spark optimizer job not exists in ${OPTIMIZER_JOB}"
       echo "please check the file or run '${BUILD_CMD}' first. "
       exit  1
@@ -195,6 +207,7 @@ function build_optimizer_spark() {
     cd "$PROJECT_HOME" || exit
     docker build -t ${IMAGE_REF}:${IMAGE_TAG} \
       --build-arg SPARK_VERSION=$SPARK_VERSION \
+      --build-arg AWS_VERSION=$SPARK_AWS_VERSION \
       --build-arg OPTIMIZER_JOB=$SPARK_OPTIMIZER_JOB_PATH \
       --build-arg MAVEN_MIRROR=$MAVEN_MIRROR \
       -f ./docker/optimizer-spark/Dockerfile .
