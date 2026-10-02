@@ -104,6 +104,11 @@ public class TableConfigurations {
                     properties,
                     TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN,
                     TableProperties.ENABLE_DANGLING_DELETE_FILES_CLEAN_DEFAULT))
+        .setIgnoreLocationConflictWhenCleanOrphan(
+            CompatiblePropertyUtil.propertyAsBoolean(
+                properties,
+                TableProperties.IGNORE_LOCATION_CONFLICT_WHEN_CLEAN_ORPHAN,
+                TableProperties.IGNORE_LOCATION_CONFLICT_WHEN_CLEAN_ORPHAN_DEFAULT))
         .setOptimizingConfig(parseOptimizingConfig(properties))
         .setExpiringDataConfig(parseDataExpirationConfig(properties))
         .setTagConfiguration(parseTagConfiguration(properties));
