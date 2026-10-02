@@ -40,6 +40,9 @@ public class ServerTableProperties {
     HIDDEN_EXPOSED.add(TableProperties.WRITE_DISTRIBUTION_HASH_PRIMARY_PARTITION);
     HIDDEN_EXPOSED.add(TableProperties.WRITE_DISTRIBUTION_HASH_PRIMARY);
     HIDDEN_EXPOSED.add(TableProperties.WRITE_DISTRIBUTION_HASH_PARTITION);
+    // Hide individual protected properties and the synthetic key produced by reflecting
+    // the Set itself in the dashboard property browser.
+    HIDDEN_EXPOSED.addAll(TableProperties.WRITE_PROTECTED_PROPERTIES);
     HIDDEN_EXPOSED.add(TableProperties.WRITE_PROTECTED_PROPERTIES.toString());
     HIDDEN_EXPOSED.add(TableProperties.TABLE_EVENT_TIME_FIELD);
 
