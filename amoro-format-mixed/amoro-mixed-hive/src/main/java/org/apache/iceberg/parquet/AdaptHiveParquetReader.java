@@ -160,7 +160,7 @@ public class AdaptHiveParquetReader<T> extends CloseableGroup implements Closeab
       nextRowGroupStart += pages.getRowCount();
       nextRowGroup += 1;
 
-      model.setPageSource(pages, rowPosition);
+      model.setPageSource(pages);
     }
 
     @Override
