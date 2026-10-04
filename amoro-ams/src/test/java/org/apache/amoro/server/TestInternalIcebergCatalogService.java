@@ -66,6 +66,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -92,18 +93,28 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
       CatalogMeta oldMeta = meta.deepCopy();
       meta.putToCatalogProperties("cache-enabled", "false");
       meta.putToCatalogProperties("cache.expiration-interval-ms", "10000");
-      catalogManager.updateCatalog(meta);
-      // Force a cache reload after invalidation to prevent the background catalog-scan task from
-      // overwriting the cache with a stale DB snapshot it read before the update completed.
-      CatalogMeta updatedMeta = catalogManager.getCatalogMeta(catalogName());
-      String warehouseInAMS =
-          updatedMeta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
 
       Map<String, String> clientSideConfiguration = Maps.newHashMap();
       clientSideConfiguration.put("cache-enabled", "true");
 
-      try (RESTCatalog catalog = loadIcebergCatalog(clientSideConfiguration)) {
-        Map<String, String> finallyConfigs = catalog.properties();
+      try {
+        Map<String, String> finallyConfigs = Maps.newHashMap();
+        for (int attempt = 0; attempt < 3; attempt++) {
+          catalogManager.updateCatalog(meta.deepCopy());
+          // A concurrent catalog scan may have read the old metadata before this update and reload
+          // it afterward. Reload through REST and reapply the update if that race occurred.
+          try (RESTCatalog catalog = loadIcebergCatalog(clientSideConfiguration)) {
+            finallyConfigs = catalog.properties();
+          }
+          if ("10000".equals(finallyConfigs.get("cache.expiration-interval-ms"))) {
+            break;
+          }
+        }
+        String warehouseInAMS =
+            catalogManager
+                .getCatalogMeta(catalogName())
+                .getCatalogProperties()
+                .get(CatalogMetaProperties.KEY_WAREHOUSE);
         // overwrites properties using value from ams
         Assertions.assertEquals(warehouseInAMS, finallyConfigs.get("warehouse"));
         // default properties using value from client then properties.
@@ -135,6 +146,56 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
       Assertions.assertTrue(nsCatalog.loadNamespaceMetadata(ns).isEmpty());
       nsCatalog.dropNamespace(Namespace.of(database));
       Assertions.assertTrue(nsCatalog.listNamespaces().isEmpty());
+    }
+
+    @Test
+    public void testNamespaceExists() throws IOException, InterruptedException {
+      HttpClient client = HttpClient.newHttpClient();
+      String existsUrl =
+          ams.getHttpUrl()
+              + restCatalogUri
+              + "/v1/catalogs/"
+              + catalogName()
+              + "/namespaces/"
+              + database;
+      String notExistsUrl =
+          ams.getHttpUrl()
+              + restCatalogUri
+              + "/v1/catalogs/"
+              + catalogName()
+              + "/namespaces/non_existent_db";
+
+      // 1. Verify non-existent namespace returns 404
+      HttpRequest notFoundReq =
+          HttpRequest.newBuilder(URI.create(notExistsUrl))
+              .timeout(Duration.ofSeconds(5))
+              .method("HEAD", HttpRequest.BodyPublishers.noBody())
+              .build();
+      HttpResponse<Void> notFoundResp =
+          client.send(notFoundReq, HttpResponse.BodyHandlers.discarding());
+      Assertions.assertEquals(404, notFoundResp.statusCode());
+      // Note: Iceberg RESTSessionCatalog uses GET fallback unless Endpoint.V1_NAMESPACE_EXISTS is
+      // advertised in /v1/config
+      Assertions.assertFalse(nsCatalog.namespaceExists(Namespace.of("non_existent_db")));
+
+      // 2. Create namespace and verify HEAD returns 204 No Content
+      nsCatalog.createNamespace(ns);
+      HttpRequest existsReq =
+          HttpRequest.newBuilder(URI.create(existsUrl))
+              .timeout(Duration.ofSeconds(5))
+              .method("HEAD", HttpRequest.BodyPublishers.noBody())
+              .build();
+      HttpResponse<Void> existsResp =
+          client.send(existsReq, HttpResponse.BodyHandlers.discarding());
+      Assertions.assertEquals(204, existsResp.statusCode());
+      Assertions.assertTrue(nsCatalog.namespaceExists(ns));
+
+      // 3. Drop namespace and verify HEAD returns 404 again (full lifecycle verification)
+      nsCatalog.dropNamespace(ns);
+      HttpResponse<Void> postDropResp =
+          client.send(existsReq, HttpResponse.BodyHandlers.discarding());
+      Assertions.assertEquals(404, postDropResp.statusCode());
+      Assertions.assertFalse(nsCatalog.namespaceExists(ns));
     }
 
     @Test

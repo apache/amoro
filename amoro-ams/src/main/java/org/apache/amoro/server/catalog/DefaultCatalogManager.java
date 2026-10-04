@@ -24,6 +24,7 @@ import static org.apache.amoro.properties.CatalogMetaProperties.CLIENT_POOL_SIZE
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.Constants;
+import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.exception.AlreadyExistsException;
@@ -49,6 +50,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -273,6 +275,12 @@ public class DefaultCatalogManager extends PersistentBase implements CatalogMana
     if (!oldType.equals(newType)) {
       throw new IllegalMetadataException("Cannot update catalog type");
     }
+
+    // A REST catalog serves a single protocol per uri, so Lance cannot be combined with other
+    // table formats. Reject the update before it is persisted.
+    String type = newMeta.getCatalogType();
+    Set<TableFormat> tableFormats = CatalogUtil.tableFormats(newMeta);
+    CatalogBuilder.checkRestLanceExclusivity(type, tableFormats);
   }
 
   private void disposeCatalog(String name) {

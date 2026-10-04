@@ -27,11 +27,8 @@ import org.lance.Dataset;
 import org.lance.namespace.LanceNamespace;
 import org.lance.namespace.errors.TableNotFoundException;
 import org.lance.namespace.model.DropTableRequest;
-import org.lance.namespace.model.ListTablesRequest;
-import org.lance.namespace.model.ListTablesResponse;
 import org.lance.namespace.model.TableExistsRequest;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -91,17 +88,10 @@ public abstract class AbstractLanceCatalog implements FormatCatalog {
   }
 
   @Override
-  public List<String> listTables(String database) {
-    if (!databaseExists(database)) {
-      return Collections.emptyList();
-    }
-    ListTablesRequest request = new ListTablesRequest().id(tableIdForListTables(database));
-    ListTablesResponse response = namespace.listTables(request);
-    if (response == null) {
-      return Collections.emptyList();
-    }
-    return new ArrayList<>(response.getTables());
-  }
+  public abstract List<String> listTables(String database);
+
+  @Override
+  public abstract List<String> listDatabases();
 
   protected void validateDatabase(String database) {
     if (!databaseExists(database)) {

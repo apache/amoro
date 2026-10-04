@@ -24,7 +24,10 @@ import org.apache.arrow.util.Preconditions;
 import org.apache.iceberg.aliyun.AliyunProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.lance.namespace.LanceNamespace;
+import org.lance.namespace.model.ListTablesRequest;
+import org.lance.namespace.model.ListTablesResponse;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -108,6 +111,28 @@ public class LanceDirectoryV1Catalog extends AbstractLanceCatalog {
   @Override
   public void dropDatabase(String database) {
     throw new UnsupportedOperationException("Dropping Lance databases is not supported.");
+  }
+
+  @Override
+  public List<String> listTables(String database) {
+    if (!databaseExists(database)) {
+      return Collections.emptyList();
+    }
+    return listTablesFromNamespace();
+  }
+
+  private List<String> listTablesFromNamespace() {
+    if (namespace == null) {
+      return Collections.emptyList();
+    }
+
+    ListTablesRequest request = new ListTablesRequest().id(Collections.emptyList());
+    ListTablesResponse response = namespace.listTables(request);
+    if (response == null) {
+      return Collections.emptyList();
+    }
+
+    return new ArrayList<>(response.getTables());
   }
 
   private static String removeFirstNonNull(Map<String, String> properties, String... keys) {

@@ -222,6 +222,9 @@ public class AmoroServiceContainer {
     if (IS_MASTER_SLAVE_MODE) {
       startOptimizingService();
     }
+    if (haState == HAState.INITIALIZING) {
+      haState = HAState.FOLLOWER;
+    }
   }
 
   /**
@@ -288,26 +291,32 @@ public class AmoroServiceContainer {
     if (haState == HAState.LEADER) {
       return;
     }
-    if (IS_MASTER_SLAVE_MODE) {
-      // AmsAssignService may have been stopped and set to null by a previous stopLeaderServices
-      // call (leader re-election); recreate it if needed.
-      if (amsAssignService == null && haContainer != null) {
-        try {
-          BucketAssignStore bucketAssignStore =
-              BucketAssignStoreFactory.create(haContainer, serviceConfig);
-          amsAssignService = new AmsAssignService(haContainer, serviceConfig, bucketAssignStore);
-        } catch (Exception e) {
-          LOG.error("Failed to recreate AmsAssignService", e);
+    try {
+      if (IS_MASTER_SLAVE_MODE) {
+        // AmsAssignService may have been stopped and set to null by a previous stopLeaderServices
+        // call (leader re-election); recreate it if needed.
+        if (amsAssignService == null && haContainer != null) {
+          try {
+            BucketAssignStore bucketAssignStore =
+                BucketAssignStoreFactory.create(haContainer, serviceConfig);
+            amsAssignService = new AmsAssignService(haContainer, serviceConfig, bucketAssignStore);
+          } catch (Exception e) {
+            LOG.error("Failed to recreate AmsAssignService", e);
+          }
         }
+        if (amsAssignService != null) {
+          amsAssignService.start();
+          LOG.info("AmsAssignService started");
+        }
+      } else {
+        startOptimizingService();
       }
-      if (amsAssignService != null) {
-        amsAssignService.start();
-        LOG.info("AmsAssignService started");
-      }
-    } else {
-      startOptimizingService();
+      haState = HAState.LEADER;
+    } catch (Exception e) {
+      haState = HAState.INITIALIZING;
+      stopLeaderServices();
+      throw e;
     }
-    haState = HAState.LEADER;
   }
 
   /**

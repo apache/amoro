@@ -80,6 +80,21 @@ public class TestFileUtil {
     Assert.assertEquals(expected, TableFileUtil.getUriPath(path));
   }
 
+  @ParameterizedTest
+  @CsvSource(
+      value = {
+        "s3://bucket/warehouse/db/tbl/00000-0.parquet, s3://bucket/warehouse/db/tbl, 00000-0.parquet",
+        "s3://bucket/warehouse/db/tbl/00000-0.parquet, s3://bucket/warehouse/db/tbl/, 00000-0.parquet",
+        "hdfs://nn:8020/warehouse/db/tbl/data-1.orc, hdfs://nn:8020/warehouse/db/tbl, file:/tmp/data-1.orc",
+        "hdfs://nn:8020/warehouse/db/tbl/data-1.orc, hdfs://nn:8020/warehouse/db/tbl/, file:/tmp/data-1.orc"
+      })
+  public void testGetNewFilePath(String expected, String newDirectory, String filePath) {
+    String newFilePath = TableFileUtil.getNewFilePath(newDirectory, filePath);
+    Assert.assertEquals(expected, newFilePath);
+    Assert.assertNotNull(TableFileUtil.getUriPath(newFilePath));
+    Assert.assertFalse(newFilePath.contains("\\"));
+  }
+
   private static final TemporaryFolder temp = new TemporaryFolder();
 
   static class LocalAuthenticatedFileIO

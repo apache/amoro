@@ -4,4 +4,4 @@
 // ------------------------------------------------------------------
 
 Apache Amoro
-Copyright 2024 The Apache Software Foundation
+Copyright 2024-2026 The Apache Software Foundation
