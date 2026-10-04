@@ -17,7 +17,7 @@
  / -->
 
 <script lang="ts">
-import { computed, defineComponent, onBeforeMount, reactive, toRefs } from 'vue'
+import { computed, defineComponent, onBeforeMount, onBeforeUnmount, reactive, toRefs } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CreateDBModal from './CreateDB.vue'
 import useStore from '@/store/index'
@@ -87,6 +87,18 @@ export default defineComponent({
 
     const placeholder = reactive(usePlaceholder())
 
+    const getSearchTableList = debounce(() => {
+      getAllTableList()
+    })
+    const getSearchDBList = debounce(() => {
+      getAllDatabaseList(true)
+    })
+
+    onBeforeUnmount(() => {
+      getSearchTableList.cancel()
+      getSearchDBList.cancel()
+    })
+
     function handleSearch(type: string) {
       type === 'table' ? getSearchTableList() : getSearchDBList()
     }
@@ -100,18 +112,6 @@ export default defineComponent({
         state.DBSearchInput = ''
         getSearchDBList()
       }
-    }
-
-    function getSearchTableList() {
-      debounce(() => {
-        getAllTableList()
-      })()
-    }
-
-    function getSearchDBList() {
-      debounce(() => {
-        getAllDatabaseList(true)
-      })()
     }
 
     function handleClickDb(item: IDatabaseItem) {
