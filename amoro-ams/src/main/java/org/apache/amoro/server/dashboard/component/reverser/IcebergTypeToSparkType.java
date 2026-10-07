@@ -38,6 +38,7 @@ import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StringType$;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType$;
+import org.apache.spark.sql.types.TimestampNTZType$;
 import org.apache.spark.sql.types.TimestampType$;
 
 import java.util.List;
@@ -107,7 +108,13 @@ public class IcebergTypeToSparkType extends TypeUtil.SchemaVisitor<DataType> {
       case TIME:
         throw new UnsupportedOperationException("Spark does not support time fields");
       case TIMESTAMP:
-        return TimestampType$.MODULE$;
+        // Iceberg timestamps without a zone must not be adjusted to UTC, keep them apart from
+        // timestamps with a zone instead of mapping both to Spark's zone-adjusted timestamp.
+        Types.TimestampType timestamp = (Types.TimestampType) primitive;
+        if (timestamp.shouldAdjustToUTC()) {
+          return TimestampType$.MODULE$;
+        }
+        return TimestampNTZType$.MODULE$;
       case STRING:
         return StringType$.MODULE$;
       case UUID:
