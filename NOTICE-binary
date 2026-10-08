@@ -439,3 +439,17 @@ Copyright 2020-2021 SmartBear Software Inc.
 
 swagger-js/swagger-client
 Copyright 2020-2021 SmartBear Software Inc.
+
+ApiDOM (@swagger-api/apidom-* packages bundled with the dashboard)
+Copyright 2020 SmartBear Software Inc.
+The full upstream NOTICE, including attribution for embedded portions
+originally from json-schema-ref-parser, graphql-js, refract-spec,
+api-elements, deepmerge and the OpenAPI/AsyncAPI/JSON Schema
+specifications, is distributed in the dashboard jar
+(licenses/NOTICE-@swagger-api-apidom).
+
+openapi-path-templating
+Copyright 2023, Vladimír Gorej
+
+openapi-server-url-templating
+Copyright 2024, Vladimír Gorej

@@ -374,10 +374,29 @@ org.jetbrains.kotlin:kotlin-*
 ./charts/amoro/templates/common/_labels.tpl
 
 npm packages bundled into the dashboard (amoro-web):
+
+direct dependencies:
 echarts
-swagger-client (transitive dependency of swagger-ui)
 swagger-ui
-swagger-ui-dist
+
+transitive dependencies:
+@swagger-api/apidom-ast
+@swagger-api/apidom-core
+@swagger-api/apidom-error
+@swagger-api/apidom-ns-json-schema-2019-09
+@swagger-api/apidom-ns-json-schema-2020-12
+@swagger-api/apidom-ns-json-schema-draft-4
+@swagger-api/apidom-ns-json-schema-draft-6
+@swagger-api/apidom-ns-json-schema-draft-7
+@swagger-api/apidom-ns-openapi-3-0
+@swagger-api/apidom-ns-openapi-3-1
+@swagger-api/apidom-reference
+@swaggerexpert/cookie
+@swaggerexpert/json-pointer
+openapi-path-templating
+openapi-server-url-templating
+short-unique-id
+swagger-client
 
 The BSD License
 --------------
@@ -402,6 +421,9 @@ BSD 2-Clause License
 com.github.luben:zstd-jni
 jline:jline:2.12
 
+npm packages bundled into the dashboard (amoro-web):
+apg-lite (transitive dependency)
+
 BSD 3-Clause License
 --------------------
 com.esotericsoftware:kryo
@@ -413,7 +435,15 @@ org.fusesource.leveldbjni:leveldbjni-all
 org.threeten:threeten-extra
 
 npm packages bundled into the dashboard (amoro-web):
+
+direct dependencies:
 qs
+
+transitive dependencies:
+highlight.js
+ieee754
+ramda-adjunct
+redux-immutable
 zrender
 
 New BSD License
@@ -465,6 +495,7 @@ dayjs
 monaco-editor
 pinia
 sql-formatter
+swagger-ui-dist
 vue
 vue-clipboard3
 vue-i18n
@@ -472,32 +503,104 @@ vue-router
 vue-virtual-scroller
 
 transitive dependencies:
+@ant-design/colors
+@ant-design/icons-svg
+@babel/runtime
+@babel/runtime-corejs3
 @ctrl/tinycolor
 @emotion/hash
 @emotion/unitless
 @intlify/core-base
+@intlify/message-compiler
 @intlify/shared
 async-validator
+autolinker
+available-typed-arrays
+base64-js
+buffer
+call-bind
+call-bind-apply-helpers
+call-bound
 classnames
 clipboard
+compute-scroll-into-view
+copy-to-clipboard
+core-js-pure
+css.escape
+deepmerge
+define-data-property
+dom-align
+drange
+dunder-proto
+es-define-property
+es-errors
+es-object-atoms
+fast-json-patch
+fault
+for-each
+format
+function-bind
+get-intrinsic
+get-proto
+gopd
+has-property-descriptors
+has-proto
+has-symbols
+has-tostringtag
+hasown
 immutable
+is-callable
+is-typed-array
+isarray
+js-file-download
 js-yaml
+lodash
+lodash-es
+lodash.debounce
+lowlight
 marked
+math-intrinsics
+minim
 nearley
+neotraverse
+possible-typed-array-names
 prop-types
+querystringify
+ramda
 randexp
 react
 react-copy-to-clipboard
 react-debounce-input
 react-dom
+react-immutable-proptypes
+react-immutable-pure-component
 react-redux
 react-syntax-highlighter
 redux
 remarkable
+repeat-string
+requires-port
 reselect
+resize-observer-polyfill
+ret
+safe-buffer
+scheduler
+scroll-into-view-if-needed
 serialize-error
+set-function-length
 shallow-equal
 sha.js (MIT AND BSD-3-Clause)
+stylis
+throttle-debounce
+to-buffer
+toggle-selection
+ts-mixer
+typed-array-buffer
+url-parse
+use-sync-external-store
+vue-types
+which-typed-array
+xml-but-prettier
 
 Common Development and Distribution License (CDDL) 1.0
 ------------------------------------------------------
