@@ -88,6 +88,11 @@
                                     </excludes>
                                 </filter>
                             </filters>
+                            <transformers combine.children="append">
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/LICENSE</resource>
+                                </transformer>
+                            </transformers>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <includes combine.children="append">
