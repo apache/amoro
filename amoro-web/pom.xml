@@ -41,6 +41,10 @@
     <build>
         <finalName>amoro-web-${project.version}</finalName>
         <resources>
+            <!-- Retain the default resource directory; declaring <resources> overrides it. -->
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
             <!-- Ship third-party npm license texts with the dashboard jar so downstream
                  users can verify the bundled frontend dependencies. -->
             <resource>
