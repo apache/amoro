@@ -18,12 +18,15 @@
 
 package org.apache.amoro.server;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.resource.ResourceGroup;
@@ -34,6 +37,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.ws.rs.BadRequestException;
 
@@ -81,6 +85,21 @@ public class TestOptimizerGroupController {
 
     when(ctx.bodyAsClass(Map.class)).thenReturn(requestBody);
     assertThrows(BadRequestException.class, () -> controller.createResourceGroup(ctx));
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {0, -1})
+  void scaleOutOptimizerWithInvalidParallelism(int parallelism) {
+    Map<String, Integer> requestBody = new HashMap<>();
+    requestBody.put("parallelism", parallelism);
+
+    when(ctx.pathParam("optimizerGroup")).thenReturn("group1");
+    when(ctx.bodyAsClass(Map.class)).thenReturn(requestBody);
+
+    BadRequestResponse exception =
+        assertThrows(BadRequestResponse.class, () -> controller.scaleOutOptimizer(ctx));
+    assertEquals(400, exception.getStatus());
+    verifyNoInteractions(optimizerManager);
   }
 
   private Map<String, Object> groupRequest(String name, Map<String, String> properties) {
