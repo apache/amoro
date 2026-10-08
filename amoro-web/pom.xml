@@ -40,6 +40,14 @@
 
     <build>
         <finalName>amoro-web-${project.version}</finalName>
+        <resources>
+            <!-- Ship third-party npm license texts with the dashboard jar so downstream
+                 users can verify the bundled frontend dependencies. -->
+            <resource>
+                <directory>licenses</directory>
+                <targetPath>licenses</targetPath>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
