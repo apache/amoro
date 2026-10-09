@@ -200,6 +200,35 @@ public class ZkBucketAssignStore implements BucketAssignStore {
   }
 
   @Override
+  public void registerNode(AmsServerInfo serverInfo) throws BucketAssignStoreException {
+    String nodeKey = getNodeKey(serverInfo);
+    String nodePath = assignmentsBasePath + "/" + nodeKey;
+    String serverInfoJson = JacksonUtil.toJSONString(serverInfo);
+    try {
+      zkClient
+          .create()
+          .creatingParentsIfNeeded()
+          .withMode(CreateMode.EPHEMERAL)
+          .forPath(nodePath, serverInfoJson.getBytes(StandardCharsets.UTF_8));
+      LOG.debug("Registered node {} in ZK", nodeKey);
+    } catch (KeeperException.NodeExistsException e) {
+      // Already registered, update data
+      try {
+        zkClient.setData().forPath(nodePath, serverInfoJson.getBytes(StandardCharsets.UTF_8));
+      } catch (Exception ex) {
+        throw new BucketAssignStoreException("Failed to update node registration " + nodeKey, ex);
+      }
+    } catch (Exception e) {
+      throw new BucketAssignStoreException("Failed to register node " + nodeKey, e);
+    }
+  }
+
+  @Override
+  public void removeNode(AmsServerInfo serverInfo) throws BucketAssignStoreException {
+    removeAssignments(serverInfo);
+  }
+
+  @Override
   public long getLastUpdateTime(AmsServerInfo nodeInfo) throws BucketAssignStoreException {
     String nodeKey = getNodeKey(nodeInfo);
     String timePath = assignmentsBasePath + "/" + nodeKey + LAST_UPDATE_TIME_SUFFIX;
@@ -270,5 +299,10 @@ public class ZkBucketAssignStore implements BucketAssignStore {
     } catch (Exception e) {
       throw new BucketAssignStoreException("Failed to create path: " + path, e);
     }
+  }
+
+  @Override
+  public void close() {
+    zkClient.close();
   }
 }
