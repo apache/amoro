@@ -40,6 +40,36 @@ public interface MaintainerMetrics {
    */
   void recordOrphanMetadataFilesCleaned(int expected, int cleaned);
 
+  /** Record a successful orphan-file-cleaning run. */
+  void recordSuccess();
+
+  /**
+   * Record an orphan-file-cleaning failure event.
+   *
+   * @param reason the failure reason
+   */
+  void recordFailure(CleanFailureReason reason);
+
+  /** Atomic failure reasons for orphan-file-cleaning observability. */
+  enum CleanFailureReason {
+    /** Another table uuid detected in the same location; cleanup skipped. */
+    LOCATION_CONFLICT(1),
+    /** The location-conflict check itself failed (e.g. FileIO doesn't support prefix ops). */
+    LOCATION_CONFLICT_CHECK_FAILED(2),
+    /** The actual cleaning execution threw an exception. */
+    EXECUTION_FAILED(3);
+
+    private final int statusCode;
+
+    CleanFailureReason(int statusCode) {
+      this.statusCode = statusCode;
+    }
+
+    public int statusCode() {
+      return statusCode;
+    }
+  }
+
   /** No-op implementation that does nothing. */
   MaintainerMetrics NOOP =
       new MaintainerMetrics() {
@@ -48,5 +78,11 @@ public interface MaintainerMetrics {
 
         @Override
         public void recordOrphanMetadataFilesCleaned(int expected, int cleaned) {}
+
+        @Override
+        public void recordSuccess() {}
+
+        @Override
+        public void recordFailure(CleanFailureReason reason) {}
       };
 }
