@@ -1051,7 +1051,7 @@ public class OptimizingQueue extends PersistentBase {
                           getFailedReason(),
                           new HashMap<>(),
                           getSummary().summaryAsMap(false))),
-          () -> tableRuntime.completeProcess(success),
+          () -> tableRuntime.completeProcess(status),
           () -> clearProcess(this));
     }
 
