@@ -424,3 +424,57 @@ modified April 2001  by Iris Van den Broeke, Daniel Deville.
 Permission to use, copy, modify and distribute UnixCrypt
 for non-commercial or commercial purposes and without fee is
 granted provided that the copyright notice appears in all copies.
+
+------
+Dashboard (amoro-web) bundled npm packages
+
+Apache ECharts
+Copyright 2017-2026 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+swagger-ui
+Copyright 2020-2021 SmartBear Software Inc.
+
+swagger-js/swagger-client
+Copyright 2020-2021 SmartBear Software Inc.
+
+ApiDOM (@swagger-api/apidom-* packages bundled with the dashboard)
+Copyright 2020 SmartBear Software Inc.
+The full upstream NOTICE, including attribution for embedded portions
+originally from json-schema-ref-parser, graphql-js, refract-spec,
+api-elements, deepmerge and the OpenAPI/AsyncAPI/JSON Schema
+specifications, is distributed in the dashboard jar
+(licenses/NOTICE-@swagger-api-apidom).
+
+openapi-path-templating
+Copyright 2023, Vladimír Gorej
+
+openapi-server-url-templating
+Copyright 2024, Vladimír Gorej
+
+@swaggerexpert/json-pointer
+Copyright 2025, Vladimír Gorej
+This product includes the JSON Pointer (RFC 6901) ABNF grammar and
+related text.
+Copyright (c) 2013 IETF Trust and the persons identified as the document
+authors. All rights reserved. https://datatracker.ietf.org/doc/html/rfc6901
+Licensed under the Simplified BSD License. The full upstream NOTICE is
+distributed in the dashboard jar
+(licenses/NOTICE-@swaggerexpert-json-pointer).
+
+nodejs path library (bundled inside monaco-editor base/common/path.js)
+Copyright Joyent, Inc. and other Node contributors.
+Licensed under the MIT License. The monaco-editor ThirdPartyNotices.txt
+is distributed in the dashboard jar (licenses/NOTICE-monaco-editor).
+
+d3 quantile implementation (bundled inside echarts)
+Copyright (c) Mike Bostock
+Licensed under the BSD 3-Clause License. The license text is distributed
+in the dashboard jar (licenses/LICENSE-echarts-d3).
+
+fast-deep-equal _areEquals implementation (bundled inside fast-json-patch)
+Copyright (c) 2017 Evgeny Poberezkin
+Licensed under the MIT License. The notice is preserved in the dashboard
+jar (licenses/LICENSE-fast-deep-equal).
