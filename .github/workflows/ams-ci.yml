@@ -1,4 +1,4 @@
-name: Trino Mixed Format Connector
+name: AMS
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,7 +25,7 @@ jobs:
         with:
           fetch-depth: 0
       - id: filter
-        name: Detect Trino connector changes
+        name: Detect AMS changes
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
@@ -33,7 +33,7 @@ jobs:
           elif bash dev/ci/has-changes.sh \
             "${{ github.event.pull_request.base.sha }}" \
             "${{ github.event.pull_request.head.sha }}" \
-            '^amoro-common/|^amoro-format-iceberg/|^amoro-format-mixed/amoro-mixed-(hive|trino)/|^pom\.xml$|^tools/maven/|^dev/ci/|^\.github/workflows/trino-ci\.yml$'; then
+            '^amoro-ams/|^amoro-common/|^amoro-format-iceberg/|^amoro-format-mixed/amoro-mixed-hive/|^amoro-optimizer/amoro-optimizer-(common|standalone)/|^pom\.xml$|^tools/maven/|^dev/ci/|^\.github/workflows/ams-ci\.yml$'; then
             echo "changed=true" >> "${GITHUB_OUTPUT}"
           else
             echo "changed=false" >> "${GITHUB_OUTPUT}"
@@ -46,31 +46,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - hadoop: '2'
-            profiles: hadoop2,java17,format-mixed-format-trino,build-mixed-format-trino
-          - hadoop: '3'
-            profiles: java17,format-mixed-format-trino,build-mixed-format-trino
-    name: Trino 406 / Hadoop ${{ matrix.hadoop }} / JDK 17
+        jdk: [ '11', '17' ]
+    name: AMS / Spark 3.5 / Hadoop 3 / JDK ${{ matrix.jdk }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: ${{ matrix.jdk }}
           distribution: temurin
           cache: maven
-      - name: Verify Trino mixed-format connector
+      - name: Verify AMS
         run: >-
           ./mvnw -B -ntp verify
-          -pl amoro-format-mixed/amoro-mixed-trino
-          -am -P${{ matrix.profiles }}
-      - name: Upload Trino coverage
+          -pl amoro-ams -am
+          -Pjava${{ matrix.jdk }},spark-3.5,skip-dashboard-build
+      - name: Upload AMS coverage
         uses: codecov/codecov-action@v5
         with:
-          flags: trino
+          flags: ams
 
   gate:
-    name: CI / Trino Mixed Format Connector
+    name: CI / AMS
     if: always()
     needs:
       - changes
