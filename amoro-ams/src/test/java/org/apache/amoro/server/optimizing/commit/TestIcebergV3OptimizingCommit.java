@@ -267,9 +267,10 @@ class TestIcebergV3OptimizingCommit {
               new DeleteFile[] {oldDelete},
               table);
     } else {
-      // A valid staged output with one redundant row removed by the new equality delete.
+      // A valid staged output plus a new equality delete. Iceberg 1.10+ rejects REPLACE
+      // commits that add more records than they replace, so the output keeps the input row count.
       outputData =
-          IcebergDataTestHelpers.insert(table, IcebergV3TestTables.records(table, 1, 2, 3))
+          IcebergDataTestHelpers.insert(table, IcebergV3TestTables.records(table, 1, 2))
               .dataFiles();
       outputDelete = equalityDelete(table, outputData[0], 3);
       input =
