@@ -1,0 +1,83 @@
+ApiDOM
+Copyright 2020 SmartBear Software Inc.
+ApiDOM is licensed under Apache 2.0 license.
+Copy of the Apache 2.0 license can be found in `LICENSES/Apache-2.0.txt` file.
+
+json-schema-ref-parser
+Copyright (c) 2015 James Messinger
+File packages/apidom-reference/src/util/url.ts (the file) was originally created under MIT license in https://github.com/APIDevTools/json-schema-ref-parser repository.
+The file has been copied into this project and modified. All modifications are licensed under Apache 2.0 License.
+Copy of the MIT license can be found in `LICENSES/MIT.txt` file.
+
+graphql-js
+Copyright (c) GraphQL Contributors
+File packages/apidom-ast/src/traversal/visitor.ts (the file) was originally created under MIT license in https://github.com/graphql/graphql-js repository.
+The file has been copied into this project and modified. All modifications are licensed under Apache 2.0 License.
+Copy of the MIT license can be found in `LICENSES/MIT.txt` file.
+
+babel-plugin-add-import-extension
+Copyright (c) 2019 Karl Prieb
+File scripts/babel-plugin-add-import-extension.cjs (the file) was originally created under MIT license in https://codeberg.org/karl/babel-plugin-add-import-extension.
+The file has been copied into this project and modified. All modifications are licensed under Apache 2.0 License.
+Copy of the MIT license can be found in `LICENSES/MIT.txt` file.
+
+refract-spec
+Copyright (c) 2015 refractproject
+Specific texts in README.md (the file) were originally created under MIT license in https://github.com/refractproject/refract-spec repository.
+Specific texts have been copied into this project and modified. All modifications are licensed under Apache 2.0 License.
+Copy of the MIT license can be found in `LICENSES/MIT.txt` file.
+
+api-elements
+Copyright (c) 2015 Apiary Inc.
+Specific texts in README.md (the file) were originally created under MIT license in https://github.com/refractproject/refract-spec repository.
+Specific texts have been copied into this project and modified. All modifications are licensed under Apache 2.0 License.
+Copy of the MIT license can be found in `LICENSES/MIT.txt` file.
+
+deepmerge
+Copyright (c) 2012 James Halliday, Josh Duff, and other contributors
+- File packages/apidom-core/src/deepmerge.ts contains algorithms that we originally created
+  in https://github.com/TehShrike/deepmerge/blob/master/index.js to handle deep merging of JavaScript Objects and Arrays.
+  These algorithms have been reverse engineered and adapted to support deep merging of ApiDOM structures.
+- File packages/apidom-core/test/deepmerge.ts contains tests and fixtures that were originally created
+  in https://github.com/TehShrike/deepmerge/blob/master/test/merge.js to test deep merging of JavaScript Objects and Arrays.
+  These tests have been adapted to support testing deep merging of ApiDOM structures.
+- File packages/apidom-core/README.md contains text fragments that were originally created
+  in https://github.com/TehShrike/deepmerge/blob/master/readme.md to document deepmerge library.
+  These text fragments have been amended to describe merging of ApiDOM structures.
+Copy of the MIT license can be found in `LICENSES/MIT.txt` file.
+All modifications are licensed under Apache 2.0 License.
+
+OpenAPI Specification 2.0
+Copyright The Linux Foundation
+Fragments of the specification text are embedded in packages/apidom-ls/src/config/openapi.
+Copy of the Apache 2.0 license can be found in `LICENSES/Apache-2.0.txt` file.
+
+OpenAPI Specification 3.0.x
+Copyright The Linux Foundation
+Fragments of the specification text are embedded in packages/apidom-ls/src/config/openapi.
+Copy of the Apache 2.0 license can be found in `LICENSES/Apache-2.0.txt` file.
+
+OpenAPI Specification 3.1.x
+Copyright The Linux Foundation
+Fragments of the specification text are embedded in packages/apidom-ls/src/config/openapi.
+Copy of the Apache 2.0 license can be found in `LICENSES/Apache-2.0.txt` file.
+
+AsyncAPI Specification 2.x / AsyncAPI Initiative
+Copyright The Linux Foundation
+Fragments of the specification text are embedded in packages/apidom-ls/src/config/asyncapi.
+Copy of the Apache 2.0 license can be found in `LICENSES/Apache-2.0.txt` file.
+
+JSON Schema Specification (Draft 4/5 -> 2020-12)
+Copyright (c) 2022 JSON Schema Specification Authors
+Fragments of the specification text are embedded in packages/apidom-ls/src/config/common.
+Copy of the BSD 3-Clause "New" or "Revised" License can be found in `LICENSES/BSD-3-Clause.txt` file.
+Copy of the Academic Free License v3.0 can be found in `LICENSES/AFL-3.0.txt` file.
+
+---
+
+If the SPDX-FileCopyrightText and SPDX-License-Identifier tags are not present in the file,
+it is assumed that these tags have following implicit value:
+
+SPDX-FileCopyrightText: Copyright 2020-2021 SmartBear Software Inc.
+SPDX-License-Identifier: Apache-2.0
+
