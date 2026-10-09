@@ -26,7 +26,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>amoro-optimizer-spark-${spark.major.version}_${scala.binary.version}</artifactId>
+    <artifactId>amoro-optimizer-spark-${optimizer.spark.major.version}_${optimizer.spark.scala.binary.version}</artifactId>
     <name>Amoro Project AMS Spark Optimizer</name>
     <url>https://amoro.apache.org</url>
 
@@ -35,13 +35,19 @@
             <groupId>org.apache.amoro</groupId>
             <artifactId>amoro-optimizer-common</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.orbit</groupId>
+                    <artifactId>javax.servlet</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- spark dependencies begin -->
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_${scala.binary.version}</artifactId>
-            <version>${spark.version}</version>
+            <artifactId>spark-core_${optimizer.spark.scala.binary.version}</artifactId>
+            <version>${optimizer.spark.version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -57,8 +63,8 @@
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_${scala.binary.version}</artifactId>
-            <version>${spark.version}</version>
+            <artifactId>spark-sql_${optimizer.spark.scala.binary.version}</artifactId>
+            <version>${optimizer.spark.version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -107,6 +113,15 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
+        <!-- Spark 3.3's Logging trait directly references org.slf4j.impl.StaticLoggerBinder
+             (hard bytecode dependency, fixed in Spark 3.4+ via reflection). This SLF4J 1.x
+             binding is inert for SLF4J 2.x code paths but provides the class Spark needs. -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -125,6 +140,8 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <excludes>
+                                    <exclude>org.apache.spark:*</exclude>
+                                    <exclude>org.scala-lang:*</exclude>
                                     <exclude>org.slf4j:slf4j-api</exclude>
                                     <exclude>org.apache.hadoop:*</exclude>
                                     <exclude>org.apache.hive:*</exclude>
@@ -147,4 +164,36 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>optimizer-spark-4.1</id>
+            <dependencies>
+                <dependency>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                    <version>${optimizer.spark.jackson.annotations.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                    <version>${optimizer.spark.jackson.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                    <version>${optimizer.spark.jackson.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-datatype-jsr310</artifactId>
+                    <version>${optimizer.spark.jackson.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>
