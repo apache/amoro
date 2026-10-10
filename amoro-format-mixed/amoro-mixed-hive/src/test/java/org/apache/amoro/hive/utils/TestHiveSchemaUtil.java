@@ -65,4 +65,138 @@ public class TestHiveSchemaUtil {
     Assert.assertEquals(
         changedSchema.asStruct(), HiveSchemaUtil.changeFieldNameToLowercase(schema).asStruct());
   }
+
+  /** The same field name is allowed in sibling scopes, e.g. in two independent nested structs. */
+  @Test
+  public void testChangeFieldNameToLowercaseWithRepeatedNameInIndependentStructs() {
+
+    Schema schema =
+        new Schema(
+            Types.NestedField.optional(
+                1,
+                "Col1",
+                Types.StructType.of(Types.NestedField.required(2, "X", Types.IntegerType.get()))),
+            Types.NestedField.optional(
+                3,
+                "Col2",
+                Types.StructType.of(Types.NestedField.optional(4, "X", Types.StringType.get()))));
+
+    Schema changedSchema =
+        new Schema(
+            Types.NestedField.optional(
+                1,
+                "col1",
+                Types.StructType.of(Types.NestedField.required(2, "x", Types.IntegerType.get()))),
+            Types.NestedField.optional(
+                3,
+                "col2",
+                Types.StructType.of(Types.NestedField.optional(4, "x", Types.StringType.get()))));
+
+    Assert.assertEquals(
+        changedSchema.asStruct(), HiveSchemaUtil.changeFieldNameToLowercase(schema).asStruct());
+  }
+
+  /** A top level field and a field nested in a struct are in different scopes. */
+  @Test
+  public void testChangeFieldNameToLowercaseWithNameRepeatedInTopLevelAndNestedScope() {
+
+    Schema schema =
+        new Schema(
+            Types.NestedField.optional(1, "X", Types.IntegerType.get(), "top level x"),
+            Types.NestedField.optional(
+                2,
+                "Col2",
+                Types.StructType.of(Types.NestedField.required(3, "X", Types.StringType.get()))));
+
+    Schema changedSchema =
+        new Schema(
+            Types.NestedField.optional(1, "x", Types.IntegerType.get(), "top level x"),
+            Types.NestedField.optional(
+                2,
+                "col2",
+                Types.StructType.of(Types.NestedField.required(3, "x", Types.StringType.get()))));
+
+    Assert.assertEquals(
+        changedSchema.asStruct(), HiveSchemaUtil.changeFieldNameToLowercase(schema).asStruct());
+  }
+
+  /** Fields of the same struct that fold to the same name must still be rejected. */
+  @Test
+  public void testChangeFieldNameToLowercaseRejectsSiblingCollision() {
+
+    Schema schema =
+        new Schema(
+            Types.NestedField.optional(1, "Col", Types.IntegerType.get()),
+            Types.NestedField.optional(2, "COL", Types.LongType.get()));
+
+    Assert.assertThrows(
+        IllegalArgumentException.class, () -> HiveSchemaUtil.changeFieldNameToLowercase(schema));
+  }
+
+  /** Fields nested in lists and maps are renamed as well, keeping ids and requiredness. */
+  @Test
+  public void testChangeFieldNameToLowercaseInsideListAndMap() {
+
+    Schema schema =
+        new Schema(
+            Types.NestedField.optional(
+                1,
+                "Col1",
+                Types.ListType.ofRequired(
+                    2,
+                    Types.StructType.of(
+                        Types.NestedField.optional(3, "ELEM", Types.StringType.get())))),
+            Types.NestedField.optional(
+                4,
+                "Col2",
+                Types.MapType.ofRequired(
+                    5,
+                    6,
+                    Types.StringType.get(),
+                    Types.StructType.of(
+                        Types.NestedField.required(7, "VALUE", Types.IntegerType.get())))),
+            Types.NestedField.optional(
+                8,
+                "Col3",
+                Types.MapType.ofOptional(
+                    9,
+                    10,
+                    Types.StringType.get(),
+                    Types.StructType.of(
+                        Types.NestedField.optional(11, "VALUE", Types.IntegerType.get())))));
+
+    Schema changedSchema =
+        new Schema(
+            Types.NestedField.optional(
+                1,
+                "col1",
+                Types.ListType.ofRequired(
+                    2,
+                    Types.StructType.of(
+                        Types.NestedField.optional(3, "elem", Types.StringType.get())))),
+            Types.NestedField.optional(
+                4,
+                "col2",
+                Types.MapType.ofRequired(
+                    5,
+                    6,
+                    Types.StringType.get(),
+                    Types.StructType.of(
+                        Types.NestedField.required(7, "value", Types.IntegerType.get())))),
+            Types.NestedField.optional(
+                8,
+                "col3",
+                Types.MapType.ofOptional(
+                    9,
+                    10,
+                    Types.StringType.get(),
+                    Types.StructType.of(
+                        Types.NestedField.optional(11, "value", Types.IntegerType.get())))));
+
+    Schema changed = HiveSchemaUtil.changeFieldNameToLowercase(schema);
+    Assert.assertEquals(changedSchema.asStruct(), changed.asStruct());
+    // Map value requiredness is part of the map type, do not silently relax it.
+    Assert.assertFalse(changed.findType("col2").asMapType().isValueOptional());
+    Assert.assertTrue(changed.findType("col3").asMapType().isValueOptional());
+  }
 }
