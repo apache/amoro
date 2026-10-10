@@ -575,15 +575,6 @@ public class TableController {
                     new TableMeta(
                         idWithFormat.getIdentifier().getTableName(),
                         formatToType.apply(idWithFormat.getTableFormat())))
-            // Sort by table format and table name
-            .sorted(
-                (table1, table2) -> {
-                  if (Objects.equals(table1.getType(), table2.getType())) {
-                    return table1.getName().compareTo(table2.getName());
-                  } else {
-                    return table1.getType().compareTo(table2.getType());
-                  }
-                })
             .collect(Collectors.toList());
     String catalogType = serverCatalog.getMetadata().getCatalogType();
     if (catalogType.equals(CATALOG_TYPE_HIVE)) {
@@ -597,9 +588,18 @@ public class TableController {
           tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
       hiveTables.stream()
           .filter(e -> !mixedHiveTables.contains(e))
-          .sorted(String::compareTo)
           .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
     }
+
+    // Sort by table format and table name
+    tables.sort(
+        (table1, table2) -> {
+          if (Objects.equals(table1.getType(), table2.getType())) {
+            return table1.getName().compareTo(table2.getName());
+          } else {
+            return table1.getType().compareTo(table2.getType());
+          }
+        });
 
     ctx.json(
         OkResponse.of(
