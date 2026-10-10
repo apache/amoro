@@ -202,8 +202,13 @@
 
 ------------------------------------------------------------------------------------
 This product bundles various third-party components under other open source licenses.
-This section summarizes those components and their licenses. See licenses/
-for text of these licenses.
+This section summarizes those components and their licenses.
+
+Additional license texts are provided in the top-level licenses/ directory.
+
+For the dashboard's third-party npm components, license texts and notices
+are provided in the licenses/ directory inside
+lib/amoro-web-*.jar, where * is the project version.
 
 Apache License Version 2.0
 --------------------------
