@@ -86,7 +86,7 @@ public class SparkMetadataChangeHandler implements MetadataChangeHandler {
 
   @Override
   public String changeColumnsRequire(String columnName, boolean required) {
-    String template = ALTER_TABLE + ALTER_COLUMN + (required ? IS_OPTIONAL : NOT_OPTIONAL);
+    String template = ALTER_TABLE + ALTER_COLUMN + (required ? NOT_OPTIONAL : IS_OPTIONAL);
     return String.format(template, tableName, columnName);
   }
 

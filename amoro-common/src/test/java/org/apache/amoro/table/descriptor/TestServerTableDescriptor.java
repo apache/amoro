@@ -146,7 +146,7 @@ public abstract class TestServerTableDescriptor {
         tableOperations
             .get(6)
             .getDdl()
-            .equalsIgnoreCase("ALTER TABLE test_table ALTER COLUMN renamed_col DROP NOT NULL"));
+            .equalsIgnoreCase("ALTER TABLE test_table ALTER COLUMN renamed_col SET NOT NULL"));
 
     Assert.assertTrue(
         tableOperations
