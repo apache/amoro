@@ -30,7 +30,6 @@
     <url>https://amoro.apache.org</url>
 
     <properties>
-        <iceberg.version>${maintenance-iceberg.version}</iceberg.version>
         <assembly.descriptor.file>src/main/assemblies/bin.xml</assembly.descriptor.file>
     </properties>
 

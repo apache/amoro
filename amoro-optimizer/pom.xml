@@ -39,7 +39,6 @@
     </modules>
 
     <properties>
-        <iceberg.version>${maintenance-iceberg.version}</iceberg.version>
         <avro.version>1.12.1</avro.version>
     </properties>
     <dependencyManagement>
