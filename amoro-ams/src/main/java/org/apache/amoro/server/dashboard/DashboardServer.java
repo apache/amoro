@@ -472,12 +472,15 @@ public class DashboardServer {
       if (!ctx.req.getRequestURI().startsWith("/api/ams")) {
         ctx.html(getIndexFileContent());
       } else {
-        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, e.getMessage(), ""));
+        ctx.status(HttpCode.FORBIDDEN)
+            .json(new ErrorResponse(HttpCode.FORBIDDEN, e.getMessage(), ""));
       }
     } else if (e instanceof SignatureCheckException) {
-      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature check failed", ""));
+      ctx.status(HttpCode.FORBIDDEN)
+          .json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature check failed", ""));
     } else {
-      ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
+      ctx.status(HttpCode.INTERNAL_SERVER_ERROR)
+          .json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
     }
     LOG.error("An error occurred while processing the url:{}", ctx.url(), e);
   }
