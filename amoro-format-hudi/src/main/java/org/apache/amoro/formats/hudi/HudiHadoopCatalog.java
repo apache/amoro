@@ -160,7 +160,7 @@ public class HudiHadoopCatalog implements FormatCatalog {
           try {
             items = fs.listStatus(databasePath);
           } catch (FileNotFoundException e) {
-            throw new NoSuchDatabaseException("Database: " + database + " is not exists", e);
+            throw new NoSuchDatabaseException("Database: " + database + " does not exist", e);
           }
           if (items == null || items.length == 0) {
             return Lists.newArrayList();
@@ -205,7 +205,7 @@ public class HudiHadoopCatalog implements FormatCatalog {
           if (isHoodieTableBase(fs, tablePath)) {
             return tablePath.toString();
           }
-          throw new NoSuchTableException(database + "." + table + " is not exists");
+          throw new NoSuchTableException(database + "." + table + " does not exist");
         });
   }
 

@@ -319,9 +319,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
                             summary, SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
                 amoroSnapshotsOfTable.setFileCount(fileCount);
                 amoroSnapshotsOfTable.setFileSize(
-                    PropertyUtil.propertyAsLong(summary, SnapshotSummary.ADDED_FILE_SIZE_PROP, 0L)
-                        + PropertyUtil.propertyAsLong(
-                            summary, SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0L));
+                    PropertyUtil.propertyAsLong(summary, SnapshotSummary.TOTAL_FILE_SIZE_PROP, 0L));
                 long totalRecords =
                     PropertyUtil.propertyAsLong(summary, SnapshotSummary.TOTAL_RECORDS_PROP, 0L);
                 amoroSnapshotsOfTable.setRecords(totalRecords);

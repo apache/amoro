@@ -62,8 +62,12 @@ public class OptimizingUtil {
         TableConfigurations.parseTableConfig(tableRuntimeMeta.getTableConfig());
     OptimizingConfig optimizingConfig = tableConfig.getOptimizingConfig();
     double targetQuota = optimizingConfig.getTargetQuota();
+    // A non-positive target quota must not make the occupation ratio NaN; clamp to 1 like
+    // DefaultTableRuntime.calculateQuotaOccupy does.
     tableOptimizeInfo.setQuota(
-        targetQuota > 1 ? (int) targetQuota : (int) Math.ceil(targetQuota * threadCount));
+        targetQuota > 1
+            ? (int) targetQuota
+            : (int) Math.max(1, Math.ceil(targetQuota * threadCount)));
 
     long endTime = System.currentTimeMillis();
     long startTime = System.currentTimeMillis() - AmoroServiceConstants.QUOTA_LOOK_BACK_TIME;
