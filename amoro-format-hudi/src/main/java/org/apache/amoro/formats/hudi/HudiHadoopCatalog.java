@@ -61,7 +61,7 @@ public class HudiHadoopCatalog implements FormatCatalog {
 
     Preconditions.checkArgument(
         this.properties.containsKey(CatalogMetaProperties.KEY_WAREHOUSE),
-        "Lack required property: {}",
+        "Lack required property: %s",
         CatalogMetaProperties.KEY_WAREHOUSE);
     String warehouse = this.properties.get(CatalogMetaProperties.KEY_WAREHOUSE);
     this.warehouse = new Path(warehouse);
