@@ -39,7 +39,6 @@ class ChangeFieldName extends TypeUtil.CustomOrderSchemaVisitor<Type> {
   }
 
   private final ChangeType changeType;
-  private final Set<String> fieldNameSet = Sets.newHashSet();
 
   /**
    * Change the field name of a schema, change to uppercase or lowercase.
@@ -69,27 +68,27 @@ class ChangeFieldName extends TypeUtil.CustomOrderSchemaVisitor<Type> {
   @Override
   public Type struct(Types.StructType struct, Iterable<Type> futures) {
     List<Types.NestedField> fields = struct.fields();
-    int length = struct.fields().size();
+    int length = fields.size();
+
+    // Field names only have to stay unique among the fields of the same struct. Fields of
+    // different structs live in different scopes, so they may share the same name after the
+    // change, tracked with a collision set that is local to this struct.
+    Set<String> siblingNames = Sets.newHashSetWithExpectedSize(length);
 
     List<Types.NestedField> newFields = Lists.newArrayListWithExpectedSize(length);
     Iterator<Type> types = futures.iterator();
     for (int i = 0; i < length; i += 1) {
       Types.NestedField field = fields.get(i);
       Type type = types.next();
+      String newName = changeName(field.name());
+      if (!siblingNames.add(newName)) {
+        throw new IllegalArgumentException("Multiple fields' name will be changed to " + newName);
+      }
       if (field.isOptional()) {
-        newFields.add(
-            Types.NestedField.optional(
-                field.fieldId(), changeName(field.name()), type, field.doc()));
+        newFields.add(Types.NestedField.optional(field.fieldId(), newName, type, field.doc()));
       } else {
-        newFields.add(
-            Types.NestedField.required(
-                field.fieldId(), changeName(field.name()), type, field.doc()));
+        newFields.add(Types.NestedField.required(field.fieldId(), newName, type, field.doc()));
       }
-      if (fieldNameSet.contains(newFields.get(i).name())) {
-        throw new IllegalArgumentException(
-            "Multiple fields' name will be changed to " + newFields.get(i).name());
-      }
-      fieldNameSet.add(newFields.get(i).name());
     }
 
     return Types.StructType.of(newFields);
@@ -102,12 +101,21 @@ class ChangeFieldName extends TypeUtil.CustomOrderSchemaVisitor<Type> {
 
   @Override
   public Type list(Types.ListType list, Supplier<Type> future) {
-    return list;
+    Type elementType = future.get();
+    if (list.isElementOptional()) {
+      return Types.ListType.ofOptional(list.elementId(), elementType);
+    }
+    return Types.ListType.ofRequired(list.elementId(), elementType);
   }
 
   @Override
   public Type map(Types.MapType map, Supplier<Type> keyFuture, Supplier<Type> valueFuture) {
-    return map;
+    Type keyType = keyFuture.get();
+    Type valueType = valueFuture.get();
+    if (map.isValueOptional()) {
+      return Types.MapType.ofOptional(map.keyId(), map.valueId(), keyType, valueType);
+    }
+    return Types.MapType.ofRequired(map.keyId(), map.valueId(), keyType, valueType);
   }
 
   @Override
