@@ -180,12 +180,18 @@ export const dateFormat = (() => {
 
 export function debounce(func: any, timeout = 300) {
   let timer: number | undefined
-  return (...args: any) => {
+  const debounced = (...args: any[]) => {
     clearTimeout(timer)
     timer = setTimeout(() => {
-      func && func(args)
+      timer = undefined
+      func && func(...args)
     }, timeout)
   }
+  debounced.cancel = () => {
+    clearTimeout(timer)
+    timer = undefined
+  }
+  return debounced
 }
 
 export function getUUid() {

@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "vite",
     "dev:mock": "vite --mode mock",
-    "build": "node ./scripts/preload-error-recovery.test.mjs && vite build",
+    "build": "node ./scripts/preload-error-recovery.test.mjs && node --test ./scripts/tables-menu-search.test.mjs && vite build",
     "typecheck": "vue-tsc --noEmit",
     "gen:license": "node ./license.node.js",
     "preview": "vite preview",
     "test:preload-recovery": "node ./scripts/preload-error-recovery.test.mjs",
+    "test:tables-menu-search": "node --test ./scripts/tables-menu-search.test.mjs",
     "lint": "eslint ./src",
     "format": "eslint ./src --fix"
   },
