@@ -244,7 +244,7 @@ public class HudiTableDescriptor implements FormatTableDescriptor {
               snapshotsOfTable.setSnapshotId(s.getSnapshotId());
               snapshotsOfTable.setCommitTime(s.getCommitTimestamp());
               snapshotsOfTable.setFileCount(s.getTotalFileCount());
-              snapshotsOfTable.setFileSize((int) s.getTotalFileSize());
+              snapshotsOfTable.setFileSize(s.getTotalFileSize());
               snapshotsOfTable.setSummary(s.getSummary());
               snapshotsOfTable.setOperation(s.getOperation());
               Map<String, String> fileSummary = new HashMap<>();
