@@ -72,6 +72,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InvalidClassException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -1090,6 +1091,19 @@ public class OptimizingQueue extends PersistentBase {
                 retryTask(taskRuntime);
               }
             });
+      } catch (PersistenceException e) {
+        Throwable cause = e;
+        while (cause != null && !(cause instanceof InvalidClassException)) {
+          cause = cause.getCause();
+        }
+        if (cause == null) {
+          throw e;
+        }
+        LOG.warn(
+            "Incompatible persisted task output, close the optimizing process : {}",
+            optimizingProcess.getProcessId(),
+            e);
+        optimizingProcess.close(false);
       } catch (IllegalArgumentException e) {
         LOG.warn(
             "Load task inputs failed, close the optimizing process : {}",

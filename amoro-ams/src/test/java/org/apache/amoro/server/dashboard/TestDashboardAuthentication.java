@@ -101,6 +101,7 @@ public class TestDashboardAuthentication {
 
   private static void assertForbidden(HttpResponse<String> response, String expectedMessage)
       throws IOException {
+    Assertions.assertEquals(403, response.statusCode());
     JsonNode responseBody = OBJECT_MAPPER.readTree(response.body());
     Assertions.assertEquals(403, responseBody.get("code").asInt());
     Assertions.assertEquals(expectedMessage, responseBody.get("message").asText());
