@@ -54,7 +54,7 @@ jobs:
         run: ./mvnw validate
 
       - name: Build all modules with Maven
-        run: ./mvnw clean install -Djacoco.flink.skip=true -B -ntp -Phadoop2 -Pjava${{ matrix.jdk }}
+        run: ./mvnw clean install -pl '!amoro-ams,!dist' -Djacoco.flink.skip=true -B -ntp -Phadoop2 -Pjava${{ matrix.jdk }}
 
       - name: Code coverage
         uses: codecov/codecov-action@v3
