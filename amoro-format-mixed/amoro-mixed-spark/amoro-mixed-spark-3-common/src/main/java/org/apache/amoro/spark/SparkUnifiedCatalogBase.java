@@ -96,7 +96,7 @@ public class SparkUnifiedCatalogBase implements TableCatalog, SupportsNamespaces
         registerCatalogName = name;
         if (CatalogManager.SESSION_CATALOG_NAME().equalsIgnoreCase(registerCatalogName)) {
           LOG.warn(
-              "Catalog name is not exists in catalog uri, using spark catalog as register catalog name, but "
+              "Catalog name does not exist in catalog uri, using spark catalog as registered catalog name, but "
                   + "current name "
                   + registerCatalogName
                   + " is spark session catalog name.");
