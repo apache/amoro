@@ -150,6 +150,16 @@ If using Iceberg Format，please refer to [Iceberg configurations](https://icebe
 | table.event-time-field.datetime-string-format | `yyyy-MM-dd HH:mm:ss` | The format of event time when it is in string format           |
 | table.event-time-field.datetime-number-format | TIMESTAMP_MS | The format of event time when it is in numeric format, which supports TIMESTAMP_MS (timestamp in milliseconds) and TIMESTAMP_S (timestamp in seconds)|
 
+When `table.event-time-field` names a string column, Amoro's mixed-table writers
+default that column's `write.metadata.metrics.column.<column-name>` mode to `full`.
+This preserves the complete timestamp string needed to calculate watermarks;
+Iceberg's default `truncate(16)` can discard part of the timestamp. Other columns
+keep their configured metrics mode, and an explicit per-column mode takes
+precedence. This default is applied to the effective writer properties and does
+not rewrite existing metadata or repair bounds in previously written files.
+Writers that access the underlying Iceberg table directly must configure their
+event-time column metrics separately.
+
 ### Mixed-Hive format configurations
 
 | Key                               | Default          | Description                                                                                            |
