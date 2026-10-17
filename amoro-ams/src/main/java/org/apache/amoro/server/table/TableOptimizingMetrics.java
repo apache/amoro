@@ -377,9 +377,14 @@ public class TableOptimizingMetrics extends AbstractTableMetrics {
    * Handle table self optimizing process completed event.
    *
    * @param processType optimizing process type.
-   * @param success is optimizing process success.
+   * @param success whether the optimizing process succeeded.
+   * @param failed whether the optimizing process failed. A process that was closed because
+   *     self-optimizing was disabled or was cancelled by the user is neither {@code success} nor
+   *     {@code failed}, so it must not increment the failure counters.
+   * @param planTime optimizing plan time.
    */
-  public void processComplete(OptimizingType processType, boolean success, long planTime) {
+  public void processComplete(
+      OptimizingType processType, boolean success, boolean failed, long planTime) {
     processTotalCount.inc();
     Counter totalCounter = null;
     Counter failedCounter = null;
@@ -403,7 +408,7 @@ public class TableOptimizingMetrics extends AbstractTableMetrics {
     if (totalCounter != null) {
       totalCounter.inc();
     }
-    if (!success && failedCounter != null) {
+    if (failed && failedCounter != null) {
       processFailedCount.inc();
       failedCounter.inc();
     }
