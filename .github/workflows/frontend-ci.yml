@@ -1,0 +1,81 @@
+name: Frontend
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - "master"
+      - "[0-9]+.**"
+  pull_request:
+    branches:
+      - "master"
+      - "[0-9]+.**"
+  workflow_dispatch:
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.filter.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        name: Detect frontend changes
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+          elif bash dev/ci/has-changes.sh \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" \
+            '^amoro-web/|^dev/ci/|^\.github/workflows/frontend-ci\.yml$'; then
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+  build:
+    needs: changes
+    if: needs.changes.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: amoro-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.2'
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.6.0 --activate
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint (non-blocking until the existing baseline is clean)
+        continue-on-error: true
+        run: pnpm lint
+      - name: Type check (non-blocking until the existing baseline is clean)
+        continue-on-error: true
+        run: pnpm typecheck
+      - name: Build dashboard
+        run: pnpm build
+
+  gate:
+    name: CI / Frontend
+    if: always()
+    needs:
+      - changes
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        shell: bash
+        run: |
+          [[ "${{ needs.changes.result }}" == "success" ]]
+          [[ "${{ needs.build.result }}" == "success" || "${{ needs.build.result }}" == "skipped" ]]

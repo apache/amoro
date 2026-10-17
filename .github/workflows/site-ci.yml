@@ -1,0 +1,69 @@
+name: Site Validation
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - "master"
+      - "[0-9]+.**"
+  pull_request:
+    branches:
+      - "master"
+      - "[0-9]+.**"
+  workflow_dispatch:
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.filter.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        name: Detect site changes
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+          elif bash dev/ci/has-changes.sh \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" \
+            '^site/|^docs/|^dev/ci/|^\.github/workflows/site-ci\.yml$'; then
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+  build:
+    needs: changes
+    if: needs.changes.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: latest
+          extended: true
+      - name: Build project site
+        run: hugo --source site/amoro-site --minify
+      - name: Build documentation site
+        run: hugo --source site/amoro-docs --minify
+
+  gate:
+    name: CI / Site Validation
+    if: always()
+    needs:
+      - changes
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        shell: bash
+        run: |
+          [[ "${{ needs.changes.result }}" == "success" ]]
+          [[ "${{ needs.build.result }}" == "success" || "${{ needs.build.result }}" == "skipped" ]]
