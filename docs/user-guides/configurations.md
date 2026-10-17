@@ -106,6 +106,14 @@ soon.
 
 If using Iceberg Format，please refer to [Iceberg configurations](https://iceberg.apache.org/docs/latest/configuration/)，the following configurations are only applicable to Mixed Format.
 
+Spark `ALTER TABLE ... SET TBLPROPERTIES` and `UNSET TBLPROPERTIES` reject changes
+to mixed-table metadata maintained by Amoro: `table.partition-properties`,
+`base.table.max-transaction-id`, `max-txId`, `watermark.table`,
+and `watermark.base`. These values must be updated through table commits rather
+than user property changes. Requests containing these property changes are rejected
+before any part of the alteration is committed. Normal configuration properties
+and supported location, format, and schema changes remain available.
+
 ### Reading configurations
 
 | Key                                                 | Default          | Description                                              |
