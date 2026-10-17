@@ -39,6 +39,20 @@ public class SparkMetadataChangeHandler implements MetadataChangeHandler {
 
   private final String tableName;
 
+  /**
+   * Escapes a raw value so it can be spliced between single quotes in a Spark SQL literal. Spark
+   * uses backslash escapes rather than the SQL-standard doubled apostrophe, so backslashes are
+   * doubled first and apostrophes escaped second.
+   */
+  private static String escapeLiteral(String value) {
+    return value
+        .replace("\\", "\\\\")
+        .replace("'", "\\'")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t");
+  }
+
   public SparkMetadataChangeHandler(String tableName) {
     this.tableName = tableName;
   }
@@ -48,7 +62,11 @@ public class SparkMetadataChangeHandler implements MetadataChangeHandler {
     String template = ALTER_TABLE + SET_PROPERTIES;
     String properties =
         diffProperties.entrySet().stream()
-            .map(entry -> String.format("'%s' = '%s'", entry.getKey(), entry.getValue()))
+            .map(
+                entry ->
+                    String.format(
+                        "'%s' = '%s'",
+                        escapeLiteral(entry.getKey()), escapeLiteral(entry.getValue())))
             .collect(Collectors.joining(","));
     return String.format(template, tableName, properties);
   }
@@ -57,7 +75,9 @@ public class SparkMetadataChangeHandler implements MetadataChangeHandler {
   public String removeProperties(Set<String> removeKeys) {
     String template = ALTER_TABLE + UNSET_PROPERTIES;
     String properties =
-        removeKeys.stream().map(key -> String.format("'%s'", key)).collect(Collectors.joining(","));
+        removeKeys.stream()
+            .map(key -> String.format("'%s'", escapeLiteral(key)))
+            .collect(Collectors.joining(","));
     return String.format(template, tableName, properties);
   }
 
@@ -93,7 +113,9 @@ public class SparkMetadataChangeHandler implements MetadataChangeHandler {
   @Override
   public String changeColumnsComment(String columnName, String comment) {
     String template = ALTER_TABLE + ALTER_COLUMN + DOC;
-    return String.format(template, tableName, columnName, comment);
+    // A null comment means the comment is being removed, which Spark spells as an empty literal.
+    return String.format(
+        template, tableName, columnName, escapeLiteral(comment == null ? "" : comment));
   }
 
   @Override
