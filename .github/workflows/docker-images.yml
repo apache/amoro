@@ -193,7 +193,7 @@ jobs:
             major: "3.5"
             jdk: "11"
             profile: "spark-3.5"
-            aws: "2.24.12"
+            aws: "2.29.52"
           - spark: "4.1.3"
             scala: "2.13.17"
             scala_binary: "2.13"

@@ -28,6 +28,7 @@ cd $CURRENT_DIR
 AMORO_VERSION=`cat $PROJECT_HOME/pom.xml | grep 'amoro-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
 FLINK_VERSION=1.20.0
 SPARK_VERSION=3.5.7
+SPARK_AWS_VERSION=2.29.52
 DEBIAN_MIRROR=http://deb.debian.org
 APACHE_ARCHIVE=https://archive.apache.org/dist
 FLINK_OPTIMIZER_JOB_PATH=amoro-optimizer/amoro-optimizer-flink/target/amoro-optimizer-flink-${AMORO_VERSION}-jar-with-dependencies.jar
@@ -134,11 +135,9 @@ SPARK_MAJOR_VERSION=${SPARK_VERSION%.*}
 if [ "${SPARK_MAJOR_VERSION}" = "4.1" ]; then
   SPARK_OPTIMIZER_SCALA_BINARY_VERSION=2.13
   SPARK_OPTIMIZER_PROFILE=optimizer-spark-4.1
-  SPARK_AWS_VERSION=2.29.52
 else
   SPARK_OPTIMIZER_SCALA_BINARY_VERSION=2.12
   SPARK_OPTIMIZER_PROFILE=spark-${SPARK_MAJOR_VERSION}
-  SPARK_AWS_VERSION=2.24.12
 fi
 
 SPARK_OPTIMIZER_JOB_PATH=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${SPARK_MAJOR_VERSION}_${SPARK_OPTIMIZER_SCALA_BINARY_VERSION}-${AMORO_VERSION}-jar-with-dependencies.jar
