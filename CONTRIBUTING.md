@@ -41,7 +41,7 @@ to track it.
     * Bug: A problem that prevents the project from functioning as intended.
     * Subtask: A subtask of a Feature/Improvement that can be broken down into smaller steps.
 
-You can assign the issue to yourself by leaving a comment with content `take`.
+You can claim an unassigned issue by leaving a comment containing exactly `take`. Only the first user to comment `take` will be assigned; subsequent `take` comments will not change the assignee.
 
 ## Pull requests
 
