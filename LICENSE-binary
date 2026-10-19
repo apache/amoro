@@ -425,6 +425,10 @@ BSD 2-Clause License
 --------------------
 com.github.luben:zstd-jni
 jline:jline:2.12
+com.ongres.scram:client
+com.ongres.scram:common
+com.ongres.stringprep:saslprep
+com.ongres.stringprep:stringprep
 
 npm packages bundled into the dashboard (amoro-web):
 apg-lite (transitive dependency)
