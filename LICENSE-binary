@@ -206,6 +206,10 @@ This section summarizes those components and their licenses.
 
 Additional license texts are provided in the top-level licenses/ directory.
 
+Some dependencies listed under Apache License Version 2.0 also bundle
+components under other licenses. Those components are identified separately
+below, with references to their license texts within this distribution.
+
 For the dashboard's third-party npm components, license texts and notices
 are provided in the licenses/ directory inside
 lib/amoro-web-*.jar, where * is the project version.
@@ -426,6 +430,23 @@ BSD 2-Clause License
 com.github.luben:zstd-jni
 jline:jline:2.12
 
+com.ongres.scram:client:2.1
+com.ongres.scram:common:2.1
+com.ongres.stringprep:saslprep:1.1
+com.ongres.stringprep:stringprep:1.1
+  These four components are bundled in lib/postgresql-42.7.2.jar.
+  Copyright notices and license texts are in these files inside that JAR:
+  META-INF/licenses/com.ongres.scram/client-2.1/LICENSE
+  META-INF/licenses/com.ongres.scram/common-2.1/LICENSE
+  META-INF/licenses/com.ongres.stringprep/saslprep-1.1/LICENSE
+  META-INF/licenses/com.ongres.stringprep/stringprep-1.1/LICENSE
+
+bigint (portions used by FastDoubleParser, embedded in Jackson)
+  Copyright 2022 Tim Buktu.
+  The copyright notice and BSD-2-Clause license text are included in:
+  lib/third-party-jackson-core-2.24.12.jar: META-INF/bigint-LICENSE
+  lib/kyuubi-hive-jdbc-shaded-1.10.2.jar: META-INF/thirdparty-LICENSE
+
 npm packages bundled into the dashboard (amoro-web):
 apg-lite (transitive dependency)
 
@@ -438,6 +459,16 @@ com.google.protobuf:protobuf-java
 org.abego.treelayout:org.abego.treelayout.core
 org.fusesource.leveldbjni:leveldbjni-all
 org.threeten:threeten-extra
+
+ASM (repackaged bytecode manipulation library)
+  Bundled in:
+  lib/flink-shaded-asm-9-9.5-17.0.jar
+  lib/xbean-asm9-shaded-4.20.jar (Hadoop 2 distribution)
+  lib/xbean-asm9-shaded-4.23.jar (Hadoop 3 distribution)
+  lib/datanucleus-core-4.1.17.jar
+  See licenses/LICENSE.asm for the copyright notice and BSD-3-Clause
+  license text. The DataNucleus repackaging is also described in
+  META-INF/ASM_LICENSE.txt inside lib/datanucleus-core-4.1.17.jar.
 
 npm packages bundled into the dashboard (amoro-web):
 
@@ -488,6 +519,12 @@ net.razorvine:pickle
 org.checkerframework:checker-qual
 org.codehaus.mojo:animal-sniffer-annotations
 com.github.pagehelper:pagehelper
+
+fast_float (portions used by FastDoubleParser, embedded in Jackson)
+  Copyright (c) 2021 The fast_float authors.
+  Bundled in lib/kyuubi-hive-jdbc-shaded-1.10.2.jar. See
+  META-INF/thirdparty-LICENSE inside that JAR for the copyright notice
+  and MIT license text.
 
 npm packages bundled into the dashboard (amoro-web):
 
@@ -638,3 +675,11 @@ zenscroll (npm package bundled into the dashboard, amoro-web)
 Mozilla Public License 2.0 OR Apache License 2.0
 ------------------------------------------------
 dompurify (npm package bundled into the dashboard, amoro-web)
+
+Third-party components bundled in the Flink Web UI
+-------------------------------------------------
+org.apache.flink:flink-runtime-web:1.20.3 bundles JavaScript components under
+MIT, ISC, BSD-3-Clause, Apache-2.0, Unlicense and 0BSD licenses.
+See web/3rdpartylicenses.txt and META-INF/NOTICE inside
+lib/flink-runtime-web-1.20.3.jar for the component names, versions,
+copyright notices and license texts.
