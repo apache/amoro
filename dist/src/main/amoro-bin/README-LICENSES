@@ -14,16 +14,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-Apache Amoro convenience binaries include the jsr305 3.0.2 JAR. Its
+Apache Amoro convenience binaries include the jsr305 3.0.0 JAR. Its
 javax.annotation.concurrent annotations by Brian Goetz are licensed under
 Creative Commons Attribution 2.5, which has terms different from the Apache
-License 2.0. The JAR contains compiled classes only; its source files are not
-bundled in this distribution.
+License 2.0. The upstream JAR contains both compiled classes and Java source
+files, which are retained in this distribution.
 
-For the affected classes, attribution, and the complete license text, see the
-top-level LICENSE and licenses/LICENSE.CC-BY-2.5.html files. The jsr305
+For the affected classes and sources, attribution, and the complete license
+text, see the top-level LICENSE and licenses/LICENSE.CC-BY-2.5.html files. The jsr305
 project and its source artifact are available at
-https://repo.maven.apache.org/maven2/com/google/code/findbugs/jsr305/3.0.2/.
+https://repo.maven.apache.org/maven2/com/google/code/findbugs/jsr305/3.0.0/.
 
 Other third-party terms in these convenience binaries
 -----------------------------------------------------

@@ -700,8 +700,9 @@ org.glassfish:javax.json
 
 Creative Commons Attribution 2.5
 --------------------------------
-com.google.code.findbugs:jsr305:3.0.2 contains compiled annotations derived
-from the following works by Brian Goetz (Copyright (c) 2005 Brian Goetz):
+com.google.code.findbugs:jsr305:3.0.0 contains compiled annotations and
+accompanying Java sources derived from the following works by Brian Goetz
+(Copyright (c) 2005 Brian Goetz):
 
   javax.annotation.concurrent.GuardedBy
   javax.annotation.concurrent.Immutable
@@ -711,7 +712,7 @@ from the following works by Brian Goetz (Copyright (c) 2005 Brian Goetz):
 These annotations are licensed under Creative Commons Attribution 2.5.
 The complete license text is in licenses/LICENSE.CC-BY-2.5.html.
 Original project: https://jcip.net/
-Source: https://repo.maven.apache.org/maven2/com/google/code/findbugs/jsr305/3.0.2/
+Source: https://repo.maven.apache.org/maven2/com/google/code/findbugs/jsr305/3.0.0/
 
 MIT No Attribution (MIT-0)
 -------------------------

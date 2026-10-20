@@ -160,8 +160,6 @@
         <amoro-shade-zookeeper.version>3.9.1</amoro-shade-zookeeper.version>
         <amoro-shade-thrift.version>0.20.0</amoro-shade-thrift.version>
         <annotation-api.version>1.3.2</annotation-api.version>
-        <!-- 3.0.0 bundles CC BY source files; 3.0.2 contains compiled annotations only. -->
-        <jsr305.version>3.0.2</jsr305.version>
         <guava.version>32.1.1-jre</guava.version>
         <guava-hive.version>32.1.1-jre</guava-hive.version>
         <hudi.version>0.14.1</hudi.version>
@@ -199,11 +197,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>jsr305</artifactId>
-                <version>${jsr305.version}</version>
-            </dependency>
             <dependency>
                 <groupId>org.apache.arrow</groupId>
                 <artifactId>arrow-bom</artifactId>
@@ -1861,10 +1854,6 @@
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
-                        <configuration>
-                            <!-- https://maven.apache.org/plugins-archives/maven-jar-plugin-3.0.2/test-jar-mojo.html#skipIfEmpty -->
-                            <skipIfEmpty>true</skipIfEmpty>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
