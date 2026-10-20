@@ -429,7 +429,6 @@ org.codehaus.janino:janino
 org.codehaus.woodstox:stax2-api
 org.jboss.logging:jboss-logging
 org.jboss.threads:jboss-threads
-org.jline:jline
 org.postgresql:postgresql
 
 BSD 2-Clause License
@@ -466,6 +465,23 @@ com.google.protobuf:protobuf-java
 org.abego.treelayout:org.abego.treelayout.core
 org.fusesource.leveldbjni:leveldbjni-all
 org.threeten:threeten-extra
+
+org.jline:jline:3.9.0 (including its jline-* modules)
+  Repackaged in lib/hadoop-client-runtime-3.4.3.jar (Hadoop 3).
+  See licenses/LICENSE.jline-3.9.0.txt for the copyright notice and
+  complete BSD-3-Clause license text.
+
+jakarta.activation:jakarta.activation-api:1.2.1
+  Repackaged in lib/hadoop-client-runtime-3.4.3.jar (Hadoop 3).
+  Distributed under the Eclipse Distribution License 1.0 (BSD-3-Clause).
+  See licenses/LICENSE.jakarta.activation-api-1.2.1.txt for the
+  copyright notice and complete license text.
+
+jakarta.xml.bind:jakarta.xml.bind-api:2.3.2
+  Repackaged in lib/hadoop-client-runtime-3.4.3.jar (Hadoop 3).
+  Distributed under the Eclipse Distribution License 1.0 (BSD-3-Clause).
+  See licenses/LICENSE.jakarta.xml.bind-api-2.3.2.txt for the
+  copyright notice and complete license text.
 
 ASM (repackaged bytecode manipulation library)
   Bundled in:
@@ -688,6 +704,10 @@ javax.servlet.jsp:jsp-api:2.1
 javax.xml.stream:stax-api:1.0-2 (Hadoop 2 distribution)
   CDDL-1.0 is selected.
   See licenses/LICENSE.CDDL-1.0.
+javax.ws.rs:jsr311-api:1.1.1
+  Repackaged in lib/hadoop-client-runtime-3.4.3.jar (Hadoop 3).
+  Distributed under CDDL-1.0; see licenses/LICENSE.CDDL-1.0.
+  Project and corresponding source artifact locations are in README-LICENSES.
 
 Common Development and Distribution License (CDDL) 1.1
 ------------------------------------------------------
@@ -697,6 +717,13 @@ javax.xml.bind:jaxb-api
   lib/jaxb-api-2.2.2.jar (Hadoop 2).
 org.glassfish:javax.json
   See licenses/LICENSE.javax.json.
+com.sun.jersey:jersey-core:1.19.4
+com.sun.jersey:jersey-client:1.19.4
+com.sun.jersey:jersey-servlet:1.19.4
+  Repackaged in lib/hadoop-client-runtime-3.4.3.jar (Hadoop 3).
+  CDDL-1.1 is selected from the upstream CDDL/GPL dual license.
+  See licenses/LICENSE.CDDL-1.1 for the complete license text and
+  README-LICENSES for project and corresponding source artifact locations.
 
 Creative Commons Attribution 2.5
 --------------------------------

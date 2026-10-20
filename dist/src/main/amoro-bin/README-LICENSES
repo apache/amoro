@@ -47,6 +47,13 @@ CDDL-1.0 (selected where a choice is offered):
   https://repo.maven.apache.org/maven2/javax/servlet/jsp/jsp-api/2.1/
   https://repo.maven.apache.org/maven2/javax/xml/stream/stax-api/1.0-2/
 
+  JSR-311 API 1.1.1 (javax.ws.rs:jsr311-api), repackaged in
+  lib/hadoop-client-runtime-3.4.3.jar (Hadoop 3), is also distributed
+  under CDDL-1.0. See licenses/LICENSE.CDDL-1.0.
+  Project and corresponding source artifact:
+  https://github.com/javaee/jsr311
+  https://repo.maven.apache.org/maven2/javax/ws/rs/jsr311-api/1.1.1/jsr311-api-1.1.1-sources.jar
+
 CDDL-1.1 (selected where a choice is offered):
   JAXB API (javax.xml.bind:jaxb-api), JSON Processing (org.glassfish:javax.json)
   and the standard JSP schema/DTD resources identified in
@@ -59,10 +66,20 @@ CDDL-1.1 (selected where a choice is offered):
   These unmodified standard schema/DTD files are consumed at runtime;
   licenses/LICENSE.jsp-resources records the upstream CDDL grants.
 
+  Jersey 1.19.4 (com.sun.jersey:jersey-core, jersey-client and
+  jersey-servlet), repackaged in lib/hadoop-client-runtime-3.4.3.jar
+  (Hadoop 3), is distributed under CDDL-1.1, selected from its upstream
+  CDDL/GPL dual license. See licenses/LICENSE.CDDL-1.1.
+  Project and corresponding source artifacts:
+  https://github.com/javaee/jersey-1.x
+  https://repo.maven.apache.org/maven2/com/sun/jersey/jersey-core/1.19.4/jersey-core-1.19.4-sources.jar
+  https://repo.maven.apache.org/maven2/com/sun/jersey/jersey-client/1.19.4/jersey-client-1.19.4-sources.jar
+  https://repo.maven.apache.org/maven2/com/sun/jersey/jersey-servlet/1.19.4/jersey-servlet-1.19.4-sources.jar
+
 EPL-2.0 (selected where a choice is offered):
   Jakarta Annotations, Servlet and RESTful Web Services APIs; GlassFish HK2,
   including its repackaged AOP Alliance and injection API components and
-  OSGi Resource Locator; and Jersey.
+  OSGi Resource Locator; and Jersey 2.x (org.glassfish.jersey).
   Projects and corresponding source artifacts:
   https://github.com/jakartaee/common-annotations-api
   https://github.com/jakartaee/servlet
