@@ -26,6 +26,7 @@ on:
       - "amoro-format-iceberg/**"
       - "amoro-format-paimon/**"
       - "amoro-format-hudi/**"
+      - "amoro-format-lance/**"
       - "amoro-format-mixed/amoro-mixed-flink/**"
       - "amoro-format-mixed/amoro-mixed-hive/**"
       - "amoro-format-mixed/amoro-mixed-spark/**"
