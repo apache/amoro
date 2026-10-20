@@ -52,6 +52,11 @@
             <fileMode>0644</fileMode>
         </file>
         <file>
+            <source>src/main/amoro-bin/README-LICENSES</source>
+            <outputDirectory/>
+            <fileMode>0644</fileMode>
+        </file>
+        <file>
             <source>../DISCLAIMER</source>
             <outputDirectory/>
             <fileMode>0644</fileMode>

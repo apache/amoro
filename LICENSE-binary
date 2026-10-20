@@ -205,6 +205,11 @@ This product bundles various third-party components under other open source lice
 This section summarizes those components and their licenses.
 
 Additional license texts are provided in the top-level licenses/ directory.
+For components whose license texts are retained inside their JARs, the
+entries below identify the JAR and the path within it. Version wildcards
+refer to the version actually included in the selected Hadoop distribution.
+See README-LICENSES for components with terms different from Apache-2.0,
+including source availability and the choice of license for dual-licensed works.
 
 Some dependencies listed under Apache License Version 2.0 also bundle
 components under other licenses. Those components are identified separately
@@ -262,7 +267,8 @@ com.github.davidmoten:guava-mini
 com.github.davidmoten:hilbert-curve
 com.github.joshelser:dropwizard-metrics-hadoop-metrics2-reporter
 com.github.stephenc.jcip:jcip-annotations
-com.google.code.findbugs:jsr305
+com.google.code.findbugs:jsr305 (except the javax.annotation.concurrent
+annotations identified under Creative Commons Attribution 2.5 below)
 com.google.code.gson:gson
 com.google.crypto.tink:tink
 com.google.errorprone:error_prone_annotations
@@ -376,6 +382,8 @@ org.objenesis:objenesis
 org.mybatis:mybatis
 org.lz4:lz4-java
 org.jetbrains.kotlin:kotlin-*
+org.jetbrains:annotations
+org.jboss.xnio:xnio-api
 ./charts/amoro/templates/common/_names.tpl
 ./charts/amoro/templates/common/_capabilities.tpl
 ./charts/amoro/templates/common/_tplvalues.tpl
@@ -387,6 +395,7 @@ npm packages bundled into the dashboard (amoro-web):
 direct dependencies:
 echarts
 swagger-ui
+swagger-ui-dist
 
 transitive dependencies:
 @swagger-api/apidom-ast
@@ -420,8 +429,6 @@ org.codehaus.janino:janino
 org.codehaus.woodstox:stax2-api
 org.jboss.logging:jboss-logging
 org.jboss.threads:jboss-threads
-org.jboss.xnio:xnio-api
-org.jetbrains:annotations
 org.jline:jline
 org.postgresql:postgresql
 
@@ -462,6 +469,7 @@ org.threeten:threeten-extra
 
 ASM (repackaged bytecode manipulation library)
   Bundled in:
+  lib/asm-5.0.4.jar (org.ow2.asm:asm)
   lib/flink-shaded-asm-9-9.5-17.0.jar
   lib/xbean-asm9-shaded-4.20.jar (Hadoop 2 distribution)
   lib/xbean-asm9-shaded-4.23.jar (Hadoop 3 distribution)
@@ -510,15 +518,31 @@ org.glassfish.hk2.external:jakarta.inject
 org.glassfish.jersey.containers:jersey-*
 org.glassfish.jersey.core:jersey-*
 org.glassfish.jersey.inject:jersey-hk2
+  EPL-2.0 is selected where an alternative license is offered.
+  License texts and notices are retained in META-INF/LICENSE.md and
+  META-INF/NOTICE.md inside lib/hk2-*.jar, lib/jersey-*.jar,
+  lib/jakarta.ws.rs-api-2.1.6.jar, lib/jakarta.annotation-api-*.jar,
+  lib/aopalliance-repackaged-*.jar and lib/jakarta.inject-*.jar,
+  for the components present in the selected distribution.
+  For lib/jakarta.servlet-api-4.0.3.jar and
+  lib/osgi-resource-locator-1.0.3.jar, see licenses/LICENSE.EPL-2.0.
 
 MIT License
 -----------
 args4j:args4j
 org.slf4j:slf4j-api
+  See META-INF/LICENSE.txt inside lib/slf4j-api-2.0.17.jar.
 net.razorvine:pickle
 org.checkerframework:checker-qual
 org.codehaus.mojo:animal-sniffer-annotations
 com.github.pagehelper:pagehelper
+  See the copyright notice and complete MIT text in
+  META-INF/maven/com.github.pagehelper/pagehelper/pom.xml inside
+  lib/pagehelper-6.1.0.jar.
+
+com.microsoft.sqlserver:mssql-jdbc:6.2.1.jre7 (Hadoop 2 distribution)
+  Copyright(c) 2017 Microsoft Corporation. All rights reserved.
+  See licenses/LICENSE.mssql-jdbc for the MIT license text.
 
 fast_float (portions used by FastDoubleParser, embedded in Jackson)
   Copyright (c) 2021 The fast_float authors.
@@ -537,7 +561,6 @@ dayjs
 monaco-editor
 pinia
 sql-formatter
-swagger-ui-dist
 vue
 vue-clipboard3
 vue-i18n
@@ -647,14 +670,74 @@ xml-but-prettier
 Common Development and Distribution License (CDDL) 1.0
 ------------------------------------------------------
 javax.activation:activation
+  See META-INF/LICENSE.txt inside lib/activation-1.1.1.jar (Hadoop 2).
 javax.annotation:javax.annotation-api
+  See META-INF/LICENSE.txt inside lib/javax.annotation-api-1.3.2.jar.
 javax.servlet:javax.servlet-api
+  See META-INF/LICENSE.txt inside lib/javax.servlet-api-3.1.0.jar.
 javax.transaction:jta
+  See META-INF/LICENSE.txt inside lib/jta-1.1.jar (Hadoop 2).
+javax.servlet.jsp:jsp-api:2.1
+  The JSP API classes are distributed under CDDL-1.0.
+  In Hadoop 2 they are in lib/jsp-api-2.1.jar; in Hadoop 3 they are
+  repackaged in lib/hadoop-client-runtime-3.4.3.jar.
+  Copyright 2005 Sun Microsystems, Inc. All rights reserved.
+  Portions Copyright Apache Software Foundation.
+  See licenses/LICENSE.CDDL-1.0 and licenses/LICENSE.jsp-resources
+  for the API license and the separately documented schema/DTD resources.
+javax.xml.stream:stax-api:1.0-2 (Hadoop 2 distribution)
+  CDDL-1.0 is selected.
+  See licenses/LICENSE.CDDL-1.0.
 
 Common Development and Distribution License (CDDL) 1.1
 ------------------------------------------------------
 javax.xml.bind:jaxb-api
+  CDDL-1.1 is selected; see licenses/LICENSE.CDDL-1.1. The original
+  license notice is retained in META-INF/LICENSE.txt inside
+  lib/jaxb-api-2.2.2.jar (Hadoop 2).
 org.glassfish:javax.json
+  See licenses/LICENSE.javax.json.
+
+Creative Commons Attribution 2.5
+--------------------------------
+com.google.code.findbugs:jsr305:3.0.2 contains compiled annotations derived
+from the following works by Brian Goetz (Copyright (c) 2005 Brian Goetz):
+
+  javax.annotation.concurrent.GuardedBy
+  javax.annotation.concurrent.Immutable
+  javax.annotation.concurrent.NotThreadSafe
+  javax.annotation.concurrent.ThreadSafe
+
+These annotations are licensed under Creative Commons Attribution 2.5.
+The complete license text is in licenses/LICENSE.CC-BY-2.5.html.
+Original project: https://jcip.net/
+Source: https://repo.maven.apache.org/maven2/com/google/code/findbugs/jsr305/3.0.2/
+
+MIT No Attribution (MIT-0)
+-------------------------
+org.reactivestreams:reactive-streams:1.0.4
+  See licenses/LICENSE.reactive-streams.
+
+Public domain
+--------------
+org.tukaani:xz:1.9
+  Written by Lasse Collin, Igor Pavlov and/or Brett Okken.
+  See licenses/LICENSE.xz for the authors' public-domain dedication.
+
+Mozilla Public License 2.0
+--------------------------
+Public Suffix List (https://publicsuffix.org/)
+  These unmodified data files are included in source form inside the
+  following JARs. They are used at runtime for public-suffix matching.
+  See licenses/LICENSE.MPL-2.0 for the complete license text.
+
+  mozilla/public-suffix-list.txt inside:
+    lib/amoro-shade-thrift-0.20.0-0.7.0-incubating.jar
+    lib/httpclient-4.5.13.jar (Hadoop 2)
+    lib/httpclient-4.5.14.jar (Hadoop 3)
+    lib/hadoop-client-runtime-3.4.3.jar (Hadoop 3)
+  org/publicsuffix/list/effective_tld_names.dat inside:
+    lib/httpclient5-5.4.1.jar
 
 The Go license
 --------------
@@ -683,3 +766,69 @@ MIT, ISC, BSD-3-Clause, Apache-2.0, Unlicense and 0BSD licenses.
 See web/3rdpartylicenses.txt and META-INF/NOTICE inside
 lib/flink-runtime-web-1.20.3.jar for the component names, versions,
 copyright notices and license texts.
+
+Third-party components bundled in the Spark Web UI
+--------------------------------------------------
+lib/spark-core_2.12-3.3.4.jar (Hadoop 2) and
+lib/spark-core_2.12-3.5.8.jar (Hadoop 3) include the following components
+under org/apache/spark/ui/static/:
+
+  MIT: Bootstrap 4.4.1 (including Popper.js), jQuery 3.5.1,
+  DataTables 1.10.25 / 1.13.5 and its Bootstrap integration,
+  DataTables RowsGroup 1.0.0, dagre-d3, graphlib-dot, Mustache,
+  jQuery BlockUI, jQuery cookies 2.2.0, SortTable.
+  BSD-3-Clause: d3 3.5.5.
+  Apache-2.0 (selected): vis.js 4.21.0 / vis-timeline 7.7.2.
+  Apache-2.0: JSON formatter (Hadoop 2).
+
+See licenses/LICENSE.spark-web for copyright notices, license texts
+and the upstream sources for these bundled resources.
+
+Third-party components bundled in the Hadoop Web UI
+---------------------------------------------------
+lib/hadoop-yarn-common-2.10.2.jar (Hadoop 2) and
+lib/hadoop-client-api-3.4.3.jar (Hadoop 3) include jQuery, jQuery UI,
+DataTables and jsTree under webapps/static/, including compressed copies.
+DataTables 1.9.4 in Hadoop 2 is distributed under BSD-3-Clause; DataTables
+1.11.5 in Hadoop 3 is MIT. MIT is selected for jQuery, jQuery UI and jsTree
+where alternatives are offered.
+See licenses/LICENSE.hadoop-web for versions, copyright notices,
+license texts and upstream sources.
+
+Additional Java dependency license locations
+--------------------------------------------
+The following entries identify the full texts for the components listed
+above. All JAR paths are relative to lib/; only versions present in the
+selected distribution apply.
+
+The following JARs are covered by licenses/LICENSE.java-dependencies:
+  antlr-runtime-3.5.2.jar
+  javolution-5.5.1.jar
+  jsch-0.1.55.jar
+  kryo-4.0.3.jar
+  kryo-shaded-4.0.2.jar
+  leveldbjni-all-1.8.jar
+  org.abego.treelayout.core-1.0.3.jar
+  paranamer-2.8.jar
+  reflectasm-1.11.3.jar
+  py4j-0.10.9.5.jar
+  py4j-0.10.9.7.jar
+  protobuf-java-3.21.9.jar
+  kryo-2.24.0.jar
+  antlr4-4.9.3.jar, antlr4-runtime-4.8.jar, antlr4-runtime-4.9.3.jar
+  minlog-1.2.jar, minlog-1.3.0.jar
+  pickle-1.2.jar, pickle-1.3.jar
+  sqlline-1.3.0.jar
+  zstd-jni-1.5.2-1.jar, zstd-jni-1.5.5-4.jar
+
+License texts retained inside dependency JARs:
+  args4j-2.33.jar: LICENSE
+  checker-qual-3.42.0.jar: META-INF/LICENSE.txt
+  jboss-logging-3.3.1.Final.jar: META-INF/LICENSE.txt
+  jboss-threads-2.3.6.Final.jar: META-INF/LICENSE.txt
+  stax2-api-4.2.1.jar: META-INF/LICENSE
+  threeten-extra-1.7.1.jar: META-INF/LICENSE.txt
+  icu4j-69.1.jar: LICENSE
+
+Janino and commons-compiler 3.0.16 / 3.1.9:
+  See licenses/LICENSE.janino.

@@ -9,6 +9,12 @@ Copyright 2024-2026 The Apache Software Foundation
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
+jsr305 concurrent annotations
+Copyright (c) 2005 Brian Goetz
+Licensed under Creative Commons Attribution 2.5.
+See LICENSE and licenses/LICENSE.CC-BY-2.5.html for the affected classes
+and complete license terms.
+
 Curator Framework
 Copyright 2011-2024 The Apache Software Foundation
 
@@ -128,7 +134,8 @@ under the License.
 This product contains a forked and modified version of Tomcat Native
 
   * LICENSE:
-    * license/LICENSE.tomcat-native.txt (Apache License 2.0)
+    * META-INF/license/LICENSE.tomcat-native.txt inside
+      lib/amoro-shade-zookeeper-3-3.9.1-0.7.0-incubating.jar (Apache License 2.0)
   * HOMEPAGE:
     * http://tomcat.apache.org/native-doc/
     * https://svn.apache.org/repos/asf/tomcat/native/
@@ -136,21 +143,24 @@ This product contains a forked and modified version of Tomcat Native
 This product contains the Maven wrapper scripts from 'Maven Wrapper', that provides an easy way to ensure a user has everything necessary to run the Maven build.
 
   * LICENSE:
-    * license/LICENSE.mvn-wrapper.txt (Apache License 2.0)
+    * META-INF/license/LICENSE.mvn-wrapper.txt inside
+      lib/amoro-shade-zookeeper-3-3.9.1-0.7.0-incubating.jar (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/takari/maven-wrapper
 
 This product contains small piece of code to support AIX, taken from netbsd.
 
   * LICENSE:
-    * license/LICENSE.aix-netbsd.txt (OpenSSL License)
+    * META-INF/license/LICENSE.aix-netbsd.txt inside
+      lib/amoro-shade-zookeeper-3-3.9.1-0.7.0-incubating.jar (OpenSSL License)
   * HOMEPAGE:
     * https://ftp.netbsd.org/pub/NetBSD/NetBSD-current/src/crypto/external/bsd/openssl/dist
 
 This product contains code from boringssl.
 
   * LICENSE (Combination ISC and OpenSSL license)
-    * license/LICENSE.boringssl.txt (Combination ISC and OpenSSL license)
+    * META-INF/license/LICENSE.boringssl.txt inside
+      lib/amoro-shade-zookeeper-3-3.9.1-0.7.0-incubating.jar (Combination ISC and OpenSSL license)
   * HOMEPAGE:
     * https://boringssl.googlesource.com/boringssl/
 
