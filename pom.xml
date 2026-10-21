@@ -161,6 +161,7 @@
         <amoro-shade-thrift.version>0.20.0</amoro-shade-thrift.version>
         <annotation-api.version>1.3.2</annotation-api.version>
         <guava.version>32.1.1-jre</guava.version>
+        <jsr305.version>3.0.2</jsr305.version>
         <guava-hive.version>32.1.1-jre</guava-hive.version>
         <hudi.version>0.14.1</hudi.version>
         <pagehelper.version>6.1.0</pagehelper.version>
@@ -197,6 +198,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Use the binary-only upstream JAR; 3.0.0 also bundles CC BY Java sources. -->
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>${jsr305.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.apache.arrow</groupId>
                 <artifactId>arrow-bom</artifactId>
