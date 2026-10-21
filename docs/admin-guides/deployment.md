@@ -121,8 +121,6 @@ ams:
 
 The default database is stored under `/tmp`, which may be cleaned by the operating system. To retain local data, set the URL to an absolute path in a persistent directory, for example `jdbc:h2:file:/data/amoro/ams`. Embedded H2 is intended for a single AMS process; use PostgreSQL or MySQL for production and multi-node HA deployments. H2 Console and TCP server are not enabled.
 
-Derby is no longer supported as the AMS system database. Before upgrading a Derby-backed installation, migrate its data to a supported database while the previous Amoro version is still available. This release does not provide automatic migration. Changing the database URL opens a separate database and does not transfer existing data.
-
 You can also configure a relational backend storage as you needed.
 
 > If you would like to use MySQL as the system database, you need to manually download the [MySQL JDBC Connector](https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.1.0/mysql-connector-j-8.1.0.jar)
