@@ -726,6 +726,46 @@ please read the following guidelines and select the appropriate creation accordi
 </ul>
 <h3 id="configure-table-properties">Configure table properties</h3>
 <p>If you want to add the same table properties to all tables under a catalog, you can add these table properties here on the catalog level. If you also configure this property on the table level, the property on the table will take effect.</p>
+<div class="info">
+    When configuring table-level properties on a catalog, you <strong>must prefix the key with <code>table.</code></strong>. The prefix will be automatically stripped when the property is applied to tables. For example, to set the default <code>self-optimizing.group</code> for all tables under the catalog, you need to configure <code>table.self-optimizing.group</code> instead of <code>self-optimizing.group</code>. Properties without the <code>table.</code> prefix will not be recognized as table-level defaults and will be treated as catalog-level properties only.
+</div>
+<p>The following table lists some examples. For the full list of available table properties, see <a href="../user-guides/configurations.md">Table configurations</a>.</p>
+<table>
+	<thead>
+			<tr>
+					<th>Catalog property key</th>
+					<th>Effective table property key</th>
+					<th>Description</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><code>table.self-optimizing.enabled</code></td>
+					<td><code>self-optimizing.enabled</code></td>
+					<td>Enable/disable self-optimizing for all tables</td>
+			</tr>
+			<tr>
+					<td><code>table.self-optimizing.group</code></td>
+					<td><code>self-optimizing.group</code></td>
+					<td>Set the default optimizer group for all tables</td>
+			</tr>
+			<tr>
+					<td><code>table.table-expire.enabled</code></td>
+					<td><code>table-expire.enabled</code></td>
+					<td>Enable/disable table expiration for all tables</td>
+			</tr>
+			<tr>
+					<td><code>table.clean-orphan-file.enabled</code></td>
+					<td><code>clean-orphan-file.enabled</code></td>
+					<td>Enable/disable orphan file cleaning for all tables</td>
+			</tr>
+			<tr>
+					<td><code>table.log-store.enabled</code></td>
+					<td><code>log-store.enabled</code></td>
+					<td>Enable/disable LogStore for all tables</td>
+			</tr>
+	</tbody>
+</table>
 <h2 id="rest-catalog">REST Catalog</h2>
 <p>When a user needs to create a Iceberg REST Catalog, they can choose <strong>External Catalog Type</strong>、<strong>Custom Metastore Type</strong>、<strong>Iceberg Table Format</strong>, configure properties include:
 <strong>catalog-impl=org.apache.iceberg.rest.RESTCatalog</strong>, <strong>uri=$restCatalog_uri</strong>.</p>

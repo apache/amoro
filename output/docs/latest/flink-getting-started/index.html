@@ -703,15 +703,16 @@ for more information.</p>
 <p><code>./mvnw clean package -pl ':amoro-mixed-flink-runtime-1.18' -am -DskipTests</code></p>
 <p>The Flink Runtime Jar is located in the <code>amoro-format-mixed/amoro-mixed-flink/v1.18/amoro-mixed-flink-runtime-1.18/target</code> directory.</p>
 <h2 id="environment-preparation">Environment preparation</h2>
+<p>Use Hadoop 3 client libraries; Hadoop 2 is no longer supported. Remove any existing Hadoop 2 uber JAR from Flink&rsquo;s <code>lib</code> directory before adding the Hadoop 3 JARs.</p>
 <p>Download Flink and related dependencies, and download Flink 1.18/1.19/1.20 as needed. Taking Flink 1.18 as an example:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Replace version value with the latest Amoro version if needed</span>
 </span></span><span style="display:flex;"><span>AMORO_VERSION<span style="color:#f92672">=</span>0.9.0-incubating
 </span></span><span style="display:flex;"><span>FLINK_VERSION<span style="color:#f92672">=</span>1.18.1
 </span></span><span style="display:flex;"><span>FLINK_MAJOR_VERSION<span style="color:#f92672">=</span>1.18
-</span></span><span style="display:flex;"><span>FLINK_HADOOP_SHADE_VERSION<span style="color:#f92672">=</span>2.7.5
+</span></span><span style="display:flex;"><span>HADOOP_VERSION<span style="color:#f92672">=</span>3.4.3
 </span></span><span style="display:flex;"><span>APACHE_FLINK_URL<span style="color:#f92672">=</span>archive.apache.org/dist/flink
 </span></span><span style="display:flex;"><span>MAVEN_URL<span style="color:#f92672">=</span>https://repo1.maven.org/maven2
-</span></span><span style="display:flex;"><span>FLINK_CONNECTOR_URL<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MAVEN_URL<span style="color:#e6db74">}</span>/org/apache/flink
+</span></span><span style="display:flex;"><span>HADOOP_URL<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MAVEN_URL<span style="color:#e6db74">}</span>/org/apache/hadoop
 </span></span><span style="display:flex;"><span>AMORO_CONNECTOR_URL<span style="color:#f92672">=</span><span style="color:#e6db74">${</span>MAVEN_URL<span style="color:#e6db74">}</span>/org/apache/amoro
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Download FLink binary package</span>
@@ -721,12 +722,13 @@ for more information.</p>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>cd flink-<span style="color:#e6db74">${</span>FLINK_VERSION<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Download Flink Hadoop dependency</span>
-</span></span><span style="display:flex;"><span>wget <span style="color:#e6db74">${</span>FLINK_CONNECTOR_URL<span style="color:#e6db74">}</span>/flink-shaded-hadoop-2-uber/<span style="color:#e6db74">${</span>FLINK_HADOOP_SHADE_VERSION<span style="color:#e6db74">}</span>-10.0/flink-shaded-hadoop-2-uber-<span style="color:#e6db74">${</span>FLINK_HADOOP_SHADE_VERSION<span style="color:#e6db74">}</span>-10.0.jar
+</span></span><span style="display:flex;"><span>wget <span style="color:#e6db74">${</span>HADOOP_URL<span style="color:#e6db74">}</span>/hadoop-client-api/<span style="color:#e6db74">${</span>HADOOP_VERSION<span style="color:#e6db74">}</span>/hadoop-client-api-<span style="color:#e6db74">${</span>HADOOP_VERSION<span style="color:#e6db74">}</span>.jar
+</span></span><span style="display:flex;"><span>wget <span style="color:#e6db74">${</span>HADOOP_URL<span style="color:#e6db74">}</span>/hadoop-client-runtime/<span style="color:#e6db74">${</span>HADOOP_VERSION<span style="color:#e6db74">}</span>/hadoop-client-runtime-<span style="color:#e6db74">${</span>HADOOP_VERSION<span style="color:#e6db74">}</span>.jar
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Download Flink Amoro Connector</span>
 </span></span><span style="display:flex;"><span>wget <span style="color:#e6db74">${</span>AMORO_CONNECTOR_URL<span style="color:#e6db74">}</span>/amoro-mixed-format-flink-runtime-<span style="color:#e6db74">${</span>FLINK_MAJOR_VERSION<span style="color:#e6db74">}</span>/<span style="color:#e6db74">${</span>AMORO_VERSION<span style="color:#e6db74">}</span>/amoro-mixed-format-flink-runtime-<span style="color:#e6db74">${</span>FLINK_MAJOR_VERSION<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>AMORO_VERSION<span style="color:#e6db74">}</span>.jar
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Copy the necessary JAR files to the lib directory</span>
-</span></span><span style="display:flex;"><span>mv flink-shaded-hadoop-2-uber-<span style="color:#e6db74">${</span>FLINK_HADOOP_SHADE_VERSION<span style="color:#e6db74">}</span>-10.0.jar lib
+</span></span><span style="display:flex;"><span>mv hadoop-client-api-<span style="color:#e6db74">${</span>HADOOP_VERSION<span style="color:#e6db74">}</span>.jar hadoop-client-runtime-<span style="color:#e6db74">${</span>HADOOP_VERSION<span style="color:#e6db74">}</span>.jar lib
 </span></span><span style="display:flex;"><span>mv amoro-mixed-format-flink-runtime-<span style="color:#e6db74">${</span>FLINK_MAJOR_VERSION<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>AMORO_VERSION<span style="color:#e6db74">}</span>.jar lib
 </span></span></code></pre></div><p>Modify Flink related configuration files:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>cd flink-1.18.1
@@ -741,7 +743,6 @@ for more information.</p>
 </span></span><span style="display:flex;"><span>cp examples/table/ChangelogSocketExample.jar lib
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>cp ../amoro-mixed-flink-runtime-<span style="color:#e6db74">${</span>FLINK_MAJOR_VERSION<span style="color:#e6db74">}</span>-<span style="color:#e6db74">${</span>AMORO_VERSION<span style="color:#e6db74">}</span>.jar lib
-</span></span><span style="display:flex;"><span>cp ../flink-shaded-hadoop-2-uber-<span style="color:#e6db74">${</span>FLINK_HADOOP_SHADE_VERSION<span style="color:#e6db74">}</span>-10.0.jar lib
 </span></span></code></pre></div><h3 id="mixed-hive-format">Mixed-Hive format</h3>
 <p>Starting from Amoro version 0.3.1, Mixed-Hive format is supported, and data in Amoro  Mixed-Hive format tables can be read/written through Flink. When operating on Mixed-Hive format tables through Flink, the following points should be noted:</p>
 <ol>

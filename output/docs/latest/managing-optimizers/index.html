@@ -1206,7 +1206,7 @@ contain several optimizers with the same container implementation to facilitate 
 					<td>All</td>
 					<td>No</td>
 					<td>false</td>
-					<td>Whether to enable dynamic resource allocation (AIP-5) for this group: the group then grows its optimizer count automatically in response to optimizing demand, bounded by <code>dynamic-allocation.max-parallelism</code>. Not supported on externally-registered optimizers. Manual optimizer operations (scale-out/release via the dashboard) are not recommended on groups with dynamic allocation enabled.</td>
+					<td>Whether to enable dynamic resource allocation for this group: the group then grows its optimizer count automatically in response to optimizing demand, bounded by <code>dynamic-allocation.max-parallelism</code>. Not supported on externally-registered optimizers. Manual optimizer operations (scale-out/release via the dashboard) are not recommended on groups with dynamic allocation enabled.</td>
 			</tr>
 			<tr>
 					<td>dynamic-allocation.min-parallelism</td>
@@ -1296,7 +1296,29 @@ contain several optimizers with the same container implementation to facilitate 
 <li>When using <code>shutdown-timeout-ms</code> with a Flink Optimizer, also raise <code>flink-conf.task.cancellation.timeout</code> (default 180000) accordingly — the graceful drain on job cancellation is capped below Flink&rsquo;s cancellation watchdog, which otherwise fails the whole TaskManager.</li>
 </ul>
 </div>
-<h3 id="edit-optimizer-group">Edit optimizer group</h3>
+<h3 id="dynamic-resource-allocation">Dynamic resource allocation</h3>
+<p>Dynamic resource allocation (DRA) lets a group grow and shrink its optimizer count automatically based on optimizing demand, instead of running a fixed number of optimizers. Enable it by setting <code>dynamic-allocation.enabled</code> to <code>true</code> on the group; once enabled, <code>dynamic-allocation.min-parallelism</code> and <code>dynamic-allocation.max-parallelism</code> take over from the deprecated flat <code>min-parallelism</code>.</p>
+<p><strong>Scale-up</strong>: when optimizing demand (queued tasks) persists for <code>dynamic-allocation.scheduler-backlog-timeout</code>, the group scales out for the first time. While demand keeps persisting, it scales out again every <code>dynamic-allocation.sustained-backlog-timeout</code>, up to <code>dynamic-allocation.max-parallelism</code>.</p>
+<p><strong>Scale-down</strong>: an optimizer that has been idle for <code>dynamic-allocation.executor-idle-timeout</code> becomes a scale-down candidate. At most one optimizer is removed per evaluation round, and only while the group has no scale-up demand, with at least <code>dynamic-allocation.scale-down-cooldown</code> between removals. A scaled-down optimizer is drained gracefully — it stops receiving new tasks and is removed once its in-flight tasks finish; if draining exceeds <code>dynamic-allocation.drain-timeout</code>, it is force-removed and its remaining tasks are re-executed on other optimizers.</p>
+<div class="info">
+    <ul>
+<li>DRA is not supported for externally-registered optimizers.</li>
+<li>Avoid manual scale-out/release from the dashboard on a group with DRA enabled — it fights with the auto scaler.</li>
+<li><code>dynamic-allocation.min-parallelism</code> and <code>dynamic-allocation.max-parallelism</code> must both be reachable as multiples of <code>dynamic-allocation.executor-parallelism</code>, the number of threads added or removed per scaling step.</li>
+</ul>
+
+</div>
+<p>An example enabling DRA on a Kubernetes optimizer group, entered in the group&rsquo;s <code>properties</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">dynamic-allocation.enabled</span>: <span style="color:#66d9ef">true</span>                          <span style="color:#75715e"># Turn on dynamic resource allocation</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">dynamic-allocation.min-parallelism</span>: <span style="color:#ae81ff">8</span>                      <span style="color:#75715e"># Keep at least 1 optimizer (executor-parallelism=8) running</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">dynamic-allocation.max-parallelism</span>: <span style="color:#ae81ff">64</span>                     <span style="color:#75715e"># Scale out to at most 8 optimizers</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">dynamic-allocation.executor-parallelism</span>: <span style="color:#ae81ff">8</span>                 <span style="color:#75715e"># Threads per optimizer pod; 4-8 is recommended on Kubernetes</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">dynamic-allocation.scheduler-backlog-timeout</span>: <span style="color:#ae81ff">1min         </span> <span style="color:#75715e"># Wait 1 min of sustained backlog before the first scale-out</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">dynamic-allocation.sustained-backlog-timeout</span>: <span style="color:#ae81ff">30s          </span> <span style="color:#75715e"># Re-evaluate and scale out every 30s while backlog persists</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">dynamic-allocation.executor-idle-timeout</span>: <span style="color:#ae81ff">10min            </span> <span style="color:#75715e"># Consider an optimizer idle after 10 min without tasks</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">dynamic-allocation.scale-down-cooldown</span>: <span style="color:#ae81ff">1min                </span> <span style="color:#75715e"># Wait at least 1 min between scale-down removals</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">dynamic-allocation.drain-timeout</span>: <span style="color:#ae81ff">15min                     </span> <span style="color:#75715e"># Force-remove a draining optimizer after 15 min</span>
+</span></span></code></pre></div><h3 id="edit-optimizer-group">Edit optimizer group</h3>
 <p>You can click the <code>edit</code> button on the <code>Optimizer Groups</code> page to modify the configuration of the Optimizer group.</p>
 <h3 id="remove-optimizer-group">Remove optimizer group</h3>
 <p>You can click the <code>remove</code> button on the <code>Optimizer Groups</code> page to delete the optimizer group, but only if the group is
@@ -1514,6 +1536,7 @@ If the optimizer runs normally, you will see an optimizer with the status <code>
     <li><a href="#optimizer-group">Optimizer group</a>
       <ul>
         <li><a href="#add-optimizer-group">Add optimizer group</a></li>
+        <li><a href="#dynamic-resource-allocation">Dynamic resource allocation</a></li>
         <li><a href="#edit-optimizer-group">Edit optimizer group</a></li>
         <li><a href="#remove-optimizer-group">Remove optimizer group</a></li>
       </ul>
