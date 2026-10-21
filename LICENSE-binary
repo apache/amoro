@@ -638,3 +638,11 @@ zenscroll (npm package bundled into the dashboard, amoro-web)
 Mozilla Public License 2.0 OR Apache License 2.0
 ------------------------------------------------
 dompurify (npm package bundled into the dashboard, amoro-web)
+
+Mozilla Public License (MPL) 2.0
+-------------------------------
+com.h2database:h2
+
+The H2 license text is included in licenses/LICENSE.h2.
+The corresponding source is available at:
+https://github.com/h2database/h2database/tree/version-2.5.252

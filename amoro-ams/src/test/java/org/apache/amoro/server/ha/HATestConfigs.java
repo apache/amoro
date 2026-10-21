@@ -27,12 +27,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Random;
 
-/**
- * Test helper: Build Configurations with JDBC HA enabled and ensure database.url points to the
- * DerbyPersistence path. Note: The current master branch may not yet include ha.type/heartbeat/ttl
- * keys. We still set them as string keys. After the PR is merged, the HA factory will recognize
- * them. Even if not recognized, tests will still be safely skipped.
- */
+/** Build DATABASE HA configurations against the shared H2 persistence fixture. */
 public final class HATestConfigs {
   private HATestConfigs() {}
 
@@ -46,7 +41,7 @@ public final class HATestConfigs {
    * @param tablePort Table Thrift port.
    * @param optimizingPort Optimizing Thrift port.
    * @param httpPort HTTP port.
-   * @return Configurations including Derby URL, ha.enabled=true, ha.type=database, etc.
+   * @return Configurations including H2 URL, ha.enabled=true, ha.type=database, etc.
    */
   public static Configurations buildDataBaseHAConfig(
       String clusterName,
@@ -57,10 +52,12 @@ public final class HATestConfigs {
       int optimizingPort,
       int httpPort) {
     Configurations conf = new Configurations();
+    conf.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_H2);
+    conf.set(AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.h2.Driver");
+    conf.set(AmoroManagementConf.DB_CONNECTION_URL, detectH2UrlFromSqlSessionFactory());
 
     // HA basic switches.
     conf.set(AmoroManagementConf.HA_ENABLE, true);
-    // Keys introduced by the PR. The current master may not recognize them; that's fine.
     conf.setString(AmoroManagementConf.HA_TYPE, AmoroManagementConf.HA_TYPE_DATABASE);
     conf.setString(
         AmoroManagementConf.HA_HEARTBEAT_INTERVAL.key(), String.valueOf(heartbeatMillis));
@@ -77,17 +74,15 @@ public final class HATestConfigs {
   }
 
   /**
-   * Detect the JDBC URL used by DerbyPersistence from SqlSessionFactoryProvider connection
-   * metadata.
+   * Detect the JDBC URL used by H2Persistence from SqlSessionFactoryProvider connection metadata.
    */
-  public static String detectDerbyUrlFromSqlSessionFactory() {
+  public static String detectH2UrlFromSqlSessionFactory() {
     try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession(true)) {
       try (Connection conn = session.getConnection()) {
         return conn.getMetaData().getURL();
       }
     } catch (SQLException e) {
-      // Fallback to a default path as a safeguard; does not affect skip behavior.
-      return "jdbc:derby:/tmp/amoro/derby;create=true";
+      throw new IllegalStateException("Cannot read the shared H2 test database URL", e);
     }
   }
 

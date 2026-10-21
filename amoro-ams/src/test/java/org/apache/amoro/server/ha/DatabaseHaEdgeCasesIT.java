@@ -21,15 +21,13 @@ package org.apache.amoro.server.ha;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.persistence.DataSourceFactory;
-import org.apache.amoro.server.table.DerbyPersistence;
+import org.apache.amoro.server.table.H2Persistence;
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
-
-import javax.sql.DataSource;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -41,17 +39,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * DATABASE HA concurrency and edge-case tests using Derby. All external classes are invoked via
- * reflection; safely skipped when not merged.
+ * DATABASE HA concurrency and edge-case tests using H2. All external classes are invoked via
+ * reflection against the current DATABASE HA implementation.
  */
 public class DatabaseHaEdgeCasesIT {
 
-  @ClassRule public static ExternalResource derby = new DerbyPersistence();
+  @ClassRule public static ExternalResource h2 = new H2Persistence();
 
   @BeforeClass
   public static void checkPrerequisites() {
-    Assume.assumeTrue(classExists("org.apache.amoro.server.ha.DataBaseHighAvailabilityContainer"));
-    Assume.assumeTrue(
+    Assert.assertTrue(classExists("org.apache.amoro.server.ha.DataBaseHighAvailabilityContainer"));
+    Assert.assertTrue(
         "ha_lease table not present",
         DataBaseHighAvailabilityContainerIT.checkHaLeaseTablePresent());
   }
@@ -176,12 +174,11 @@ public class DatabaseHaEdgeCasesIT {
   private static void assertLeaseRowCount(int minExpected, int maxExpected) throws Exception {
     Configurations conf = new Configurations();
     conf.set(
-        AmoroManagementConf.DB_CONNECTION_URL, HATestConfigs.detectDerbyUrlFromSqlSessionFactory());
-    conf.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_DERBY);
-    conf.set(AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.apache.derby.jdbc.EmbeddedDriver");
-    DataSource ds = DataSourceFactory.createDataSource(conf);
-
-    try (Connection conn = ds.getConnection();
+        AmoroManagementConf.DB_CONNECTION_URL, HATestConfigs.detectH2UrlFromSqlSessionFactory());
+    conf.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_H2);
+    conf.set(AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.h2.Driver");
+    try (BasicDataSource ds = (BasicDataSource) DataSourceFactory.createDataSource(conf);
+        Connection conn = ds.getConnection();
         Statement st = conn.createStatement()) {
       try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM HA_LEASE")) {
         Assert.assertTrue(rs.next());
@@ -195,11 +192,11 @@ public class DatabaseHaEdgeCasesIT {
   private static void bumpLeaseVersion() throws Exception {
     Configurations conf = new Configurations();
     conf.set(
-        AmoroManagementConf.DB_CONNECTION_URL, HATestConfigs.detectDerbyUrlFromSqlSessionFactory());
-    conf.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_DERBY);
-    conf.set(AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.apache.derby.jdbc.EmbeddedDriver");
-    DataSource ds = DataSourceFactory.createDataSource(conf);
-    try (Connection conn = ds.getConnection();
+        AmoroManagementConf.DB_CONNECTION_URL, HATestConfigs.detectH2UrlFromSqlSessionFactory());
+    conf.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_H2);
+    conf.set(AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.h2.Driver");
+    try (BasicDataSource ds = (BasicDataSource) DataSourceFactory.createDataSource(conf);
+        Connection conn = ds.getConnection();
         Statement st = conn.createStatement()) {
       st.executeUpdate("UPDATE HA_LEASE SET VERSION = VERSION + 1");
       conn.commit();

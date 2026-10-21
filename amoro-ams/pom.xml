@@ -244,8 +244,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.derby</groupId>
-            <artifactId>derby</artifactId>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
         </dependency>
 
         <dependency>
@@ -664,7 +664,7 @@
                 <configuration>
                     <excludes>
                         <exclude>log4j2.xml</exclude>
-                        <exclude>derby/**</exclude>
+                        <exclude>h2/**</exclude>
                         <exclude>mysql/**</exclude>
                         <exclude>postgres/**</exclude>
                     </excludes>
