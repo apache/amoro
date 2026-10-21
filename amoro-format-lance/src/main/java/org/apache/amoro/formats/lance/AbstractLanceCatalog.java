@@ -229,6 +229,10 @@ public abstract class AbstractLanceCatalog implements FormatCatalog {
   @Override
   public void dropDatabase(String database) {
     validateDatabase(database);
-    namespace.dropNamespace(new DropNamespaceRequest().id(namespaceId(database)));
+    try {
+      namespace.dropNamespace(new DropNamespaceRequest().id(namespaceId(database)));
+    } catch (InvalidInputException e) {
+      throw new IllegalStateException("Failed to drop database: " + database, e);
+    }
   }
 }

@@ -36,9 +36,9 @@ import org.lance.namespace.LanceNamespace;
 import org.lance.namespace.hive3.Hive3Namespace;
 import org.lance.namespace.hive3.Hive3NamespaceConfig;
 import org.lance.namespace.model.DeregisterTableRequest;
+import org.lance.namespace.model.DeregisterTableResponse;
 import org.lance.namespace.model.DescribeTableRequest;
 import org.lance.namespace.model.DescribeTableResponse;
-import org.lance.namespace.model.DropTableRequest;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -46,7 +46,6 @@ import java.util.Map;
 
 /** Lance catalog backed by a Hive metastore; metadata is delegated to {@link Hive3Namespace}. */
 public class LanceHiveCatalog extends AbstractLanceCatalog {
-
   private static final String HIVE_METASTORE_URIS = "hive.metastore.uris";
 
   /** Escape hatch for storage options Amoro does not model, e.g. MinIO's aws_allow_http. */
@@ -73,13 +72,21 @@ public class LanceHiveCatalog extends AbstractLanceCatalog {
         response.getProperties());
   }
 
-  /** Purge deletes the table data; otherwise only the metastore entry is deregistered. */
   @Override
   protected void dropInNamespace(String database, String table, boolean purge) {
-    if (purge) {
-      namespace.dropTable(new DropTableRequest().id(tableId(database, table)));
-    } else {
-      namespace.deregisterTable(new DeregisterTableRequest().id(tableId(database, table)));
+    // delete the table metadata.
+    DeregisterTableResponse response =
+        namespace.deregisterTable(new DeregisterTableRequest().id(tableId(database, table)));
+    if (!purge) {
+      return;
+    }
+
+    // delete the table data.
+    String location = response.getLocation();
+    try {
+      Dataset.drop(location, storageOptions(catalogProperties, location));
+    } catch (Exception e) {
+      throw new IllegalStateException("Failed to purge Lance data at " + location, e);
     }
   }
 

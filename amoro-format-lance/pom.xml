@@ -114,6 +114,28 @@
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-aliyun</artifactId>
         </dependency>
+
+        <!-- HMSMockServer and the derby schema used by the hive3 namespace tests -->
+        <dependency>
+            <groupId>org.apache.amoro</groupId>
+            <artifactId>amoro-common</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- arrow-memory-netty brings netty-buffer 4.1.129 while hive3 pulls netty-common
+             4.1.119; align them on the test classpath only. -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+            <version>${netty.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>
