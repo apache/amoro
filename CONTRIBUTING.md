@@ -41,7 +41,9 @@ to track it.
     * Bug: A problem that prevents the project from functioning as intended.
     * Subtask: A subtask of a Feature/Improvement that can be broken down into smaller steps.
 
-You can claim an unassigned issue by leaving a comment containing exactly `take`. Only the first user to comment `take` will be assigned; subsequent `take` comments will not change the assignee.
+You can claim an unassigned issue by leaving a comment containing exactly `take`. Only the first
+user to comment `take` while the issue is unassigned will be assigned. Later `take` comments have
+no effect unless the assignee is removed.
 
 ## Pull requests
 

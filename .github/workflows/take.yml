@@ -42,13 +42,16 @@ jobs:
               return
             }
 
-            const comments = await github.paginate(github.rest.issues.listComments, {
+            const timeline = await github.paginate(github.rest.issues.listEventsForTimeline, {
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
               per_page: 100,
             })
-            const firstTakeComment = comments.find(comment => comment.body === 'take')
+            const lastUnassignedIndex = timeline.findLastIndex(event => event.event === 'unassigned')
+            const firstTakeComment = timeline
+              .slice(lastUnassignedIndex + 1)
+              .find(event => event.event === 'commented' && event.body === 'take')
 
             if (firstTakeComment?.id !== context.payload.comment.id) {
               core.info('An earlier `take` comment already claimed this issue.')
