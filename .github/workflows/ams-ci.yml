@@ -1,0 +1,80 @@
+name: AMS
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - "master"
+      - "[0-9]+.**"
+  pull_request:
+    branches:
+      - "master"
+      - "[0-9]+.**"
+  workflow_dispatch:
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.filter.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        name: Detect AMS changes
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+          elif bash dev/ci/has-changes.sh \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}" \
+            '^amoro-ams/|^amoro-common/|^amoro-format-iceberg/|^amoro-format-mixed/amoro-mixed-hive/|^amoro-optimizer/amoro-optimizer-(common|standalone)/|^pom\.xml$|^tools/maven/|^dev/ci/|^\.github/workflows/ams-ci\.yml$'; then
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+  build:
+    needs: changes
+    if: needs.changes.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [ '11', '17' ]
+    name: AMS / Spark 3.5 / Hadoop 3 / JDK ${{ matrix.jdk }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.jdk }}
+          distribution: temurin
+          cache: maven
+      - name: Verify AMS
+        run: >-
+          ./mvnw -B -ntp verify
+          -pl amoro-ams -am
+          -Pjava${{ matrix.jdk }},spark-3.5,skip-dashboard-build
+      - name: Upload AMS coverage
+        uses: codecov/codecov-action@v5
+        with:
+          flags: ams
+
+  gate:
+    name: CI / AMS
+    if: always()
+    needs:
+      - changes
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        shell: bash
+        run: |
+          [[ "${{ needs.changes.result }}" == "success" ]]
+          [[ "${{ needs.build.result }}" == "success" || "${{ needs.build.result }}" == "skipped" ]]
