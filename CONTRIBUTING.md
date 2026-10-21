@@ -112,9 +112,11 @@ $ cd amoro
 $ base_dir=$(pwd)
 $ mkdir -p conf
 $ cp dist/src/main/amoro-bin/conf/config.yaml conf/config.yaml
-$ sed -i '' "s|/tmp/amoro/derby|${base_dir}/conf/derby|g" conf/config.yaml
+$ sed -i '' "s|/tmp/amoro/h2/ams|${base_dir}/conf/h2/ams|g" conf/config.yaml
 ```
 The above text replacement command is applicable to macOS. In the Linux system, `-i ''` should be replaced with `-i`.
+
+AMS persistence tests use embedded H2. Hive Metastore test fixtures retain their existing Derby backend.
 
 2. Import the project:
     1. Open IntelliJ IDEA and select `File`->`Open`.

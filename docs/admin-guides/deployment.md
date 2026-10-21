@@ -109,7 +109,19 @@ Make sure the port is not used before configuring it.
 
 ### Configure system database
 
-AMS uses embedded [Apache Derby](https://db.apache.org/derby/) as the backend storage by default, so you can use `Derby` directly without any additional configuration.
+AMS uses embedded [H2](https://h2database.com/) as the system database by default. No separate database service is required for local development or demonstrations.
+
+```yaml
+ams:
+  database:
+    type: h2
+    jdbc-driver-class: org.h2.Driver
+    url: jdbc:h2:file:/tmp/amoro/h2/ams
+```
+
+The default database is stored under `/tmp`, which may be cleaned by the operating system. To retain local data, set the URL to an absolute path in a persistent directory, for example `jdbc:h2:file:/data/amoro/ams`. Embedded H2 is intended for a single AMS process; use PostgreSQL or MySQL for production and multi-node HA deployments. H2 Console and TCP server are not enabled.
+
+Derby is no longer supported as the AMS system database. Before upgrading a Derby-backed installation, migrate its data to a supported database while the previous Amoro version is still available. This release does not provide automatic migration. Changing the database URL opens a separate database and does not transfer existing data.
 
 You can also configure a relational backend storage as you needed.
 

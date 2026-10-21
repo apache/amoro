@@ -76,7 +76,6 @@ public interface TableMetaMapper {
       "<script>"
           + "SELECT catalog_name, db_name, properties FROM database_metadata"
           + " WHERE catalog_name = #{catalogName} AND db_name = #{dbName} FOR UPDATE"
-          + "<if test=\"_databaseId == 'derby'\"> WITH RS</if>"
           + "</script>")
   @ResultMap("databaseMetadata")
   DatabaseMetadata selectDatabaseMetadataForUpdate(
