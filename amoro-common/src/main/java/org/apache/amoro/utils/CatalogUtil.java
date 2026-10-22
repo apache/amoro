@@ -121,11 +121,9 @@ public class CatalogUtil {
 
   /** Build {@link TableMetaStore} from catalog meta. */
   public static TableMetaStore buildMetaStore(CatalogMeta catalogMeta) {
-    // REST + Lance manages storage/auth server-side, so a client-side TableMetaStore is
-    // unnecessary. Set a local configuration so build() returns a disabled-auth store.
-    if (CatalogMetaProperties.CATALOG_TYPE_REST.equalsIgnoreCase(catalogMeta.getCatalogType())
-        && isLanceOnly(catalogMeta)) {
-      return TableMetaStore.builder().withConfiguration(new Configuration()).build();
+    // Lance over REST/Hive catalog authenticates on its own; EMPTY is a disabled-auth store.
+    if (isLanceManagedExternally(catalogMeta)) {
+      return TableMetaStore.EMPTY;
     }
 
     // load storage configs
@@ -222,9 +220,25 @@ public class CatalogUtil {
     return builder.build();
   }
 
-  private static boolean isLanceOnly(CatalogMeta catalogMeta) {
+  private static boolean isLanceManagedExternally(CatalogMeta catalogMeta) {
     Set<TableFormat> formats = tableFormats(catalogMeta);
-    return formats.size() == 1 && formats.contains(TableFormat.LANCE);
+    if (formats.size() != 1 || !formats.contains(TableFormat.LANCE)) {
+      return false;
+    }
+
+    String type = catalogMeta.getCatalogType();
+    Map<String, String> authConfigs = catalogMeta.getAuthConfigs();
+    if (CatalogMetaProperties.CATALOG_TYPE_HIVE.equalsIgnoreCase(type)
+        && authConfigs != null
+        && CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equalsIgnoreCase(
+            authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE))) {
+      throw new IllegalArgumentException(
+          "Kerberos auth is not supported for Lance catalogs backed by a Hive metastore: "
+              + catalogMeta.getCatalogName());
+    }
+
+    return CatalogMetaProperties.CATALOG_TYPE_REST.equalsIgnoreCase(type)
+        || CatalogMetaProperties.CATALOG_TYPE_HIVE.equalsIgnoreCase(type);
   }
 
   public static TableIdentifier tableId(TableMeta tableMeta) {
