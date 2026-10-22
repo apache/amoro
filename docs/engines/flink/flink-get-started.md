@@ -59,16 +59,18 @@ The Amoro project can be self-compiled to obtain the runtime jar.
 The Flink Runtime Jar is located in the `amoro-format-mixed/amoro-mixed-flink/v1.18/amoro-mixed-flink-runtime-1.18/target` directory.
 
 ## Environment preparation
+Use Hadoop 3 client libraries; Hadoop 2 is no longer supported. Remove any existing Hadoop 2 uber JAR from Flink's `lib` directory before adding the Hadoop 3 JARs.
+
 Download Flink and related dependencies, and download Flink 1.18/1.19/1.20 as needed. Taking Flink 1.18 as an example:
 ```shell
 # Replace version value with the latest Amoro version if needed
 AMORO_VERSION=0.9.0-incubating
 FLINK_VERSION=1.18.1
 FLINK_MAJOR_VERSION=1.18
-FLINK_HADOOP_SHADE_VERSION=2.7.5
+HADOOP_VERSION=3.4.3
 APACHE_FLINK_URL=archive.apache.org/dist/flink
 MAVEN_URL=https://repo1.maven.org/maven2
-FLINK_CONNECTOR_URL=${MAVEN_URL}/org/apache/flink
+HADOOP_URL=${MAVEN_URL}/org/apache/hadoop
 AMORO_CONNECTOR_URL=${MAVEN_URL}/org/apache/amoro
 
 # Download FLink binary package
@@ -78,12 +80,13 @@ tar -zxvf flink-${FLINK_VERSION}-bin-scala_2.12.tgz
 
 cd flink-${FLINK_VERSION}
 # Download Flink Hadoop dependency
-wget ${FLINK_CONNECTOR_URL}/flink-shaded-hadoop-2-uber/${FLINK_HADOOP_SHADE_VERSION}-10.0/flink-shaded-hadoop-2-uber-${FLINK_HADOOP_SHADE_VERSION}-10.0.jar
+wget ${HADOOP_URL}/hadoop-client-api/${HADOOP_VERSION}/hadoop-client-api-${HADOOP_VERSION}.jar
+wget ${HADOOP_URL}/hadoop-client-runtime/${HADOOP_VERSION}/hadoop-client-runtime-${HADOOP_VERSION}.jar
 # Download Flink Amoro Connector
 wget ${AMORO_CONNECTOR_URL}/amoro-mixed-format-flink-runtime-${FLINK_MAJOR_VERSION}/${AMORO_VERSION}/amoro-mixed-format-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar
 
 # Copy the necessary JAR files to the lib directory
-mv flink-shaded-hadoop-2-uber-${FLINK_HADOOP_SHADE_VERSION}-10.0.jar lib
+mv hadoop-client-api-${HADOOP_VERSION}.jar hadoop-client-runtime-${HADOOP_VERSION}.jar lib
 mv amoro-mixed-format-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar lib
 ```
 
@@ -109,7 +112,6 @@ Move the dependencies to the lib directory of Flink:
 cp examples/table/ChangelogSocketExample.jar lib
 
 cp ../amoro-mixed-flink-runtime-${FLINK_MAJOR_VERSION}-${AMORO_VERSION}.jar lib
-cp ../flink-shaded-hadoop-2-uber-${FLINK_HADOOP_SHADE_VERSION}-10.0.jar lib
 ```
 
 ### Mixed-Hive format
