@@ -35,6 +35,8 @@ import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.table.blocker.TableBlocker;
 import org.apache.amoro.server.table.cleanup.TableRuntimeCleanupState;
@@ -118,7 +120,7 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
     }
     this.optimizingProcess = optimizingProcess;
     if (this.optimizingProcess.getStatus() == ProcessStatus.SUCCESS) {
-      completeProcess(true);
+      completeProcess(ProcessStatus.SUCCESS);
     }
   }
 
@@ -375,8 +377,30 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
         .commit();
   }
 
-  public void completeProcess(boolean success) {
-    OptimizingType processType = optimizingProcess.getOptimizingType();
+  /**
+   * Complete the current in-memory optimizing process and release it.
+   *
+   * <p>The terminal {@code finalStatus} is used to tell a real failure ({@link
+   * ProcessStatus#FAILED}) apart from a process that was merely closed because self-optimizing was
+   * disabled or the user cancelled it ({@link ProcessStatus#CLOSED} / {@link
+   * ProcessStatus#CANCELED} / {@link ProcessStatus#KILLED}). Only genuine failures should be
+   * reflected in {@code process_failed_count}.
+   *
+   * @param finalStatus terminal status of the process.
+   */
+  public void completeProcess(ProcessStatus finalStatus) {
+    OptimizingProcess process = optimizingProcess;
+    if (process == null) {
+      // The in-memory process is already gone (released or lost during restart). Nothing to
+      // account for, but make sure the table is not left stuck in a processing status.
+      if (getOptimizingStatus() != OptimizingStatus.IDLE) {
+        store().begin().updateStatusCode(code -> OptimizingStatus.IDLE.getCode()).commit();
+      }
+      return;
+    }
+    boolean success = finalStatus == ProcessStatus.SUCCESS;
+    boolean failed = finalStatus == ProcessStatus.FAILED;
+    OptimizingType processType = process.getOptimizingType();
 
     store()
         .begin()
@@ -384,24 +408,93 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
             OPTIMIZING_STATE_KEY,
             state -> {
               if (success) {
-                state.setLastOptimizedSnapshotId(optimizingProcess.getTargetSnapshotId());
-                state.setLastOptimizedChangeSnapshotId(
-                    optimizingProcess.getTargetChangeSnapshotId());
+                state.setLastOptimizedSnapshotId(process.getTargetSnapshotId());
+                state.setLastOptimizedChangeSnapshotId(process.getTargetChangeSnapshotId());
               }
               if (processType == OptimizingType.MINOR) {
-                state.setLastMinorOptimizingTime(optimizingProcess.getPlanTime());
+                state.setLastMinorOptimizingTime(process.getPlanTime());
               } else if (processType == OptimizingType.MAJOR) {
-                state.setLastMajorOptimizingTime(optimizingProcess.getPlanTime());
+                state.setLastMajorOptimizingTime(process.getPlanTime());
               } else if (processType == OptimizingType.FULL) {
-                state.setLastFullOptimizingTime(optimizingProcess.getPlanTime());
+                state.setLastFullOptimizingTime(process.getPlanTime());
               }
               return state;
             })
         .updateStatusCode(code -> OptimizingStatus.IDLE.getCode())
         .commit();
 
-    optimizingMetrics.processComplete(processType, success, optimizingProcess.getPlanTime());
+    optimizingMetrics.processComplete(processType, success, failed, process.getPlanTime());
     optimizingProcess = null;
+  }
+
+  /**
+   * Persist-close the optimizing process row in {@code table_process} when there is no in-memory
+   * {@link OptimizingProcess} left to close it (AMS restarted, process already released, or the
+   * in-memory process id no longer matches). This makes disabling self-optimizing and cancelling a
+   * process idempotent and prevents orphan RUNNING rows that the Dashboard cannot dismiss.
+   *
+   * <p>Only a row still in a non-terminal status owned by the currently tracked process id is
+   * closed; terminal rows are left untouched.
+   *
+   * @return the closed process id, or {@code -1} when there was nothing to close.
+   */
+  public long closeTrackedProcessFromStore() {
+    long processId = getProcessId();
+    if (processId <= 0) {
+      return -1;
+    }
+    return closeProcessFromStore(processId) ? processId : -1;
+  }
+
+  /**
+   * Persist-close a specific optimizing process row in {@code table_process} if it belongs to this
+   * table and is still in a non-terminal status. Used when there is no in-memory {@link
+   * OptimizingProcess} to do it, so that disabling self-optimizing or cancelling by process id
+   * stays idempotent and cannot leave an orphan RUNNING row.
+   *
+   * @param processId the process id to close.
+   * @return true if a non-terminal row owned by this table was closed.
+   */
+  public boolean closeProcessFromStore(long processId) {
+    if (processId <= 0) {
+      return false;
+    }
+    long tableId = getTableIdentifier().getId();
+    TableProcessMeta meta =
+        getAs(TableProcessMapper.class, mapper -> mapper.getProcessMeta(processId));
+    if (meta == null || meta.getTableId() != tableId || isTerminalStatus(meta.getStatus())) {
+      return false;
+    }
+    doAs(
+        TableProcessMapper.class,
+        mapper ->
+            mapper.updateProcess(
+                tableId,
+                processId,
+                meta.getExternalProcessIdentifier(),
+                ProcessStatus.CLOSED,
+                meta.getProcessStage(),
+                meta.getRetryNumber(),
+                System.currentTimeMillis(),
+                meta.getFailMessage(),
+                meta.getProcessParameters(),
+                meta.getSummary()));
+    // The in-memory process is gone, so the normal completeProcess()/OptimizingQueue close path
+    // cannot reset the table. Reset the tracked process and the table status here so the table does
+    // not stay stuck in a processing status with a dangling PROCESS_ID that blocks future
+    // optimization.
+    if (processId == getProcessId() && getOptimizingStatus().isProcessing()) {
+      store().begin().updateStatusCode(code -> OptimizingStatus.IDLE.getCode()).commit();
+    }
+    return true;
+  }
+
+  private static boolean isTerminalStatus(ProcessStatus status) {
+    return status == ProcessStatus.SUCCESS
+        || status == ProcessStatus.FAILED
+        || status == ProcessStatus.CANCELED
+        || status == ProcessStatus.CLOSED
+        || status == ProcessStatus.KILLED;
   }
 
   /**

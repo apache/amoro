@@ -136,10 +136,30 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
     // After disabling self-optimizing, close the currently running optimizing process.
     if (originalConfig.getOptimizingConfig().isEnabled()
         && !tableRuntime.getTableConfiguration().getOptimizingConfig().isEnabled()) {
-      OptimizingProcess optimizingProcess = defaultTableRuntime.getOptimizingProcess();
-      if (optimizingProcess != null && optimizingProcess.getStatus() == ProcessStatus.RUNNING) {
-        optimizingProcess.close(false);
-      }
+      closeRunningProcess(defaultTableRuntime);
+    }
+  }
+
+  /**
+   * Close the optimizing process of the table. Prefers the in-memory process (which persists the
+   * CLOSED row itself), and falls back to closing the tracked {@code table_process} row directly
+   * when the in-memory process is already gone (AMS restart, released process, id mismatch).
+   * Without the fallback the row stays RUNNING forever and neither disabling self-optimizing nor
+   * the Dashboard Cancel can clear it.
+   */
+  private void closeRunningProcess(DefaultTableRuntime tableRuntime) {
+    OptimizingProcess optimizingProcess = tableRuntime.getOptimizingProcess();
+    if (optimizingProcess != null && optimizingProcess.getStatus() == ProcessStatus.RUNNING) {
+      optimizingProcess.close(false);
+      return;
+    }
+    long closedProcessId = tableRuntime.closeTrackedProcessFromStore();
+    if (closedProcessId > 0) {
+      logger.info(
+          "Closed orphan optimizing process {} of table {} because optimizing was disabled or the "
+              + "in-memory process was already released",
+          closedProcessId,
+          tableRuntime.getTableIdentifier());
     }
   }
 
@@ -159,6 +179,12 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
       AmoroTable<?> table = loadTable(tableRuntime);
       defaultTableRuntime.refresh(table);
       MixedTable mixedTable = (MixedTable) table.originalTable();
+      // Self-optimizing may have been disabled in a previous refresh whose close attempt failed
+      // (e.g. the process had already been released from memory). Keep retrying on every refresh
+      // while optimizing stays disabled so the tracked table_process row cannot stay RUNNING.
+      if (!defaultTableRuntime.getOptimizingConfig().isEnabled()) {
+        closeRunningProcess(defaultTableRuntime);
+      }
       if (table.format() == TableFormat.ICEBERG) {
         try {
           IcebergMaintenanceCompatibility.checkSupported(mixedTable.asUnkeyedTable());
