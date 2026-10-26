@@ -154,6 +154,7 @@ Amoro is built using Maven with JDK 11 and 17(required for `amoro-format-mixed/a
 versions in `amoro-bom/maintenance/pom.xml` or `amoro-bom/connector/pom.xml`; keep the
 Parquet versions aligned. `-Dconnector-iceberg.version` overrides the connector baseline;
 `-Diceberg.version` overrides maintenance. Optimizer and Trino Avro settings remain in their module POMs.
+`-Dparquet-jackson.version` overrides only Parquet Jackson; by default it follows `parquet.version`.
 
 Build from the repository root so Maven can resolve both BOMs from the reactor. Before
 using `-N` or building directly from a child POM, install the BOMs with
