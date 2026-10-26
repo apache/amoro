@@ -24,12 +24,14 @@ on:
       - '.github/workflows/mcp-server-ci.yml'
       - '.gitignore'
       - 'pom.xml'
+      - 'amoro-bom/**'
   push:
     paths:
       - 'amoro-mcp-server/**'
       - '.github/workflows/mcp-server-ci.yml'
       - '.gitignore'
       - 'pom.xml'
+      - 'amoro-bom/**'
   workflow_dispatch:
 
 jobs:

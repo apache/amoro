@@ -30,6 +30,7 @@ on:
       - "amoro-format-mixed/amoro-mixed-hive/**"
       - "amoro-format-mixed/amoro-mixed-spark/**"
       - "pom.xml"
+      - "amoro-bom/**"
       - "tools/maven/**"
 
 jobs:
