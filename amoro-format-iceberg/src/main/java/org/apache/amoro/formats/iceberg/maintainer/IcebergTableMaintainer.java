@@ -43,6 +43,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.utils.IcebergThreadPools;
 import org.apache.amoro.utils.TableFileUtil;
 import org.apache.iceberg.ContentFile;
@@ -53,6 +54,7 @@ import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReachableFileCleanupBridge;
@@ -63,6 +65,7 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.expressions.Expression;
@@ -76,6 +79,7 @@ import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.DateTimeUtil;
 import org.apache.iceberg.util.LocationUtil;
+import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.SerializableFunction;
 import org.apache.iceberg.util.SnapshotUtil;
 import org.slf4j.Logger;
@@ -148,6 +152,14 @@ public class IcebergTableMaintainer implements TableMaintainer {
     table.refresh();
     IcebergMaintenanceCompatibility.checkSupported(table);
 
+    if (!PropertyUtil.propertyAsBoolean(
+            table.properties(),
+            TableProperties.CLEAN_ORPHAN_IGNORE_LOCATION_CONFLICT,
+            TableProperties.CLEAN_ORPHAN_IGNORE_LOCATION_CONFLICT_DEFAULT)
+        && hasConflictingMetadata()) {
+      return Maps.newHashMap();
+    }
+
     long keepTime = tableConfiguration.getOrphanExistingMinutes() * 60 * 1000;
 
     int dataDeleted = cleanContentFiles(System.currentTimeMillis() - keepTime, metrics);
@@ -162,6 +174,47 @@ public class IcebergTableMaintainer implements TableMaintainer {
     summary.put("orphan-data-files-cleaned", String.valueOf(dataDeleted));
     summary.put("orphan-metadata-files-cleaned", String.valueOf(metadataDeleted));
     return summary;
+  }
+
+  private boolean hasConflictingMetadata() {
+    // Reachability is scoped to this table, but orphan deletion scans the shared location.
+    // Inspect metadata before deleting either content or metadata files, regardless of file age.
+    try {
+      if (!(table instanceof HasTableOperations)) {
+        LOG.warn("Skipping orphan cleanup: cannot determine table UUID for {}", table.name());
+        return true;
+      }
+      String uuid = ((HasTableOperations) table).operations().current().uuid();
+      AuthenticatedFileIO io = fileIO();
+      if (uuid == null || !io.supportPrefixOperations()) {
+        LOG.warn("Skipping orphan cleanup: cannot inspect metadata for {}", table.name());
+        return true;
+      }
+      String prefix = LocationUtil.stripTrailingSlash(table.location()) + "/metadata/";
+      Set<String> ownMetadata = ReachableFileUtil.metadataFileLocations(table, false);
+      for (FileInfo file : io.asPrefixFileIO().listPrefix(prefix)) {
+        String location = file.location();
+        if ((!location.endsWith(".metadata.json") && !location.endsWith(".metadata.json.gz"))
+            || ownMetadata.contains(location)) {
+          continue;
+        }
+        String candidateUuid = TableMetadataParser.read(io, location).uuid();
+        if (!uuid.equals(candidateUuid)) {
+          LOG.warn(
+              "Skipping orphan cleanup for {}: metadata {} belongs to a different or unknown table UUID",
+              table.name(),
+              location);
+          return true;
+        }
+      }
+      return false;
+    } catch (RuntimeException e) {
+      LOG.warn(
+          "Skipping orphan cleanup for {}: metadata ownership could not be verified",
+          table.name(),
+          e);
+      return true;
+    }
   }
 
   @Override

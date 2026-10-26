@@ -88,6 +88,18 @@ Data-cleaning configurations are applicable to both Iceberg Format and Mixed str
 | data-expire.retention-time                  | NULL             | Retention period for data expiration. For example, 1d means retaining data for 1 day. Other supported units include h (hour), min (minute), s (second), ms (millisecond), etc.                                                                                        |
 | data-expire.base-on-rule                    | LAST_COMMIT_TIME | A rule to indicate how to start expire data. Including LAST_COMMIT_TIME and CURRENT_TIME. LAST_COMMIT_TIME uses the timestamp of latest commit snapshot which is not optimized as the start of the expiration, which ensures that the table has `retention-time` data |
 
+Orphan cleanup checks the table's `metadata/` directory before deleting files. If it
+finds metadata belonging to another table UUID, or cannot verify ownership, it logs
+a warning and skips both content and metadata cleanup. Older metadata with the
+same UUID does not prevent cleanup. Keep each table in a separate location: this
+check only detects conflicting metadata present when cleanup starts, and does not
+coordinate concurrent table creation or detect shared data outside that location.
+
+The table property `clean-orphan-file.ignore-location-conflict` defaults to `false`.
+Setting it to `true` bypasses this check and restores the previous cleanup behavior.
+Only use this override after verifying ownership of all files in the location;
+otherwise cleanup can permanently delete files belonging to another table.
+
 ## Tags configurations
 
 Tags configurations are applicable to Iceberg Format only now, and will be supported in Mixed Format
