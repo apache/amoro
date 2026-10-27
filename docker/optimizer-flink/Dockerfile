@@ -14,9 +14,9 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG FLINK_VERSION=1.20.0-java11
+ARG FLINK_VERSION=1.20.0
 
-FROM flink:${FLINK_VERSION}
+FROM flink:${FLINK_VERSION}-java11
 
 ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 ARG OPTIMIZER_JOB=optimizer-job.jar

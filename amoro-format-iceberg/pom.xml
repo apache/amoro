@@ -29,6 +29,11 @@
     <name>Amoro Project Iceberg Format</name>
     <url>https://amoro.apache.org</url>
 
+    <properties>
+        <!-- Shared with mixed-format connectors that support older engines. -->
+        <iceberg.version>${connector-iceberg.version}</iceberg.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.amoro</groupId>
