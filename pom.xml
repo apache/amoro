@@ -137,7 +137,7 @@
         <caffeine.version>2.9.3</caffeine.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <mybatis.version>3.5.15</mybatis.version>
-        <postgres-jdbc.version>42.7.12</postgres-jdbc.version>
+        <postgres-jdbc.version>42.7.14</postgres-jdbc.version>
         <derby-jdbc.version>10.14.2.0</derby-jdbc.version>
         <commons-dbcp2.version>2.9.0</commons-dbcp2.version>
         <netty.version>4.1.129.Final</netty.version>
