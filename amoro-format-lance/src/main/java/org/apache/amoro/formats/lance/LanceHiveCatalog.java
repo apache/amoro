@@ -27,20 +27,26 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.util.Preconditions;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.aliyun.AliyunProperties;
 import org.apache.iceberg.aws.AwsClientProperties;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.lance.Dataset;
 import org.lance.ReadOptions;
 import org.lance.namespace.LanceNamespace;
+import org.lance.namespace.errors.NamespaceNotFoundException;
 import org.lance.namespace.hive3.Hive3Namespace;
 import org.lance.namespace.hive3.Hive3NamespaceConfig;
 import org.lance.namespace.model.DeregisterTableRequest;
 import org.lance.namespace.model.DeregisterTableResponse;
+import org.lance.namespace.model.DescribeNamespaceRequest;
 import org.lance.namespace.model.DescribeTableRequest;
 import org.lance.namespace.model.DescribeTableResponse;
 
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -52,6 +58,7 @@ public class LanceHiveCatalog extends AbstractLanceCatalog {
   private static final String STORAGE_OPTIONS_PREFIX = "lance.storage-options.";
 
   private final Map<String, String> catalogProperties;
+  private final String warehouse;
 
   public LanceHiveCatalog(
       String catalogName, Map<String, String> catalogProperties, TableMetaStore metaStore) {
@@ -60,6 +67,42 @@ public class LanceHiveCatalog extends AbstractLanceCatalog {
         buildNamespace(catalogProperties, metaStore),
         catalogPrefix(catalogProperties, Hive3NamespaceConfig.CATALOG_NAME));
     this.catalogProperties = new HashMap<>(catalogProperties);
+    String root = catalogProperties.get(CatalogMetaProperties.KEY_WAREHOUSE).trim();
+    this.warehouse = hmsReadableUri(new Path(root).toUri());
+  }
+
+  @Override
+  public List<String> listDatabases() {
+    List<String> databases = super.listDatabases();
+    databases.removeIf(database -> !databaseInWarehouse(database));
+    return databases;
+  }
+
+  @Override
+  public List<String> listTables(String database) {
+    return databaseInWarehouse(database) ? super.listTables(database) : new ArrayList<>();
+  }
+
+  private boolean databaseInWarehouse(String database) {
+    String location;
+    try {
+      location =
+          namespace
+              .describeNamespace(new DescribeNamespaceRequest().id(namespaceId(database)))
+              .getProperties()
+              .get(Hive3NamespaceConfig.DATABASE_LOCATION_URI);
+    } catch (NamespaceNotFoundException e) {
+      return false;
+    }
+    return location != null && (location.equals(warehouse) || location.startsWith(warehouse + "/"));
+  }
+
+  /** HMS reads locations back as scheme:/path, e.g. file:///p becomes file:/p. */
+  static String hmsReadableUri(URI uri) {
+    String path = uri.getPath() == null ? "" : uri.getPath().replaceAll("/+$", "");
+    String scheme = uri.getScheme() == null ? "file" : uri.getScheme();
+    String authority = uri.getAuthority() == null ? "" : uri.getAuthority();
+    return scheme + ":" + (authority.isEmpty() ? "" : "//" + authority) + path;
   }
 
   @Override
