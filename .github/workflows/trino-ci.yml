@@ -25,6 +25,7 @@ on:
       - "amoro-format-mixed/amoro-mixed-hive/**"
       - "amoro-format-mixed/amoro-mixed-trino/**"
       - "pom.xml"
+      - "amoro-bom/**"
       - "tools/maven/**"
 
 jobs:
