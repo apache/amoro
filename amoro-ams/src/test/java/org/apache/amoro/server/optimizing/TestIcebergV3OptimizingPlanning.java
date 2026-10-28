@@ -54,7 +54,7 @@ import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.scheduler.inline.TableRuntimeRefreshExecutor;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.DefaultTableRuntimeStore;
-import org.apache.amoro.server.table.DerbyPersistence;
+import org.apache.amoro.server.table.H2Persistence;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.table.TableMetaStore;
 import org.apache.amoro.table.TableProperties;
@@ -82,22 +82,22 @@ import java.util.stream.Collectors;
 class TestIcebergV3OptimizingPlanning extends PersistentBase {
   @TempDir private Path temp;
 
-  // Preserve standalone execution without loading DerbyPersistence when the shared AMS test
+  // Preserve standalone execution without loading H2Persistence when the shared AMS test
   // environment has already initialized persistence. Loading it would truncate the shared DB.
   @SuppressWarnings("unused")
-  private final DerbyPersistence standalonePersistence = initializePersistence();
+  private final H2Persistence standalonePersistence = initializePersistence();
 
   private final TestPersistence persistence = new TestPersistence();
   private final CatalogManager catalogManager = mock(CatalogManager.class);
   private final Set<Long> tableIds = new HashSet<>();
   private OptimizingQueue queue;
 
-  private static DerbyPersistence initializePersistence() {
+  private static H2Persistence initializePersistence() {
     try {
       SqlSessionFactoryProvider.getInstance().get();
       return null;
     } catch (IllegalStateException e) {
-      return new DerbyPersistence();
+      return new H2Persistence();
     }
   }
 

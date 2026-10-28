@@ -140,6 +140,7 @@
         <mybatis.version>3.5.15</mybatis.version>
         <postgres-jdbc.version>42.7.14</postgres-jdbc.version>
         <derby-jdbc.version>10.14.2.0</derby-jdbc.version>
+        <h2-jdbc.version>2.5.252</h2-jdbc.version>
         <commons-dbcp2.version>2.9.0</commons-dbcp2.version>
         <netty.version>4.1.129.Final</netty.version>
         <javalin.version>4.6.8</javalin.version>
@@ -857,6 +858,12 @@
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${postgres-jdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2-jdbc.version}</version>
             </dependency>
 
             <dependency>
