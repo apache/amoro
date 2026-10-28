@@ -125,6 +125,7 @@ Amoro is built using Maven with JDK 11 and 17(required for `amoro-format-mixed/a
 * Specify Spark version for Spark optimizer(the default is 3.5.7): `./mvnw clean package -DskipTests -Dspark.version=3.5.7`
   * Build the external Spark 4.1 optimizer for native Iceberg tables with JDK 17: `./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -DskipTests -Pjava17,optimizer-spark-4.1`. This profile does not enable general Spark 4.1 support in Amoro.
 * Build `amoro-mixed-trino` module under JDK 17: `./mvnw clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-mixed-trino' -am`.
+* Build the mixed-format Spark 3.3 connector: `./mvnw clean package -DskipTests -Pspark-3.3 -pl amoro-format-mixed/amoro-mixed-spark/v3.3/amoro-mixed-spark-runtime-3.3 -am`. AMS is built with Iceberg 1.10.2, which no longer provides a Spark 3.3 binding; external mixed-format connectors remain on Iceberg 1.8.1.
 * Build all modules: `./mvnw clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.
 * Build a distribution package with all formats integrated: `./mvnw clean package -Psupport-all-formats`
   * Build a distribution package with Apache Paimon format: `./mvnw clean package -Psupport-paimon-format`
