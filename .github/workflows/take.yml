@@ -31,7 +31,34 @@ jobs:
       - uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.addAssignees({
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+
+            if (issue.data.assignees.length > 0) {
+              core.info('The issue is already assigned; ignoring this `take` comment.')
+              return
+            }
+
+            const timeline = await github.paginate(github.rest.issues.listEventsForTimeline, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            })
+            const lastUnassignedIndex = timeline.findLastIndex(event => event.event === 'unassigned')
+            const firstTakeComment = timeline
+              .slice(lastUnassignedIndex + 1)
+              .find(event => event.event === 'commented' && event.body === 'take')
+
+            if (firstTakeComment?.id !== context.payload.comment.id) {
+              core.info('An earlier `take` comment already claimed this issue.')
+              return
+            }
+
+            await github.rest.issues.addAssignees({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
