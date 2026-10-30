@@ -91,7 +91,7 @@ jobs:
         run: >-
           ./mvnw clean package
           -pl amoro-optimizer/amoro-optimizer-spark -am
-          -Pjava17,optimizer-spark-4.1
+          -Doptimizer.spark.version=4.1.3
           -Dtest=TestSparkOptimizerLocalMode
           -Djacoco.skip=true
           -B -ntp

@@ -182,14 +182,12 @@ jobs:
             scala_binary: "2.12"
             major: "3.5"
             jdk: "11"
-            profile: "spark-3.5"
             aws: "2.29.52"
           - spark: "4.1.3"
             scala: "2.13.17"
             scala_binary: "2.13"
             major: "4.1"
             jdk: "17"
-            profile: "optimizer-spark-4.1"
             aws: "2.29.52"
     steps:
       - uses: actions/checkout@v3
@@ -242,10 +240,7 @@ jobs:
         run: >-
           ./mvnw clean package
           -pl 'amoro-optimizer/amoro-optimizer-spark' -am
-          -P${{ matrix.profile }}
           -Doptimizer.spark.version=${{ matrix.spark }}
-          -Doptimizer.spark.major.version=${{ matrix.major }}
-          -Doptimizer.spark.scala.binary.version=${{ matrix.scala_binary }}
           -DskipTests -B -ntp
 
       - name: Build and Push Spark Optimizer Docker Image

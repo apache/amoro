@@ -134,10 +134,8 @@ SPARK_MAJOR_VERSION=${SPARK_VERSION%.*}
 
 if [ "${SPARK_MAJOR_VERSION}" = "4.1" ]; then
   SPARK_OPTIMIZER_SCALA_BINARY_VERSION=2.13
-  SPARK_OPTIMIZER_PROFILE=optimizer-spark-4.1
 else
   SPARK_OPTIMIZER_SCALA_BINARY_VERSION=2.12
-  SPARK_OPTIMIZER_PROFILE=spark-${SPARK_MAJOR_VERSION}
 fi
 
 SPARK_OPTIMIZER_JOB_PATH=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${SPARK_MAJOR_VERSION}_${SPARK_OPTIMIZER_SCALA_BINARY_VERSION}-${AMORO_VERSION}-jar-with-dependencies.jar
@@ -196,7 +194,7 @@ function build_optimizer_spark() {
     OPTIMIZER_JOB=${SPARK_OPTIMIZER_JOB}
 
     if [ ! -f "${OPTIMIZER_JOB}" ]; then
-      BUILD_CMD="$MVN clean package -pl amoro-optimizer/amoro-optimizer-spark -am -e -DskipTests -P${SPARK_OPTIMIZER_PROFILE} -Doptimizer.spark.version=${SPARK_VERSION}"
+      BUILD_CMD="$MVN clean package -pl amoro-optimizer/amoro-optimizer-spark -am -e -DskipTests -Doptimizer.spark.version=${SPARK_VERSION}"
       echo "spark optimizer job not exists in ${OPTIMIZER_JOB}"
       echo "please check the file or run '${BUILD_CMD}' first. "
       exit  1
