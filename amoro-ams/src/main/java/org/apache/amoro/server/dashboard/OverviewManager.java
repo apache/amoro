@@ -42,7 +42,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +65,7 @@ public class OverviewManager extends PersistentBase {
   public static final String STATUS_COMMITTING = "Committing";
 
   private static final Logger LOG = LoggerFactory.getLogger(OverviewManager.class);
-  private final List<OverviewTopTableItem> allTopTableItem = new ArrayList<>();
+  private volatile List<OverviewTopTableItem> allTopTableItem = ImmutableList.of();
   private final Map<String, Long> optimizingStatusCountMap = new ConcurrentHashMap<>();
   private final ConcurrentLinkedDeque<OverviewResourceUsageItem> resourceUsageHistory =
       new ConcurrentLinkedDeque<>();
@@ -104,7 +103,7 @@ public class OverviewManager extends PersistentBase {
   }
 
   public List<OverviewTopTableItem> getAllTopTableItem() {
-    return ImmutableList.copyOf(allTopTableItem);
+    return allTopTableItem;
   }
 
   public int getTotalCatalog() {
@@ -195,8 +194,7 @@ public class OverviewManager extends PersistentBase {
     this.totalCatalog.set(totalCatalogs);
     this.totalTableCount.set(topTableItemMap.size());
     this.totalDataSize.set(totalDataSize.get());
-    this.allTopTableItem.clear();
-    this.allTopTableItem.addAll(topTableItemMap.values());
+    this.allTopTableItem = ImmutableList.copyOf(topTableItemMap.values());
     addAndCheck(new OverviewDataSizeItem(ts, this.totalDataSize.get()));
     resetStatusMap();
     this.optimizingStatusCountMap.putAll(optimizingStatusMap);
