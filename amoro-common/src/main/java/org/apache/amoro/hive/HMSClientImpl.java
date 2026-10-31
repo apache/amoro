@@ -28,10 +28,15 @@ import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.metastore.api.TableMeta;
 import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class HMSClientImpl implements HMSClient {
+
+  private static final Logger LOG = LoggerFactory.getLogger(HMSClientImpl.class);
 
   private final HiveMetaStoreClient client;
 
@@ -128,19 +133,32 @@ public class HMSClientImpl implements HMSClient {
 
   @Override
   public Partition addPartition(Partition partition) throws TException {
-    return getClient().add_partition(partition);
+    Partition added = getClient().add_partition(partition);
+    LOG.info("Added Hive partition {}", describePartition(partition));
+    return added;
   }
 
   @Override
   public boolean dropPartition(
       String dbName, String tblName, List<String> partVals, PartitionDropOptions options)
       throws TException {
-    return getClient().dropPartition(dbName, tblName, partVals, options);
+    boolean dropped = getClient().dropPartition(dbName, tblName, partVals, options);
+    if (dropped) {
+      LOG.info("Dropped Hive partition {}.{} values={}", dbName, tblName, partVals);
+    }
+    return dropped;
   }
 
   @Override
   public int addPartitions(List<Partition> partitions) throws TException {
-    return getClient().add_partitions(partitions);
+    int added = getClient().add_partitions(partitions);
+    if (LOG.isInfoEnabled() && added > 0) {
+      LOG.info(
+          "Added {} Hive partitions; requested partitions: {}",
+          added,
+          describePartitions(partitions));
+    }
+    return added;
   }
 
   @Override
@@ -165,6 +183,10 @@ public class HMSClientImpl implements HMSClient {
             .impl(HiveMetaStoreClient.class, String.class, String.class, List.class)
             .build();
     alterPartitions.invoke(getClient(), dbName, tblName, newParts, environmentContext);
+    if (LOG.isInfoEnabled() && !newParts.isEmpty()) {
+      LOG.info(
+          "Altered Hive partitions for {}.{}: {}", dbName, tblName, describePartitions(newParts));
+    }
   }
 
   @Override
@@ -181,6 +203,22 @@ public class HMSClientImpl implements HMSClient {
             .impl(HiveMetaStoreClient.class, String.class, String.class, Partition.class)
             .build();
     alterPartition.invoke(getClient(), dbName, tblName, newPart, environmentContext);
+    LOG.info("Altered Hive partition for {}.{}: {}", dbName, tblName, describePartition(newPart));
+  }
+
+  private static String describePartitions(List<Partition> partitions) {
+    return partitions.stream()
+        .map(HMSClientImpl::describePartition)
+        .collect(Collectors.joining(", "));
+  }
+
+  private static String describePartition(Partition partition) {
+    return String.format(
+        "%s.%s values=%s location=%s",
+        partition.getDbName(),
+        partition.getTableName(),
+        partition.getValues(),
+        partition.isSetSd() ? partition.getSd().getLocation() : null);
   }
 
   @Override
