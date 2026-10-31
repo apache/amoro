@@ -47,6 +47,7 @@ import org.apache.amoro.shade.guava32.com.google.common.base.MoreObjects;
 import org.apache.amoro.shade.guava32.com.google.common.base.Objects;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.Striped;
 import org.apache.amoro.shade.guava32.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.amoro.table.TableRuntimeFactory;
 import org.apache.amoro.table.TableSummary;
@@ -76,6 +77,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -85,6 +87,7 @@ public class DefaultTableService extends PersistentBase implements TableService 
   private final long externalCatalogRefreshingInterval;
 
   private final Map<Long, TableRuntime> tableRuntimeMap = new ConcurrentHashMap<>();
+  private final Striped<Lock> tableRegistrationLocks = Striped.lock(128);
 
   private final ScheduledExecutorService tableExplorerScheduler =
       Executors.newSingleThreadScheduledExecutor(
@@ -933,26 +936,37 @@ public class DefaultTableService extends PersistentBase implements TableService 
       return true;
     }
 
-    doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
+    Lock registrationLock = tableRegistrationLocks.get(serverTableIdentifier.getId());
+    registrationLock.lock();
+    try {
+      // Creation callbacks and catalog exploration may both discover the same new table.
+      // Keep the check, persistence and publication atomic with respect to other registrations.
+      if (tableRuntimeMap.containsKey(serverTableIdentifier.getId())) {
+        return false;
+      }
+      doAs(TableRuntimeMapper.class, mapper -> mapper.insertRuntime(meta));
 
-    // Only skip local runtime creation when master-slave mode is fully wired (bucketAssignStore
-    // is non-null). When bucketAssignStore is null (e.g. 3-arg test constructor), fall through
-    // and create the runtime in memory as in non-master-slave mode.
+      // Only skip local runtime creation when master-slave mode is fully wired (bucketAssignStore
+      // is non-null). When bucketAssignStore is null (e.g. 3-arg test constructor), fall through
+      // and create the runtime in memory as in non-master-slave mode.
 
-    Optional<TableRuntime> tableRuntimeOpt =
-        createTableRuntime(serverTableIdentifier, meta, Collections.emptyList());
-    if (!tableRuntimeOpt.isPresent()) {
-      LOG.warn("No available table runtime factory found for table {}", serverTableIdentifier);
-      return false;
+      Optional<TableRuntime> tableRuntimeOpt =
+          createTableRuntime(serverTableIdentifier, meta, Collections.emptyList());
+      if (!tableRuntimeOpt.isPresent()) {
+        LOG.warn("No available table runtime factory found for table {}", serverTableIdentifier);
+        return false;
+      }
+
+      TableRuntime tableRuntime = tableRuntimeOpt.get();
+      tableRuntimeMap.put(serverTableIdentifier.getId(), tableRuntime);
+      tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
+      if (headHandler != null) {
+        headHandler.fireTableAdded(table, tableRuntime);
+      }
+      return true;
+    } finally {
+      registrationLock.unlock();
     }
-
-    TableRuntime tableRuntime = tableRuntimeOpt.get();
-    tableRuntimeMap.put(serverTableIdentifier.getId(), tableRuntime);
-    tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
-    if (headHandler != null) {
-      headHandler.fireTableAdded(table, tableRuntime);
-    }
-    return true;
   }
 
   private Optional<TableRuntime> createTableRuntime(
