@@ -33,6 +33,7 @@ import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.spark.SupportAuthentication;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
+import org.apache.amoro.table.TableProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.spark.SparkUtil;
@@ -43,6 +44,7 @@ import org.apache.spark.sql.connector.catalog.Identifier;
 import org.apache.spark.sql.connector.catalog.NamespaceChange;
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
+import org.apache.spark.sql.connector.catalog.TableChange;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import java.util.ArrayList;
@@ -51,11 +53,37 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Base class of mixed-format spark catalog. */
 public abstract class MixedSparkCatalogBase
     implements TableCatalog, SupportsNamespaces, SupportAuthentication {
+  // Protect bookkeeping fields without blocking supported location and format DDL.
+  private static final Set<String> INTERNAL_TABLE_PROPERTIES =
+      Set.of(
+          TableProperties.TABLE_PARTITION_PROPERTIES,
+          TableProperties.BASE_TABLE_MAX_TRANSACTION_ID,
+          TableProperties.PARTITION_OPTIMIZED_SEQUENCE,
+          TableProperties.WATERMARK_TABLE,
+          TableProperties.WATERMARK_BASE_STORE);
+
+  /** Reject user changes to metadata maintained by mixed-table commits. */
+  protected static void validatePropertyChanges(TableChange... changes) {
+    for (TableChange change : changes) {
+      String property = null;
+      if (change instanceof TableChange.SetProperty) {
+        property = ((TableChange.SetProperty) change).property();
+      } else if (change instanceof TableChange.RemoveProperty) {
+        property = ((TableChange.RemoveProperty) change).property();
+      }
+      Preconditions.checkArgument(
+          property == null || !INTERNAL_TABLE_PROPERTIES.contains(property),
+          "Cannot modify internal mixed-table property: %s",
+          property);
+    }
+  }
+
   private String catalogName = null;
   private TableMetaStore tableMetaStore;
 

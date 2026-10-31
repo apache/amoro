@@ -181,6 +181,7 @@ public class MixedFormatSparkCatalog extends MixedSparkCatalogBase {
 
   @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
+    validatePropertyChanges(changes);
     TableIdentifier identifier = buildIdentifier(ident);
     MixedTable table;
     try {
