@@ -202,6 +202,10 @@ public class TableProperties {
   public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
   public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
 
+  public static final String CLEAN_ORPHAN_IGNORE_LOCATION_CONFLICT =
+      "clean-orphan-file.ignore-location-conflict";
+  public static final boolean CLEAN_ORPHAN_IGNORE_LOCATION_CONFLICT_DEFAULT = false;
+
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME =
       "clean-orphan-file.min-existing-time-minutes";
   public static final long MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = 2880; // 2 Days
