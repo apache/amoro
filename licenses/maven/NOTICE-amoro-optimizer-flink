@@ -1,0 +1,1032 @@
+Apache Amoro (incubating)
+Copyright 2024-2026 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+Notices for components included in this distribution
+===================================================
+
+com.fasterxml.jackson.core:jackson-annotations:2.14.2
+-----------------------------------------------------
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers.
+
+## Licensing
+
+Jackson 2.x core and extension components are licensed under Apache License 2.0
+To find the details that apply to this artifact see the accompanying LICENSE file.
+
+## Credits
+
+A list of contributors may be found from CREDITS(-2.x) file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.12.7
+--------------------------------------------------------------
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers, as well as supported
+commercially by FasterXML.com.
+
+## Licensing
+
+Jackson core and extension components may be licensed under different licenses.
+To find the details that apply to this artifact see the accompanying LICENSE file.
+For more information, including possible other licensing options, contact
+FasterXML.com (http://fasterxml.com).
+
+## Credits
+
+A list of contributors may be found from CREDITS file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.12.7
+-------------------------------------------------------------------
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers, as well as supported
+commercially by FasterXML.com.
+
+## Licensing
+
+Jackson core and extension components may licensed under different licenses.
+To find the details that apply to this artifact see the accompanying LICENSE file.
+For more information, including possible other licensing options, contact
+FasterXML.com (http://fasterxml.com).
+
+## Credits
+
+A list of contributors may be found from CREDITS file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+com.github.joshelser:dropwizard-metrics-hadoop-metrics2-reporter:0.1.2
+----------------------------------------------------------------------
+Copyright 2016 Josh Elser
+
+commons-beanutils:commons-beanutils:1.11.0
+------------------------------------------
+Apache Commons BeanUtils
+Copyright 2000-2025 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+commons-cli:commons-cli:1.5.0
+-----------------------------
+Apache Commons CLI
+Copyright 2002-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+commons-codec:commons-codec:1.17.2
+----------------------------------
+Apache Commons Codec
+Copyright 2002-2024 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+commons-collections:commons-collections:3.2.2
+---------------------------------------------
+Apache Commons Collections
+Copyright 2001-2015 The Apache Software Foundation
+
+This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/).
+
+commons-dbcp:commons-dbcp:1.4
+-----------------------------
+Apache Commons DBCP
+Copyright 2001-2010 The Apache Software Foundation
+
+This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/).
+
+commons-io:commons-io:2.11.0
+----------------------------
+Apache Commons IO
+Copyright 2002-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+commons-lang:commons-lang:2.6
+-----------------------------
+Apache Commons Lang
+Copyright 2001-2011 The Apache Software Foundation
+
+This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/).
+
+commons-logging:commons-logging:1.3.5
+-------------------------------------
+Apache Commons Logging
+Copyright 2001-2025 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+commons-net:commons-net:3.12.0
+------------------------------
+Apache Commons Net
+Copyright 2001-2025 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+commons-pool:commons-pool:1.5.4
+-------------------------------
+Apache Commons Pool
+Copyright 1999-2009 The Apache Software Foundation
+
+This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/).
+
+jakarta.activation:jakarta.activation-api:1.2.1
+-----------------------------------------------
+# Notices for Eclipse Project for JAF
+
+This content is produced and maintained by the Eclipse Project for JAF project.
+
+* Project home: https://projects.eclipse.org/projects/ee4j.jaf
+
+## Copyright
+
+All content is the property of the respective authors or their employers. For
+more information regarding authorship of content, please consult the listed
+source code repository logs.
+
+## Declared Project Licenses
+
+This program and the accompanying materials are made available under the terms
+of the Eclipse Distribution License v. 1.0,
+which is available at http://www.eclipse.org/org/documents/edl-v10.php.
+
+SPDX-License-Identifier: BSD-3-Clause
+
+## Source Code
+
+The project maintains the following source code repositories:
+
+* https://github.com/eclipse-ee4j/jaf
+
+## Third-party Content
+
+This project leverages the following third party content.
+
+JUnit (4.12)
+
+* License: Eclipse Public License
+
+jakarta.xml.bind:jakarta.xml.bind-api:2.3.2
+-------------------------------------------
+# Notices for Eclipse Project for JAXB
+
+This content is produced and maintained by the Eclipse Project for JAXB project.
+
+* Project home: https://projects.eclipse.org/projects/ee4j.jaxb
+
+## Trademarks
+
+Eclipse Project for JAXB is a trademark of the Eclipse Foundation.
+
+## Copyright
+
+All content is the property of the respective authors or their employers. For
+more information regarding authorship of content, please consult the listed
+source code repository logs.
+
+## Declared Project Licenses
+
+This program and the accompanying materials are made available under the terms
+of the Eclipse Distribution License v. 1.0 which is available
+at http://www.eclipse.org/org/documents/edl-v10.php.
+
+SPDX-License-Identifier: BSD-3-Clause
+
+## Source Code
+
+The project maintains the following source code repositories:
+
+* https://github.com/eclipse-ee4j/jaxb-api
+
+## Third-party Content
+
+This project leverages the following third party content.
+
+None
+
+## Cryptography
+
+Content may contain encryption software. The country in which you are currently
+may have restrictions on the import, possession, and use, and/or re-export to
+another country, of encryption software. BEFORE using any encryption software,
+please check the country's laws, regulations and policies concerning the import,
+possession, or use, and re-export of encryption software, to see if this is
+permitted.
+
+joda-time:joda-time:2.9.9
+-------------------------
+=============================================================================
+= NOTICE file corresponding to section 4d of the Apache License Version 2.0 =
+=============================================================================
+This product includes software developed by
+Joda.org (http://www.joda.org/).
+
+org.apache.arrow:arrow-format:18.3.0
+------------------------------------
+Arrow Format
+Copyright 2025 The Apache Software Foundation
+
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.arrow:arrow-memory-core:18.3.0
+-----------------------------------------
+Arrow Memory - Core
+Copyright 2025 The Apache Software Foundation
+
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.arrow:arrow-vector:18.3.0
+------------------------------------
+Arrow Vectors
+Copyright 2025 The Apache Software Foundation
+
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.avro:avro:1.11.4
+---------------------------
+Apache Avro
+Copyright 2009-2024 The Apache Software Foundation
+
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.commons:commons-collections4:4.4
+-------------------------------------------
+Apache Commons Collections
+Copyright 2001-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.commons:commons-compress:1.23.0
+------------------------------------------
+Apache Commons Compress
+Copyright 2002-2023 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+---
+
+The files in the package org.apache.commons.compress.archivers.sevenz
+were derived from the LZMA SDK, version 9.20 (C/ and CPP/7zip/),
+which has been placed in the public domain:
+
+"LZMA SDK is placed in the public domain." (http://www.7-zip.org/sdk.html)
+
+---
+
+The test file lbzip2_32767.bz2 has been copied from libbzip2's source
+repository:
+
+This program, "bzip2", the associated library "libbzip2", and all
+documentation, are copyright (C) 1996-2019 Julian R Seward.  All
+rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+2. The origin of this software must not be misrepresented; you must 
+   not claim that you wrote the original software.  If you use this 
+   software in a product, an acknowledgment in the product 
+   documentation would be appreciated but is not required.
+
+3. Altered source versions must be plainly marked as such, and must
+   not be misrepresented as being the original software.
+
+4. The name of the author may not be used to endorse or promote 
+   products derived from this software without specific prior written 
+   permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Julian Seward, jseward@acm.org
+
+org.apache.commons:commons-configuration2:2.10.1
+------------------------------------------------
+Apache Commons Configuration
+Copyright 2001-2024 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+org.apache.commons:commons-lang3:3.20.0
+---------------------------------------
+Apache Commons Lang
+Copyright 2001-2025 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+org.apache.commons:commons-math3:3.6.1
+--------------------------------------
+Apache Commons Math
+Copyright 2001-2016 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+This product includes software developed for Orekit by
+CS Systèmes d'Information (http://www.c-s.fr/)
+Copyright 2010-2012 CS Systèmes d'Information
+
+org.apache.commons:commons-pool2:2.12.0
+---------------------------------------
+Apache Commons Pool
+Copyright 2001-2023 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+org.apache.commons:commons-text:1.14.0
+--------------------------------------
+Apache Commons Text
+Copyright 2014-2025 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+org.apache.curator:curator-client:5.2.0
+---------------------------------------
+Curator Client
+Copyright 2011-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.curator:curator-framework:5.2.0
+------------------------------------------
+Curator Framework
+Copyright 2011-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.curator:curator-recipes:5.2.0
+----------------------------------------
+Curator Recipes
+Copyright 2011-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.hadoop.thirdparty:hadoop-shaded-guava:1.5.0
+------------------------------------------------------
+Apache Hadoop Third-party Libs
+Copyright 2020 and onwards The Apache Software Foundation.
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.hadoop:hadoop-annotations:3.4.3
+------------------------------------------
+Apache Hadoop
+Copyright 2006 and onwards The Apache Software Foundation.
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+Export Control Notice
+---------------------
+
+This distribution includes cryptographic software.  The country in
+which you currently reside may have restrictions on the import,
+possession, use, and/or re-export to another country, of
+encryption software.  BEFORE using any encryption software, please
+check your country's laws, regulations and policies concerning the
+import, possession, or use, and re-export of encryption software, to
+see if this is permitted.  See <http://www.wassenaar.org/> for more
+information.
+
+The U.S. Government Department of Commerce, Bureau of Industry and
+Security (BIS), has classified this software as Export Commodity
+Control Number (ECCN) 5D002.C.1, which includes information security
+software using or performing cryptographic functions with asymmetric
+algorithms.  The form and manner of this Apache Software Foundation
+distribution makes it eligible for export under the License Exception
+ENC Technology Software Unrestricted (TSU) exception (see the BIS
+Export Administration Regulations, Section 740.13) for both object
+code and source code.
+
+The following provides more details on the included cryptographic software:
+
+This software uses the SSL libraries from the Jetty project written
+by mortbay.org.
+Hadoop Yarn Server Web Proxy uses the BouncyCastle Java
+cryptography APIs written by the Legion of the Bouncy Castle Inc.
+
+org.apache.hive.shims:hive-shims-0.23:3.1.3
+-------------------------------------------
+Hive Shims 0.23
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.hive.shims:hive-shims-common:3.1.3
+---------------------------------------------
+Hive Shims Common
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.hive.shims:hive-shims-scheduler:3.1.3
+------------------------------------------------
+Hive Shims Scheduler
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.hive:hive-classification:3.1.3
+-----------------------------------------
+Hive Classifications
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.hive:hive-common:3.1.3
+---------------------------------
+Hive Common
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.hive:hive-metastore:3.1.3
+------------------------------------
+Hive Metastore
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.hive:hive-serde:3.1.3
+--------------------------------
+Hive Serde
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.hive:hive-service-rpc:3.1.3
+--------------------------------------
+Hive Service RPC
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.hive:hive-standalone-metastore:3.1.3
+-----------------------------------------------
+Hive Standalone Metastore
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.hive:hive-storage-api:2.8.1
+--------------------------------------
+Hive Storage API
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.hive:hive-upgrade-acid:3.1.3
+---------------------------------------
+Hive Upgrade Acid
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.httpcomponents.client5:httpclient5:5.4.1
+---------------------------------------------------
+Apache HttpClient
+Copyright 1999-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.httpcomponents.core5:httpcore5-h2:5.3.1
+--------------------------------------------------
+Apache HttpComponents Core HTTP/2
+Copyright 2005-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.httpcomponents.core5:httpcore5:5.3.1
+-----------------------------------------------
+Apache HttpComponents Core HTTP/1.1
+Copyright 2005-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.httpcomponents:httpclient:4.5.13
+-------------------------------------------
+Apache HttpClient
+Copyright 1999-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.httpcomponents:httpcore:4.4.13
+-----------------------------------------
+Apache HttpCore
+Copyright 2005-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerb-admin:2.1.1
+---------------------------------
+Kerby-kerb Admin
+Copyright 2014-2025 The Apache Software Foundation
+
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerb-client:2.1.1
+----------------------------------
+Kerby-kerb Client
+Copyright 2014-2025 The Apache Software Foundation
+
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerb-common:2.1.1
+----------------------------------
+Kerby-kerb Common
+Copyright 2014-2025 The Apache Software Foundation
+
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerb-core:2.0.3
+--------------------------------
+Kerby-kerb core
+Copyright 2014-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerb-crypto:2.0.3
+----------------------------------
+Kerby-kerb Crypto
+Copyright 2014-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerb-identity:2.1.1
+------------------------------------
+Kerby-kerb Identity
+Copyright 2014-2025 The Apache Software Foundation
+
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerb-server:2.1.1
+----------------------------------
+Kerby-kerb Server
+Copyright 2014-2025 The Apache Software Foundation
+
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerb-simplekdc:2.1.1
+-------------------------------------
+Kerb Simple Kdc
+Copyright 2014-2025 The Apache Software Foundation
+
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerb-util:2.0.3
+--------------------------------
+Kerby-kerb Util
+Copyright 2014-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerby-asn1:2.0.3
+---------------------------------
+Kerby ASN1 Project
+Copyright 2014-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerby-config:2.0.3
+-----------------------------------
+Kerby Config
+Copyright 2014-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerby-pkix:2.0.3
+---------------------------------
+Kerby PKIX Project
+Copyright 2014-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerby-util:2.0.3
+---------------------------------
+Kerby Util
+Copyright 2014-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:kerby-xdr:2.1.1
+--------------------------------
+Kerby XDR Project
+Copyright 2014-2025 The Apache Software Foundation
+
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.kerby:token-provider:2.1.1
+-------------------------------------
+Token provider
+Copyright 2014-2025 The Apache Software Foundation
+
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.orc:orc-shims:1.9.7
+------------------------------
+ORC Shims
+Copyright 2013-2025 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.parquet:parquet-avro:1.15.2
+--------------------------------------
+Apache Parquet Avro
+Copyright 2014-2024 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+--------------------------------------------------------------------------------
+
+This product includes code from Apache Avro, which includes the following in
+its NOTICE file:
+
+  Apache Avro
+  Copyright 2010-2015 The Apache Software Foundation
+
+  This product includes software developed at
+  The Apache Software Foundation (http://www.apache.org/).
+
+org.datanucleus:datanucleus-api-jdo:4.2.4
+-----------------------------------------
+=========================================================================
+==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
+==  Version 2.0, in this case for the DataNucleus distribution.        ==
+=========================================================================
+
+===================================================================
+This product includes software developed by many individuals,
+including the following:
+===================================================================
+Erik Bengtson
+Andy Jefferson
+
+
+===================================================================
+This product has included contributions from some individuals,
+including the following:
+===================================================================
+
+org.datanucleus:datanucleus-core:4.1.17
+---------------------------------------
+=========================================================================
+==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
+==  Version 2.0, in this case for the DataNucleus distribution.        ==
+=========================================================================
+
+===================================================================
+This product includes software developed by many individuals,
+including the following:
+===================================================================
+Erik Bengtson
+Andy Jefferson
+
+
+===================================================================
+This product has included contributions from some individuals,
+including the following:
+===================================================================
+Joerg von Frantzius
+Thomas Marti
+Barry Haddow
+Marco Schulze
+Ralph Ullrich
+David Ezzio
+Brendan de Beer
+David Eaves
+Martin Taal
+Tony Lai
+Roland Szabo
+Marcus Mennemeier
+Xuan Baldauf
+Eric Sultan
+
+
+===================================================================
+This product also includes software developed by the TJDO project
+(http://tjdo.sourceforge.net/).
+===================================================================
+
+org.datanucleus:datanucleus-rdbms:4.1.19
+----------------------------------------
+=========================================================================
+==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
+==  Version 2.0, in this case for the DataNucleus distribution.        ==
+=========================================================================
+
+===================================================================
+This product includes software developed by many individuals,
+including the following:
+===================================================================
+Andy Jefferson
+Erik Bengtson
+Joerg von Frantzius
+Marco Schulze
+
+
+===================================================================
+This product has included contributions from some individuals,
+including the following:
+===================================================================
+Barry Haddow
+Ralph Ullrich
+David Ezzio
+Brendan de Beer
+David Eaves
+Martin Taal
+Tony Lai
+Roland Szabo
+Anton Troshin (Timesten)
+
+
+===================================================================
+This product also includes software developed by the TJDO project
+(http://tjdo.sourceforge.net/).
+===================================================================
+
+===================================================================
+This product also includes software developed by the Apache Commons project
+(http://commons.apache.org/).
+===================================================================
+
+org.eclipse.jetty.websocket:websocket-api:9.4.57.v20241219
+----------------------------------------------------------
+==============================================================
+ Jetty Web Container
+ Copyright 1995-2018 Mort Bay Consulting Pty Ltd.
+==============================================================
+
+The Jetty Web Container is Copyright Mort Bay Consulting Pty Ltd
+unless otherwise noted.
+
+Jetty is dual licensed under both
+
+  * The Apache 2.0 License
+    http://www.apache.org/licenses/LICENSE-2.0.html
+
+      and
+
+  * The Eclipse Public 1.0 License
+    http://www.eclipse.org/legal/epl-v10.html
+
+Jetty may be distributed under either license.
+
+------
+Eclipse
+
+The following artifacts are EPL.
+ * org.eclipse.jetty.orbit:org.eclipse.jdt.core
+
+The following artifacts are EPL and ASL2.
+ * org.eclipse.jetty.orbit:javax.security.auth.message
+
+
+The following artifacts are EPL and CDDL 1.0.
+ * org.eclipse.jetty.orbit:javax.mail.glassfish
+
+
+------
+Oracle
+
+The following artifacts are CDDL + GPLv2 with classpath exception.
+https://glassfish.dev.java.net/nonav/public/CDDL+GPL.html
+
+ * javax.servlet:javax.servlet-api
+ * javax.annotation:javax.annotation-api
+ * javax.transaction:javax.transaction-api
+ * javax.websocket:javax.websocket-api
+
+------
+Oracle OpenJDK
+
+If ALPN is used to negotiate HTTP/2 connections, then the following
+artifacts may be included in the distribution or downloaded when ALPN 
+module is selected. 
+
+ * java.sun.security.ssl
+
+These artifacts replace/modify OpenJDK classes.  The modififications
+are hosted at github and both modified and original are under GPL v2 with 
+classpath exceptions.
+http://openjdk.java.net/legal/gplv2+ce.html
+
+
+------
+OW2
+
+The following artifacts are licensed by the OW2 Foundation according to the
+terms of http://asm.ow2.org/license.html
+
+org.ow2.asm:asm-commons
+org.ow2.asm:asm
+
+
+------
+Apache
+
+The following artifacts are ASL2 licensed.
+
+org.apache.taglibs:taglibs-standard-spec
+org.apache.taglibs:taglibs-standard-impl
+
+
+------
+MortBay
+
+The following artifacts are ASL2 licensed.  Based on selected classes from 
+following Apache Tomcat jars, all ASL2 licensed.
+
+org.mortbay.jasper:apache-jsp
+  org.apache.tomcat:tomcat-jasper
+  org.apache.tomcat:tomcat-juli
+  org.apache.tomcat:tomcat-jsp-api
+  org.apache.tomcat:tomcat-el-api
+  org.apache.tomcat:tomcat-jasper-el
+  org.apache.tomcat:tomcat-api
+  org.apache.tomcat:tomcat-util-scan
+  org.apache.tomcat:tomcat-util
+
+org.mortbay.jasper:apache-el
+  org.apache.tomcat:tomcat-jasper-el
+  org.apache.tomcat:tomcat-el-api
+
+
+------
+Mortbay
+
+The following artifacts are CDDL + GPLv2 with classpath exception.
+
+https://glassfish.dev.java.net/nonav/public/CDDL+GPL.html
+
+org.eclipse.jetty.toolchain:jetty-schemas
+
+------
+Assorted
+
+The UnixCrypt.java code implements the one way cryptography used by
+Unix systems for simple password protection.  Copyright 1996 Aki Yoshida,
+modified April 2001  by Iris Van den Broeke, Daniel Deville.
+Permission to use, copy, modify and distribute UnixCrypt
+for non-commercial or commercial purposes and without fee is
+granted provided that the copyright notice appears in all copies.
+
+
+org.apache.hive:hive-storage-api:2.7.0
+--------------------------------------
+Hive Storage API
+Copyright 2018 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.httpcomponents:httpclient:4.4.1
+------------------------------------------
+Apache HttpClient
+Copyright 1999-2015 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.httpcomponents:httpcore:4.4.1
+----------------------------------------
+Apache HttpCore
+Copyright 2005-2015 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+This project contains annotations derived from JCIP-ANNOTATIONS
+Copyright (c) 2005 Brian Goetz and Tim Peierls. See http://www.jcip.net
+
+
+Portions of the spill-map memory estimator are adapted from
+Apache Lucene 8.11.2 RamUsageEstimator and Constants.
+Apache Lucene
+Copyright 2001-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+=== Snappy Java 1.1.10.4 upstream NOTICE ===
+This product includes software developed by Google
+ Snappy: http://code.google.com/p/snappy/ (New BSD License)
+
+This product includes software developed by Apache
+ PureJavaCrc32C from apache-hadoop-common http://hadoop.apache.org/
+ (Apache 2.0 license)
+
+This library contains statically linked libstdc++. This inclusion is allowed by
+"GCC Runtime Library Exception"
+http://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html
+
+== Contributors ==
+  * Tatu Saloranta
+    * Providing benchmark suite
+  * Alec Wysoker
+    * Performance and memory usage improvement
+
+Third-Party Notices and Licenses:
+
+- Hadoop: Apache Hadoop is used as a dependency
+  License: Apache License 2.0
+  Source/Reference: https://github.com/apache/hadoop/blob/trunk/NOTICE.txt

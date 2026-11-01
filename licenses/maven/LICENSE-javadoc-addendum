@@ -1,0 +1,17 @@
+
+Additional components in the generated Javadoc
+=============================================
+
+This JAR includes JDK-generated documentation scripts, styles and resources
+under GPL-2.0 with the Classpath exception. See legal/LICENSE,
+legal/ADDITIONAL_LICENSE_INFO and legal/ASSEMBLY_EXCEPTION in this JAR.
+
+The generated documentation also bundles the following browser libraries.
+Their versions, original copyright notices and complete terms are in:
+
+  jQuery (MIT): legal/jquery.md
+  jQuery UI (MIT selected): legal/jqueryUI.md
+  JSZip and JSZipUtils (MIT selected): legal/jszip.md
+  pako (MIT and Zlib): legal/pako.md
+
+These references concern generated documentation assets only.

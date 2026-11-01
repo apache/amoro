@@ -193,9 +193,9 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${maven-assembly-plugin.version}</version>
                 <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
+                    <descriptors>
+                        <descriptor>${project.basedir}/../../tools/maven/fat-jar-with-licenses.xml</descriptor>
+                    </descriptors>
                     <attach>true</attach>
                 </configuration>
                 <executions>
@@ -204,6 +204,16 @@
                         <goals>
                             <goal>single</goal>
                         </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>repair-distribution-resources</id>
                         <phase>package</phase>
                     </execution>
                 </executions>

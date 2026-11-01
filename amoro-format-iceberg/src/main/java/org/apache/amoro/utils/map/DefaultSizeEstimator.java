@@ -18,16 +18,14 @@
 
 package org.apache.amoro.utils.map;
 
-import org.apache.lucene.util.RamUsageEstimator;
-
 import java.io.Serializable;
 
 public class DefaultSizeEstimator<T> implements SizeEstimator<T>, Serializable {
   @Override
   public long sizeEstimate(T t) {
-    // RamUsageEstimator calculate shallow size for complex objects, which is enough for our use
+    // The estimator calculates shallow size for complex objects, which is enough for our use
     // case for now.
     // But it should be noticed that it is not a common way to calculate size of all java objects.
-    return RamUsageEstimator.sizeOfObject(t, 0);
+    return ObjectSizeEstimator.sizeOf(t);
   }
 }

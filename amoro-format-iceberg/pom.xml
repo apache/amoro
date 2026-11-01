@@ -163,9 +163,11 @@
             <artifactId>rocksdbjni</artifactId>
         </dependency>
 
+        <!-- Test oracle for the previous estimator; no Lucene implementation is distributed. -->
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- test dependencies -->

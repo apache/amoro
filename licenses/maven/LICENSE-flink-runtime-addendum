@@ -1,0 +1,11 @@
+
+Additional bundled components
+=============================
+
+zstd-jni 1.5.6-6 is distributed under the BSD 2-Clause License.
+Its bundled Zstandard native library is distributed under the BSD
+3-Clause License. The copyright notices, complete license conditions
+and disclaimers for both components are in
+META-INF/LICENSE.zstd-jni-1.5.6-6 in this JAR.
+
+Source: https://github.com/luben/zstd-jni/tree/v1.5.6-6

@@ -1,0 +1,39 @@
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+JSP standard resources used by the distribution packaging repair
+===============================================================
+
+These five files are unmodified from javaee/glassfish commit
+371c9e1beb285a30bd4203ec86fde5729dbd06f9. Original copyright and
+CDDL/GPL-choice headers are retained. Amoro selects CDDL-1.1.
+Full terms: ../../../licenses-binary/LICENSE.CDDL-1.1.
+
+XSD source directory:
+https://github.com/javaee/glassfish/tree/371c9e1beb285a30bd4203ec86fde5729dbd06f9/appserver/deployment/schemas/src/main/resources/glassfish/lib/schemas
+DTD source directory:
+https://github.com/javaee/glassfish/tree/371c9e1beb285a30bd4203ec86fde5729dbd06f9/appserver/deployment/dtds/src/main/resources/glassfish/lib/dtds
+
+ASF permits appropriately labelled, unmodified standard resources consumed
+at runtime: https://www.apache.org/legal/resolved.html#weak-copyleft-licenses
+See also https://issues.apache.org/jira/browse/LEGAL-11.
+
+SHA-512 of the unmodified upstream files:
+425ce55a3d6419ed21e94cd7e03c4af65eeb563dfc49a683b37167ec3d9e020f63c1a7bbf85bf029486fce485f1d8ec7416793a5395c1d021b2038610aec5d9b  jsp_2_0.xsd
+9608b9aa40e7854a3c3e58526f2a17baa0a22a2cb99f4dde9a102fb27b1b979ac18884ce6ca89cd9bcafaedc52b9fc402ff66185a58702f8f78dabe6d58316a9  web-jsptaglibrary_1_1.dtd
+c2ec54cc505e82f15345aee951f6727e8fc05935f9980a3cafb0c6bb7afc6702abbc8020fb8b34f032d8b91c0147c468c4837d8247bc211de41043389891453d  web-jsptaglibrary_1_2.dtd
+645b85fab32473c7b3f2baa10810a58fd3725b4cbef3cc925726a7c6054e029241177d2358e1fd39217089be4e456f38b8168b5a0b12e5e840f0c99611b94b41  web-jsptaglibrary_2_0.xsd
+332ee07ab124d75c040cb0c8f902041d302867d59824d1ae8a4f3348fa14e9448ead09d5baedb63c6840e1acd57f6425d59bf187ccae03ee982dc881a1a14bd5  web-jsptaglibrary_2_1.xsd

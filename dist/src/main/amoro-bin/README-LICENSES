@@ -37,13 +37,16 @@ are retained, including notices in upstream shaded JARs.
 CDDL-1.0 (selected where a choice is offered):
   JavaBeans Activation Framework (javax.activation:activation),
   Java Annotations (javax.annotation:javax.annotation-api),
-  Servlet API (javax.servlet:javax.servlet-api), JTA (javax.transaction:jta),
-  JSP API 2.1 classes, and StAX API 1.0-2 (Hadoop 2).
+  Servlet API (javax.servlet:javax.servlet-api),
+  JTA 1.1 (javax.transaction:jta, Hadoop 2 and Hadoop 3),
+  JSP API 2.1 classes, JAXB API 2.2.2 and StAX API 1.0-2 (Hadoop 2).
   Projects and source distributions:
   https://github.com/javaee/activation
   https://github.com/javaee/javax.annotation
   https://github.com/javaee/servlet-spec
   https://github.com/javaee/jta-spec
+  https://github.com/javaee/jaxb-spec
+  https://repo.maven.apache.org/maven2/javax/xml/bind/jaxb-api/2.2.2/
   https://repo.maven.apache.org/maven2/javax/servlet/jsp/jsp-api/2.1/
   https://repo.maven.apache.org/maven2/javax/xml/stream/stax-api/1.0-2/
 
@@ -55,11 +58,10 @@ CDDL-1.0 (selected where a choice is offered):
   https://repo.maven.apache.org/maven2/javax/ws/rs/jsr311-api/1.1.1/jsr311-api-1.1.1-sources.jar
 
 CDDL-1.1 (selected where a choice is offered):
-  JAXB API (javax.xml.bind:jaxb-api), JSON Processing (org.glassfish:javax.json)
+  JSON Processing (org.glassfish:javax.json)
   and the standard JSP schema/DTD resources identified in
   licenses/LICENSE.jsp-resources.
   Projects and source distributions:
-  https://github.com/javaee/jaxb-spec
   https://github.com/javaee/jsonp
   https://github.com/javaee/glassfish
   JSP resource source form is already included in the dependency JARs.
@@ -102,3 +104,72 @@ This README applies to the dependencies actually present in the selected
 Hadoop 2 or Hadoop 3 convenience binary. Source artifacts for the same
 Maven coordinates and versions are available from
 https://repo.maven.apache.org/maven2/.
+
+The bundled dashboard JAR has its own component/version index and package-local
+license pointers in META-INF/LICENSE, including the MIT Rolldown runtime.
+
+The Servlet 5.0.0 schemas retained inside the shaded Thrift JAR use
+EPL-2.0. The schemas remain at
+org/apache/amoro/shade/thrift/jakarta/servlet/resources/ inside that JAR.
+They are distinct from the standalone Servlet API 4.0.3 dependency.
+
+Kyuubi dependency repackaging
+-----------------------------
+Amoro removes the bundled org/slf4j/ classes from the distribution copy of
+org.apache.kyuubi:kyuubi-hive-jdbc-shaded:1.10.2 to prevent its SLF4J 1.x API
+from overriding the SLF4J 2.x API used by AMS. All retained upstream files,
+including the original license and NOTICE records, remain unchanged.
+The modified JAR carries META-INF/README-amoro-resource-changes. The original
+Maven repository artifact is unchanged. Project: https://kyuubi.apache.org/.
+
+JSP standard-resource replacements
+----------------------------------
+Five JSP schema/DTD resources, where present, are replaced with unmodified
+GlassFish versions from commit 371c9e1beb285a30bd4203ec86fde5729dbd06f9,
+under the selected CDDL-1.1 license. Resource paths and owner headers remain.
+The copies in dependency JARs are modified during packaging; the original
+Maven repository artifacts are unchanged. See LICENSE.jsp-resources and
+LICENSE.CDDL-1.1 in the distribution's licenses directory (META-INF/licenses
+in standalone fat JARs), and META-INF/README-amoro-resource-changes in the
+modified JARs. Project: https://github.com/javaee/glassfish.
+
+TLS packaging change
+---------------------
+The five statically linked netty-tcnative-boringssl native libraries are
+removed from the modified ZooKeeper dependency copy and the runtime/fat
+JARs. Netty Java code and unrelated epoll libraries remain. ZooKeeper uses
+its default JDK TLS provider. Configurations explicitly setting
+zookeeper.ssl.sslProvider=OPENSSL
+must select JDK. Original producer license records remain as provenance.
+See META-INF/README-amoro-resource-changes in modified JARs.
+
+BSD-style grants and exact software versions
+--------------------------------------------
+Javolution 5.5.1 uses its original short BSD-style permission notice.
+Original copyright/permission notices: licenses/LICENSE.java-dependencies.
+Upstream identifies this exact grant wording as BSD: https://javolution.org/.
+
+RocksDB JNI 7.10.2 in standalone fat JARs embeds bzip2 software version 1.0.8,
+whose license identifier is bzip2-1.0.6. The original complete text is retained
+in META-INF/licenses/LICENSE.rocksdb-native in those JARs. Its four conditions
+include an optional acknowledgment request, not a mandatory advertising clause.
+Upstream BSD-style classification: https://sourceware.org/bzip2/.
+
+Snappy Java native components
+-----------------------------
+The JNI binding uses Apache-2.0. Its native libraries embed Snappy (BSD-3-Clause),
+Bitshuffle (MIT), and statically linked GCC runtime code covered by the GCC
+Runtime Library Exception. Full original notices, terms and exception are in
+licenses/LICENSE.snappy-java; applicable upstream notifications are in NOTICE.
+The Hadoop 2 JAR is snappy-java 1.1.8.4; its build recipe targets
+Snappy 1.1.8 and Bitshuffle 0.3.2. The Hadoop 3 JAR is snappy-java 1.1.10.5;
+its build recipe targets Snappy 1.1.10 and Bitshuffle 0.3.4. The publisher
+retains older platform prebuilts, so these are not uniform per-platform versions.
+Native sources and build configuration for these exact versions:
+https://github.com/xerial/snappy-java/tree/1.1.8.4
+https://github.com/xerial/snappy-java/tree/v1.1.10.5
+https://github.com/google/snappy/tree/1.1.8
+https://github.com/google/snappy/tree/1.1.10
+https://github.com/kiyo-masui/bitshuffle/tree/0.3.2
+https://github.com/kiyo-masui/bitshuffle/tree/0.3.4
+Runtime license and exception: https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html

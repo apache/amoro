@@ -146,6 +146,7 @@
         <javalin.version>4.6.8</javalin.version>
         <kyuubi-hive-jdbc-shaded.version>1.10.2</kyuubi-hive-jdbc-shaded.version>
         <rocksdb.version>7.10.2</rocksdb.version>
+        <binary.notice.file>NOTICE-binary</binary.notice.file>
         <kryo.version>4.0.3</kryo.version>
         <trino.version>406</trino.version>
         <lucene.version>8.11.2</lucene.version>
@@ -172,7 +173,6 @@
         <apache-directory-server.version>2.0.0-M15</apache-directory-server.version>
         <apache-directory-api-all.version>1.0.0-M20</apache-directory-api-all.version>
         <rocksdb-dependency-scope>compile</rocksdb-dependency-scope>
-        <lucene-dependency-scope>compile</lucene-dependency-scope>
         <aliyun-sdk-dependency-scope>provided</aliyun-sdk-dependency-scope>
 
         <jvm.module.opens>--add-opens=java.base/java.lang=ALL-UNNAMED
@@ -1271,7 +1271,6 @@
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
                 <version>${lucene.version}</version>
-                <scope>${lucene-dependency-scope}</scope>
             </dependency>
 
             <dependency>
@@ -1569,6 +1568,25 @@
                 <plugin>
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>${maven-antrun-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <!-- Opted into by distribution producers, after Shade/Assembly. -->
+                            <id>repair-distribution-resources</id>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <phase>none</phase>
+                            <configuration>
+                                <target>
+                                    <exec executable="${java.home}/bin/java" failonerror="true">
+                                        <arg value="${maven.multiModuleProjectDirectory}/tools/releasing/RepairDistributionResources.java"></arg>
+                                        <arg value="${maven.multiModuleProjectDirectory}"></arg>
+                                        <arg value="${project.build.directory}"></arg>
+                                    </exec>
+                                </target>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
@@ -1662,6 +1680,9 @@
                             <exclude>tools/maven/scalafmt.conf</exclude>
                             <exclude>**/licenses/**</exclude>
                             <exclude>**/licenses-binary/**</exclude>
+                            <!-- Unmodified upstream CDDL standard resources; reviewed and scanned separately. -->
+                            <exclude>tools/releasing/jsp-resources/*.xsd</exclude>
+                            <exclude>tools/releasing/jsp-resources/*.dtd</exclude>
                             <!-- Administrative files in the main trunk. -->
                             <exclude>**/README.md</exclude>
                             <exclude>**/CODE_OF_CONDUCT.md</exclude>
@@ -1680,7 +1701,6 @@
                             <exclude>docs/static/js/anchor.min.js</exclude>
                             <exclude>**/*.svg</exclude>
                             <exclude>**/dependency-reduced-pom.xml</exclude>
-                            <exclude>**/gen-antlr/**</exclude>
                             <exclude>**/node_modules/**</exclude>
                             <exclude>**/src/main/resources/static/**</exclude>
                             <exclude>**/amoro_krb_conf/**</exclude>
@@ -1937,12 +1957,51 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>${maven-antrun-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>include-javadoc-license-references</id>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <phase>package</phase>
+                                <configuration>
+                                    <target xmlns:if="ant:if">
+                                        <available file="${project.build.directory}/${project.build.finalName}-javadoc.jar" property="javadoc.jar.exists"></available>
+                                        <delete dir="${project.build.directory}/javadoc-license-input" quiet="true"></delete>
+                                        <unzip dest="${project.build.directory}/javadoc-license-input" if:set="javadoc.jar.exists" src="${project.build.directory}/${project.build.finalName}-javadoc.jar">
+                                            <patternset>
+                                                <include name="legal/**"></include>
+                                            </patternset>
+                                        </unzip>
+                                        <available file="${project.build.directory}/javadoc-license-input/legal/LICENSE" property="javadoc.legal.exists"></available>
+                                        <concat destfile="${project.build.directory}/javadoc-license-patch/META-INF/LICENSE" overwrite="true" if:set="javadoc.legal.exists">
+                                            <filelist dir="${project.build.directory}/maven-shared-archive-resources" files="META-INF/LICENSE"></filelist>
+                                            <filelist dir="${maven.multiModuleProjectDirectory}/licenses/maven" files="LICENSE-javadoc-addendum"></filelist>
+                                        </concat>
+                                        <!-- ZIP timestamps have two-second granularity. Always rebuild
+                                             the archive so a freshly generated LICENSE is not skipped. -->
+                                        <delete file="${project.build.directory}/javadoc-licensed.jar" quiet="true"></delete>
+                                        <zip destfile="${project.build.directory}/javadoc-licensed.jar" duplicate="fail" if:set="javadoc.legal.exists">
+                                            <zipfileset excludes="META-INF/LICENSE" src="${project.build.directory}/${project.build.finalName}-javadoc.jar"></zipfileset>
+                                            <zipfileset dir="${project.build.directory}/javadoc-license-patch"></zipfileset>
+                                        </zip>
+                                        <move file="${project.build.directory}/javadoc-licensed.jar" overwrite="true" if:set="javadoc.legal.exists" tofile="${project.build.directory}/${project.build.finalName}-javadoc.jar"></move>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
         <profile>
             <id>hadoop2</id>
             <properties>
+                <binary.notice.file>NOTICE-binary-hadoop2</binary.notice.file>
                 <guava.version>14.0.1</guava.version>
                 <!-- Do not use Hive 2.3.9 for Hive 4 Metastore support due to incompatible API changes. -->
                 <hive.version>2.3.8</hive.version>
@@ -1957,7 +2016,6 @@
             <id>no-extended-disk-storage</id>
             <properties>
                 <rocksdb-dependency-scope>provided</rocksdb-dependency-scope>
-                <lucene-dependency-scope>provided</lucene-dependency-scope>
             </properties>
         </profile>
         <profile>

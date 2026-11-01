@@ -1,0 +1,82 @@
+javolution:javolution:5.5.1
+Selected license: original BSD-style Javolution permission notice
+Original artifact: https://repo.maven.apache.org/maven2/javolution/javolution/5.5.1/
+
+javolution-5.5.1.jar
+--------------------
+Source: https://repo.maven.apache.org/maven2/javolution/javolution/5.5.1/javolution-5.5.1-sources.jar
+Source entry: _templates/java/io/CharConversionException.java
+
+Javolution - Java(TM) Solution for Real-Time and Embedded Systems
+Copyright (C) 2005 - Javolution (http://javolution.org/)
+All rights reserved.
+
+Permission to use, copy, modify, and distribute this software is
+freely granted, provided that this notice is preserved.
+
+
+
+javolution-5.5.1.jar
+--------------------
+Source: https://repo.maven.apache.org/maven2/javolution/javolution/5.5.1/javolution-5.5.1-sources.jar
+Source entry: _templates/java/nio/CharBuffer.java
+
+Javolution - Java(TM) Solution for Real-Time and Embedded Systems
+Copyright (C) 2006 - Javolution (http://javolution.org/)
+All rights reserved.
+
+Permission to use, copy, modify, and distribute this software is
+freely granted, provided that this notice is preserved.
+
+
+
+javolution-5.5.1.jar
+--------------------
+Source: https://repo.maven.apache.org/maven2/javolution/javolution/5.5.1/javolution-5.5.1-sources.jar
+Source entry: _templates/javolution/context/AllocatorContext.java
+
+Javolution - Java(TM) Solution for Real-Time and Embedded Systems
+Copyright (C) 2007 - Javolution (http://javolution.org/)
+All rights reserved.
+
+Permission to use, copy, modify, and distribute this software is
+freely granted, provided that this notice is preserved.
+
+
+
+javolution-5.5.1.jar
+--------------------
+Source: https://repo.maven.apache.org/maven2/javolution/javolution/5.5.1/javolution-5.5.1-sources.jar
+Source entry: _templates/javolution/context/PoolContext.java
+
+Javolution - Java(TM) Solution for Real-Time and Embedded Systems
+Copyright (C) 2009 - Javolution (http://javolution.org/)
+All rights reserved.
+
+Permission to use, copy, modify, and distribute this software is
+freely granted, provided that this notice is preserved.
+
+
+
+javolution-5.5.1.jar
+--------------------
+Source: https://repo.maven.apache.org/maven2/javolution/javolution/5.5.1/javolution-5.5.1-sources.jar
+Source entry: _templates/javolution/util/FastBitSet.java
+
+Javolution - Java(TM) Solution for Real-Time and Embedded Systems
+Copyright (C) 2008 - Javolution (http://javolution.org/)
+All rights reserved.
+
+Permission to use, copy, modify, and distribute this software is
+freely granted, provided that this notice is preserved.
+
+
+Source entry: javolution/context/Context.java
+/*
+ * Javolution - Java(TM) Solution for Real-Time and Embedded Systems
+ * Copyright (C) 2007 - Javolution (http://javolution.org/)
+ * All rights reserved.
+ * 
+ * Permission to use, copy, modify, and distribute this software is
+ * freely granted, provided that this notice is preserved.
+ */

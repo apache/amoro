@@ -183,3 +183,10 @@ Made with [contrib.rocks](https://contrib.rocks).
 ## Star History
 
 [![Star History Chart](https://star-history.dera.page/svg?repos=apache/amoro&type=Date)](https://star-history.dera.page/#apache/amoro&Date)
+
+## Third-party standard resources
+
+Distribution packaging uses five unmodified GlassFish JSP schema/DTD resources under the selected
+CDDL-1.1 license. Their original headers are retained. See
+[resource provenance and checksums](tools/releasing/jsp-resources/README) and the
+[complete selected license](licenses-binary/LICENSE.CDDL-1.1).

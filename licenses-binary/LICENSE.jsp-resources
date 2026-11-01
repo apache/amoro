@@ -1,7 +1,7 @@
 JSP API 2.1 schema and DTD resources
 ===================================
 
-The standard JSP resources below are bundled without changes in
+Amoro replaces the earlier resources with the unmodified GlassFish versions below in
 lib/jsp-api-2.1.jar (javax/servlet/jsp/resources/) in Hadoop 2 and in
 lib/hadoop-client-runtime-3.4.3.jar
 (org/apache/hadoop/shaded/javax/servlet/jsp/resources/) in Hadoop 3.
@@ -9,9 +9,10 @@ lib/hadoop-client-runtime-3.4.3.jar
 Sun subsequently published these resources in GlassFish under the
 CDDL/GPL choice reproduced below. Amoro selects CDDL-1.1 for these
 resources; the complete terms are in LICENSE.CDDL-1.1 in this directory.
-The original headers in the dependency JARs are retained.
+The complete GlassFish license headers are retained in each replacement file.
+The dependency copies are modified only during packaging, outside the Maven cache.
 
-The original source form is included in the JARs at the paths above.
+The selected upstream source form is included in the JARs at the paths above.
 The following upstream files provide the CDDL notices for the same
 JSP schema/DTD definitions. The earlier resources differ in licensing
 comments, formatting, version annotations and an unused namespace.

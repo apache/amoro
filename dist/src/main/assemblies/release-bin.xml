@@ -46,7 +46,7 @@
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>../NOTICE-binary</source>
+            <source>../${binary.notice.file}</source>
             <outputDirectory/>
             <destName>NOTICE</destName>
             <fileMode>0644</fileMode>
@@ -66,6 +66,9 @@
         <fileSet>
             <directory>../licenses-binary</directory>
             <outputDirectory>licenses</outputDirectory>
+            <excludes>
+                <exclude>LICENSE.rocksdb-native</exclude>
+            </excludes>
             <fileMode>0644</fileMode>
         </fileSet>
         <fileSet>

@@ -1,0 +1,346 @@
+Apache Amoro (incubating)
+Copyright 2024-2026 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+Notices for components included in this distribution
+===================================================
+
+org.apache.amoro:amoro-shade-guava-32:32.1.1-jre-0.7.0-incubating
+-----------------------------------------------------------------
+// ------------------------------------------------------------------
+// NOTICE file corresponding to the section 4d of The Apache License,
+// Version 2.0, in this case for Apache Amoro-shade
+// ------------------------------------------------------------------
+
+Apache Amoro-shade
+Copyright 2006-2024 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+amoro-shade-guava-32
+Copyright 2024 The Apache Software Foundation
+
+This project bundles the following dependencies under the Apache Software License 2.0 (http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+- com.google.guava:guava:32.1.1-jre
+- com.google.guava:failureaccess:1.0.1
+
+org.apache.amoro:amoro-shade-jackson-2:2.14.2-0.7.0-incubating
+--------------------------------------------------------------
+// ------------------------------------------------------------------
+// NOTICE file corresponding to the section 4d of The Apache License,
+// Version 2.0, in this case for Apache Amoro-shade
+// ------------------------------------------------------------------
+
+Apache Amoro-shade
+Copyright 2006-2024 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+amoro-shade-jackson-2
+Copyright 2024 The Apache Software Foundation
+
+This project includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+This project bundles the following dependencies under the Apache Software License 2.0 (http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+- com.fasterxml.jackson.core:jackson-annotations:2.14.2
+- com.fasterxml.jackson.core:jackson-core:2.14.2
+- com.fasterxml.jackson.core:jackson-databind:2.14.2
+- com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.14.2
+- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2
+- com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.14.2
+- com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2
+- org.yaml:snakeyaml:1.33
+
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers.
+
+## Licensing
+
+Jackson 2.x core and extension components are licensed under Apache License 2.0
+To find the details that apply to this artifact see the accompanying LICENSE file.
+
+## Credits
+
+A list of contributors may be found from CREDITS(-2.x) file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers, as well as supported
+commercially by FasterXML.com.
+
+Jackson core and extension components may be licensed under different licenses.
+To find the details that apply to this artifact see the accompanying LICENSE file.
+For more information, including possible other licensing options, contact
+FasterXML.com (http://fasterxml.com).
+
+A list of contributors may be found from CREDITS file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+org.apache.amoro:amoro-shade-thrift:0.20.0-0.7.0-incubating
+-----------------------------------------------------------
+# Notices for Jakarta Annotations
+
+This content is produced and maintained by the Jakarta Annotations project.
+
+ * Project home: https://projects.eclipse.org/projects/ee4j.ca
+
+## Trademarks
+
+Jakarta Annotations is a trademark of the Eclipse Foundation.
+
+## Declared Project Licenses
+
+This program and the accompanying materials are made available under the terms
+of the Eclipse Public License v. 2.0 which is available at
+http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
+available under the following Secondary Licenses when the conditions for such
+availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
+General Public License, version 2 with the GNU Classpath Exception which is
+available at https://www.gnu.org/software/classpath/license.html.
+
+SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+
+## Source Code
+
+The project maintains the following source code repositories:
+
+ * https://github.com/eclipse-ee4j/common-annotations-api
+
+## Third-party Content
+
+## Cryptography
+
+Content may contain encryption software. The country in which you are currently
+may have restrictions on the import, possession, and use, and/or re-export to
+another country, of encryption software. BEFORE using any encryption software,
+please check the country's laws, regulations and policies concerning the import,
+possession, or use, and re-export of encryption software, to see if this is
+permitted.
+
+org.apache.amoro:amoro-shade-thrift:0.20.0-0.7.0-incubating
+-----------------------------------------------------------
+// ------------------------------------------------------------------
+// NOTICE file corresponding to the section 4d of The Apache License,
+// Version 2.0, in this case for Apache Amoro-shade
+// ------------------------------------------------------------------
+
+Apache Amoro-shade
+Copyright 2006-2024 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+amoro-shade-thrift
+Copyright (C) 2006 - 2019, The Apache Software Foundation
+
+This project bundles the following dependencies under the Apache Software License 2.0 (http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+- org.apache.httpcomponents.client5:httpclient5:5.2.1
+- org.apache.httpcomponents.core5:httpcore5:5.2
+- org.apache.commons:commons-lang3:3.12.0
+
+This project bundles the following dependencies under Eclipse Public License v. 2.0 (http://www.eclipse.org/legal/epl-2.0)
+- jakarta.servlet:jakarta.servlet-api:5.0.0
+- jakarta.annotation:jakarta.annotation-api:2.1.1
+
+Apache Thrift
+Copyright (C) 2006 - 2019, The Apache Software Foundation
+
+
+Apache HttpClient
+Copyright 1999-2021 The Apache Software Foundation
+
+Apache HttpComponents Core HTTP/2
+Copyright 2005-2021 The Apache Software Foundation
+
+Apache HttpComponents Core HTTP/1.1
+Copyright 2005-2021 The Apache Software Foundation
+
+Apache Commons Lang
+Copyright 2001-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+org.apache.amoro:amoro-shade-zookeeper-3:3.9.1-0.7.0-incubating
+---------------------------------------------------------------
+// ------------------------------------------------------------------
+// NOTICE file corresponding to the section 4d of The Apache License,
+// Version 2.0, in this case for Apache Amoro-shade
+// ------------------------------------------------------------------
+
+Apache Amoro-shade
+Copyright 2006-2024 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+amoro-shade-zookeeper-3
+Copyright 2014-2023 The Apache Software Foundation
+
+This project bundles the following dependencies under the Apache Software License 2.0 (http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+- com.google.guava:guava:32.0.0-jre
+- commons-io:commons-io:2.11.0
+- io.dropwizard.metrics:metrics-core:4.1.12.1
+- io.netty:netty-buffer:4.1.94.Final
+- io.netty:netty-codec:4.1.94.Final
+- io.netty:netty-common:4.1.94.Final
+- io.netty:netty-handler:4.1.94.Final
+- io.netty:netty-resolver:4.1.94.Final
+- io.netty:netty-transport-classes-epoll:4.1.94.Final
+- io.netty:netty-transport-native-epoll:4.1.94.Final
+- io.netty:netty-transport-native-unix-common:4.1.94.Final
+- io.netty:netty-transport:4.1.94.Final
+- org.apache.curator:curator-client:5.6.0
+- org.apache.curator:curator-framework:5.6.0
+- org.apache.curator:curator-recipes:5.6.0
+- org.apache.zookeeper:zookeeper-jute:3.9.1
+- org.apache.zookeeper:zookeeper:3.9.1
+
+                          The Netty Project
+                            =================
+
+Please visit the Netty web site for more information:
+
+  * http://netty.io/
+
+Copyright 2016 The Netty Project
+
+The Netty Project licenses this file to you under the Apache License,
+version 2.0 (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at:
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations
+under the License.
+
+-------------------------------------------------------------------------------
+This product contains a forked and modified version of Tomcat Native
+
+  * LICENSE:
+    * license/LICENSE.tomcat-native.txt (Apache License 2.0)
+  * HOMEPAGE:
+    * http://tomcat.apache.org/native-doc/
+    * https://svn.apache.org/repos/asf/tomcat/native/
+
+Apache Commons IO
+Copyright 2002-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+Curator Recipes
+Copyright 2011-2023 The Apache Software Foundation
+
+Curator Framework
+Copyright 2011-2023 The Apache Software Foundation
+
+Curator Client
+Copyright 2011-2023 The Apache Software Foundation
+
+org.apache.commons:commons-lang3:3.20.0
+---------------------------------------
+Apache Commons Lang
+Copyright 2001-2025 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+org.apache.commons:commons-pool2:2.12.0
+---------------------------------------
+Apache Commons Pool
+Copyright 2001-2023 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+org.apache.iceberg:iceberg-aliyun:1.8.1
+---------------------------------------
+Apache Iceberg
+Copyright 2017-2025 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+--------------------------------------------------------------------------------
+
+This project includes code from Kite, developed at Cloudera, Inc. with
+the following copyright notice:
+
+| Copyright 2013 Cloudera Inc.
+|
+| Licensed under the Apache License, Version 2.0 (the "License");
+| you may not use this file except in compliance with the License.
+| You may obtain a copy of the License at
+|
+|   http://www.apache.org/licenses/LICENSE-2.0
+|
+| Unless required by applicable law or agreed to in writing, software
+| distributed under the License is distributed on an "AS IS" BASIS,
+| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+| See the License for the specific language governing permissions and
+| limitations under the License.
+
+org.apache.iceberg:iceberg-bundled-guava:1.8.1
+----------------------------------------------
+Apache Iceberg
+Copyright 2017-2025 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.parquet:parquet-avro:1.15.2
+--------------------------------------
+Apache Parquet Avro
+Copyright 2014-2024 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+--------------------------------------------------------------------------------
+
+This product includes code from Apache Avro, which includes the following in
+its NOTICE file:
+
+  Apache Avro
+  Copyright 2010-2015 The Apache Software Foundation
+
+  This product includes software developed at
+  The Apache Software Foundation (http://www.apache.org/).
+
+org.apache.thrift:libthrift:0.9.3
+---------------------------------
+Apache Thrift
+Copyright 2006-2010 The Apache Software Foundation.
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+Portions of the spill-map memory estimator are adapted from
+Apache Lucene 8.11.2 RamUsageEstimator and Constants.
+Apache Lucene
+Copyright 2001-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).

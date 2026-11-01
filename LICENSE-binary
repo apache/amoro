@@ -370,12 +370,11 @@ software.amazon.awssdk:url-connection-client
 software.amazon.awssdk:utils
 org.yaml:snakeyaml
 org.snakeyaml:snakeyaml-engine
-org.xerial.snappy:snappy-java
+org.xerial.snappy:snappy-java (JNI binding only; native components below)
 org.wildfly.openssl:wildfly-openssl
 org.wildfly.common:wildfly-common
 org.wildfly.client:wildfly-client-config
 org.scala-lang:scala-*
-org.rocksdb:rocksdbjni
 org.roaringbitmap:RoaringBitmap
 org.opentest4j:opentest4j
 org.objenesis:objenesis
@@ -458,6 +457,15 @@ apg-lite (transitive dependency)
 
 BSD 3-Clause License
 --------------------
+Snappy native compression library (BSD-3-Clause)
+  Carried by lib/snappy-java-1.1.8.4.jar (Hadoop 2) and
+  lib/snappy-java-1.1.10.5.jar (Hadoop 3), together with Bitshuffle (MIT)
+  and GCC runtime code with version-specific linking exceptions.
+  Producer build recipes target Snappy 1.1.8/1.1.10 and Bitshuffle
+  0.3.2/0.3.4, respectively; retained platform prebuilts can be older.
+  See licenses/LICENSE.snappy-java for the complete copyrights, license
+  texts, exception and upstream notifications. See README-LICENSES for sources.
+
 com.esotericsoftware:kryo
 com.esotericsoftware:kryo-shaded
 com.esotericsoftware.kryo:kryo
@@ -465,6 +473,16 @@ com.google.protobuf:protobuf-java
 org.abego.treelayout:org.abego.treelayout.core
 org.fusesource.leveldbjni:leveldbjni-all
 org.threeten:threeten-extra
+
+dnsjava:dnsjava:3.6.1
+  Repackaged in lib/hadoop-client-runtime-3.4.3.jar (Hadoop 3).
+  See licenses/LICENSE.dnsjava for the original copyright notices and
+  complete BSD-3-Clause license text.
+
+xmlenc:xmlenc:0.52
+  Included as lib/xmlenc-0.52.jar in the Hadoop 2 distribution.
+  See licenses/LICENSE.xmlenc-0.52 for the original copyright notice and
+  complete BSD-3-Clause license text.
 
 org.jline:jline:3.9.0 (including its jline-* modules)
   Repackaged in lib/hadoop-client-runtime-3.4.3.jar (Hadoop 3).
@@ -692,7 +710,7 @@ javax.annotation:javax.annotation-api
 javax.servlet:javax.servlet-api
   See META-INF/LICENSE.txt inside lib/javax.servlet-api-3.1.0.jar.
 javax.transaction:jta
-  See META-INF/LICENSE.txt inside lib/jta-1.1.jar (Hadoop 2).
+  See META-INF/LICENSE.txt inside lib/jta-1.1.jar (Hadoop 2 and Hadoop 3).
 javax.servlet.jsp:jsp-api:2.1
   The JSP API classes are distributed under CDDL-1.0.
   In Hadoop 2 they are in lib/jsp-api-2.1.jar; in Hadoop 3 they are
@@ -711,10 +729,6 @@ javax.ws.rs:jsr311-api:1.1.1
 
 Common Development and Distribution License (CDDL) 1.1
 ------------------------------------------------------
-javax.xml.bind:jaxb-api
-  CDDL-1.1 is selected; see licenses/LICENSE.CDDL-1.1. The original
-  license notice is retained in META-INF/LICENSE.txt inside
-  lib/jaxb-api-2.2.2.jar (Hadoop 2).
 org.glassfish:javax.json
   See licenses/LICENSE.javax.json.
 com.sun.jersey:jersey-core:1.19.4
@@ -854,9 +868,51 @@ License texts retained inside dependency JARs:
   checker-qual-3.42.0.jar: META-INF/LICENSE.txt
   jboss-logging-3.3.1.Final.jar: META-INF/LICENSE.txt
   jboss-threads-2.3.6.Final.jar: META-INF/LICENSE.txt
-  stax2-api-4.2.1.jar: META-INF/LICENSE
   threeten-extra-1.7.1.jar: META-INF/LICENSE.txt
   icu4j-69.1.jar: LICENSE
 
 Janino and commons-compiler 3.0.16 / 3.1.9:
   See licenses/LICENSE.janino.
+
+
+Dashboard generated runtime helpers
+------------------------------------
+Rolldown 1.2.5 runtime helpers (MIT), Copyright (c) 2024-present VoidZero Inc.
+& Contributors, are included in lib/amoro-web-0.9.0-incubating.jar.
+See licenses/LICENSE-rolldown inside that JAR for the complete original terms.
+Its META-INF/LICENSE lists all bundled dashboard modules, versions and
+package-local license locations, including @ant-design/icons-svg 4.4.2 (MIT).
+
+Embedded dashboard dependency portions
+--------------------------------------
+ApiDOM's copied URL/visitor/deepmerge portions are MIT; see
+licenses/LICENSE-apidom-embedded inside lib/amoro-web-0.9.0-incubating.jar.
+The RFC 6901 grammar in @swaggerexpert/json-pointer is BSD-2-Clause; see
+licenses/LICENSE-ietf-json-pointer inside that JAR. Its META-INF/LICENSE
+also identifies the d3, fast-deep-equal and Monaco embedded portions.
+
+Stax2 API 4.2.1 (BSD-2-Clause)
+-----------------------------
+lib/stax2-api-4.2.1.jar retains its original grant and owner/year declaration
+in META-INF/LICENSE. That upstream file links to the BSD text rather than
+including it. See licenses/LICENSE.stax2-api-4.2.1 for the complete
+BSD-2-Clause terms and FasterXML.com copyright retained with this binary.
+
+JAXB API 2.2.2 (Hadoop 2)
+-------------------------
+javax.xml.bind:jaxb-api:2.2.2 selects CDDL-1.0, as granted in
+META-INF/LICENSE.txt inside lib/jaxb-api-2.2.2.jar. Full terms are
+also in licenses/LICENSE.CDDL-1.0.
+
+The Servlet 5.0.0 runtime schemas in the shaded Thrift JAR select EPL-2.0.
+Their original headers remain at
+org/apache/amoro/shade/thrift/jakarta/servlet/resources/. See
+licenses/LICENSE.EPL-2.0 and README-LICENSES for source locations.
+
+Javolution 5.5.1 uses an original BSD-style permission notice requiring
+retention of copyright and permission notices. Full original notices are
+in licenses/LICENSE.java-dependencies. Project: https://javolution.org/.
+
+The spill-map memory estimator adapts Apache-2.0 portions of Apache Lucene
+8.11.2 RamUsageEstimator and Constants; see NOTICE. The Lucene library is
+used only by tests and is not included in this binary distribution.

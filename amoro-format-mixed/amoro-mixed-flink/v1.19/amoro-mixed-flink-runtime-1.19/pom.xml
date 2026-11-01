@@ -82,15 +82,42 @@
                         <configuration>
                             <filters>
                                 <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/NOTICE</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
                                     <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
                                     <excludes>
                                         <exclude>META-INF/versions/**</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
-                            <transformers combine.children="append">
+                            <transformers combine.self="override">
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"></transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>META-INF/NOTICE</resource>
+                                    <file>${project.basedir}/../../../../licenses/maven/NOTICE-${project.artifactId}</file>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>META-INF/licenses/LICENSE.EPL-2.0</resource>
+                                    <file>${project.basedir}/../../../../licenses-binary/LICENSE.EPL-2.0</file>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>META-INF/licenses/LICENSE.MPL-2.0</resource>
+                                    <file>${project.basedir}/../../../../licenses-binary/LICENSE.MPL-2.0</file>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>META-INF/README-LICENSES</resource>
+                                    <file>${project.basedir}/../../../../licenses/maven/README-runtime</file>
+                                </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>META-INF/LICENSE</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>META-INF/LICENSE.zstd-jni-1.5.6-6</resource>
+                                    <file>${project.basedir}/../../../../licenses/maven/LICENSE.zstd-jni-1.5.6-6</file>
                                 </transformer>
                             </transformers>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
@@ -235,6 +262,33 @@
                                 </relocation>
                             </relocations>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>include-bundled-license-references</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <target>
+                                <concat destfile="${project.build.outputDirectory}/META-INF/LICENSE" overwrite="true">
+                                    <filelist dir="${project.build.directory}/maven-shared-archive-resources" files="META-INF/LICENSE"></filelist>
+                                    <filelist dir="${project.basedir}/../../../../licenses/maven" files="LICENSE-flink-runtime-addendum"></filelist>
+                                    <filelist dir="${project.basedir}/../../../../licenses/maven" files="LICENSE-runtime-native-addendum"></filelist>
+                                    <filelist dir="${project.basedir}/../../../../licenses/maven" files="LICENSE-runtime-resources-addendum"></filelist>
+                                </concat>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>repair-distribution-resources</id>
+                        <phase>package</phase>
                     </execution>
                 </executions>
             </plugin>

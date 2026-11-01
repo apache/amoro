@@ -277,3 +277,15 @@
    use or other dealings in these Data Files or Software without prior
    written authorization of the copyright holder.
 
+
+-----------------------------------------------------------------------
+JSP standard resources used by distribution packaging
+-----------------------------------------------------------------------
+The five .xsd/.dtd files in tools/releasing/jsp-resources/ are unmodified
+GlassFish standard resources from commit
+371c9e1beb285a30bd4203ec86fde5729dbd06f9. Amoro selects CDDL-1.1 from their
+CDDL/GPL license choice. Original copyright and license headers are retained.
+See licenses-binary/LICENSE.CDDL-1.1 for the complete selected terms and
+tools/releasing/jsp-resources/README for upstream locations and checksums.
+These standard resources are consumed at runtime after packaging; they are
+included under the ASF small unmodified standard-resource exception.
