@@ -23,20 +23,22 @@ import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.apache.amoro.openapi.api.HealthApi;
 import org.apache.amoro.openapi.invoker.ApiClient;
 import org.apache.amoro.openapi.model.Response;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class OpenAPITest {
   private WireMockServer wireMockServer;
   private String basePath;
 
-  @Before
+  @BeforeEach
   public void setup() {
     wireMockServer = new WireMockServer(0);
     wireMockServer.start();
@@ -45,14 +47,13 @@ public class OpenAPITest {
     basePath = "http://localhost:" + port;
   }
 
-  @After
+  @AfterEach
   public void teardown() {
     wireMockServer.stop();
   }
 
   @Test
   public void testSdkCall() throws Exception {
-    String json = "{\"message\":\"string\",\"code\":0,\"result\":{}}";
     stubFor(
         get(urlEqualTo("/api/ams/v1/health/status"))
             .willReturn(
@@ -63,9 +64,9 @@ public class OpenAPITest {
     ApiClient apiClient = new ApiClient().setBasePath(basePath);
     HealthApi api = new HealthApi(apiClient);
     Response healthResponse = api.apiAmsV1HealthStatusGet();
-    assert healthResponse.getCode() == 0;
-    assert healthResponse.getMessage().equals("");
-    assert healthResponse.getResult() instanceof java.util.Map;
-    assert ((java.util.Map<?, ?>) healthResponse.getResult()).isEmpty();
+    assertEquals(0, healthResponse.getCode());
+    assertEquals("", healthResponse.getMessage());
+    assertTrue(healthResponse.getResult() instanceof java.util.Map);
+    assertTrue(((java.util.Map<?, ?>) healthResponse.getResult()).isEmpty());
   }
 }
