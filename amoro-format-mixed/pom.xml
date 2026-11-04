@@ -38,4 +38,9 @@
         <module>amoro-mixed-trino</module>
     </modules>
 
+    <properties>
+        <!-- Shared with mixed-format connectors that support older engines. -->
+        <iceberg.version>${connector-iceberg.version}</iceberg.version>
+    </properties>
+
 </project>

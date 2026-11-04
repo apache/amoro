@@ -43,7 +43,7 @@ public abstract class RuntimeHandlerChain {
     Preconditions.checkNotNull(handler);
     Preconditions.checkArgument(
         !Objects.equals(handler, this),
-        "Cannot add the same runtime handler:{} twice",
+        "Cannot add the same runtime handler:%s twice",
         handler.getClass().getSimpleName());
     if (next == null) {
       next = handler;

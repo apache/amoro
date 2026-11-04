@@ -38,4 +38,26 @@
         <module>amoro-optimizer-standalone</module>
     </modules>
 
+    <properties>
+        <avro.version>1.12.1</avro.version>
+    </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>${avro.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-api</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-bundled-guava</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>

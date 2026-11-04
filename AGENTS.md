@@ -58,7 +58,7 @@ UPDATE=1 ./mvnw test -pl amoro-ams -am -Dtest=ConfigurationsTest
 pnpm install && pnpm dev:mock
 ```
 
-Key Maven profiles: `-Phadoop2` (Hadoop 2.x), `-Pspark-3.3`/`-Pspark-3.5`, `-Psupport-all-formats`, `-Pbuild-mixed-format-trino` (requires JDK 17).
+Key Maven profiles: `-Pspark-3.3`/`-Pspark-3.5`, `-Psupport-all-formats`, `-Pbuild-mixed-format-trino` (requires JDK 17).
 
 ## Conventions & Patterns
 

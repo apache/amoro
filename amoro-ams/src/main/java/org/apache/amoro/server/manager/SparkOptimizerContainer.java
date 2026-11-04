@@ -277,7 +277,7 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
   private String buildReleaseYarnCommand(Resource resource) {
     Preconditions.checkArgument(
         resource.getProperties().containsKey(YARN_APPLICATION_ID_PROPERTY),
-        "Cannot find {} from optimizer start up stats",
+        "Cannot find %s from optimizer start up stats",
         YARN_APPLICATION_ID_PROPERTY);
     String applicationId = resource.getProperties().get(YARN_APPLICATION_ID_PROPERTY);
     return String.format(
@@ -288,7 +288,7 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
     Map<String, String> sparkConfig = loadSparkConfig();
     Preconditions.checkArgument(
         resource.getProperties().containsKey(KUBERNETES_SUBMISSION_ID_PROPERTY),
-        "Cannot find {} from optimizer start up stats.",
+        "Cannot find %s from optimizer start up stats.",
         KUBERNETES_SUBMISSION_ID_PROPERTY);
     SparkOptimizerContainer.SparkConf resourceSparkConf =
         SparkOptimizerContainer.SparkConf.buildFor(sparkConfig, getContainerProperties())
