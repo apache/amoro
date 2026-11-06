@@ -197,6 +197,21 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-bom</artifactId>
+                <version>${iceberg.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Newer Iceberg BOMs omit this binding, but Maven reads unselected Flink modules before applying -pl. -->
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-flink-1.18</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.apache.arrow</groupId>
                 <artifactId>arrow-bom</artifactId>
                 <version>${arrow.version}</version>
@@ -298,66 +313,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-core</artifactId>
-                <version>${iceberg.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-data</artifactId>
-                <version>${iceberg.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-orc</artifactId>
-                <version>${iceberg.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-common</artifactId>
-                <version>${iceberg.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-parquet</artifactId>
-                <version>${iceberg.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-flink</artifactId>
-                <version>${iceberg.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-hive-metastore</artifactId>
-                <version>${iceberg.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-aws</artifactId>
-                <version>${iceberg.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-aliyun</artifactId>
-                <version>${iceberg.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-arrow</artifactId>
-                <version>${iceberg.version}</version>
             </dependency>
 
             <dependency>
