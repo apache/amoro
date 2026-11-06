@@ -74,21 +74,20 @@ Common properties include:
 - table-filter: Configure a regular expression to filter tables in the catalog. The matching will be done in the format of `database.table`. For example, if it is set to `(A\.a)|(B\.b)`, it will ignore all tables except for table `a` in database `A` and table `b` in database `B`
 
 ### Configure table properties
-If you want to add the same table properties to all tables under a catalog, you can add these table properties here on the catalog level. If you also configure this property on the table level, the property on the table will take effect.
+In the web UI for creating a catalog, there are two properties fields that serve different purposes:
+- **Properties** adds catalog-level properties.
+- **Table Properties** adds catalog-level table properties.
 
-{{< hint info >}}
-When configuring table-level properties on a catalog, you **must prefix the key with `table.`**. The prefix will be automatically stripped when the property is applied to tables. For example, to set the default `self-optimizing.group` for all tables under the catalog, you need to configure `table.self-optimizing.group` instead of `self-optimizing.group`. Properties without the `table.` prefix will not be recognized as table-level defaults and will be treated as catalog-level properties only.
+![catalog_table_properties](../images/admin/catalog-table-properties.png)
+
+To apply the same table property to every table under a catalog, add it through the **Table Properties** field.
+
+#### Adding table-level properties through the Properties field
+{{< hint warning >}}
+If you add table-level properties through the **Properties** field instead, you must prefix the key with `table.`. For example, to set the default `self-optimizing.group` for all tables under a catalog, you need to configure `table.self-optimizing.group` instead of `self-optimizing.group`. Keys without the `table.` prefix are not recognized as table-level defaults and are treated as catalog-level properties only.
 {{< /hint >}}
 
-The following table lists some examples. For the full list of available table properties, see [Table configurations](../user-guides/configurations.md).
-
-| Catalog property key                        | Effective table property key              | Description                                              |
-|---------------------------------------------|-------------------------------------------|----------------------------------------------------------|
-| `table.self-optimizing.enabled`             | `self-optimizing.enabled`                 | Enable/disable self-optimizing for all tables            |
-| `table.self-optimizing.group`               | `self-optimizing.group`                   | Set the default optimizer group for all tables           |
-| `table.table-expire.enabled`                | `table-expire.enabled`                    | Enable/disable table expiration for all tables           |
-| `table.clean-orphan-file.enabled`           | `clean-orphan-file.enabled`               | Enable/disable orphan file cleaning for all tables       |
-| `table.log-store.enabled`                   | `log-store.enabled`                       | Enable/disable LogStore for all tables                   |
+For the full list of available table properties, see [Table configurations](../configurations/).
 
 ## REST Catalog
 When a user needs to create a Iceberg REST Catalog, they can choose **External Catalog Type**、**Custom Metastore Type**、**Iceberg Table Format**, configure properties include:
