@@ -41,6 +41,7 @@ import org.apache.amoro.exception.ObjectNotExistsException;
 import org.apache.amoro.exception.PluginRetryAuthException;
 import org.apache.amoro.exception.TaskRuntimeException;
 import org.apache.amoro.io.MixedDataTestHelpers;
+import org.apache.amoro.metrics.Counter;
 import org.apache.amoro.metrics.Gauge;
 import org.apache.amoro.metrics.MetricKey;
 import org.apache.amoro.metrics.MetricRegistry;
@@ -63,9 +64,11 @@ import org.apache.amoro.server.scheduler.inline.TableRuntimeRefreshExecutor;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.DefaultTableRuntime;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
+import org.apache.amoro.server.table.TableOptimizingMetrics;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.SerializationUtil;
 import org.apache.ibatis.session.SqlSession;
@@ -911,6 +914,182 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
 
     // Verify that completeEmptyProcess was called on the spy
     verify(spyRuntime).completeEmptyProcess();
+  }
+
+  /**
+   * Regression test for AMORO-4431: disabling self-optimizing while a process is RUNNING must
+   * persist the process as CLOSED and must NOT count it as a failure.
+   */
+  @Test
+  public void testDisableSelfOptimizingClosesRunningProcessWithoutFailure() {
+    long tableId = serverTableIdentifier().getId();
+    DefaultTableRuntime runtime = getDefaultTableRuntime(tableId);
+
+    // 1. Start a process by polling a task.
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+    optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
+    long processId = runtime.getProcessId();
+    Assertions.assertTrue(processId > 0);
+    Assertions.assertEquals(ProcessStatus.RUNNING, getProcessMeta(processId).getStatus());
+
+    long failedBefore = processFailedCount();
+
+    // 2. Disable self-optimizing on the table and refresh.
+    disableSelfOptimizing(runtime);
+    try {
+      TableRuntimeRefreshExecutor executor =
+          new TableRuntimeRefreshExecutor(tableService(), 1, 60000L, 1);
+      try {
+        executor.execute(runtime);
+      } finally {
+        executor.gracefulShutdown();
+      }
+
+      // 3. The process must be CLOSED, the table IDLE, and no failure recorded.
+      Assertions.assertEquals(ProcessStatus.CLOSED, getProcessMeta(processId).getStatus());
+      Assertions.assertNull(runtime.getOptimizingProcess());
+      Assertions.assertEquals(OptimizingStatus.IDLE, runtime.getOptimizingStatus());
+      Assertions.assertEquals(
+          failedBefore,
+          processFailedCount(),
+          "Closing a process because optimizing was disabled must not increment the failure counter");
+    } finally {
+      restoreSelfOptimizing();
+    }
+  }
+
+  /**
+   * Regression test for AMORO-4431: when the in-memory process is already gone, disabling
+   * self-optimizing must still close the tracked {@code table_process} row instead of leaving it
+   * RUNNING forever.
+   */
+  @Test
+  public void testDisableSelfOptimizingClosesOrphanRowWhenInMemoryProcessGone() {
+    long tableId = serverTableIdentifier().getId();
+    DefaultTableRuntime runtime = getDefaultTableRuntime(tableId);
+
+    // 1. Start a process and then drop the in-memory reference, but keep the DB row RUNNING.
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+    optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
+    long processId = runtime.getProcessId();
+    Assertions.assertEquals(ProcessStatus.RUNNING, getProcessMeta(processId).getStatus());
+
+    reloadInMemoryProcessOnly(tableId);
+    DefaultTableRuntime reloaded = getDefaultTableRuntime(tableId);
+    Assertions.assertNull(
+        reloaded.getOptimizingProcess(),
+        "precondition: in-memory process must be gone while the DB row stays RUNNING");
+    Assertions.assertEquals(ProcessStatus.RUNNING, getProcessMeta(processId).getStatus());
+
+    long failedBefore = processFailedCount();
+
+    // 2. Disable self-optimizing and refresh; the orphan row must be closed.
+    disableSelfOptimizing(reloaded);
+    try {
+      TableRuntimeRefreshExecutor executor =
+          new TableRuntimeRefreshExecutor(tableService(), 1, 60000L, 1);
+      try {
+        executor.execute(reloaded);
+      } finally {
+        executor.gracefulShutdown();
+      }
+
+      Assertions.assertEquals(
+          ProcessStatus.CLOSED,
+          getProcessMeta(processId).getStatus(),
+          "Orphan RUNNING process must be closed when optimizing is disabled");
+      Assertions.assertEquals(
+          failedBefore,
+          processFailedCount(),
+          "Closing an orphan process must not increment the failure counter");
+    } finally {
+      restoreSelfOptimizing();
+    }
+  }
+
+  /**
+   * Regression test for AMORO-4431: Cancel by process id must close the tracked row when the
+   * in-memory process is gone, and return true (so the HTTP API does not report success on a
+   * no-op).
+   */
+  @Test
+  public void testCancelProcessClosesOrphanRowWhenInMemoryProcessGone() {
+    long tableId = serverTableIdentifier().getId();
+    DefaultTableRuntime runtime = getDefaultTableRuntime(tableId);
+
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+    optimizingService().ackTask(token, THREAD_ID, task.getTaskId());
+    long processId = runtime.getProcessId();
+
+    reloadInMemoryProcessOnly(tableId);
+    Assertions.assertNull(getDefaultTableRuntime(tableId).getOptimizingProcess());
+
+    boolean canceled = optimizingService().cancelProcess(processId);
+
+    Assertions.assertTrue(canceled, "Cancel must succeed by closing the orphan row");
+    Assertions.assertEquals(ProcessStatus.CLOSED, getProcessMeta(processId).getStatus());
+  }
+
+  private long processFailedCount() {
+    Map<String, String> tags = Maps.newHashMap();
+    tags.put("catalog", serverTableIdentifier().getCatalog());
+    tags.put("database", serverTableIdentifier().getDatabase());
+    tags.put("table", serverTableIdentifier().getTableName());
+    tags.put("group", defaultResourceGroup().getName());
+    Counter counter =
+        (Counter)
+            MetricManager.getInstance()
+                .getGlobalRegistry()
+                .getMetrics()
+                .get(
+                    new MetricKey(
+                        TableOptimizingMetrics.TABLE_OPTIMIZING_PROCESS_FAILED_COUNT, tags));
+    return counter == null ? 0L : counter.getCount();
+  }
+
+  private TableProcessMeta getProcessMeta(long processId) {
+    try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession(true)) {
+      return session.getMapper(TableProcessMapper.class).getProcessMeta(processId);
+    }
+  }
+
+  private void disableSelfOptimizing(DefaultTableRuntime runtime) {
+    MixedTable mixedTable =
+        (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    mixedTable
+        .asUnkeyedTable()
+        .updateProperties()
+        .set(TableProperties.ENABLE_SELF_OPTIMIZING, "false")
+        .commit();
+    runtime.refresh(tableService().loadTable(serverTableIdentifier()));
+  }
+
+  /** Restore self-optimizing on the physical table so the disabled property does not leak. */
+  private void restoreSelfOptimizing() {
+    MixedTable mixedTable =
+        (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    mixedTable
+        .asUnkeyedTable()
+        .updateProperties()
+        .remove(TableProperties.ENABLE_SELF_OPTIMIZING)
+        .commit();
+  }
+
+  /**
+   * Drop only the in-memory optimizing process reference (simulate AMS restart / released process)
+   * while keeping the persisted table_process row untouched.
+   */
+  private void reloadInMemoryProcessOnly(long tableId) {
+    try {
+      Field field = DefaultTableRuntime.class.getDeclaredField("optimizingProcess");
+      field.setAccessible(true);
+      field.set(getDefaultTableRuntime(tableId), null);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException("Failed to reset in-memory optimizing process", e);
+    }
   }
 
   private OptimizerRegisterInfo buildRegisterInfo() {

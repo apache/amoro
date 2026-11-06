@@ -504,11 +504,14 @@ public class DefaultOptimizingService extends StatedPersistentBase
       return false;
     }
     OptimizingProcess process = tableRuntime.getOptimizingProcess();
-    if (process == null || process.getProcessId() != processId) {
-      return false;
+    if (process != null && process.getProcessId() == processId) {
+      process.close(true);
+      return true;
     }
-    process.close(true);
-    return true;
+    // The in-memory process is gone (AMS restarted or already released). Close the tracked
+    // table_process row by id so the Dashboard Cancel is not a silent no-op that leaves the row
+    // RUNNING.
+    return tableRuntime.closeProcessFromStore(processId);
   }
 
   @Override
