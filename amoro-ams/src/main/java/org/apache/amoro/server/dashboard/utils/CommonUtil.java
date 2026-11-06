@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.dashboard.utils;
 
+import org.apache.amoro.shade.guava32.com.google.common.net.HostAndPort;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,23 +37,21 @@ public class CommonUtil {
   public static boolean telnetOrPing(String addresses) {
     String[] split = addresses.split(",");
     for (String address : split) {
-      String[] info = address.split(":");
-      if (info.length < 2) {
-        String[] ip = info[0].split("/");
-        if (ping(ip[0])) {
+      String hostAndPort = address.split("/", 2)[0];
+      HostAndPort endpoint = HostAndPort.fromString(hostAndPort);
+      if (!endpoint.hasPort()) {
+        if (hostAndPort.endsWith(":")
+            && !hostAndPort.equals(endpoint.getHost())
+            && (address.contains("/") || hostAndPort.startsWith("["))) {
+          throw new IllegalArgumentException("port is empty");
+        }
+        if (ping(endpoint.getHost())) {
           return true;
         } else {
           continue;
         }
       }
-      String[] portSplit = info[1].split("/");
-      int port;
-      try {
-        port = Integer.parseInt(portSplit[0]);
-      } catch (NumberFormatException e) {
-        throw new IllegalArgumentException(portSplit[0] + " is not port");
-      }
-      if (telnet(info[0], port)) {
+      if (telnet(endpoint.getHost(), endpoint.getPort())) {
         return true;
       }
     }
