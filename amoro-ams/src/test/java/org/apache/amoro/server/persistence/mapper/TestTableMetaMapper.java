@@ -54,18 +54,16 @@ public class TestTableMetaMapper {
   public static void initialize() {
     Configurations configurations = new Configurations();
     configurations.set(
-        AmoroManagementConf.DB_CONNECTION_URL,
-        String.format("jdbc:derby:memory:%s;create=true", UUID.randomUUID()));
-    configurations.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_DERBY);
-    configurations.set(
-        AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.apache.derby.jdbc.EmbeddedDriver");
+        AmoroManagementConf.DB_CONNECTION_URL, String.format("jdbc:h2:mem:%s", UUID.randomUUID()));
+    configurations.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_H2);
+    configurations.set(AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.h2.Driver");
     dataSource = (BasicDataSource) DataSourceFactory.createDataSource(configurations);
 
     TransactionFactory transactionFactory = new JdbcTransactionFactory();
     Environment environment = new Environment("test", transactionFactory, dataSource);
     org.apache.ibatis.session.Configuration configuration =
         new org.apache.ibatis.session.Configuration(environment);
-    configuration.setDatabaseId("derby");
+    configuration.setDatabaseId("h2");
     configuration.addMapper(TableMetaMapper.class);
     sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
   }

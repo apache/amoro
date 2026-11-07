@@ -80,9 +80,9 @@ ams:
     expiration-interval: 60s
 
   database:
-    type: derby
-    jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
-    url: jdbc:derby:/tmp/amoro/derby;create=true
+    type: h2
+    jdbc-driver-class: org.h2.Driver
+    url: jdbc:h2:file:/tmp/amoro/h2/ams
     connection-pool-max-total: 20
     connection-pool-max-idle: 16
     connection-pool-max-wait-millis: 1000

@@ -474,13 +474,13 @@ public class AmoroManagementConf {
   public static final ConfigOption<String> DB_TYPE =
       ConfigOptions.key("database.type")
           .stringType()
-          .defaultValue("derby")
-          .withDescription("Database type.");
+          .defaultValue("h2")
+          .withDescription("Database type. Supported values: h2, mysql, postgres.");
 
   public static final ConfigOption<String> DB_CONNECTION_URL =
       ConfigOptions.key("database.url")
           .stringType()
-          .defaultValue("jdbc:derby:/tmp/amoro/derby;create=true")
+          .defaultValue("jdbc:h2:file:/tmp/amoro/h2/ams")
           .withDescription("Database connection address");
 
   public static final ConfigOption<Boolean> DB_AUTO_CREATE_TABLES =
@@ -492,7 +492,7 @@ public class AmoroManagementConf {
   public static final ConfigOption<String> DB_DRIVER_CLASS_NAME =
       ConfigOptions.key("database.jdbc-driver-class")
           .stringType()
-          .defaultValue("org.apache.derby.jdbc.EmbeddedDriver")
+          .defaultValue("org.h2.Driver")
           .withDescription("The JDBC driver class name for connecting to the database.");
 
   public static final ConfigOption<String> DB_USER_NAME =
@@ -634,7 +634,7 @@ public class AmoroManagementConf {
   public static final String CONTAINER_IMPL = "container-impl";
   public static final String CONTAINER_PROPERTIES = "properties";
 
-  public static final String DB_TYPE_DERBY = "derby";
+  public static final String DB_TYPE_H2 = "h2";
   public static final String DB_TYPE_MYSQL = "mysql";
   public static final String DB_TYPE_POSTGRES = "postgres";
 
