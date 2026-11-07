@@ -20,7 +20,7 @@ FROM apache/spark:${SPARK_VERSION}
 
 ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 ARG OPTIMIZER_JOB=optimizer-job.jar
-ARG AWS_VERSION=2.24.12
+ARG AWS_VERSION=2.29.52
 USER root
 
 RUN apt-get update \
