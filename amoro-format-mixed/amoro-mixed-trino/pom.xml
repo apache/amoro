@@ -240,7 +240,6 @@
         <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-api</artifactId>
-            <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.iceberg</groupId>
@@ -291,7 +290,6 @@
         <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-parquet</artifactId>
-            <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -325,7 +323,6 @@
         <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-common</artifactId>
-            <version>${iceberg.version}</version>
         </dependency>
 
         <dependency>
