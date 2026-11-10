@@ -16,7 +16,7 @@
   * limitations under the License.
   */
 
-import type { VueWrapper } from '@vue/test-utils'
+import type { DOMWrapper, VueWrapper } from '@vue/test-utils'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Selector from './Selector.vue'
@@ -84,7 +84,8 @@ const stubs = {
     template: '<div class="tabs-stub"><slot /></div>',
   },
   'a-tab-pane': {
-    template: '<div class="tab-pane-stub"><slot /></div>',
+    props: ['key', 'tab'],
+    template: '<div class="tab-pane-stub" :data-tab="tab"><slot /></div>',
   },
   'a-modal': {
     props: ['visible'],
@@ -118,7 +119,12 @@ function mountSelector() {
 }
 
 function tagNames(wrapper: VueWrapper) {
-  return wrapper.findAll('.tab-pane-stub .item-label').map(item => item.text())
+  return tagPane(wrapper).findAll('.item-label').map(item => item.text())
+}
+
+/** Returns the tags tab pane, distinguishing it from the branches/consumers panes. */
+function tagPane(wrapper: VueWrapper): DOMWrapper<Element> {
+  return wrapper.find('[data-tab="tags"]')
 }
 
 async function fillCreateTagForm(wrapper: VueWrapper, tagName: string, snapshotId: string) {
@@ -295,5 +301,46 @@ describe('selector tag management', () => {
 
     expect(messageMock.success).not.toHaveBeenCalled()
     expect(serviceMock.getTags).toHaveBeenCalledTimes(1)
+  })
+
+  it('falls back to the main branch when the selected tag is deleted', async () => {
+    const wrapper = mountSelector()
+    await flushPromises()
+
+    // Select the tag itself so the fallback branch is actually reachable.
+    await tagPane(wrapper).findAll('.branch-selector-item')[0].trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.branch-btn-label').text()).toBe('existing_tag')
+
+    await tagPane(wrapper).find('.tag-delete-btn').trigger('click')
+    const options = modalMock.confirm.mock.calls[0][0]
+    await options.onOk()
+    await flushPromises()
+
+    // The deleted tag must no longer be the active ref.
+    expect(wrapper.find('.branch-btn-label').text()).toBe('main')
+    const refChanges = wrapper.emitted('refChange') as unknown[][]
+    const lastRef = (refChanges[refChanges.length - 1][0] as { ref: string }).ref
+    expect(lastRef).toBe('main')
+  })
+
+  it('keeps the current selection when a different tag is deleted', async () => {
+    serviceMock.getTags.mockResolvedValue({
+      list: [{ name: 'selected_tag' }, { name: 'other_tag' }],
+    })
+    const wrapper = mountSelector()
+    await flushPromises()
+
+    // Select the first tag, then delete the second one.
+    await tagPane(wrapper).findAll('.branch-selector-item')[0].trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.branch-btn-label').text()).toBe('selected_tag')
+
+    await tagPane(wrapper).findAll('.tag-delete-btn')[1].trigger('click')
+    const options = modalMock.confirm.mock.calls[0][0]
+    await options.onOk()
+    await flushPromises()
+
+    expect(wrapper.find('.branch-btn-label').text()).toBe('selected_tag')
   })
 })
