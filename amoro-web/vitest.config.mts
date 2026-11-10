@@ -19,6 +19,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
+import { playwright } from '@vitest/browser-playwright'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -29,9 +30,18 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'happy-dom',
     include: ['src/**/*.test.ts'],
     globals: false,
     root: path.resolve(fileURLToPath(new URL('.', import.meta.url))),
+    // Run in a real Chromium so the tag flows can be exercised against real ant-design-vue
+    // DOM output, and so each test can capture a screenshot as review evidence. Screenshots
+    // are written next to the test file under __screenshots__/.
+    browser: {
+      enabled: true,
+      headless: true,
+      provider: playwright(),
+      instances: [{ browser: 'chromium' }],
+      screenshotFailures: false,
+    },
   },
 })

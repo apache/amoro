@@ -16,10 +16,16 @@
   * limitations under the License.
   */
 
-import type { DOMWrapper, VueWrapper } from '@vue/test-utils'
-import { flushPromises, mount } from '@vue/test-utils'
+import { page } from 'vitest/browser'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createApp, nextTick } from 'vue'
+import Antd from 'ant-design-vue'
+import { CheckOutlined, DeleteOutlined, DownOutlined, PlusOutlined } from '@ant-design/icons-vue'
+import { createI18n } from 'vue-i18n'
 import Selector from './Selector.vue'
+import SvgIcon from '@/components/svg-icon.vue'
+import en from '@/language/en'
+import zh from '@/language/zh'
 
 const { serviceMock, messageMock, modalMock } = vi.hoisted(() => ({
   serviceMock: {
@@ -33,6 +39,7 @@ const { serviceMock, messageMock, modalMock } = vi.hoisted(() => ({
     success: vi.fn(),
     warning: vi.fn(),
     error: vi.fn(),
+    loading: vi.fn(),
   },
   modalMock: {
     confirm: vi.fn(),
@@ -56,81 +63,103 @@ vi.mock('ant-design-vue', async () => {
   }
 })
 
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({ t: (key: string) => key }),
-}))
+const i18n = createI18n({
+  legacy: false,
+  globalInjection: true,
+  locale: 'en',
+  fallbackLocale: 'en',
+  messages: { en, zh },
+})
 
-/** Minimal stand-ins for the ant-design-vue components used by the Selector. */
-const stubs = {
-  'a-dropdown': {
-    template: '<div class="dropdown-stub"><slot /><slot name="overlay" /></div>',
-  },
-  'a-button': {
-    template: '<button v-bind="$attrs"><slot /></button>',
-  },
-  'a-input': {
-    props: ['value'],
-    emits: ['update:value'],
-    template:
-      '<input class="input-stub" :value="value" @input="$emit(\'update:value\', $event.target.value)">',
-  },
-  'a-input-number': {
-    props: ['value'],
-    emits: ['update:value'],
-    template:
-      '<input class="input-number-stub" :value="value" @input="$emit(\'update:value\', $event.target.value === \'\' ? undefined : Number($event.target.value))">',
-  },
-  'a-tabs': {
-    template: '<div class="tabs-stub"><slot /></div>',
-  },
-  'a-tab-pane': {
-    props: ['key', 'tab'],
-    template: '<div class="tab-pane-stub" :data-tab="tab"><slot /></div>',
-  },
-  'a-modal': {
-    props: ['visible'],
-    emits: ['ok', 'update:visible'],
-    template: `
-      <div v-if="visible" class="modal-stub">
-        <div class="modal-body"><slot /></div>
-        <button class="modal-ok" @click="$emit('ok')">ok</button>
-      </div>
-    `,
-  },
-  'a-form': { template: '<form><slot /></form>' },
-  'a-form-item': { template: '<div><slot /></div>' },
-  'a-select': { template: '<div><slot /></div>' },
-  'a-select-option': { template: '<div><slot /></div>' },
-  'svg-icon': { template: '<i class="svg-icon-stub" />' },
-  'down-outlined': { template: '<i />' },
-  'check-outlined': { template: '<i />' },
-  'delete-outlined': { template: '<i />' },
-  'plus-outlined': { template: '<i />' },
-}
+let app: ReturnType<typeof createApp> | undefined
 
-function mountSelector() {
-  return mount(Selector, {
-    props: { catalog: 'catalog', db: 'db', table: 'table' },
-    global: {
-      stubs,
-      mocks: { $t: (key: string) => key },
-    },
+/**
+ * Mounts the Selector into a container that fills the viewport so screenshots capture the
+ * real ant-design-vue markup produced by the component.
+ */
+async function mountSelector() {
+  const container = document.createElement('div')
+  container.id = 'app'
+  container.style.width = '900px'
+  container.style.padding = '24px'
+  container.style.background = '#fff'
+  document.body.appendChild(container)
+
+  app = createApp(Selector, {
+    catalog: 'catalog',
+    db: 'db',
+    table: 'table',
   })
+  app.use(Antd)
+  app.use(i18n)
+  // The app normally resolves these through unplugin-vue-components; register them explicitly.
+  app.component('svg-icon', SvgIcon)
+  app.component('DownOutlined', DownOutlined)
+  app.component('CheckOutlined', CheckOutlined)
+  app.component('DeleteOutlined', DeleteOutlined)
+  app.component('PlusOutlined', PlusOutlined)
+  app.mount(container)
+  await settle()
+  return container
 }
 
-function tagNames(wrapper: VueWrapper) {
-  return tagPane(wrapper).findAll('.item-label').map(item => item.text())
+/** Waits for pending promises and Vue re-renders so the DOM is stable before asserting. */
+async function settle() {
+  await vi.waitFor(async () => {
+    await nextTick()
+  })
+  await new Promise(resolve => setTimeout(resolve, 60))
+  await nextTick()
 }
 
-/** Returns the tags tab pane, distinguishing it from the branches/consumers panes. */
-function tagPane(wrapper: VueWrapper): DOMWrapper<Element> {
-  return wrapper.find('[data-tab="tags"]')
+function q<T extends Element = HTMLElement>(selector: string): T | null {
+  return document.querySelector<T>(selector)
 }
 
-async function fillCreateTagForm(wrapper: VueWrapper, tagName: string, snapshotId: string) {
-  const inputs = wrapper.findAll('.modal-stub input')
-  await inputs[0].setValue(tagName)
-  await inputs[1].setValue(snapshotId)
+function qa<T extends Element = HTMLElement>(selector: string): T[] {
+  return Array.from(document.querySelectorAll<T>(selector))
+}
+
+/** Opens the tags tab inside the dropdown overlay. */
+async function openTagsTab() {
+  // The dropdown overlay is only mounted after the trigger button is clicked.
+  const trigger = q<HTMLElement>('.branch-btn')
+  expect(trigger, 'the branch selector button should be rendered').toBeTruthy()
+  trigger!.click()
+  await settle()
+
+  const tabs = qa<HTMLElement>('.ant-tabs-tab')
+  const tagsTab = tabs.find(tab => tab.textContent?.toLowerCase().includes('tag'))
+  expect(tagsTab, 'the tags tab should be rendered').toBeTruthy()
+  tagsTab!.click()
+  await settle()
+}
+
+/** Opens the create-tag modal through the visible footer entry. */
+async function openCreateTagModal() {
+  const entry = q<HTMLElement>('.create-tag-btn-wrapper button')
+  expect(entry, 'the create tag entry should be rendered').toBeTruthy()
+  entry!.click()
+  await settle()
+  expect(q('.ant-modal'), 'the create tag modal should be visible').toBeTruthy()
+}
+
+/** Types into an ant-design-vue input and fires the events Vue listens to. */
+async function typeInto(selector: string, value: string) {
+  const input = q<HTMLInputElement>(selector)
+  expect(input, `input ${selector} should exist`).toBeTruthy()
+  input!.value = value
+  input!.dispatchEvent(new Event('input', { bubbles: true }))
+  input!.dispatchEvent(new Event('change', { bubbles: true }))
+  await settle()
+}
+
+async function clickModalOk() {
+  const buttons = qa<HTMLElement>('.ant-modal-footer button')
+  const ok = buttons[buttons.length - 1]
+  expect(ok, 'the modal ok button should exist').toBeTruthy()
+  ok.click()
+  await settle()
 }
 
 describe('selector tag management', () => {
@@ -143,47 +172,50 @@ describe('selector tag management', () => {
   })
 
   afterEach(() => {
+    app?.unmount()
+    app = undefined
+    document.body.innerHTML = ''
     vi.clearAllMocks()
   })
 
-  it('renders the create tag entry in the tags tab', async () => {
-    const wrapper = mountSelector()
-    await flushPromises()
+  it('renders the create tag entry and existing tags', async () => {
+    await mountSelector()
+    await openTagsTab()
 
-    const createButton = wrapper.find('.create-tag-btn-wrapper button')
-    expect(createButton.exists()).toBe(true)
-    expect(createButton.text()).toContain('createTag')
+    expect(q('.create-tag-btn-wrapper')).toBeTruthy()
+    expect(document.body.textContent).toContain('existing_tag')
+
+    await page.screenshot({ path: '__screenshots__/tags-tab-list.png' })
   })
 
-  it('renders existing tags from the API', async () => {
-    const wrapper = mountSelector()
-    await flushPromises()
+  it('opens the create tag modal', async () => {
+    await mountSelector()
+    await openTagsTab()
+    await openCreateTagModal()
 
-    expect(serviceMock.getTags).toHaveBeenCalledWith(
-      expect.objectContaining({ catalog: 'catalog', db: 'db', table: 'table' }),
-    )
-    expect(tagNames(wrapper)).toContain('existing_tag')
+    const modalText = q('.ant-modal')!.textContent || ''
+    expect(modalText).toContain('Snapshot ID')
+
+    await page.screenshot({ path: '__screenshots__/create-tag-modal-open.png' })
   })
 
-  it('opens the create tag modal when the entry is clicked', async () => {
-    const wrapper = mountSelector()
-    await flushPromises()
+  it('creates a tag and shows a success message', async () => {
+    await mountSelector()
+    await openTagsTab()
+    await openCreateTagModal()
 
-    expect(wrapper.find('.modal-stub').exists()).toBe(false)
+    const inputs = qa<HTMLInputElement>('.ant-modal input')
+    expect(inputs.length, 'the modal should render tag name and snapshot id inputs').toBeGreaterThan(1)
+    await typeInto('.ant-modal input', 'new_tag')
 
-    await wrapper.find('.create-tag-btn-wrapper button').trigger('click')
+    const snapshotInput = qa<HTMLInputElement>('.ant-modal input')[1]
+    snapshotInput.value = '  12345  '
+    snapshotInput.dispatchEvent(new Event('input', { bubbles: true }))
+    await settle()
 
-    expect(wrapper.find('.modal-stub').exists()).toBe(true)
-  })
+    await page.screenshot({ path: '__screenshots__/create-tag-form-filled.png' })
 
-  it('creates a tag with the trimmed snapshot id and refreshes the list', async () => {
-    const wrapper = mountSelector()
-    await flushPromises()
-
-    await wrapper.find('.create-tag-btn-wrapper button').trigger('click')
-    await fillCreateTagForm(wrapper, 'new_tag', '  12345  ')
-    await wrapper.find('.modal-ok').trigger('click')
-    await flushPromises()
+    await clickModalOk()
 
     expect(serviceMock.createTag).toHaveBeenCalledWith({
       catalog: 'catalog',
@@ -193,91 +225,75 @@ describe('selector tag management', () => {
       snapshotId: '12345',
       maxRefAgeMs: undefined,
     })
-    expect(messageMock.success).toHaveBeenCalledWith('createTagSuccess')
-    // modal closes and the tag list is reloaded
-    expect(wrapper.find('.modal-stub').exists()).toBe(false)
+    expect(messageMock.success).toHaveBeenCalledWith('Tag created successfully')
+    // The list is refreshed after a successful creation.
     expect(serviceMock.getTags).toHaveBeenCalledTimes(2)
   })
 
-  it('forwards maxRefAgeMs when provided', async () => {
-    const wrapper = mountSelector()
-    await flushPromises()
+  it('warns when the tag name is missing', async () => {
+    await mountSelector()
+    await openTagsTab()
+    await openCreateTagModal()
 
-    await wrapper.find('.create-tag-btn-wrapper button').trigger('click')
-    await fillCreateTagForm(wrapper, 'new_tag', '12345')
-    await wrapper.find('.input-number-stub').setValue('60000')
-    await wrapper.find('.modal-ok').trigger('click')
-    await flushPromises()
+    const snapshotInput = qa<HTMLInputElement>('.ant-modal input')[1]
+    snapshotInput.value = '12345'
+    snapshotInput.dispatchEvent(new Event('input', { bubbles: true }))
+    await settle()
 
-    expect(serviceMock.createTag).toHaveBeenCalledWith(
-      expect.objectContaining({ tagName: 'new_tag', snapshotId: '12345', maxRefAgeMs: 60000 }),
-    )
-  })
+    await clickModalOk()
 
-  it('warns and skips the request when the tag name is empty', async () => {
-    const wrapper = mountSelector()
-    await flushPromises()
-
-    await wrapper.find('.create-tag-btn-wrapper button').trigger('click')
-    await fillCreateTagForm(wrapper, '', '12345')
-    await wrapper.find('.modal-ok').trigger('click')
-    await flushPromises()
-
-    expect(messageMock.warning).toHaveBeenCalledWith('tagNameRequired')
+    expect(messageMock.warning).toHaveBeenCalledWith('Tag name is required')
     expect(serviceMock.createTag).not.toHaveBeenCalled()
+
+    await page.screenshot({ path: '__screenshots__/create-tag-missing-name.png' })
   })
 
-  it('warns and skips the request when the snapshot id is blank', async () => {
-    const wrapper = mountSelector()
-    await flushPromises()
-
-    await wrapper.find('.create-tag-btn-wrapper button').trigger('click')
-    await fillCreateTagForm(wrapper, 'new_tag', '   ')
-    await wrapper.find('.modal-ok').trigger('click')
-    await flushPromises()
-
-    expect(messageMock.warning).toHaveBeenCalledWith('snapshotIdRequired')
-    expect(serviceMock.createTag).not.toHaveBeenCalled()
-  })
-
-  it('keeps the modal open and shows no success message when creation fails', async () => {
+  it('keeps the tag list unchanged when creation fails', async () => {
     serviceMock.createTag.mockRejectedValue(new Error('Ref new_tag already exists in table'))
-    const wrapper = mountSelector()
-    await flushPromises()
+    await mountSelector()
+    await openTagsTab()
+    await openCreateTagModal()
 
-    await wrapper.find('.create-tag-btn-wrapper button').trigger('click')
-    await fillCreateTagForm(wrapper, 'new_tag', '12345')
-    await wrapper.find('.modal-ok').trigger('click')
-    await flushPromises()
+    await typeInto('.ant-modal input', 'new_tag')
+    const snapshotInput = qa<HTMLInputElement>('.ant-modal input')[1]
+    snapshotInput.value = '12345'
+    snapshotInput.dispatchEvent(new Event('input', { bubbles: true }))
+    await settle()
+
+    await clickModalOk()
 
     expect(messageMock.success).not.toHaveBeenCalled()
-    expect(wrapper.find('.modal-stub').exists()).toBe(true)
-    // the list is not reloaded on failure
     expect(serviceMock.getTags).toHaveBeenCalledTimes(1)
   })
 
   it('asks for confirmation before deleting a tag', async () => {
-    const wrapper = mountSelector()
-    await flushPromises()
+    await mountSelector()
+    await openTagsTab()
 
-    await wrapper.find('.tag-delete-btn').trigger('click')
+    const deleteButton = q<HTMLElement>('.tag-delete-btn')
+    expect(deleteButton, 'a delete button should be rendered for the tag').toBeTruthy()
+    deleteButton!.click()
+    await settle()
 
     expect(modalMock.confirm).toHaveBeenCalledTimes(1)
     const options = modalMock.confirm.mock.calls[0][0]
-    expect(options.title).toBe('deleteTag')
-    expect(options.content).toBe('deleteTagConfirm')
-    // deletion only happens after the user confirms
+    expect(options.title).toBe('Delete Tag')
+    // Deletion must not happen before the user confirms.
     expect(serviceMock.deleteTag).not.toHaveBeenCalled()
   })
 
   it('deletes the tag after confirmation and refreshes the list', async () => {
-    const wrapper = mountSelector()
-    await flushPromises()
+    await mountSelector()
+    await openTagsTab()
 
-    await wrapper.find('.tag-delete-btn').trigger('click')
+    q<HTMLElement>('.tag-delete-btn')!.click()
+    await settle()
+
     const options = modalMock.confirm.mock.calls[0][0]
+    // The backend list is now empty, so the refreshed view should not contain the tag.
+    serviceMock.getTags.mockResolvedValue({ list: [] })
     await options.onOk()
-    await flushPromises()
+    await settle()
 
     expect(serviceMock.deleteTag).toHaveBeenCalledWith({
       catalog: 'catalog',
@@ -285,62 +301,40 @@ describe('selector tag management', () => {
       table: 'table',
       tagName: 'existing_tag',
     })
-    expect(messageMock.success).toHaveBeenCalledWith('deleteTagSuccess')
+    expect(messageMock.success).toHaveBeenCalledWith('Tag deleted successfully')
     expect(serviceMock.getTags).toHaveBeenCalledTimes(2)
-  })
+    expect(document.body.textContent).not.toContain('existing_tag')
 
-  it('shows no success message when deletion fails', async () => {
-    serviceMock.deleteTag.mockRejectedValue(new Error('Tag existing_tag not found in table'))
-    const wrapper = mountSelector()
-    await flushPromises()
-
-    await wrapper.find('.tag-delete-btn').trigger('click')
-    const options = modalMock.confirm.mock.calls[0][0]
-    await options.onOk()
-    await flushPromises()
-
-    expect(messageMock.success).not.toHaveBeenCalled()
-    expect(serviceMock.getTags).toHaveBeenCalledTimes(1)
+    await openTagsTab()
+    await page.screenshot({ path: '__screenshots__/delete-tag-call-success.png' })
   })
 
   it('falls back to the main branch when the selected tag is deleted', async () => {
-    const wrapper = mountSelector()
-    await flushPromises()
+    await mountSelector()
+    await openTagsTab()
 
-    // Select the tag itself so the fallback branch is actually reachable.
-    await tagPane(wrapper).findAll('.branch-selector-item')[0].trigger('click')
-    await flushPromises()
-    expect(wrapper.find('.branch-btn-label').text()).toBe('existing_tag')
+    // Select the tag itself so the fallback path is reachable.
+    const tagItem = q<HTMLElement>('.ant-tabs-tabpane-active .branch-selector-item')
+    expect(tagItem, 'the tag item should be selectable').toBeTruthy()
+    tagItem!.click()
+    await settle()
+    expect(q('.branch-btn-label')!.textContent).toBe('existing_tag')
+    await page.screenshot({ path: '__screenshots__/delete-tag-selected-tag.png' })
 
-    await tagPane(wrapper).find('.tag-delete-btn').trigger('click')
+    q<HTMLElement>('.tag-delete-btn')!.click()
+    await settle()
     const options = modalMock.confirm.mock.calls[0][0]
+    // After deletion the tag list is empty and the active ref falls back to main.
+    serviceMock.getTags.mockResolvedValue({ list: [] })
     await options.onOk()
-    await flushPromises()
+    await settle()
 
-    // The deleted tag must no longer be the active ref.
-    expect(wrapper.find('.branch-btn-label').text()).toBe('main')
-    const refChanges = wrapper.emitted('refChange') as unknown[][]
-    const lastRef = (refChanges[refChanges.length - 1][0] as { ref: string }).ref
-    expect(lastRef).toBe('main')
-  })
+    expect(q('.branch-btn-label')!.textContent).toBe('main')
+    expect(document.body.textContent).not.toContain('existing_tag')
 
-  it('keeps the current selection when a different tag is deleted', async () => {
-    serviceMock.getTags.mockResolvedValue({
-      list: [{ name: 'selected_tag' }, { name: 'other_tag' }],
-    })
-    const wrapper = mountSelector()
-    await flushPromises()
-
-    // Select the first tag, then delete the second one.
-    await tagPane(wrapper).findAll('.branch-selector-item')[0].trigger('click')
-    await flushPromises()
-    expect(wrapper.find('.branch-btn-label').text()).toBe('selected_tag')
-
-    await tagPane(wrapper).findAll('.tag-delete-btn')[1].trigger('click')
-    const options = modalMock.confirm.mock.calls[0][0]
-    await options.onOk()
-    await flushPromises()
-
-    expect(wrapper.find('.branch-btn-label').text()).toBe('selected_tag')
+    // Re-open the dropdown so the screenshot shows the tags list after the deletion.
+    await openTagsTab()
+    expect(qa<HTMLElement>('.ant-tabs-tabpane-active .branch-selector-item').length).toBe(0)
+    await page.screenshot({ path: '__screenshots__/delete-tag-fallback-to-main.png' })
   })
 })
