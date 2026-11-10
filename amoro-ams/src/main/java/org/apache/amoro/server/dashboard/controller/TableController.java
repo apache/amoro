@@ -664,9 +664,17 @@ public class TableController {
         StringUtils.isNotBlank(request.getTagName()), "tagName can not be empty");
     Preconditions.checkArgument(
         StringUtils.isNotBlank(request.getSnapshotId()), "snapshotId can not be null");
-    long snapshotId = Long.parseLong(request.getSnapshotId().trim());
 
+    long snapshotId;
+    try {
+      snapshotId = Long.parseLong(request.getSnapshotId().trim());
+    } catch (NumberFormatException e) {
+      throw new IllegalArgumentException(
+          "snapshotId must be a numeric value, but was: " + request.getSnapshotId());
+    }
     Long maxRefAgeMs = request.getMaxRefAgeMs();
+    Preconditions.checkArgument(
+        maxRefAgeMs == null || maxRefAgeMs > 0, "maxRefAgeMs must be positive if provided");
 
     tableDescriptor.createTag(
         TableIdentifier.of(catalog, database, tableName).buildTableIdentifier(),

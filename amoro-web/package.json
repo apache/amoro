@@ -9,6 +9,7 @@
     "typecheck": "vue-tsc --noEmit",
     "gen:license": "node ./license.node.js",
     "preview": "vite preview",
+    "test": "vitest run",
     "test:preload-recovery": "node ./scripts/preload-error-recovery.test.mjs",
     "lint": "eslint ./src",
     "format": "eslint ./src --fix"
@@ -33,7 +34,9 @@
     "@antfu/eslint-config": "^2.21.1",
     "@types/node": "^20.14.8",
     "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/test-utils": "^2.4.6",
     "eslint": "^9.4.0",
+    "happy-dom": "^21.0.4",
     "less": "4.2.0",
     "mockjs": "^1.1.0",
     "monaco-editor": "^0.56.0",
@@ -45,6 +48,7 @@
     "vite-plugin-fake-server": "^2.1.1",
     "vite-plugin-svg-icons": "^2.0.1",
     "vite-plugin-vue-devtools": "^8.2.1",
+    "vitest": "^5.1.0",
     "vue-tsc": "^3.3.11"
   },
   "engines": {

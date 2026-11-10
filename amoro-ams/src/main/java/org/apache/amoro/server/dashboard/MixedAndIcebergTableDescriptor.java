@@ -678,8 +678,8 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     TableOperations ops = ((HasTableOperations) icebergTable).operations();
     TableMetadata base = ops.refresh();
     Preconditions.checkNotNull(base, "Table metadata is null");
-    Preconditions.checkNotNull(
-        base.snapshot(snapshotId), "Snapshot %s not found in table", snapshotId);
+    Preconditions.checkArgument(
+        base.snapshot(snapshotId) != null, "Snapshot %s not found in table", snapshotId);
     // Align with Iceberg createTag semantics (create-only, fail on existing ref)
     // to avoid silently overwriting an existing tag or branch with the same name.
     Preconditions.checkArgument(
