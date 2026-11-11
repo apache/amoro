@@ -1,0 +1,57 @@
+/* Lato font - self-hosted to comply with ASF policy (no external resources) */
+/* Source: Google Fonts - Lato by Łukasz Dziedzic, licensed under OFL */
+
+/* Lato Light (300) */
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('../fonts/lato/lato-v24-latin-300.woff2') format('woff2');
+}
+
+/* Lato Light Italic (300italic) */
+@font-face {
+  font-family: 'Lato';
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+  src: url('../fonts/lato/lato-v24-latin-300italic.woff2') format('woff2');
+}
+
+/* Lato Regular (400) */
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/lato/lato-v24-latin-regular.woff2') format('woff2');
+}
+
+/* Lato Regular Italic (400italic) */
+@font-face {
+  font-family: 'Lato';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/lato/lato-v24-latin-italic.woff2') format('woff2');
+}
+
+/* Lato Bold (700) */
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/lato/lato-v24-latin-700.woff2') format('woff2');
+}
+
+/* Lato Bold Italic (700italic) */
+@font-face {
+  font-family: 'Lato';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/lato/lato-v24-latin-700italic.woff2') format('woff2');
+}
+
