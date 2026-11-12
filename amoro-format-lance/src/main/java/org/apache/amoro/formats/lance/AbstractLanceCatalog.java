@@ -231,6 +231,8 @@ public abstract class AbstractLanceCatalog implements FormatCatalog {
     validateDatabase(database);
     try {
       namespace.dropNamespace(new DropNamespaceRequest().id(namespaceId(database)));
+    } catch (NamespaceNotFoundException e) {
+      throw new NoSuchDatabaseException("Database: " + database + "does not exist", e);
     } catch (InvalidInputException e) {
       throw new IllegalStateException("Failed to drop database: " + database, e);
     }
