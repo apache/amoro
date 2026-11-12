@@ -232,6 +232,9 @@ public final class ParquetFileMergeRunner implements Closeable {
     }
 
     writer.end(keyValueMetadata);
+    // After end() writes the footer, the stream position is the final file size.
+    // Row groups and column chunks are copied as raw bytes, so nothing is buffered in memory.
+    long fileSizeInBytes = writer.getPos();
     ParquetMetadata footer = writer.getFooter();
     writer.close();
     writer = null;
@@ -240,8 +243,6 @@ public final class ParquetFileMergeRunner implements Closeable {
     List<Long> splitOffsets =
         footer.getBlocks().stream().map(BlockMetaData::getStartingPos).collect(Collectors.toList());
     long recordCount = footer.getBlocks().stream().mapToLong(BlockMetaData::getRowCount).sum();
-    long fileSizeInBytes =
-        io.newInputFile(outputFile.encryptingOutputFile().location()).getLength();
 
     DataFile result =
         DataFiles.builder(spec)
