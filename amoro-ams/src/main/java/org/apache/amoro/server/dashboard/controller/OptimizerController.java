@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.dashboard.controller;
 
+import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.resource.ResourceContainer;
@@ -78,6 +79,9 @@ public class OptimizerController {
   public void createOptimizer(Context ctx) {
     Map<String, Object> map = ctx.bodyAsClass(Map.class);
     int parallelism = Integer.parseInt(map.get("parallelism").toString());
+    if (parallelism <= 0) {
+      throw new BadRequestResponse("Parallelism must be greater than 0.");
+    }
     String optimizerGroup = map.get("optimizerGroup").toString();
     ResourceGroup resourceGroup = optimizerManager.getResourceGroup(optimizerGroup);
     Resource resource =

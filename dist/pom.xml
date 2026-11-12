@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-parent</artifactId>
-        <version>0.9-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>dist</artifactId>
@@ -32,6 +32,31 @@
     <properties>
         <assembly.descriptor.file>src/main/assemblies/bin.xml</assembly.descriptor.file>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-api</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-bundled-guava</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-spark-${spark.major.version}_${scala.binary.version}</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-spark-extensions-${spark.major.version}_${scala.binary.version}</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>

@@ -28,11 +28,16 @@ MVN="${PWD}/mvnw"
 
 function build_classpath() {
   $MVN clean install -DskipTests --no-snapshot-updates -pl dist -am "$@"
+  classpath_separator=":"
+  [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]] && classpath_separator=";"
   $MVN dependency:build-classpath --no-snapshot-updates -pl dist -am "$@" |\
     grep -v "INFO\|WARN" | \
     tail -1 | \
-    tr ":" "\n" | \
+    tr "${classpath_separator}" "\n" | \
     awk -F '/' '{
+      gsub(/\\/, "/", $0);
+      $0 = $0;
+      if (NF < 3) next;
       artifact_id=$(NF-2);
       version=$(NF-1);
       jar_name=$NF;
@@ -56,7 +61,7 @@ function check_diff() {
     fi
 }
 
-HADOOP_SPARK_PROFILES=('hadoop2' 'spark-3.5')
+HADOOP_SPARK_PROFILES=('spark-3.5')
 for HADOOP_SPARK_PROFILE in "${HADOOP_SPARK_PROFILES[@]}";
 do
   HADOOP_MAJOR_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.version -P"$HADOOP_SPARK_PROFILE" 2>/dev/null \

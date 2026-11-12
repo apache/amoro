@@ -68,7 +68,8 @@ public class CatalogBuilder {
               TableFormat.MIXED_ICEBERG,
               TableFormat.MIXED_HIVE,
               TableFormat.PAIMON,
-              TableFormat.HUDI),
+              TableFormat.HUDI,
+              TableFormat.LANCE),
           CATALOG_TYPE_AMS,
           Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
 
@@ -86,7 +87,7 @@ public class CatalogBuilder {
         "Table format %s is not supported for metastore type: %s",
         tableFormats,
         type);
-    checkRestLanceExclusivity(type, tableFormats);
+    checkLanceExclusivity(type, tableFormats);
 
     switch (type) {
       case CATALOG_TYPE_HADOOP:
@@ -104,13 +105,14 @@ public class CatalogBuilder {
   }
 
   /** Enforced on both catalog creation and metadata updates. */
-  static void checkRestLanceExclusivity(String type, Set<TableFormat> tableFormats) {
+  static void checkLanceExclusivity(String type, Set<TableFormat> tableFormats) {
+    boolean lanceExclusiveType = CATALOG_TYPE_REST.equals(type) || CATALOG_TYPE_HIVE.equals(type);
     Preconditions.checkState(
-        !(CATALOG_TYPE_REST.equals(type)
+        !(lanceExclusiveType
             && tableFormats.contains(TableFormat.LANCE)
             && tableFormats.size() > 1),
-        "REST catalog serves a single protocol per uri,"
-            + " Lance cannot be combined with other table formats: %s",
+        "Lance cannot be combined with other table formats in a %s catalog: %s",
+        type,
         tableFormats);
   }
 }

@@ -217,6 +217,13 @@ public class CatalogController {
         CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, LANCE));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_REST, STORAGE_CONFIGS_VALUE_TYPE_OSS, LANCE));
+
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_S3, LANCE));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_OSS, LANCE));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_LOCAL, LANCE));
   }
 
   private final PlatformFileManager platformFileInfoService;

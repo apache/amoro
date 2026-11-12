@@ -69,9 +69,6 @@ $ for i in *.tar.gz; do echo $i; shasum -a 512 -c $i.sha512; done
 Unzip the binary pakcages: `apache-amoro-${AMORO_VERSION}-bin-${HADOOP_VERSION}.tar.gz`:
 
 ```shell
-# Hadoop2
-$ tar -xzvf apache-amoro-0.8.0-incubating-bin-hadoop2.tar.gz
-
 # Hadoop3 
 $ tar -xzvf apache-amoro-0.8.0-incubating-bin-hadoop3.tar.gz
 ```
