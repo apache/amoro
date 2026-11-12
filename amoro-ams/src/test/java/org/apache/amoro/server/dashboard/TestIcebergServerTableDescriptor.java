@@ -40,8 +40,10 @@ import org.apache.amoro.server.table.DerbyPersistence;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.descriptor.FormatTableDescriptor;
 import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
+import org.apache.amoro.table.descriptor.TagOrBranchInfo;
 import org.apache.amoro.table.descriptor.TestServerTableDescriptor;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.iceberg.SnapshotRef;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
@@ -415,6 +417,177 @@ public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor 
     res = descriptor.getOptimizingProcessesInfo(table, null, null, null, 10, 0);
     Assert.assertEquals(0, (int) res.getRight());
     Assert.assertEquals(0, res.getLeft().size());
+  }
+
+  @Test
+  public void testCreateTagWithMaxRefAge() {
+    long snapshotId = appendDataFile("/path/to/data-tag.parquet");
+    MixedAndIcebergTableDescriptor descriptor = new MixedAndIcebergTableDescriptor();
+    AmoroTable<?> amoroTable = getAmoroCatalog().loadTable(TEST_DB, TEST_TABLE);
+
+    descriptor.createTag(amoroTable, "tag_with_age", snapshotId, 1000L);
+
+    // Re-read the metadata to make sure the tag was actually committed.
+    SnapshotRef tagRef = getTable().refs().get("tag_with_age");
+    Assert.assertNotNull("Tag should be created", tagRef);
+    Assert.assertTrue("Ref should be a tag", tagRef.isTag());
+    Assert.assertEquals(snapshotId, tagRef.snapshotId());
+    Assert.assertEquals(
+        "maxRefAgeMs should be persisted", Long.valueOf(1000L), tagRef.maxRefAgeMs());
+
+    List<TagOrBranchInfo> tags = descriptor.getTableTags(amoroTable);
+    Assert.assertEquals(1, tags.size());
+    Assert.assertEquals("tag_with_age", tags.get(0).getName());
+    Assert.assertEquals(snapshotId, tags.get(0).getSnapshotId());
+    Assert.assertEquals(TagOrBranchInfo.TAG, tags.get(0).getType());
+  }
+
+  @Test
+  public void testCreateTagWithoutMaxRefAge() {
+    long snapshotId = appendDataFile("/path/to/data-tag-no-age.parquet");
+    MixedAndIcebergTableDescriptor descriptor = new MixedAndIcebergTableDescriptor();
+    AmoroTable<?> amoroTable = getAmoroCatalog().loadTable(TEST_DB, TEST_TABLE);
+
+    descriptor.createTag(amoroTable, "tag_forever", snapshotId, null);
+
+    SnapshotRef tagRef = getTable().refs().get("tag_forever");
+    Assert.assertNotNull("Tag should be created", tagRef);
+    Assert.assertTrue("Ref should be a tag", tagRef.isTag());
+    Assert.assertEquals(snapshotId, tagRef.snapshotId());
+    // No explicit max-ref-age is stored on the ref; Iceberg falls back to the table property.
+    Assert.assertNull("maxRefAgeMs should be null", tagRef.maxRefAgeMs());
+  }
+
+  @Test
+  public void testCreateTagWithDuplicateNameFails() {
+    long snapshotId = appendDataFile("/path/to/data-duplicate.parquet");
+    MixedAndIcebergTableDescriptor descriptor = new MixedAndIcebergTableDescriptor();
+    AmoroTable<?> amoroTable = getAmoroCatalog().loadTable(TEST_DB, TEST_TABLE);
+
+    descriptor.createTag(amoroTable, "duplicate_tag", snapshotId, null);
+
+    // Iceberg createTag semantics are create-only: an existing tag must not be overwritten.
+    IllegalArgumentException exception =
+        Assert.assertThrows(
+            IllegalArgumentException.class,
+            () -> descriptor.createTag(amoroTable, "duplicate_tag", snapshotId, null));
+    Assert.assertTrue(
+        "Error message should mention the existing ref, but was: " + exception.getMessage(),
+        exception.getMessage().contains("duplicate_tag"));
+
+    // The original tag must be untouched.
+    Assert.assertEquals(snapshotId, getTable().refs().get("duplicate_tag").snapshotId());
+    Assert.assertEquals(1, descriptor.getTableTags(amoroTable).size());
+  }
+
+  @Test
+  public void testCreateTagWithNameOfExistingBranchFails() {
+    long snapshotId = appendDataFile("/path/to/data-branch-conflict.parquet");
+    getTable().manageSnapshots().createBranch("existing_branch", snapshotId).commit();
+
+    MixedAndIcebergTableDescriptor descriptor = new MixedAndIcebergTableDescriptor();
+    AmoroTable<?> amoroTable = getAmoroCatalog().loadTable(TEST_DB, TEST_TABLE);
+
+    // A branch with the same name must not be silently replaced by a tag.
+    IllegalArgumentException exception =
+        Assert.assertThrows(
+            IllegalArgumentException.class,
+            () -> descriptor.createTag(amoroTable, "existing_branch", snapshotId, null));
+    Assert.assertTrue(
+        "Error message should mention the existing ref, but was: " + exception.getMessage(),
+        exception.getMessage().contains("existing_branch"));
+
+    SnapshotRef ref = getTable().refs().get("existing_branch");
+    Assert.assertTrue("Existing branch should be kept as a branch", ref.isBranch());
+    Assert.assertTrue("No tag should be created", descriptor.getTableTags(amoroTable).isEmpty());
+  }
+
+  @Test
+  public void testCreateTagWithUnknownSnapshotFails() {
+    appendDataFile("/path/to/data-unknown-snapshot.parquet");
+    MixedAndIcebergTableDescriptor descriptor = new MixedAndIcebergTableDescriptor();
+    AmoroTable<?> amoroTable = getAmoroCatalog().loadTable(TEST_DB, TEST_TABLE);
+
+    long unknownSnapshotId = System.currentTimeMillis();
+    Assert.assertNull(
+        "Precondition: snapshot should not exist", getTable().snapshot(unknownSnapshotId));
+
+    IllegalArgumentException exception =
+        Assert.assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                descriptor.createTag(amoroTable, "unknown_snapshot_tag", unknownSnapshotId, null));
+    Assert.assertTrue(
+        "Error message should mention the missing snapshot, but was: " + exception.getMessage(),
+        exception.getMessage().contains(String.valueOf(unknownSnapshotId)));
+
+    Assert.assertNull(
+        "No tag should be created for an unknown snapshot",
+        getTable().refs().get("unknown_snapshot_tag"));
+  }
+
+  @Test
+  public void testDeleteTag() {
+    long snapshotId = appendDataFile("/path/to/data-delete-tag.parquet");
+    MixedAndIcebergTableDescriptor descriptor = new MixedAndIcebergTableDescriptor();
+    AmoroTable<?> amoroTable = getAmoroCatalog().loadTable(TEST_DB, TEST_TABLE);
+
+    descriptor.createTag(amoroTable, "tag_to_delete", snapshotId, null);
+    Assert.assertNotNull(
+        "Tag should exist before deletion", getTable().refs().get("tag_to_delete"));
+
+    descriptor.deleteTag(amoroTable, "tag_to_delete");
+
+    Assert.assertNull("Tag should be removed", getTable().refs().get("tag_to_delete"));
+    Assert.assertTrue("Tag list should be empty", descriptor.getTableTags(amoroTable).isEmpty());
+    // Deleting a tag must not delete the snapshot itself.
+    Assert.assertNotNull("Snapshot should be kept", getTable().snapshot(snapshotId));
+  }
+
+  @Test
+  public void testDeleteMissingTagFails() {
+    appendDataFile("/path/to/data-delete-missing.parquet");
+    MixedAndIcebergTableDescriptor descriptor = new MixedAndIcebergTableDescriptor();
+    AmoroTable<?> amoroTable = getAmoroCatalog().loadTable(TEST_DB, TEST_TABLE);
+
+    IllegalArgumentException exception =
+        Assert.assertThrows(
+            IllegalArgumentException.class, () -> descriptor.deleteTag(amoroTable, "not_exist"));
+    Assert.assertTrue(
+        "Error message should mention the missing tag, but was: " + exception.getMessage(),
+        exception.getMessage().contains("not_exist"));
+  }
+
+  @Test
+  public void testDeleteTagDoesNotRemoveBranch() {
+    long snapshotId = appendDataFile("/path/to/data-delete-branch.parquet");
+    getTable().manageSnapshots().createBranch("keep_branch", snapshotId).commit();
+
+    MixedAndIcebergTableDescriptor descriptor = new MixedAndIcebergTableDescriptor();
+    AmoroTable<?> amoroTable = getAmoroCatalog().loadTable(TEST_DB, TEST_TABLE);
+
+    // Only tags may be removed through deleteTag, branches must be rejected.
+    Assert.assertThrows(
+        IllegalArgumentException.class, () -> descriptor.deleteTag(amoroTable, "keep_branch"));
+    Assert.assertNotNull("Branch should not be removed", getTable().refs().get("keep_branch"));
+  }
+
+  /**
+   * Appends a single data file to the test table and returns the resulting snapshot id.
+   *
+   * @param path data file path
+   * @return snapshot id created by the append
+   */
+  private long appendDataFile(String path) {
+    Table icebergTable = getTable();
+    org.apache.iceberg.DataFile dataFile =
+        org.apache.iceberg.DataFiles.builder(icebergTable.spec())
+            .withPath(path)
+            .withFileSizeInBytes(100)
+            .withRecordCount(10)
+            .build();
+    icebergTable.newAppend().appendFile(dataFile).commit();
+    return icebergTable.currentSnapshot().snapshotId();
   }
 
   @Override

@@ -50,4 +50,8 @@ node_modules
 .env.local
 .env.*.local
 
+# vitest browser-mode artifacts
+src/**/__screenshots__/
+.vitest/
+
 components.d.ts
