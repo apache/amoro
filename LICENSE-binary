@@ -202,8 +202,13 @@
 
 ------------------------------------------------------------------------------------
 This product bundles various third-party components under other open source licenses.
-This section summarizes those components and their licenses. See licenses/
-for text of these licenses.
+This section summarizes those components and their licenses.
+
+Additional license texts are provided in the top-level licenses/ directory.
+
+For the dashboard's third-party npm components, license texts and notices
+are provided in the licenses/ directory inside
+lib/amoro-web-*.jar, where * is the project version.
 
 Apache License Version 2.0
 --------------------------
@@ -211,14 +216,21 @@ org.apache.arrow:arrow-*
 org.apache.avro:avro-*
 org.apache.commons:commons-*
 org.apache.curator:curator-*
+org.apache.datasketches:datasketches-*
 org.apache.flink:flink-*
 org.apache.hadoop:hadoop-*
 org.apache.hive:hive-*
+org.apache.hive.shims:hive-shims-*
 org.apache.iceberg:iceberg-*
+org.apache.kerby:kerb-*
 org.apache.kerby:kerby-*
+org.apache.kerby:token-provider
 org.apache.logging.log4j:log4j-*
+org.apache.orc:orc-*
 org.apache.paimon:paimon-*
+org.apache.parquet:parquet-*
 org.apache.spark:spark-*
+org.apache.xbean:xbean-asm9-shaded
 org.apache.derby:derby
 org.apache.httpcomponents:httpclient
 org.apache.httpcomponents:httpcore
@@ -295,10 +307,22 @@ net.bytebuddy:byte-buddy-agent
 net.sf.jpam
 net.sf.opencsv:opencsv
 org.apiguardian:apiguardian-api
+org.casbin:jcasbin
+org.datanucleus:datanucleus-api-jdo
 org.datanucleus:datanucleus-core
+org.datanucleus:datanucleus-rdbms
+org.datanucleus:javax.jdo
 org.eclipse.jetty:jetty-*
-org.glassfish.jersey.containers:jersey-*
+org.eclipse.jetty.websocket:websocket-*
+org.javassist:javassist
 org.json4s:json4s-*
+org.webjars:swagger-ui
+com.github.jsqlparser:jsqlparser
+dev.failsafe:failsafe
+io.github.aviatorscript:aviator
+io.vertx:vertx-*
+software.amazon.s3.analyticsaccelerator:analyticsaccelerator-s3
+tools.profiler:async-profiler
 software.amazon.eventstream:eventstream
 software.amazon.awssdk:annotations
 software.amazon.awssdk:apache-client
@@ -327,6 +351,7 @@ software.amazon.awssdk:profiles
 software.amazon.awssdk:protocol-core
 software.amazon.awssdk:regions
 software.amazon.awssdk:s3
+software.amazon.awssdk:s3-transfer-manager
 software.amazon.awssdk:sdk-core
 software.amazon.awssdk:secretsmanager
 software.amazon.awssdk:sts
@@ -353,6 +378,31 @@ org.jetbrains.kotlin:kotlin-*
 ./charts/amoro/templates/common/_ingress.tpl
 ./charts/amoro/templates/common/_labels.tpl
 
+npm packages bundled into the dashboard (amoro-web):
+
+direct dependencies:
+echarts
+swagger-ui
+
+transitive dependencies:
+@swagger-api/apidom-ast
+@swagger-api/apidom-core
+@swagger-api/apidom-error
+@swagger-api/apidom-ns-json-schema-2019-09
+@swagger-api/apidom-ns-json-schema-2020-12
+@swagger-api/apidom-ns-json-schema-draft-4
+@swagger-api/apidom-ns-json-schema-draft-6
+@swagger-api/apidom-ns-json-schema-draft-7
+@swagger-api/apidom-ns-openapi-3-0
+@swagger-api/apidom-ns-openapi-3-1
+@swagger-api/apidom-reference
+@swaggerexpert/cookie
+@swaggerexpert/json-pointer
+openapi-path-templating
+openapi-server-url-templating
+short-unique-id
+swagger-client
+
 The BSD License
 --------------
 com.thoughtworks.paranamer:paranamer
@@ -360,10 +410,10 @@ javolution:javolution
 org.antlr:antlr-runtime
 org.antlr:antlr4
 org.antlr:antlr4-runtime
-org.codehaus.janino:commons-compile
+org.antlr:ST4
+org.codehaus.janino:commons-compiler
 org.codehaus.janino:janino
 org.codehaus.woodstox:stax2-api
-org.javassist:javassist
 org.jboss.logging:jboss-logging
 org.jboss.threads:jboss-threads
 org.jboss.xnio:xnio-api
@@ -375,15 +425,35 @@ BSD 2-Clause License
 --------------------
 com.github.luben:zstd-jni
 jline:jline:2.12
+com.ongres.scram:client
+com.ongres.scram:common
+com.ongres.stringprep:saslprep
+com.ongres.stringprep:stringprep
+
+npm packages bundled into the dashboard (amoro-web):
+apg-lite (transitive dependency)
 
 BSD 3-Clause License
 --------------------
 com.esotericsoftware:kryo
 com.esotericsoftware:kryo-shaded
+com.esotericsoftware.kryo:kryo
 com.google.protobuf:protobuf-java
 org.abego.treelayout:org.abego.treelayout.core
 org.fusesource.leveldbjni:leveldbjni-all
 org.threeten:threeten-extra
+
+npm packages bundled into the dashboard (amoro-web):
+
+direct dependencies:
+qs
+
+transitive dependencies:
+highlight.js
+ieee754
+ramda-adjunct
+redux-immutable
+zrender
 
 New BSD License
 ---------------
@@ -410,6 +480,9 @@ org.glassfish.hk2:hk2-*
 org.glassfish.hk2:osgi-resource-locator
 org.glassfish.hk2.external:aopalliance-repackaged
 org.glassfish.hk2.external:jakarta.inject
+org.glassfish.jersey.containers:jersey-*
+org.glassfish.jersey.core:jersey-*
+org.glassfish.jersey.inject:jersey-hk2
 
 MIT License
 -----------
@@ -418,7 +491,154 @@ org.slf4j:slf4j-api
 net.razorvine:pickle
 org.checkerframework:checker-qual
 org.codehaus.mojo:animal-sniffer-annotations
+com.github.pagehelper:pagehelper
+
+npm packages bundled into the dashboard (amoro-web):
+
+direct dependencies:
+@ant-design/icons-vue
+@vue/devtools-api
+ant-design-vue
+axios
+dayjs
+monaco-editor
+pinia
+sql-formatter
+swagger-ui-dist
+vue
+vue-clipboard3
+vue-i18n
+vue-router
+vue-virtual-scroller
+
+transitive dependencies:
+@ant-design/colors
+@ant-design/icons-svg
+@babel/runtime
+@babel/runtime-corejs3
+@ctrl/tinycolor
+@emotion/hash
+@emotion/unitless
+@intlify/core-base
+@intlify/message-compiler
+@intlify/shared
+async-validator
+autolinker
+available-typed-arrays
+base64-js
+buffer
+call-bind
+call-bind-apply-helpers
+call-bound
+classnames
+clipboard
+compute-scroll-into-view
+copy-to-clipboard
+core-js-pure
+css.escape
+deepmerge
+define-data-property
+dom-align
+drange
+dunder-proto
+es-define-property
+es-errors
+es-object-atoms
+fast-json-patch
+fault
+for-each
+format
+function-bind
+get-intrinsic
+get-proto
+gopd
+has-property-descriptors
+has-proto
+has-symbols
+has-tostringtag
+hasown
+immutable
+is-callable
+is-typed-array
+isarray
+js-file-download
+js-yaml
+lodash
+lodash-es
+lodash.debounce
+lowlight
+marked
+math-intrinsics
+minim
+nearley
+neotraverse
+possible-typed-array-names
+prop-types
+querystringify
+ramda
+randexp
+react
+react-copy-to-clipboard
+react-debounce-input
+react-dom
+react-immutable-proptypes
+react-immutable-pure-component
+react-redux
+react-syntax-highlighter
+redux
+remarkable
+repeat-string
+requires-port
+reselect
+resize-observer-polyfill
+ret
+safe-buffer
+scheduler
+scroll-into-view-if-needed
+serialize-error
+set-function-length
+shallow-equal
+sha.js (MIT AND BSD-3-Clause)
+stylis
+throttle-debounce
+to-buffer
+toggle-selection
+ts-mixer
+typed-array-buffer
+url-parse
+use-sync-external-store
+vue-types
+which-typed-array
+xml-but-prettier
+
+Common Development and Distribution License (CDDL) 1.0
+------------------------------------------------------
+javax.activation:activation
+javax.annotation:javax.annotation-api
+javax.servlet:javax.servlet-api
+javax.transaction:jta
+
+Common Development and Distribution License (CDDL) 1.1
+------------------------------------------------------
+javax.xml.bind:jaxb-api
+org.glassfish:javax.json
 
 The Go license
 --------------
 com.google.re2j
+
+Eclipse Distribution License (EDL) 1.0
+-------------------------------------
+org.locationtech.jts:jts-core
+
+Zero-Clause BSD License (0BSD)
+------------------------------
+tslib (npm package bundled into the dashboard, amoro-web)
+
+The Unlicense
+-------------
+zenscroll (npm package bundled into the dashboard, amoro-web)
+
+Mozilla Public License 2.0 OR Apache License 2.0
+------------------------------------------------
+dompurify (npm package bundled into the dashboard, amoro-web)

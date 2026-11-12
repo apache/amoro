@@ -14,18 +14,19 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG FLINK_VERSION=1.20.0-java11
+ARG FLINK_VERSION=1.20.0
 
-FROM flink:${FLINK_VERSION}
+FROM flink:${FLINK_VERSION}-java11
 
 ARG MAVEN_MIRROR=https://repo.maven.apache.org/maven2
 ARG OPTIMIZER_JOB=optimizer-job.jar
 ARG AWS_VERSION=2.24.12
 
+COPY amoro-optimizer/amoro-optimizer-flink/target/docker-hadoop/ $FLINK_HOME/lib/
+
 RUN cd $FLINK_HOME/lib \
  && wget ${MAVEN_MIRROR}/software/amazon/awssdk/bundle/${AWS_VERSION}/bundle-${AWS_VERSION}.jar \
  && wget ${MAVEN_MIRROR}/software/amazon/awssdk/url-connection-client/${AWS_VERSION}/url-connection-client-${AWS_VERSION}.jar \
- && wget ${MAVEN_MIRROR}/org/apache/flink/flink-shaded-hadoop-2-uber/2.8.3-10.0/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar \
  && chown flink:flink *.jar \
  && mkdir -p $FLINK_HOME/usrlib
 

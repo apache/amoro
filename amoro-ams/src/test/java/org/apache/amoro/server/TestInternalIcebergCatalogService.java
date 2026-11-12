@@ -93,18 +93,28 @@ public class TestInternalIcebergCatalogService extends RestCatalogServiceTestBas
       CatalogMeta oldMeta = meta.deepCopy();
       meta.putToCatalogProperties("cache-enabled", "false");
       meta.putToCatalogProperties("cache.expiration-interval-ms", "10000");
-      catalogManager.updateCatalog(meta);
-      // Force a cache reload after invalidation to prevent the background catalog-scan task from
-      // overwriting the cache with a stale DB snapshot it read before the update completed.
-      CatalogMeta updatedMeta = catalogManager.getCatalogMeta(catalogName());
-      String warehouseInAMS =
-          updatedMeta.getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE);
 
       Map<String, String> clientSideConfiguration = Maps.newHashMap();
       clientSideConfiguration.put("cache-enabled", "true");
 
-      try (RESTCatalog catalog = loadIcebergCatalog(clientSideConfiguration)) {
-        Map<String, String> finallyConfigs = catalog.properties();
+      try {
+        Map<String, String> finallyConfigs = Maps.newHashMap();
+        for (int attempt = 0; attempt < 3; attempt++) {
+          catalogManager.updateCatalog(meta.deepCopy());
+          // A concurrent catalog scan may have read the old metadata before this update and reload
+          // it afterward. Reload through REST and reapply the update if that race occurred.
+          try (RESTCatalog catalog = loadIcebergCatalog(clientSideConfiguration)) {
+            finallyConfigs = catalog.properties();
+          }
+          if ("10000".equals(finallyConfigs.get("cache.expiration-interval-ms"))) {
+            break;
+          }
+        }
+        String warehouseInAMS =
+            catalogManager
+                .getCatalogMeta(catalogName())
+                .getCatalogProperties()
+                .get(CatalogMetaProperties.KEY_WAREHOUSE);
         // overwrites properties using value from ams
         Assertions.assertEquals(warehouseInAMS, finallyConfigs.get("warehouse"));
         // default properties using value from client then properties.

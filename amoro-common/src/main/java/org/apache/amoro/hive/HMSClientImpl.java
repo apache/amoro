@@ -26,6 +26,7 @@ import org.apache.hadoop.hive.metastore.api.EnvironmentContext;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.metastore.api.TableMeta;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -186,5 +187,11 @@ public class HMSClientImpl implements HMSClient {
   public List<Table> getTableObjectsByName(String dbName, List<String> tableNames)
       throws TException {
     return getClient().getTableObjectsByName(dbName, tableNames);
+  }
+
+  @Override
+  public List<TableMeta> getTableMeta(
+      String databasePattern, String tablePattern, List<String> tableTypes) throws TException {
+    return getClient().getTableMeta(databasePattern, tablePattern, tableTypes);
   }
 }

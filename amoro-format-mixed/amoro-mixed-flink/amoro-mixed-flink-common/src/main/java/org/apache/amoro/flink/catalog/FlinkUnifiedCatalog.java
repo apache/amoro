@@ -465,7 +465,7 @@ public class FlinkUnifiedCatalog extends AbstractCatalog {
   }
 
   /**
-   * Get the original flink catalog for the given table, if the flink catalog is not exists in the
+   * Get the original flink catalog for the given table, if the flink catalog does not exist in the
    * cache, would create a new original flink catalog for this table format.
    *
    * @param amoroTable amoroTable

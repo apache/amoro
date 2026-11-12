@@ -22,11 +22,11 @@ import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.io.BulkDeletionFailureException;
+import org.apache.iceberg.util.LocationUtil;
 import org.apache.iceberg.util.Tasks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
@@ -211,7 +211,8 @@ public class TableFileUtil {
    * @return new file path
    */
   public static String getNewFilePath(String newDirectory, String filePath) {
-    return newDirectory + File.separator + getFileName(filePath);
+    return String.format(
+        "%s/%s", LocationUtil.stripTrailingSlash(newDirectory), getFileName(filePath));
   }
 
   /**

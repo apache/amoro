@@ -23,7 +23,7 @@ Alternatively, you can manually deploy the following components to set up the te
 | Component  | Version  | Description |  Installation Guide|
 |:----------|:----------|:--------|:--------|
 | MySQL    | 5.7+    | MySQL is used to generate TPC-C data for synchronization to data lakes. | [MySQL Installation Guide](https://dev.mysql.com/doc/mysql-installation-excerpt/5.7/en/) |
-| Hadoop   | 2.3.7+  | Hadoop is used to provide the storage for data lakes. | [Ambari](https://ambari.apache.org/)    |
+| Hadoop   | 3.x     | Hadoop is used to provide the storage for data lakes. | [Ambari](https://ambari.apache.org/)    |
 | Trino    | 380     | Trino is used to execute TPC-H queries for Iceberg and Mixed-Iceberg format tables. | [Trino Installation Guide](https://trino.io/docs/current/installation/deployment.html) |
 | Amoro Trino Connector | 0.4.0 | To query Mixed-Iceberg Format tables in Trino, you need to install and configure the Amoro connector in Trino. | [Amoro Trino Connector](https://amoro.netease.com/docs/latest/trino/)    |
 | Iceberg Trino Connector | 0.13.0 | To query Iceberg Format tables in Trino, you need to install and configure the Iceberg connector in Trino. | [Iceberg Trino Connector](https://trino.io/docs/current/connector/iceberg.html)    |

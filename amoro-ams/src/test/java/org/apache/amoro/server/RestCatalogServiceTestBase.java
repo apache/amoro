@@ -125,7 +125,7 @@ public abstract class RestCatalogServiceTestBase {
 
   protected void assertTableRuntime(TableIdentifier identifier, TableFormat format) {
     TableRuntime runtime = getTableRuntime(identifier);
-    Assertions.assertNotNull(runtime, "table runtime is not exists after created");
+    Assertions.assertNotNull(runtime, "table runtime does not exist after created");
     Assertions.assertEquals(format, runtime.getFormat());
   }
 }

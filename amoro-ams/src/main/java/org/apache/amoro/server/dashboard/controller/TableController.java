@@ -199,7 +199,12 @@ public class TableController {
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     HiveTableInfo hiveTableInfo;
-    Table hiveTable = HiveTableUtil.loadHmsTable(hmsClientPool, tableIdentifier);
+    Table hiveTable = HiveTableUtil.loadPhysicalHmsTable(hmsClientPool, tableIdentifier);
+    Preconditions.checkState(
+        hiveTable.getSd() != null,
+        "Hive table %s.%s does not have a storage descriptor",
+        db,
+        table);
     List<AMSColumnInfo> schema = transformHiveSchemaToAMSColumnInfo(hiveTable.getSd().getCols());
     List<AMSColumnInfo> partitionColumnInfos =
         transformHiveSchemaToAMSColumnInfo(hiveTable.getPartitionKeys());
@@ -338,13 +343,11 @@ public class TableController {
     }
 
     String status = ctx.queryParam("status");
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer pageSize = getPageSize(ctx);
+    Integer page = getPage(ctx, pageSize);
 
     int offset = (page - 1) * pageSize;
     int limit = pageSize;
-    Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
-    Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     ProcessStatus processStatus =
@@ -390,13 +393,11 @@ public class TableController {
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     String processId = ctx.pathParam("processId");
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer pageSize = getPageSize(ctx);
+    Integer page = getPage(ctx, pageSize);
 
     int offset = (page - 1) * pageSize;
     int limit = pageSize;
-    Preconditions.checkArgument(offset >= 0, "offset[%s] must >= 0", offset);
-    Preconditions.checkArgument(limit >= 0, "limit[%s] must >= 0", limit);
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     List<OptimizingTaskInfo> optimizingTaskInfos =
@@ -416,8 +417,8 @@ public class TableController {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
     String tableName = ctx.pathParam("table");
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer pageSize = getPageSize(ctx);
+    Integer page = getPage(ctx, pageSize);
     // ref means tag/branch
     String ref = ctx.queryParamAsClass("ref", String.class).getOrDefault(null);
     String operation =
@@ -446,8 +447,8 @@ public class TableController {
     String database = ctx.pathParam("db");
     String tableName = ctx.pathParam("table");
     String snapshotId = ctx.pathParam("snapshotId");
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer pageSize = getPageSize(ctx);
+    Integer page = getPage(ctx, pageSize);
     String ref = ctx.queryParamAsClass("ref", String.class).getOrDefault(null);
 
     List<PartitionFileBaseInfo> result =
@@ -470,8 +471,8 @@ public class TableController {
     String database = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     String filter = ctx.queryParamAsClass("filter", String.class).getOrDefault("");
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer pageSize = getPageSize(ctx);
+    Integer page = getPage(ctx, pageSize);
 
     List<PartitionBaseInfo> partitionBaseInfos =
         tableDescriptor.getTablePartition(
@@ -499,8 +500,8 @@ public class TableController {
     String partition = ctx.pathParam("partition");
 
     Integer specId = ctx.queryParamAsClass("specId", Integer.class).getOrDefault(0);
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer pageSize = getPageSize(ctx);
+    Integer page = getPage(ctx, pageSize);
 
     List<PartitionFileBaseInfo> partitionFileBaseInfos =
         tableDescriptor.getTableFile(
@@ -521,8 +522,8 @@ public class TableController {
     String db = ctx.pathParam("db");
     String tableName = ctx.pathParam("table");
 
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer pageSize = getPageSize(ctx);
+    Integer page = getPage(ctx, pageSize);
     int offset = (page - 1) * pageSize;
 
     List<DDLInfo> ddlInfoList =
@@ -633,8 +634,8 @@ public class TableController {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
     String table = ctx.pathParam("table");
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer pageSize = getPageSize(ctx);
+    Integer page = getPage(ctx, pageSize);
     List<TagOrBranchInfo> partitionBaseInfos =
         tableDescriptor.getTableTags(
             TableIdentifier.of(catalog, database, table).buildTableIdentifier());
@@ -647,8 +648,8 @@ public class TableController {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
     String table = ctx.pathParam("table");
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer pageSize = getPageSize(ctx);
+    Integer page = getPage(ctx, pageSize);
     List<TagOrBranchInfo> partitionBaseInfos =
         tableDescriptor.getTableBranches(
             TableIdentifier.of(catalog, database, table).buildTableIdentifier());
@@ -662,8 +663,8 @@ public class TableController {
     String catalog = ctx.pathParam("catalog");
     String database = ctx.pathParam("db");
     String table = ctx.pathParam("table");
-    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
-    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer pageSize = getPageSize(ctx);
+    Integer page = getPage(ctx, pageSize);
     List<ConsumerInfo> consumerInfos =
         tableDescriptor.getTableConsumersInfos(
             TableIdentifier.of(catalog, database, table).buildTableIdentifier());
@@ -712,6 +713,21 @@ public class TableController {
     ctx.json(OkResponse.ok());
   }
 
+  private int getPageSize(Context ctx) {
+    return ctx.queryParamAsClass("pageSize", Integer.class)
+        .check(size -> size >= 1, "pageSize must be greater than 0")
+        .getOrDefault(20);
+  }
+
+  private int getPage(Context ctx, int pageSize) {
+    return ctx.queryParamAsClass("page", Integer.class)
+        .check(page -> page >= 1, "page must be greater than 0")
+        .check(
+            page -> ((long) page - 1) * pageSize <= Integer.MAX_VALUE,
+            "page offset exceeds int range")
+        .getOrDefault(1);
+  }
+
   private void putMainBranchFirst(List<TagOrBranchInfo> branchInfos) {
     if (branchInfos.size() <= 1) {
       return;
@@ -727,6 +743,9 @@ public class TableController {
   }
 
   private List<AMSColumnInfo> transformHiveSchemaToAMSColumnInfo(List<FieldSchema> fields) {
+    if (fields == null) {
+      return Collections.emptyList();
+    }
     return fields.stream()
         .map(
             f -> {

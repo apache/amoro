@@ -18,7 +18,9 @@
 
 package org.apache.amoro.hive.utils;
 
+import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.hive.HMSClientPool;
+import org.apache.amoro.hive.HiveTableTypeUtil;
 import org.apache.amoro.properties.HiveTableProperties;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.TableIdentifier;
@@ -37,8 +39,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class HiveTableUtil {
 
@@ -59,6 +65,23 @@ public class HiveTableUtil {
       Thread.currentThread().interrupt();
       throw new RuntimeException("Interrupted during commit", e);
     }
+  }
+
+  /**
+   * Loads a physical Hive table and rejects missing tables and Hive views.
+   *
+   * @param hiveClient Hive Metastore client pool
+   * @param tableIdentifier table to load
+   * @return the physical Hive table
+   * @throws NoSuchTableException if the table is missing or is a Hive view
+   */
+  public static Table loadPhysicalHmsTable(
+      HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
+    Table table = loadHmsTable(hiveClient, tableIdentifier);
+    if (table == null || HiveTableTypeUtil.isView(table)) {
+      throw new NoSuchTableException("Hive table does not exist: " + tableIdentifier);
+    }
+    return table;
   }
 
   public static void persistTable(
@@ -161,7 +184,8 @@ public class HiveTableUtil {
   }
 
   /**
-   * Gets all the tables in a database.
+   * Gets all physical tables in a database. Hive views are excluded because they cannot be managed
+   * as Hive or Mixed Hive tables.
    *
    * @param hiveClient Hive client from MixedHiveCatalog
    * @param database Hive database
@@ -169,7 +193,18 @@ public class HiveTableUtil {
    */
   public static List<String> getAllHiveTables(HMSClientPool hiveClient, String database) {
     try {
-      return hiveClient.run(client -> client.getAllTables(database));
+      return hiveClient.run(
+          client -> {
+            List<String> tableNames = client.getAllTables(database);
+            if (tableNames == null || tableNames.isEmpty()) {
+              return Collections.emptyList();
+            }
+
+            Set<String> viewNames = HiveTableTypeUtil.listViewNames(client, database, tableNames);
+            return tableNames.stream()
+                .filter(name -> !viewNames.contains(name.toLowerCase(Locale.ROOT)))
+                .collect(Collectors.toList());
+          });
     } catch (TException e) {
       throw new RuntimeException("Failed to get tables of database " + database, e);
     } catch (InterruptedException e) {

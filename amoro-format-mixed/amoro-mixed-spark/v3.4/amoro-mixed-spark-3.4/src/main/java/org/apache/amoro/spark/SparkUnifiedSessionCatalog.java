@@ -33,7 +33,7 @@ import org.apache.spark.sql.connector.catalog.functions.UnboundFunction;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 /**
- * For TableCatalog in spark 3.3 is different with spark 3.2。 so we define it seperately 1、 we
+ * For TableCatalog in spark 3.3 is different with spark 3.2。 so we define it separately 1、 we
  * support the grammar feature of time travel. 2、 support FunctionCatalog
  */
 public class SparkUnifiedSessionCatalog<
