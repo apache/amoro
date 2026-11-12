@@ -126,6 +126,10 @@ public class LanceHiveCatalog extends AbstractLanceCatalog {
 
     // delete the table data.
     String location = response.getLocation();
+    if (StringUtils.isBlank(location)) {
+      throw new IllegalStateException(
+          "Failed to purge Lance data: no location for " + database + "." + table);
+    }
     try {
       Dataset.drop(location, storageOptions(catalogProperties, location));
     } catch (Exception e) {
