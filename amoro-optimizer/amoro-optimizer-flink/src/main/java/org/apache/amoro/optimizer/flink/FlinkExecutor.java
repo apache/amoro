@@ -24,9 +24,12 @@ import static org.apache.flink.configuration.TaskManagerOptions.TASK_MANAGER_RES
 
 import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.apache.amoro.optimizer.common.OptimizerExecutor;
+import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
+
+import java.time.Duration;
 
 public class FlinkExecutor extends AbstractStreamOperator<Void>
     implements OneInputStreamOperator<String, Void> {
@@ -77,15 +80,19 @@ public class FlinkExecutor extends AbstractStreamOperator<Void>
     getMetricGroup().getAllVariables().put("<optimizer_group>", optimizeGroupName);
     executor.initOperatorMetric(getMetricGroup());
     long taskCancellationTimeoutMs =
-        getRuntimeContext()
-            .getTaskManagerRuntimeInfo()
-            .getConfiguration()
-            .get(TASK_CANCELLATION_TIMEOUT);
+        taskCancellationTimeoutMs(
+            getRuntimeContext().getTaskManagerRuntimeInfo().getConfiguration());
     drainTimeoutMs = effectiveDrainTimeoutMs(shutdownTimeoutMs, taskCancellationTimeoutMs);
     optimizerThread =
         new Thread(() -> executor.start(), "flink-optimizer-executor-" + subTaskIndex);
     optimizerThread.setDaemon(true);
     optimizerThread.start();
+  }
+
+  static long taskCancellationTimeoutMs(ReadableConfig configuration) {
+    // Flink 1.20 changed this option from milliseconds (Long) to Duration.
+    Object timeout = configuration.get(TASK_CANCELLATION_TIMEOUT);
+    return timeout instanceof Duration ? ((Duration) timeout).toMillis() : (Long) timeout;
   }
 
   @Override
