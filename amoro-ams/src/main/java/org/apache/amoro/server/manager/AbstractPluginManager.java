@@ -85,6 +85,19 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
     foundAvailablePlugins();
 
     List<PluginConfiguration> pluginConfigs = loadPluginConfigurations();
+    // If no plugin configs were loaded from file but plugins were found via ServiceLoader,
+    // create default configurations so they can be installed. This handles the case where
+    // AMS is started from an IDE without the full plugins directory structure.
+    if (pluginConfigs.isEmpty() && !foundedPlugins.isEmpty()) {
+      pluginConfigs =
+          foundedPlugins.keySet().stream()
+              .map(PluginConfiguration::emptyConfig)
+              .collect(Collectors.toList());
+      LOG.info(
+          "No {} plugin configurations found, auto-installing discovered plugins: {}",
+          pluginCategory(),
+          foundedPlugins.keySet());
+    }
     pluginConfigs.stream()
         .sorted(Comparator.comparing(PluginConfiguration::getPriority))
         .forEach(

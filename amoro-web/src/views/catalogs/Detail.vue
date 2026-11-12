@@ -191,6 +191,14 @@ const defaultPropertiesMap = {
   PAIMON: ['warehouse'],
 }
 
+const LANCE_EXCLUSIVE_TYPES = ['rest', 'hive']
+
+// Hive + Lance reads metastore uri and warehouse root from catalog properties.
+const HIVE_LANCE_PROPERTIES = ['uri', 'warehouse']
+const isHiveLance = computed(() => {
+  return formState.catalog.type === 'hive' && formState.tableFormatList.includes(tableFormatMap.LANCE)
+})
+
 watch(() => route.query, (value) => {
   value && initData()
 }, {
@@ -250,9 +258,8 @@ async function loadMetastoreCapabilities(loadTableFormats: boolean) {
   const options = (formats || []) as string[]
   tableFormatOptions.value = options
   if (loadTableFormats) {
-    // REST catalog: Lance and Iceberg use different protocols (one protocol per uri),
-    // so they can't coexist. Default to Iceberg family; Lance stays unchecked (opt-in).
-    const defaultFormats = type === 'rest'
+    // Lance is opt-in: including it in the default would collapse the selection onto Lance.
+    const defaultFormats = LANCE_EXCLUSIVE_TYPES.includes(type)
       ? options.filter(format => format !== tableFormatMap.LANCE)
       : options
     formState.tableFormatList = defaultFormats.length > 0 ? [...defaultFormats] : [...options]
@@ -361,7 +368,10 @@ async function getConfigInfo() {
 
 async function changeProperties() {
   const properties = await propertiesRef.value.getPropertiesWithoputValidation()
-  const catalogKeys = defaultPropertiesMap[formState.catalog.type as keyof typeof defaultPropertiesMap] || []
+  const catalogKeys = [
+    ...(defaultPropertiesMap[formState.catalog.type as keyof typeof defaultPropertiesMap] || []),
+    ...(isHiveLance.value ? HIVE_LANCE_PROPERTIES : []),
+  ]
   catalogKeys.forEach((key) => {
     if (key && !properties[key]) {
       properties[key] = ''
@@ -406,12 +416,22 @@ const isRestLance = computed(() => {
   return formState.catalog.type === 'rest' && formState.tableFormatList.includes(tableFormatMap.LANCE)
 })
 
+// Lance whitelists S3/OSS/Local only; hide Hadoop while Lance is selected.
+const storageTypeOptionsView = computed(() => {
+  return formState.tableFormatList.includes(tableFormatMap.LANCE)
+    ? storageTypeOptions.value.filter(option => option.value !== 'Hadoop')
+    : storageTypeOptions.value
+})
+
 watch(
   () => formState.storageConfig['storage.type'],
   (storageType) => {
     if (storageType === 'Local') {
       if (isNewCatalog.value) {
-        formState.tableFormatList = [tableFormatMap.ICEBERG]
+        // Hive + Local only serves Lance; the other metastores still default to Iceberg.
+        formState.tableFormatList = formState.catalog.type === 'hive'
+          ? [tableFormatMap.LANCE]
+          : [tableFormatMap.ICEBERG]
       }
       if (!formState.authConfig['auth.type']) {
         formState.authConfig['auth.type'] = 'SIMPLE'
@@ -426,17 +446,30 @@ watch(
 
 watch(
   () => formState.tableFormatList,
-  (formats, oldFormats) => {
-    const isRest = formState.catalog.type === 'rest'
+  async (formats, oldFormats) => {
     const hasLance = formats.includes(tableFormatMap.LANCE)
 
-    if (isRest && hasLance && formats.length > 1) {
-      // If Lance was just added, keep only Lance; otherwise the user switched away from Lance.
+    if (LANCE_EXCLUSIVE_TYPES.includes(formState.catalog.type as string) && hasLance && formats.length > 1) {
+      // If Lance was just added, keep only Lance; otherwise drop the deselected Lance.
       const hadLance = oldFormats?.includes(tableFormatMap.LANCE)
       formState.tableFormatList = hadLance
         ? formats.filter(format => format !== tableFormatMap.LANCE)
         : [tableFormatMap.LANCE]
+      return
     }
+
+    // Skip while loading: changeProperties() would overwrite the just-loaded properties.
+    if (loading.value) {
+      return
+    }
+
+    // Hadoop is not whitelisted for Lance; fall back to the first supported storage type.
+    if (hasLance && formState.storageConfig['storage.type'] === 'Hadoop') {
+      formState.storageConfig['storage.type'] = storageTypeOptionsView.value[0]?.value || ''
+    }
+
+    // Use changeProperties(): a direct write drops the user's unsaved edits.
+    await changeProperties()
   },
 )
 
@@ -686,7 +719,7 @@ onMounted(() => {
             <a-form-item :label="$t('type')" :name="['storageConfig', 'storage.type']" :rules="[{ required: isEdit }]">
               <a-select
                 v-if="isEdit" v-model:value="formState.storageConfig['storage.type']"
-                :placeholder="placeholder.selectPh" :options="storageTypeOptions"
+                :placeholder="placeholder.selectPh" :options="storageTypeOptionsView"
               />
               <span v-else class="config-value">{{ formState.storageConfig['storage.type'] }}</span>
             </a-form-item>

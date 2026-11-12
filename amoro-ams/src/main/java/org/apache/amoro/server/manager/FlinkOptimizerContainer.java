@@ -390,7 +390,7 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
     if (target.runByFlinkRestClient()) {
       Preconditions.checkArgument(
           resource.getProperties().containsKey(SESSION_CLUSTER_JOB_ID),
-          "Cannot find {} from optimizer start up stats",
+          "Cannot find %s from optimizer start up stats",
           SESSION_CLUSTER_JOB_ID);
       String jobId = resource.getProperties().get(SESSION_CLUSTER_JOB_ID);
       Configuration configuration =
@@ -443,14 +443,14 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
   private String buildReleaseYarnCommand(Resource resource) {
     Preconditions.checkArgument(
         resource.getProperties().containsKey(YARN_APPLICATION_ID_PROPERTY),
-        "Cannot find {} from optimizer start up stats",
+        "Cannot find %s from optimizer start up stats",
         YARN_APPLICATION_ID_PROPERTY);
     String applicationId = resource.getProperties().get(YARN_APPLICATION_ID_PROPERTY);
     String options = "-Dyarn.application.id=" + applicationId;
 
     Preconditions.checkArgument(
         resource.getProperties().containsKey(Resource.PROPERTY_JOB_ID),
-        "Cannot find {} from optimizer properties",
+        "Cannot find %s from optimizer properties",
         Resource.PROPERTY_JOB_ID);
     String jobId = resource.getProperties().get(Resource.PROPERTY_JOB_ID);
     return String.format(
@@ -460,7 +460,7 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
   private String buildReleaseKubernetesCommand(Resource resource) {
     Preconditions.checkArgument(
         resource.getProperties().containsKey(KUBERNETES_CLUSTER_ID_PROPERTY),
-        "Cannot find {} from optimizer start up stats.",
+        "Cannot find %s from optimizer start up stats.",
         KUBERNETES_CLUSTER_ID_PROPERTY);
     String clusterId = resource.getProperties().get(KUBERNETES_CLUSTER_ID_PROPERTY);
 

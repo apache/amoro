@@ -44,7 +44,7 @@ jobs:
         run: ./mvnw validate -P format-mixed-format-trino
 
       - name: Build trino module with Maven
-        run: ./mvnw clean install -pl 'amoro-format-mixed/amoro-mixed-trino' -am -B -P hadoop2,format-mixed-format-trino,build-mixed-format-trino
+        run: ./mvnw clean install -pl 'amoro-format-mixed/amoro-mixed-trino' -am -B -P format-mixed-format-trino,build-mixed-format-trino
 
       - name: Code coverage
         uses: codecov/codecov-action@v3

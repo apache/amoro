@@ -18,6 +18,8 @@
 
 package org.apache.amoro.optimizer.flink;
 
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.TaskManagerOptions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +28,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestFlinkExecutor {
+
+  @Test
+  public void testTaskCancellationTimeoutAcrossFlinkVersions() {
+    Configuration configuration = new Configuration();
+    Assertions.assertEquals(180_000, FlinkExecutor.taskCancellationTimeoutMs(configuration));
+
+    configuration.setLong(TaskManagerOptions.TASK_CANCELLATION_TIMEOUT.key(), 12_345);
+    Assertions.assertEquals(12_345, FlinkExecutor.taskCancellationTimeoutMs(configuration));
+
+    configuration.setLong(TaskManagerOptions.TASK_CANCELLATION_TIMEOUT.key(), 0);
+    Assertions.assertEquals(0, FlinkExecutor.taskCancellationTimeoutMs(configuration));
+  }
 
   @Test
   public void testDrainWaitsForInProgressTask() throws InterruptedException {

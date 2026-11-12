@@ -470,10 +470,10 @@ CREATE TABLE IF NOT EXISTS bucket_assignments (
 
 CREATE INDEX IF NOT EXISTS idx_bucket_assignments_cluster ON bucket_assignments (cluster_name);
 
-COMMENT ON COLUMN service_name IS 'Service name (AMS/TABLE_SERVICE/OPTIMIZING_SERVICE)';
-COMMENT ON COLUMN node_id IS 'Unique node identifier (host:port:uuid)';
-COMMENT ON COLUMN node_ip IS 'Node IP address';
-COMMENT ON COLUMN server_info_json IS 'JSON encoded server info (AmsServerInfo)';
-COMMENT ON COLUMN lease_expire_ts IS 'Lease expiration timestamp (ms since epoch)';
-COMMENT ON COLUMN version IS 'Optimistic lock version of the lease row';
-COMMENT ON COLUMN updated_at IS 'Last update timestamp (ms since epoch)';
+COMMENT ON COLUMN ha_lease.service_name IS 'Service name (AMS/TABLE_SERVICE/OPTIMIZING_SERVICE)';
+COMMENT ON COLUMN ha_lease.node_id IS 'Unique node identifier (host:port:uuid)';
+COMMENT ON COLUMN ha_lease.node_ip IS 'Node IP address';
+COMMENT ON COLUMN ha_lease.server_info_json IS 'JSON encoded server info (AmsServerInfo)';
+COMMENT ON COLUMN ha_lease.lease_expire_ts IS 'Lease expiration timestamp (ms since epoch)';
+COMMENT ON COLUMN ha_lease.version IS 'Optimistic lock version of the lease row';
+COMMENT ON COLUMN ha_lease.updated_at IS 'Last update timestamp (ms since epoch)';
