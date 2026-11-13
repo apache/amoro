@@ -70,10 +70,14 @@ jobs:
           images: |
             name=apache/amoro
           tags: |
-            type=ref,event=branch,suffix=-snapshot
-            type=raw,enable=${{ startsWith(github.ref, 'refs/tags/v') }},value=latest
+            type=ref,event=branch,enable=${{ github.ref == 'refs/heads/master' }},suffix=-snapshot
+            type=raw,enable=${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/0.9.0' }},value=latest
             type=semver,event=tag,pattern={{version}}
             type=semver,event=tag,pattern={{version}}, suffix=-hadoop3
+            # Release rebuilds: the v0.9.0-incubating tag is immutable, so 0.9.0
+            # images are built from this branch and tagged explicitly.
+            type=raw,enable=${{ github.ref == 'refs/heads/0.9.0' }},value=0.9.0-incubating
+            type=raw,enable=${{ github.ref == 'refs/heads/0.9.0' }},value=0.9.0-incubating-hadoop3
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
@@ -129,13 +133,16 @@ jobs:
           images: |
             name=apache/amoro-flink-optimizer
           tags: |
-            type=ref,event=branch,enable=${{ matrix.flink == '1.18.1' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.flink == '1.18.1' }},suffix=-snapshot-flink1.18
-            type=ref,event=branch,enable=${{ matrix.flink == '1.20.0' }},suffix=-snapshot-flink1.20
-            type=raw,enable=${{ matrix.flink == '1.18.1' && startsWith(github.ref, 'refs/tags/v') }},value=latest
+            type=ref,event=branch,enable=${{ github.ref == 'refs/heads/master' && matrix.flink == '1.18.1' }},suffix=-snapshot
+            type=ref,event=branch,enable=${{ github.ref == 'refs/heads/master' && matrix.flink == '1.18.1' }},suffix=-snapshot-flink1.18
+            type=ref,event=branch,enable=${{ github.ref == 'refs/heads/master' && matrix.flink == '1.20.0' }},suffix=-snapshot-flink1.20
+            type=raw,enable=${{ (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/0.9.0') && matrix.flink == '1.18.1' }},value=latest
             type=semver,enable=${{ matrix.flink == '1.18.1' }},pattern={{version}}
             type=semver,enable=${{ matrix.flink == '1.18.1' }},pattern={{version}}, suffix=-flink1.18
             type=semver,enable=${{ matrix.flink == '1.20.0' }},pattern={{version}}, suffix=-flink1.20
+            type=raw,enable=${{ github.ref == 'refs/heads/0.9.0' && matrix.flink == '1.18.1' }},value=0.9.0-incubating
+            type=raw,enable=${{ github.ref == 'refs/heads/0.9.0' && matrix.flink == '1.18.1' }},value=0.9.0-incubating-flink1.18
+            type=raw,enable=${{ github.ref == 'refs/heads/0.9.0' && matrix.flink == '1.20.0' }},value=0.9.0-incubating-flink1.20
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
@@ -214,11 +221,13 @@ jobs:
           images: |
             name=apache/amoro-spark-optimizer
           tags: |
-            type=ref,event=branch,enable=${{ matrix.spark == '3.5.7' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.spark == '3.5.7' }},suffix=-snapshot-spark3.5
-            type=raw,enable=${{ matrix.spark == '3.5.7' && startsWith(github.ref, 'refs/tags/v') }},value=latest
+            type=ref,event=branch,enable=${{ github.ref == 'refs/heads/master' && matrix.spark == '3.5.7' }},suffix=-snapshot
+            type=ref,event=branch,enable=${{ github.ref == 'refs/heads/master' && matrix.spark == '3.5.7' }},suffix=-snapshot-spark3.5
+            type=raw,enable=${{ (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/0.9.0') && matrix.spark == '3.5.7' }},value=latest
             type=semver,enable=${{ matrix.spark == '3.5.7' }},pattern={{version}}
             type=semver,enable=${{ matrix.spark == '3.5.7' }},pattern={{version}}, suffix=-spark3.5
+            type=raw,enable=${{ github.ref == 'refs/heads/0.9.0' && matrix.spark == '3.5.7' }},value=0.9.0-incubating
+            type=raw,enable=${{ github.ref == 'refs/heads/0.9.0' && matrix.spark == '3.5.7' }},value=0.9.0-incubating-spark3.5
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
