@@ -119,6 +119,66 @@ public class DBBucketAssignStore extends PersistentBase implements BucketAssignS
   }
 
   @Override
+  public void registerNode(AmsServerInfo serverInfo) throws BucketAssignStoreException {
+    String nodeKey = getNodeKey(serverInfo);
+    String serverInfoJson = JacksonUtil.toJSONString(serverInfo);
+    long now = System.currentTimeMillis();
+    try {
+      int updated =
+          updateAs(
+                  BucketAssignMapper.class,
+                  mapper -> mapper.updateNodeHeartbeat(clusterName, nodeKey, now))
+              .intValue();
+      if (updated == 0) {
+        try {
+          doAs(
+              BucketAssignMapper.class,
+              mapper ->
+                  mapper.insert(
+                      new BucketAssignmentMeta(
+                          clusterName, nodeKey, serverInfoJson, null, now, now)));
+        } catch (Exception insertException) {
+          // The HA container's heartbeat (upsertNodeHeartbeat) races with this registration
+          // using the same UPDATE-then-INSERT pattern and starts earlier; if it inserted this
+          // node after our UPDATE returned zero, the INSERT fails with a duplicate key.
+          // Retry the UPDATE to complete the registration instead of failing AMS startup.
+          int retried =
+              updateAs(
+                      BucketAssignMapper.class,
+                      mapper -> mapper.updateNodeHeartbeat(clusterName, nodeKey, now))
+                  .intValue();
+          if (retried == 0) {
+            // The row vanished between the failed insert and the retry (e.g. a concurrent
+            // removeNode); surface the original insert failure.
+            throw insertException;
+          }
+          LOG.info(
+              "Node {} was concurrently inserted during registration, completed via update retry",
+              nodeKey);
+        }
+      }
+      LOG.debug("Registered node {} in bucket_assignments", nodeKey);
+    } catch (BucketAssignStoreException e) {
+      throw e;
+    } catch (Exception e) {
+      LOG.error("Failed to register node {}", nodeKey, e);
+      throw new BucketAssignStoreException("Failed to register node " + nodeKey, e);
+    }
+  }
+
+  @Override
+  public void removeNode(AmsServerInfo serverInfo) throws BucketAssignStoreException {
+    String nodeKey = getNodeKey(serverInfo);
+    try {
+      doAs(BucketAssignMapper.class, mapper -> mapper.deleteByNode(clusterName, nodeKey));
+      LOG.debug("Removed node {} from bucket_assignments", nodeKey);
+    } catch (Exception e) {
+      LOG.error("Failed to remove node {}", nodeKey, e);
+      throw new BucketAssignStoreException("Failed to remove node " + nodeKey, e);
+    }
+  }
+
+  @Override
   public Map<AmsServerInfo, List<String>> getAllAssignments() throws BucketAssignStoreException {
     try {
       List<BucketAssignmentMeta> rows =
@@ -235,5 +295,10 @@ public class DBBucketAssignStore extends PersistentBase implements BucketAssignS
     nodeInfo.setHost(parts[0]);
     nodeInfo.setThriftBindPort(Integer.parseInt(parts[1]));
     return nodeInfo;
+  }
+
+  @Override
+  public void close() {
+    // No resources to release — DataSource is shared and managed globally.
   }
 }

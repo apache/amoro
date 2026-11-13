@@ -37,9 +37,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ZooKeeper-based implementation of BucketAssignStore. Stores bucket ID assignments in ZooKeeper
- * with the following structure: /{namespace}/amoro/ams/bucket-assignments/{nodeKey}/assignments -
- * bucket IDs /{namespace}/amoro/ams/bucket-assignments/{nodeKey}/last-update-time - timestamp
+ * ZooKeeper-based implementation of BucketAssignStore. Bucket assignments are stored as persistent
+ * nodes, while ephemeral node membership is tracked in a separate registration path so that
+ * ephemeral nodes never carry children (ZooKeeper rejects children of ephemeral nodes with
+ * NoChildrenForEphemeralsException):
+ *
+ * <p>- bucket assignments (persistent):
+ * /{namespace}/amoro/ams/bucket-assignments/{nodeKey}/assignments - bucket IDs
+ * /{namespace}/amoro/ams/bucket-assignments/{nodeKey}/last-update-time - timestamp
+ *
+ * <p>- node registration (ephemeral, liveness): /{namespace}/amoro/ams/nodes/{nodeKey}
  */
 public class ZkBucketAssignStore implements BucketAssignStore {
 
@@ -52,12 +59,15 @@ public class ZkBucketAssignStore implements BucketAssignStore {
 
   private final CuratorFramework zkClient;
   private final String assignmentsBasePath;
+  private final String nodesBasePath;
 
   public ZkBucketAssignStore(CuratorFramework zkClient, String clusterName) {
     this.zkClient = zkClient;
     this.assignmentsBasePath = AmsHAProperties.getBucketAssignmentsPath(clusterName);
+    this.nodesBasePath = AmsHAProperties.getNodesPath(clusterName);
     try {
       createPathIfNeeded(assignmentsBasePath);
+      createPathIfNeeded(nodesBasePath);
     } catch (Exception e) {
       LOG.error("Failed to create bucket assignments path", e);
       throw new RuntimeException("Failed to initialize ZkBucketAssignStore", e);
@@ -174,10 +184,10 @@ public class ZkBucketAssignStore implements BucketAssignStore {
   public List<AmsServerInfo> getAliveNodes() throws BucketAssignStoreException {
     List<AmsServerInfo> nodes = new ArrayList<>();
     try {
-      if (zkClient.checkExists().forPath(assignmentsBasePath) == null) {
+      if (zkClient.checkExists().forPath(nodesBasePath) == null) {
         return nodes;
       }
-      List<String> nodeKeys = zkClient.getChildren().forPath(assignmentsBasePath);
+      List<String> nodeKeys = zkClient.getChildren().forPath(nodesBasePath);
       for (String nodeKey : nodeKeys) {
         try {
           AmsServerInfo nodeInfo = parseNodeKey(nodeKey);
@@ -197,6 +207,52 @@ public class ZkBucketAssignStore implements BucketAssignStore {
       throw new BucketAssignStoreException("Failed to get alive nodes", e);
     }
     return nodes;
+  }
+
+  @Override
+  public void registerNode(AmsServerInfo serverInfo) throws BucketAssignStoreException {
+    String nodeKey = getNodeKey(serverInfo);
+    // Register in the dedicated ephemeral membership path, NOT under the bucket-assignments
+    // path. Ephemeral nodes cannot have children in ZooKeeper, and assignments are stored as
+    // children of the per-node path, so registration must live in a separate path.
+    String nodePath = nodesBasePath + "/" + nodeKey;
+    String serverInfoJson = JacksonUtil.toJSONString(serverInfo);
+    try {
+      zkClient
+          .create()
+          .creatingParentsIfNeeded()
+          .withMode(CreateMode.EPHEMERAL)
+          .forPath(nodePath, serverInfoJson.getBytes(StandardCharsets.UTF_8));
+      LOG.debug("Registered node {} in ZK", nodeKey);
+    } catch (KeeperException.NodeExistsException e) {
+      // Already registered, update data
+      try {
+        zkClient.setData().forPath(nodePath, serverInfoJson.getBytes(StandardCharsets.UTF_8));
+      } catch (Exception ex) {
+        throw new BucketAssignStoreException("Failed to update node registration " + nodeKey, ex);
+      }
+    } catch (Exception e) {
+      throw new BucketAssignStoreException("Failed to register node " + nodeKey, e);
+    }
+  }
+
+  @Override
+  public void removeNode(AmsServerInfo serverInfo) throws BucketAssignStoreException {
+    // Remove both the ephemeral registration and the persistent assignments
+    removeAssignments(serverInfo);
+    String nodeKey = getNodeKey(serverInfo);
+    String nodePath = nodesBasePath + "/" + nodeKey;
+    try {
+      if (zkClient.checkExists().forPath(nodePath) != null) {
+        zkClient.delete().forPath(nodePath);
+        LOG.debug("Removed node registration {} from ZK", nodeKey);
+      }
+    } catch (KeeperException.NoNodeException e) {
+      // Already deleted, ignore
+    } catch (Exception e) {
+      LOG.error("Failed to remove node registration {}", nodeKey, e);
+      throw new BucketAssignStoreException("Failed to remove node registration " + nodeKey, e);
+    }
   }
 
   @Override
@@ -270,5 +326,10 @@ public class ZkBucketAssignStore implements BucketAssignStore {
     } catch (Exception e) {
       throw new BucketAssignStoreException("Failed to create path: " + path, e);
     }
+  }
+
+  @Override
+  public void close() {
+    zkClient.close();
   }
 }
