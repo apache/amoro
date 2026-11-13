@@ -94,7 +94,7 @@ Watermark configuration is only supported in Mixed-Hive format and Mixed-Iceberg
 
 After logging into the AMS dashboard, go to the `Terminal` and enter the 
 modification statement to complete the table modification. The current `Terminal` uses Spark Engine to execute SQL. For 
-more information on modifying tables, please refer to the syntax guide [Spark DDL](../spark-ddl#alter-statement).
+more information on modifying tables, please refer to the syntax guide [Spark DDL](../spark-ddl/#alter-table).
 
 ## Upgrade a Hive table
 Amoro supports [Mixed-Hive format](../mixed-hive-format/) table, which combines the capabilities of Hive formats to directly implement new table formats on top of Hive.
