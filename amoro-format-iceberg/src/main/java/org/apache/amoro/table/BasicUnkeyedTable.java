@@ -38,6 +38,7 @@ import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.HistoryEntry;
 import org.apache.iceberg.IncrementalAppendScan;
 import org.apache.iceberg.ManageSnapshots;
+import org.apache.iceberg.MetricsModes;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReplacePartitions;
@@ -61,8 +62,11 @@ import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.UpdateStatistics;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
+import org.apache.iceberg.types.Type;
+import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -158,12 +162,28 @@ public class BasicUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public Map<String, String> properties() {
+    Map<String, String> properties;
     if (catalogProperties == null) {
-      return icebergTable.properties();
+      properties = icebergTable.properties();
     } else {
-      return MixedFormatCatalogUtil.mergeCatalogPropertiesToTable(
-          icebergTable.properties(), catalogProperties);
+      properties =
+          MixedFormatCatalogUtil.mergeCatalogPropertiesToTable(
+              icebergTable.properties(), catalogProperties);
     }
+    String eventTime = properties.get(TableProperties.TABLE_EVENT_TIME_FIELD);
+    if (eventTime != null) {
+      Types.NestedField field = schema().findField(eventTime);
+      String metricKey =
+          org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + eventTime;
+      if (field != null
+          && field.type().typeId() == Type.TypeID.STRING
+          && !properties.containsKey(metricKey)) {
+        // A truncated timestamp string cannot be parsed reliably when advancing the watermark.
+        properties = new HashMap<>(properties);
+        properties.put(metricKey, MetricsModes.Full.get().toString());
+      }
+    }
+    return properties;
   }
 
   @Override
