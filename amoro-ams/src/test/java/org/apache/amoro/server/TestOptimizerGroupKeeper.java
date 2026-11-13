@@ -224,7 +224,10 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
   public void testNoAllocationWhenMinParallelismSatisfied() throws InterruptedException {
     resourceAvailable.set(true);
     scaleOutCallCount.set(0);
-    ResourceGroup resourceGroup = buildTestResourceGroup(TEST_GROUP_NAME + "-2", 2);
+    // The keeper starts checking the group as soon as it is created, so create it with
+    // min-parallelism 0 and raise it only after the optimizer is registered. Otherwise a check
+    // that runs before the registration is visible triggers a legitimate scale-out.
+    ResourceGroup resourceGroup = buildTestResourceGroup(TEST_GROUP_NAME + "-2", 0);
 
     optimizerManager().createResourceGroup(resourceGroup);
     optimizingService().createResourceGroup(resourceGroup);
@@ -233,6 +236,10 @@ public class TestOptimizerGroupKeeper extends AMSTableTestBase {
     OptimizerRegisterInfo registerInfo = buildRegisterInfo(resourceGroup.getName(), 3);
     String testToken = optimizingService().authenticate(registerInfo);
     Assertions.assertNotNull(testToken, "Optimizer should be registered successfully");
+
+    ResourceGroup satisfiedGroup = buildTestResourceGroup(resourceGroup.getName(), 2);
+    optimizerManager().updateResourceGroup(satisfiedGroup);
+    optimizingService().updateResourceGroup(satisfiedGroup);
 
     Thread.sleep(200);
 
