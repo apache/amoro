@@ -36,7 +36,7 @@ import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.server.persistence.mapper.OptimizingProcessMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
-import org.apache.amoro.server.table.DerbyPersistence;
+import org.apache.amoro.server.table.H2Persistence;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.descriptor.FormatTableDescriptor;
 import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
@@ -57,7 +57,7 @@ import java.util.Map;
 
 @RunWith(Parameterized.class)
 public class TestIcebergServerTableDescriptor extends TestServerTableDescriptor {
-  @Rule public DerbyPersistence derbyPersistence = new DerbyPersistence();
+  @Rule public H2Persistence h2Persistence = new H2Persistence();
 
   public TestIcebergServerTableDescriptor(AmoroCatalogTestHelper<?> amoroCatalogTestHelper) {
     super(amoroCatalogTestHelper);

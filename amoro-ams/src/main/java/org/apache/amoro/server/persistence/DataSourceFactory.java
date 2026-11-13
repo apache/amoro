@@ -44,17 +44,30 @@ import java.time.Duration;
 /** Factory to help create data source */
 public class DataSourceFactory {
   private static final Logger LOG = LoggerFactory.getLogger(DataSourceFactory.class);
-  private static final String DERBY_INIT_SQL_SCRIPT = "derby/ams-derby-init.sql";
+  private static final String H2_INIT_SQL_SCRIPT = "h2/ams-h2-init.sql";
   private static final String MYSQL_INIT_SQL_SCRIPT = "mysql/ams-mysql-init.sql";
   private static final String POSTGRES_INIT_SQL_SCRIPT = "postgres/ams-postgres-init.sql";
 
+  private static void validateDatabaseType(String dbType) {
+    if (!AmoroManagementConf.DB_TYPE_H2.equals(dbType)
+        && !AmoroManagementConf.DB_TYPE_MYSQL.equals(dbType)
+        && !AmoroManagementConf.DB_TYPE_POSTGRES.equals(dbType)) {
+      throw new IllegalArgumentException(
+          "Unsupported database.type: "
+              + dbType
+              + "; supported database types are h2, mysql, postgres");
+    }
+  }
+
   public static DataSource createDataSource(Configurations config) {
+    validateDatabaseType(config.getString(AmoroManagementConf.DB_TYPE));
     BasicDataSource dataSource = new BasicDataSource();
     dataSource.setUrl(config.getString(AmoroManagementConf.DB_CONNECTION_URL));
     dataSource.setDriverClassName(config.getString(AmoroManagementConf.DB_DRIVER_CLASS_NAME));
     String dbType = config.getString(AmoroManagementConf.DB_TYPE);
     if (AmoroManagementConf.DB_TYPE_MYSQL.equals(dbType)
-        || AmoroManagementConf.DB_TYPE_POSTGRES.equals(dbType)) {
+        || AmoroManagementConf.DB_TYPE_POSTGRES.equals(dbType)
+        || AmoroManagementConf.DB_TYPE_H2.equals(dbType)) {
       dataSource.setUsername(config.getString(AmoroManagementConf.DB_USER_NAME));
       dataSource.setPassword(config.getString(AmoroManagementConf.DB_PASSWORD));
     }
@@ -92,8 +105,10 @@ public class DataSourceFactory {
 
     try (Connection connection = ds.getConnection();
         Statement statement = connection.createStatement()) {
-      if (AmoroManagementConf.DB_TYPE_DERBY.equals(dbTypeConfig)) {
-        query = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = 'CATALOG_METADATA'";
+      if (AmoroManagementConf.DB_TYPE_H2.equals(dbTypeConfig)) {
+        query =
+            "SELECT 1 FROM INFORMATION_SCHEMA.TABLES "
+                + "WHERE TABLE_SCHEMA = CURRENT_SCHEMA() AND TABLE_NAME = 'CATALOG_METADATA'";
       } else if (AmoroManagementConf.DB_TYPE_MYSQL.equals(dbTypeConfig)) {
         query =
             String.format(
@@ -111,6 +126,7 @@ public class DataSourceFactory {
           Path script = Paths.get(getInitSqlScriptPath(dbTypeConfig));
           LOG.info("Table not exists, start run create tables script file:{}", script);
           ScriptRunner runner = new ScriptRunner(connection);
+          runner.setStopOnError(true);
           runner.runScript(
               new InputStreamReader(Files.newInputStream(script), StandardCharsets.UTF_8));
           LOG.info("Tables are created successfully");
@@ -127,8 +143,8 @@ public class DataSourceFactory {
     String scriptPath = null;
     if (type.equals(AmoroManagementConf.DB_TYPE_MYSQL)) {
       scriptPath = MYSQL_INIT_SQL_SCRIPT;
-    } else if (type.equals(AmoroManagementConf.DB_TYPE_DERBY)) {
-      scriptPath = DERBY_INIT_SQL_SCRIPT;
+    } else if (type.equals(AmoroManagementConf.DB_TYPE_H2)) {
+      scriptPath = H2_INIT_SQL_SCRIPT;
     } else if (type.equals(AmoroManagementConf.DB_TYPE_POSTGRES)) {
       scriptPath = POSTGRES_INIT_SQL_SCRIPT;
     }
