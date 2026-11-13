@@ -52,9 +52,7 @@ public class LanceDirectoryV1Catalog extends AbstractLanceCatalog {
   }
 
   private static LanceNamespace buildNamespace(Map<String, String> catalogProperties) {
-    Preconditions.checkArgument(
-        catalogProperties != null && !catalogProperties.isEmpty(),
-        "Catalog properties must be set.");
+    validateProperties(catalogProperties);
     Map<String, String> namespaceProperties = new HashMap<>(catalogProperties);
     String root = namespaceProperties.remove(CatalogMetaProperties.KEY_WAREHOUSE);
     String storageAccessKey =
@@ -89,7 +87,7 @@ public class LanceDirectoryV1Catalog extends AbstractLanceCatalog {
   }
 
   @Override
-  protected List<String> tableIdForListTables(String database) {
+  protected List<String> namespaceId(String database) {
     return Collections.emptyList();
   }
 
