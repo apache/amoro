@@ -27,6 +27,12 @@ on:
       - "master"
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Build the images without pushing to Docker Hub"
+        type: boolean
+        default: true
 
 
 concurrency:
@@ -40,6 +46,8 @@ jobs:
     if: ${{ startsWith(github.repository, 'apache/') }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
@@ -48,13 +56,13 @@ jobs:
           cache: maven
           check-latest: false
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+        uses: ./.github/actions/setup-qemu-action # docker/setup-qemu-action v4.2.0 (96fe6ef7)
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        uses: ./.github/actions/setup-buildx-action # docker/setup-buildx-action v4.2.0 (bb05f3f5)
 
       - name: Set up Docker tags
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        uses: ./.github/actions/metadata-action # docker/metadata-action v6.2.0 (dc802804)
         id: meta
         with:
           flavor: |
@@ -71,7 +79,7 @@ jobs:
         run: echo '${{ steps.meta.outputs.tags }}'
 
       - name: Login to Docker Hub
-        uses: docker/login-action@371161bbe7024a29a25c5e19bfcbc0804fe9ad2c # v4.5.2
+        uses: ./.github/actions/login-action # docker/login-action v4.5.2 (371161bb)
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -80,10 +88,10 @@ jobs:
         run: ./mvnw clean package -pl 'dist' -am -e -DskipTests -B -ntp -Psupport-all-formats -Pno-extended-disk-storage -Pno-plugin-bin
 
       - name: Build and Push Amoro Docker Image
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: ./.github/actions/build-push-action # docker/build-push-action v7.3.0 (53b7df96)
         with:
           context: .
-          push: true
+          push: ${{ github.event_name != 'workflow_dispatch' || inputs.dry-run == false }}
           file: docker/amoro/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
@@ -94,9 +102,11 @@ jobs:
     if: ${{ startsWith(github.repository, 'apache/') }}
     strategy:
       matrix:
-        flink: [ "1.14.6", "1.20.0" ]
+        flink: [ "1.18.1", "1.20.0" ]
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
@@ -105,13 +115,13 @@ jobs:
           cache: maven
           check-latest: false
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+        uses: ./.github/actions/setup-qemu-action # docker/setup-qemu-action v4.2.0 (96fe6ef7)
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        uses: ./.github/actions/setup-buildx-action # docker/setup-buildx-action v4.2.0 (bb05f3f5)
 
       - name: Set up Docker tags
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        uses: ./.github/actions/metadata-action # docker/metadata-action v6.2.0 (dc802804)
         id: meta
         with:
           flavor: |
@@ -119,19 +129,19 @@ jobs:
           images: |
             name=apache/amoro-flink-optimizer
           tags: |
-            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.flink == '1.14.6' }},suffix=-snapshot-flink1.14
+            type=ref,event=branch,enable=${{ matrix.flink == '1.18.1' }},suffix=-snapshot
+            type=ref,event=branch,enable=${{ matrix.flink == '1.18.1' }},suffix=-snapshot-flink1.18
             type=ref,event=branch,enable=${{ matrix.flink == '1.20.0' }},suffix=-snapshot-flink1.20
-            type=raw,enable=${{ matrix.flink == '1.14.6' && startsWith(github.ref, 'refs/tags/v') }},value=latest
-            type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}
-            type=semver,enable=${{ matrix.flink == '1.14.6' }},pattern={{version}}, suffix=-flink1.14
+            type=raw,enable=${{ matrix.flink == '1.18.1' && startsWith(github.ref, 'refs/tags/v') }},value=latest
+            type=semver,enable=${{ matrix.flink == '1.18.1' }},pattern={{version}}
+            type=semver,enable=${{ matrix.flink == '1.18.1' }},pattern={{version}}, suffix=-flink1.18
             type=semver,enable=${{ matrix.flink == '1.20.0' }},pattern={{version}}, suffix=-flink1.20
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
 
       - name: Login to Docker Hub
-        uses: docker/login-action@371161bbe7024a29a25c5e19bfcbc0804fe9ad2c # v4.5.2
+        uses: ./.github/actions/login-action # docker/login-action v4.5.2 (371161bb)
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -139,7 +149,7 @@ jobs:
       - name: Set optimizer flink version
         run: |
           OPTIMIZER_FLINK=${{ matrix.flink }} && \
-          echo "OPTIMIZER_FLINK=-Dflink-optimizer.flink-version${OPTIMIZER_FLINK}" >> $GITHUB_ENV
+          echo "OPTIMIZER_FLINK=-Dflink-optimizer.flink-version=${OPTIMIZER_FLINK}" >> $GITHUB_ENV
           if [[ "$OPTIMIZER_FLINK" < "1.15" ]]; then
             echo "Adding -Pflink-optimizer-pre-1.15 for Flink version less than 1.15"
             echo "OPTIMIZER_FLINK=-Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=${OPTIMIZER_FLINK}" >> $GITHUB_ENV
@@ -157,12 +167,12 @@ jobs:
         run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-flink' -am -e ${OPTIMIZER_FLINK} -DskipTests -B -ntp
 
       - name: Build and Push Flink Optimizer Docker Image
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: ./.github/actions/build-push-action # docker/build-push-action v7.3.0 (53b7df96)
         env:
           AMORO_VERSION: ${{ steps.version.outputs.AMORO_VERSION }}
         with:
           context: .
-          push: true
+          push: ${{ github.event_name != 'workflow_dispatch' || inputs.dry-run == false }}
           file: docker/optimizer-flink/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
@@ -176,25 +186,38 @@ jobs:
     if: ${{ startsWith(github.repository, 'apache/') }}
     strategy:
       matrix:
-        spark: [ "3.5.7" ]
-        scala: [ "2.12.15" ]
+        include:
+          - spark: "3.5.7"
+            scala: "2.12.15"
+            scala_binary: "2.12"
+            major: "3.5"
+            jdk: "11"
+            aws: "2.29.52"
+          - spark: "4.1.3"
+            scala: "2.13.17"
+            scala_binary: "2.13"
+            major: "4.1"
+            jdk: "17"
+            aws: "2.29.52"
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 11
+        with:
+          submodules: recursive
+      - name: Set up JDK ${{ matrix.jdk }}
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
+          java-version: ${{ matrix.jdk }}
           distribution: 'temurin'
           cache: maven
           check-latest: false
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+        uses: ./.github/actions/setup-qemu-action # docker/setup-qemu-action v4.2.0 (96fe6ef7)
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        uses: ./.github/actions/setup-buildx-action # docker/setup-buildx-action v4.2.0 (bb05f3f5)
 
       - name: Set up Docker tags
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        uses: ./.github/actions/metadata-action # docker/metadata-action v6.2.0 (dc802804)
         id: meta
         with:
           flavor: |
@@ -203,28 +226,19 @@ jobs:
             name=apache/amoro-spark-optimizer
           tags: |
             type=ref,event=branch,enable=${{ matrix.spark == '3.5.7' }},suffix=-snapshot
-            type=ref,event=branch,enable=${{ matrix.spark == '3.5.7' }},suffix=-snapshot-spark3.5
+            type=ref,event=branch,suffix=-snapshot-spark${{ matrix.major }}
             type=raw,enable=${{ matrix.spark == '3.5.7' && startsWith(github.ref, 'refs/tags/v') }},value=latest
             type=semver,enable=${{ matrix.spark == '3.5.7' }},pattern={{version}}
-            type=semver,enable=${{ matrix.spark == '3.5.7' }},pattern={{version}}, suffix=-spark3.5
+            type=semver,pattern={{version}},suffix=-spark${{ matrix.major }}
 
       - name: Print tags
         run: echo '${{ steps.meta.outputs.tags }}'
 
       - name: Login to Docker Hub
-        uses: docker/login-action@371161bbe7024a29a25c5e19bfcbc0804fe9ad2c # v4.5.2
+        uses: ./.github/actions/login-action # docker/login-action v4.5.2 (371161bb)
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Set optimizer spark version and extract versions
-        id: versions
-        run: |
-          echo "SPARK_VERSION=-Dspark.version=${{ matrix.spark }}" >> $GITHUB_ENV && \
-          SPARK_MAJOR_VERSION=$(echo "${{ matrix.spark }}" | cut -d. -f1-2) && \
-          echo "SPARK_MAJOR_VERSION=${SPARK_MAJOR_VERSION}" >> $GITHUB_OUTPUT && \
-          SCALA_BINARY_VERSION=$(echo "${{ matrix.scala }}" | cut -d. -f1-2) && \
-          echo "SCALA_BINARY_VERSION=${SCALA_BINARY_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Set ENV Amoro version
         id: version
@@ -235,22 +249,27 @@ jobs:
           && echo "AMORO_VERSION=${AMORO_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build optimizer module with Maven
-        run: ./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -e ${SPARK_VERSION} -DskipTests -B -ntp
+        run: >-
+          ./mvnw clean package
+          -pl 'amoro-optimizer/amoro-optimizer-spark' -am
+          -Doptimizer.spark.version=${{ matrix.spark }}
+          -DskipTests -B -ntp
 
       - name: Build and Push Spark Optimizer Docker Image
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: ./.github/actions/build-push-action # docker/build-push-action v7.3.0 (53b7df96)
         env:
           AMORO_VERSION: ${{ steps.version.outputs.AMORO_VERSION }}
-          SPARK_MAJOR_VERSION: ${{ steps.versions.outputs.SPARK_MAJOR_VERSION }}
-          SCALA_BINARY_VERSION: ${{ steps.versions.outputs.SCALA_BINARY_VERSION }}
+          SPARK_MAJOR_VERSION: ${{ matrix.major }}
+          SCALA_BINARY_VERSION: ${{ matrix.scala_binary }}
         with:
           context: .
-          push: true
+          push: ${{ github.event_name != 'workflow_dispatch' || inputs.dry-run == false }}
           file: docker/optimizer-spark/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             SPARK_VERSION=${{ matrix.spark }}
+            AWS_VERSION=${{ matrix.aws }}
             OPTIMIZER_JOB=amoro-optimizer/amoro-optimizer-spark/target/amoro-optimizer-spark-${{ env.SPARK_MAJOR_VERSION}}_${{ env.SCALA_BINARY_VERSION}}-${{ env.AMORO_VERSION }}-jar-with-dependencies.jar
 
 

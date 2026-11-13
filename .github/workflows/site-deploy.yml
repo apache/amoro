@@ -148,6 +148,7 @@ jobs:
           cd site/amoro-docs && hugo -b https://amoro.apache.org/docs/${{ steps.vars.outputs.branch_name }}/ -d ../../output/docs/${{ steps.vars.outputs.branch_name }}
           cd ../../
           echo "Copying the result to the asf-site location"
+          mkdir -p asf-site/output/docs/${{ steps.vars.outputs.branch_name }}
           cp -rf output/docs/${{ steps.vars.outputs.branch_name }}/* asf-site/output/docs/${{ steps.vars.outputs.branch_name }}
 
       - name: Deploy
