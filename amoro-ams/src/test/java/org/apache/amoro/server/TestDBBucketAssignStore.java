@@ -181,4 +181,62 @@ public class TestDBBucketAssignStore {
     long afterUpdate = assignStore.getLastUpdateTime(node1);
     Assert.assertTrue(afterUpdate > afterSave);
   }
+
+  /**
+   * Concurrent-heartbeat regression (review P2): the HA container's heartbeat uses the same
+   * UPDATE-then-INSERT upsert pattern as registerNode() and starts before registration. If the
+   * heartbeat inserts the node after registerNode()'s UPDATE returned zero, the naive INSERT fails
+   * with a duplicate key and propagates out of startBaseServices(), killing AMS startup.
+   * registerNode() must tolerate this interleaving.
+   */
+  @Test
+  public void testRegisterNodeToleratesConcurrentHeartbeatInsert() throws Exception {
+    // Pre-insert the row exactly the way the HA heartbeat's upsertNodeHeartbeat() would when
+    // it wins the race: same (cluster_name, node_key), heartbeat + last_update set, no
+    // assignments yet. This leaves registerNode() with a duplicate-key INSERT.
+    // Insert via a second store instance simulating the heartbeat thread
+    DBBucketAssignStore heartbeatStore = new DBBucketAssignStore(CLUSTER_NAME, HEARTBEAT_TTL_MS);
+    heartbeatStore.registerNode(node1); // heartbeat thread wins the race and inserts first
+    heartbeatStore.close();
+
+    // The main registration runs afterwards and must not fail even though the row already
+    // exists (heartbeat inserted it first).
+    assignStore.registerNode(node1);
+    Assert.assertEquals(1, assignStore.getAliveNodes().size());
+
+    // Direct duplicate-key simulation: call registerNode twice concurrently; both may see
+    // UPDATE == 0 and both attempt INSERT. At least one must succeed and registration must
+    // complete without an exception propagating (previously: duplicate key -> AMS exit).
+    assignStore.removeNode(node1);
+    java.util.concurrent.CountDownLatch start = new java.util.concurrent.CountDownLatch(1);
+    java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(2);
+    final java.util.List<Throwable> failures =
+        java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+    Runnable registerTask =
+        () -> {
+          try {
+            start.await();
+            assignStore.registerNode(node1);
+          } catch (Throwable t) {
+            failures.add(t);
+          } finally {
+            done.countDown();
+          }
+        };
+    Thread t1 = new Thread(registerTask, "register-1");
+    Thread t2 = new Thread(registerTask, "register-2");
+    t1.start();
+    t2.start();
+    start.countDown();
+    Assert.assertTrue("Concurrent registrations must complete", done.await(10, TimeUnit.SECONDS));
+    t1.join(5000);
+    t2.join(5000);
+
+    Assert.assertTrue(
+        "registerNode must tolerate concurrent duplicate insert: " + failures, failures.isEmpty());
+    Assert.assertEquals(
+        "Node must be registered exactly once after concurrent registration",
+        1,
+        assignStore.getAliveNodes().size());
+  }
 }
