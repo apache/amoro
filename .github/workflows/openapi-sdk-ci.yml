@@ -38,6 +38,7 @@ on:
       - "amoro-ams/src/main/resources/openapi/**"
       - "amoro-openapi-sdk/**"
       - "pom.xml"
+      - "amoro-bom/**"
       - "tools/maven/**"
 
 jobs:

@@ -40,7 +40,7 @@
 
     <properties>
         <!-- Shared with mixed-format connectors that support older engines. -->
-        <iceberg.version>${connector-iceberg.version}</iceberg.version>
+        <amoro.dependencies.bom>amoro-connector-bom</amoro.dependencies.bom>
     </properties>
 
 </project>
