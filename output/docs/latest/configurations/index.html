@@ -414,6 +414,10 @@
                         </li>
                     
                         <li>
+                            <a href="../process/">Processes</a>
+                        </li>
+                    
+                        <li>
                             <a href="../table-watermark/">Table Watermark</a>
                         </li>
                     
@@ -691,6 +695,8 @@ modified through <a href="../using-tables/#modify-table">Alter Table</a> operati
 <li>Engine: If tuning is required in the engines, then consider configuring it at the engine level, refer to
 <a href="../spark-configuration/">Spark</a> and <a href="../flink-dml/">Flink</a>.</li>
 </ul>
+<h2 id="process-related-table-properties">Process-related table properties</h2>
+<p>Many data-cleaning and tag actions are controlled by table properties. These properties work together with the process factory and execution engine configuration described in <a href="../process/">Processes</a> and the <a href="../deployment/">Deployment guide</a>.</p>
 <h2 id="self-optimizing-configurations">Self-optimizing configurations</h2>
 <p>Self-optimizing configurations are applicable to both Iceberg Format and Mixed streaming Format.</p>
 <table>
@@ -1160,6 +1166,7 @@ soon.</p>
         <nav id="TableOfContents">
   <ul>
     <li><a href="#multi-level-configuration-management">Multi-level configuration management</a></li>
+    <li><a href="#process-related-table-properties">Process-related table properties</a></li>
     <li><a href="#self-optimizing-configurations">Self-optimizing configurations</a></li>
     <li><a href="#data-cleaning-configuratio">Data-cleaning configuratio</a></li>
     <li><a href="#tags-configurations">Tags configurations</a></li>

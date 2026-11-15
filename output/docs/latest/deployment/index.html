@@ -414,6 +414,10 @@
                         </li>
                     
                         <li>
+                            <a href="../process/">Processes</a>
+                        </li>
+                    
+                        <li>
                             <a href="../table-watermark/">Table Watermark</a>
                         </li>
                     
@@ -873,6 +877,7 @@ The configuration for kyuubi mode can refer to: <a href="../using-kyuubi/">Using
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">static_configs</span>:
 </span></span><span style="display:flex;"><span>      - <span style="color:#f92672">targets</span>: [<span style="color:#e6db74">&#39;localhost:9090&#39;</span>]  <span style="color:#75715e"># The host and port that you configured in Amoro plugins configs file.</span>
 </span></span></code></pre></div><h3 id="configure-process-factories">Configure process factories</h3>
+<p>Maintenance processes are governed by factory registration, engine pools, and table properties. For an overview, see <a href="../process/">Processes</a>.</p>
 <p>Process factories manage table maintenance actions like snapshot expiration and orphan file cleaning.
 They are configured in <code>$AMORO_CONF_DIR/plugins/process-factories.yaml</code>.</p>
 <p>The configuration format is:</p>
@@ -927,6 +932,19 @@ They are configured in <code>$AMORO_CONF_DIR/plugins/execute-engines.yaml</code>
 </span></span></code></pre></div><div class="info">
     Custom pools use the pattern <code>pool.&lt;name&gt;.thread-count</code>. Processes select pools via their <code>tag()</code> method, falling back to the default pool if no match.
 </div>
+<h3 id="migrate-duration-keys">Migrate duration keys</h3>
+<p>The current development version uses duration-valued AMS settings for process and optimizer history. The old integer keys remain accepted as deprecated fallbacks. If both forms are present, the new duration key takes precedence.</p>
+<p>For example, an existing configuration may contain:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">process.history-data-keep-days</span>: <span style="color:#ae81ff">7</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">self-optimizing.runtime-data-keep-days</span>: <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">self-optimizing.runtime-data-expire-interval-hours</span>: <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><p>The equivalent preferred configuration is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">ams</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">process.history-data-keep-time</span>: <span style="color:#ae81ff">7d</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">self-optimizing.runtime-data-keep-time</span>: <span style="color:#ae81ff">30d</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">self-optimizing.runtime-data-expire-interval</span>: <span style="color:#ae81ff">1h</span>
+</span></span></code></pre></div><p>These examples target the current development version. Use the documentation matching your release when upgrading.</p>
 <h3 id="configure-encrypted-configuration-items">Configure encrypted configuration items</h3>
 <p>For enhanced security, AMS supports encrypted values for sensitive configuration items such as passwords within <code>config.yaml</code>. This prevents plaintext passwords and other critical information from being directly exposed in the configuration file.
 Currently, AMS provides built-in support for base64 decryption, and users can also implement custom decryption algorithms if needed (see <a href="../using-customized-encryption-method/">Using Customized Encryption Method for Configurations</a>).</p>
@@ -1068,6 +1086,7 @@ Replace all contents in the original <code>{AMORO_HOME}/plugin</code> directory 
         <li><a href="#configure-metric-reporter">Configure metric reporter</a></li>
         <li><a href="#configure-process-factories">Configure process factories</a></li>
         <li><a href="#configure-execute-engines">Configure execute engines</a></li>
+        <li><a href="#migrate-duration-keys">Migrate duration keys</a></li>
         <li><a href="#configure-encrypted-configuration-items">Configure encrypted configuration items</a></li>
         <li><a href="#environments-variables">Environments variables</a></li>
         <li><a href="#configure-ams-jvm">Configure AMS JVM</a></li>

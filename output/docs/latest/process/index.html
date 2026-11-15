@@ -1,0 +1,861 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Processes</title>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="../css/bootstrap.css" rel="stylesheet">
+
+
+<link href="../css/markdown.css" rel="stylesheet">
+<link href="../css/katex.min.css" rel="stylesheet">
+
+
+
+
+
+<link href="../css/amoro-theme.css" rel="stylesheet">
+
+
+<link href="../font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+<link href="../css/lato-font.css" rel="stylesheet" type="text/css">
+
+
+<link href="../css/termynal.css" rel="stylesheet">
+
+<link href="../css/home-page.css" rel="stylesheet">
+
+
+    
+    
+    
+
+</head>
+<body>
+
+<head>
+    <script>
+        
+        function addAnchor(element) {
+            element.insertAdjacentHTML('beforeend', `<a href="#${element.id}" class="anchortag" ariaLabel="Anchor"> 🔗 </a>` )
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var headers = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]')
+            if (headers) {
+                headers.forEach(addAnchor)
+            }
+        });
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <nav class="navbar navbar-default" role="navigation">
+        <topsection>
+            <div class="navbar-fixed-top">
+                <div>
+                <a class="page-scroll navbar-brand" href="https://amoro.apache.org/"><img class="top-navbar-logo" src="https://amoro.apache.org/docs/latest//img/amoro-logo-icon.png"/></a>
+                </div>
+            </div>
+            <div class="navbar-menu-fixed-top navbar-pages-group">
+                
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../quick-start/">Quickstart</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Docs</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/latest/">latest</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.1/">0.8.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.8.0/">0.8.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.1/">0.7.1-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.7.0/">0.7.0-incubating</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../docs/0.6.1/">0.6.1</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Benchmark</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-report/">Benchmark Report</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../benchmark-guide/">Benchmark Guide</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../download/">Download</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    <div class="topnav-page-selection">
+                        <a   href="https://amoro.apache.org/docs/latest/../../blogs/">Blogs</a>
+                    </div class="topnav-page-selection">
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">Community</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../join-community/">Join Community</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a   href="https://amoro.apache.org/docs/latest/../../how-to-contribute/">How to contribute</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                
+                
+                    
+                    <div class="versions-dropdown">
+                    <div class="topnav-page-selection">
+                        <a   href="">ASF</a> <i class="fa fa-caret-down"></i>
+                    </div class="topnav-page-selection">
+                        <div class="versions-dropdown-content">
+                        <ul>
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/">Foundation</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/licenses/">License</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://events.apache.org/">Events</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/sponsorship.html">Donate</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/foundation/thanks.html">Sponsors</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://www.apache.org/security/">Security</a>
+                            </li class="topnav-page-selection">
+                        
+                            <li class="topnav-page-selection">
+                            <a  target="_blank" href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
+                            </li class="topnav-page-selection">
+                        
+                        </ul>
+                        </div>
+                    </div>
+                
+                
+                <div class="topnav-page-selection">
+                    <a href="https://github.com/apache/incubator-amoro" target="_blank">
+                        <img src="https://amoro.apache.org/docs/latest//img/GitHub-Mark.png" target="_blank" class="top-navbar-logo"/>
+                    </a>
+                </div>
+            </div>
+            </topsection>
+    </nav>
+
+
+
+
+
+    
+
+    
+        
+            
+        
+            
+                
+                
+            
+        
+            
+        
+            
+        
+            
+        
+            
+        
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<body dir=" ltr">
+    <section>
+        <div class="grid-container leftnav-and-toc">
+            
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="sidebar markdown-body">
+    <div id="sidebar-full">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <div>
+        <input type="search" class="form-control" id="search-input" placeholder="Search docs..." maxlength="64" data-hotkeys="s/">
+  </div>
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section>
+    <div id="search-results-container">
+        <ul id="search-results"></ul>
+    </div>
+</section>
+    <div class="sidebar-menu">
+    <ul>
+        
+
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../">
+                        <span>Introduction</span>
+                    </a>
+                </li>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle " data-toggle="collapse" href="#Concepts">
+                        <span>Concepts</span>
+                    </a>
+                </li>
+        <div id="Concepts" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../catalogs/">Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../self-optimizing/">Self-Optimizing</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../process/">Processes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../table-watermark/">Table Watermark</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Configuration">
+                        <span>Configuration</span>
+                    </a>
+                </li>
+        <div id="Configuration" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../ams-config/">AMS Configuration</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Admin_Guides">
+                        <span>Admin Guides</span>
+                    </a>
+                </li>
+        <div id="Admin_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../deployment/">Deployment</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../deployment-on-kubernetes/">Deployment On Kubernetes</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-catalogs/">Managing Catalogs</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../managing-optimizers/">Managing Optimizers</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-customized-encryption-method/">Using Customized Encryption Method for Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../using-kyuubi/">Using Kyuubi By Terminal</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#User_Guides">
+                        <span>User Guides</span>
+                    </a>
+                </li>
+        <div id="User_Guides" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../using-tables/">Using Tables</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../configurations/">Configurations</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../cdc-ingestion/">CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../metrics/">Metrics</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../rest-api/">REST API</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Formats">
+                        <span>Formats</span>
+                    </a>
+                </li>
+        <div id="Formats" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../formats-overview/">Overview</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../iceberg-format/">Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../paimon-format/">Paimon</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-iceberg-format/">Mixed-Iceberg</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../mixed-hive-format/">Mixed-Hive</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Flink">
+                        <span>Flink</span>
+                    </a>
+                </li>
+        <div id="Flink" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../flink-getting-started/">Flink Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-ddl/">Flink DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-dml/">Flink DML</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-cdc-ingestion/">Flink CDC Ingestion</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-datastream/">Flink DataStream</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../flink-using-logstore/">Using Logstore</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+
+
+                    <a class="top-menu chevron-toggle  collapsed" data-toggle="collapse" href="#Spark">
+                        <span>Spark</span>
+                    </a>
+                </li>
+        <div id="Spark" class="collapse in">
+                <ul class="sub-menu">
+                    
+                        <li>
+                            <a href="../spark-getting-started/">Spark Getting Started</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-configuration/">Spark Configuration</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-ddl/">Spark DDL</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-queries/">Spark Queries</a>
+                        </li>
+                    
+                        <li>
+                            <a href="../spark-writes/">Spark Writes</a>
+                        </li>
+                    
+                </ul>
+        </div>
+            
+        
+        
+        
+            
+                <li>
+                    <a class="top-menu" id=""  href="../trino/">
+                        <span>Trino</span>
+                    </a>
+                </li>
+            
+        
+        </ul>
+        </div>
+    </div>
+    
+</div>
+
+            
+            <div id="content" class="markdown-body">
+                <div class="margin-for-toc">
+                    
+                    <div class="latest-docs-note">
+                        <p>This documentation reflects the <code>latest</code> development version and may change before the next official release.</p>
+                        <p>
+                            For the latest stable documentation, see
+                            <a href="https://amoro.apache.org/docs/latest/../../docs/0.8.1/"><strong>0.8.1-incubating</strong></a>.
+                        </p>
+                    </div>
+                    <!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+<h1 id="processes">Processes</h1>
+<p>This page describes the current development version (1.0.0-SNAPSHOT).</p>
+<p>Amoro manages table maintenance through a process framework. A <strong>process</strong> is a unit of work that performs a specific maintenance action on a table. Understanding processes helps you configure maintenance behavior, monitor execution, and troubleshoot issues.</p>
+<h2 id="actions-and-instances">Actions and instances</h2>
+<p>An <strong>action</strong> is a category of maintenance work defined by the Amoro process framework. Examples include:</p>
+<ul>
+<li><code>expire-snapshots</code> – remove old table snapshots.</li>
+<li><code>clean-orphan-files</code> – delete files that are no longer referenced by any snapshot.</li>
+<li><code>clean-dangling-delete-files</code> – remove dangling delete files.</li>
+<li><code>expire-data</code> – remove data older than a configured retention period.</li>
+<li><code>auto-create-tags</code> – automatically create tags on Iceberg tables.</li>
+<li><code>sync-hive-tables</code> – synchronize Hive metadata for Mixed-Hive tables.</li>
+</ul>
+<p>An <strong>instance</strong> is a concrete execution of an action against a specific table at a specific time. Each instance has a unique process ID, its own lifecycle, and may capture status, timing, and summary information.</p>
+<h2 id="process-lifecycle">Process lifecycle</h2>
+<p>Process instances move through a series of states. The lifecycle includes shared states such as <code>PENDING</code>, <code>SUBMITTED</code>, <code>RUNNING</code>, <code>SUCCESS</code>, <code>FAILED</code>, <code>CANCELED</code>, and <code>KILLED</code>. Not every process visits every state; the actual transitions depend on the engine and the operation.</p>
+<p>AMS maintains a history of maintenance process instances in its process store. This history is retained for operator visibility and troubleshooting. Expired process history is cleaned automatically based on the AMS configuration (see the <a href="../ams-config/">AMS Configuration</a> page and the deployment guide&rsquo;s retention settings).</p>
+<h2 id="three-configuration-layers">Three configuration layers</h2>
+<p>Process configuration is split between AMS service settings, plugin configuration, and table properties.</p>
+<ol>
+<li>
+<p><strong>AMS service settings</strong>
+AMS settings under <code>ams:</code> in <code>$AMORO_CONF_DIR/config.yaml</code> control service-wide behavior. Process history retention defaults to 7 days (<code>process.history-data-keep-time</code>); self-optimizing runtime data retention defaults to 30 days (<code>self-optimizing.runtime-data-keep-time</code>), with an expiration check interval of 1 hour (<code>self-optimizing.runtime-data-expire-interval</code>). See the <a href="../ams-config/">AMS Configuration</a> reference and <a href="../deployment/#migrate-duration-keys">duration-key migration examples</a>. These settings control retained history, rather than enabling a table action.</p>
+</li>
+<li>
+<p><strong>Plugin configuration: process factories and execute engines</strong>
+The process plugin configuration contains both <strong>process-factories.yaml</strong> and <strong>execute-engines.yaml</strong>. This layer registers available actions and execution engines. The shipped <code>iceberg</code> factory registers actions and their trigger intervals. The built-in <code>local</code> engine executes actions inside the AMS JVM using thread pools. An action must be registered for the table format. The factory also needs an enabled local engine before it can trigger these maintenance processes.</p>
+</li>
+<li>
+<p><strong>Table properties and format eligibility</strong>
+Individual tables can enable or disable cleanup actions using table properties. For example:</p>
+<ul>
+<li><code>table-expire.enabled</code> (default <code>true</code>)</li>
+<li><code>clean-orphan-file.enabled</code> (default <code>false</code>)</li>
+<li><code>clean-dangling-delete-files.enabled</code> (default <code>true</code>)</li>
+<li><code>data-expire.enabled</code> (default <code>false</code>)</li>
+<li><code>tag.auto-create.enabled</code> (default <code>false</code>)</li>
+</ul>
+<p>The <code>gc.enabled</code> property (default <code>true</code>) gates snapshot expiration, orphan file cleaning, dangling delete file cleaning, and data expiration. For data expiration, the table must also define a valid expiration field and a positive retention time.</p>
+<p>Format restrictions apply: <code>auto-create-tags</code> is only available for <code>ICEBERG</code> tables; <code>sync-hive-tables</code> is only available for <code>MIXED_HIVE</code> tables.</p>
+</li>
+</ol>
+<p>A table is eligible for an action only when all relevant checks pass. Even then, an interval defines when the action is <em>scheduled</em>, not a guarantee that it runs at that exact moment.</p>
+<h2 id="defaults-and-per-table-enablement">Defaults and per-table enablement</h2>
+<p>The process factory declares defaults for action enablement and intervals. With its shipped nonempty configuration, the <code>iceberg</code> factory enables all actions except <code>sync-hive-tables</code>, with intervals as shown below. Keep the <code>properties</code> block in the <a href="../deployment/#configure-process-factories">factory configuration</a>: an empty properties map does not register Iceberg maintenance actions.</p>
+<table>
+	<thead>
+			<tr>
+					<th>Action</th>
+					<th>Factory enabled</th>
+					<th>Default interval</th>
+					<th>Table-level conditions and format limits</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><code>expire-snapshots</code></td>
+					<td>true</td>
+					<td>1h</td>
+					<td>Requires <code>table-expire.enabled=true</code> and <code>gc.enabled=true</code>. Applies to <code>ICEBERG</code>, <code>MIXED_ICEBERG</code>, <code>MIXED_HIVE</code>.</td>
+			</tr>
+			<tr>
+					<td><code>clean-orphan-files</code></td>
+					<td>true</td>
+					<td>1d</td>
+					<td>Requires <code>clean-orphan-file.enabled=true</code> (singular file property) and <code>gc.enabled=true</code>. Applies to <code>ICEBERG</code>, <code>MIXED_ICEBERG</code>, <code>MIXED_HIVE</code>.</td>
+			</tr>
+			<tr>
+					<td><code>clean-dangling-delete-files</code></td>
+					<td>true</td>
+					<td>1d</td>
+					<td>Requires <code>clean-dangling-delete-files.enabled=true</code> and <code>gc.enabled=true</code>. Applies to <code>ICEBERG</code>, <code>MIXED_ICEBERG</code>, <code>MIXED_HIVE</code>.</td>
+			</tr>
+			<tr>
+					<td><code>expire-data</code></td>
+					<td>true</td>
+					<td>1d</td>
+					<td>Requires <code>data-expire.enabled=true</code> and <code>gc.enabled=true</code>. Requires valid expiration field and positive retention time. Applies to <code>ICEBERG</code>, <code>MIXED_ICEBERG</code>, <code>MIXED_HIVE</code>.</td>
+			</tr>
+			<tr>
+					<td><code>auto-create-tags</code></td>
+					<td>true</td>
+					<td>1m</td>
+					<td>Requires <code>tag.auto-create.enabled=true</code>. Only applies to <code>ICEBERG</code> tables.</td>
+			</tr>
+			<tr>
+					<td><code>sync-hive-tables</code></td>
+					<td>false</td>
+					<td>10m</td>
+					<td>When enabled, requires table format <code>MIXED_HIVE</code>. There is no table-level switch for this action; enabling is via factory configuration only.</td>
+			</tr>
+	</tbody>
+</table>
+<p>Table properties have their own defaults. For example, table expiration is enabled by default, but orphan file cleaning and data expiration are disabled by default. This means an action may be registered by the factory but still not execute for a table until the table property is turned on.</p>
+<h2 id="local-engine-and-thread-pools">Local engine and thread pools</h2>
+<p>The local engine executes processes in thread pools. Each process declares a <strong>tag</strong> that is used to select a pool. The six concrete maintenance processes in the Iceberg factory use tags that match their action names, for example <code>expire-snapshots</code>, <code>clean-orphan-files</code>, <code>clean-dangling-delete-files</code>, <code>expire-data</code>, <code>auto-create-tags</code>, and <code>sync-hive-tables</code>.</p>
+<p>The local engine looks for a configured pool named <code>pool.&lt;tag&gt;.thread-count</code>. If that pool exists, it is used; otherwise the process falls back to the <code>default</code> pool. The default pool size is 10 threads. Custom pool sizes must be positive integers.</p>
+<p>The engine also keeps a short-lived cache of recently completed process statuses. By default, finished process status is cached for 4 hours (<code>process.status.ttl</code>). This cache is separate from the persisted process history and unrelated to any job timeout.</p>
+<h2 id="managed-process-abstraction">Managed process abstraction</h2>
+<p><code>LocalProcess</code> runs maintenance logic in the AMS JVM. The <code>ManagedProcess</code> API lets AMS modules submit, complete, retry, or kill a process. The Iceberg maintenance actions described here use the local engine.</p>
+<p>Self-optimizing has its own tuning and execution model; see the <a href="../self-optimizing/">Self-optimizing</a> page for optimizer configuration.</p>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li>Configure process factories and the local engine in the <a href="../deployment/">Deployment guide</a>.</li>
+<li>Set per-table cleanup properties in the <a href="../configurations/">Table Configurations guide</a>.</li>
+<li>Review AMS service settings in the <a href="../ams-config/">AMS Configuration</a> reference.</li>
+</ul>
+</div>
+                
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="toc" class="markdown-body">
+    <div id="full">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#actions-and-instances">Actions and instances</a></li>
+    <li><a href="#process-lifecycle">Process lifecycle</a></li>
+    <li><a href="#three-configuration-layers">Three configuration layers</a></li>
+    <li><a href="#defaults-and-per-table-enablement">Defaults and per-table enablement</a></li>
+    <li><a href="#local-engine-and-thread-pools">Local engine and thread pools</a></li>
+    <li><a href="#managed-process-abstraction">Managed process abstraction</a></li>
+    <li><a href="#next-steps">Next steps</a></li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+            </div>
+        </div>
+    </section>
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery-1.11.0.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/jquery.easing.min.js"></script>
+
+
+<script type="text/javascript" src="https://amoro.apache.org/docs/latest//js/search.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/bootstrap.min.js"></script>
+
+
+<script src="https://amoro.apache.org/docs/latest//js/iceberg-theme.js"></script>
+
+
+
+</html>
