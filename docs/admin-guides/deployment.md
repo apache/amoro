@@ -285,7 +285,7 @@ process-factories:
 ```
 
 {{< hint info >}}
-Process-level properties control whether an action is registered. Table-level properties (see [Table Configurations](../../user-guides/configurations/)) control whether a specific table executes the action.
+Process-level properties control whether an action is registered. Table-level properties (see [Table Configurations](../configurations/)) control whether a specific table executes the action.
 {{< /hint >}}
 
 ### Configure execute engines
