@@ -1,0 +1,15 @@
+
+Runtime schema resources and Public Suffix List
+-----------------------------------------------
+Jakarta Servlet API 5.0.0 standard XML schemas/DTDs are retained unchanged
+under org/apache/amoro/shade/thrift/jakarta/servlet/resources/. These runtime resources are distributed
+under EPL-2.0 (selected), with their original copyright and license headers.
+See META-INF/licenses/LICENSE.EPL-2.0 for the full terms.
+Project: https://jakarta.ee/specifications/servlet/5.0/
+Corresponding source: https://repo.maven.apache.org/maven2/jakarta/servlet/jakarta.servlet-api/5.0.0/
+
+Public Suffix List snapshots (MPL-2.0) are runtime data. The complete
+unmodified source form is retained at org/publicsuffix/list/effective_tld_names.dat
+and, where present, mozilla/public-suffix-list.txt, including original headers.
+See META-INF/licenses/LICENSE.MPL-2.0. Project: https://publicsuffix.org/.
+See META-INF/README-LICENSES for the selected licenses and source locations.

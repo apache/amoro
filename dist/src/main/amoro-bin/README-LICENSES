@@ -1,0 +1,169 @@
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Apache Amoro convenience binaries include the jsr305 3.0.2 JAR. Its
+javax.annotation.concurrent annotations by Brian Goetz are licensed under
+Creative Commons Attribution 2.5, which has terms different from the Apache
+License 2.0. These annotations are included only in compiled binary form;
+their Java source files are not included in this distribution.
+
+For the affected classes, attribution, and the complete license
+text, see the top-level LICENSE and licenses/LICENSE.CC-BY-2.5.html files. The jsr305
+project and its source artifact are available at
+https://repo.maven.apache.org/maven2/com/google/code/findbugs/jsr305/3.0.2/.
+
+Other third-party terms in these convenience binaries
+-----------------------------------------------------
+Some included dependencies have terms different from Apache License 2.0,
+including obligations when redistributing or modifying those components.
+The top-level LICENSE identifies their license texts and locations. The
+selected licenses and upstream project/source locations are listed below.
+These libraries are included as compiled JARs. Original license notices
+are retained, including notices in upstream shaded JARs.
+
+CDDL-1.0 (selected where a choice is offered):
+  Java Annotations (javax.annotation:javax.annotation-api),
+  Servlet API (javax.servlet:javax.servlet-api),
+  JTA 1.1 (javax.transaction:jta),
+  JSP API 2.1 classes.
+  Projects and source distributions:
+  https://github.com/javaee/javax.annotation
+  https://github.com/javaee/servlet-spec
+  https://github.com/javaee/jta-spec
+  https://repo.maven.apache.org/maven2/javax/servlet/jsp/jsp-api/2.1/
+
+  JSR-311 API 1.1.1 (javax.ws.rs:jsr311-api), repackaged in
+  lib/hadoop-client-runtime-3.4.3.jar, is also distributed
+  under CDDL-1.0. See licenses/LICENSE.CDDL-1.0.
+  Project and corresponding source artifact:
+  https://github.com/javaee/jsr311
+  https://repo.maven.apache.org/maven2/javax/ws/rs/jsr311-api/1.1.1/jsr311-api-1.1.1-sources.jar
+
+CDDL-1.1 (selected where a choice is offered):
+  JSON Processing (org.glassfish:javax.json)
+  and the standard JSP schema/DTD resources identified in
+  licenses/LICENSE.jsp-resources.
+  Projects and source distributions:
+  https://github.com/javaee/jsonp
+  https://github.com/javaee/glassfish
+  JSP resource source form is already included in the dependency JARs.
+  These unmodified standard schema/DTD files are consumed at runtime;
+  licenses/LICENSE.jsp-resources records the upstream CDDL grants.
+
+  Jersey 1.19.4 (com.sun.jersey:jersey-core, jersey-client and
+  jersey-servlet), repackaged in lib/hadoop-client-runtime-3.4.3.jar,
+  is distributed under CDDL-1.1, selected from its upstream
+  CDDL/GPL dual license. See licenses/LICENSE.CDDL-1.1.
+  Project and corresponding source artifacts:
+  https://github.com/javaee/jersey-1.x
+  https://repo.maven.apache.org/maven2/com/sun/jersey/jersey-core/1.19.4/jersey-core-1.19.4-sources.jar
+  https://repo.maven.apache.org/maven2/com/sun/jersey/jersey-client/1.19.4/jersey-client-1.19.4-sources.jar
+  https://repo.maven.apache.org/maven2/com/sun/jersey/jersey-servlet/1.19.4/jersey-servlet-1.19.4-sources.jar
+
+EPL-2.0 (selected where a choice is offered):
+  Jakarta Annotations, Servlet and RESTful Web Services APIs; GlassFish HK2,
+  including its repackaged AOP Alliance and injection API components and
+  OSGi Resource Locator; and Jersey 2.x (org.glassfish.jersey).
+  Projects and corresponding source artifacts:
+  https://github.com/jakartaee/common-annotations-api
+  https://github.com/jakartaee/servlet
+  https://github.com/jakartaee/rest
+  https://github.com/eclipse-ee4j/glassfish-hk2
+  https://github.com/eclipse-ee4j/glassfish-hk2-extra
+  https://github.com/eclipse-ee4j/jersey
+  https://repo.maven.apache.org/maven2/jakarta/
+  https://repo.maven.apache.org/maven2/org/glassfish/
+
+MPL-2.0:
+  Public Suffix List, https://publicsuffix.org/
+  The complete, unmodified list snapshots are included in source form in
+  the HTTP client, Thrift and Hadoop dependency JARs at the locations
+  identified in LICENSE. They are runtime data, not Amoro source code.
+  Their source form can be extracted directly from those JARs. See
+  licenses/LICENSE.MPL-2.0 for the terms governing these data files.
+
+This README applies to the dependencies actually present in the
+convenience binary distribution. Source artifacts for the same
+Maven coordinates and versions are available from
+https://repo.maven.apache.org/maven2/.
+
+The bundled dashboard JAR has its own component/version index and package-local
+license pointers in META-INF/LICENSE, including the MIT Rolldown runtime.
+
+The Servlet 5.0.0 schemas retained inside the shaded Thrift JAR use
+EPL-2.0. The schemas remain at
+org/apache/amoro/shade/thrift/jakarta/servlet/resources/ inside that JAR.
+They are distinct from the standalone Servlet API 4.0.3 dependency.
+
+Kyuubi dependency repackaging
+-----------------------------
+Amoro removes the bundled org/slf4j/ classes from the distribution copy of
+org.apache.kyuubi:kyuubi-hive-jdbc-shaded:1.10.2 to prevent its SLF4J 1.x API
+from overriding the SLF4J 2.x API used by AMS. All retained upstream files,
+including the original license and NOTICE records, remain unchanged.
+The modified JAR carries META-INF/README-amoro-resource-changes. The original
+Maven repository artifact is unchanged. Project: https://kyuubi.apache.org/.
+
+JSP standard-resource replacements
+----------------------------------
+Five JSP schema/DTD resources, where present, are replaced with unmodified
+GlassFish versions from commit 371c9e1beb285a30bd4203ec86fde5729dbd06f9,
+under the selected CDDL-1.1 license. Resource paths and owner headers remain.
+The copies in dependency JARs are modified during packaging; the original
+Maven repository artifacts are unchanged. See LICENSE.jsp-resources and
+LICENSE.CDDL-1.1 in the distribution's licenses directory (META-INF/licenses
+in standalone fat JARs), and META-INF/README-amoro-resource-changes in the
+modified JARs. Project: https://github.com/javaee/glassfish.
+
+TLS packaging change
+---------------------
+The five statically linked netty-tcnative-boringssl native libraries are
+removed from the modified ZooKeeper dependency copy and the runtime/fat
+JARs. Netty Java code and unrelated epoll libraries remain. ZooKeeper uses
+its default JDK TLS provider. Configurations explicitly setting
+zookeeper.ssl.sslProvider=OPENSSL
+must select JDK. Original producer license records remain as provenance.
+See META-INF/README-amoro-resource-changes in modified JARs.
+
+BSD-style grants and exact software versions
+--------------------------------------------
+Javolution 5.5.1 uses its original short BSD-style permission notice.
+Original copyright/permission notices: licenses/LICENSE.java-dependencies.
+Upstream identifies this exact grant wording as BSD: https://javolution.org/.
+
+RocksDB JNI 7.10.2 in standalone fat JARs embeds bzip2 software version 1.0.8,
+whose license identifier is bzip2-1.0.6. The original complete text is retained
+in META-INF/licenses/LICENSE.rocksdb-native in those JARs. Its four conditions
+include an optional acknowledgment request, not a mandatory advertising clause.
+Upstream BSD-style classification: https://sourceware.org/bzip2/.
+
+Snappy Java native components
+-----------------------------
+The JNI binding uses Apache-2.0. Its native libraries embed Snappy (BSD-3-Clause),
+Bitshuffle (MIT), and statically linked GCC runtime code covered by the GCC
+Runtime Library Exception. Full original notices, terms and exception are in
+licenses/LICENSE.snappy-java; applicable upstream notifications are in NOTICE.
+The bundled JAR is snappy-java 1.1.10.5; its build recipe targets
+Snappy 1.1.10 and Bitshuffle 0.3.4. The publisher retains older platform
+prebuilts, so these are not uniform per-platform versions.
+Native sources and build configuration for these exact versions:
+https://github.com/xerial/snappy-java/tree/1.1.8.4
+https://github.com/xerial/snappy-java/tree/v1.1.10.5
+https://github.com/google/snappy/tree/1.1.8
+https://github.com/google/snappy/tree/1.1.10
+https://github.com/kiyo-masui/bitshuffle/tree/0.3.2
+https://github.com/kiyo-masui/bitshuffle/tree/0.3.4
+Runtime license and exception: https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html
