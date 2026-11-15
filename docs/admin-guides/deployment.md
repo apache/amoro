@@ -249,6 +249,8 @@ scrape_configs:
 
 ### Configure process factories
 
+Maintenance processes are governed by factory registration, engine pools, and table properties. For an overview, see [Processes](../process/).
+
 Process factories manage table maintenance actions like snapshot expiration and orphan file cleaning.
 They are configured in `$AMORO_CONF_DIR/plugins/process-factories.yaml`.
 
@@ -322,6 +324,30 @@ execute-engines:
 {{< hint info >}}
 Custom pools use the pattern `pool.<name>.thread-count`. Processes select pools via their `tag()` method, falling back to the default pool if no match.
 {{< /hint >}}
+
+### Migrate duration keys
+
+The current development version uses duration-valued AMS settings for process and optimizer history. The old integer keys remain accepted as deprecated fallbacks. If both forms are present, the new duration key takes precedence.
+
+For example, an existing configuration may contain:
+
+```yaml
+ams:
+  process.history-data-keep-days: 7
+  self-optimizing.runtime-data-keep-days: 30
+  self-optimizing.runtime-data-expire-interval-hours: 1
+```
+
+The equivalent preferred configuration is:
+
+```yaml
+ams:
+  process.history-data-keep-time: 7d
+  self-optimizing.runtime-data-keep-time: 30d
+  self-optimizing.runtime-data-expire-interval: 1h
+```
+
+These examples target the current development version. Use the documentation matching your release when upgrading.
 
 ### Configure encrypted configuration items
 For enhanced security, AMS supports encrypted values for sensitive configuration items such as passwords within `config.yaml`. This prevents plaintext passwords and other critical information from being directly exposed in the configuration file. 
