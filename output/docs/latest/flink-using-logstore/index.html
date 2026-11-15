@@ -762,7 +762,7 @@
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;log-store.topic&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;topic_log_test&#39;</span>,
 </span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#39;log-store.address&#39;</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;localhost:9092&#39;</span>);
 </span></span></code></pre></div><h3 id="double-write-logstore-and-filestore">Double write LogStore and FileStore</h3>
-<p><img src="../../images/flink/double-write.png" alt="Introduce"></p>
+<p><img src="../images/flink/double-write.png" alt="Introduce"></p>
 <p>Amoro Connector writes data to LogStore and ChangeStore at the same time through double-write operations, without opening Kafka transactions to ensure data consistency between the two, because opening transactions will bring a few minutes of delay to downstream tasks (the specific delay time depends on upstream tasks checkpoint interval).</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> db.log_table <span style="color:#75715e">/*+ OPTIONS(&#39;mixed-format.emit.mode&#39;=&#39;log&#39;) */</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> id, name, ts <span style="color:#66d9ef">from</span> sourceTable;
