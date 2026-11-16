@@ -182,13 +182,17 @@ public class LogDynamicSource
 
   @Override
   public DynamicTableSource copy() {
-    return new LogDynamicSource(
-        this.properties,
-        this.schema,
-        this.tableOptions,
-        this.mixedTable,
-        this.logRetractionEnable,
-        this.consumerChangelogMode);
+    LogDynamicSource copy =
+        new LogDynamicSource(
+            this.properties,
+            this.schema,
+            this.tableOptions,
+            this.mixedTable,
+            this.logRetractionEnable,
+            this.consumerChangelogMode);
+    copy.watermarkStrategy = this.watermarkStrategy;
+    copy.projectedFields = this.projectedFields;
+    return copy;
   }
 
   @Override
