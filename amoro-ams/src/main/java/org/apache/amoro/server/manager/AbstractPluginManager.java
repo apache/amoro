@@ -84,19 +84,17 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   public void initialize() {
     foundAvailablePlugins();
 
-    List<PluginConfiguration> pluginConfigs = loadPluginConfigurations();
-    // If no plugin configs were loaded from file but plugins were found via ServiceLoader,
-    // create default configurations so they can be installed. This handles the case where
-    // AMS is started from an IDE without the full plugins directory structure.
-    if (pluginConfigs.isEmpty() && !foundedPlugins.isEmpty()) {
-      pluginConfigs =
-          foundedPlugins.keySet().stream()
-              .map(PluginConfiguration::emptyConfig)
-              .collect(Collectors.toList());
+    List<PluginConfiguration> pluginConfigs = Lists.newArrayList(loadPluginConfigurations());
+    List<String> defaultConfigured = Lists.newArrayList();
+    for (String name : foundedPlugins.keySet()) {
+      if (pluginConfigs.stream().noneMatch(config -> config.getName().equals(name))) {
+        pluginConfigs.add(PluginConfiguration.emptyConfig(name));
+        defaultConfigured.add(name);
+      }
+    }
+    if (!defaultConfigured.isEmpty()) {
       LOG.info(
-          "No {} plugin configurations found, auto-installing discovered plugins: {}",
-          pluginCategory(),
-          foundedPlugins.keySet());
+          "No configuration found for plugins {}, using empty configuration", defaultConfigured);
     }
     pluginConfigs.stream()
         .sorted(Comparator.comparing(PluginConfiguration::getPriority))
@@ -111,7 +109,17 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
       if (!pluginConfig.isEnabled()) {
         continue;
       }
-      install(pluginConfig.getName());
+      try {
+        install(pluginConfig.getName());
+      } catch (RuntimeException e) {
+        if (!defaultConfigured.contains(pluginConfig.getName())) {
+          throw e;
+        }
+        LOG.warn(
+            "Failed to install plugin {} with empty configuration, skip it",
+            pluginConfig.getName(),
+            e);
+      }
     }
   }
 
