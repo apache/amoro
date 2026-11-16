@@ -69,6 +69,11 @@ public class TestAbstractPluginManager {
     public String name() {
       return "test-C";
     }
+
+    @Override
+    public void open(Map<String, String> properties) {
+      throw new IllegalStateException("Failed to open plugin: test-C");
+    }
   }
 
   static class TestPluginManager extends AbstractPluginManager<TestPlugin> {
@@ -97,9 +102,9 @@ public class TestAbstractPluginManager {
 
   static Stream<Arguments> testInstall() {
     return Stream.of(
-        // enable 1 plugin
+        // only test-A is configured, test-B gets a default configuration
         Arguments.of(
-            ImmutableList.of(new PluginConfiguration("test-A", true, 0, Maps.newHashMap())), 1),
+            ImmutableList.of(new PluginConfiguration("test-A", true, 0, Maps.newHashMap())), 2),
         // enable 2 plugin
         Arguments.of(
             ImmutableList.of(
@@ -126,6 +131,23 @@ public class TestAbstractPluginManager {
     manager.close();
 
     Assertions.assertEquals(0, manager.activePlugins());
+  }
+
+  @Test
+  public void testInstallFailureIsIgnoredOnlyForDefaultConfig() {
+    TestPluginManager defaultManager = new TestPluginManager();
+    defaultManager.getFoundedPlugins().put("test-C", new TestPluginImplC());
+    defaultManager.initialize();
+
+    Assertions.assertNull(defaultManager.get("test-C"));
+    Assertions.assertEquals(2, defaultManager.activePlugins());
+
+    TestPluginManager explicitManager = new TestPluginManager();
+    explicitManager.getFoundedPlugins().put("test-C", new TestPluginImplC());
+    explicitManager.setConfigs(
+        ImmutableList.of(new PluginConfiguration("test-C", true, 0, Maps.newHashMap())));
+
+    Assertions.assertThrows(IllegalStateException.class, explicitManager::initialize);
   }
 
   @Test
