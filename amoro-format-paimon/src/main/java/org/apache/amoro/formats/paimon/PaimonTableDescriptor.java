@@ -21,6 +21,7 @@ package org.apache.amoro.formats.paimon;
 import static org.apache.paimon.operation.FileStoreScan.Plan.groupByPartFiles;
 
 import org.apache.amoro.AmoroTable;
+import org.apache.amoro.PaimonActions;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CommitMetaProducer;
 import org.apache.amoro.process.ProcessStatus;
@@ -480,7 +481,19 @@ public class PaimonTableDescriptor implements FormatTableDescriptor {
   }
 
   @Override
+  public Map<String, String> getTableProcessTypes(AmoroTable<?> table, String processCategory) {
+    if (ProcessCategory.CLEANUP.getName().equalsIgnoreCase(processCategory)) {
+      return Collections.singletonMap(PaimonActions.EXPIRE_SNAPSHOTS.getName(), "Expire Snapshots");
+    }
+    return FormatTableDescriptor.super.getTableProcessTypes(table, processCategory);
+  }
+
+  @Override
   public List<String> getProcessTypesByCategory(String processCategory) {
+    if (ProcessCategory.CLEANUP.getName().equalsIgnoreCase(processCategory)) {
+      return Collections.singletonList(PaimonActions.EXPIRE_SNAPSHOTS.getName());
+    }
+
     if (ProcessCategory.OPTIMIZING.getName().equalsIgnoreCase(processCategory)) {
       return OPTIMIZING_TYPES;
     }

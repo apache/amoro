@@ -137,6 +137,16 @@ public class ServerTableDescriptor extends PersistentBase {
       int offset) {
     AmoroTable<?> amoroTable = loadTable(tableIdentifier);
     FormatTableDescriptor formatTableDescriptor = formatDescriptorMap.get(amoroTable.format());
+    if (TableProcessQuery.handles(formatTableDescriptor, processCategory, type)) {
+      return new TableProcessQuery()
+          .list(
+              amoroTable.id(),
+              formatTableDescriptor.getProcessTypesByCategory(processCategory),
+              type,
+              status,
+              limit,
+              offset);
+    }
     return formatTableDescriptor.getOptimizingProcessesInfo(
         amoroTable, type, processCategory, status, limit, offset);
   }

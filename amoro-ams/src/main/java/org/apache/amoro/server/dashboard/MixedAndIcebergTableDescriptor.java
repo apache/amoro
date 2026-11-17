@@ -687,6 +687,11 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     if (identifier == null) {
       return Pair.of(Collections.emptyList(), 0);
     }
+    if (TableProcessQuery.handles(this, processCategory, type)) {
+      return new TableProcessQuery()
+          .list(
+              identifier, getProcessTypesByCategory(processCategory), type, status, limit, offset);
+    }
     int total = 0;
     // page helper is 1-based
     int pageNumber = (offset / limit) + 1;

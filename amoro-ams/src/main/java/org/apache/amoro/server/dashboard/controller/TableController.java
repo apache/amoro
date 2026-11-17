@@ -706,7 +706,10 @@ public class TableController {
         OptimizingClientPools.getClient(
             AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
     try {
-      client.cancelProcess(processId);
+      Preconditions.checkState(
+          client.cancelProcess(processId),
+          "Process could not be canceled: it is no longer active or is not managed by this AMS, processId: %s",
+          processId);
     } catch (TException e) {
       throw new IllegalStateException("Failed to cancel optimizing process:" + e.getMessage());
     }

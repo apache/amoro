@@ -27,16 +27,31 @@ import org.apache.paimon.table.DataTable;
 import org.apache.paimon.table.Table;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class PaimonTable implements AmoroTable<Table> {
 
   private final TableIdentifier tableIdentifier;
 
   private final Table table;
+  private final Supplier<PaimonTable> refresh;
 
   public PaimonTable(TableIdentifier tableIdentifier, Table table) {
+    this(tableIdentifier, table, null);
+  }
+
+  PaimonTable(TableIdentifier tableIdentifier, Table table, Supplier<PaimonTable> refresh) {
     this.tableIdentifier = tableIdentifier;
     this.table = table;
+    this.refresh = refresh;
+  }
+
+  /** Reload this table through its owning catalog, invalidating any cached metadata. */
+  public PaimonTable refresh() {
+    if (refresh == null) {
+      throw new IllegalStateException("Paimon table has no catalog refresh callback");
+    }
+    return refresh.get();
   }
 
   @Override

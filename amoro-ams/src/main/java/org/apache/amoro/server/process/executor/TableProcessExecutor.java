@@ -70,119 +70,139 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
     }
 
     try {
-      if (store.getStatus() == ProcessStatus.UNKNOWN
-          || store.getStatus() == ProcessStatus.PENDING
-          || Strings.isNullOrEmpty(store.getExternalProcessIdentifier())) {
-        externalProcessIdentifier = executeEngine.submitTableProcess(tableProcess);
-        LOG.info(
-            "Submit table process {} to engine {} success, external process identifier is {}",
-            store.getProcessId(),
-            executeEngine.engineType(),
-            externalProcessIdentifier);
-      } else {
-        externalProcessIdentifier = store.getExternalProcessIdentifier();
-      }
-
-      validateIdentifier(externalProcessIdentifier);
-
-      status = executeEngine.getStatus(externalProcessIdentifier);
-
-      // If the engine returns UNKNOWN, the process was lost (e.g., AMS restart cleared
-      // LocalExecutionEngine's in-memory process map). Treat it as FAILED so the process
-      // is properly terminated and optionally retried, rather than being stuck in UNKNOWN.
-      if (status == ProcessStatus.UNKNOWN) {
-        LOG.warn(
-            "Table process {} got UNKNOWN status from engine (identifier={}), "
-                + "likely due to AMS restart or process loss, marking as FAILED",
-            store.getProcessId(),
-            externalProcessIdentifier);
-        status = ProcessStatus.FAILED;
-        message = "Process lost: engine returned UNKNOWN status";
-      } else {
-        store.tryTransitState(
-            status,
-            ProcessEvent.SUBMIT_REQUESTED,
-            externalProcessIdentifier,
-            "Complete Submitted.",
-            tableProcess.getProcessParameters(),
-            tableProcess.getSummary());
-      }
-
-      while (isTableProcessExecuting(status)) {
-        if (isTableProcessCanceling(store.getStatus())) {
+      try {
+        if (store.getStatus() == ProcessStatus.UNKNOWN
+            || store.getStatus() == ProcessStatus.PENDING
+            || Strings.isNullOrEmpty(store.getExternalProcessIdentifier())) {
+          externalProcessIdentifier = executeEngine.submitTableProcess(tableProcess);
           LOG.info(
-              "Table process {} with identifier {} may have been in canceling, exit submit process.",
+              "Submit table process {} to engine {} success, external process identifier is {}",
+              store.getProcessId(),
+              executeEngine.engineType(),
+              externalProcessIdentifier);
+        } else {
+          externalProcessIdentifier = store.getExternalProcessIdentifier();
+        }
+
+        validateIdentifier(externalProcessIdentifier);
+        if (isTableProcessCanceling(store.getStatus())) {
+          return;
+        }
+
+        status = executeEngine.getStatus(externalProcessIdentifier);
+
+        // If the engine returns UNKNOWN, the process was lost (e.g., AMS restart cleared
+        // LocalExecutionEngine's in-memory process map). Treat it as FAILED so the process
+        // is properly terminated and optionally retried, rather than being stuck in UNKNOWN.
+        if (status == ProcessStatus.UNKNOWN) {
+          LOG.warn(
+              "Table process {} got UNKNOWN status from engine (identifier={}), "
+                  + "likely due to AMS restart or process loss, marking as FAILED",
+              store.getProcessId(),
+              externalProcessIdentifier);
+          status = ProcessStatus.FAILED;
+          message = "Process lost: engine returned UNKNOWN status";
+        } else {
+          store.tryTransitState(
+              status,
+              ProcessEvent.SUBMIT_REQUESTED,
+              externalProcessIdentifier,
+              "Complete Submitted.",
+              tableProcess.getProcessParameters(),
+              tableProcess.getSummary());
+        }
+
+        while (isTableProcessExecuting(status)) {
+          if (isTableProcessCanceling(store.getStatus())) {
+            LOG.info(
+                "Table process {} with identifier {} may have been in canceling, exit submit process.",
+                store.getProcessId(),
+                externalProcessIdentifier);
+            return;
+          }
+          try {
+            Thread.sleep(DEFAULT_POLL_INTERVAL_MS);
+          } catch (InterruptedException e) {
+            throw e;
+          }
+          status = executeEngine.getStatus(externalProcessIdentifier);
+        }
+      } catch (Throwable t) {
+        if (t instanceof InterruptedException) {
+          LOG.info(
+              "Table process {} with identifier {} may have been interrupted by process service disposing, exit submit process.",
               store.getProcessId(),
               externalProcessIdentifier);
           return;
+        } else {
+          status = ProcessStatus.FAILED;
+          message = t.getMessage();
         }
-        try {
-          Thread.sleep(DEFAULT_POLL_INTERVAL_MS);
-        } catch (InterruptedException e) {
-          throw e;
-        }
-        status = executeEngine.getStatus(externalProcessIdentifier);
       }
-    } catch (Throwable t) {
-      if (t instanceof InterruptedException) {
-        LOG.info(
-            "Table process {} with identifier {} may have been interrupted by process service disposing, exit submit process.",
-            store.getProcessId(),
-            externalProcessIdentifier);
-        return;
+
+      LOG.info("The process {} is finished with status {}", tableProcess, status);
+      if (status == ProcessStatus.KILLED) {
+        store.tryTransitState(
+            status,
+            ProcessEvent.KILL_REQUESTED,
+            store.getExternalProcessIdentifier(),
+            "Gracefully Killed.",
+            tableProcess.getProcessParameters(),
+            tableProcess.getSummary());
+      } else if (status == ProcessStatus.CANCELED) {
+        store.tryTransitState(
+            status,
+            ProcessEvent.CANCEL_REQUESTED,
+            store.getExternalProcessIdentifier(),
+            "Gracefully Cancelled.",
+            tableProcess.getProcessParameters(),
+            tableProcess.getSummary());
+      } else if (status == ProcessStatus.CLOSED) {
+        store.tryTransitState(
+            status,
+            ProcessEvent.KILL_REQUESTED,
+            store.getExternalProcessIdentifier(),
+            "Gracefully Closed.",
+            tableProcess.getProcessParameters(),
+            tableProcess.getSummary());
+      } else if (status == ProcessStatus.FAILED) {
+        store.tryTransitState(
+            status,
+            ProcessEvent.COMPLETE_FAILED,
+            store.getExternalProcessIdentifier(),
+            message,
+            tableProcess.getProcessParameters(),
+            tableProcess.getSummary());
+      } else if (status == ProcessStatus.SUCCESS) {
+        store.tryTransitState(
+            status,
+            ProcessEvent.COMPLETE_SUCCESS,
+            store.getExternalProcessIdentifier(),
+            "Complete Success",
+            tableProcess.getProcessParameters(),
+            tableProcess.getSummary());
       } else {
-        status = ProcessStatus.FAILED;
-        message = t.getMessage();
+        LOG.warn("Un expected terminal status: {} for process: {}.", status, store.getProcessId());
       }
-    }
 
-    LOG.info("The process {} is finished with status {}", tableProcess, status);
-    if (status == ProcessStatus.KILLED) {
-      store.tryTransitState(
-          status,
-          ProcessEvent.KILL_REQUESTED,
-          store.getExternalProcessIdentifier(),
-          "Gracefully Killed.",
-          tableProcess.getProcessParameters(),
-          tableProcess.getSummary());
-    } else if (status == ProcessStatus.CANCELED) {
-      store.tryTransitState(
-          status,
-          ProcessEvent.CANCEL_REQUESTED,
-          store.getExternalProcessIdentifier(),
-          "Gracefully Cancelled.",
-          tableProcess.getProcessParameters(),
-          tableProcess.getSummary());
-    } else if (status == ProcessStatus.CLOSED) {
-      store.tryTransitState(
-          status,
-          ProcessEvent.KILL_REQUESTED,
-          store.getExternalProcessIdentifier(),
-          "Gracefully Closed.",
-          tableProcess.getProcessParameters(),
-          tableProcess.getSummary());
-    } else if (status == ProcessStatus.FAILED) {
-      store.tryTransitState(
-          status,
-          ProcessEvent.COMPLETE_FAILED,
-          store.getExternalProcessIdentifier(),
-          message,
-          tableProcess.getProcessParameters(),
-          tableProcess.getSummary());
-    } else if (status == ProcessStatus.SUCCESS) {
-      store.tryTransitState(
-          status,
-          ProcessEvent.COMPLETE_SUCCESS,
-          store.getExternalProcessIdentifier(),
-          "Complete Success",
-          tableProcess.getProcessParameters(),
-          tableProcess.getSummary());
-    } else {
-      LOG.warn("Un expected terminal status: {} for process: {}.", status, store.getProcessId());
-    }
-
-    if (finishedCallback != null) {
-      finishedCallback.run();
+      if (finishedCallback != null) {
+        finishedCallback.run();
+      }
+    } finally {
+      // Cancellation can win before submit returns or before its identifier is persisted.
+      // Always hand the identifier obtained by this attempt to the engine before exiting.
+      if (!Strings.isNullOrEmpty(externalProcessIdentifier)
+          && isTableProcessCanceling(store.getStatus())) {
+        try {
+          executeEngine.tryCancelTableProcess(tableProcess, externalProcessIdentifier);
+        } catch (Exception e) {
+          LOG.error(
+              "Failed to cancel submitted process {} with identifier {}",
+              store.getProcessId(),
+              externalProcessIdentifier,
+              e);
+        }
+      }
     }
   }
 

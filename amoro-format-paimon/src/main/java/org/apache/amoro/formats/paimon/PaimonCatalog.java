@@ -19,7 +19,6 @@
 package org.apache.amoro.formats.paimon;
 
 import org.apache.amoro.AlreadyExistsException;
-import org.apache.amoro.AmoroTable;
 import org.apache.amoro.DatabaseNotEmptyException;
 import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.NoSuchDatabaseException;
@@ -87,14 +86,20 @@ public class PaimonCatalog implements FormatCatalog {
   }
 
   @Override
-  public AmoroTable<?> loadTable(String database, String table) {
+  public PaimonTable loadTable(String database, String table) {
     try {
       return new PaimonTable(
           TableIdentifier.of(name, database, table),
-          catalog.getTable(Identifier.create(database, table)));
+          catalog.getTable(Identifier.create(database, table)),
+          () -> reloadTable(database, table));
     } catch (Catalog.TableNotExistException e) {
       throw new NoSuchTableException(e);
     }
+  }
+
+  private PaimonTable reloadTable(String database, String table) {
+    catalog.invalidateTable(Identifier.create(database, table));
+    return loadTable(database, table);
   }
 
   @Override
