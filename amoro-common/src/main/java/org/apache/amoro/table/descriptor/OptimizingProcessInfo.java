@@ -19,6 +19,7 @@
 package org.apache.amoro.table.descriptor;
 
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.shade.jackson2.com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Map;
 
@@ -32,6 +33,7 @@ public class OptimizingProcessInfo {
   private long startTime;
   private String optimizingType;
   private ProcessStatus status;
+  private boolean amsCancellationSupported;
   private String failReason;
   private long duration;
   private int successTasks;
@@ -96,6 +98,19 @@ public class OptimizingProcessInfo {
 
   public void setOptimizingType(String optimizingType) {
     this.optimizingType = optimizingType;
+  }
+
+  /**
+   * Whether this record supports cancellation through AMS. Callers must also check permissions and
+   * the current process status.
+   */
+  @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+  public boolean isAmsCancellationSupported() {
+    return amsCancellationSupported;
+  }
+
+  public void setAmsCancellationSupported(boolean amsCancellationSupported) {
+    this.amsCancellationSupported = amsCancellationSupported;
   }
 
   public ProcessStatus getStatus() {

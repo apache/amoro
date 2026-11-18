@@ -72,7 +72,7 @@ class TestProcessCancellationConcurrency {
       await(f.engine.submitted);
       Assertions.assertEquals(0, target.runs.get());
 
-      Assertions.assertTrue(f.endpoint.cancelProcess(f.service.store.getProcessId()));
+      f.cancelCleanup();
       Assertions.assertEquals(ProcessStatus.CANCELED, f.service.store.getStatus());
       f.engine.releaseSubmit.countDown();
       await(f.engine.canceled);
@@ -84,6 +84,7 @@ class TestProcessCancellationConcurrency {
       f.releasePool.countDown();
       await(marker.finished);
       Assertions.assertEquals(0, target.runs.get());
+      Assertions.assertEquals(1, f.engine.cancelRequests.get());
       Assertions.assertTrue(f.service.getTableProcessInstances(f.identifier).isEmpty());
     }
   }
@@ -103,7 +104,7 @@ class TestProcessCancellationConcurrency {
       await(f.service.transitionReached);
       Assertions.assertEquals(ProcessStatus.FAILED, f.service.store.getStatus());
 
-      Assertions.assertTrue(f.endpoint.cancelProcess(f.service.store.getProcessId()));
+      f.cancelCleanup();
       Assertions.assertEquals(ProcessStatus.CANCELED, f.service.store.getStatus());
       f.service.releaseTransition.countDown();
       await(f.service.callbackFinished);
@@ -174,6 +175,46 @@ class TestProcessCancellationConcurrency {
 
   @ParameterizedTest
   @MethodSource("formats")
+  void tableRemovalCancelsExecutionAfterFinalPollingFailure(TableFormat format) throws Exception {
+    try (Fixture f = new Fixture(format)) {
+      f.service.pause = Pause.AFTER_FAILURE;
+      f.engine.failPolling = true;
+      Work target = f.work(() -> await(f.releasePool, 30));
+      f.service.register(f.runtime, target);
+      await(f.engine.submitted);
+      await(target.started);
+      // Submit is gated, so the last-attempt state is persisted before polling starts.
+      f.service
+          .store
+          .begin()
+          .updateRetryNumber(ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER)
+          .commit();
+      f.engine.releaseSubmit.countDown();
+      await(f.service.transitionReached);
+
+      Assertions.assertEquals(ProcessStatus.FAILED, f.service.store.getStatus());
+      Assertions.assertEquals(f.engine.id, f.service.store.getExternalProcessIdentifier());
+      Assertions.assertEquals(1, target.finished.getCount());
+      Assertions.assertFalse(f.endpoint.cancelProcess(f.service.store.getProcessId()));
+      Assertions.assertEquals(0, f.engine.cancelRequests.get());
+      Assertions.assertFalse(f.service.getTableProcessInstances(f.identifier).isEmpty());
+
+      f.service.getTableHandlerChain().fireTableRemoved(f.runtime);
+      Assertions.assertEquals(1, f.engine.cancelRequests.get());
+      await(f.engine.canceled);
+      Assertions.assertTrue(f.service.getTableProcessInstances(f.identifier).isEmpty());
+      // Table removal preserves the recorded terminal result.
+      Assertions.assertEquals(ProcessStatus.FAILED, f.service.store.getStatus());
+      f.service.releaseTransition.countDown();
+      await(f.service.callbackFinished);
+      Assertions.assertEquals(1, f.engine.submissions.get());
+      Assertions.assertEquals(
+          ActionCoordinatorScheduler.PROCESS_MAX_RETRY_NUMBER, f.service.store.getRetryNumber());
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("formats")
   void completionWinsCancellation(TableFormat format) throws Exception {
     try (Fixture f = new Fixture(format)) {
       f.service.pause = Pause.AFTER_SUCCESS;
@@ -198,7 +239,7 @@ class TestProcessCancellationConcurrency {
       f.engine.releaseSubmit.countDown();
       f.service.register(f.runtime, f.work(() -> {}));
       await(f.service.transitionReached);
-      Assertions.assertTrue(f.endpoint.cancelProcess(f.service.store.getProcessId()));
+      f.cancelCleanup();
       f.service.releaseTransition.countDown();
       await(f.service.callbackFinished);
       Assertions.assertEquals(ProcessStatus.CANCELED, f.service.store.getStatus());
@@ -230,7 +271,7 @@ class TestProcessCancellationConcurrency {
   }
 
   private static class Fixture extends PersistentBase implements AutoCloseable {
-    final Persistence persistence = new Persistence();
+    final DerbyPersistence persistence = new DerbyPersistence();
     final CountDownLatch releasePool = new CountDownLatch(1);
     final GatedEngine engine = new GatedEngine();
     final ServerTableIdentifier identifier;
@@ -239,7 +280,7 @@ class TestProcessCancellationConcurrency {
     final DefaultOptimizingService endpoint;
 
     Fixture(TableFormat format) throws Exception {
-      identifier = ServerTableIdentifier.of(1L, "cancel-races", "db", "tbl", format);
+      identifier = ServerTableIdentifier.of("cancel-races", "db", "tbl", format);
       doAs(TableMetaMapper.class, mapper -> mapper.insertTable(identifier));
       TableRuntimeMeta meta = new TableRuntimeMeta();
       meta.setTableId(identifier.getId());
@@ -275,17 +316,25 @@ class TestProcessCancellationConcurrency {
               new Configurations(), null, null, tables, service, null, null);
     }
 
+    void cancelCleanup() {
+      boolean canceled = endpoint.cancelProcess(service.store.getProcessId());
+      if (identifier.getFormat() == TableFormat.ICEBERG) {
+        Assertions.assertFalse(canceled);
+        service.getTableHandlerChain().fireTableRemoved(runtime);
+      } else {
+        Assertions.assertTrue(canceled);
+      }
+    }
+
     Work work(Runnable action) {
       return new Work(runtime, engine, action);
     }
 
     @Override
-    public void close() {
+    public void close() throws InterruptedException {
       engine.releaseSubmit.countDown();
       service.releaseTransition.countDown();
-      if (service.store != null) {
-        endpoint.cancelProcess(service.store.getProcessId());
-      }
+      service.getTableHandlerChain().fireTableRemoved(runtime);
       releasePool.countDown();
       Work marker = work(() -> {});
       engine.submitDirect(marker);
@@ -297,7 +346,9 @@ class TestProcessCancellationConcurrency {
       endpoint.dispose();
       service.dispose();
       engine.close();
-      persistence.clear();
+      Assertions.assertTrue(
+          service.awaitTermination(10, TimeUnit.SECONDS), "Process callbacks did not terminate");
+      persistence.clearTable(identifier.getId());
     }
   }
 
@@ -381,6 +432,18 @@ class TestProcessCancellationConcurrency {
     final CountDownLatch canceled = new CountDownLatch(1);
     volatile String id;
     final AtomicInteger submissions = new AtomicInteger();
+    final AtomicInteger cancelRequests = new AtomicInteger();
+
+    boolean failPolling;
+    final AtomicInteger polls = new AtomicInteger();
+
+    @Override
+    public ProcessStatus getStatus(String identifier) {
+      if (failPolling && polls.incrementAndGet() > 1) {
+        throw new IllegalStateException("Status query failed while execution is still running");
+      }
+      return super.getStatus(identifier);
+    }
 
     String submitDirect(TableProcess process) {
       return super.submitTableProcess(process);
@@ -397,6 +460,7 @@ class TestProcessCancellationConcurrency {
 
     @Override
     public ProcessStatus tryCancelTableProcess(TableProcess process, String identifier) {
+      cancelRequests.incrementAndGet();
       ProcessStatus status = super.tryCancelTableProcess(process, identifier);
       if (status == ProcessStatus.CANCELED) {
         canceled.countDown();
@@ -440,12 +504,6 @@ class TestProcessCancellationConcurrency {
       } finally {
         finished.countDown();
       }
-    }
-  }
-
-  private static class Persistence extends DerbyPersistence {
-    void clear() {
-      super.after();
     }
   }
 }

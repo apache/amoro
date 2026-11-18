@@ -93,6 +93,9 @@ async function getTableDetails() {
     const result = await getTableDetail({
       ...requestParams,
     })
+    if (catalog !== route.query.catalog || db !== route.query.db || table !== route.query.table) {
+      return
+    }
     const { pkList = [], tableType, partitionColumnList = [], properties, changeMetrics, schema, createTime, tableIdentifier, baseMetrics, tableSummary, comment } = result
     state.baseDetailInfo = {
       ...tableSummary,

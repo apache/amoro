@@ -29,9 +29,7 @@ import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.descriptor.FilesStatistics;
-import org.apache.amoro.table.descriptor.FormatTableDescriptor;
 import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
-import org.apache.amoro.table.descriptor.ProcessCategory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -41,12 +39,6 @@ import java.util.stream.Collectors;
 
 /** Format-independent queries of AMS cleanup records, without optimizing task metrics. */
 public class TableProcessQuery extends PersistentBase {
-  static boolean handles(FormatTableDescriptor descriptor, String category, String type) {
-    return ProcessCategory.CLEANUP.getName().equalsIgnoreCase(category)
-        && (StringUtils.isBlank(type)
-            || descriptor.getProcessTypesByCategory(category).contains(type));
-  }
-
   Pair<List<OptimizingProcessInfo>, Integer> list(
       TableIdentifier table,
       List<String> actions,

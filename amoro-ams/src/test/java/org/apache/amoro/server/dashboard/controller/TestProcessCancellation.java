@@ -21,9 +21,11 @@ package org.apache.amoro.server.dashboard.controller;
 import io.javalin.http.Context;
 import org.apache.amoro.Action;
 import org.apache.amoro.Constants;
+import org.apache.amoro.IcebergActions;
 import org.apache.amoro.PaimonActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
+import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.api.OptimizingService;
 import org.apache.amoro.client.OptimizingClientPools;
 import org.apache.amoro.config.Configurations;
@@ -35,6 +37,7 @@ import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.catalog.CatalogManager;
 import org.apache.amoro.server.persistence.PersistentBase;
 import org.apache.amoro.server.persistence.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.process.ProcessService;
@@ -69,6 +72,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 
@@ -76,7 +80,7 @@ import java.util.stream.Stream;
  * Exercise the dashboard controller through real Thrift and the production cancellation service.
  */
 class TestProcessCancellation extends PersistentBase {
-  private final Persistence persistence = new Persistence();
+  private final DerbyPersistence persistence = new DerbyPersistence();
   private final AwaitableEngine engine = new AwaitableEngine();
   private final TableService tables = Mockito.mock(TableService.class);
   private final TableManager tableManager = Mockito.mock(TableManager.class);
@@ -203,14 +207,13 @@ class TestProcessCancellation extends PersistentBase {
           "Process callbacks did not terminate; Derby must remain available");
     }
     // A timed-out or interrupted drain leaves persistence intact so teardown can be retried.
-    persistence.clear();
+    persistence.clearTable(identifier == null ? null : identifier.getId());
     closed = true;
   }
 
-  @ParameterizedTest
-  @MethodSource("formats")
-  void dashboardCancelsCleanupAndRejectsRepeatedCancellation(TableFormat format) throws Exception {
-    startCleanup(format);
+  @Test
+  void dashboardCancelsPaimonSnapshotsAndRejectsRepeatedCancellation() throws Exception {
+    startCleanup(TableFormat.PAIMON);
     controller.cancelOptimizingProcess(ctx);
     Assertions.assertEquals(ProcessStatus.CANCELED, status());
     Assertions.assertTrue(processes.getTableProcessInstances(identifier).isEmpty());
@@ -218,6 +221,40 @@ class TestProcessCancellation extends PersistentBase {
         IllegalStateException.class, () -> controller.cancelOptimizingProcess(ctx));
     Mockito.verify(ctx, Mockito.times(1)).json(Mockito.any());
     Assertions.assertFalse(client.cancelProcess(Long.MAX_VALUE));
+    close();
+    Assertions.assertEquals(1, engine.cancelRequests.get());
+  }
+
+  @ParameterizedTest
+  @MethodSource("unsupportedManualActions")
+  void unsupportedMaintenanceKeepsLegacyCancelResponse(TableFormat format, Action action)
+      throws Exception {
+    startCleanup(format, action);
+    Assertions.assertFalse(client.cancelProcess(processId));
+    controller.cancelOptimizingProcess(ctx);
+    Mockito.verify(ctx).json(Mockito.any());
+    Assertions.assertEquals(ProcessStatus.RUNNING, status());
+    Assertions.assertTrue(processes.getTableProcessInstances(identifier).containsKey(processId));
+    release.countDown();
+    await(() -> status() == ProcessStatus.SUCCESS);
+    close();
+    Assertions.assertEquals(0, engine.cancelRequests.get());
+  }
+
+  static Stream<Arguments> unsupportedManualActions() {
+    return Stream.of(
+        Arguments.of(TableFormat.ICEBERG, PaimonActions.EXPIRE_SNAPSHOTS),
+        Arguments.of(TableFormat.MIXED_ICEBERG, PaimonActions.EXPIRE_SNAPSHOTS),
+        Arguments.of(TableFormat.PAIMON, IcebergActions.CLEAN_ORPHAN));
+  }
+
+  @Test
+  void tableRemovalCancelsPublishedExecutionOnce() throws Exception {
+    startCleanup(TableFormat.ICEBERG);
+    processes.getTableHandlerChain().fireTableRemoved(tables.getRuntime(identifier.getId()));
+    Assertions.assertEquals(ProcessStatus.CANCELED, status());
+    close();
+    Assertions.assertEquals(1, engine.cancelRequests.get());
   }
 
   static Stream<TableFormat> formats() {
@@ -226,11 +263,11 @@ class TestProcessCancellation extends PersistentBase {
 
   @Test
   void dashboardRejectsCancellationForAnotherTable() throws Exception {
-    startCleanup(TableFormat.ICEBERG);
+    startCleanup(TableFormat.PAIMON);
     Mockito.when(tableManager.getServerTableIdentifier(Mockito.any()))
         .thenReturn(
             ServerTableIdentifier.of(
-                identifier.getId() + 1, "catalog", "db", "other", TableFormat.ICEBERG));
+                identifier.getId() + 1, "catalog", "db", "other", TableFormat.PAIMON));
     Assertions.assertThrows(
         IllegalStateException.class, () -> controller.cancelOptimizingProcess(ctx));
     Assertions.assertEquals(ProcessStatus.RUNNING, status());
@@ -239,8 +276,25 @@ class TestProcessCancellation extends PersistentBase {
   }
 
   @Test
+  void cleanupPreservesOtherCatalogs() throws Exception {
+    String catalogName = "cancel-test-unrelated-catalog";
+    CatalogMeta catalog = new CatalogMeta(catalogName, "ams", Map.of(), Map.of(), Map.of());
+    doAs(CatalogMetaMapper.class, mapper -> mapper.insertCatalog(catalog));
+    try {
+      startCleanup(TableFormat.ICEBERG);
+      close();
+      Assertions.assertNotNull(
+          getAs(CatalogMetaMapper.class, mapper -> mapper.getCatalog(catalogName)));
+      Assertions.assertNull(
+          getAs(TableProcessMapper.class, mapper -> mapper.getProcessMeta(processId)));
+    } finally {
+      doAs(CatalogMetaMapper.class, mapper -> mapper.deleteCatalog(catalogName));
+    }
+  }
+
+  @Test
   void completedCleanupIsNotReportedAsCanceled() throws Exception {
-    startCleanup(TableFormat.ICEBERG);
+    startCleanup(TableFormat.PAIMON);
     release.countDown();
     await(() -> status() == ProcessStatus.SUCCESS);
     Assertions.assertThrows(
@@ -294,7 +348,11 @@ class TestProcessCancellation extends PersistentBase {
   }
 
   private void startCleanup(TableFormat format) throws Exception {
-    identifier = ServerTableIdentifier.of(1L, "catalog", "db", "tbl", format);
+    startCleanup(format, PaimonActions.EXPIRE_SNAPSHOTS);
+  }
+
+  private void startCleanup(TableFormat format, Action action) throws Exception {
+    identifier = ServerTableIdentifier.of("catalog", "db", "tbl", format);
     doAs(TableMetaMapper.class, mapper -> mapper.insertTable(identifier));
     TableRuntimeMeta meta = new TableRuntimeMeta();
     meta.setTableId(identifier.getId());
@@ -306,7 +364,7 @@ class TestProcessCancellation extends PersistentBase {
     DefaultTableRuntime runtime = new DefaultTableRuntime(store, () -> null);
     store.setTableRuntime(runtime);
     Mockito.when(tables.getRuntime(identifier.getId())).thenReturn(runtime);
-    processes.register(runtime, new BlockingCleanup(runtime));
+    processes.register(runtime, new BlockingCleanup(runtime, action));
     Assertions.assertTrue(entered.await(10, TimeUnit.SECONDS));
     processId = processes.getTableProcessInstances(identifier).keySet().iterator().next();
     await(() -> status() == ProcessStatus.RUNNING);
@@ -326,13 +384,16 @@ class TestProcessCancellation extends PersistentBase {
   }
 
   private class BlockingCleanup extends TableProcess implements LocalProcess {
-    BlockingCleanup(DefaultTableRuntime runtime) {
+    private final Action action;
+
+    BlockingCleanup(DefaultTableRuntime runtime, Action action) {
       super(runtime, engine);
+      this.action = action;
     }
 
     @Override
     public Action getAction() {
-      return PaimonActions.EXPIRE_SNAPSHOTS;
+      return action;
     }
 
     @Override
@@ -366,6 +427,13 @@ class TestProcessCancellation extends PersistentBase {
 
   private static class AwaitableEngine extends LocalExecutionEngine {
     private final List<ThreadPoolExecutor> pools = new ArrayList<>();
+    private final AtomicInteger cancelRequests = new AtomicInteger();
+
+    @Override
+    public ProcessStatus tryCancelTableProcess(TableProcess process, String identifier) {
+      cancelRequests.incrementAndGet();
+      return super.tryCancelTableProcess(process, identifier);
+    }
 
     @Override
     protected ThreadPoolExecutor newFixedPool(String tag, int size) {
@@ -381,12 +449,6 @@ class TestProcessCancellation extends PersistentBase {
             pool.awaitTermination(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS),
             "Local workers did not terminate; Derby must remain available");
       }
-    }
-  }
-
-  private static class Persistence extends DerbyPersistence {
-    void clear() {
-      super.after();
     }
   }
 }

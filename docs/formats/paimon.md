@@ -61,9 +61,8 @@ on the default branch. Install the Paimon format module (build AMS with
 The distributed configuration disables this plugin. The plugin property
 `expire-snapshots.enabled` defaults to `true`; setting it to `false` prevents registration of the
 snapshot-expiration action. An explicit positive interval of at least
-one millisecond is required; missing configuration does not register any Paimon maintenance
-actions, even when AMS automatically discovers plugins. Restart AMS after changing plugin
-configuration. The common plugin loader defaults an omitted `enabled` field to `true`.
+one millisecond is required; without it, snapshot expiration remains disabled.
+Restart AMS after changing plugin configuration.
 
 Add `pool.paimon-expire-snapshots.thread-count: 1` to the existing `local` execution engine's
 properties in `conf/plugins/execute-engines.yaml` (included in the distributed configuration).
@@ -93,30 +92,34 @@ remain eligible for snapshot expiration.
 This release does not schedule orphan-file deletion, independent changelog expiration, compaction,
 partition expiration or tag lifecycle management.
 
-Each execution, retry and recovery reloads the table through its existing catalog, invalidating
-cached metadata. Paimon reads retention settings through `CoreOptions.expireConfig()` and applies
-them using `newExpireSnapshots().config(...).expire()`; AMS supplies no retention overrides.
+### Retention settings
+
+Each execution, including retries and execution after recovery, reads the latest table settings
+through its catalog. AMS uses the catalog's configured credentials and delegates snapshot
+expiration to Paimon without overriding the table's retention policy.
 The relevant native settings are `snapshot.num-retained.min`, `snapshot.num-retained.max`,
 `snapshot.time-retained` and `snapshot.expire.limit`. With Paimon 1.2.0, defaults are respectively
-10, 2147483647, 1 hour and 50. Changelog settings retain their native values and fallback rules. In Paimon 1.1.1 and 1.2.0,
-the effective changelog deletion limit also comes from `snapshot.expire.limit`; there is no
-separate `changelog.expire.limit` table option in these versions.
-With independent changelog retention, native snapshot expiration preserves the files needed by
-changelog readers and archives expired snapshot metadata as changelog metadata. AMS does not call
-`newExpireChangelog()`: archived changelogs are not expired by this action, even on later runs.
-Because `write-only=true` also disables writer-side automatic changelog expiration, arrange
-separate native changelog maintenance when needed; setting changelog retention alone does not
-make AMS enforce that retention limit.
+10, 2147483647, 1 hour and 50.
 The maximum snapshot count can expire snapshots within the time window; time retention alone
 is not an absolute guarantee. Paimon remains responsible for tag and consumer protection.
 Invalid retention configurations fail before expiration.
+
+With independent changelog retention, native snapshot expiration preserves the files needed by
+changelog readers and archives expired snapshot metadata as changelog metadata.
+Archived changelogs are not expired by this action, even on later runs.
+Because `write-only=true` also disables writer-side automatic changelog expiration, arrange
+separate native changelog maintenance when needed; setting changelog retention alone does not
+make AMS enforce that retention limit.
 
 Choose the interval and native expiration limit according to snapshot generation rate, storage
 load and retention needs. The interval controls scheduling checks, not guaranteed cleanup
 completion frequency. Checks also respect the last successful execution time, so asynchronous
 execution can make the effective period approach twice the configured interval; queuing and
-failures can extend it further. One process attempt makes one native call, without an unbounded
-cleanup loop. The limit applies to each invocation, not the cumulative work across retries.
+failures can extend it further. The expiration limit applies to each attempt, not the cumulative
+work across retries. A task can retry up to three times after its initial attempt; later scheduling
+checks can create new tasks even after these retries are exhausted.
+
+### Viewing and canceling tasks
 
 The table's **Cleanup** tab lists AMS tasks and their latest-attempt summaries:
 
@@ -125,18 +128,23 @@ The table's **Cleanup** tab lists AMS tasks and their latest-attempt summaries:
   count or reclaimed byte count. Normal return does not prove every file deletion succeeded.
 - `outcome=skipped` means eligibility changed before execution; no expiration was invoked and
   the last successful cleanup time is unchanged.
-- `error-stage` and `error-message` identify a failure. If expiration returns but recording the
-  last-success time fails, the task can fail while retaining the completed invocation's result.
-  Retrying replaces the previous attempt's summary; this is not a complete attempt history.
+- `error-stage` and `error-message` identify a failure. A failed task may already have expired
+  snapshots. Retrying replaces the previous attempt's summary; this is not a complete attempt history.
 
-Expand a task to see its summary and, with write permission, cancel a running task. Cancellation
-is routed through AMS ProcessService for both Paimon and Iceberg cleanup tasks. A request that
-cannot cancel a tracked active task returns an error rather than reporting success. Iceberg
-self-optimizing tasks retain their existing cancellation and partial-commit behavior. A failed
-attempt that still has retries remaining can be canceled before its retry starts. If cancellation
-wins before the engine identifier is recorded, the executor forwards cancellation once that
-identifier becomes available; a task still queued at that point will not run. Cancellation
-uses the same framework semantics as Iceberg: it does not undo completed deletion or guarantee
-that underlying file operations immediately stop. Failures use the existing bounded retries
-(up to three additional attempts per process); later scheduling checks can create a new process.
-Recovery repeats the operation with current settings and does not guarantee exactly-once deletion.
+In the Cleanup tab, expand an AMS-managed Paimon snapshot expiration task to see its summary.
+Users with write permission can cancel a running task from that row. A repeated request or a
+request for a completed task returns an error. Cancellation prevents pending retries of that task,
+but later scheduling checks can create another task. To stop future automatic expiration for a
+table, set `amoro.expire-snapshots.enabled=false`.
+
+### Known limitations
+
+- Cancellation or disabling table maintenance does not guarantee that an already-started cleanup
+  stops immediately. Files already deleted stay deleted. The default single-threaded Paimon pool
+  queues a replacement task; with multiple threads, a replacement can run while the canceled task
+  finishes.
+- A successful task can have an empty finish time, and its displayed duration can continue to
+  increase on refresh.
+- A task still recorded as `PENDING` when AMS stops remains in the history as `PENDING` after
+  restart; later scheduling can create a new task. Recovery may repeat expiration and does not
+  guarantee exactly-once execution.

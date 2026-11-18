@@ -22,13 +22,17 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.formats.paimon.PaimonTable;
 import org.apache.paimon.CoreOptions;
+import org.apache.paimon.fs.FileIO;
+import org.apache.paimon.fs.local.LocalFileIO;
 import org.apache.paimon.options.ExpireConfig;
 import org.apache.paimon.table.AppendOnlyFileStoreTable;
+import org.apache.paimon.table.ExpireSnapshots;
 import org.apache.paimon.table.FileStoreTable;
 import org.apache.paimon.table.PrimaryKeyFileStoreTable;
 import org.apache.paimon.table.Table;
 import org.apache.paimon.utils.BranchManager;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -50,11 +54,14 @@ final class PaimonSnapshotExpiration {
 
   /** Null means that this table is eligible; other values are safe diagnostic reason codes. */
   static String skipReason(PaimonTable table) {
-    Map<String, String> properties = table.properties();
+    return table.doAs(() -> skipReason(table.originalTable()));
+  }
+
+  private static String skipReason(Table nativeTable) {
+    Map<String, String> properties = nativeTable.options();
     if (!Boolean.parseBoolean(properties.getOrDefault(ENABLED, String.valueOf(ENABLED_DEFAULT)))) {
       return "governance-disabled";
     }
-    Table nativeTable = table.originalTable();
     if (!(nativeTable instanceof PrimaryKeyFileStoreTable)
         && !(nativeTable instanceof AppendOnlyFileStoreTable)) {
       return "unsupported-table-type";
@@ -68,6 +75,24 @@ final class PaimonSnapshotExpiration {
       return "write-only-required";
     }
     return null;
+  }
+
+  static ExpireSnapshots newExpireSnapshots(FileStoreTable table) throws IOException {
+    FileIO io = table.fileIO();
+    // LocalFileIO uses the JVM's local filesystem directly, without Hadoop authentication.
+    if (io.getClass() == LocalFileIO.class) {
+      return table.newExpireSnapshots();
+    }
+    // Native deletion threads are shared between catalogs. Use the refreshed schema and catalog
+    // environment with a task-local FileIO so each worker operates as this catalog's user.
+    FileIO catalogIO = CatalogFileIO.bindToCurrentUser(io);
+    FileStoreTable scopedTable =
+        table instanceof PrimaryKeyFileStoreTable
+            ? new PrimaryKeyFileStoreTable(
+                catalogIO, table.location(), table.schema(), table.catalogEnvironment())
+            : new AppendOnlyFileStoreTable(
+                catalogIO, table.location(), table.schema(), table.catalogEnvironment());
+    return scopedTable.newExpireSnapshots();
   }
 
   static ExpireConfig configuration(FileStoreTable table) {

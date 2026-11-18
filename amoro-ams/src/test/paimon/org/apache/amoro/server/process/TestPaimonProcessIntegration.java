@@ -113,9 +113,9 @@ import java.util.stream.IntStream;
 
 class TestPaimonProcessIntegration extends PersistentBase {
   private Path warehouse;
-  private final Persistence persistence = new Persistence();
+  private final DerbyPersistence persistence = new DerbyPersistence();
   private final ServerTableIdentifier identifier =
-      ServerTableIdentifier.of(1L, "catalog", "db", "tbl", TableFormat.PAIMON);
+      ServerTableIdentifier.of("catalog", "db", "tbl", TableFormat.PAIMON);
   private final Clock clock = Mockito.mock(Clock.class);
   private final ObservedFactory factory = new ObservedFactory(clock);
   private final AwaitableEngine engine = new AwaitableEngine();
@@ -239,7 +239,7 @@ class TestPaimonProcessIntegration extends PersistentBase {
     if (nativeCatalog != null) {
       nativeCatalog.close();
     }
-    persistence.clear();
+    persistence.clearTable(identifier.getId());
     if (warehouse != null) {
       FileUtils.deleteDirectory(warehouse.toFile());
     }
@@ -253,6 +253,9 @@ class TestPaimonProcessIntegration extends PersistentBase {
         runtime, factory.trigger(runtime, PaimonActions.EXPIRE_SNAPSHOTS).orElseThrow());
     await(() -> rows().size() == 1 && rows().get(0).getStatus() == ProcessStatus.SUCCESS);
     OptimizingProcessInfo info = rows().get(0);
+    Assertions.assertTrue(info.isAmsCancellationSupported());
+    Assertions.assertTrue(
+        new ObjectMapper().valueToTree(info).get("amsCancellationSupported").asBoolean());
     Assertions.assertEquals("noop", info.getSummary().get("outcome"));
     Assertions.assertEquals("0", info.getSummary().get("reported-expired-snapshots"));
     Assertions.assertTrue(runtime.getState(PaimonProcessFactory.LAST_SUCCESS_TIME) > 0);
@@ -684,8 +687,14 @@ class TestPaimonProcessIntegration extends PersistentBase {
       Assertions.assertTrue(schedulerThread.get().isAlive());
       Assertions.assertNotNull(nativeCatalog.getTable(Identifier.create("db", "tbl")));
       Assertions.assertEquals(
-          List.of(identifier),
-          getAs(TableMetaMapper.class, TableMetaMapper::selectAllTableIdentifiers));
+          identifier,
+          getAs(
+              TableMetaMapper.class,
+              mapper ->
+                  mapper.selectTableIdentifier(
+                      identifier.getCatalog(),
+                      identifier.getDatabase(),
+                      identifier.getTableName())));
     } finally {
       release.countDown();
       if (schedulerThread.get() != null) {
@@ -701,7 +710,7 @@ class TestPaimonProcessIntegration extends PersistentBase {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void junitTeardownOwnsWarehouseLifetime(boolean schedulerBlocked) throws Exception {
-    // The launched fixture needs exclusive ownership of the shared Derby tables.
+    // Release this fixture's table name before the nested fixture registers its own.
     close();
     PaimonWarehouseLifecycle.instance = null;
     SummaryGeneratingListener listener = new SummaryGeneratingListener();
@@ -1025,12 +1034,6 @@ class TestPaimonProcessIntegration extends PersistentBase {
     @Override
     protected List<PluginConfiguration> loadPluginConfigurations() {
       return configs;
-    }
-  }
-
-  private static class Persistence extends DerbyPersistence {
-    void clear() {
-      super.after();
     }
   }
 }

@@ -17,7 +17,7 @@ limitations under the License.
 / -->
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref, shallowReactive } from 'vue'
+import { computed, onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
@@ -28,6 +28,7 @@ import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
 import { canManageTable } from '@/utils/permission'
 
 const props = withDefaults(defineProps<{
+  tableType?: string
   processCategory?: string
   cancelModalTitleKey?: string
 }>(), {
@@ -162,6 +163,15 @@ async function refreshOptimizingProcesses() {
     loading.value = false
   }
 }
+
+function supportsAmsCancellation(record: { amsCancellationSupported?: boolean }) {
+  return props.processCategory === 'CLEANUP' && record.amsCancellationSupported === true
+}
+
+const showDetailsCancellation = computed(() =>
+  writable.value
+  && (props.processCategory !== 'CLEANUP' || Boolean(props.tableType && props.tableType !== 'PAIMON')),
+)
 
 async function cancel(targetProcessId: string | number = processId.value) {
   Modal.confirm({
@@ -305,10 +315,10 @@ onMounted(() => {
         </template>
         <template #bodyCell="{ record, column }">
           <template v-if="column.dataIndex === 'processId'">
-            <span v-if="props.processCategory === 'CLEANUP'">{{ record.processId }}</span>
-            <a-button v-else type="link" @click="toggleBreadcrumb(record.processId, record.status)">
+            <a-button v-if="!supportsAmsCancellation(record)" type="link" @click="toggleBreadcrumb(record.processId, record.status)">
               {{ record.processId }}
             </a-button>
+            <span v-else>{{ record.processId }}</span>
           </template>
           <template v-if="column.dataIndex === 'status'">
             <div class="g-flex-ac">
@@ -333,7 +343,7 @@ onMounted(() => {
         </template>
         <template #expandedRowRender="{ record }">
           <a-button
-            v-if="props.processCategory === 'CLEANUP' && writable"
+            v-if="writable && supportsAmsCancellation(record)"
             :disabled="record.status !== 'RUNNING'" type="primary" class="g-mb-16"
             @click="cancel(record.processId)"
           >
@@ -362,7 +372,7 @@ onMounted(() => {
         </a-col>
         <a-col :span="6">
           <a-button
-            v-if="writable"
+            v-if="showDetailsCancellation"
             v-model:disabled="cancelDisabled" type="primary" class="g-mb-16" style="float: right"
             @click="cancel()"
           >

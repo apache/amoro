@@ -24,6 +24,7 @@ import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 
@@ -35,7 +36,14 @@ public class PaimonCatalog implements FormatCatalog {
 
   private final String name;
 
+  private final TableMetaStore metaStore;
+
   public PaimonCatalog(Catalog catalog, String name) {
+    this(catalog, name, TableMetaStore.EMPTY);
+  }
+
+  public PaimonCatalog(Catalog catalog, String name, TableMetaStore metaStore) {
+    this.metaStore = metaStore;
     this.catalog = catalog;
     this.name = name;
   }
@@ -91,6 +99,7 @@ public class PaimonCatalog implements FormatCatalog {
       return new PaimonTable(
           TableIdentifier.of(name, database, table),
           catalog.getTable(Identifier.create(database, table)),
+          metaStore,
           () -> reloadTable(database, table));
     } catch (Catalog.TableNotExistException e) {
       throw new NoSuchTableException(e);

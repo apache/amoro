@@ -33,26 +33,35 @@ import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
 import org.apache.amoro.server.table.DerbyPersistence;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.descriptor.FormatTableDescriptor;
 import org.apache.amoro.table.descriptor.OptimizingProcessInfo;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 class TestTableProcessQuery extends PersistentBase {
-  private final Persistence persistence = new Persistence();
+  private final DerbyPersistence persistence = new DerbyPersistence();
   private final ServerTableIdentifier table =
-      ServerTableIdentifier.of(1L, "catalog", "db", "tbl", TableFormat.PAIMON);
+      ServerTableIdentifier.of("catalog", "db", "tbl", TableFormat.PAIMON);
+  private final ServerTableIdentifier otherTable =
+      ServerTableIdentifier.of("catalog", "db", "other", TableFormat.PAIMON);
   private final String action = PaimonActions.EXPIRE_SNAPSHOTS.getName();
 
   @AfterEach
   void cleanup() {
-    persistence.clear();
+    persistence.clearTable(table.getId());
+    persistence.clearTable(otherTable.getId());
   }
 
   @Test
@@ -61,13 +70,15 @@ class TestTableProcessQuery extends PersistentBase {
     insert(table.getId(), 11, action, ProcessStatus.SUCCESS);
     insert(table.getId(), 12, action, ProcessStatus.FAILED);
     insert(table.getId(), 13, "MINOR", ProcessStatus.SUCCESS);
-    insert(table.getId() + 1, 14, action, ProcessStatus.SUCCESS);
+    doAs(TableMetaMapper.class, mapper -> mapper.insertTable(otherTable));
+    insert(otherTable.getId(), 14, action, ProcessStatus.SUCCESS);
     TableProcessQuery query = new TableProcessQuery();
     Pair<List<OptimizingProcessInfo>, Integer> page =
         query.list(table, List.of(action), "  ", null, 1, 0);
     Assertions.assertEquals(2, page.getRight());
     OptimizingProcessInfo result = page.getLeft().get(0);
     Assertions.assertEquals("12", result.getProcessId());
+    Assertions.assertFalse(asDashboardJson(result).containsKey("amsCancellationSupported"));
     Assertions.assertEquals("catalog", result.getCatalogName());
     Assertions.assertEquals("db", result.getDbName());
     Assertions.assertEquals("tbl", result.getTableName());
@@ -91,6 +102,7 @@ class TestTableProcessQuery extends PersistentBase {
 
   @Test
   void serverRoutingRetainsIcebergTypePriorityAndOptimizationMetrics() {
+    table.setFormat(TableFormat.ICEBERG);
     doAs(TableMetaMapper.class, mapper -> mapper.insertTable(table));
     insert(table.getId(), 11, action, ProcessStatus.SUCCESS);
     Map<String, String> metrics =
@@ -128,13 +140,10 @@ class TestTableProcessQuery extends PersistentBase {
     ServerTableDescriptor descriptor =
         new ServerTableDescriptor(catalogs, Mockito.mock(TableManager.class), new Configurations());
     org.apache.amoro.api.TableIdentifier id = iceberg.id().buildTableIdentifier();
-    Assertions.assertEquals(
-        "11",
-        descriptor
-            .getOptimizingProcessesInfo(id, null, "CLEANUP", null, 10, 0)
-            .getLeft()
-            .get(0)
-            .getProcessId());
+    OptimizingProcessInfo cleanup =
+        descriptor.getOptimizingProcessesInfo(id, null, "CLEANUP", null, 10, 0).getLeft().get(0);
+    Assertions.assertEquals("11", cleanup.getProcessId());
+    Assertions.assertFalse(asDashboardJson(cleanup).containsKey("amsCancellationSupported"));
     for (String category : new String[] {"CLEANUP", "OPTIMIZING", null}) {
       OptimizingProcessInfo minor =
           descriptor
@@ -161,6 +170,73 @@ class TestTableProcessQuery extends PersistentBase {
         () -> descriptor.getOptimizingProcessesInfo(id, null, "CLEANUP", null, 10, 0));
   }
 
+  @Test
+  void cleanupHistoryComesFromTheRegisteredDescriptor(@TempDir Path plugins) throws Exception {
+    Path services = Files.createDirectories(plugins.resolve("META-INF/services"));
+    Files.writeString(
+        services.resolve(FormatTableDescriptor.class.getName()), NativeHistory.class.getName());
+    // Deliberately use the same action and a different record in the AMS store.
+    doAs(TableMetaMapper.class, mapper -> mapper.insertTable(table));
+    insert(table.getId(), 11, action, ProcessStatus.SUCCESS);
+    AmoroTable<?> nativeTable = Mockito.mock(AmoroTable.class);
+    Mockito.when(nativeTable.id()).thenReturn(TableIdentifier.of("catalog", "db", "tbl"));
+    Mockito.when(nativeTable.format()).thenReturn(TableFormat.PAIMON);
+    CatalogManager catalogs = Mockito.mock(CatalogManager.class);
+    ServerCatalog catalog = Mockito.mock(ServerCatalog.class);
+    Mockito.when(catalogs.getServerCatalog("catalog")).thenReturn(catalog);
+    Mockito.doReturn(nativeTable).when(catalog).loadTable("db", "tbl");
+
+    Thread thread = Thread.currentThread();
+    ClassLoader original = thread.getContextClassLoader();
+    try (URLClassLoader loader =
+        new URLClassLoader(new URL[] {plugins.toUri().toURL()}, original)) {
+      thread.setContextClassLoader(loader);
+      ServerTableDescriptor server =
+          new ServerTableDescriptor(
+              catalogs, Mockito.mock(TableManager.class), new Configurations());
+      for (String type : new String[] {null, action}) {
+        Pair<List<OptimizingProcessInfo>, Integer> history =
+            server.getOptimizingProcessesInfo(
+                nativeTable.id().buildTableIdentifier(), type, "CLEANUP", null, 10, 0);
+        Assertions.assertEquals(1, history.getRight());
+        OptimizingProcessInfo entry = history.getLeft().get(0);
+        Assertions.assertEquals("native-record", entry.getProcessId());
+        Assertions.assertEquals(action, entry.getOptimizingType());
+        Assertions.assertEquals(ProcessStatus.RUNNING, entry.getStatus());
+        Assertions.assertFalse(asDashboardJson(entry).containsKey("amsCancellationSupported"));
+      }
+    } finally {
+      thread.setContextClassLoader(original);
+    }
+  }
+
+  public static class NativeHistory extends MixedAndIcebergTableDescriptor {
+    @Override
+    public List<TableFormat> supportFormat() {
+      return List.of(TableFormat.PAIMON);
+    }
+
+    @Override
+    public Pair<List<OptimizingProcessInfo>, Integer> getOptimizingProcessesInfo(
+        AmoroTable<?> table,
+        String type,
+        String category,
+        ProcessStatus status,
+        int limit,
+        int offset) {
+      OptimizingProcessInfo entry = new OptimizingProcessInfo();
+      entry.setProcessId("native-record");
+      entry.setOptimizingType(PaimonActions.EXPIRE_SNAPSHOTS.getName());
+      entry.setStatus(ProcessStatus.RUNNING);
+      return Pair.of(List.of(entry), 1);
+    }
+  }
+
+  private Map<?, ?> asDashboardJson(OptimizingProcessInfo info) {
+    JavalinJsonMapper json = JavalinJsonMapper.createDefaultJsonMapper();
+    return json.fromJsonString(json.toJsonString(info), Map.class);
+  }
+
   private void insert(long tableId, long processId, String type, ProcessStatus status) {
     doAs(
         TableProcessMapper.class,
@@ -177,11 +253,5 @@ class TestTableProcessQuery extends PersistentBase {
                 1000L,
                 Collections.emptyMap(),
                 Map.of("outcome", "noop")));
-  }
-
-  private static class Persistence extends DerbyPersistence {
-    void clear() {
-      super.after();
-    }
   }
 }

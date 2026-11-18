@@ -22,5 +22,9 @@ package org.apache.amoro;
 public final class PaimonActions {
   public static final Action EXPIRE_SNAPSHOTS = Action.register("expire-snapshots");
 
+  public static boolean isSnapshotExpiration(TableFormat format, String processType) {
+    return format == TableFormat.PAIMON && EXPIRE_SNAPSHOTS.getName().equals(processType);
+  }
+
   private PaimonActions() {}
 }

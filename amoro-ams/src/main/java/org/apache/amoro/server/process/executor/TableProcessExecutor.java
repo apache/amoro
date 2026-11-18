@@ -184,15 +184,12 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
       } else {
         LOG.warn("Un expected terminal status: {} for process: {}.", status, store.getProcessId());
       }
-
-      if (finishedCallback != null) {
-        finishedCallback.run();
-      }
     } finally {
-      // Cancellation can win before submit returns or before its identifier is persisted.
-      // Always hand the identifier obtained by this attempt to the engine before exiting.
+      // ProcessService cancels the recorded identifier. Compensate only when cancellation
+      // won before this attempt's identifier was recorded, before a callback can start a retry.
       if (!Strings.isNullOrEmpty(externalProcessIdentifier)
-          && isTableProcessCanceling(store.getStatus())) {
+          && isTableProcessCanceling(store.getStatus())
+          && !externalProcessIdentifier.equals(store.getExternalProcessIdentifier())) {
         try {
           executeEngine.tryCancelTableProcess(tableProcess, externalProcessIdentifier);
         } catch (Exception e) {
@@ -203,6 +200,9 @@ public class TableProcessExecutor extends PersistentBase implements Runnable {
               e);
         }
       }
+    }
+    if (finishedCallback != null) {
+      finishedCallback.run();
     }
   }
 

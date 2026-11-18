@@ -445,7 +445,11 @@ public class ProcessService extends PersistentBase {
     }
     untrackTableProcessInstance(
         process.getTableRuntime().getTableIdentifier(), store.getProcessId());
+    cancelExecution(store, process);
+    return true;
+  }
 
+  private void cancelExecution(TableProcessStore store, TableProcess process) {
     ExecuteEngine executeEngine = executeEngines.get(store.getExecutionEngine());
 
     String externalIdentifier = store.getExternalProcessIdentifier();
@@ -457,7 +461,6 @@ public class ProcessService extends PersistentBase {
           executeEngine.name(),
           store.getProcessId());
     }
-    return canceled;
   }
 
   /**
@@ -725,6 +728,8 @@ public class ProcessService extends PersistentBase {
           if (!cancelProcess(holder.getStore(), holder.getProcess())) {
             untrackTableProcessInstance(
                 tableRuntime.getTableIdentifier(), holder.getStore().getProcessId());
+            // A terminal status can reflect a polling failure while the engine still runs.
+            cancelExecution(holder.getStore(), holder.getProcess());
           }
         }
       }

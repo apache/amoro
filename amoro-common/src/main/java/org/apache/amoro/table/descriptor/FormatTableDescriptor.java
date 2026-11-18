@@ -21,6 +21,8 @@ package org.apache.amoro.table.descriptor;
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.process.ProcessStatus;
+import org.apache.amoro.table.TableIdentifier;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Collections;
@@ -37,6 +39,26 @@ public interface FormatTableDescriptor {
    * @param ioExecutor io executor pool.
    */
   void withIoExecutor(ExecutorService ioExecutor);
+
+  /** Supply the AMS history reader to descriptors that display AMS-managed cleanup actions. */
+  default void withCleanupProcessQuery(CleanupProcessQuery query) {}
+
+  @FunctionalInterface
+  interface CleanupProcessQuery {
+    Pair<List<OptimizingProcessInfo>, Integer> list(
+        TableIdentifier table,
+        List<String> actions,
+        String type,
+        ProcessStatus status,
+        int limit,
+        int offset);
+
+    static boolean handles(FormatTableDescriptor descriptor, String category, String type) {
+      return ProcessCategory.CLEANUP.getName().equalsIgnoreCase(category)
+          && (StringUtils.isBlank(type)
+              || descriptor.getProcessTypesByCategory(category).contains(type));
+    }
+  }
 
   /** Get the format supported by this descriptor. */
   List<TableFormat> supportFormat();

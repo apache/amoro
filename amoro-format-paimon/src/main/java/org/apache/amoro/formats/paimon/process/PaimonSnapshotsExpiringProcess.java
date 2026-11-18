@@ -62,11 +62,14 @@ public class PaimonSnapshotsExpiringProcess extends TableProcess implements Loca
         return;
       }
       FileStoreTable nativeTable = (FileStoreTable) table.originalTable();
-      ExpireConfig config = PaimonSnapshotExpiration.configuration(nativeTable);
+      ExpireConfig config = table.doAs(() -> PaimonSnapshotExpiration.configuration(nativeTable));
       result.putAll(PaimonSnapshotExpiration.summary(config));
       publish(result);
       stage = "expire";
-      int expired = nativeTable.newExpireSnapshots().config(config).expire();
+      int expired =
+          table.doAs(
+              () ->
+                  PaimonSnapshotExpiration.newExpireSnapshots(nativeTable).config(config).expire());
       result.put("outcome", expired == 0 ? "noop" : "executed");
       result.put("reported-expired-snapshots", String.valueOf(expired));
       result.put("result-scope", "last-completed-invocation");

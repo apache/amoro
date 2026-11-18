@@ -687,7 +687,7 @@ public class MixedAndIcebergTableDescriptor extends PersistentBase
     if (identifier == null) {
       return Pair.of(Collections.emptyList(), 0);
     }
-    if (TableProcessQuery.handles(this, processCategory, type)) {
+    if (CleanupProcessQuery.handles(this, processCategory, type)) {
       return new TableProcessQuery()
           .list(
               identifier, getProcessTypesByCategory(processCategory), type, status, limit, offset);

@@ -20,6 +20,7 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
+import org.apache.amoro.PaimonActions;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.OptimizingService;
@@ -514,7 +515,9 @@ public class DefaultOptimizingService extends StatedPersistentBase
         return true;
       }
     }
-    return processService.cancelProcess(tableRuntime.getTableIdentifier(), processId);
+    return PaimonActions.isSnapshotExpiration(
+            tableRuntime.getFormat(), processMeta.getProcessType())
+        && processService.cancelProcess(tableRuntime.getTableIdentifier(), processId);
   }
 
   @Override

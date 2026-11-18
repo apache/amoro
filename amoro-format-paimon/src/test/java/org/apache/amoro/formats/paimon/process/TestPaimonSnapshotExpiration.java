@@ -35,7 +35,10 @@ import org.apache.amoro.process.RecoverProcessFailedException;
 import org.apache.amoro.process.TableProcess;
 import org.apache.amoro.process.TableProcessStore;
 import org.apache.amoro.table.StateKey;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.RawLocalFileSystem;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.paimon.catalog.CachingCatalog;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
@@ -45,7 +48,9 @@ import org.apache.paimon.data.InternalRow;
 import org.apache.paimon.options.Options;
 import org.apache.paimon.schema.Schema;
 import org.apache.paimon.schema.SchemaChange;
+import org.apache.paimon.table.ExpireSnapshots;
 import org.apache.paimon.table.FileStoreTable;
+import org.apache.paimon.table.PrimaryKeyFileStoreTable;
 import org.apache.paimon.table.sink.BatchTableCommit;
 import org.apache.paimon.table.sink.BatchTableWrite;
 import org.apache.paimon.table.sink.BatchWriteBuilder;
@@ -53,6 +58,7 @@ import org.apache.paimon.table.source.ReadBuilder;
 import org.apache.paimon.table.source.StreamTableScan;
 import org.apache.paimon.types.DataTypes;
 import org.apache.paimon.utils.CloseableIterator;
+import org.apache.paimon.utils.FileDeletionThreadPool;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +68,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -71,6 +84,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 class TestPaimonSnapshotExpiration {
@@ -510,6 +524,146 @@ class TestPaimonSnapshotExpiration {
         org.apache.amoro.process.ProcessStatus.SUCCESS, engine.getStatus(executionId));
     Assertions.assertTrue(
         thread.get().startsWith(configured ? "local-paimon-expire-snapshots-" : "local-default-"));
+  }
+
+  @Test
+  void usesCatalogIdentityForRefreshEligibilityAndExpiration() throws Exception {
+    createTable(true, Map.of("snapshot.num-retained.min", "1", "snapshot.num-retained.max", "1"));
+    append(1, 3);
+    String caller = UserGroupInformation.getCurrentUser().getShortUserName();
+    String catalogUser = caller + "-catalog";
+    byte[] site = "<configuration/>".getBytes(StandardCharsets.UTF_8);
+    TableMetaStore store =
+        TableMetaStore.builder()
+            .withHdfsSite(site)
+            .withCoreSite(site)
+            .withSimpleAuth(catalogUser)
+            .build();
+    PrimaryKeyFileStoreTable nativeTable = Mockito.spy((PrimaryKeyFileStoreTable) table());
+    ExpireSnapshots expiration = Mockito.spy(nativeTable.newExpireSnapshots());
+    Mockito.doReturn(expiration).when(nativeTable).newExpireSnapshots();
+    Answer<Object> callAsCatalogUser =
+        call -> {
+          Assertions.assertEquals(
+              catalogUser, UserGroupInformation.getCurrentUser().getShortUserName());
+          return call.callRealMethod();
+        };
+    Mockito.doAnswer(callAsCatalogUser).when(expiration).expire();
+    Mockito.doAnswer(callAsCatalogUser).when(nativeTable).options();
+    Mockito.doAnswer(callAsCatalogUser).when(nativeTable).store();
+    Catalog nativeCatalog = Mockito.mock(Catalog.class);
+    Mockito.when(nativeCatalog.getTable(id))
+        .thenAnswer(
+            call -> {
+              Assertions.assertEquals(
+                  catalogUser, UserGroupInformation.getCurrentUser().getShortUserName());
+              return nativeTable;
+            });
+    PaimonCatalog wrapper = new PaimonCatalog(nativeCatalog, "catalog", store);
+    Runtime runtime = new Runtime();
+    // The AMS catalog authenticates the initial lookup before returning the table to the scheduler.
+    runtime.loader = () -> store.doAs(() -> wrapper.loadTable("db", "tbl"));
+    TableProcess process = factory().trigger(runtime, PaimonActions.EXPIRE_SNAPSHOTS).orElseThrow();
+    Assertions.assertEquals(caller, UserGroupInformation.getCurrentUser().getShortUserName());
+    ((LocalProcess) process).run();
+    Assertions.assertEquals(caller, UserGroupInformation.getCurrentUser().getShortUserName());
+    Assertions.assertEquals("2", process.getSummary().get("reported-expired-snapshots"));
+    Assertions.assertEquals(3L, table().snapshotManager().earliestSnapshotId());
+    Mockito.verify(expiration).expire();
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void expiresExternalFilesAsCatalogUserOnReusedThreads(boolean primaryKey) throws Exception {
+    Path external = Files.createDirectory(warehouse.resolve("external"));
+    createTable(
+        primaryKey,
+        Map.of(
+            "snapshot.num-retained.min", "1",
+            "snapshot.num-retained.max", "1",
+            "data-file.external-paths", "testdata://external" + external.toUri().getRawPath(),
+            "data-file.external-paths.strategy", "round-robin"));
+    Map<String, String> properties =
+        Map.of("warehouse", warehouse.toUri().toString(), "resolving-file-io.enabled", "true");
+    Configuration conf = new Configuration(false);
+    conf.setClass(
+        "fs.testdata.impl", ExternalDataFileSystem.class, org.apache.hadoop.fs.FileSystem.class);
+    conf.setBoolean("fs.testdata.impl.disable.cache", true);
+    try (Catalog writer = PaimonCatalogFactory.paimonCatalog(properties, conf)) {
+      for (int i = 1; i <= 3; i++) {
+        BatchWriteBuilder builder =
+            ((FileStoreTable) writer.getTable(id)).newBatchWriteBuilder().withOverwrite();
+        try (BatchTableWrite write = builder.newWrite();
+            BatchTableCommit commit = builder.newCommit()) {
+          write.write(GenericRow.of(i));
+          commit.commit(write.prepareCommit());
+        }
+      }
+    }
+    Assertions.assertEquals(3L, countDataFiles(external));
+
+    // All native deletion workers already exist before the catalog user starts this attempt.
+    FileDeletionThreadPool.getExecutorService(1).prestartAllCoreThreads();
+    String catalogUser = "cleanup-" + warehouse.getFileName();
+    conf.set(ExternalDataFileSystem.REQUIRED_USER, catalogUser);
+    ByteArrayOutputStream coreSite = new ByteArrayOutputStream();
+    conf.writeXml(coreSite);
+    TableMetaStore store =
+        TableMetaStore.builder()
+            .withCoreSite(coreSite.toByteArray())
+            .withHdfsSite("<configuration/>".getBytes(StandardCharsets.UTF_8))
+            .withSimpleAuth(catalogUser)
+            .build();
+    PaimonCatalog reader =
+        store.doAs(() -> new PaimonCatalogFactory().create("catalog", "hadoop", properties, store));
+    Runtime runtime = new Runtime();
+    runtime.loader = () -> store.doAs(() -> reader.loadTable("db", "tbl"));
+    TableProcess process = factory().trigger(runtime, PaimonActions.EXPIRE_SNAPSHOTS).orElseThrow();
+    ((LocalProcess) process).run();
+    Assertions.assertEquals("2", process.getSummary().get("reported-expired-snapshots"));
+    Assertions.assertEquals(3L, table().snapshotManager().earliestSnapshotId());
+    Assertions.assertEquals(1L, countDataFiles(external));
+  }
+
+  private long countDataFiles(Path directory) throws IOException {
+    try (Stream<Path> paths = Files.walk(directory)) {
+      return paths.filter(Files::isRegularFile).count();
+    }
+  }
+
+  /** Local storage exposed as a separate Hadoop authority with a per-catalog identity check. */
+  public static class ExternalDataFileSystem extends RawLocalFileSystem {
+    static final String REQUIRED_USER = "fs.testdata.required-user";
+
+    @Override
+    public URI getUri() {
+      return URI.create("testdata://external");
+    }
+
+    @Override
+    public File pathToFile(org.apache.hadoop.fs.Path path) {
+      return new File(path.toUri().getPath());
+    }
+
+    @Override
+    public void initialize(URI uri, Configuration conf) throws IOException {
+      checkUser(conf);
+      super.initialize(uri, conf);
+    }
+
+    @Override
+    public boolean delete(org.apache.hadoop.fs.Path path, boolean recursive) throws IOException {
+      checkUser(getConf());
+      return super.delete(path, recursive);
+    }
+
+    private static void checkUser(Configuration conf) throws IOException {
+      String required = conf.get(REQUIRED_USER);
+      if (required != null
+          && !required.equals(UserGroupInformation.getCurrentUser().getShortUserName())) {
+        throw new IOException("External test filesystem requires " + required);
+      }
+    }
   }
 
   @Test
