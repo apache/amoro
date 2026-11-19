@@ -114,6 +114,7 @@ const propertiesRef = ref()
 const tablePropertiesRef = ref()
 // ICEBERG  MIXED_HIVE  MIXED_ICEBERG
 const tableFormatMap = {
+  HIVE: 'HIVE',
   MIXED_HIVE: 'MIXED_HIVE',
   ICEBERG: 'ICEBERG',
   MIXED_ICEBERG: 'MIXED_ICEBERG',
@@ -124,6 +125,7 @@ const tableFormatMap = {
 
 const tableFormatText = {
   [tableFormatMap.ICEBERG]: 'Iceberg',
+  [tableFormatMap.HIVE]: 'Hive',
   [tableFormatMap.MIXED_HIVE]: 'Mixed Hive',
   [tableFormatMap.MIXED_ICEBERG]: 'Mixed Iceberg',
   [tableFormatMap.PAIMON]: 'Paimon',

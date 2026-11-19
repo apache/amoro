@@ -23,6 +23,7 @@ import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.hive.CachedHiveClientPool;
 import org.apache.amoro.hive.HMSClient;
+import org.apache.amoro.hive.HiveTableTypeUtil;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
 import org.apache.amoro.table.TableIdentifier;
 import org.apache.amoro.table.TableMetaStore;
@@ -210,13 +211,8 @@ public class HudiHiveCatalog implements FormatCatalog {
     }
   }
 
-  static final String SPARK_SOURCE_PROVIDER = "spark.sql.sources.provider";
-  static final String FLINK_CONNECTOR = "connector";
-
   private boolean isHoodieTable(Table table) {
-
-    return "hudi".equalsIgnoreCase(table.getParameters().getOrDefault(SPARK_SOURCE_PROVIDER, ""))
-        || "hudi".equalsIgnoreCase(table.getParameters().getOrDefault(FLINK_CONNECTOR, ""));
+    return HiveTableTypeUtil.isHudi(table.getParameters());
   }
 
   private Map<String, String> filterEngineProperties(Map<String, String> properties) {

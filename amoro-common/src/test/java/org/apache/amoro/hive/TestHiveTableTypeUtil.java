@@ -32,7 +32,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 public class TestHiveTableTypeUtil {
 
@@ -72,9 +74,43 @@ public class TestHiveTableTypeUtil {
     verifyNoInteractions(client);
   }
 
+  @Test
+  public void testIsHiveTable() {
+    assertTrue(HiveTableTypeUtil.isHiveTable(table()));
+    Table noParameters = table();
+    noParameters.setParameters(null);
+    assertTrue(HiveTableTypeUtil.isHiveTable(noParameters));
+
+    assertFalse(HiveTableTypeUtil.isHiveTable(null));
+    Table view = table();
+    view.setTableType(TableType.VIRTUAL_VIEW.name());
+    assertFalse(HiveTableTypeUtil.isHiveTable(view));
+
+    assertFalse(HiveTableTypeUtil.isHiveTable(table("arctic.enabled", "true")));
+    assertFalse(HiveTableTypeUtil.isHiveTable(table("spark.sql.sources.provider", "hudi")));
+    assertFalse(HiveTableTypeUtil.isHiveTable(table("connector", "hudi")));
+
+    for (String format : Arrays.asList("PAIMON", "paimon", "ICEBERG", "LANCE")) {
+      assertFalse(HiveTableTypeUtil.isHiveTable(table("table_type", format)), format);
+    }
+    // Unknown table_type values must not be treated as another format.
+    assertTrue(HiveTableTypeUtil.isHiveTable(table("table_type", "unknown")));
+  }
+
   private static Table tableWithType(String tableType) {
     Table table = new Table();
     table.setTableType(tableType);
+    return table;
+  }
+
+  private static Table table(String... keyValues) {
+    Map<String, String> parameters = new HashMap<>();
+    for (int i = 0; i < keyValues.length; i += 2) {
+      parameters.put(keyValues[i], keyValues[i + 1]);
+    }
+    Table table = new Table();
+    table.setTableType(TableType.EXTERNAL_TABLE.name());
+    table.setParameters(parameters);
     return table;
   }
 }
