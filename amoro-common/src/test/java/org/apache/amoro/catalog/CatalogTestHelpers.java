@@ -22,6 +22,11 @@ import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
 import org.apache.amoro.properties.CatalogMetaProperties;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.metastore.TableType;
+import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.hadoop.hive.metastore.api.SerDeInfo;
+import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
+import org.apache.hadoop.hive.metastore.api.Table;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,6 +34,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -84,6 +90,30 @@ public class CatalogTestHelpers {
             CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE,
             encodeHadoopConfiguration(hiveConfiguration));
     return meta;
+  }
+
+  /** Builds a native Hive external table whose ownership is marked by {@code parameters}. */
+  public static Table hiveTable(String database, String tableName, Map<String, String> parameters) {
+    StorageDescriptor storageDescriptor = new StorageDescriptor();
+    storageDescriptor.setCols(Collections.singletonList(new FieldSchema("id", "int", null)));
+    SerDeInfo serDeInfo = new SerDeInfo();
+    serDeInfo.setSerializationLib("org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe");
+    storageDescriptor.setSerdeInfo(serDeInfo);
+    storageDescriptor.setInputFormat("org.apache.hadoop.mapred.TextInputFormat");
+    storageDescriptor.setOutputFormat("org.apache.hadoop.mapred.TextOutputFormat");
+    return new Table(
+        tableName,
+        database,
+        System.getProperty("user.name"),
+        (int) (System.currentTimeMillis() / 1000),
+        0,
+        0,
+        storageDescriptor,
+        Collections.emptyList(),
+        new HashMap<>(parameters),
+        null,
+        null,
+        TableType.EXTERNAL_TABLE.name());
   }
 
   public static String encodeHadoopConfiguration(Configuration conf) {

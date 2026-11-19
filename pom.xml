@@ -52,6 +52,7 @@
         <module>amoro-metrics</module>
         <module>amoro-format-iceberg</module>
         <module>amoro-format-mixed</module>
+        <module>amoro-format-hive</module>
         <module>amoro-format-hudi</module>
         <module>amoro-format-paimon</module>
         <module>amoro-format-lance</module>
@@ -213,6 +214,12 @@
             <dependency>
                 <groupId>org.apache.amoro</groupId>
                 <artifactId>amoro-format-iceberg</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.amoro</groupId>
+                <artifactId>amoro-format-hive</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

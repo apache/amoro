@@ -121,7 +121,8 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
             TableFormat.ICEBERG,
             TableFormat.PAIMON,
             TableFormat.HUDI,
-            TableFormat.LANCE)
+            TableFormat.LANCE,
+            TableFormat.HIVE)
         .map(
             formatCatalog -> {
               try {
@@ -149,7 +150,8 @@ public class CommonUnifiedCatalog implements UnifiedCatalog {
           TableFormat.ICEBERG,
           TableFormat.PAIMON,
           TableFormat.HUDI,
-          TableFormat.LANCE
+          TableFormat.LANCE,
+          TableFormat.HIVE
         };
 
     Map<String, TableFormat> tableNameToFormat = Maps.newHashMap();
