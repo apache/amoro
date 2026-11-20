@@ -163,7 +163,8 @@ public class LocalExecutionEngine implements ExecuteEngine {
     return pools.get(DEFAULT_POOL);
   }
 
-  private ThreadPoolExecutor newFixedPool(String tag, int size) {
+  /** Create a worker pool; subclasses can retain it to await termination in tests. */
+  protected ThreadPoolExecutor newFixedPool(String tag, int size) {
     return new ThreadPoolExecutor(
         size,
         size,

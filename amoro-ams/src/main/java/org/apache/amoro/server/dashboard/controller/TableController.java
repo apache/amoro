@@ -22,6 +22,7 @@ import static org.apache.amoro.properties.CatalogMetaProperties.CATALOG_TYPE_HIV
 
 import io.javalin.http.Context;
 import org.apache.amoro.Constants;
+import org.apache.amoro.PaimonActions;
 import org.apache.amoro.ServerTableIdentifier;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.CatalogMeta;
@@ -706,7 +707,14 @@ public class TableController {
         OptimizingClientPools.getClient(
             AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_OPTIMIZING_SERVICE_NAME));
     try {
-      client.cancelProcess(processId);
+      boolean canceled = client.cancelProcess(processId);
+      if (PaimonActions.isSnapshotExpiration(
+          serverTableIdentifier.getFormat(), processMeta.getProcessType())) {
+        Preconditions.checkState(
+            canceled,
+            "Process could not be canceled: it is no longer active or is not managed by this AMS, processId: %s",
+            processId);
+      }
     } catch (TException e) {
       throw new IllegalStateException("Failed to cancel optimizing process:" + e.getMessage());
     }

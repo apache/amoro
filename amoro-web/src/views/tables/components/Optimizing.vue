@@ -17,7 +17,7 @@ limitations under the License.
 / -->
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref, shallowReactive } from 'vue'
+import { computed, onMounted, reactive, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { Modal, message } from 'ant-design-vue'
@@ -28,6 +28,7 @@ import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
 import { canManageTable } from '@/utils/permission'
 
 const props = withDefaults(defineProps<{
+  tableType?: string
   processCategory?: string
   cancelModalTitleKey?: string
 }>(), {
@@ -163,7 +164,16 @@ async function refreshOptimizingProcesses() {
   }
 }
 
-async function cancel() {
+function supportsAmsCancellation(record: { amsCancellationSupported?: boolean }) {
+  return props.processCategory === 'CLEANUP' && record.amsCancellationSupported === true
+}
+
+const showDetailsCancellation = computed(() =>
+  writable.value
+  && (props.processCategory !== 'CLEANUP' || Boolean(props.tableType && props.tableType !== 'PAIMON')),
+)
+
+async function cancel(targetProcessId: string | number = processId.value) {
   Modal.confirm({
     title: t(props.cancelModalTitleKey),
     onOk: async () => {
@@ -171,7 +181,7 @@ async function cancel() {
         loading.value = true
         await cancelOptimizingProcess({
           ...sourceData,
-          processId: processId.value?.toString(),
+          processId: targetProcessId.toString(),
         })
         cancelDisabled.value = true
         refresh()
@@ -305,9 +315,10 @@ onMounted(() => {
         </template>
         <template #bodyCell="{ record, column }">
           <template v-if="column.dataIndex === 'processId'">
-            <a-button type="link" @click="toggleBreadcrumb(record.processId, record.status)">
+            <a-button v-if="!supportsAmsCancellation(record)" type="link" @click="toggleBreadcrumb(record.processId, record.status)">
               {{ record.processId }}
             </a-button>
+            <span v-else>{{ record.processId }}</span>
           </template>
           <template v-if="column.dataIndex === 'status'">
             <div class="g-flex-ac">
@@ -331,6 +342,13 @@ onMounted(() => {
           </template>
         </template>
         <template #expandedRowRender="{ record }">
+          <a-button
+            v-if="writable && supportsAmsCancellation(record)"
+            :disabled="record.status !== 'RUNNING'" type="primary" class="g-mb-16"
+            @click="cancel(record.processId)"
+          >
+            {{ t('cancelProcess') }}
+          </a-button>
           <a-row v-for="(value, key) in record.summary" :key="key" type="flex" :gutter="16">
             <a-col flex="420px" style="text-align: right;">
               {{ key }} :
@@ -353,9 +371,10 @@ onMounted(() => {
           </a-breadcrumb>
         </a-col>
         <a-col :span="6">
-          <a-button v-if="writable"
+          <a-button
+            v-if="showDetailsCancellation"
             v-model:disabled="cancelDisabled" type="primary" class="g-mb-16" style="float: right"
-            @click="cancel"
+            @click="cancel()"
           >
             {{ t("cancelProcess") }}
           </a-button>

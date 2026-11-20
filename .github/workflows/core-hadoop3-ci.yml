@@ -67,11 +67,55 @@ jobs:
         if: matrix.spark == '3.3'
         run: ./mvnw clean install -pl '!amoro-ams,!dist' -Djacoco.flink.skip=true -B -ntp -Pjava${{ matrix.jdk }} -Pspark-${{ matrix.spark }}
 
+      # Standard-directory tests already run in the full build above.
+      - name: Test Paimon AMS integration
+        if: matrix.spark == '3.5'
+        run: |
+          ./mvnw test -pl amoro-ams -am -B -ntp \
+            -Pjava${{ matrix.jdk }},support-paimon-format,spark-3.5,skip-dashboard-build \
+            -Dtest=TestPaimonProcessIntegration \
+            -Dsurefire.failIfNoSpecifiedTests=false
+          python3 - <<'PYTHON'
+          import xml.etree.ElementTree as ET
+          report = ET.parse('amoro-ams/target/surefire-reports/TEST-org.apache.amoro.server.process.TestPaimonProcessIntegration.xml').getroot()
+          assert int(report.get('tests', '0')) > 0, 'Paimon AMS integration tests did not run'
+          assert all(int(report.get(key, '0')) == 0 for key in ('failures', 'errors', 'skipped')), report.attrib
+          PYTHON
+
       - name: Code coverage
         uses: codecov/codecov-action@v3
         with:
           verbose: true
           flags: core
+
+  paimon-1-1-1:
+    name: Paimon 1.1.1 format regression with JDK 17
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+          check-latest: false
+      - name: Test Paimon 1.1.1 and Scala 2.13
+        run: |
+          ./mvnw clean test -pl amoro-format-paimon -am -B -ntp \
+            -Pjava17,scala-2.13 \
+            -Dtest=TestPaimonSnapshotExpiration,TestPaimonTableRefresh \
+            -Dsurefire.failIfNoSpecifiedTests=false
+          python3 - <<'PYTHON'
+          import xml.etree.ElementTree as ET
+          for test_class in (
+              'org.apache.amoro.formats.paimon.process.TestPaimonSnapshotExpiration',
+              'org.apache.amoro.formats.paimon.TestPaimonTableRefresh',
+          ):
+              report = ET.parse(f'amoro-format-paimon/target/surefire-reports/TEST-{test_class}.xml').getroot()
+              assert int(report.get('tests', '0')) > 0, f'{test_class} did not run'
+              assert all(int(report.get(key, '0')) == 0 for key in ('failures', 'errors', 'skipped')), report.attrib
+          PYTHON
 
   spark-optimizer-4-1:
     name: Build Spark 4.1 Optimizer with JDK 17

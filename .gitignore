@@ -82,6 +82,10 @@ resources
 !javadoc/resources
 !amoro-ams/src/main/resources/
 !amoro-ams/src/main/resources/**
+!amoro-format-paimon/src/main/resources/
+!amoro-format-paimon/src/main/resources/META-INF/
+!amoro-format-paimon/src/main/resources/META-INF/services/
+!amoro-format-paimon/src/main/resources/META-INF/services/org.apache.amoro.process.ProcessFactory
 
 !dist/src/main/amoro-bin/bin/
 !dist/src/main/amoro-bin/conf/

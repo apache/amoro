@@ -31,7 +31,7 @@ public class TableProcessMeta {
   private long processId;
   private long tableId;
   private volatile String externalProcessIdentifier;
-  private ProcessStatus status;
+  private volatile ProcessStatus status;
   private String processType;
   private String processStage;
   private String executionEngine;

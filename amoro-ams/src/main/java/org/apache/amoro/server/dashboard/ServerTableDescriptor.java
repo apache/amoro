@@ -61,6 +61,7 @@ public class ServerTableDescriptor extends PersistentBase {
 
     // All table formats will jointly reuse the work thread pool named iceberg-worker-pool-%d
     ExecutorService executorService = ThreadPools.getWorkerPool();
+    TableProcessQuery cleanupQuery = new TableProcessQuery();
     ServiceLoader<FormatTableDescriptor> tableDescriptorLoader =
         ServiceLoader.load(FormatTableDescriptor.class);
     for (FormatTableDescriptor descriptor : tableDescriptorLoader) {
@@ -68,6 +69,7 @@ public class ServerTableDescriptor extends PersistentBase {
         formatDescriptorMap.put(format, descriptor);
       }
       descriptor.withIoExecutor(executorService);
+      descriptor.withCleanupProcessQuery(cleanupQuery::list);
     }
   }
 

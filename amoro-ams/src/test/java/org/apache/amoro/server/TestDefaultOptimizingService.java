@@ -49,6 +49,7 @@ import org.apache.amoro.optimizing.TableOptimizing;
 import org.apache.amoro.process.ProcessStatus;
 import org.apache.amoro.resource.ResourceGroup;
 import org.apache.amoro.server.manager.MetricManager;
+import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingQueue;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.TaskRuntime;
@@ -66,6 +67,7 @@ import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.table.MixedTable;
+import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;
 import org.apache.amoro.utils.SerializationUtil;
 import org.apache.ibatis.session.SqlSession;
@@ -165,6 +167,39 @@ public class TestDefaultOptimizingService extends AMSTableTestBase {
     AppendFiles appendFiles = table.newAppend();
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
+  }
+
+  @Test
+  public void testCancelProcessKeepsOptimizingLifecycle() {
+    OptimizingTask task = optimizingService().pollTask(token, THREAD_ID);
+    Assertions.assertNotNull(task);
+    DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
+    Assertions.assertFalse(runtime.isAllowPartialCommit());
+    OptimizingProcess process = runtime.getOptimizingProcess();
+    Assertions.assertTrue(optimizingService().cancelProcess(process.getProcessId()));
+    Assertions.assertEquals(ProcessStatus.CLOSED, process.getStatus());
+    Assertions.assertNull(runtime.getOptimizingProcess());
+    Assertions.assertEquals(OptimizingStatus.IDLE, runtime.getOptimizingStatus());
+    Assertions.assertFalse(optimizingService().cancelProcess(process.getProcessId()));
+  }
+
+  @Test
+  public void testCancelProcessKeepsPartialCommit() {
+    MixedTable table =
+        (MixedTable) tableService().loadTable(serverTableIdentifier()).originalTable();
+    table
+        .asUnkeyedTable()
+        .updateProperties()
+        .set(TableProperties.SELF_OPTIMIZING_ALLOW_PARTIAL_COMMIT, "true")
+        .commit();
+    DefaultTableRuntime runtime = getDefaultTableRuntime(serverTableIdentifier().getId());
+    runtime.refresh(tableService().loadTable(serverTableIdentifier()));
+    Assertions.assertTrue(runtime.isAllowPartialCommit());
+    Assertions.assertNotNull(optimizingService().pollTask(token, THREAD_ID));
+    OptimizingProcess process = runtime.getOptimizingProcess();
+    Assertions.assertTrue(optimizingService().cancelProcess(process.getProcessId()));
+    Assertions.assertEquals(OptimizingStatus.COMMITTING, runtime.getOptimizingStatus());
+    Assertions.assertFalse(process.isClosed());
   }
 
   @Test

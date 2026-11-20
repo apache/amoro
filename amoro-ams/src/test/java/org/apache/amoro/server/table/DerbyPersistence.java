@@ -22,6 +22,9 @@ import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
+import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
+import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.persistence.mapper.TableRuntimeMapper;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.ibatis.session.SqlSession;
 import org.junit.rules.ExternalResource;
@@ -65,7 +68,6 @@ public class DerbyPersistence extends ExternalResource {
                     SINGLETON_FOLDER.delete();
                     LOG.info("Deleted resources in derby persistent.");
                   }));
-      truncateAllTables();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -74,6 +76,21 @@ public class DerbyPersistence extends ExternalResource {
   @Override
   protected void after() {
     truncateAllTables();
+  }
+
+  /** Clears only the rows owned by a fixture that shares the AMS test database. */
+  public void clearTable(Long tableId) {
+    if (tableId == null) {
+      return;
+    }
+    try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession()) {
+      session.getMapper(TableProcessMapper.class).deleteBefore(tableId, Long.MAX_VALUE);
+      TableRuntimeMapper runtimeMapper = session.getMapper(TableRuntimeMapper.class);
+      runtimeMapper.removeAllTableStates(tableId);
+      runtimeMapper.deleteRuntime(tableId);
+      session.getMapper(TableMetaMapper.class).deleteTableIdById(tableId);
+      session.commit();
+    }
   }
 
   private static void truncateAllTables() {
