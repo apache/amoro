@@ -1,0 +1,6 @@
+
+TLS packaging
+-------------
+Static netty-tcnative-boringssl libraries are removed during packaging.
+ZooKeeper uses its default JDK TLS provider. See META-INF/README-LICENSES.
+Original producer license documents are retained for provenance.

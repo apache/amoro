@@ -3,3 +3,11 @@ Copyright 2024-2026 The Apache Software Foundation
 
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
+
+Portions of the spill-map memory estimator are adapted from
+Apache Lucene 8.11.2 RamUsageEstimator and Constants.
+Apache Lucene
+Copyright 2001-2021 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).

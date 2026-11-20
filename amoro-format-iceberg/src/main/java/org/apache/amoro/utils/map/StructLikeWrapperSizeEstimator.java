@@ -20,7 +20,6 @@ package org.apache.amoro.utils.map;
 
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.util.StructLikeWrapper;
-import org.apache.lucene.util.RamUsageEstimator;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -48,7 +47,7 @@ public class StructLikeWrapperSizeEstimator implements SizeEstimator<StructLikeW
               if (object.getClass().isArray()) {
                 return sizeOf((Object[]) object);
               } else {
-                return RamUsageEstimator.sizeOfObject(object, 0);
+                return ObjectSizeEstimator.sizeOf(object);
               }
             })
         .sum();
