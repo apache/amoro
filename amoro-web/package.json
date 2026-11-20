@@ -9,6 +9,7 @@
     "typecheck": "vue-tsc --noEmit",
     "gen:license": "node ./license.node.js",
     "preview": "vite preview",
+    "test": "vitest run",
     "test:preload-recovery": "node ./scripts/preload-error-recovery.test.mjs",
     "lint": "eslint ./src",
     "format": "eslint ./src --fix"
@@ -33,10 +34,13 @@
     "@antfu/eslint-config": "^2.21.1",
     "@types/node": "^20.14.8",
     "@vitejs/plugin-vue": "^6.0.8",
+    "@vitest/browser": "5.1.0",
+    "@vitest/browser-playwright": "5.1.0",
     "eslint": "^9.4.0",
     "less": "4.2.0",
     "mockjs": "^1.1.0",
     "monaco-editor": "^0.56.0",
+    "playwright": "^1.65.0",
     "qs": "^6.12.1",
     "sql-formatter": "^15.3.1",
     "typescript": "~5.9.3",
@@ -45,6 +49,7 @@
     "vite-plugin-fake-server": "^2.1.1",
     "vite-plugin-svg-icons": "^2.0.1",
     "vite-plugin-vue-devtools": "^8.2.1",
+    "vitest": "^5.1.0",
     "vue-tsc": "^3.3.11"
   },
   "engines": {

@@ -301,6 +301,19 @@ public class LanceTableDescriptor implements FormatTableDescriptor {
     return Collections.emptyList();
   }
 
+  @Override
+  public void createTag(
+      AmoroTable<?> amoroTable, String tagName, long snapshotId, Long maxRefAgeMs) {
+    throw new UnsupportedOperationException(
+        "Creating tags via dashboard is not supported for Lance tables");
+  }
+
+  @Override
+  public void deleteTag(AmoroTable<?> amoroTable, String tagName) {
+    throw new UnsupportedOperationException(
+        "Deleting tags via dashboard is not supported for Lance tables");
+  }
+
   private AmoroSnapshotsOfTable buildSnapshot(Version version) {
     ManifestSummary summary = version.getManifestSummary();
     AmoroSnapshotsOfTable snapshot = new AmoroSnapshotsOfTable();
