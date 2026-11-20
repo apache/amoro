@@ -46,6 +46,7 @@ public class MixedDataFiles {
   private static final String HIVE_NULL = "__HIVE_DEFAULT_PARTITION__";
   private static final String MONTH_TYPE = "month";
   private static final String HOUR_TYPE = "hour";
+  private static final String YEAR_TYPE = "year";
 
   /** return the number of months away from the epoch, reverse {@link TransformUtil#humanMonth} */
   public static Integer readMonthData(String dateStr) {
@@ -53,6 +54,12 @@ public class MixedDataFiles {
     int year = Integer.parseInt(dateParts[0]);
     int month = Integer.parseInt(dateParts[1]);
     return Math.multiplyExact((year - EPOCH_YEAR), 12) + month - 1;
+  }
+
+  /** return the number of years away from the epoch, reverse {@link TransformUtil#humanYear} */
+  private static Integer readYearData(String asString) {
+    int year = Integer.parseInt(asString);
+    return year - EPOCH_YEAR;
   }
 
   /** return the number of hours away from the epoch, reverse {@link TransformUtil#humanHour} */
@@ -70,7 +77,9 @@ public class MixedDataFiles {
       case BOOLEAN:
         return Boolean.valueOf(asString);
       case INTEGER:
-        if (MONTH_TYPE.equals(field.transform().toString())) {
+        if (YEAR_TYPE.equals(field.transform().toString())) {
+          return readYearData(asString);
+        } else if (MONTH_TYPE.equals(field.transform().toString())) {
           return readMonthData(asString);
         } else if (HOUR_TYPE.equals(field.transform().toString())) {
           return readHoursData(asString);
