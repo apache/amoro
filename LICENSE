@@ -203,6 +203,16 @@
    This product bundles various third-party components also under the
    Apache Software License 2.0.
 
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/io/trino/parquet/reader/ColumnReaderFactory.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/io/trino/parquet/reader/TimestampColumnReader.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/delete/DummyFileScanTask.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/delete/TrinoDeleteFile.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/delete/TrinoRow.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/unkeyed/IcebergMetadata.java
+   are derived from Trino (https://github.com/trinodb/trino) and were
+   modified for the mixed-format connector. Trino is licensed under the
+   Apache License, Version 2.0.
+
    amoro-common/src/main/java/org/apache/amoro/client/ClientPool.java
    amoro-common/src/main/java/org/apache/amoro/client/ClientPoolImpl.java
    amoro-format-mixed/amoro-mixed-spark/v3.3/amoro-mixed-spark-3.3/src/main/java/org/apache/amoro/spark/SparkInternalRowWrapper.java
