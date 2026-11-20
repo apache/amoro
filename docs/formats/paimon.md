@@ -34,6 +34,12 @@ Furthermore, they can operate on Paimon tables using Spark SQL in the Terminal. 
 
 For registering catalog operation steps, please refer to [Managing Catalogs](../managing-catalogs/).
 
+To register an existing Paimon catalog on the local filesystem, select **FileSystem** as the metastore,
+**PAIMON** as the table format, and **Local** as the storage type. Set the `warehouse` catalog property
+to an absolute local URI, for example `file:///data/paimon/warehouse`. Hadoop configuration files and
+authentication settings are not required for Local storage. The warehouse must be accessible to the
+AMS process; a path on the browser's machine is not sufficient.
+
 {{< hint info >}}
 If you want to use S3 or OSS, please download the 
 [S3](https://repo.maven.apache.org/maven2/org/apache/paimon/paimon-s3/0.5.0-incubating/paimon-s3-0.5.0-incubating.jar), 
