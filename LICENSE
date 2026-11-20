@@ -230,6 +230,15 @@
    amoro-format-mixed/amoro-mixed-spark/v3.5/amoro-mixed-spark-3.5/src/main/scala/org/apache/amoro/spark/sql/catalyst/parser/MixedFormatSqlExtensionsParser.scala
    partially copied from Apache Spark(https://github.com/apache/spark/)
 
+   charts/amoro/templates/common/_capabilities.tpl
+   charts/amoro/templates/common/_ingress.tpl
+   charts/amoro/templates/common/_labels.tpl
+   charts/amoro/templates/common/_names.tpl
+   charts/amoro/templates/common/_tplvalues.tpl
+   from the Bitnami charts common library, version 2.11.1
+   (https://github.com/bitnami/charts). Copyright VMware, Inc.
+   Licensed under the Apache License, Version 2.0.
+
    This product includes software developed at The ICU Project
    (https://github.com/unicode-org/icu).
 
