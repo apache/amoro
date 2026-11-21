@@ -341,12 +341,19 @@ dynamic-allocation.drain-timeout: 15min                      # Force-remove a dr
 
 ### Edit optimizer group
 
-You can click the `edit` button on the `Optimizer Groups` page to modify the configuration of the Optimizer group.
+With role-based authorization enabled, both **Edit** and **Remove** require the `MANAGE_OPTIMIZER` privilege.
+
+Open **Optimizing** in the sidebar and select **Optimizer Groups**. In the group's row, click **Edit**. Set the **Container** or change the key-value entries under **Properties**, then click **OK**. The group name is read-only in this form.
+
+![Edit Group dialog showing a read-only name and a scheduling-policy property](../images/admin/optimizer_group_edit.png)
 
 ### Remove optimizer group
 
-You can click the `remove` button on the `Optimizer Groups` page to delete the optimizer group, but only if the group is
-not referenced by any catalog or table and no optimizer belonging to this group is running.
+In **Optimizer Groups**, click **Remove** in the group's row and confirm. Amoro checks catalog defaults, table assignments, and registered optimizers before removing a group.
+
+If the dashboard says the group has been used, reassign the catalogs and tables that use it and stop any optimizers still registered to it. Then return to the group list and click **Remove** again.
+
+![The dashboard blocks removal of an optimizer group still referenced by a catalog](../images/admin/optimizer_group_remove_blocked.png)
 
 ## Optimizer Create and Release
 
