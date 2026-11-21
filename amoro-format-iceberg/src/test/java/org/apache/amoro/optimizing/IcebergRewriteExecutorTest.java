@@ -19,20 +19,33 @@
 package org.apache.amoro.optimizing;
 
 import static org.apache.amoro.table.TableProperties.SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import org.apache.amoro.BasicTableTestHelper;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.catalog.BasicCatalogTestHelper;
 import org.apache.amoro.catalog.TableTestBase;
+import org.apache.amoro.io.AuthenticatedFileIO;
 import org.apache.amoro.io.MixedDataTestHelpers;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Iterables;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Sets;
+import org.apache.amoro.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.Files;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
@@ -47,14 +60,32 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
 import org.apache.iceberg.data.orc.GenericOrcReader;
 import org.apache.iceberg.data.parquet.GenericParquetReaders;
+import org.apache.iceberg.encryption.EncryptedFiles;
+import org.apache.iceberg.encryption.EncryptionManager;
+import org.apache.iceberg.encryption.PlaintextEncryptionManager;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.io.OutputFileFactory;
+import org.apache.iceberg.mapping.MappedField;
+import org.apache.iceberg.mapping.NameMapping;
+import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.parquet.Parquet;
+import org.apache.iceberg.parquet.ParquetIOBridge;
+import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.Pair;
+import org.apache.parquet.example.data.Group;
+import org.apache.parquet.example.data.simple.SimpleGroupFactory;
+import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.hadoop.ParquetWriter;
+import org.apache.parquet.hadoop.example.ExampleParquetWriter;
+import org.apache.parquet.hadoop.metadata.BlockMetaData;
+import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
+import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.schema.MessageTypeParser;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -62,8 +93,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -251,7 +284,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
             getMixedTable());
     Assert.assertFalse(newExecutor(rewrittenDeleteInput).canParquetRowGroupMerge());
 
-    // parquet row-group merge should be disabled if the bloom filter is enabled.
+    // parquet row-group merge should be enabled if the column-level bloom filter is enabled.
     resetParquetRowGroupMergeTestState();
     Assert.assertTrue(newExecutor(dataScanTask).canParquetRowGroupMerge());
     getMixedTable()
@@ -261,9 +294,9 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
             org.apache.iceberg.TableProperties.PARQUET_BLOOM_FILTER_COLUMN_ENABLED_PREFIX + "id",
             "true")
         .commit();
-    Assert.assertFalse(newExecutor(dataScanTask).canParquetRowGroupMerge());
+    Assert.assertTrue(newExecutor(dataScanTask).canParquetRowGroupMerge());
 
-    // parquet row-group merge should be disabled if the global bloom filter switch is enabled.
+    // parquet row-group merge should be enabled if the global bloom filter switch is enabled.
     resetParquetRowGroupMergeTestState();
     Assert.assertTrue(newExecutor(dataScanTask).canParquetRowGroupMerge());
     getMixedTable()
@@ -271,7 +304,7 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
         .updateProperties()
         .set("write.parquet.bloom-filter-enabled.default", "true")
         .commit();
-    Assert.assertFalse(newExecutor(dataScanTask).canParquetRowGroupMerge());
+    Assert.assertTrue(newExecutor(dataScanTask).canParquetRowGroupMerge());
 
     // parquet row-group merge should be disabled if the table spec evolves so that the source files
     // no longer match the partition spec.
@@ -328,6 +361,11 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
   public void testParquetRowGroupMergeExecuteSplitAndCommitDataIntegrity() throws IOException {
     Assume.assumeTrue(fileFormat == FileFormat.PARQUET);
     prepareParquetRowGroupMergeTableConditions(true);
+    getMixedTable()
+        .asUnkeyedTable()
+        .updateProperties()
+        .set(TableProperties.PARQUET_BLOOM_FILTER_COLUMN_ENABLED_PREFIX + "id", "true")
+        .commit();
 
     // Create 5 data files, and each data file has 3 records.
     List<List<Record>> inputRecordGroups = parquetRowGroupMergeSourceRecordGroups();
@@ -362,6 +400,17 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
     // With this target, the first 3 source files are grouped into one output and
     // the last 2 into another.
     Assert.assertEquals(2, output.getDataFiles().length);
+    for (DataFile dataFile : output.getDataFiles()) {
+      try (ParquetFileReader reader =
+          ParquetFileReader.open(
+              ParquetIOBridge.file(getMixedTable().io().newInputFile(dataFile.location())))) {
+        for (BlockMetaData group : reader.getRowGroups()) {
+          ColumnChunkMetaData idColumn = group.getColumns().get(0);
+          Assert.assertEquals("id", idColumn.getPath().toDotString());
+          Assert.assertNotNull(reader.readBloomFilter(idColumn));
+        }
+      }
+    }
 
     // Commit merge result and validate the iceberg table data contains all records from the
     // source files.
@@ -498,6 +547,144 @@ public class IcebergRewriteExecutorTest extends TableTestBase {
     setMinAvgRowGroupSizeThreshold(avgRowGroupSize);
     result = newExecutor(rewriteInput).canParquetRowGroupMerge();
     Assert.assertTrue(result);
+  }
+
+  @Test
+  public void testLegacyPlaintextInputFallsBackForEncryptedOutput() throws Exception {
+    Assume.assumeTrue(fileFormat == FileFormat.PARQUET);
+    prepareParquetRowGroupMergeTableConditions(true);
+    EncryptionManager encryption = spy(PlaintextEncryptionManager.instance());
+    doAnswer(
+            invocation ->
+                EncryptedFiles.encryptedOutput(invocation.getArgument(0), new byte[] {1, 2, 3}))
+        .when(encryption)
+        .encrypt(any(OutputFile.class));
+    UnkeyedTable encryptedTable = spy(getMixedTable().asUnkeyedTable());
+    doReturn(encryptedTable).when(encryptedTable).asUnkeyedTable();
+    doReturn(encryption).when(encryptedTable).encryption();
+    RewriteFilesInput input = newDataOnlyInput(Arrays.asList(dataScanTask.rewrittenDataFiles()));
+    IcebergRewriteExecutor executor =
+        spy(new IcebergRewriteExecutor(input, encryptedTable, Collections.emptyMap()));
+
+    Assert.assertNull(input.rewrittenDataFiles()[0].keyMetadata());
+    Assert.assertTrue(executor.canParquetRowGroupMerge());
+    RewriteFilesOutput output = assertRowRewriteFallback(executor);
+    Assert.assertNotNull(output.getDataFiles()[0].keyMetadata());
+  }
+
+  @Test
+  public void testTableNameMappingIsUsedForMergedMetrics() throws Exception {
+    Assume.assumeTrue(fileFormat == FileFormat.PARQUET);
+    prepareParquetRowGroupMergeTableConditions(true);
+    NameMapping mapping =
+        NameMapping.of(
+            MappedField.of(3, Arrays.asList("old_ts", "ts")),
+            MappedField.of(1, "id"),
+            MappedField.of(2, "name"),
+            MappedField.of(4, "op_time"));
+    getMixedTable()
+        .asUnkeyedTable()
+        .updateProperties()
+        .set(TableProperties.DEFAULT_NAME_MAPPING, NameMappingParser.toJson(mapping))
+        .commit();
+    MessageType schema =
+        MessageTypeParser.parseMessageType(
+            "message table { required int64 old_ts; required int32 id; "
+                + "required binary name (UTF8); "
+                + "required int64 op_time (TIMESTAMP(MICROS,false)); }");
+    File source = new File(temp.newFolder("legacy-parquet"), "input.parquet");
+    try (ParquetWriter<Group> writer =
+        ExampleParquetWriter.builder(ParquetIOBridge.file(Files.localOutput(source)))
+            .withType(schema)
+            .build()) {
+      writer.write(
+          new SimpleGroupFactory(schema)
+              .newGroup()
+              .append("old_ts", 7L)
+              .append("id", 42)
+              .append("name", "legacy")
+              .append("op_time", 0L));
+    }
+    DataFile inputFile =
+        DataFiles.builder(getMixedTable().spec())
+            .withPath(source.toString())
+            .withFormat(FileFormat.PARQUET)
+            .withFileSizeInBytes(source.length())
+            .withRecordCount(1)
+            .withPartition(getPartitionData())
+            .build();
+    IcebergRewriteExecutor executor =
+        spy(newExecutor(newDataOnlyInput(Collections.singletonList(inputFile))));
+
+    RewriteFilesOutput output = executor.execute();
+
+    Assert.assertEquals(1, output.getDataFiles().length);
+    DataFile merged = output.getDataFiles()[0];
+    Assert.assertEquals(1L, merged.valueCounts().get(3).longValue());
+    Assert.assertEquals(
+        7L,
+        Conversions.<Long>fromByteBuffer(Types.LongType.get(), merged.lowerBounds().get(3))
+            .longValue());
+    Assert.assertEquals(
+        7L,
+        Conversions.<Long>fromByteBuffer(Types.LongType.get(), merged.upperBounds().get(3))
+            .longValue());
+    Assert.assertEquals(
+        42,
+        Conversions.<Integer>fromByteBuffer(Types.IntegerType.get(), merged.lowerBounds().get(1))
+            .intValue());
+    verify(executor, never()).dataWriter();
+  }
+
+  @Test
+  public void testFileIOFailureDuringPreflightFallsBack() throws IOException {
+    Assume.assumeTrue(fileFormat == FileFormat.PARQUET);
+    prepareParquetRowGroupMergeTableConditions(true);
+    IcebergRewriteExecutor executor =
+        spy(newExecutor(newDataOnlyInput(Arrays.asList(dataScanTask.rewrittenDataFiles()))));
+    AuthenticatedFileIO failingIO = spy(getMixedTable().io());
+    doThrow(new UnsupportedOperationException("Cannot open footer"))
+        .when(failingIO)
+        .newInputFile(anyString(), anyLong());
+    executor.io = failingIO;
+
+    assertRowRewriteFallback(executor);
+  }
+
+  @Test
+  public void testMalformedFooterDuringPreflightFallsBack() throws IOException {
+    Assume.assumeTrue(fileFormat == FileFormat.PARQUET);
+    prepareParquetRowGroupMergeTableConditions(true);
+    File malformed = temp.newFile("malformed.parquet");
+    java.nio.file.Files.write(
+        malformed.toPath(), "not a parquet file".getBytes(StandardCharsets.UTF_8));
+    IcebergRewriteExecutor executor =
+        spy(newExecutor(newDataOnlyInput(Arrays.asList(dataScanTask.rewrittenDataFiles()))));
+    AuthenticatedFileIO failingIO = spy(getMixedTable().io());
+    doReturn(Files.localInput(malformed)).when(failingIO).newInputFile(anyString(), anyLong());
+    executor.io = failingIO;
+
+    assertRowRewriteFallback(executor);
+  }
+
+  @Test
+  public void testRowRewriteFailureIsNotRetried() {
+    Assume.assumeTrue(fileFormat == FileFormat.PARQUET);
+    prepareParquetRowGroupMergeTableConditions(false);
+    IcebergRewriteExecutor executor =
+        spy(newExecutor(newDataOnlyInput(Arrays.asList(dataScanTask.rewrittenDataFiles()))));
+    doThrow(new IllegalStateException("Cannot create row writer")).when(executor).dataWriter();
+
+    Assert.assertThrows(RuntimeException.class, executor::execute);
+    verify(executor, times(1)).dataWriter();
+  }
+
+  private RewriteFilesOutput assertRowRewriteFallback(IcebergRewriteExecutor executor) {
+    RewriteFilesOutput output = executor.execute();
+    Assert.assertEquals(
+        3L, Arrays.stream(output.getDataFiles()).mapToLong(DataFile::recordCount).sum());
+    verify(executor, times(1)).dataWriter();
+    return output;
   }
 
   private void setMinAvgRowGroupSizeThreshold(long threshold) {
