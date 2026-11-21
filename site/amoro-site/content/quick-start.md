@@ -79,48 +79,53 @@ docker-compose up
 
 ### Create optimizer group
 
-Open [http://localhost:1630](http://localhost:1630) in a browser, enter `admin/admin` to log in to the dashboard.
+Open [http://localhost:1630](http://localhost:1630) and sign in with the demo username and password (`admin` / `admin`).
 
-Click on `Optimizing` in the sidebar, choose `Optimizer Groups` and click `Add Group` button to create a new group befre creating catalog:
+1. In the sidebar, open **Optimizing**, select **Optimizer Groups**, and click **Add Group**.
+2. Set **Name** to `local` and **Container** to `localContainer`.
+3. In **Properties**, click **+** and add the key `memory` with the value `1024`. This allocates 1024 MiB of JVM heap per optimizer thread. Click **OK**.
 
-![Create group](../images/quickstart/create-group.png)
+![Create the local optimizer group with its memory property](../images/quickstart/create-group.png)
 
 ### Create catalog
 
-Click on `Catalogs` in the sidebar, click on the `+` button under Catalog List to create a test catalog, and name it to `demo_catalog`:
+Open **Catalogs** in the sidebar and click **+** under **Catalog List**. Set **Name** to `demo_catalog`, **Metastore** to **Internal**, and **Optimizer Group** to `local`. Pick one table format below.
 {{% codetabs "CreateCatalog" %}}
 {{% addtab "Iceberg Format" "spark-queries" "spark-sql" %}}
 {{% addtab "Mixed-Iceberg Format" "spark-queries" "spark-shell" %}}
 {{% tabcontent "spark-sql"  %}}
 
-To use the Iceberg Format, select `Type` as `Internal Catalog`, and choose `Iceberg` as `Table Format`.
+For the Iceberg example, select **Iceberg** under **Table Format**.
 ![Create iceberg catalog](../images/quickstart/create-iceberg-catalog.png)
 
 {{% /tabcontent %}}
 {{% tabcontent "spark-shell" %}}
 
-To use the Mixed-Iceberg Format, select `Type` as `Internal Catalog`, and choose `Mixed-Iceberg` as `Table Format`.
+For the Mixed-Iceberg example, select **Mixed Iceberg** under **Table Format**.
 ![Create mixed catalog](../images/quickstart/create-mixed-catalog.png)
 
 {{% /tabcontent %}}
 {{% /codetabs %}}
 
+For either format, configure the MinIO warehouse from the Compose file:
+
+| Section | Settings |
+|---------|----------|
+| **Storage** | Select **S3**. Set **Endpoint** to `http://minio:9000` and **Region** to `us-east-1`. |
+| **Authentication** | Select **AK/SK**. Enter the demo access and secret keys from `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` in the Compose file. |
+| **Properties** | Set `warehouse` to `s3://warehouse/`. |
+
+Click **Save**.
 
 ### Start optimizers
 
-Click on `Optimizing` in the sidebar, select the `Optimizers` tab, and click the `Create Optimizer` button.
+Open **Optimizing** in the sidebar, select **Optimizers**, and click **Create Optimizer**.
 
-![Scale out optimizer](../images/quickstart/create-optimizer.png)
+![Create a local optimizer with parallelism 1](../images/quickstart/create-optimizer.png)
 
-Choose the `local` resource group and set the concurrency of the optimizer to 1 and click `OK`.
+Set **Resource Group** to `local` and **Parallelism** to `1`, then click **OK**. Wait for the optimizer to register and refresh the **Optimizers** tab if the new row has not appeared yet.
 
-You may need to wait a few seconds and try refreshing the page, you will find the newly launched optimizer here.
-
-![Optimizers](../images/quickstart/optimizers.png)
-
-{{< hint info >}}
-You may need to wait for up to 30 seconds for the optimizer to register with AMS.
-{{< /hint >}}
+![A local optimizer in the RUNNING state](../images/quickstart/optimizers.png)
 
 ## Demo steps
 
