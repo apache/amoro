@@ -50,10 +50,10 @@ table td:last-child, table th:last-child { width: 40%; word-break: break-all; }
 | database.connection-pool-max-idle | 16 | Max idle connect count of database connect pool. |
 | database.connection-pool-max-total | 20 | Max connect count of database connect pool. |
 | database.connection-pool-max-wait-millis | 30000 | Max wait time before getting a connection timeout. |
-| database.jdbc-driver-class | org.apache.derby.jdbc.EmbeddedDriver | The JDBC driver class name for connecting to the database. |
+| database.jdbc-driver-class | org.h2.Driver | The JDBC driver class name for connecting to the database. |
 | database.password |  | The password for connecting to the database. |
-| database.type | derby | Database type. |
-| database.url | jdbc:derby:/tmp/amoro/derby;create=true | Database connection address |
+| database.type | h2 | Database type. Supported values: h2, mysql, postgres. |
+| database.url | jdbc:h2:file:/tmp/amoro/h2/ams | Database connection address |
 | database.username | root | The username for connecting to the database. |
 | ha.bucket-assign.interval | 1 min | Interval for bucket assignment service to detect node changes and redistribute bucket IDs. |
 | ha.bucket-id.total-count | 100 | Total count of bucket IDs for assignment. Bucket IDs range from 1 to this value. |

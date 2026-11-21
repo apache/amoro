@@ -23,13 +23,12 @@ import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.ibatis.session.SqlSession;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -37,8 +36,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-public class DerbyPersistence extends ExternalResource {
-  private static final Logger LOG = LoggerFactory.getLogger(DerbyPersistence.class);
+public class H2Persistence extends ExternalResource {
+  private static final Logger LOG = LoggerFactory.getLogger(H2Persistence.class);
 
   private static final TemporaryFolder SINGLETON_FOLDER;
 
@@ -48,22 +47,26 @@ public class DerbyPersistence extends ExternalResource {
     try {
       SINGLETON_FOLDER = new TemporaryFolder();
       SINGLETON_FOLDER.create();
-      String derbyFilePath = SINGLETON_FOLDER.newFolder("derby").getPath();
-      String derbyUrl = String.format("jdbc:derby:%s/derby;create=true", derbyFilePath);
+      String h2FilePath = SINGLETON_FOLDER.newFolder("h2").getPath();
+      String h2Url = String.format("jdbc:h2:file:%s/ams", h2FilePath);
       Configurations configurations = new Configurations();
-      configurations.set(AmoroManagementConf.DB_CONNECTION_URL, derbyUrl);
-      configurations.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_DERBY);
-      configurations.set(
-          AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.apache.derby.jdbc.EmbeddedDriver");
-      DataSource ds = DataSourceFactory.createDataSource(configurations);
+      configurations.set(AmoroManagementConf.DB_CONNECTION_URL, h2Url);
+      configurations.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_H2);
+      configurations.set(AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.h2.Driver");
+      BasicDataSource ds = (BasicDataSource) DataSourceFactory.createDataSource(configurations);
       SqlSessionFactoryProvider.getInstance().init(ds);
-      LOG.info("Initialized derby persistent with url: {}", derbyUrl);
+      LOG.info("Initialized H2 persistence with url: {}", h2Url);
       Runtime.getRuntime()
           .addShutdownHook(
               new Thread(
                   () -> {
+                    try {
+                      ds.close();
+                    } catch (SQLException e) {
+                      LOG.warn("Failed to close H2 data source", e);
+                    }
                     SINGLETON_FOLDER.delete();
-                    LOG.info("Deleted resources in derby persistent.");
+                    LOG.info("Deleted H2 persistence resources.");
                   }));
       truncateAllTables();
     } catch (Exception e) {
@@ -80,18 +83,21 @@ public class DerbyPersistence extends ExternalResource {
     try (SqlSession sqlSession = SqlSessionFactoryProvider.getInstance().get().openSession(true)) {
       try (Connection connection = sqlSession.getConnection()) {
         try (Statement statement = connection.createStatement()) {
-          String query = "SELECT TABLENAME FROM SYS.SYSTABLES WHERE TABLETYPE='T'";
           List<String> tableList = Lists.newArrayList();
-          try (ResultSet rs = statement.executeQuery(query)) {
+          try (ResultSet rs =
+              connection
+                  .getMetaData()
+                  .getTables(null, connection.getSchema(), null, new String[] {"TABLE"})) {
             while (rs.next()) {
-              tableList.add(rs.getString(1));
+              tableList.add(rs.getString("TABLE_NAME"));
             }
           }
           for (String table : tableList) {
             int retry = TRUNCATE_RETRY_NUM;
             while (true) {
               try {
-                statement.execute("TRUNCATE TABLE " + table);
+                statement.execute(
+                    "TRUNCATE TABLE \"" + table.replace("\"", "\"\"") + "\" CONTINUE IDENTITY");
                 break;
               } catch (SQLException e) {
                 if (retry > 0) {

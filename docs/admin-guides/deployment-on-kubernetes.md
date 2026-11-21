@@ -143,7 +143,7 @@ ingress:
 
 ### Configure the database.
 
-AMS uses embedded [Apache Derby](https://db.apache.org/derby/) as its backend storage by default.
+AMS uses embedded [H2](https://h2database.com/) as its backend storage by default for single-process development and demonstrations. The default database is stored under `/tmp`; use an external database for production or multi-node deployments.
 In production environments, we recommend using a RDBMS(Relational Database Management System) with higher availability guarantees as the storage for system data, you can ref to [Database Configuration](/deployment/#configure-system-database) for more detail.
 
 ```yaml

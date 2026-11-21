@@ -14,12 +14,12 @@
 -- limitations under the License.
 
 CREATE TABLE catalog_metadata (
-    catalog_id             INT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+    catalog_id             INT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1),
     catalog_name           VARCHAR(64) NOT NULL,
     catalog_metastore      VARCHAR(64) NOT NULL,
-    storage_configs        CLOB(64m),
-    auth_configs           CLOB(64m),
-    catalog_properties     CLOB(64m),
+    storage_configs        CLOB(67108864),
+    auth_configs           CLOB(67108864),
+    catalog_properties     CLOB(67108864),
     database_count         INT NOT NULL DEFAULT 0,
     table_count            INT NOT NULL DEFAULT 0,
     PRIMARY KEY (catalog_id),
@@ -29,7 +29,7 @@ CREATE TABLE catalog_metadata (
 CREATE TABLE database_metadata (
     catalog_name           VARCHAR(64) NOT NULL,
     db_name                VARCHAR(128) NOT NULL,
-    properties             CLOB(64m),
+    properties             CLOB(67108864),
     table_count            INT NOT NULL DEFAULT 0,
     PRIMARY KEY (catalog_name, db_name)
 );
@@ -43,7 +43,7 @@ CREATE TABLE optimizer (
     touch_time                 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     thread_count               INT,
     total_memory               INT,
-    properties                 CLOB(64m),
+    properties                 CLOB(67108864),
     PRIMARY KEY (token)
 );
 
@@ -55,7 +55,7 @@ CREATE TABLE resource (
     thread_count              INT,
     total_memory              INT,
     start_time                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    properties                CLOB(64m),
+    properties                CLOB(67108864),
     CONSTRAINT resource_pk PRIMARY KEY (resource_id)
 );
 
@@ -67,7 +67,7 @@ CREATE TABLE resource_group (
 );
 
 CREATE TABLE table_identifier (
-    table_id        BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+    table_id        BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1),
     catalog_name    VARCHAR(64) NOT NULL,
     db_name         VARCHAR(128) NOT NULL,
     table_name      VARCHAR(256) NOT NULL,
@@ -86,15 +86,15 @@ CREATE TABLE table_metadata (
     table_location   VARCHAR(256),
     base_location    VARCHAR(256),
     change_location  VARCHAR(256),
-    properties       CLOB(64m),
-    meta_store_site  CLOB(64m),
-    hdfs_site        CLOB(64m),
-    core_site        CLOB(64m),
+    properties       CLOB(67108864),
+    meta_store_site  CLOB(67108864),
+    hdfs_site        CLOB(67108864),
+    core_site        CLOB(67108864),
     auth_method      VARCHAR(32),
     hadoop_username  VARCHAR(64),
-    krb_keytab       CLOB(64m),
-    krb_conf         CLOB(64m),
-    krb_principal    CLOB(64m),
+    krb_keytab       CLOB(67108864),
+    krb_conf         CLOB(67108864),
+    krb_principal    CLOB(67108864),
     current_schema_id INT NOT NULL DEFAULT 0,
     meta_version     BIGINT NOT NULL DEFAULT 0,
     CONSTRAINT table_metadata_pk PRIMARY KEY (table_id)
@@ -115,7 +115,7 @@ CREATE INDEX idx_status_time_desc
     ON table_runtime (status_code, status_code_update_time DESC);
 
 CREATE TABLE table_runtime_state (
-    state_id        BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+    state_id        BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1),
     table_id        BIGINT NOT NULL,
     state_key       VARCHAR(256) NOT NULL,
     state_value     CLOB,
@@ -125,8 +125,6 @@ CREATE TABLE table_runtime_state (
     PRIMARY KEY (state_id),
     CONSTRAINT uniq_table_state_key UNIQUE (table_id, state_key)
 );
-
-CREATE UNIQUE INDEX uniq_table_state_key ON table_runtime_state (table_id, state_key);
 
 CREATE TABLE table_process (
     process_id       BIGINT NOT NULL PRIMARY KEY,
@@ -140,8 +138,8 @@ CREATE TABLE table_process (
     create_time      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     finish_time      TIMESTAMP DEFAULT NULL,
     fail_message     CLOB,
-    process_parameters          CLOB(64m),
-    summary          CLOB(64m)
+    process_parameters          CLOB(67108864),
+    summary          CLOB(67108864)
 );
 CREATE INDEX table_process_table_idx ON table_process (table_id, create_time);
 
@@ -150,9 +148,9 @@ CREATE TABLE optimizing_process_state (
     table_id                  BIGINT NOT NULL,
     target_snapshot_id        BIGINT NOT NULL,
     target_change_snapshot_id BIGINT NOT NULL,
-    rewrite_input             BLOB(64m),
-    from_sequence             CLOB(64m),
-    to_sequence               CLOB(64m)
+    rewrite_input             BLOB(67108864),
+    from_sequence             CLOB(67108864),
+    to_sequence               CLOB(67108864)
 );
 CREATE INDEX optimizing_process_state_table_idx
     ON optimizing_process_state (table_id);
@@ -223,14 +221,14 @@ CREATE TABLE platform_file (
 );
 
 CREATE TABLE table_blocker (
-  blocker_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+  blocker_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1),
   catalog_name varchar(64) NOT NULL,
   db_name varchar(128) NOT NULL,
   table_name varchar(256) NOT NULL,
   operations varchar(128) NOT NULL,
   create_time timestamp DEFAULT NULL,
   expiration_time timestamp DEFAULT NULL,
-  properties clob(64m),
+  properties CLOB(67108864),
   prev_blocker_id bigint NOT NULL DEFAULT -1,
   PRIMARY KEY (blocker_id),
   CONSTRAINT prev_uq UNIQUE (catalog_name, db_name, table_name, prev_blocker_id)

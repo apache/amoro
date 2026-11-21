@@ -56,7 +56,6 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
 
 public class AmsEnvironment {
@@ -113,8 +112,6 @@ public class AmsEnvironment {
   public AmsEnvironment(String rootPath) throws Exception {
     this.rootPath = rootPath;
     LOG.info("Initializing test AMS environment with root path: {}", rootPath);
-    String path =
-        Objects.requireNonNull(this.getClass().getClassLoader().getResource("")).getPath();
     FileUtils.writeStringToFile(
         new File(rootPath + "/conf/config.yaml"), getAmsConfig(), Charset.defaultCharset());
     FileUtils.writeStringToFile(
@@ -126,7 +123,6 @@ public class AmsEnvironment {
         getRestExtensionsConfig(),
         Charset.defaultCharset());
     System.setProperty(Environments.AMORO_HOME, rootPath);
-    System.setProperty("derby.init.sql.dir", path + "../classes/sql/derby/");
     serviceContainer = new AmoroServiceContainer();
     TemporaryFolder hiveDir = new TemporaryFolder();
     hiveDir.create();
@@ -390,11 +386,11 @@ public class AmsEnvironment {
         + "    break-quota-limit-enabled: true\n"
         + "\n"
         + "  database:\n"
-        + "    type: \"derby\"\n"
-        + "    jdbc-driver-class: \"org.apache.derby.jdbc.EmbeddedDriver\"\n"
-        + "    url: \"jdbc:derby:"
+        + "    type: \"h2\"\n"
+        + "    jdbc-driver-class: \"org.h2.Driver\"\n"
+        + "    url: \"jdbc:h2:file:"
         + rootPath.replace("\\", "\\\\")
-        + "/derby;create=true\"\n"
+        + "/h2/ams\"\n"
         + "\n"
         + "  terminal:\n"
         + "    backend: local\n"

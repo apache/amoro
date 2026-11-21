@@ -23,7 +23,6 @@ import static com.github.pagehelper.page.PageAutoDialect.registerDialectAlias;
 import com.github.pagehelper.PageInterceptor;
 import com.github.pagehelper.dialect.helper.MySqlDialect;
 import com.github.pagehelper.dialect.helper.PostgreSqlDialect;
-import com.github.pagehelper.dialect.helper.SqlServer2012Dialect;
 import org.apache.amoro.server.persistence.mapper.ApiTokensMapper;
 import org.apache.amoro.server.persistence.mapper.BucketAssignMapper;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
@@ -61,6 +60,16 @@ public class SqlSessionFactoryProvider {
   private volatile SqlSessionFactory sqlSessionFactory;
 
   public void init(DataSource dataSource) throws SQLException {
+    if (sqlSessionFactory == null) {
+      synchronized (this) {
+        if (sqlSessionFactory == null) {
+          sqlSessionFactory = buildSqlSessionFactory(dataSource);
+        }
+      }
+    }
+  }
+
+  static SqlSessionFactory buildSqlSessionFactory(DataSource dataSource) throws SQLException {
     registerDialectAliases();
 
     TransactionFactory transactionFactory = new JdbcTransactionFactory();
@@ -89,22 +98,15 @@ public class SqlSessionFactoryProvider {
     Properties properties = new Properties();
     properties.setProperty("MySQL", "mysql");
     properties.setProperty("PostgreSQL", "postgres");
-    properties.setProperty("Derby", "derby");
+    properties.setProperty("H2", "h2");
     provider.setProperties(properties);
     configuration.setDatabaseId(provider.getDatabaseId(dataSource));
-    if (sqlSessionFactory == null) {
-      synchronized (this) {
-        if (sqlSessionFactory == null) {
-          sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
-        }
-      }
-    }
+    return new SqlSessionFactoryBuilder().build(configuration);
   }
 
-  private void registerDialectAliases() {
+  private static void registerDialectAliases() {
     registerDialectAlias("postgres", PostgreSqlDialect.class);
     registerDialectAlias("mysql", MySqlDialect.class);
-    registerDialectAlias("derby", SqlServer2012Dialect.class);
   }
 
   public SqlSessionFactory get() {
