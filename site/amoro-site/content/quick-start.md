@@ -126,7 +126,9 @@ You may need to wait for up to 30 seconds for the optimizer to register with AMS
 
 ### Initialize tables
 
-Click on `Terminal` in the sidebar, you can create the test tables here using SQL. Terminal supports executing Spark SQL statements for now.
+Open **Terminal** in the sidebar. In the **Use** dropdown above the SQL
+editor, select `demo_catalog`. Copy the Spark SQL example that matches the
+table format you chose for that catalog.
 
 {{% codetabs "CreateATable" %}}
 {{% addtab "Iceberg Format" "spark-queries" "spark-sql" %}}
@@ -170,7 +172,14 @@ SELECT * FROM db.user;
 {{% /tabcontent %}}
 {{% /codetabs %}}
 
-Click on the `RUN` button uppon the SQL editor, and wait for the SQL query to finish executing. You can then see the query results under the SQL editor.
+Paste the script into the editor and click **Run** (the play icon).
+With no text selected, **Run** executes the whole script. To run only
+specific statements, select them before clicking **Run**.
+
+When the script finishes, look for the `SELECT * FROM db.user` result tab
+below the editor. On the first run, it shows three rows.
+
+![Terminal showing three query results from demo_catalog](../images/quickstart/terminal-query-result.png)
 
 ### Make some changes
 
