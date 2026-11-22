@@ -241,16 +241,32 @@ The Amoro Tables details page provides multiple tabs to display the status of th
 | Details      | Display the table's schema, primary key configuration, partition configuration, properties; as well as the metric information of the files stored in ChangeStore and BaseStore, including the number of files and average file size, as well as the latest submission time of the files. |
 | Files        | Display all partitions and files of the table.                                                                                                                                                                                                                                           |
 | Snapshots    | Display all snapshots of the table, which can be filtered by branch and tag.                                                                                                                                                                                                             |
-| Optimizing   | Display all the self-optimizing processes of the table, each record shows the number and average size of files before and after Optimize, as well as the execution time of each process.                                                                                                 |
+| Optimizing   | Review self-optimizing processes and their tasks for the current table. |
 | Operations   | Display the current table's DDL historical change records.                                                                                                                                                                                                                               |
 
 ![table-details](../images/admin/table_metrics.png)
 
-![table-optimize-history](../images/admin/table_optimizer_history.png)
+### Review a table's optimizing history
+
+Open **Tables**, select a table, and choose the **Optimizing** tab.
+Select **Type** or **Status** to filter the process history. The results refresh
+as soon as you change a filter.
+
+Each process shows its start and finish times and duration. **Tasks** shows
+successful tasks out of the total. **Input** and **Output** show the total size
+and count of the files. Select a **Process ID** to see the tasks for that run.
+
+![Table Optimizing history with one successful minor process](../images/admin/table_optimizer_history.png)
 
 ## Explore self-optimizing status
-The Optimizing page displays self-optimizing status of all tables.
-![optimizing-metrics](../images/admin/optimizer_metrics.png)
+
+Open **Optimizing** in the sidebar and select **Tables** to check the current
+optimizing status across tables. Filter by **Optimizer Group**, database or
+table name, or select one or more statuses in **Action**. Choose **Search** to
+apply the filters or **Reset** to clear them. Select a table name to open its
+details page.
+
+![Optimizing Tables view filtered by database and table name](../images/admin/optimizer_metrics.png)
 
 
 - **Optimizing Status**: The current optimizing status of the table, including idle, pending, planning, minor, major, full, committing.
