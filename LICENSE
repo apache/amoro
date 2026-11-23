@@ -205,13 +205,32 @@
 
    amoro-format-mixed/amoro-mixed-trino/src/main/java/io/trino/parquet/reader/ColumnReaderFactory.java
    amoro-format-mixed/amoro-mixed-trino/src/main/java/io/trino/parquet/reader/TimestampColumnReader.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/MixedFormatConnector.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/MixedFormatConnectorFactory.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/MixedFormatMetadataFactory.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/MixedFormatModule.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/MixedFormatTransactionManager.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/MixedFormatTrinoCatalog.java
    amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/delete/DummyFileScanTask.java
    amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/delete/TrinoDeleteFile.java
    amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/delete/TrinoRow.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/keyed/KeyedConnectorMetadata.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/keyed/KeyedConnectorPageSource.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/keyed/KeyedConnectorSplit.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/keyed/KeyedDeleteFilter.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/keyed/KeyedPageSourceProvider.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/unkeyed/AdaptHiveIcebergTableHandle.java
    amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/unkeyed/IcebergMetadata.java
-   are derived from Trino (https://github.com/trinodb/trino) and were
-   modified for the mixed-format connector. Trino is licensed under the
-   Apache License, Version 2.0.
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/unkeyed/IcebergPageSource.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/unkeyed/IcebergPageSourceProvider.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/unkeyed/IcebergSplit.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/unkeyed/IcebergSplitManager.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/unkeyed/IcebergSplitSource.java
+   amoro-format-mixed/amoro-mixed-trino/src/main/java/org/apache/amoro/trino/unkeyed/TrinoDeleteFilter.java
+   amoro-format-mixed/amoro-mixed-trino/src/test/java/org/apache/amoro/trino/mixed/MixedFormatQueryRunner.java
+   contain source code derived from Trino (https://github.com/trinodb/trino)
+   for the mixed-format connector. Trino is licensed under the Apache
+   License, Version 2.0.
 
    amoro-common/src/main/java/org/apache/amoro/client/ClientPool.java
    amoro-common/src/main/java/org/apache/amoro/client/ClientPoolImpl.java
