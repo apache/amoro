@@ -61,9 +61,10 @@ The documentation is organized into versioned and non-versioned content:
   - `amoro-docs`: Contains the documentation site that renders versioned content (via symlink to `/docs`)
   - `amoro-theme`: Contains the Hugo theme used by both sites
 
-During each new release, the release manager will:
-1. Create a branch from master named for the release version
-2. Update the latest branch HEAD to point to the release branch HEAD
+The [site deployment workflow](../.github/workflows/site-deploy.yml) builds the main site and
+the [development documentation](https://amoro.apache.org/docs/latest/) from `master`.
+Release branches and tags build to `/docs/<version>/`. A branch named `0.9.0` and a tag
+named `v0.9.0-incubating` both map to `/docs/0.9.0/`.
 
 # How to Contribute
 
@@ -81,13 +82,8 @@ All issues related to the doc website should be submitted to the [Amoro reposito
 
 ## Running Locally
 
-To run the website locally:
-
-```shell
-# From the root of the repository
-```
-
-To start the site page locally, run:
+With Hugo Extended installed, run the following commands from the repository root.
+To preview the main site, run:
 ```shell
 (cd site/amoro-site && hugo serve)
 ```
@@ -99,21 +95,17 @@ To start the documentation site locally, run:
 
 ## Testing Both Sites Together
 
-In some cases, it's useful to test both the amoro site and the docs site together, especially for testing relative links between the two. This can be achieved by building both sites with custom `baseURL` and `publishDir` values:
+To verify links between the main site and the development documentation, build both
+sites into one directory and serve it with Python 3. Run this block from the repository root:
 
-First, build the main site:
-```
-cd site/amoro-site
-hugo -b http://localhost:5500/ -d ../../public
-```
-
-Next, build the docs site:
-```
-cd ../amoro-docs
-hugo -b http://localhost:5500/docs/latest/ -d ../../public/docs/latest
+```shell
+(cd site/amoro-site && hugo -b http://127.0.0.1:5500/ -d ../../public)
+(cd site/amoro-docs && hugo -b http://127.0.0.1:5500/docs/latest/ -d ../../public/docs/latest)
+python3 -m http.server 5500 --bind 127.0.0.1 --directory public
 ```
 
-You can then serve the combined site from the `public` directory using any local server.
+Open the [main site](http://127.0.0.1:5500/), [Quickstart](http://127.0.0.1:5500/quick-start/),
+or [development documentation](http://127.0.0.1:5500/docs/latest/). Press Ctrl+C to stop the server.
 
 ## Scanning For Broken Links
 
