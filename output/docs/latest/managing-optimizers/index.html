@@ -1338,16 +1338,18 @@ contain several optimizers with the same container implementation to facilitate 
 <p><img src="../images/admin/optimizer_group_remove_blocked.png" alt="The dashboard blocks removal of an optimizer group still referenced by a catalog"></p>
 <h2 id="optimizer-create-and-release">Optimizer Create and Release</h2>
 <h3 id="create-optimizer">Create optimizer</h3>
-<p>You can click the <code>Create Optimizer</code> button on the <code>Optimizers</code> page to create the optimizer for the corresponding optimizer
-group, and then click <code>OK</code> to start the optimizer for this optimizer group according to the parallelism configuration.
-If the optimizer runs normally, you will see an optimizer with the status <code>RUNNING</code> on the <code>Optimizers</code> page.</p>
-<p><img src="../images/admin/optimizer_create.png" alt="optimize-create"></p>
+<p>Open <strong>Optimizing</strong> in the sidebar and select <strong>Optimizers</strong>. With role-based authorization enabled, creating and releasing optimizers require the <code>MANAGE_OPTIMIZER</code> privilege.</p>
+<p>Create an optimizer group with the appropriate container and properties first. For a local container, the group must include the <code>memory</code> property, which specifies the JVM heap size in MiB per optimizer thread. For example, <code>memory=1024</code> with <strong>Parallelism</strong> set to <code>1</code> starts one optimizer thread with a 1024 MiB heap.</p>
+<p>Click <strong>Create Optimizer</strong>, select the group under <strong>Resource Group</strong>, and enter a positive integer for <strong>Parallelism</strong>. Click <strong>OK</strong> to start the optimizer through the group&rsquo;s container.</p>
+<p><img src="../images/admin/optimizer_create.png" alt="Create Optimizer dialog with a resource group and parallelism of one"></p>
+<p>The optimizer must start and register with AMS before it appears in the list. Refresh the page if necessary, then check its <strong>Optimizer Group</strong>, <strong>Container</strong>, <strong>Status</strong>, and <strong>Resource Allocation</strong>. For the local example above, the registered optimizer shows <strong>RUNNING</strong> and <strong>1 Core 1 G</strong>.</p>
 <h3 id="release-optimizer">Release optimizer</h3>
-<p>You can click the <code>Release</code> button on the <code>Optimizer</code> page to release the optimizer.</p>
-<p><img src="../images/admin/optimizer_release.png" alt="release optimizer"></p>
+<p>In <strong>Optimizing</strong> &gt; <strong>Optimizers</strong>, find the optimizer to stop, click <strong>Release</strong> in its row, and confirm with <strong>OK</strong>. After release, refresh the list and check that the optimizer is no longer present. Releasing an optimizer leaves its optimizer group in place.</p>
+<p><img src="../images/admin/optimizer_release.png" alt="Release confirmation for a running local optimizer"></p>
 <div class="info">
-    Currently, only optimizer scaled through the dashboard can be released on dashboard.
+    Only dashboard-managed optimizers can be released here. <strong>Release</strong> is disabled for an <code>external</code> container. Releasing a local optimizer forcibly stops its process and can interrupt in-progress tasks.
 </div>
+<p>The screenshots show the English dashboard in <code>1.0.0-SNAPSHOT</code> at commit <code>7e9a5ca</code>.</p>
 <h3 id="deploy-external-optimizer">Deploy external optimizer</h3>
 <p>You can submit optimizer in your own Flink task development platform or local Flink environment with the following configuration. The main parameters include:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>./bin/flink run-application -t yarn-application <span style="color:#ae81ff">\
