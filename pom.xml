@@ -28,7 +28,7 @@
 
     <groupId>org.apache.amoro</groupId>
     <artifactId>amoro-parent</artifactId>
-    <version>0.9-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Amoro Project Parent</name>
@@ -1615,6 +1615,9 @@
                     <version>${maven-spotless-plugin.version}</version>
                     <configuration>
                         <java>
+                            <excludes>
+                                <exclude>**/org/apache/amoro/flink/lookup/ByteArrayWrapper.java</exclude>
+                            </excludes>
                             <googleJavaFormat>
                                 <version>1.7</version>
                             </googleJavaFormat>
@@ -1708,6 +1711,8 @@
                             <exclude>**/Chart.lock</exclude>
                             <exclude>dev/deps/**</exclude>
                             <exclude>site/**</exclude>
+                            <!-- Third-party source files retain their original license headers. -->
+                            <exclude>**/org/apache/amoro/flink/lookup/ByteArrayWrapper.java</exclude>
                             <!-- artifacts created during release process -->
                             <exclude>release/**</exclude>
                         </excludes>

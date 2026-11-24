@@ -658,6 +658,9 @@ public class Configurations implements java.io.Serializable, Cloneable {
       return true;
     } else if (obj instanceof Configurations) {
       Map<String, Object> otherConf = ((Configurations) obj).confData;
+      if (this.confData.size() != otherConf.size()) {
+        return false;
+      }
 
       for (Map.Entry<String, Object> e : this.confData.entrySet()) {
         Object thisVal = e.getValue();
@@ -667,7 +670,7 @@ public class Configurations implements java.io.Serializable, Cloneable {
           if (!thisVal.equals(otherVal)) {
             return false;
           }
-        } else if (otherVal.getClass().equals(byte[].class)) {
+        } else if (otherVal instanceof byte[]) {
           if (!Arrays.equals((byte[]) thisVal, (byte[]) otherVal)) {
             return false;
           }

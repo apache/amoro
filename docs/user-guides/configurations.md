@@ -39,6 +39,10 @@ modified through [Alter Table](../using-tables/#modify-table) operations.
 - Engine: If tuning is required in the engines, then consider configuring it at the engine level, refer to 
 [Spark](../spark-configuration/) and [Flink](../flink-dml/).
 
+## Process-related table properties
+
+Many data-cleaning and tag actions are controlled by table properties. These properties work together with the process factory and execution engine configuration described in [Processes](../process/) and the [Deployment guide](../deployment/).
+
 ## Self-optimizing configurations
 
 Self-optimizing configurations are applicable to both Iceberg Format and Mixed streaming Format.

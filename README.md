@@ -122,7 +122,8 @@ Amoro is built using Maven with JDK 11 and 17(required for `amoro-format-mixed/a
 * Build and enable aliyun-oss-sdk: `./mvnw clean package -DskipTests -Paliyun-oss-sdk`
 * Specify Flink version for Flink optimizer(the default is 1.20.0): `./mvnw clean package -DskipTests -Dflink-optimizer.flink-version=1.20.0`
   * If the version of Flink is below 1.15.0, you also need to add the `-Pflink-optimizer-pre-1.15` parameter: `./mvnw clean package -DskipTests -Pflink-optimizer-pre-1.15 -Dflink-optimizer.flink-version=1.14.6`
-* Specify Spark version for Spark optimizer(the default is 3.5.7): `./mvnw clean package -DskipTests -Dspark.version=3.5.7`
+* Specify Spark version for Spark optimizer(the default is 3.5.8): `./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -DskipTests -Doptimizer.spark.version=3.5.8`
+  * Build the external Spark 4.1 optimizer with JDK 17: `./mvnw clean package -pl 'amoro-optimizer/amoro-optimizer-spark' -am -DskipTests -Doptimizer.spark.version=4.1.3`. This only changes the Spark version used by the optimizer and does not enable general Spark 4.1 support in Amoro.
 * Build `amoro-mixed-trino` module under JDK 17: `./mvnw clean package -DskipTests -Pformat-mixed-format-trino,build-mixed-format-trino -pl 'amoro-format-mixed/amoro-mixed-trino' -am`.
 * Build the mixed-format Spark 3.3 connector: `./mvnw clean package -DskipTests -Pspark-3.3 -pl amoro-format-mixed/amoro-mixed-spark/v3.3/amoro-mixed-spark-runtime-3.3 -am`. AMS is built with Iceberg 1.10.2, which no longer provides a Spark 3.3 binding; external mixed-format connectors remain on Iceberg 1.8.1.
 * Build all modules: `./mvnw clean package -DskipTests -Ptoolchain,build-mixed-format-trino`, besides you need config `toolchains.xml` in `${user.home}/.m2/` dir with content below.

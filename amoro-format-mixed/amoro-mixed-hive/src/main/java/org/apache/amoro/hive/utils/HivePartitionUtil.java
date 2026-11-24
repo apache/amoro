@@ -21,6 +21,7 @@ package org.apache.amoro.hive.utils;
 import org.apache.amoro.client.ClientPool;
 import org.apache.amoro.hive.HMSClient;
 import org.apache.amoro.hive.HMSClientPool;
+import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Lists;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableIdentifier;
@@ -31,10 +32,11 @@ import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.PartitionData;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
@@ -62,16 +64,29 @@ public class HivePartitionUtil {
     return values;
   }
 
+  /**
+   * Builds the Iceberg partition data of a Hive partition from its raw partition values.
+   *
+   * <p>A Hive partition value is an arbitrary string and may contain the path separator of an
+   * Iceberg partition path (for example {@code dt=2024/01}), so the values are converted field by
+   * field instead of by parsing a generated partition path.
+   */
   public static StructLike buildPartitionData(List<String> partitionValues, PartitionSpec spec) {
-    StringBuilder pathBuilder = new StringBuilder();
-    for (int i = 0; i < spec.partitionType().fields().size(); i++) {
-      Types.NestedField field = spec.partitionType().fields().get(i);
-      pathBuilder.append(field.name()).append("=").append(partitionValues.get(i));
-      if (i < spec.partitionType().fields().size() - 1) {
-        pathBuilder.append("/");
-      }
+    Types.StructType partitionType = spec.partitionType();
+    List<Types.NestedField> fields = partitionType.fields();
+    Preconditions.checkArgument(
+        partitionValues.size() == fields.size(),
+        "Invalid partition data, expecting %s fields but got %s: %s",
+        fields.size(),
+        partitionValues.size(),
+        partitionValues);
+
+    PartitionData partitionData = new PartitionData(partitionType);
+    for (int i = 0; i < fields.size(); i++) {
+      Type type = fields.get(i).type();
+      partitionData.set(i, Conversions.fromPartitionString(type, partitionValues.get(i)));
     }
-    return DataFiles.data(spec, pathBuilder.toString());
+    return partitionData;
   }
 
   public static Partition newPartition(

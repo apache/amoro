@@ -25,7 +25,7 @@ menu:
  - limitations under the License.
  -->
 # Using Customized Encryption Method for Configurations
-To enhance security, AMS allows encrypted sensitive configuration items such as passwords. Currently, AMS only supports the built-in base64 encryption algorithm (see [Configure encrypted configuration items](../deployment/#configure-encrypted-sensitive-configuration-items) for details). If you require a stronger or customized encryption method, AMS also provides the flexibility to implement your own encryption algorithm.
+To enhance security, AMS allows encrypted sensitive configuration items such as passwords. Currently, AMS only supports the built-in base64 encryption algorithm (see [Configure encrypted configuration items](../deployment/#configure-encrypted-configuration-items) for details). If you require a stronger or customized encryption method, AMS also provides the flexibility to implement your own encryption algorithm.
 ## Develop the Custom Implementation
 To integrate a custom encryption algorithm, you need to create a Java class that implements the `ConfigShade` interface and package it as a service.
 ### Add Maven Dependency
