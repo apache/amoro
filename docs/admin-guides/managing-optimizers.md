@@ -358,21 +358,28 @@ If the dashboard says the group has been used, reassign the catalogs and tables 
 ## Optimizer Create and Release
 
 ### Create optimizer
-You can click the `Create Optimizer` button on the `Optimizers` page to create the optimizer for the corresponding optimizer
-group, and then click `OK` to start the optimizer for this optimizer group according to the parallelism configuration.
-If the optimizer runs normally, you will see an optimizer with the status `RUNNING` on the `Optimizers` page.
 
-![optimize-create](../images/admin/optimizer_create.png)
+Open **Optimizing** in the sidebar and select **Optimizers**. With role-based authorization enabled, creating and releasing optimizers require the `MANAGE_OPTIMIZER` privilege.
+
+Create an optimizer group with the appropriate container and properties first. For a local container, the group must include the `memory` property, which specifies the JVM heap size in MiB per optimizer thread. For example, `memory=1024` with **Parallelism** set to `1` starts one optimizer thread with a 1024 MiB heap.
+
+Click **Create Optimizer**, select the group under **Resource Group**, and enter a positive integer for **Parallelism**. Click **OK** to start the optimizer through the group's container.
+
+![Create Optimizer dialog with a resource group and parallelism of one](../images/admin/optimizer_create.png)
+
+The optimizer must start and register with AMS before it appears in the list. Refresh the page if necessary, then check its **Optimizer Group**, **Container**, **Status**, and **Resource Allocation**. For the local example above, the registered optimizer shows **RUNNING** and **1 Core 1 G**.
 
 ### Release optimizer
 
-You can click the `Release` button on the `Optimizer` page to release the optimizer.
+In **Optimizing** > **Optimizers**, find the optimizer to stop, click **Release** in its row, and confirm with **OK**. After release, refresh the list and check that the optimizer is no longer present. Releasing an optimizer leaves its optimizer group in place.
 
-![release optimizer](../images/admin/optimizer_release.png)
+![Release confirmation for a running local optimizer](../images/admin/optimizer_release.png)
 
 {{< hint info >}}
-Currently, only optimizer scaled through the dashboard can be released on dashboard.
+Only dashboard-managed optimizers can be released here. **Release** is disabled for an `external` container. Releasing a local optimizer forcibly stops its process and can interrupt in-progress tasks.
 {{< /hint >}}
+
+The screenshots show the English dashboard in `1.0.0-SNAPSHOT` at commit `7e9a5ca`.
 
 ### Deploy external optimizer
 
