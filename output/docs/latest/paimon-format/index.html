@@ -694,6 +694,11 @@ Paimon is a streaming data lake platform with high-speed data ingestion, changel
 <p>By registering Paimon&rsquo;s catalog with Amoro, users can view information such as Schema, Options, Files, Snapshots, DDLs, Compaction information, and more for Paimon tables.
 Furthermore, they can operate on Paimon tables using Spark SQL in the Terminal. The current supported catalog types and file system types for Paimon are all supported.</p>
 <p>For registering catalog operation steps, please refer to <a href="../managing-catalogs/">Managing Catalogs</a>.</p>
+<p>To register an existing Paimon catalog on the local filesystem, select <strong>FileSystem</strong> as the metastore,
+<strong>PAIMON</strong> as the table format, and <strong>Local</strong> as the storage type. Set the <code>warehouse</code> catalog property
+to an absolute local URI, for example <code>file:///data/paimon/warehouse</code>. Hadoop configuration files and
+authentication settings are not required for Local storage. The warehouse must be accessible to the
+AMS process; a path on the browser&rsquo;s machine is not sufficient.</p>
 <div class="info">
     If you want to use S3 or OSS, please download the
 <a href="https://repo.maven.apache.org/maven2/org/apache/paimon/paimon-s3/0.5.0-incubating/paimon-s3-0.5.0-incubating.jar">S3</a>,
