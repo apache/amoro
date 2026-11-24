@@ -725,9 +725,15 @@ please read the following guidelines and select the appropriate creation accordi
 <li>warehouse: Warehouse <strong>must be configured</strong> for ams/hadoop/glue catalog, as it determines where our database and table files should be placed</li>
 <li>catalog-impl: when the metastore is <strong>Custom</strong>, an additional catalog-impl must be defined, and the user must put the jar package for the custom catalog implementation into the <strong>{AMORO_HOME}/lib</strong> directory, <strong>and the service must be restarted to take effect</strong></li>
 <li>clients: Hive Catalog connection pool size for accessing HiveMetaStore, default configuration is 20, requires restarting Amoro to take effect.</li>
-<li>database-filter: Configure a regular expression to filter databases in the catalog. If not set then all databases will be displayed in table menu.</li>
-<li>table-filter: Configure a regular expression to filter tables in the catalog. The matching will be done in the format of <code>database.table</code>. For example, if it is set to <code>(A\.a)|(B\.b)</code>, it will ignore all tables except for table <code>a</code> in database <code>A</code> and table <code>b</code> in database <code>B</code></li>
+<li><code>database-filter</code> matches a regular expression against the full database name.
+For example, <code>analytics</code> shows only the <code>analytics</code> database.</li>
+<li><code>table-filter</code> matches a regular expression against the full <code>database.table</code>
+name. For example, <code>analytics[.]events</code> shows only the <code>events</code> table in
+the <code>analytics</code> database.</li>
 </ul>
+<p>These filters apply to the AMS database and table lists for external catalogs.
+Internal catalogs display unfiltered lists. Leave a filter unset to list all
+entries of that kind in an external catalog.</p>
 <h3 id="configure-table-properties">Configure table properties</h3>
 <p>If you want to add the same table properties to all tables under a catalog, you can add these table properties here on the catalog level. If you also configure this property on the table level, the property on the table will take effect.</p>
 <div class="info">
