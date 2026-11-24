@@ -345,6 +345,26 @@ public class DefaultTableRuntime extends AbstractTableRuntime {
     return this;
   }
 
+  /** Clear disabled pending work without marking its snapshot as optimized. */
+  public void resetDisabledPending() {
+    store()
+        .synchronizedInvoke(
+            () -> {
+              if (!getOptimizingConfig().isEnabled()
+                  && getOptimizingStatus() == OptimizingStatus.PENDING
+                  && (optimizingProcess == null
+                      || optimizingProcess.getStatus() != ProcessStatus.RUNNING)) {
+                store()
+                    .begin()
+                    .updateStatusCode(code -> OptimizingStatus.IDLE.getCode())
+                    .updateState(
+                        PENDING_INPUT_KEY, any -> new AbstractOptimizingEvaluator.PendingInput())
+                    .commit();
+                optimizingProcess = null;
+              }
+            });
+  }
+
   public void beginPlanning() {
     store().begin().updateStatusCode(code -> OptimizingStatus.PLANNING.getCode()).commit();
   }
