@@ -212,6 +212,8 @@ lib/amoro-web-*.jar, where * is the project version.
 
 Apache License Version 2.0
 --------------------------
+org.apache.ant:ant
+org.apache.ant:ant-launcher
 org.apache.arrow:arrow-*
 org.apache.avro:avro-*
 org.apache.commons:commons-*
@@ -222,6 +224,7 @@ org.apache.hadoop:hadoop-*
 org.apache.hive:hive-*
 org.apache.hive.shims:hive-shims-*
 org.apache.iceberg:iceberg-*
+org.apache.ivy:ivy
 org.apache.kerby:kerb-*
 org.apache.kerby:kerby-*
 org.apache.kerby:token-provider
@@ -372,6 +375,7 @@ org.objenesis:objenesis
 org.mybatis:mybatis
 org.lz4:lz4-java
 org.jetbrains.kotlin:kotlin-*
+com.github.seancfoley:ipaddress
 ./charts/amoro/templates/common/_names.tpl
 ./charts/amoro/templates/common/_capabilities.tpl
 ./charts/amoro/templates/common/_tplvalues.tpl
@@ -402,6 +406,11 @@ openapi-path-templating
 openapi-server-url-templating
 short-unique-id
 swagger-client
+
+Apache Software License 1.1
+---------------------------
+oro:oro
+The license text is in META-INF/LICENSE inside lib/oro-2.0.8.jar.
 
 The BSD License
 --------------
@@ -617,6 +626,10 @@ javax.activation:activation
 javax.annotation:javax.annotation-api
 javax.servlet:javax.servlet-api
 javax.transaction:jta
+javax.transaction:transaction-api
+The transaction-api license text is in META-INF/LICENSE.txt inside
+lib/transaction-api-1.1.jar. The source archive is available at
+https://repo.maven.apache.org/maven2/javax/transaction/transaction-api/1.1/transaction-api-1.1-sources.jar.
 
 Common Development and Distribution License (CDDL) 1.1
 ------------------------------------------------------
