@@ -754,6 +754,15 @@ entries of that kind in an external catalog.</p>
 <img src="../images/admin/create-rest_catalog.png" alt="create-rest_catalog"></p>
 <h3 id="nessies-rest-catalog">Nessie&rsquo;s REST Catalog</h3>
 <p>When a user needs to create a Nessie Rest Catalog, they can also set <strong>catalog-impl=org.apache.iceberg.nessie.NessieCatalog</strong> on top of the above parameters.</p>
+<h2 id="edit-a-catalog">Edit a catalog</h2>
+<p>In the AMS Dashboard, open <strong>Catalogs</strong>, select a catalog from the <strong>Catalog List</strong>,
+and click <strong>Edit</strong>. The <strong>Name</strong> and <strong>Metastore</strong> fields are read-only for an
+existing catalog. The available table formats and storage options depend on the
+metastore.</p>
+<p><img src="../images/admin/edit-catalog.png" alt="Editing an existing catalog in the AMS Dashboard"></p>
+<p>To change the catalog&rsquo;s default optimizer group, choose an existing group in
+<strong>Optimizer Group</strong>. Click <strong>Save</strong> to apply the change. Click <strong>Cancel</strong> to
+discard unsaved changes and return to the saved configuration.</p>
 <h2 id="delete-catalog">Delete catalog</h2>
 <p>When a user needs to delete a Catalog, they can go to the details page of the Catalog and click the Remove button at the bottom of the page to perform the deletion.</p>
 <div class="info">
@@ -795,6 +804,7 @@ If there are still tables under that Catalog, AMS will prompt that the deletion 
         <li><a href="#nessies-rest-catalog">Nessie&rsquo;s REST Catalog</a></li>
       </ul>
     </li>
+    <li><a href="#edit-a-catalog">Edit a catalog</a></li>
     <li><a href="#delete-catalog">Delete catalog</a></li>
   </ul>
 </nav>
