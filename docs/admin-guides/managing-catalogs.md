@@ -106,6 +106,19 @@ After configuring the above parameters, the final result in the AMS frontend wil
 ### Nessie's REST Catalog
 When a user needs to create a Nessie Rest Catalog, they can also set **catalog-impl=org.apache.iceberg.nessie.NessieCatalog** on top of the above parameters.
 
+## Edit a catalog
+
+In the AMS Dashboard, open **Catalogs**, select a catalog from the **Catalog List**,
+and click **Edit**. The **Name** and **Metastore** fields are read-only for an
+existing catalog. The available table formats and storage options depend on the
+metastore.
+
+![Editing an existing catalog in the AMS Dashboard](../images/admin/edit-catalog.png)
+
+To change the catalog's default optimizer group, choose an existing group in
+**Optimizer Group**. Click **Save** to apply the change. Click **Cancel** to
+discard unsaved changes and return to the saved configuration.
+
 ## Delete catalog
 When a user needs to delete a Catalog, they can go to the details page of the Catalog and click the Remove button at the bottom of the page to perform the deletion.
 
