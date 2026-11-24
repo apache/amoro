@@ -1329,10 +1329,13 @@ contain several optimizers with the same container implementation to facilitate 
 </span></span><span style="display:flex;"><span><span style="color:#f92672">dynamic-allocation.scale-down-cooldown</span>: <span style="color:#ae81ff">1min                </span> <span style="color:#75715e"># Wait at least 1 min between scale-down removals</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">dynamic-allocation.drain-timeout</span>: <span style="color:#ae81ff">15min                     </span> <span style="color:#75715e"># Force-remove a draining optimizer after 15 min</span>
 </span></span></code></pre></div><h3 id="edit-optimizer-group">Edit optimizer group</h3>
-<p>You can click the <code>edit</code> button on the <code>Optimizer Groups</code> page to modify the configuration of the Optimizer group.</p>
+<p>With role-based authorization enabled, both <strong>Edit</strong> and <strong>Remove</strong> require the <code>MANAGE_OPTIMIZER</code> privilege.</p>
+<p>Open <strong>Optimizing</strong> in the sidebar and select <strong>Optimizer Groups</strong>. In the group&rsquo;s row, click <strong>Edit</strong>. Set the <strong>Container</strong> or change the key-value entries under <strong>Properties</strong>, then click <strong>OK</strong>. The group name is read-only in this form.</p>
+<p><img src="../images/admin/optimizer_group_edit.png" alt="Edit Group dialog showing a read-only name and a scheduling-policy property"></p>
 <h3 id="remove-optimizer-group">Remove optimizer group</h3>
-<p>You can click the <code>remove</code> button on the <code>Optimizer Groups</code> page to delete the optimizer group, but only if the group is
-not referenced by any catalog or table and no optimizer belonging to this group is running.</p>
+<p>In <strong>Optimizer Groups</strong>, click <strong>Remove</strong> in the group&rsquo;s row and confirm. Amoro checks catalog defaults, table assignments, and registered optimizers before removing a group.</p>
+<p>If the dashboard says the group has been used, reassign the catalogs and tables that use it and stop any optimizers still registered to it. Then return to the group list and click <strong>Remove</strong> again.</p>
+<p><img src="../images/admin/optimizer_group_remove_blocked.png" alt="The dashboard blocks removal of an optimizer group still referenced by a catalog"></p>
 <h2 id="optimizer-create-and-release">Optimizer Create and Release</h2>
 <h3 id="create-optimizer">Create optimizer</h3>
 <p>You can click the <code>Create Optimizer</code> button on the <code>Optimizers</code> page to create the optimizer for the corresponding optimizer
