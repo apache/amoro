@@ -28,11 +28,16 @@ MVN="${PWD}/mvnw"
 
 function build_classpath() {
   $MVN clean install -DskipTests --no-snapshot-updates -pl dist -am "$@"
+  classpath_separator=":"
+  [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]] && classpath_separator=";"
   $MVN dependency:build-classpath --no-snapshot-updates -pl dist -am "$@" |\
     grep -v "INFO\|WARN" | \
     tail -1 | \
-    tr ":" "\n" | \
+    tr "${classpath_separator}" "\n" | \
     awk -F '/' '{
+      gsub(/\\/, "/", $0);
+      $0 = $0;
+      if (NF < 3) next;
       artifact_id=$(NF-2);
       version=$(NF-1);
       jar_name=$NF;

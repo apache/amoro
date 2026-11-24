@@ -341,31 +341,45 @@ dynamic-allocation.drain-timeout: 15min                      # Force-remove a dr
 
 ### Edit optimizer group
 
-You can click the `edit` button on the `Optimizer Groups` page to modify the configuration of the Optimizer group.
+With role-based authorization enabled, both **Edit** and **Remove** require the `MANAGE_OPTIMIZER` privilege.
+
+Open **Optimizing** in the sidebar and select **Optimizer Groups**. In the group's row, click **Edit**. Set the **Container** or change the key-value entries under **Properties**, then click **OK**. The group name is read-only in this form.
+
+![Edit Group dialog showing a read-only name and a scheduling-policy property](../images/admin/optimizer_group_edit.png)
 
 ### Remove optimizer group
 
-You can click the `remove` button on the `Optimizer Groups` page to delete the optimizer group, but only if the group is
-not referenced by any catalog or table and no optimizer belonging to this group is running.
+In **Optimizer Groups**, click **Remove** in the group's row and confirm. Amoro checks catalog defaults, table assignments, and registered optimizers before removing a group.
+
+If the dashboard says the group has been used, reassign the catalogs and tables that use it and stop any optimizers still registered to it. Then return to the group list and click **Remove** again.
+
+![The dashboard blocks removal of an optimizer group still referenced by a catalog](../images/admin/optimizer_group_remove_blocked.png)
 
 ## Optimizer Create and Release
 
 ### Create optimizer
-You can click the `Create Optimizer` button on the `Optimizers` page to create the optimizer for the corresponding optimizer
-group, and then click `OK` to start the optimizer for this optimizer group according to the parallelism configuration.
-If the optimizer runs normally, you will see an optimizer with the status `RUNNING` on the `Optimizers` page.
 
-![optimize-create](../images/admin/optimizer_create.png)
+Open **Optimizing** in the sidebar and select **Optimizers**. With role-based authorization enabled, creating and releasing optimizers require the `MANAGE_OPTIMIZER` privilege.
+
+Create an optimizer group with the appropriate container and properties first. For a local container, the group must include the `memory` property, which specifies the JVM heap size in MiB per optimizer thread. For example, `memory=1024` with **Parallelism** set to `1` starts one optimizer thread with a 1024 MiB heap.
+
+Click **Create Optimizer**, select the group under **Resource Group**, and enter a positive integer for **Parallelism**. Click **OK** to start the optimizer through the group's container.
+
+![Create Optimizer dialog with a resource group and parallelism of one](../images/admin/optimizer_create.png)
+
+The optimizer must start and register with AMS before it appears in the list. Refresh the page if necessary, then check its **Optimizer Group**, **Container**, **Status**, and **Resource Allocation**. For the local example above, the registered optimizer shows **RUNNING** and **1 Core 1 G**.
 
 ### Release optimizer
 
-You can click the `Release` button on the `Optimizer` page to release the optimizer.
+In **Optimizing** > **Optimizers**, find the optimizer to stop, click **Release** in its row, and confirm with **OK**. After release, refresh the list and check that the optimizer is no longer present. Releasing an optimizer leaves its optimizer group in place.
 
-![release optimizer](../images/admin/optimizer_release.png)
+![Release confirmation for a running local optimizer](../images/admin/optimizer_release.png)
 
 {{< hint info >}}
-Currently, only optimizer scaled through the dashboard can be released on dashboard.
+Only dashboard-managed optimizers can be released here. **Release** is disabled for an `external` container. Releasing a local optimizer forcibly stops its process and can interrupt in-progress tasks.
 {{< /hint >}}
+
+The screenshots show the English dashboard in `1.0.0-SNAPSHOT` at commit `7e9a5ca`.
 
 ### Deploy external optimizer
 

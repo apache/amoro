@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.amoro</groupId>
         <artifactId>amoro-parent</artifactId>
-        <version>0.9-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -37,5 +37,10 @@
         <module>amoro-mixed-hive</module>
         <module>amoro-mixed-trino</module>
     </modules>
+
+    <properties>
+        <!-- Shared with mixed-format connectors that support older engines. -->
+        <iceberg.version>${connector-iceberg.version}</iceberg.version>
+    </properties>
 
 </project>

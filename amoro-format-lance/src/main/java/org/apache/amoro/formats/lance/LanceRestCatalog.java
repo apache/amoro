@@ -18,28 +18,12 @@
 
 package org.apache.amoro.formats.lance;
 
-import org.apache.amoro.AlreadyExistsException;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.util.Preconditions;
-import org.apache.commons.lang3.StringUtils;
 import org.lance.namespace.LanceNamespace;
-import org.lance.namespace.errors.NamespaceAlreadyExistsException;
-import org.lance.namespace.errors.NamespaceNotFoundException;
-import org.lance.namespace.model.CreateNamespaceRequest;
-import org.lance.namespace.model.DropNamespaceRequest;
-import org.lance.namespace.model.ListNamespacesRequest;
-import org.lance.namespace.model.ListNamespacesResponse;
-import org.lance.namespace.model.ListTablesRequest;
-import org.lance.namespace.model.ListTablesResponse;
-import org.lance.namespace.model.NamespaceExistsRequest;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * REST catalog implementation for Lance.
@@ -50,133 +34,20 @@ import java.util.Set;
  */
 public class LanceRestCatalog extends AbstractLanceCatalog {
 
-  private static final String URI_PROPERTY = "uri";
-
-  /**
-   * Optional catalog name prepended to the REST namespace id, mapping Amoro's database/table onto
-   * the service's schema/table levels (catalog/schema/table hierarchy). Empty when the service has
-   * no catalog level.
-   */
-  private static final String CATALOG_PROPERTY = "catalog-name";
-
-  private final List<String> catalogPrefix;
-
   public LanceRestCatalog(String catalogName, Map<String, String> catalogProperties) {
-    super(catalogName, buildNamespace(catalogProperties));
-    this.catalogPrefix = catalogPrefix(catalogProperties);
-  }
-
-  private static List<String> catalogPrefix(Map<String, String> catalogProperties) {
-    String catalog = catalogProperties.get(CATALOG_PROPERTY);
-    return catalog == null || catalog.isEmpty()
-        ? Collections.emptyList()
-        : Collections.singletonList(catalog);
+    super(
+        catalogName,
+        buildNamespace(catalogProperties),
+        // The REST service may or may not expose a catalog level.
+        catalogPrefix(catalogProperties, null));
   }
 
   private static LanceNamespace buildNamespace(Map<String, String> namespaceProperties) {
-    Preconditions.checkArgument(
-        namespaceProperties != null && !namespaceProperties.isEmpty(),
-        "Catalog properties must be set.");
+    validateProperties(namespaceProperties);
     Preconditions.checkArgument(
         namespaceProperties.containsKey(URI_PROPERTY),
         "URI must be set in namespaceProperties for REST metastore type.");
     Map<String, String> restProperties = new HashMap<>(namespaceProperties);
     return LanceNamespace.connect("rest", restProperties, new RootAllocator(Long.MAX_VALUE));
-  }
-
-  @Override
-  protected List<String> tableId(String database, String table) {
-    return concat(catalogPrefix, database, table);
-  }
-
-  @Override
-  protected List<String> tableIdForListTables(String database) {
-    return concat(catalogPrefix, database);
-  }
-
-  private static List<String> concat(List<String> prefix, String... parts) {
-    List<String> id = new ArrayList<>(prefix);
-    Collections.addAll(id, parts);
-    return id;
-  }
-
-  /**
-   * Lists the tables of a database. The REST service pages results via pageToken, so follow the
-   * token until it is empty to avoid silently missing tables on large catalogs.
-   */
-  @Override
-  public List<String> listTables(String database) {
-    validateDatabase(database);
-
-    Set<String> tables = new LinkedHashSet<>();
-    String pageToken = null;
-    do {
-      ListTablesRequest request = new ListTablesRequest().id(tableIdForListTables(database));
-      if (pageToken != null) {
-        request.pageToken(pageToken);
-      }
-      ListTablesResponse response = namespace.listTables(request);
-      if (response == null) {
-        break;
-      }
-      if (response.getTables() != null) {
-        tables.addAll(response.getTables());
-      }
-
-      pageToken = response.getPageToken();
-    } while (StringUtils.isNotEmpty(pageToken));
-
-    return new ArrayList<>(tables);
-  }
-
-  /** Lists the schemas under the catalog, following the REST pageToken until it is empty. */
-  @Override
-  public List<String> listDatabases() {
-    Set<String> namespaces = new LinkedHashSet<>();
-    String pageToken = null;
-    do {
-      ListNamespacesRequest request = new ListNamespacesRequest().id(catalogPrefix);
-      if (pageToken != null) {
-        request.pageToken(pageToken);
-      }
-      ListNamespacesResponse response = namespace.listNamespaces(request);
-      if (response == null) {
-        break;
-      }
-      if (response.getNamespaces() != null) {
-        namespaces.addAll(response.getNamespaces());
-      }
-
-      pageToken = response.getPageToken();
-    } while (StringUtils.isNotEmpty(pageToken));
-
-    return new ArrayList<>(namespaces);
-  }
-
-  @Override
-  public boolean databaseExists(String database) {
-    try {
-      NamespaceExistsRequest request =
-          new NamespaceExistsRequest().id(concat(catalogPrefix, database));
-      namespace.namespaceExists(request);
-      return true;
-    } catch (NamespaceNotFoundException e) {
-      return false;
-    }
-  }
-
-  @Override
-  public void createDatabase(String database) {
-    try {
-      namespace.createNamespace(new CreateNamespaceRequest().id(concat(catalogPrefix, database)));
-    } catch (NamespaceAlreadyExistsException e) {
-      throw new AlreadyExistsException("Database: " + database + " already exists", e);
-    }
-  }
-
-  @Override
-  public void dropDatabase(String database) {
-    validateDatabase(database);
-    namespace.dropNamespace(new DropNamespaceRequest().id(concat(catalogPrefix, database)));
   }
 }

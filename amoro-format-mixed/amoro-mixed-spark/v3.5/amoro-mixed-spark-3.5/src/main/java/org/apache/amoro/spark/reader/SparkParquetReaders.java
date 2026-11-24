@@ -527,7 +527,7 @@ public class SparkParquetReaders {
     private final int numFields;
 
     InternalRowReader(List<Type> types, List<ParquetValueReader<?>> readers) {
-      super(types, readers);
+      super(readers);
       this.numFields = readers.size();
     }
 

@@ -84,7 +84,18 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
   public void initialize() {
     foundAvailablePlugins();
 
-    List<PluginConfiguration> pluginConfigs = loadPluginConfigurations();
+    List<PluginConfiguration> pluginConfigs = Lists.newArrayList(loadPluginConfigurations());
+    List<String> defaultConfigured = Lists.newArrayList();
+    for (String name : foundedPlugins.keySet()) {
+      if (pluginConfigs.stream().noneMatch(config -> config.getName().equals(name))) {
+        pluginConfigs.add(PluginConfiguration.emptyConfig(name));
+        defaultConfigured.add(name);
+      }
+    }
+    if (!defaultConfigured.isEmpty()) {
+      LOG.info(
+          "No configuration found for plugins {}, using empty configuration", defaultConfigured);
+    }
     pluginConfigs.stream()
         .sorted(Comparator.comparing(PluginConfiguration::getPriority))
         .forEach(
@@ -98,7 +109,17 @@ public abstract class AbstractPluginManager<T extends ActivePlugin> implements P
       if (!pluginConfig.isEnabled()) {
         continue;
       }
-      install(pluginConfig.getName());
+      try {
+        install(pluginConfig.getName());
+      } catch (RuntimeException e) {
+        if (!defaultConfigured.contains(pluginConfig.getName())) {
+          throw e;
+        }
+        LOG.warn(
+            "Failed to install plugin {} with empty configuration, skip it",
+            pluginConfig.getName(),
+            e);
+      }
     }
   }
 
