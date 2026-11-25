@@ -21,16 +21,16 @@ package org.apache.amoro.server.ha;
 import org.apache.amoro.config.Configurations;
 import org.apache.amoro.server.AmoroManagementConf;
 import org.apache.amoro.server.persistence.DataSourceFactory;
-import org.apache.amoro.server.table.DerbyPersistence;
+import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
+import org.apache.amoro.server.table.H2Persistence;
+import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.ibatis.session.SqlSession;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
-
-import javax.sql.DataSource;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -43,15 +43,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Derby-based integration tests for the DATABASE HA container: leader election, failover on crash,
+ * H2-based integration tests for the DATABASE HA container: leader election, failover on crash,
  * non-preemptive recovery, and demotion on heartbeat loss. Calls
  * org.apache.amoro.server.ha.DataBaseHighAvailabilityContainer via reflection
- * (waitLeaderShip/waitFollowerShip/close). If the class is absent on this branch (PR not merged),
- * safely skip all tests in @BeforeClass.
+ * (waitLeaderShip/waitFollowerShip/close).
  */
 public class DataBaseHighAvailabilityContainerIT {
 
-  @ClassRule public static ExternalResource derby = new DerbyPersistence();
+  @ClassRule public static ExternalResource h2 = new H2Persistence();
 
   private static boolean databaseHAAvailable;
 
@@ -59,16 +58,13 @@ public class DataBaseHighAvailabilityContainerIT {
   public static void checkDatabaseHAExists() {
     databaseHAAvailable =
         classExists("org.apache.amoro.server.ha.DataBaseHighAvailabilityContainer");
-    Assume.assumeTrue(
-        "Skip DATABASE HA container tests because class not found (PR not merged)",
-        databaseHAAvailable);
-    // If ha_lease is not present in the Derby init scripts, skip to avoid false positives.
-    Assume.assumeTrue("ha_lease table not present", checkHaLeaseTablePresent());
+    Assert.assertTrue("DATABASE HA implementation must be present", databaseHAAvailable);
+    Assert.assertTrue("ha_lease table must be initialized", checkHaLeaseTablePresent());
   }
 
   @After
   public void afterEach() {
-    // DerbyPersistence.after() automatically truncates all tables; ensure containers are closed.
+    // H2Persistence.after() automatically truncates all tables; ensure containers are closed.
   }
 
   @Test
@@ -313,26 +309,14 @@ public class DataBaseHighAvailabilityContainerIT {
   }
 
   public static boolean checkHaLeaseTablePresent() {
-    Configurations conf =
-        HATestConfigs.buildDataBaseHAConfig(
-            "default",
-            2000,
-            6000,
-            "127.0.0.1",
-            HATestConfigs.randomEphemeralPort(),
-            HATestConfigs.randomEphemeralPort(),
-            HATestConfigs.randomEphemeralPort());
-    try {
-      DataSource ds = DataSourceFactory.createDataSource(conf);
-      try (Connection conn = ds.getConnection();
-          Statement st = conn.createStatement()) {
-        try (ResultSet rs =
-            st.executeQuery("SELECT 1 FROM SYS.SYSTABLES WHERE UPPER(TABLENAME) = 'HA_LEASE'")) {
-          return rs.next();
-        }
-      }
+    try (SqlSession session = SqlSessionFactoryProvider.getInstance().get().openSession();
+        Connection conn = session.getConnection();
+        ResultSet tables =
+            conn.getMetaData()
+                .getTables(null, conn.getSchema(), "HA_LEASE", new String[] {"TABLE"})) {
+      return tables.next();
     } catch (Exception e) {
-      return false;
+      throw new IllegalStateException("Cannot inspect the H2 HA schema", e);
     }
   }
 
@@ -354,11 +338,11 @@ public class DataBaseHighAvailabilityContainerIT {
     // Assert using ha_lease: unique leader row (count=1).
     Configurations conf = new Configurations();
     conf.set(
-        AmoroManagementConf.DB_CONNECTION_URL, HATestConfigs.detectDerbyUrlFromSqlSessionFactory());
-    conf.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_DERBY);
-    conf.set(AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.apache.derby.jdbc.EmbeddedDriver");
-    DataSource ds = DataSourceFactory.createDataSource(conf);
-    try (Connection conn = ds.getConnection();
+        AmoroManagementConf.DB_CONNECTION_URL, HATestConfigs.detectH2UrlFromSqlSessionFactory());
+    conf.set(AmoroManagementConf.DB_TYPE, AmoroManagementConf.DB_TYPE_H2);
+    conf.set(AmoroManagementConf.DB_DRIVER_CLASS_NAME, "org.h2.Driver");
+    try (BasicDataSource ds = (BasicDataSource) DataSourceFactory.createDataSource(conf);
+        Connection conn = ds.getConnection();
         Statement st = conn.createStatement()) {
       try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM HA_LEASE")) {
         Assert.assertTrue("ha_lease table should have at least one row", rs.next());

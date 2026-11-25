@@ -156,12 +156,12 @@ amoroConf:
     identifier: ~
     sensitiveKeywords: ~
 
-  ## AMS database properties, default value is derby. For production environment, suggest to use mysql
+  ## AMS database properties, default value is embedded H2. For production, use PostgreSQL or MySQL
   ##
   database:
-    type: derby
-    driver: org.apache.derby.jdbc.EmbeddedDriver
-    url: jdbc:derby:/tmp/amoro/derby;create=true
+    type: h2
+    driver: org.h2.Driver
+    url: jdbc:h2:file:/tmp/amoro/h2/ams
 
   ## e.g:
   ##    type: mysql
