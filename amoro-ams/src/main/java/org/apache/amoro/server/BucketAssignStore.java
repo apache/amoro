@@ -75,6 +75,22 @@ public interface BucketAssignStore {
   List<AmsServerInfo> getAliveNodes() throws BucketAssignStoreException;
 
   /**
+   * Register this node in the store so it can be discovered by {@link #getAliveNodes()}.
+   *
+   * @param serverInfo this node's server info
+   * @throws BucketAssignStoreException If registration fails
+   */
+  void registerNode(AmsServerInfo serverInfo) throws BucketAssignStoreException;
+
+  /**
+   * Remove this node's registration from the store.
+   *
+   * @param serverInfo this node's server info
+   * @throws BucketAssignStoreException If removal fails
+   */
+  void removeNode(AmsServerInfo serverInfo) throws BucketAssignStoreException;
+
+  /**
    * Get the last update time for a node's assignments.
    *
    * @param nodeInfo The node information
@@ -90,4 +106,7 @@ public interface BucketAssignStore {
    * @throws BucketAssignStoreException If update operation fails
    */
   void updateLastUpdateTime(AmsServerInfo nodeInfo) throws BucketAssignStoreException;
+
+  /** Close the store and release any resources (e.g. ZK connection). */
+  void close();
 }
