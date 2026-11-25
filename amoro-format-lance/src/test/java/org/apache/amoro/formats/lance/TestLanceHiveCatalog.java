@@ -30,10 +30,19 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.util.Progressable;
 import org.apache.iceberg.aws.s3.S3FileIOProperties;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -50,19 +59,23 @@ import org.lance.namespace.model.DeregisterTableRequest;
 import org.lance.namespace.model.DeregisterTableResponse;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 public class TestLanceHiveCatalog {
 
   private static final String S3_ENDPOINT = "http://127.0.0.1:1";
+  private static final String S3_WAREHOUSE = "s3://filter-bucket/s1";
   private static HMSMockServer hms;
   private static RootAllocator allocator;
   private static LanceHiveCatalog catalog;
+  private static LanceHiveCatalog s3Catalog;
   private String database;
 
   private static final Schema SCHEMA =
@@ -88,15 +101,20 @@ public class TestLanceHiveCatalog {
   @BeforeAll
   public static void startMetastore() {
     hms = new HMSMockServer(new File("target/hive_warehouse"));
+    hms.hiveConf().set("fs.s3.impl", InMemoryS3FileSystem.class.getName());
     hms.start();
     allocator = new RootAllocator(Long.MAX_VALUE);
     Map<String, String> properties = new HashMap<>();
-    properties.put("warehouse", hms.getWareHouseLocation());
+    properties.put("warehouse", "file://" + hms.getWareHouseLocation());
     properties.put("uri", hms.hiveConf().get(HiveConf.ConfVars.METASTOREURIS.varname));
     properties.put(S3FileIOProperties.ENDPOINT, S3_ENDPOINT);
     properties.put(S3FileIOProperties.ACCESS_KEY_ID, "test-key");
     properties.put(S3FileIOProperties.SECRET_ACCESS_KEY, "test-secret");
     catalog = new LanceHiveCatalog("lance_hive", properties, TableMetaStore.EMPTY);
+
+    Map<String, String> s3Properties = new HashMap<>(properties);
+    s3Properties.put("warehouse", S3_WAREHOUSE);
+    s3Catalog = new LanceHiveCatalog("lance_s3", s3Properties, TableMetaStore.EMPTY);
   }
 
   @BeforeEach
@@ -206,5 +224,110 @@ public class TestLanceHiveCatalog {
 
     Assertions.assertFalse(catalog.dropTable(database, "hive_tbl", true));
     Assertions.assertTrue(hms.getClient().tableExists(database, "hive_tbl"));
+  }
+
+  /** One HMS serves several catalogs; each lists only its own warehouse. */
+  @Test
+  public void testCatalogOnlyListsDatabasesUnderOwnWarehouse() throws Exception {
+    createTable("local_tbl");
+    String foreign = "foreign_" + UUID.randomUUID().toString().replace("-", "");
+    Database foreignDb = new Database();
+    foreignDb.setCatalogName(Hive3NamespaceConfig.CATALOG_NAME);
+    foreignDb.setName(foreign);
+    foreignDb.setLocationUri(S3_WAREHOUSE + "/" + foreign);
+    hms.getClient().createDatabase(foreignDb);
+    try {
+      List<String> localDatabases = catalog.listDatabases();
+      Assertions.assertTrue(localDatabases.contains(database));
+      Assertions.assertFalse(localDatabases.contains(foreign));
+      Assertions.assertEquals(Collections.singletonList("local_tbl"), catalog.listTables(database));
+      Assertions.assertTrue(s3Catalog.listDatabases().contains(foreign));
+      Assertions.assertTrue(s3Catalog.listTables(database).isEmpty());
+    } finally {
+      hms.getClient().dropDatabase(foreign, true, true, true);
+    }
+  }
+
+  @Test
+  public void testHmsReadableUri() {
+    Assertions.assertEquals(
+        "file:/p", LanceHiveCatalog.hmsReadableUri(new Path("file:///p").toUri()));
+    Assertions.assertEquals("file:/p", LanceHiveCatalog.hmsReadableUri(new Path("/p").toUri()));
+    Assertions.assertEquals(
+        "s3://bucket", LanceHiveCatalog.hmsReadableUri(new Path("s3://bucket/").toUri()));
+    Assertions.assertEquals(
+        "s3://bucket/s1", LanceHiveCatalog.hmsReadableUri(new Path("s3://bucket/s1/").toUri()));
+  }
+
+  /** Stub filesystem so the metastore can resolve s3:// locations. */
+  public static class InMemoryS3FileSystem extends FileSystem {
+    private URI uri = URI.create("s3://filter-bucket");
+
+    @Override
+    public void initialize(URI name, Configuration conf) {
+      this.uri = URI.create(name.getScheme() + "://" + name.getAuthority());
+    }
+
+    @Override
+    public URI getUri() {
+      return uri;
+    }
+
+    @Override
+    public FSDataInputStream open(Path f, int bufferSize) throws IOException {
+      throw new IOException("open is not supported");
+    }
+
+    @Override
+    public FSDataOutputStream create(
+        Path f,
+        FsPermission permission,
+        boolean overwrite,
+        int bufferSize,
+        short replication,
+        long blockSize,
+        Progressable progress)
+        throws IOException {
+      throw new IOException("create is not supported");
+    }
+
+    @Override
+    public FSDataOutputStream append(Path f, int bufferSize, Progressable progress)
+        throws IOException {
+      throw new IOException("append is not supported");
+    }
+
+    @Override
+    public boolean rename(Path src, Path dst) {
+      return true;
+    }
+
+    @Override
+    public boolean delete(Path f, boolean recursive) {
+      return true;
+    }
+
+    @Override
+    public FileStatus[] listStatus(Path f) {
+      return new FileStatus[0];
+    }
+
+    @Override
+    public void setWorkingDirectory(Path newDir) {}
+
+    @Override
+    public Path getWorkingDirectory() {
+      return new Path("/");
+    }
+
+    @Override
+    public boolean mkdirs(Path f, FsPermission permission) {
+      return true;
+    }
+
+    @Override
+    public FileStatus getFileStatus(Path f) {
+      return new FileStatus(0, true, 1, 0, System.currentTimeMillis(), f);
+    }
   }
 }
