@@ -45,6 +45,8 @@ import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.UnpartitionedWriter;
+import org.apache.iceberg.mapping.NameMapping;
+import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.parquet.ParquetIOBridge;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.parquet.hadoop.ParquetFileReader;
@@ -63,8 +65,6 @@ import java.util.UUID;
 /** OptimizingExecutor for iceberg format. */
 public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergRewriteExecutor.class);
-  private static final String PARQUET_BLOOM_FILTER_ENABLED_PREFIX =
-      "write.parquet.bloom-filter-enabled";
   private FileSchemaContext fileSchemaContext;
 
   private static class FileSchemaContext {
@@ -162,21 +162,20 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
 
   @Override
   protected List<DataFile> rewriterDataFiles() throws Exception {
-    if (!canParquetRowGroupMerge()) {
-      return super.rewriterDataFiles();
-    }
-
     try {
-      LOG.debug(
-          "Starting parquet row-group merge for {} files.", input.rewrittenDataFiles().length);
-      List<DataFile> dataFiles = parquetRowGroupMergeFiles();
-      LOG.debug("Parquet row-group merge completed successfully");
+      if (canParquetRowGroupMerge()) {
+        LOG.debug(
+            "Starting parquet row-group merge for {} files.", input.rewrittenDataFiles().length);
+        List<DataFile> dataFiles = parquetRowGroupMergeFiles();
+        LOG.debug("Parquet row-group merge completed successfully");
 
-      return dataFiles;
+        return dataFiles;
+      }
     } catch (Exception e) {
       LOG.warn("Parquet row-group merge failed, falling back to row-based rewrite", e);
-      return super.rewriterDataFiles();
     }
+
+    return super.rewriterDataFiles();
   }
 
   protected boolean canParquetRowGroupMerge() {
@@ -188,7 +187,6 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
         && hasNoEncryptedDataFiles()
         && hasNoReadOnlyDeleteFiles()
         && hasNoRewrittenDeleteFiles()
-        && hasNoBloomFilter()
         && allFilesHaveCurrentSpecId()
         && canPrepareParquetSchemaContext();
   }
@@ -278,6 +276,9 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
     ParquetFileMergeRunner parquetFileMergeRunner = null;
 
     try {
+      String nameMappingJson = table.properties().get(TableProperties.DEFAULT_NAME_MAPPING);
+      NameMapping nameMapping =
+          nameMappingJson == null ? null : NameMappingParser.fromJson(nameMappingJson);
       for (int i = 0; i < fileSchemaContext.inputFiles.size(); i++) {
         InputFile inputFile = fileSchemaContext.inputFiles.get(i);
         long fileSize = fileSchemaContext.fileSizes.get(i);
@@ -295,7 +296,8 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
                   table.spec(),
                   partition(),
                   parquetRowGroupSize(),
-                  metricsConfig());
+                  metricsConfig(),
+                  nameMapping);
           EncryptedOutputFile outputFile = newRowGroupMergeOutputFile(outputFileFactory);
           parquetFileMergeRunner.start(outputFile);
           currentOutputSize = 0L;
@@ -406,21 +408,6 @@ public class IcebergRewriteExecutor extends AbstractRewriteFilesExecutor {
   private boolean hasNoRewrittenDeleteFiles() {
     return checkCondition(
         ArrayUtils.isEmpty(input.rewrittenDeleteFiles()), "has rewritten delete files");
-  }
-
-  private boolean hasNoBloomFilter() {
-    // Check if bloom filter is enabled by looking for properties
-    // with the prefix 'write.parquet.bloom-filter-enabled' and value 'true'
-    // such as 'write.parquet.bloom-filter-enabled.default' or
-    // 'write.parquet.bloom-filter-enabled.column.'.
-    for (Map.Entry<String, String> entry : table.properties().entrySet()) {
-      if (entry.getKey().startsWith(PARQUET_BLOOM_FILTER_ENABLED_PREFIX)
-          && Boolean.parseBoolean(entry.getValue())) {
-        return checkCondition(false, "table has bloom filter");
-      }
-    }
-
-    return true;
   }
 
   private long parquetRowGroupSize() {

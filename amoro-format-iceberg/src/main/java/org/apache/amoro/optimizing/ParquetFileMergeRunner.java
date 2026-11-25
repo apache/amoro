@@ -26,13 +26,22 @@ import org.apache.iceberg.MetricsConfig;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
+import org.apache.iceberg.encryption.EncryptionKeyMetadata;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.parquet.ParquetIOBridge;
 import org.apache.iceberg.parquet.ParquetUtil;
+import org.apache.parquet.column.ColumnDescriptor;
+import org.apache.parquet.column.values.bloomfilter.BloomFilter;
+import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
+import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
+import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
+import org.apache.parquet.internal.column.columnindex.ColumnIndex;
+import org.apache.parquet.io.SeekableInputStream;
 import org.apache.parquet.schema.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +83,7 @@ public final class ParquetFileMergeRunner implements Closeable {
   private final PartitionSpec spec;
   private final StructLike partition;
   private final MetricsConfig metricsConfig;
+  private final NameMapping nameMapping;
   private final FileIO io;
 
   private ParquetFileWriter writer;
@@ -89,6 +99,18 @@ public final class ParquetFileMergeRunner implements Closeable {
       StructLike partition,
       long rowGroupSize,
       MetricsConfig metricsConfig) {
+    this(io, parquetSchema, keyValueMetadata, spec, partition, rowGroupSize, metricsConfig, null);
+  }
+
+  public ParquetFileMergeRunner(
+      FileIO io,
+      MessageType parquetSchema,
+      Map<String, String> keyValueMetadata,
+      PartitionSpec spec,
+      StructLike partition,
+      long rowGroupSize,
+      MetricsConfig metricsConfig,
+      NameMapping nameMapping) {
     this.io = io;
     this.parquetSchema = parquetSchema;
     this.keyValueMetadata =
@@ -97,15 +119,20 @@ public final class ParquetFileMergeRunner implements Closeable {
     this.partition = partition;
     this.rowGroupSize = rowGroupSize;
     this.metricsConfig = metricsConfig;
+    this.nameMapping = nameMapping;
   }
 
   /**
    * Initializes the ParquetFileWriter for row-group merge.
    *
    * @param output encrypted output file destination
-   * @throws java.io.IOException if writer creation or writer start fails
+   * @throws java.io.IOException if output requires encryption or writer creation or start fails
    */
   public void start(EncryptedOutputFile output) throws IOException {
+    EncryptionKeyMetadata keyMetadata = output.keyMetadata();
+    if (keyMetadata != null && keyMetadata.buffer() != null) {
+      throw new IOException("Parquet row-group merge does not support encrypted output files.");
+    }
     this.outputFile = output;
     writer =
         new ParquetFileWriter(
@@ -117,13 +144,83 @@ public final class ParquetFileMergeRunner implements Closeable {
     writer.start();
   }
 
+  /**
+   * Appends a parquet file without row-level decode/encode.
+   *
+   * <p>Files with neither page indexes nor bloom filters use direct row-group copying. Other files
+   * use column-chunk copying to preserve their existing page indexes and bloom filters.
+   *
+   * @param inputFile source parquet file
+   * @throws java.io.IOException when reading or copying the source file fails
+   */
   public void appendFile(InputFile inputFile) throws IOException {
     if (writer == null) {
       throw new IllegalStateException("ParquetFileWriter not initialized. Call start() first.");
     }
 
     org.apache.parquet.io.InputFile file = ParquetIOBridge.file(inputFile);
-    writer.appendFile(file);
+    try (ParquetFileReader reader = ParquetFileReader.open(file)) {
+      if (!parquetSchema.equals(reader.getFileMetaData().getSchema())) {
+        throw new IOException(
+            "Cannot merge parquet file with a different schema: " + inputFile.location());
+      }
+
+      boolean hasIndexes =
+          reader.getRowGroups().stream()
+              .flatMap(group -> group.getColumns().stream())
+              .anyMatch(
+                  column ->
+                      column.getColumnIndexReference() != null
+                          || column.getOffsetIndexReference() != null
+                          || column.getBloomFilterOffset() >= 0);
+      if (!hasIndexes) {
+        // This is the appendFile() copy path, reusing the reader to avoid reopening the footer.
+        reader.appendTo(writer);
+        return;
+      }
+
+      try (SeekableInputStream dataStream = file.newStream()) {
+        appendColumnChunks(reader, dataStream, inputFile.location());
+      }
+    }
+  }
+
+  private void appendColumnChunks(
+      ParquetFileReader reader, SeekableInputStream dataStream, String location)
+      throws IOException {
+    for (BlockMetaData rg : reader.getRowGroups()) {
+      Map<ColumnPath, ColumnChunkMetaData> chunksByPath = new HashMap<>();
+      for (ColumnChunkMetaData chunk : rg.getColumns()) {
+        chunksByPath.put(chunk.getPath(), chunk);
+      }
+      writer.startBlock(rg.getRowCount());
+
+      // Use physical paths rather than column names to handle nested columns as well.
+      for (ColumnDescriptor column : parquetSchema.getColumns()) {
+        ColumnPath path = ColumnPath.get(column.getPath());
+        ColumnChunkMetaData chunk = chunksByPath.get(path);
+        if (chunk == null) {
+          throw new IOException("Missing parquet column " + path + " in " + location);
+        }
+
+        // Index reads seek within the reader; keep the compressed data stream independent.
+        // appendColumnChunk adjusts page offsets and retains indexes until writer.end().
+        BloomFilter bloomFilter = reader.readBloomFilter(chunk);
+        if (chunk.getBloomFilterOffset() >= 0 && bloomFilter == null) {
+          throw new IOException(
+              "Cannot preserve parquet bloom filter for " + path + " in " + location);
+        }
+        ColumnIndex columnIndex = reader.readColumnIndex(chunk);
+        if (chunk.getColumnIndexReference() != null && columnIndex == null) {
+          throw new IOException(
+              "Cannot preserve parquet column index for " + path + " in " + location);
+        }
+        writer.appendColumnChunk(
+            column, dataStream, chunk, bloomFilter, columnIndex, reader.readOffsetIndex(chunk));
+      }
+
+      writer.endBlock();
+    }
   }
 
   public DataFile result() throws IOException {
@@ -135,16 +232,17 @@ public final class ParquetFileMergeRunner implements Closeable {
     }
 
     writer.end(keyValueMetadata);
+    // After end() writes the footer, the stream position is the final file size.
+    // Row groups and column chunks are copied as raw bytes, so nothing is buffered in memory.
+    long fileSizeInBytes = writer.getPos();
     ParquetMetadata footer = writer.getFooter();
     writer.close();
     writer = null;
 
-    Metrics metrics = ParquetUtil.footerMetrics(footer, Stream.empty(), metricsConfig);
+    Metrics metrics = ParquetUtil.footerMetrics(footer, Stream.empty(), metricsConfig, nameMapping);
     List<Long> splitOffsets =
         footer.getBlocks().stream().map(BlockMetaData::getStartingPos).collect(Collectors.toList());
     long recordCount = footer.getBlocks().stream().mapToLong(BlockMetaData::getRowCount).sum();
-    long fileSizeInBytes =
-        io.newInputFile(outputFile.encryptingOutputFile().location()).getLength();
 
     DataFile result =
         DataFiles.builder(spec)
