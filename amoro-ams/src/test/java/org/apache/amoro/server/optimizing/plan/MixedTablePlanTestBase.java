@@ -85,6 +85,14 @@ public abstract class MixedTablePlanTestBase extends TableTestBase {
         .thenAnswer(f -> getCurrentChangeSnapshotId());
   }
 
+  protected void enableRoaringBitmapInPlanning() {
+    getMixedTable()
+        .updateProperties()
+        .set(TableProperties.SELF_OPTIMIZING_ROARING_BITMAP_IN_PLANNING_ENABLED, "true")
+        .commit();
+    Assert.assertTrue(getConfig().isUseRoaringBitmapInPlanning());
+  }
+
   private long getCurrentSnapshotId() {
     if (getMixedTable().isKeyedTable()) {
       return IcebergTableUtil.getSnapshotId(getMixedTable().asKeyedTable().baseTable(), false);

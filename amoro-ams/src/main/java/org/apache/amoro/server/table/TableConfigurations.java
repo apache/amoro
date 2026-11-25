@@ -356,7 +356,12 @@ public class TableConfigurations {
             PropertyUtil.propertyAsLong(
                 properties,
                 TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS,
-                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS_DEFAULT));
+                TableProperties.SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS_DEFAULT))
+        .setUseRoaringBitmapInPlanning(
+            PropertyUtil.propertyAsBoolean(
+                properties,
+                TableProperties.SELF_OPTIMIZING_ROARING_BITMAP_IN_PLANNING_ENABLED,
+                TableProperties.SELF_OPTIMIZING_ROARING_BITMAP_IN_PLANNING_ENABLED_DEFAULT));
   }
 
   /**

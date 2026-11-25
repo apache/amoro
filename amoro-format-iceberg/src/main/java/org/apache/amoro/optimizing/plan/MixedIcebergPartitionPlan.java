@@ -286,7 +286,7 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
     public List<SplitTask> splitTasks(int targetTaskCount) {
       List<SplitTask> result = Lists.newArrayList();
       FileTree rootTree = FileTree.newTreeRoot();
-      undersizedSegmentFiles.forEach(rootTree::addRewriteDataFile);
+      forEachUndersizedSegmentFile(rootTree::addRewriteDataFile);
       for (SplitTask splitTask : genSplitTasks(rootTree)) {
         if (splitTask.getRewriteDataFiles().size() > 1) {
           result.add(splitTask);
@@ -296,8 +296,8 @@ public class MixedIcebergPartitionPlan extends AbstractPartitionPlan {
       }
 
       rootTree = FileTree.newTreeRoot();
-      rewritePosDataFiles.forEach(rootTree::addRewritePosDataFile);
-      rewriteDataFiles.forEach(rootTree::addRewriteDataFile);
+      forEachRewritePosDataFile(rootTree::addRewritePosDataFile);
+      forEachRewriteDataFile(rootTree::addRewriteDataFile);
       result.addAll(genSplitTasks(rootTree));
       return result;
     }

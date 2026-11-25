@@ -106,6 +106,9 @@ public class OptimizingConfig {
   // self-optimizing.refresh-table.adaptive.increase-step-ms
   private long refreshTableAdaptiveIncreaseStepMs;
 
+  // self-optimizing.roaring-bitmap-in-planning.enabled
+  private boolean useRoaringBitmapInPlanning;
+
   public OptimizingConfig() {}
 
   public boolean isEnabled() {
@@ -366,6 +369,21 @@ public class OptimizingConfig {
     return this;
   }
 
+  /**
+   * Whether to use RoaringBitmap to index delete files during optimizing planning to reduce memory
+   * usage for tables with many delete files.
+   *
+   * @return true if RoaringBitmap-based planning is enabled
+   */
+  public boolean isUseRoaringBitmapInPlanning() {
+    return useRoaringBitmapInPlanning;
+  }
+
+  public OptimizingConfig setUseRoaringBitmapInPlanning(boolean useRoaringBitmapInPlanning) {
+    this.useRoaringBitmapInPlanning = useRoaringBitmapInPlanning;
+    return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -402,7 +420,8 @@ public class OptimizingConfig {
         && Objects.equal(evaluationFallbackInterval, that.evaluationFallbackInterval)
         && Objects.equal(refreshTableAdaptiveMaxIntervalMs, that.refreshTableAdaptiveMaxIntervalMs)
         && Objects.equal(
-            refreshTableAdaptiveIncreaseStepMs, that.refreshTableAdaptiveIncreaseStepMs);
+            refreshTableAdaptiveIncreaseStepMs, that.refreshTableAdaptiveIncreaseStepMs)
+        && useRoaringBitmapInPlanning == that.useRoaringBitmapInPlanning;
   }
 
   @Override
@@ -434,7 +453,8 @@ public class OptimizingConfig {
         evaluationMseTolerance,
         evaluationFallbackInterval,
         refreshTableAdaptiveMaxIntervalMs,
-        refreshTableAdaptiveIncreaseStepMs);
+        refreshTableAdaptiveIncreaseStepMs,
+        useRoaringBitmapInPlanning);
   }
 
   @Override
@@ -465,6 +485,7 @@ public class OptimizingConfig {
         .add("evaluationFallbackInterval", evaluationFallbackInterval)
         .add("refreshTableAdaptiveMaxIntervalMs", refreshTableAdaptiveMaxIntervalMs)
         .add("refreshTableAdaptiveIncreaseStepMs", refreshTableAdaptiveIncreaseStepMs)
+        .add("useRoaringBitmapInPlanning", useRoaringBitmapInPlanning)
         .toString();
   }
 }
