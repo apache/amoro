@@ -240,8 +240,12 @@ public class TableController {
     String amsUri = AmsUtil.getAMSThriftAddress(serviceConfig, Constants.THRIFT_TABLE_SERVICE_NAME);
     catalogMeta.putToCatalogProperties(CatalogMetaProperties.AMS_URI, amsUri);
     TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
-    // check whether catalog support MIXED_HIVE format.
+    // check whether catalog support HIVE and MIXED_HIVE format.
     Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
+    Preconditions.checkState(
+        tableFormats.contains(TableFormat.HIVE),
+        "Catalog %s does not support HIVE format",
+        catalog);
     Preconditions.checkState(
         tableFormats.contains(TableFormat.MIXED_HIVE),
         "Catalog %s does not support MIXED_HIVE format",
@@ -549,6 +553,10 @@ public class TableController {
         "catalog.database can not be empty in any element");
 
     ServerCatalog serverCatalog = catalogManager.getServerCatalog(catalog);
+    ctx.json(OkResponse.of(buildTableList(serverCatalog, db, keywords)));
+  }
+
+  public List<TableMeta> buildTableList(ServerCatalog serverCatalog, String db, String keywords) {
     Function<TableFormat, String> formatToType =
         format -> {
           if (format.equals(TableFormat.MIXED_HIVE) || format.equals(TableFormat.MIXED_ICEBERG)) {
@@ -581,27 +589,9 @@ public class TableController {
                   }
                 })
             .collect(Collectors.toList());
-    String catalogType = serverCatalog.getMetadata().getCatalogType();
-    if (catalogType.equals(CATALOG_TYPE_HIVE)) {
-      CatalogMeta catalogMeta = serverCatalog.getMetadata();
-      TableMetaStore tableMetaStore = CatalogUtil.buildMetaStore(catalogMeta);
-      HMSClientPool hmsClientPool =
-          new CachedHiveClientPool(tableMetaStore, catalogMeta.getCatalogProperties());
-
-      List<String> hiveTables = HiveTableUtil.getAllHiveTables(hmsClientPool, db);
-      Set<String> mixedHiveTables =
-          tables.stream().map(TableMeta::getName).collect(Collectors.toSet());
-      hiveTables.stream()
-          .filter(e -> !mixedHiveTables.contains(e))
-          .sorted(String::compareTo)
-          .forEach(e -> tables.add(new TableMeta(e, TableMeta.TableType.HIVE.toString())));
-    }
-
-    ctx.json(
-        OkResponse.of(
-            tables.stream()
-                .filter(t -> StringUtils.isBlank(keywords) || t.getName().contains(keywords))
-                .collect(Collectors.toList())));
+    return tables.stream()
+        .filter(t -> StringUtils.isBlank(keywords) || t.getName().contains(keywords))
+        .collect(Collectors.toList());
   }
 
   /**
@@ -613,11 +603,33 @@ public class TableController {
     String catalog = ctx.pathParam("catalog");
     String keywords = ctx.queryParam("keywords");
 
-    List<String> dbList =
-        catalogManager.getServerCatalog(catalog).listDatabases().stream()
-            .filter(item -> StringUtils.isBlank(keywords) || item.contains(keywords))
-            .collect(Collectors.toList());
-    ctx.json(OkResponse.of(dbList));
+    ServerCatalog serverCatalog = catalogManager.getServerCatalog(catalog);
+    ctx.json(OkResponse.of(buildDatabaseList(serverCatalog, keywords)));
+  }
+
+  public List<String> buildDatabaseList(ServerCatalog serverCatalog, String keywords) {
+    List<String> databases =
+        CATALOG_TYPE_HIVE.equals(serverCatalog.getMetadata().getCatalogType())
+            ? listHmsCatalogDatabases(serverCatalog)
+            : serverCatalog.listDatabases();
+    return databases.stream()
+        .filter(item -> StringUtils.isBlank(keywords) || item.contains(keywords))
+        .collect(Collectors.toList());
+  }
+
+  /** Keeping only those holding tables of selected formats. */
+  private List<String> listHmsCatalogDatabases(ServerCatalog serverCatalog) {
+    return serverCatalog.listDatabases().stream()
+        .filter(
+            database -> {
+              try {
+                return !serverCatalog.listTables(database).isEmpty();
+              } catch (RuntimeException e) {
+                LOG.warn("Failed to list tables of database {}, keep it visible.", database, e);
+                return true;
+              }
+            })
+        .collect(Collectors.toList());
   }
 
   /**
