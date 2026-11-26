@@ -164,8 +164,10 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
         getContainerProperties()
             .getOrDefault(
                 OptimizerProperties.EXPORT_PROPERTY_PREFIX + ENV_HADOOP_USER_NAME, "hadoop");
+    String proxyUserOption = StringUtils.isBlank(proxyUser) ? "" : " --proxy-user " + proxyUser;
     String jobArgs = super.buildOptimizerStartupArgsString(resource);
-    // ./bin/spark-submit --master <master> --deploy-mode=<sparkMode> <options> --proxy-user <user>
+    // ./bin/spark-submit --master <master> --deploy-mode=<sparkMode> <options> [--proxy-user
+    // <user>]
     // --name <appName>
     // --class
     // <main-class>
@@ -173,12 +175,12 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
     // <arguments>
     //  options: --conf <property=value>
     return String.format(
-        "%s/bin/spark-submit --master %s --deploy-mode=%s %s --proxy-user %s --name %s --class %s %s %s",
+        "%s/bin/spark-submit --master %s --deploy-mode=%s %s%s --name %s --class %s %s %s",
         sparkHome,
         sparkMaster,
         deployMode.getValue(),
         sparkOptions,
-        proxyUser,
+        proxyUserOption,
         String.join(
             "-", "Amoro-spark-optimizer", resource.getGroupName(), resource.getResourceId()),
         SPARK_JOB_MAIN_CLASS,

@@ -212,6 +212,12 @@ The spark optimizer may fail due to class conflicts sometimes, you can try to fi
 * Set `spark-conf.spark.executor.userClassPathFirst` to `true`.
 {{< /hint >}}
 
+To submit as the already authenticated service identity without impersonation, set
+`export.HADOOP_USER_NAME: ""` in the Spark container properties. This omits
+`--proxy-user` from `spark-submit`. If the property is not set, Amoro keeps the
+default proxy user `hadoop`. A non-empty value keeps its existing proxy behavior.
+The Spark submitter must still have valid credentials for the target cluster.
+
 An example for yarn client mode:
 
 ```yaml
