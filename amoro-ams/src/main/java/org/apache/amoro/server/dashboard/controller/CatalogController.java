@@ -18,6 +18,7 @@
 
 package org.apache.amoro.server.dashboard.controller;
 
+import static org.apache.amoro.TableFormat.HIVE;
 import static org.apache.amoro.TableFormat.HUDI;
 import static org.apache.amoro.TableFormat.ICEBERG;
 import static org.apache.amoro.TableFormat.LANCE;
@@ -143,6 +144,8 @@ public class CatalogController {
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, HUDI));
     VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_HIVE, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, HIVE));
+    VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(
             CATALOG_TYPE_HADOOP, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, MIXED_ICEBERG));
     VALIDATE_CATALOGS.add(
@@ -160,6 +163,8 @@ public class CatalogController {
         CatalogDescriptor.of(CATALOG_TYPE_FILESYSTEM, STORAGE_CONFIGS_VALUE_TYPE_LOCAL, ICEBERG));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_FILESYSTEM, STORAGE_CONFIGS_VALUE_TYPE_HADOOP, PAIMON));
+    VALIDATE_CATALOGS.add(
+        CatalogDescriptor.of(CATALOG_TYPE_FILESYSTEM, STORAGE_CONFIGS_VALUE_TYPE_LOCAL, PAIMON));
     VALIDATE_CATALOGS.add(
         CatalogDescriptor.of(CATALOG_TYPE_FILESYSTEM, STORAGE_CONFIGS_VALUE_TYPE_S3, PAIMON));
     VALIDATE_CATALOGS.add(

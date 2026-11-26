@@ -69,7 +69,8 @@ public class CatalogBuilder {
               TableFormat.MIXED_HIVE,
               TableFormat.PAIMON,
               TableFormat.HUDI,
-              TableFormat.LANCE),
+              TableFormat.LANCE,
+              TableFormat.HIVE),
           CATALOG_TYPE_AMS,
           Sets.newHashSet(TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG));
 

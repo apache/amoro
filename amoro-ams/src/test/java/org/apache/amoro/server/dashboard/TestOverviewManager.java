@@ -150,4 +150,19 @@ public class TestOverviewManager extends AMSTableTestBase {
     allTopTableItem = overviewManager.getAllTopTableItem();
     Assertions.assertEquals(100, allTopTableItem.get(0).getHealthScore());
   }
+
+  @Test
+  public void testTopTableCacheSnapshotPublication() {
+    List<OverviewTopTableItem> initialSnapshot = overviewManager.getAllTopTableItem();
+
+    Assertions.assertSame(initialSnapshot, overviewManager.getAllTopTableItem());
+    Assertions.assertThrows(UnsupportedOperationException.class, initialSnapshot::clear);
+
+    overviewManager.refresh();
+
+    List<OverviewTopTableItem> refreshedSnapshot = overviewManager.getAllTopTableItem();
+    Assertions.assertNotSame(initialSnapshot, refreshedSnapshot);
+    Assertions.assertSame(refreshedSnapshot, overviewManager.getAllTopTableItem());
+    Assertions.assertEquals(initialSnapshot.size(), refreshedSnapshot.size());
+  }
 }
