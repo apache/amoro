@@ -22,7 +22,6 @@ import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.resource.Resource;
 import org.apache.amoro.server.utils.FlinkClientUtil;
 import org.apache.amoro.shade.guava32.com.google.common.annotations.VisibleForTesting;
-import org.apache.amoro.shade.guava32.com.google.common.base.Function;
 import org.apache.amoro.shade.guava32.com.google.common.base.Joiner;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.base.Supplier;
@@ -55,10 +54,8 @@ import org.apache.flink.runtime.webmonitor.handlers.JarUploadResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -75,8 +72,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
@@ -101,19 +96,7 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
   public static final String KUBERNETES_CLUSTER_ID_PROPERTY = "kubernetes-cluster-id";
   public static final String SESSION_CLUSTER_JOB_ID = "session-cluster-job-id";
 
-  private static final Pattern APPLICATION_ID_PATTERN =
-      Pattern.compile("(.*)application_(\\d+)_(\\d+)");
-  private static final int MAX_READ_APP_ID_TIME = 600000; // 10 min
   private static final long FLINK_CLIENT_TIMEOUT_SECOND_DEFAULT = 30; // 30s
-
-  private static final Function<String, String> yarnApplicationIdReader =
-      readLine -> {
-        Matcher matcher = APPLICATION_ID_PATTERN.matcher(readLine);
-        if (matcher.matches()) {
-          return String.format("application_%s_%s", matcher.group(2), matcher.group(3));
-        }
-        return null;
-      };
 
   private final Supplier<ExecutorService> clientExecutorServiceSupplier =
       Suppliers.memoize(
@@ -168,6 +151,9 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
 
   @Override
   protected Map<String, String> doScaleOut(Resource resource) {
+    if (target == Target.YARN_PER_JOB || target == Target.YARN_APPLICATION) {
+      resource.getProperties().remove(YARN_APPLICATION_ID_PROPERTY);
+    }
     if (target.runByFlinkRestClient()) {
       try {
         Configuration configuration =
@@ -184,20 +170,29 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
       }
     } else {
       String startUpArgs = this.buildOptimizerStartupArgsString(resource);
-      Runtime runtime = Runtime.getRuntime();
       try {
         String exportCmd = String.join(" && ", exportSystemProperties());
         String startUpCmd = String.format("%s && %s", exportCmd, startUpArgs);
         String[] cmd = {"/bin/sh", "-c", startUpCmd};
         LOG.info("Starting flink optimizer using command : {}", startUpCmd);
-        Process exec = runtime.exec(cmd);
+        ProcessBuilder processBuilder = new ProcessBuilder(cmd);
+        if (target == Target.YARN_PER_JOB || target == Target.YARN_APPLICATION) {
+          processBuilder.redirectErrorStream(true);
+        }
+        Process exec = processBuilder.start();
         Map<String, String> startUpStatesMap = Maps.newHashMap();
         switch (target) {
           case YARN_PER_JOB:
           case YARN_APPLICATION:
-            String applicationId = fetchCommandOutput(exec, yarnApplicationIdReader);
+            String applicationId =
+                YarnApplicationIdReader.read(
+                    exec, YarnApplicationIdReader.Engine.FLINK, line -> LOG.info("{}", line));
             if (applicationId != null) {
               startUpStatesMap.put(YARN_APPLICATION_ID_PROPERTY, applicationId);
+            } else {
+              LOG.warn(
+                  "Unable to confirm Flink YARN application ID from submission output; "
+                      + "startup state remains unknown.");
             }
             break;
           case KUBERNETES_APPLICATION:
@@ -360,29 +355,6 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
     }
 
     return MemorySize.parse(memoryStr).getMebiBytes();
-  }
-
-  private <T> T fetchCommandOutput(Process exec, Function<String, T> commandReader) {
-    T value = null;
-    try (InputStreamReader inputStreamReader = new InputStreamReader(exec.getInputStream())) {
-      try (BufferedReader bufferedReader = new BufferedReader(inputStreamReader)) {
-        long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime < MAX_READ_APP_ID_TIME) {
-          String readLine = bufferedReader.readLine();
-          if (readLine == null) {
-            break;
-          }
-          LOG.info("{}", readLine);
-          if ((value = commandReader.apply(readLine)) != null) {
-            break;
-          }
-        }
-        return value;
-      }
-    } catch (IOException e) {
-      LOG.error("Read application id from output failed", e);
-      return null;
-    }
   }
 
   @Override

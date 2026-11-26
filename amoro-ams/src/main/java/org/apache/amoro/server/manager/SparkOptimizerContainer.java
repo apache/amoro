@@ -20,7 +20,6 @@ package org.apache.amoro.server.manager;
 
 import org.apache.amoro.OptimizerProperties;
 import org.apache.amoro.resource.Resource;
-import org.apache.amoro.shade.guava32.com.google.common.base.Function;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
@@ -28,16 +27,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class SparkOptimizerContainer extends AbstractOptimizerContainer {
@@ -53,17 +48,6 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
   public static final String SPARK_JOB_URI = "job-uri";
   public static final String YARN_APPLICATION_ID_PROPERTY = "yarn-application-id";
   public static final String KUBERNETES_SUBMISSION_ID_PROPERTY = "kubernetes-submission-id";
-  private static final Pattern APPLICATION_ID_PATTERN =
-      Pattern.compile("(.*)application_(\\d+)_(\\d+)");
-  private static final int MAX_READ_APP_ID_TIME = 600000; // 10 min
-  private static final Function<String, String> yarnApplicationIdReader =
-      readLine -> {
-        Matcher matcher = APPLICATION_ID_PATTERN.matcher(readLine);
-        if (matcher.matches()) {
-          return String.format("application_%s_%s", matcher.group(2), matcher.group(3));
-        }
-        return null;
-      };
   private String sparkMaster;
   private DeployMode deployMode;
   private String sparkHome;
@@ -106,6 +90,9 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
 
   @Override
   protected Map<String, String> doScaleOut(Resource resource) {
+    if (!deployedOnKubernetes()) {
+      resource.getProperties().remove(YARN_APPLICATION_ID_PROPERTY);
+    }
     String startUpArgs = this.buildOptimizerStartupArgsString(resource);
     try {
       String exportCmd = String.join(" && ", exportSystemProperties());
@@ -126,9 +113,15 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
             KUBERNETES_SUBMISSION_ID_PROPERTY,
             String.format("%s:%s", namespace, kubernetesDriverName(resource)));
       } else {
-        String applicationId = fetchCommandOutput(exec, yarnApplicationIdReader);
+        String applicationId =
+            YarnApplicationIdReader.read(
+                exec, YarnApplicationIdReader.Engine.SPARK, line -> LOG.info("{}", line));
         if (applicationId != null) {
           startUpStatesMap.put(YARN_APPLICATION_ID_PROPERTY, applicationId);
+        } else {
+          LOG.warn(
+              "Unable to confirm Spark YARN application ID from submission output; "
+                  + "startup state remains unknown.");
         }
       }
       return startUpStatesMap;
@@ -230,29 +223,6 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
         "spark-native-kubernetes");
     sparkConf.putToOptions(
         SparkConfKeys.KUBERNETES_EXECUTOR_LABEL_PREFIX + "optimizer-id", resource.getResourceId());
-  }
-
-  private <T> T fetchCommandOutput(Process exec, Function<String, T> commandReader) {
-    T value = null;
-    try (InputStreamReader inputStreamReader = new InputStreamReader(exec.getInputStream())) {
-      try (BufferedReader bufferedReader = new BufferedReader(inputStreamReader)) {
-        long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime < MAX_READ_APP_ID_TIME) {
-          String readLine = bufferedReader.readLine();
-          if (readLine == null) {
-            break;
-          }
-          LOG.info("{}", readLine);
-          if ((value = commandReader.apply(readLine)) != null) {
-            break;
-          }
-        }
-        return value;
-      }
-    } catch (IOException e) {
-      LOG.error("Read application id from output failed", e);
-      return null;
-    }
   }
 
   @Override
