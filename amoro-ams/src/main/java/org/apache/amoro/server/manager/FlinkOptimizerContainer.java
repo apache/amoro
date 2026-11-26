@@ -52,15 +52,18 @@ import org.apache.flink.runtime.webmonitor.handlers.JarRunRequestBody;
 import org.apache.flink.runtime.webmonitor.handlers.JarRunResponseBody;
 import org.apache.flink.runtime.webmonitor.handlers.JarUploadHeaders;
 import org.apache.flink.runtime.webmonitor.handlers.JarUploadResponseBody;
+import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -103,6 +106,10 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
 
   private static final Pattern APPLICATION_ID_PATTERN =
       Pattern.compile("(.*)application_(\\d+)_(\\d+)");
+  private static final Pattern FLINK_JOB_ID_PATTERN = Pattern.compile("[0-9a-fA-F]{32}");
+  private static final Pattern YARN_REPORT_FIELD =
+      Pattern.compile("(Application-Id|Application-Name|State|Diagnostics)\\s*:\\s*(.*)");
+  private static final int YARN_REPORT_HEADER_BYTES = 64 * 1024;
   private static final int MAX_READ_APP_ID_TIME = 600000; // 10 min
   private static final long FLINK_CLIENT_TIMEOUT_SECOND_DEFAULT = 30; // 30s
 
@@ -235,10 +242,7 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
         FlinkConfKeys.TASK_MANAGER_TOTAL_PROCESS_MEMORY,
         MemorySize.ofMebiBytes(taskManagerMemory).toString());
     resourceFlinkConf.putToOptions(
-        FlinkConfKeys.YARN_APPLICATION_JOB_NAME,
-        String.join(
-            "-", "Amoro-flink-optimizer", resource.getGroupName(), resource.getResourceId()));
-
+        FlinkConfKeys.YARN_APPLICATION_JOB_NAME, yarnApplicationName(resource));
     String flinkAction = target.isApplicationMode() ? "run-application" : "run";
     if (Target.KUBERNETES_APPLICATION == target) {
       addKubernetesProperties(resource, resourceFlinkConf);
@@ -419,8 +423,8 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
       switch (target) {
         case YARN_APPLICATION:
         case YARN_PER_JOB:
-          releaseCommand = buildReleaseYarnCommand(resource);
-          break;
+          releaseYarnResource(resource);
+          return;
         case KUBERNETES_APPLICATION:
           releaseCommand = buildReleaseKubernetesCommand(resource);
           break;
@@ -440,21 +444,140 @@ public class FlinkOptimizerContainer extends AbstractOptimizerContainer {
     }
   }
 
-  private String buildReleaseYarnCommand(Resource resource) {
-    Preconditions.checkArgument(
-        resource.getProperties().containsKey(YARN_APPLICATION_ID_PROPERTY),
-        "Cannot find %s from optimizer start up stats",
-        YARN_APPLICATION_ID_PROPERTY);
+  private void releaseYarnResource(Resource resource) {
     String applicationId = resource.getProperties().get(YARN_APPLICATION_ID_PROPERTY);
-    String options = "-Dyarn.application.id=" + applicationId;
-
     Preconditions.checkArgument(
-        resource.getProperties().containsKey(Resource.PROPERTY_JOB_ID),
-        "Cannot find %s from optimizer properties",
-        Resource.PROPERTY_JOB_ID);
-    String jobId = resource.getProperties().get(Resource.PROPERTY_JOB_ID);
-    return String.format(
-        "%s/bin/flink cancel -t %s %s %s", flinkHome, target.getValue(), options, jobId);
+        applicationId != null && applicationId.matches("application_[0-9]+_[0-9]+"),
+        "Missing or invalid YARN application ID");
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(resource.getGroupName())
+            && StringUtils.isNotBlank(resource.getResourceId()),
+        "Cannot identify the Flink optimizer resource");
+    String applicationName = yarnApplicationName(resource);
+    long deadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(flinkClientTimeoutSecond);
+    Exception cancelFailure = null;
+    try {
+      List<String> exports = exportSystemProperties();
+      if (isYarnApplicationTerminal(exports, deadlineNanos, applicationId, applicationName)) {
+        return;
+      }
+
+      String jobId = resource.getProperties().get(Resource.PROPERTY_JOB_ID);
+      Preconditions.checkArgument(
+          jobId != null && FLINK_JOB_ID_PATTERN.matcher(jobId).matches(),
+          "Missing or invalid Flink optimizer job ID");
+      try {
+        ExecUtil.exec(
+            ExecUtil.shellCommand(
+                exports,
+                "exec \"$@\"",
+                flinkHome + "/bin/flink",
+                "cancel",
+                "-t",
+                target.getValue(),
+                "-Dyarn.application.id=" + applicationId,
+                jobId),
+            deadlineNanos,
+            "Cancel Flink optimizer job");
+      } catch (IOException | IllegalStateException e) {
+        // The job may disappear between the initial check and cancel. Only RM can confirm release.
+        cancelFailure = e;
+      }
+
+      while (deadlineNanos - System.nanoTime() > 0) {
+        if (isYarnApplicationTerminal(exports, deadlineNanos, applicationId, applicationName)) {
+          return;
+        }
+        TimeUnit.NANOSECONDS.sleep(
+            Math.min(TimeUnit.SECONDS.toNanos(1), deadlineNanos - System.nanoTime()));
+      }
+      throw new IllegalStateException("Timed out waiting for YARN application to terminate");
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      if (cancelFailure != null) {
+        e.addSuppressed(cancelFailure);
+      }
+      throw new IllegalStateException(
+          "Interrupted while releasing Flink YARN application " + applicationId, e);
+    } catch (IOException | IllegalStateException e) {
+      if (cancelFailure != null) {
+        cancelFailure.addSuppressed(e);
+      }
+      throw new IllegalStateException(
+          "Failed to confirm release of Flink YARN application " + applicationId,
+          cancelFailure == null ? e : cancelFailure);
+    }
+  }
+
+  private static boolean isYarnApplicationTerminal(
+      List<String> exports, long deadlineNanos, String applicationId, String applicationName)
+      throws IOException, InterruptedException {
+    Path report = Files.createTempFile("amoro-yarn-application-", ".report");
+    String header;
+    try {
+      ExecUtil.exec(
+          ExecUtil.shellCommand(
+                  exports,
+                  "YARN_BIN_HOME=${HADOOP_YARN_HOME:-${HADOOP_HOME:-}} && "
+                      + "exec \"${YARN_BIN_HOME:+$YARN_BIN_HOME/bin/}yarn\" \"$@\"",
+                  "application",
+                  "-status",
+                  applicationId)
+              .redirectOutput(report.toFile()),
+          deadlineNanos,
+          "Read YARN application " + applicationId);
+      try (InputStream stdout = Files.newInputStream(report)) {
+        header = new String(stdout.readNBytes(YARN_REPORT_HEADER_BYTES), StandardCharsets.UTF_8);
+      }
+    } finally {
+      Files.deleteIfExists(report);
+    }
+    Map<String, String> fields = new HashMap<>();
+    // Bound the read even for large diagnostics, and do not trust a partial last line.
+    for (String line : header.substring(0, header.lastIndexOf('\n') + 1).split("\n")) {
+      Matcher field = YARN_REPORT_FIELD.matcher(line.trim());
+      if (!field.matches()) {
+        continue;
+      }
+      if ("Diagnostics".equals(field.group(1))) {
+        // Multiline diagnostics are free text and may look like the report fields.
+        break;
+      }
+      Preconditions.checkState(
+          fields.putIfAbsent(field.group(1), field.group(2)) == null,
+          "Ambiguous YARN report for %s",
+          applicationId);
+    }
+    Preconditions.checkState(
+        deadlineNanos - System.nanoTime() > 0,
+        "Reading YARN report for %s timed out",
+        applicationId);
+    if (!applicationId.equals(fields.get("Application-Id"))
+        || !applicationName.equals(fields.get("Application-Name"))) {
+      throw new IllegalStateException(
+          "YARN report does not identify the optimizer application " + applicationId);
+    }
+    String state = fields.get("State");
+    if (state == null) {
+      throw new IllegalStateException("Missing YARN state for " + applicationId);
+    }
+    try {
+      switch (YarnApplicationState.valueOf(state)) {
+        case FINISHED:
+        case FAILED:
+        case KILLED:
+          return true;
+        default:
+          return false;
+      }
+    } catch (IllegalArgumentException e) {
+      throw new IllegalStateException("Invalid YARN state for " + applicationId);
+    }
+  }
+
+  private static String yarnApplicationName(Resource resource) {
+    return String.join(
+        "-", "Amoro-flink-optimizer", resource.getGroupName(), resource.getResourceId());
   }
 
   private String buildReleaseKubernetesCommand(Resource resource) {

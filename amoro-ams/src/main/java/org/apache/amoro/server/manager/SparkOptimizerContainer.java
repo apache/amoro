@@ -23,7 +23,9 @@ import org.apache.amoro.resource.Resource;
 import org.apache.amoro.shade.guava32.com.google.common.base.Function;
 import org.apache.amoro.shade.guava32.com.google.common.base.Preconditions;
 import org.apache.amoro.shade.guava32.com.google.common.collect.Maps;
+import org.apache.amoro.utils.PropertyUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
@@ -32,10 +34,20 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -53,6 +65,9 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
   public static final String SPARK_JOB_URI = "job-uri";
   public static final String YARN_APPLICATION_ID_PROPERTY = "yarn-application-id";
   public static final String KUBERNETES_SUBMISSION_ID_PROPERTY = "kubernetes-submission-id";
+  private static final String YARN_CLIENT_DRIVER_PROPERTY = "yarn-client-driver";
+  private static final int YARN_KILL_TIMEOUT_SECONDS = 60;
+  private static final long DRIVER_SHUTDOWN_GRACE_MS = 15_000;
   private static final Pattern APPLICATION_ID_PATTERN =
       Pattern.compile("(.*)application_(\\d+)_(\\d+)");
   private static final int MAX_READ_APP_ID_TIME = 600000; // 10 min
@@ -108,12 +123,29 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
   protected Map<String, String> doScaleOut(Resource resource) {
     String startUpArgs = this.buildOptimizerStartupArgsString(resource);
     try {
+      boolean yarnClient = isYarnClientMode();
+      String driverHost = yarnClient ? InetAddress.getLocalHost().getHostName() : null;
       String exportCmd = String.join(" && ", exportSystemProperties());
-      String startUpCmd = String.format("%s && %s", exportCmd, startUpArgs);
+      // spark-submit execs the JVM. Replace the shell too so this PID identifies the driver.
+      String startUpCmd =
+          String.format("%s && %s%s", exportCmd, yarnClient ? "exec " : "", startUpArgs);
       String[] cmd = {"/bin/sh", "-c", startUpCmd};
-      LOG.info("Starting spark optimizer using command : {}", startUpCmd);
+      if (yarnClient) {
+        LOG.info("Starting Spark YARN client optimizer {}", resource.getResourceId());
+      } else {
+        LOG.info("Starting spark optimizer using command : {}", startUpCmd);
+      }
       Process exec = new ProcessBuilder(cmd).redirectErrorStream(true).start();
       Map<String, String> startUpStatesMap = Maps.newHashMap();
+      if (yarnClient) {
+        Optional<Instant> startedAt = exec.info().startInstant();
+        if (!startedAt.isPresent()) {
+          exec.destroy();
+          throw new IllegalStateException("Cannot identify the Spark YARN client driver process");
+        }
+        startUpStatesMap.put(
+            YARN_CLIENT_DRIVER_PROPERTY, driverHost + ":" + exec.pid() + ":" + startedAt.get());
+      }
       if (deployedOnKubernetes()) {
         SparkOptimizerContainer.SparkConf sparkConf =
             SparkOptimizerContainer.SparkConf.buildFor(loadSparkConfig(), getContainerProperties())
@@ -200,6 +232,10 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
     return sparkMaster.startsWith("k8s://");
   }
 
+  private boolean isYarnClientMode() {
+    return "yarn".equals(sparkMaster) && deployMode == DeployMode.CLIENT;
+  }
+
   private void addKubernetesProperties(
       Resource resource, SparkOptimizerContainer.SparkConf sparkConf) {
     sparkConf.putToOptions(
@@ -257,12 +293,11 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
 
   @Override
   public void releaseResource(Resource resource) {
-    String releaseCommand;
-    if (deployedOnKubernetes()) {
-      releaseCommand = buildReleaseKubernetesCommand(resource);
-    } else {
-      releaseCommand = buildReleaseYarnCommand(resource);
+    if ("yarn".equals(sparkMaster)) {
+      releaseYarnResource(resource);
+      return;
     }
+    String releaseCommand = buildReleaseKubernetesCommand(resource);
     try {
       String exportCmd = String.join(" && ", exportSystemProperties());
       String releaseCmd = exportCmd + " && " + releaseCommand;
@@ -274,14 +309,133 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
     }
   }
 
-  private String buildReleaseYarnCommand(Resource resource) {
+  private void releaseYarnResource(Resource resource) {
+    // SparkOptimizer reports the ID from its SparkContext. A legacy log match alone
+    // does not establish that the application belongs to this optimizer.
+    String applicationId = resource.getProperties().get(Resource.PROPERTY_JOB_ID);
     Preconditions.checkArgument(
-        resource.getProperties().containsKey(YARN_APPLICATION_ID_PROPERTY),
-        "Cannot find %s from optimizer start up stats",
-        YARN_APPLICATION_ID_PROPERTY);
-    String applicationId = resource.getProperties().get(YARN_APPLICATION_ID_PROPERTY);
-    return String.format(
-        "%s/bin/spark-submit --kill %s --master %s", sparkHome, applicationId, sparkMaster);
+        applicationId != null && applicationId.matches("application_[0-9]+_[0-9]+"),
+        "Missing or invalid registered YARN application ID for optimizer %s",
+        resource.getResourceId());
+    try {
+      Exception driverFailure = null;
+      if (isYarnClientMode() || resource.getProperties().containsKey(YARN_CLIENT_DRIVER_PROPERTY)) {
+        try {
+          stopYarnClientDriver(resource);
+        } catch (IOException | RuntimeException e) {
+          driverFailure = e;
+        }
+      }
+      try {
+        LOG.info("Releasing Spark YARN application {}", applicationId);
+        ExecUtil.exec(
+            ExecUtil.shellCommand(
+                exportSystemProperties(),
+                "YARN_BIN_HOME=${HADOOP_YARN_HOME:-${HADOOP_HOME:-}} && "
+                    + "exec \"${YARN_BIN_HOME:+$YARN_BIN_HOME/bin/}yarn\" \"$@\"",
+                "application",
+                "-kill",
+                applicationId),
+            System.nanoTime() + TimeUnit.SECONDS.toNanos(YARN_KILL_TIMEOUT_SECONDS),
+            "Kill YARN application " + applicationId);
+      } catch (IOException | InterruptedException | RuntimeException e) {
+        if (driverFailure != null) {
+          e.addSuppressed(driverFailure);
+        }
+        throw e;
+      }
+      if (driverFailure != null) {
+        throw new IllegalStateException(
+            "YARN application "
+                + applicationId
+                + " is stopped but the client driver for optimizer "
+                + resource.getResourceId()
+                + " could not be verified as stopped",
+            driverFailure);
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException("Failed to release YARN application " + applicationId, e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Interrupted releasing YARN application " + applicationId, e);
+    }
+  }
+
+  private void stopYarnClientDriver(Resource resource) throws IOException, InterruptedException {
+    String identity = resource.getProperties().get(YARN_CLIENT_DRIVER_PROPERTY);
+    Preconditions.checkState(
+        identity != null,
+        "Missing Spark YARN client driver identity for optimizer %s",
+        resource.getResourceId());
+    String[] parts = identity.split(":", 3);
+    Preconditions.checkState(
+        parts.length == 3 && InetAddress.getLocalHost().getHostName().equals(parts[0]),
+        "Cannot verify the Spark YARN client driver for optimizer %s on this AMS host",
+        resource.getResourceId());
+    Optional<ProcessHandle> process = ProcessHandle.of(Long.parseLong(parts[1]));
+    if (process.isEmpty() || !process.get().isAlive()) {
+      return;
+    }
+
+    ProcessHandle driver = process.get();
+    ProcessHandle.Info info = driver.info();
+    Instant expectedStart = Instant.parse(parts[2]);
+    Instant actualStart = info.startInstant().orElse(null);
+    if (!driver.isAlive()) {
+      return;
+    }
+    Preconditions.checkState(actualStart != null, "Cannot verify Spark client driver start time");
+    if (!expectedStart.equals(actualStart)) {
+      // The original driver has exited and its PID has been reused.
+      return;
+    }
+    String resourceId = resource.getResourceId();
+    List<String> args = Arrays.asList(info.arguments().orElse(new String[0]));
+    if (!matchesDriverArguments(args, resourceId) && SystemUtils.IS_OS_LINUX) {
+      // Linux JDK 11 may omit or truncate argv past one page. Read the NUL-separated
+      // arguments of this one PID, without logging them.
+      try {
+        String commandLine =
+            Files.readString(
+                Path.of("/proc", Long.toString(driver.pid()), "cmdline"),
+                StandardCharsets.ISO_8859_1);
+        args = Arrays.asList(commandLine.split("\\x00"));
+      } catch (NoSuchFileException e) {
+        if (driver.isAlive()) {
+          throw e;
+        }
+        return;
+      }
+    }
+    if (!driver.isAlive()) {
+      return;
+    }
+    Preconditions.checkState(
+        matchesDriverArguments(args, resourceId)
+            && driver.info().startInstant().filter(expectedStart::equals).isPresent(),
+        "PID does not match the Spark YARN client driver for optimizer %s",
+        resourceId);
+
+    long timeoutMs =
+        PropertyUtil.propertyAsLong(
+            resource.getProperties(),
+            OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS,
+            OptimizerProperties.OPTIMIZER_SHUTDOWN_TIMEOUT_MS_DEFAULT);
+    driver.destroy();
+    try {
+      driver.onExit().get(timeoutMs + DRIVER_SHUTDOWN_GRACE_MS, TimeUnit.MILLISECONDS);
+    } catch (ExecutionException | TimeoutException e) {
+      throw new IllegalStateException(
+          "Spark YARN client driver did not exit for optimizer " + resourceId, e);
+    }
+  }
+
+  private static boolean matchesDriverArguments(List<String> args, String resourceId) {
+    int idArg = args.lastIndexOf("-id");
+    return args.contains(SPARK_JOB_MAIN_CLASS)
+        && idArg >= 0
+        && idArg + 1 < args.size()
+        && resourceId.equals(args.get(idArg + 1));
   }
 
   private String buildReleaseKubernetesCommand(Resource resource) {
