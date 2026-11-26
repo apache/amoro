@@ -159,6 +159,14 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
     if (deployedOnKubernetes()) {
       addKubernetesProperties(resource, resourceSparkConf);
     }
+    String appName =
+        StringUtils.defaultIfBlank(
+            resourceSparkConf.configValue(SparkConfKeys.APP_NAME),
+            "amoro-spark-optimizer-" + resource.getResourceId());
+    Preconditions.checkArgument(
+        !StringUtils.containsAny(appName, '\r', '\n'),
+        "Spark application name must be on one line");
+    resourceSparkConf.putToOptions(SparkConfKeys.APP_NAME, appName);
     String sparkOptions = resourceSparkConf.toConfOptions();
     String proxyUser =
         getContainerProperties()
@@ -166,21 +174,18 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
                 OptimizerProperties.EXPORT_PROPERTY_PREFIX + ENV_HADOOP_USER_NAME, "hadoop");
     String jobArgs = super.buildOptimizerStartupArgsString(resource);
     // ./bin/spark-submit --master <master> --deploy-mode=<sparkMode> <options> --proxy-user <user>
-    // --name <appName>
     // --class
     // <main-class>
     // <job-file>
     // <arguments>
     //  options: --conf <property=value>
     return String.format(
-        "%s/bin/spark-submit --master %s --deploy-mode=%s %s --proxy-user %s --name %s --class %s %s %s",
+        "%s/bin/spark-submit --master %s --deploy-mode=%s %s --proxy-user %s --class %s %s %s",
         sparkHome,
         sparkMaster,
         deployMode.getValue(),
         sparkOptions,
         proxyUser,
-        String.join(
-            "-", "Amoro-spark-optimizer", resource.getGroupName(), resource.getResourceId()),
         SPARK_JOB_MAIN_CLASS,
         jobUri,
         jobArgs);
@@ -335,6 +340,7 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
   }
 
   public static class SparkConfKeys {
+    public static final String APP_NAME = "spark.app.name";
     public static final String KUBERNETES_IMAGE_REF = "spark.kubernetes.container.image";
     public static final String KUBERNETES_DRIVER_NAME = "spark.kubernetes.driver.pod.name";
     public static final String KUBERNETES_NAMESPACE = "spark.kubernetes.namespace";
@@ -379,7 +385,15 @@ public class SparkOptimizerContainer extends AbstractOptimizerContainer {
      */
     public String toConfOptions() {
       return sparkOptions.entrySet().stream()
-          .map(entry -> "--conf " + entry.getKey() + "=" + entry.getValue())
+          .map(
+              entry -> {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if (SparkConfKeys.APP_NAME.equals(key)) {
+                  value = "'" + StringUtils.defaultString(value).replace("'", "'\\''") + "'";
+                }
+                return "--conf " + key + "=" + value;
+              })
           .collect(Collectors.joining(" "));
     }
 

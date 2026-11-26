@@ -23,6 +23,7 @@ import org.apache.amoro.optimizer.common.OptimizerConfig;
 import org.apache.amoro.optimizer.common.OptimizerToucher;
 import org.apache.amoro.resource.Resource;
 import org.apache.hadoop.util.ShutdownHookManager;
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.util.Utils;
@@ -47,7 +48,9 @@ public class SparkOptimizer extends Optimizer {
     OptimizerConfig config = new OptimizerConfig(args);
     SparkSession spark =
         SparkSession.builder()
-            .appName(String.format(APP_NAME_FORMAT, config.getResourceId()))
+            .appName(
+                new SparkConf()
+                    .get("spark.app.name", String.format(APP_NAME_FORMAT, config.getResourceId())))
             .getOrCreate();
     JavaSparkContext jsc = new JavaSparkContext(spark.sparkContext());
     if (!jsc.getConf().getBoolean("spark.dynamicAllocation.enabled", false)) {
