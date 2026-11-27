@@ -248,6 +248,26 @@ The Amoro Tables details page provides multiple tabs to display the status of th
 
 ![table-optimize-history](../images/admin/table_optimizer_history.png)
 
+### Inspect snapshot history
+
+In **Tables**, open an Iceberg table and select **Snapshots** to inspect its commit history. Open the selector at the top, switch between **branches** and **tags**, and choose an existing ref. The list updates to show snapshots reachable from that ref. The **Operation** dropdown filters to **all**, **optimizing**, or **non-optimizing** commits to separate self-optimizing commits from other commits.
+
+The history table includes:
+
+- **Snapshot ID**: unique identifier; click it to view the files added or removed in that snapshot.
+- **Operation**: type of commit, such as append or overwrite.
+- **Records**: total records reported in the snapshot summary, rather than records changed by this commit.
+- **File Count**: total number of data and delete files recorded for this snapshot.
+- **Commit Time**: when the snapshot was created.
+
+Click any snapshot ID to open a details view showing file-level changes: whether each file was added or removed, its name, partition, type, size, commit time, and path. Use the **All** breadcrumb to return to snapshot history. The selector resets to **main** and **all**; reapply the branch, tag, or operation filter if needed.
+
+Optionally, toggle the **Charts** control to plot cumulative records and file counts over time; the charts show the selected history.
+
+![Snapshots history list with branch selector and operation filter](../images/admin/table_snapshot_history.png)
+
+![Snapshot details showing file changes for selected snapshot](../images/admin/table_snapshot_details.png)
+
 ## Explore self-optimizing status
 The Optimizing page displays self-optimizing status of all tables.
 ![optimizing-metrics](../images/admin/optimizer_metrics.png)
