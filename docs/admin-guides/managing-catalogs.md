@@ -30,46 +30,64 @@ Users can import your test or online clusters through the catalog management fun
 please read the following guidelines and select the appropriate creation according to your actual needs.
 
 ## Create catalog
-In Amoro, the catalog is a namespace for a group of libraries and tables. Under the catalog, it is further divided into different databases, and under each database, there are different tables. The name of a table in Amoro is uniquely identified by the format `catalog.database.table`. In practical applications, a catalog generally corresponds to a metadata service, such as the commonly used Hive Metastore in big data.
 
-AMS can also serve as a metadata service. In order to differentiate the storage method of metadata, Amoro classifies the catalog type into `Internal Catalog` and `External Catalog`. Catalogs that use AMS as the metadata service are internal catalogs, while others are external catalogs. When creating an external catalog, you need to select the storage backend for its metadata, such as Hive, Hadoop, or Custom.
+In Amoro, a catalog is a namespace that groups databases and tables. A table is uniquely identified by `catalog.database.table`. A catalog typically corresponds to a metadata service, such as Hive Metastore or the AMS itself.
 
-In addition, when defining a catalog, you also need to select the table format used under it. Currently, Amoro supports the following table formats:
-[Iceberg](../iceberg-format/) 、[Paimon](../paimon-format)、[Mixed-Hive](../mixed-hive-format/)、[Mixed-Iceberg](../mixed-iceberg-format/).
+Before creating a catalog, ensure an optimizer group exists. With role-based authorization, creating a catalog requires the `MANAGE_CATALOG` privilege.
 
-You can create a catalog in the AMS frontend:
-![create_catalog](../images/admin/create-catalog.png)
+Open **Catalogs** in the sidebar. On the **Catalog List**, click **+** to open the create form.
+
+![Create catalog form with FileSystem, Iceberg, and an optimizer group selected](../images/admin/create-catalog.png)
+
+For example, enter `catalog_docs` as **Name**, choose **FileSystem** as
+**Metastore**, leave only **Iceberg** selected under **Table Format**, and
+select an existing **Optimizer Group**.
 
 ### Configure basic information
 
-- name: catalog name, only numbers, letters, _, - , starting with letters are supported (lower case letters are recommended)
-- type: Internal Catalog or External Catalog
-- metastore: storage type for table metadata. Hive Metastore (for using HMS to store metadata), Hadoop (corresponding to iceberg's Hadoop catalog), Glue (for using AWS Glue to store metadata), Custom (other iceberg catalog implementations).
-- table format: Iceberg 、Paimon、Mixed-Hive、Mixed-Iceberg.
-- optimizer group: tables under the catalog will automatically perform self-optimizing within this group.
+- **Name**: catalog name. Only letters, digits, underscores, and hyphens are supported. It must start with a letter (lowercase recommended).
+- **Metastore**: metadata storage backend. Options are **Internal**, **Hive**, **FileSystem**, **Glue**, **REST**, and **Custom**. See [Formats Overview](../formats-overview/) for supported combinations.
+- **Table Format**: table formats supported under this catalog. Select one or more. When you change the metastore, the default selection may include multiple formats; clear formats you don't need.
+- **Optimizer Group**: group used for self-optimizing tables in this catalog. If no optimizer group exists, the dialog shows “No resource groups available. Please create an optimizer group first.” Click **Go** to navigate to **Optimizing** > **Optimizer Groups**. See [Managing Optimizers](../managing-optimizers/) for instructions.
+
+![Create catalog dialog showing no optimizer group](../images/admin/catalog_create_prerequisite.png)
 
 ### Configure storage
-- Type: Hadoop or S3
-- core-site: the core-site.xml of the hadoop cluster
-- hdfs-site: the hdfs-site.xml of the hadoop cluster
-- hive-site: the hive-site.xml for Hive
-- Region: region of the S3 bucket
-- Endpoint: endpoint of the S3 bucket
+
+Storage options depend on the selected metastore and table formats. For **FileSystem** with only **Iceberg** selected, choose **Hadoop** as the storage type.
+
+- **Type**: storage type. Options include **Hadoop**, **S3**, **OSS**, and others depending on metastore and table formats.
+- **Hadoop core-site** and **Hadoop hdfs-site**: XML configuration files for the Hadoop cluster. Upload them if you need to access a cluster; for a local demo, you can leave both empty. Use actual cluster files when connecting to a cluster.
+- **Hadoop hive-site**: XML configuration file for Hive Metastore, shown when applicable.
+- **Endpoint** and, where available, **Region**: connection settings for object storage.
 
 ### Configure authentication
-- Type: SIMPLE, KERBEROS, AK/SK or CUSTOM
-- hadoop username: username of the hadoop cluster
-- keytab: keytab file
-- principal: principal of keytab
-- krb5: Kerberos krb5.conf configuration file
-- Access Key: Access Key for S3
-- Secret Key: Secret Access Key for S3
+
+Authentication options depend on storage type. For **Hadoop** storage, choose **SIMPLE** or **KERBEROS**.
+
+- **Type**: authentication method. For Hadoop, **SIMPLE** or **KERBEROS**.
+- **Hadoop Username**: required for **SIMPLE**.
+- **Principal**, **Keytab**, **krb5**: fields and file uploads for **KERBEROS**.
+- Other storage types (e.g., S3, OSS) show different authentication fields such as **Access Key** and **Secret Key**.
 
 ### Configure properties
+
+In the **Properties** section, add catalog-level key-value properties. For this local example, set `warehouse` to an absolute file URI such as
+`file:///tmp/amoro-catalog-guide/warehouse`, and use **SIMPLE** authentication
+with a **Hadoop Username**, such as `amoro_docs`. The screenshots use a
+disposable local directory.
+
+A local file URI is suitable for a single-host demo. In a deployed environment,
+use a warehouse URI that AMS and the relevant engines and optimizers can access
+with the configured credentials.
+
+![Storage and authentication configuration for a Hadoop catalog](../images/admin/catalog_create_storage.png)
+
 Common properties include:
-- warehouse: Warehouse **must be configured** for ams/hadoop/glue catalog, as it determines where our database and table files should be placed
-- catalog-impl: when the metastore is **Custom**, an additional catalog-impl must be defined, and the user must put the jar package for the custom catalog implementation into the **{AMORO_HOME}/lib** directory, **and the service must be restarted to take effect**
-- clients: Hive Catalog connection pool size for accessing HiveMetaStore, default configuration is 20, requires restarting Amoro to take effect.
+
+- `warehouse`: required for Internal, FileSystem, and Glue catalogs. Determines where database and table files are placed.
+- `catalog-impl`: required for **Custom** metastore. Put the custom catalog implementation jar in `{AMORO_HOME}/lib` and restart the service.
+- `clients`: Hive Metastore connection pool size. Default is 20. Requires restarting Amoro to take effect.
 - `database-filter` matches a regular expression against the full database name.
   For example, `analytics` shows only the `analytics` database.
 - `table-filter` matches a regular expression against the full `database.table`
@@ -95,6 +113,16 @@ If you add table-level properties through the **Properties** field instead, you 
 {{< /hint >}}
 
 For the full list of available table properties, see [Table configurations](../configurations/).
+
+### Save and verify
+
+After filling in the required fields, click **Save**. The catalog is created and the form switches to a read-only detail view showing the saved configuration.
+
+In the **Catalog List**, the new catalog appears by name. To verify persistence, open **Catalogs** in the sidebar and check the list, or click the catalog to reopen its detail page.
+
+![Saved catalog detail view](../images/admin/catalog_create_success.png)
+
+The screenshots show the English dashboard in `1.0.0-SNAPSHOT` at commit `7e9a5ca`.
 
 ## REST Catalog
 When a user needs to create a Iceberg REST Catalog, they can choose **External Catalog Type**、**Custom Metastore Type**、**Iceberg Table Format**, configure properties include:
