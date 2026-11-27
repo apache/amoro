@@ -140,6 +140,7 @@ public class TableRuntimeRefreshExecutor extends PeriodicTableScheduler {
       if (optimizingProcess != null && optimizingProcess.getStatus() == ProcessStatus.RUNNING) {
         optimizingProcess.close(false);
       }
+      defaultTableRuntime.resetDisabledPending();
     }
   }
 

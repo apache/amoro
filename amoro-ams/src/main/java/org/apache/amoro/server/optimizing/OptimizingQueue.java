@@ -140,6 +140,7 @@ public class OptimizingQueue extends PersistentBase {
 
       if (!tableRuntime.getOptimizingConfig().isEnabled()) {
         closeProcessIfRunning(process);
+        tableRuntime.resetDisabledPending();
         return;
       }
 
@@ -249,8 +250,9 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   public void refreshTable(DefaultTableRuntime tableRuntime) {
-    if (tableRuntime.getOptimizingConfig().isEnabled()
-        && !tableRuntime.getOptimizingStatus().isProcessing()) {
+    if (!tableRuntime.getOptimizingConfig().isEnabled()) {
+      scheduler.removeTable(tableRuntime);
+    } else if (!tableRuntime.getOptimizingStatus().isProcessing()) {
       LOG.info(
           "Bind queue {} success with table {}",
           optimizerGroup.getName(),
@@ -406,6 +408,10 @@ public class OptimizingQueue extends PersistentBase {
   }
 
   private TableOptimizingProcess planInternal(DefaultTableRuntime tableRuntime) {
+    if (!tableRuntime.getOptimizingConfig().isEnabled()) {
+      tableRuntime.resetDisabledPending();
+      return null;
+    }
     tableRuntime.beginPlanning();
     try {
       ServerTableIdentifier identifier = tableRuntime.getTableIdentifier();
@@ -413,9 +419,15 @@ public class OptimizingQueue extends PersistentBase {
       if (table.format() == TableFormat.ICEBERG) {
         IcebergMaintenanceCompatibility.checkSupported((Table) table.originalTable());
       }
+      tableRuntime.refresh(table);
+      if (!tableRuntime.getOptimizingConfig().isEnabled()) {
+        tableRuntime.planFailed();
+        tableRuntime.resetDisabledPending();
+        return null;
+      }
       AbstractOptimizingPlanner planner =
           IcebergTableUtil.createOptimizingPlanner(
-              tableRuntime.refresh(table),
+              tableRuntime,
               (MixedTable) table.originalTable(),
               getAvailableCore(),
               maxInputSizePerThread());
@@ -431,6 +443,7 @@ public class OptimizingQueue extends PersistentBase {
       return null;
     } catch (Throwable throwable) {
       tableRuntime.planFailed();
+      tableRuntime.resetDisabledPending();
       LOG.error("Planning table {} failed", tableRuntime.getTableIdentifier(), throwable);
       throw throwable;
     }
