@@ -161,11 +161,11 @@ selector.
 - **Confirm** updates the property text; click **Save** on the catalog page to
   persist it. **Cancel** in the selector leaves the property text unchanged.
 
-Existing exact rules such as `(analytics\\.events)|(other\\.users)` are recognized
+Existing exact rules such as `(analytics\.events)|(other\.users)` are recognized
 and can be removed individually. Newly selected table names are escaped as exact
 Java regular expressions and deduplicated. Existing custom regular expressions
 are preserved. Tables matched by a saved custom expression, for example
-`analytics\\.events_.*`, appear checked and disabled; edit the expression itself
+`analytics\.events_.*`, appear checked and disabled; edit the expression itself
 to change that coverage. The selector uses server-side Java regex matching, not
 JavaScript regex matching.
 
