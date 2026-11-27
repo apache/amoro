@@ -840,7 +840,10 @@ onMounted(() => {
             </p>
           </a-form-item>
           <a-form-item>
-            <Properties ref="propertiesRef" :properties-obj="formState.properties" :is-edit="isEdit" />
+            <Properties
+              ref="propertiesRef" :properties-obj="formState.properties" :is-edit="isEdit"
+              :catalog-name="isNewCatalog ? '' : formState.catalog.name || ''"
+            />
           </a-form-item>
           <a-form-item>
             <p class="header">

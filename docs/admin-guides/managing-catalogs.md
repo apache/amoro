@@ -147,6 +147,39 @@ To change the catalog's default optimizer group, choose an existing group in
 **Optimizer Group**. Click **Save** to apply the change. Click **Cancel** to
 discard unsaved changes and return to the saved configuration.
 
+### Select tables for a table filter
+
+When editing an existing catalog, add a property whose key is exactly
+`table-filter`. Click the selected-table count below its value to open the table
+selector.
+
+- Search for a database on the left, then select its tables on the right.
+- Both lists can be searched. **Select all visible tables** selects or deselects
+  editable tables in the current database's search results only.
+- Switch databases to select or deselect tables across multiple databases before
+  clicking **Confirm**. Selections are retained while switching databases.
+- **Confirm** updates the property text; click **Save** on the catalog page to
+  persist it. **Cancel** in the selector leaves the property text unchanged.
+
+Existing exact rules such as `(analytics\\.events)|(other\\.users)` are recognized
+and can be removed individually. Newly selected table names are escaped as exact
+Java regular expressions and deduplicated. Existing custom regular expressions
+are preserved. Tables matched by a saved custom expression, for example
+`analytics\\.events_.*`, appear checked and disabled; edit the expression itself
+to change that coverage. The selector uses server-side Java regex matching, not
+JavaScript regex matching.
+
+The selector lists catalog databases and tables without applying
+`database-filter` or `table-filter`; it still uses the catalog's configured
+credentials and selected table formats. This does not change the filters used
+by normal catalog operations. The selector is available after a catalog has
+been created. When creating a new catalog, enter the filter as text.
+
+Matching of custom expressions currently uses the saved catalog property.
+After editing a custom expression as text, save the catalog before reopening
+the selector to refresh its matched-table state. The selected-table count
+includes custom-expression matches after the selector has loaded.
+
 ## Delete catalog
 When a user needs to delete a Catalog, they can go to the details page of the Catalog and click the Remove button at the bottom of the page to perform the deletion.
 

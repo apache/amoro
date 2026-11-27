@@ -97,6 +97,11 @@ public class ExternalCatalog extends ServerCatalog {
   }
 
   @Override
+  public List<String> listDatabasesWithoutFilter() {
+    return doAs(() -> new ArrayList<>(unifiedCatalog.listDatabases()));
+  }
+
+  @Override
   public List<TableIDWithFormat> listTables() {
     return doAs(
         () ->
@@ -122,6 +127,11 @@ public class ExternalCatalog extends ServerCatalog {
                                             + tableIDWithFormat.getIdentifier().getTableName()))
                                     .matches())
                     .collect(Collectors.toList())));
+  }
+
+  @Override
+  public List<TableIDWithFormat> listTablesWithoutFilter(String database) {
+    return doAs(() -> new ArrayList<>(unifiedCatalog.listTables(database)));
   }
 
   @Override

@@ -76,6 +76,89 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+  /api/ams/v1/catalogs/{catalogName}/table-filter/databases:
+    parameters:
+      - name: catalogName
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Catalogs
+      summary: List databases for configuring a table filter
+      description: Lists databases without applying catalog database-filter or table-filter.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        items:
+                          type: string
+  /api/ams/v1/catalogs/{catalogName}/table-filter/databases/{db}/tables:
+    parameters:
+      - name: catalogName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: db
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Catalogs
+      summary: List tables for configuring a table filter
+      description: Lists distinct table names of the database without applying table-filter.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        items:
+                          type: string
+  /api/ams/v1/catalogs/{catalogName}/table-filter/matched-tables:
+    parameters:
+      - name: catalogName
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Catalogs
+      summary: List tables matched by the saved table filter
+      description: Returns distinct full database.table names matched by the saved table-filter using Java regex full matching. Returns an empty list if no filter is configured.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Response'
+                  - type: object
+                    properties:
+                      result:
+                        type: array
+                        items:
+                          type: string
   /api/ams/v1/catalogs/{catalogName}:
     parameters:
       - name: catalogName

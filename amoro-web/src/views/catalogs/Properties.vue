@@ -19,6 +19,7 @@ limitations under the License.
 <script setup lang="ts">
 import { computed, reactive, ref, shallowReactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import TableFilterSelector from './TableFilterSelector.vue'
 import type { IMap } from '@/types/common.type'
 import { getUUid } from '@/utils/index'
 
@@ -28,7 +29,7 @@ interface Propertie {
   uuid: string
 }
 
-const props = defineProps<{ propertiesObj: IMap<string>, isEdit: boolean }>()
+const props = defineProps<{ propertiesObj: IMap<string>, isEdit: boolean, catalogName?: string }>()
 const { t } = useI18n()
 const propertiesColumns = shallowReactive([
   { dataIndex: 'key', title: t('key'), width: 284, ellipsis: true },
@@ -133,6 +134,10 @@ defineExpose({
           </a-form-item>
           <a-form-item :name="['data', index, 'value']" :rules="rules">
             <a-input v-model:value="item.value" style="width: 100%" />
+            <TableFilterSelector
+              v-if="item.key === 'table-filter'"
+              v-model="item.value" :catalog-name="props.catalogName || ''"
+            />
           </a-form-item>
           <close-outlined class="icon-close" @click="removeRule(item)" />
         </div>
