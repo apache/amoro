@@ -253,6 +253,17 @@ containers:
 ```
 
 
+#### Spark optimizer application name
+
+Set `spark-conf.spark.app.name` in the Spark container or optimizer group
+to set the Spark application name. A group setting overrides the container setting.
+Without an override, AMS submits as `amoro-spark-optimizer-<resource-id>` on
+both YARN and Kubernetes. The Spark driver uses the submitted name. Custom names
+for Kubernetes must follow
+[Spark's Kubernetes naming rules](https://spark.apache.org/docs/latest/running-on-kubernetes.html).
+This setting does not override the driver pod name assigned by AMS. For optimizers
+launched outside AMS, use Spark's `spark-submit --name <application-name>`.
+
 ### External container
 
 External container refers to the way in which the user manually starts the optimizer. The system has a built-in external container called `external`, so you don't need to configure it manually.
