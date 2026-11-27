@@ -242,11 +242,24 @@ The Amoro Tables details page provides multiple tabs to display the status of th
 | Files        | Display all partitions and files of the table.                                                                                                                                                                                                                                           |
 | Snapshots    | Display all snapshots of the table, which can be filtered by branch and tag.                                                                                                                                                                                                             |
 | Optimizing   | Display all the self-optimizing processes of the table, each record shows the number and average size of files before and after Optimize, as well as the execution time of each process.                                                                                                 |
+| Cleanup      | View cleanup runs, such as snapshot expiration and orphan file cleanup. |
+| Profiling    | View profiling runs, such as automatic Iceberg tag creation. |
 | Operations   | Display the current table's DDL historical change records.                                                                                                                                                                                                                               |
 
 ![table-details](../images/admin/table_metrics.png)
 
 ![table-optimize-history](../images/admin/table_optimizer_history.png)
+
+### Review cleanup and profiling history
+
+Open **Tables**, select a table, and choose **Cleanup** or **Profiling**.
+Use **Type** and **Status** to filter the history. Both tabs show each run's
+process ID, start time, type, status, duration, and finish time. Expand a row
+to see the summary when the process provides one.
+
+![Cleanup history showing an example snapshot expiration run](../images/admin/table_cleanup_history.png)
+
+![Profiling history showing an example automatic Iceberg tag creation run](../images/admin/table_profiling_history.png)
 
 ## Explore self-optimizing status
 The Optimizing page displays self-optimizing status of all tables.
