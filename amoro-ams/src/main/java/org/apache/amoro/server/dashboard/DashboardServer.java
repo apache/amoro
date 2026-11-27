@@ -307,6 +307,13 @@ public class DashboardServer {
           () -> {
             get("/{catalog}/databases/{db}/tables", tableController::getTableList);
             get("/{catalog}/databases", tableController::getDatabaseList);
+            get("/{catalog}/table-filter/databases", tableController::getTableFilterDatabaseList);
+            get(
+                "/{catalog}/table-filter/databases/{db}/tables",
+                tableController::getTableFilterTableList);
+            get(
+                "/{catalog}/table-filter/matched-tables",
+                tableController::getTableFilterMatchedTables);
             get("", tableController::getCatalogs);
             post("", catalogController::createCatalog);
             get("metastore/types", catalogController::getCatalogTypeList);

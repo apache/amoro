@@ -96,6 +96,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /** The controller that handles table requests. */
@@ -605,6 +606,71 @@ public class TableController {
 
     ServerCatalog serverCatalog = catalogManager.getServerCatalog(catalog);
     ctx.json(OkResponse.of(buildDatabaseList(serverCatalog, keywords)));
+  }
+
+  /**
+   * Get all databases for configuring a catalog table filter.
+   *
+   * <p>The normal table browser honors {@code database-filter} and {@code table-filter}. This
+   * endpoint deliberately bypasses those filters so an administrator can select a table that is not
+   * currently visible and add it to the filter.
+   */
+  public void getTableFilterDatabaseList(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    Preconditions.checkArgument(StringUtils.isNotBlank(catalog), "catalog can not be empty");
+    ctx.json(OkResponse.of(catalogManager.getServerCatalog(catalog).listDatabasesWithoutFilter()));
+  }
+
+  /** See {@link #getTableFilterDatabaseList(Context)}. */
+  public void getTableFilterTableList(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String database = ctx.pathParam("db");
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(catalog) && StringUtils.isNotBlank(database),
+        "catalog.database can not be empty in any element");
+
+    List<String> tables =
+        catalogManager.getServerCatalog(catalog).listTablesWithoutFilter(database).stream()
+            .map(table -> table.getIdentifier().getTableName())
+            .distinct()
+            .sorted()
+            .collect(Collectors.toList());
+    ctx.json(OkResponse.of(tables));
+  }
+
+  /**
+   * Get the unfiltered catalog tables currently matched by {@code table-filter}.
+   *
+   * <p>Matching is done on the server with {@link Pattern}, which is the same regular-expression
+   * implementation used by the catalog. This lets the dashboard correctly recognize existing Java
+   * regular expressions instead of attempting to reinterpret them in the browser.
+   */
+  public void getTableFilterMatchedTables(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    Preconditions.checkArgument(StringUtils.isNotBlank(catalog), "catalog can not be empty");
+    ServerCatalog serverCatalog = catalogManager.getServerCatalog(catalog);
+    String tableFilter =
+        serverCatalog
+            .getMetadata()
+            .getCatalogProperties()
+            .get(CatalogMetaProperties.KEY_TABLE_FILTER);
+    if (StringUtils.isBlank(tableFilter)) {
+      ctx.json(OkResponse.of(Collections.emptyList()));
+      return;
+    }
+
+    Pattern pattern = Pattern.compile(tableFilter);
+    List<String> matchedTables =
+        serverCatalog.listDatabasesWithoutFilter().stream()
+            .flatMap(
+                database ->
+                    serverCatalog.listTablesWithoutFilter(database).stream()
+                        .map(table -> database + "." + table.getIdentifier().getTableName()))
+            .filter(table -> pattern.matcher(table).matches())
+            .distinct()
+            .sorted()
+            .collect(Collectors.toList());
+    ctx.json(OkResponse.of(matchedTables));
   }
 
   public List<String> buildDatabaseList(ServerCatalog serverCatalog, String keywords) {

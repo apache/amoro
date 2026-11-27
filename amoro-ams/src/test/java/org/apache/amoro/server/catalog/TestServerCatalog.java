@@ -123,9 +123,18 @@ public class TestServerCatalog extends TableCatalogTestBase {
     CATALOG_MANAGER.updateCatalog(metadata3);
     Assert.assertEquals(1, getServerCatalog().listTables(testDatabaseName).size());
     Assert.assertTrue(getServerCatalog().listTables(dbWithFilter).isEmpty());
+    // The configuration picker must still expose tables excluded by the current filter.
+    Assert.assertEquals(2, getServerCatalog().listTablesWithoutFilter(dbWithFilter).size());
+    metadata3
+        .getCatalogProperties()
+        .put(CatalogMetaProperties.KEY_DATABASE_FILTER, testDatabaseName);
+    CATALOG_MANAGER.updateCatalog(metadata3);
+    Assert.assertFalse(getServerCatalog().listDatabases().contains(dbWithFilter));
+    Assert.assertTrue(getServerCatalog().listDatabasesWithoutFilter().contains(dbWithFilter));
 
     CatalogMeta metadata4 = getServerCatalog().getMetadata();
     metadata.getCatalogProperties().remove(CatalogMetaProperties.KEY_TABLE_FILTER);
+    metadata.getCatalogProperties().remove(CatalogMetaProperties.KEY_DATABASE_FILTER);
     CATALOG_MANAGER.updateCatalog(metadata4);
   }
 

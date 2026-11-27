@@ -40,6 +40,22 @@ export function getTableList(params: {
   return request.get(`api/ams/v1/catalogs/${catalog}/databases/${db}/tables`, { params: { keywords } })
 }
 
+export function getTableFilterDatabaseList(catalog: string): Promise<string[]> {
+  return request.get(`api/ams/v1/catalogs/${catalog}/table-filter/databases`)
+}
+
+export function getTableFilterTableList(params: {
+  catalog: string
+  db: string
+}): Promise<string[]> {
+  const { catalog, db } = params
+  return request.get(`api/ams/v1/catalogs/${catalog}/table-filter/databases/${db}/tables`)
+}
+
+export function getTableFilterMatchedTables(catalog: string): Promise<string[]> {
+  return request.get(`api/ams/v1/catalogs/${catalog}/table-filter/matched-tables`)
+}
+
 // get tables detail
 export function getTableDetail(
   { catalog = '' as string, db = '' as string, table = '' as string, token = '' as string },

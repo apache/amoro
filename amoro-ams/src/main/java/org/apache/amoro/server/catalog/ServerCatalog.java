@@ -77,9 +77,24 @@ public abstract class ServerCatalog extends PersistentBase {
 
   public abstract List<String> listDatabases();
 
+  /**
+   * List all databases without applying catalog display filters.
+   *
+   * <p>This is used by catalog configuration so administrators can update a filter to include a
+   * table which is not currently visible through the filtered catalog view.
+   */
+  public List<String> listDatabasesWithoutFilter() {
+    return listDatabases();
+  }
+
   public abstract List<TableIDWithFormat> listTables();
 
   public abstract List<TableIDWithFormat> listTables(String database);
+
+  /** See {@link #listDatabasesWithoutFilter()}. */
+  public List<TableIDWithFormat> listTablesWithoutFilter(String database) {
+    return listTables(database);
+  }
 
   public abstract AmoroTable<?> loadTable(String database, String tableName);
 
