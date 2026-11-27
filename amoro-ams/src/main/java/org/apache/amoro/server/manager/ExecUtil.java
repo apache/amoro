@@ -25,7 +25,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ExecUtil {
@@ -50,6 +52,42 @@ public class ExecUtil {
       return retCode;
     } catch (Exception e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  static ProcessBuilder shellCommand(List<String> exports, String action, String... args) {
+    String script = exports.isEmpty() ? action : String.join(" && ", exports) + " && " + action;
+    List<String> command = new ArrayList<>(List.of("/bin/sh", "-c", script, "amoro"));
+    Collections.addAll(command, args);
+    return new ProcessBuilder(command)
+        .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+        .redirectError(ProcessBuilder.Redirect.INHERIT);
+  }
+
+  // Callers redirect output so the command cannot block on an unread Java pipe.
+  static void exec(ProcessBuilder command, long deadlineNanos, String operation)
+      throws IOException, InterruptedException {
+    if (Thread.interrupted()) {
+      throw new InterruptedException();
+    }
+    if (deadlineNanos - System.nanoTime() <= 0) {
+      throw new IllegalStateException(operation + " timed out");
+    }
+    Process process = command.start();
+    try {
+      if (!process.waitFor(deadlineNanos - System.nanoTime(), TimeUnit.NANOSECONDS)
+          || deadlineNanos - System.nanoTime() <= 0) {
+        throw new IllegalStateException(operation + " timed out");
+      }
+      if (process.exitValue() != 0) {
+        throw new IllegalStateException(
+            operation + " failed with exit code " + process.exitValue());
+      }
+    } finally {
+      if (process.isAlive()) {
+        process.descendants().forEach(ProcessHandle::destroyForcibly);
+        process.toHandle().destroyForcibly();
+      }
     }
   }
 
