@@ -32,3 +32,12 @@ process-factories:
       auto-create-tags.interval: "1min"
       sync-hive-tables.enabled: "false"
       sync-hive-tables.interval: "10min"
+
+  # Requires the Paimon format module and write-only tables.
+  # The table property amoro.expire-snapshots.enabled defaults to true.
+  - name: paimon
+    enabled: false
+    priority: 100
+    properties:
+      expire-snapshots.enabled: "true"
+      expire-snapshots.interval: "1h"

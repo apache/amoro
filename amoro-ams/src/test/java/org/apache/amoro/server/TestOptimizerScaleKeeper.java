@@ -722,7 +722,13 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
     optimizerManager().createResourceGroup(group);
     DefaultOptimizingService formerLeader =
         new DefaultOptimizingService(
-            new Configurations(), catalogManager(), optimizerManager(), tableService(), null, null);
+            new Configurations(),
+            catalogManager(),
+            optimizerManager(),
+            tableService(),
+            processServiceService(),
+            null,
+            null);
     formerLeader.createResourceGroup(group);
     Assertions.assertNotNull(
         draMetric(DynamicAllocationMetrics.OPTIMIZER_GROUP_SCALE_UP_TOTAL, group.getName()));
@@ -750,7 +756,13 @@ public class TestOptimizerScaleKeeper extends AMSTableTestBase {
     ResourceGroup group = buildSlowDraResourceGroup(TEST_GROUP_NAME + "-19", 0);
     DefaultOptimizingService formerLeader =
         new DefaultOptimizingService(
-            new Configurations(), catalogManager(), optimizerManager(), tableService(), null, null);
+            new Configurations(),
+            catalogManager(),
+            optimizerManager(),
+            tableService(),
+            processServiceService(),
+            null,
+            null);
     formerLeader.dispose();
 
     formerLeader.updateResourceGroup(group);

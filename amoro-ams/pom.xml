@@ -523,6 +523,12 @@
             <version>${swagger-ui.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- testcontainers dependencies -->
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -608,6 +614,41 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${maven-build-helper-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>paimon-integration-tests</id>
+                            <goals>
+                                <goal>add-test-source</goal>
+                            </goals>
+                            <phase>generate-test-sources</phase>
+                            <configuration>
+                                <sources>
+                                    <source>src/test/paimon</source>
+                                </sources>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <configuration>
+                        <java>
+                            <includes>
+                                <include>src/main/java/**/*.java</include>
+                                <include>src/test/**/*.java</include>
+                            </includes>
+                        </java>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>pl.project13.maven</groupId>
@@ -736,6 +777,14 @@
                     <artifactId>amoro-format-paimon</artifactId>
                 </dependency>
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>support-hudi-format</id>
@@ -787,6 +836,14 @@
                     <artifactId>amoro-format-lance</artifactId>
                 </dependency>
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>fail-on-no-git-dir</id>

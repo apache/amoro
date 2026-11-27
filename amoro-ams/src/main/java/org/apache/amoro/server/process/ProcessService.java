@@ -127,6 +127,15 @@ public class ProcessService extends PersistentBase {
   }
 
   /**
+   * Await worker termination after {@link #dispose()}, without initiating shutdown or cancellation.
+   * Tests use this to keep persistence available until completion callbacks have returned.
+   */
+  @VisibleForTesting
+  public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    return processExecutionPool.awaitTermination(timeout, unit);
+  }
+
+  /**
    * Find the scheduler that supports the given table format for the specified action.
    *
    * @param actionName action name
@@ -410,26 +419,42 @@ public class ProcessService extends PersistentBase {
   }
 
   /**
-   * Cancel the given process and untrack it.
+   * Cancel a process owned by this service for the given table, using the existing lifecycle.
    *
-   * @param process table process
+   * @param table table identity
+   * @param processId process identifier
+   * @return true if the tracked process transitioned to canceled, false if absent or terminal
    */
-  private void cancelProcess(TableProcessStore store, TableProcess process) {
+  public boolean cancelProcess(ServerTableIdentifier table, long processId) {
+    TableProcessHolder holder = getTableProcessInstances(table).get(processId);
+    return holder != null && cancelProcess(holder.getStore(), holder.getProcess());
+  }
 
-    store.tryTransitState(
-        ProcessStatus.CANCELED,
-        ProcessEvent.CANCEL_REQUESTED,
-        store.getExternalProcessIdentifier(),
-        "Gracefully Canceled.",
-        process.getProcessParameters(),
-        process.getSummary());
+  private boolean cancelProcess(TableProcessStore store, TableProcess process) {
+
+    boolean canceled =
+        store.tryTransitState(
+            ProcessStatus.CANCELED,
+            ProcessEvent.CANCEL_REQUESTED,
+            store.getExternalProcessIdentifier(),
+            "Gracefully Canceled.",
+            process.getProcessParameters(),
+            process.getSummary());
+    if (!canceled) {
+      return false;
+    }
     untrackTableProcessInstance(
         process.getTableRuntime().getTableIdentifier(), store.getProcessId());
+    cancelExecution(store, process);
+    return true;
+  }
 
+  private void cancelExecution(TableProcessStore store, TableProcess process) {
     ExecuteEngine executeEngine = executeEngines.get(store.getExecutionEngine());
 
-    if (executeEngine != null) {
-      executeEngine.tryCancelTableProcess(process, store.getExternalProcessIdentifier());
+    String externalIdentifier = store.getExternalProcessIdentifier();
+    if (executeEngine != null && externalIdentifier != null && !externalIdentifier.isEmpty()) {
+      executeEngine.tryCancelTableProcess(process, externalIdentifier);
       LOG.info(
           "Cancel table process {} in engine {}, process id:{}",
           process,
@@ -700,7 +725,12 @@ public class ProcessService extends PersistentBase {
               .collect(Collectors.toList());
       for (TableProcessHolder holder : processes) {
         if (holder != null) {
-          cancelProcess(holder.getStore(), holder.getProcess());
+          if (!cancelProcess(holder.getStore(), holder.getProcess())) {
+            untrackTableProcessInstance(
+                tableRuntime.getTableIdentifier(), holder.getStore().getProcessId());
+            // A terminal status can reflect a polling failure while the engine still runs.
+            cancelExecution(holder.getStore(), holder.getProcess());
+          }
         }
       }
     }

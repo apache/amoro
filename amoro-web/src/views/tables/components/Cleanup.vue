@@ -19,8 +19,10 @@ under the License.
 
 <script lang="ts" setup>
 import Optimizing from './Optimizing.vue'
+
+defineProps<{ tableType: string }>()
 </script>
 
 <template>
-  <Optimizing process-category="CLEANUP" cancel-modal-title-key="cancelCleanupProcessOptModalTitle" />
+  <Optimizing :table-type="tableType" process-category="CLEANUP" cancel-modal-title-key="cancelCleanupProcessOptModalTitle" />
 </template>

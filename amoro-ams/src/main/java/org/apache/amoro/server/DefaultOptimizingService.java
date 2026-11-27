@@ -20,6 +20,7 @@ package org.apache.amoro.server;
 
 import org.apache.amoro.AmoroTable;
 import org.apache.amoro.OptimizerProperties;
+import org.apache.amoro.PaimonActions;
 import org.apache.amoro.TableRuntime;
 import org.apache.amoro.api.OptimizerRegisterInfo;
 import org.apache.amoro.api.OptimizingService;
@@ -54,6 +55,7 @@ import org.apache.amoro.server.persistence.StatedPersistentBase;
 import org.apache.amoro.server.persistence.mapper.OptimizerMapper;
 import org.apache.amoro.server.persistence.mapper.ResourceMapper;
 import org.apache.amoro.server.persistence.mapper.TableProcessMapper;
+import org.apache.amoro.server.process.ProcessService;
 import org.apache.amoro.server.process.TableProcessMeta;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.OptimizerInstance;
@@ -137,6 +139,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
   private final CatalogManager catalogManager;
   private final OptimizerManager optimizerManager;
   private final TableService tableService;
+  private final ProcessService processService;
   private final RuntimeHandlerChain tableHandlerChain;
   private final ExecutorService planExecutor;
   private final BucketAssignStore bucketAssignStore;
@@ -148,6 +151,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
       CatalogManager catalogManager,
       OptimizerManager optimizerManager,
       TableService tableService,
+      ProcessService processService,
       BucketAssignStore bucketAssignStore,
       HighAvailabilityContainer haContainer) {
     this.optimizerTouchTimeout =
@@ -170,6 +174,7 @@ public class DefaultOptimizingService extends StatedPersistentBase
     this.groupMaxKeepingAttempts =
         serviceConfig.getInteger(AmoroManagementConf.OPTIMIZER_GROUP_MAX_KEEPING_ATTEMPTS);
     this.tableService = tableService;
+    this.processService = processService;
     this.catalogManager = catalogManager;
     this.optimizerManager = optimizerManager;
     this.bucketAssignStore = bucketAssignStore;
@@ -499,16 +504,20 @@ public class DefaultOptimizingService extends StatedPersistentBase
       return false;
     }
     long tableId = processMeta.getTableId();
-    DefaultTableRuntime tableRuntime = (DefaultTableRuntime) tableService.getRuntime(tableId);
+    TableRuntime tableRuntime = tableService.getRuntime(tableId);
     if (tableRuntime == null) {
       return false;
     }
-    OptimizingProcess process = tableRuntime.getOptimizingProcess();
-    if (process == null || process.getProcessId() != processId) {
-      return false;
+    if (tableRuntime instanceof DefaultTableRuntime) {
+      OptimizingProcess process = ((DefaultTableRuntime) tableRuntime).getOptimizingProcess();
+      if (process != null && process.getProcessId() == processId) {
+        process.close(true);
+        return true;
+      }
     }
-    process.close(true);
-    return true;
+    return PaimonActions.isSnapshotExpiration(
+            tableRuntime.getFormat(), processMeta.getProcessType())
+        && processService.cancelProcess(tableRuntime.getTableIdentifier(), processId);
   }
 
   @Override

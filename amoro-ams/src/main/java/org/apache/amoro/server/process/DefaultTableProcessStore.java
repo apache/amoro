@@ -284,7 +284,8 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
                     || getStatus() == ProcessStatus.PENDING)
                 && newStatus == ProcessStatus.FAILED);
       case CANCEL_REQUESTED:
-        return (getStatus() == ProcessStatus.UNKNOWN
+        return (getStatus() == ProcessStatus.FAILED
+                || getStatus() == ProcessStatus.UNKNOWN
                 || getStatus() == ProcessStatus.SUBMITTED
                 || getStatus() == ProcessStatus.RUNNING
                 || getStatus() == ProcessStatus.PENDING)
@@ -324,11 +325,6 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
     transitionLock.lock();
     try {
       int priority = processEvent.getPriority();
-      if (priority >= ProcessEvent.KILL_REQUESTED.getPriority()) {
-        highestPriority.updateAndGet(curr -> Math.max(curr, priority));
-        terminalRequested = true;
-      }
-
       ProcessStatus currentStatus = getStatus();
       if (isTerminal(currentStatus)) {
         LOG.warn(
@@ -392,6 +388,10 @@ public class DefaultTableProcessStore extends PersistentBase implements TablePro
           break;
         default:
           return false;
+      }
+      if (priority >= ProcessEvent.KILL_REQUESTED.getPriority()) {
+        highestPriority.updateAndGet(curr -> Math.max(curr, priority));
+        terminalRequested = true;
       }
     } finally {
       transitionLock.unlock();

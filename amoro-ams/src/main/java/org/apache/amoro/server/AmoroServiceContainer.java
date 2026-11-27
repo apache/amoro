@@ -261,6 +261,7 @@ public class AmoroServiceContainer {
             catalogManager,
             optimizerManager,
             tableService,
+            processService,
             bucketAssignStore,
             haContainer);
 

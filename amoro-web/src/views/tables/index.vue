@@ -188,7 +188,8 @@ export default defineComponent({
       (value, oldVal) => {
         const { catalog, db, table } = value
         const { catalog: oldCatalog, db: oldDb, table: oldTable } = oldVal
-        if (`${catalog}${db}${table}` !== `${oldCatalog}${oldDb}${oldTable}`) {
+        if (catalog !== oldCatalog || db !== oldDb || table !== oldTable) {
+          state.baseInfo.tableType = ''
           state.activeKey = 'Details'
           nextTick(() => {
             if (detailRef.value) {
@@ -293,7 +294,8 @@ export default defineComponent({
                   <UFiles :has-partition="baseInfo.hasPartition" />
                 </a-tab-pane>
                 <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="$t(tab.label)">
-                  <component :is="`U${tab.key}`" />
+                  <UCleanup v-if="tab.key === 'Cleanup'" :table-type="baseInfo.tableType" />
+                  <component :is="`U${tab.key}`" v-else />
                 </a-tab-pane>
               </a-tabs>
             </div>

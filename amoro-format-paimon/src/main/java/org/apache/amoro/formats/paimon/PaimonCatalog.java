@@ -19,12 +19,12 @@
 package org.apache.amoro.formats.paimon;
 
 import org.apache.amoro.AlreadyExistsException;
-import org.apache.amoro.AmoroTable;
 import org.apache.amoro.DatabaseNotEmptyException;
 import org.apache.amoro.FormatCatalog;
 import org.apache.amoro.NoSuchDatabaseException;
 import org.apache.amoro.NoSuchTableException;
 import org.apache.amoro.table.TableIdentifier;
+import org.apache.amoro.table.TableMetaStore;
 import org.apache.paimon.catalog.Catalog;
 import org.apache.paimon.catalog.Identifier;
 
@@ -36,7 +36,14 @@ public class PaimonCatalog implements FormatCatalog {
 
   private final String name;
 
+  private final TableMetaStore metaStore;
+
   public PaimonCatalog(Catalog catalog, String name) {
+    this(catalog, name, TableMetaStore.EMPTY);
+  }
+
+  public PaimonCatalog(Catalog catalog, String name, TableMetaStore metaStore) {
+    this.metaStore = metaStore;
     this.catalog = catalog;
     this.name = name;
   }
@@ -87,14 +94,21 @@ public class PaimonCatalog implements FormatCatalog {
   }
 
   @Override
-  public AmoroTable<?> loadTable(String database, String table) {
+  public PaimonTable loadTable(String database, String table) {
     try {
       return new PaimonTable(
           TableIdentifier.of(name, database, table),
-          catalog.getTable(Identifier.create(database, table)));
+          catalog.getTable(Identifier.create(database, table)),
+          metaStore,
+          () -> reloadTable(database, table));
     } catch (Catalog.TableNotExistException e) {
       throw new NoSuchTableException(e);
     }
+  }
+
+  private PaimonTable reloadTable(String database, String table) {
+    catalog.invalidateTable(Identifier.create(database, table));
+    return loadTable(database, table);
   }
 
   @Override
