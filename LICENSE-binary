@@ -254,6 +254,9 @@ com.fasterxml.jackson.core:jackson-core
 com.fasterxml.jackson.core:jackson-databind
 com.fasterxml.jackson.dataformat:jackson-dataformat-yaml
 com.fasterxml.jackson.datatype:jackson-datatype-jsr310
+com.fasterxml.jackson.jaxrs:jackson-jaxrs-base
+com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider
+com.fasterxml.jackson.module:jackson-module-jaxb-annotations
 com.fasterxml.jackson.module:jackson-module-scala_2.12
 com.fasterxml.woodstox:woodstox-core
 com.github.ben-manes.caffeine:caffeine
@@ -302,6 +305,7 @@ io.fabric8:kubernetes-*
 io.fabric8:zjsonpatch
 io.javalin:javalin
 io.netty:netty-*
+io.opentelemetry:opentelemetry-*
 jakarta.validation:jakarta.validation-api
 javax.jdo:jdo-api
 joda-time:joda-time
@@ -319,6 +323,9 @@ org.eclipse.jetty:jetty-*
 org.eclipse.jetty.websocket:websocket-*
 org.javassist:javassist
 org.json4s:json4s-*
+org.lance:lance-*
+org.openapitools:jackson-databind-nullable
+org.questdb:jar-jni
 org.webjars:swagger-ui
 com.github.jsqlparser:jsqlparser
 dev.failsafe:failsafe

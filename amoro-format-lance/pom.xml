@@ -43,11 +43,15 @@
             <artifactId>arrow-vector</artifactId>
         </dependency>
 
-        <!-- Lance format Java API -->
+        <!-- Lance format Java API. lance-core, lance-namespace-core/apache-client and
+             lance-namespace-hive3 have to be bumped together: lance-core bundles the dir/rest
+             namespace implementations and is compiled against the same LanceNamespace interface
+             as hive3, so a mismatch is not caught at compile time but fails at runtime with
+             UnsupportedOperationException thrown by the interface default methods. -->
         <dependency>
             <groupId>org.lance</groupId>
             <artifactId>lance-core</artifactId>
-            <version>7.0.0</version>
+            <version>14.0.3</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.lance</groupId>
@@ -64,19 +68,19 @@
         <dependency>
             <groupId>org.lance</groupId>
             <artifactId>lance-namespace-core</artifactId>
-            <version>0.8.0</version>
+            <version>0.12.0</version>
         </dependency>
         <dependency>
             <groupId>org.lance</groupId>
             <artifactId>lance-namespace-apache-client</artifactId>
-            <version>0.8.0</version>
+            <version>0.12.0</version>
         </dependency>
 
         <!-- Lance namespace Hive 3.x metastore implementation -->
         <dependency>
             <groupId>org.lance</groupId>
             <artifactId>lance-namespace-hive3</artifactId>
-            <version>0.4.1</version>
+            <version>0.4.2</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.lance</groupId>
