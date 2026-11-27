@@ -54,14 +54,18 @@ public class SimpleFuture {
             (v, e) -> {
               if (e == null) {
                 runnable.run();
-                if (callbackMap.get(runnable) == callbackFuture) {
-                  completedFuture.complete(null);
-                }
               } else {
                 throw AmoroRuntimeException.wrap(e);
               }
             });
     callbackMap.put(runnable, callbackFuture);
+    // Register the completion check after bookkeeping, since the callback may run immediately.
+    callbackFuture.thenRun(
+        () -> {
+          if (callbackMap.get(runnable) == callbackFuture) {
+            completedFuture.complete(null);
+          }
+        });
   }
 
   public boolean isDone() {

@@ -18,6 +18,7 @@
 
 package org.apache.amoro.process;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -152,6 +154,7 @@ public class TestSimpleFuture {
   @Test
   public void testCompleteException() throws ExecutionException, InterruptedException {
     CompletableFuture<?> future = mock(CompletableFuture.class);
+    doReturn(future).when(future).whenComplete(any());
     doReturn(true).when(future).complete(null);
     doThrow(new RuntimeException()).when(future).get();
     SimpleFuture simpleFuture = new SimpleFuture(future);
@@ -169,6 +172,7 @@ public class TestSimpleFuture {
   @Test
   public void testJoinException() throws ExecutionException, InterruptedException {
     CompletableFuture<?> future = mock(CompletableFuture.class);
+    doReturn(future).when(future).whenComplete(any());
     doThrow(new RuntimeException()).when(future).get();
     SimpleFuture simpleFuture = new SimpleFuture(future);
     simpleFuture.reset();
@@ -218,6 +222,87 @@ public class TestSimpleFuture {
     futures.get(0).complete();
     Assertions.assertTrue(
         combinedFuture.isDone(), "Combined future should be completed when any future completes");
+  }
+
+  @Test
+  public void testOrWithCompletedFuture() {
+    simpleFuture.complete();
+    SimpleFuture pendingFuture = new SimpleFuture();
+
+    assertCompleted(simpleFuture.or(pendingFuture));
+    assertCompleted(pendingFuture.or(simpleFuture));
+    assertCompleted(simpleFuture.or(simpleFuture));
+    Assertions.assertFalse(pendingFuture.isDone());
+  }
+
+  @Test
+  public void testAndWithCompletedFutures() {
+    SimpleFuture anotherFuture = new SimpleFuture();
+    simpleFuture.complete();
+    anotherFuture.complete();
+
+    assertCompleted(simpleFuture.and(anotherFuture));
+  }
+
+  @Test
+  public void testAndWithOneCompletedFuture() {
+    simpleFuture.complete();
+    SimpleFuture pendingFuture = new SimpleFuture();
+    SimpleFuture combinedFuture = simpleFuture.and(pendingFuture);
+    SimpleFuture reversedFuture = pendingFuture.and(simpleFuture);
+
+    Assertions.assertFalse(combinedFuture.isDone());
+    Assertions.assertFalse(reversedFuture.isDone());
+    pendingFuture.complete();
+    assertCompleted(combinedFuture);
+    assertCompleted(reversedFuture);
+  }
+
+  @Test
+  public void testAllOfWithCompletedFutures() {
+    SimpleFuture anotherFuture = new SimpleFuture();
+    simpleFuture.complete();
+    anotherFuture.complete();
+
+    assertCompleted(SimpleFuture.allOf(Arrays.asList(simpleFuture, anotherFuture)));
+    assertCompleted(SimpleFuture.allOf(Collections.singletonList(simpleFuture)));
+  }
+
+  @Test
+  public void testAllOfWithOneCompletedFuture() {
+    simpleFuture.complete();
+    SimpleFuture pendingFuture = new SimpleFuture();
+    SimpleFuture combinedFuture = SimpleFuture.allOf(Arrays.asList(simpleFuture, pendingFuture));
+
+    Assertions.assertFalse(combinedFuture.isDone());
+    pendingFuture.complete();
+    assertCompleted(combinedFuture);
+  }
+
+  @Test
+  public void testAnyOfWithCompletedFuture() {
+    simpleFuture.complete();
+    SimpleFuture pendingFuture = new SimpleFuture();
+
+    assertCompleted(SimpleFuture.anyOf(Arrays.asList(simpleFuture, pendingFuture)));
+    assertCompleted(SimpleFuture.anyOf(Arrays.asList(pendingFuture, simpleFuture)));
+    assertCompleted(SimpleFuture.anyOf(Collections.singletonList(simpleFuture)));
+    Assertions.assertFalse(pendingFuture.isDone());
+  }
+
+  @Test
+  public void testAllOfEmpty() {
+    assertCompleted(SimpleFuture.allOf(Collections.emptyList()));
+  }
+
+  @Test
+  public void testAnyOfEmpty() {
+    Assertions.assertFalse(SimpleFuture.anyOf(Collections.emptyList()).isDone());
+  }
+
+  private void assertCompleted(SimpleFuture future) {
+    Assertions.assertTrue(future.isDone(), "Future should be completed");
+    future.join();
   }
 
   // Test for when the future is already completed before calling complete()
