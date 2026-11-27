@@ -120,9 +120,16 @@ To change the catalog's default optimizer group, choose an existing group in
 discard unsaved changes and return to the saved configuration.
 
 ## Delete catalog
-When a user needs to delete a Catalog, they can go to the details page of the Catalog and click the Remove button at the bottom of the page to perform the deletion.
 
-{{< hint info >}}
-Before deleting an internal catalog, AMS will verify whether there is metadata for tables under that Catalog.
-If there are still tables under that Catalog, AMS will prompt that the deletion failed.
-{{< /hint >}}
+1. Open **Catalogs** in the AMS dashboard and select a catalog from **Catalog List**.
+2. Click **Remove** at the bottom of the catalog details.
+3. When **Remove this catalog?** appears, click **OK**. After a successful removal, the catalog disappears from the list.
+
+An internal catalog must have no databases or tables before AMS can remove it.
+
+- If the catalog contains a table, the dashboard shows **Can't remove this catalog.**
+- If the catalog contains only empty databases, the confirmation can still appear. AMS rejects the removal after you confirm. Check the catalog's database list and remove any remaining databases that you no longer need before trying again.
+
+![The AMS dashboard blocks removal of an internal catalog that contains a table](../images/admin/catalog_remove_blocked.png)
+
+Verified with Amoro 1.0.0-SNAPSHOT (`7e9a5ca`).
