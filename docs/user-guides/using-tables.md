@@ -234,17 +234,29 @@ DROP TABLE test_db.test_log_store;
 The current terminal is using the Spark engine to execute SQL. For more information about deleting tables, you can refer to  [Spark DDL](../spark-ddl/#drop-table).
 
 ## Explore table details
-The Amoro Tables details page provides multiple tabs to display the status of the table from various dimensions, mainly including:
+
+Open **Tables**, choose a table in the catalog tree on the left, and select
+**Details**.
+
+**Schema** lists the fields, types, required flags, and descriptions. For a
+partitioned table, **Partition Key** shows each partition field, its source
+field, and the transform applied to it. The **Primary Key** section appears
+when the table reports a primary key.
+
+**Base Table Metrics** shows the file count, total size, average file size,
+and last commit time when available. **Change Table Metrics** appears when
+the table reports change metrics. **Properties** lists the table's
+configuration as key-value pairs.
 
 | **Tab Name** | **Description**                                                                                                                                                                                                                                                                          |
 |--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Details      | Display the table's schema, primary key configuration, partition configuration, properties; as well as the metric information of the files stored in ChangeStore and BaseStore, including the number of files and average file size, as well as the latest submission time of the files. |
+| Details      | Inspect the schema, keys, file metrics, and properties. |
 | Files        | Display all partitions and files of the table.                                                                                                                                                                                                                                           |
 | Snapshots    | Display all snapshots of the table, which can be filtered by branch and tag.                                                                                                                                                                                                             |
 | Optimizing   | Display all the self-optimizing processes of the table, each record shows the number and average size of files before and after Optimize, as well as the execution time of each process.                                                                                                 |
 | Operations   | Display the current table's DDL historical change records.                                                                                                                                                                                                                               |
 
-![table-details](../images/admin/table_metrics.png)
+![Details tab of a partitioned Iceberg table showing schema, file metrics, and properties](../images/admin/table_metrics.png)
 
 ![table-optimize-history](../images/admin/table_optimizer_history.png)
 
