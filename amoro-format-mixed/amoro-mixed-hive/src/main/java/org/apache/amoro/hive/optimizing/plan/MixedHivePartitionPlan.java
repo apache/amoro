@@ -87,8 +87,11 @@ public class MixedHivePartitionPlan extends MixedIcebergPartitionPlan {
       // files not in hive location to hive location, so the files in the hive location should not
       // be optimizing.
       Preconditions.checkArgument(reservedDeleteFiles.isEmpty(), "delete files should be empty");
-      rewriteDataFiles.entrySet().removeIf(entry -> evaluator().inHiveLocation(entry.getKey()));
-      rewritePosDataFiles.entrySet().removeIf(entry -> evaluator().inHiveLocation(entry.getKey()));
+      // The removal must go through the accessors, so it also applies to the bitmap-based
+      // rewrite maps when RoaringBitmap planning is enabled; removing from the list maps
+      // directly would be a no-op in bitmap mode.
+      removeRewriteDataFilesIf(evaluator()::inHiveLocation);
+      removeRewritePosDataFilesIf(evaluator()::inHiveLocation);
     }
   }
 

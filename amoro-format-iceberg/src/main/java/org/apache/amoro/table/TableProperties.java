@@ -173,6 +173,19 @@ public class TableProperties {
   public static final long SELF_OPTIMIZING_REFRESH_TABLE_ADAPTIVE_INCREASE_STEP_MS_DEFAULT =
       30000; // 30s
 
+  /**
+   * Whether to use {@link org.roaringbitmap.RoaringBitmap} to index delete files during optimizing
+   * planning. When a table has a large number of delete files, enabling this option can
+   * significantly reduce memory usage by storing delete-file references as compact bitmap indices
+   * instead of holding duplicated {@code List<ContentFile>} instances per data file.
+   *
+   * <p>Default is {@code false} to keep the original list-based behavior.
+   */
+  public static final String SELF_OPTIMIZING_ROARING_BITMAP_IN_PLANNING_ENABLED =
+      "self-optimizing.roaring-bitmap-in-planning.enabled";
+
+  public static final boolean SELF_OPTIMIZING_ROARING_BITMAP_IN_PLANNING_ENABLED_DEFAULT = false;
+
   public static final String SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED =
       "self-optimizing.rewrite.use-parquet-row-group-merge.enabled";
   public static final boolean SELF_OPTIMIZING_REWRITE_USE_PARQUET_ROW_GROUP_MERGE_ENABLED_DEFAULT =

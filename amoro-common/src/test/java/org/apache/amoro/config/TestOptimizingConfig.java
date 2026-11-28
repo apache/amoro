@@ -44,4 +44,32 @@ public class TestOptimizingConfig {
     Assertions.assertEquals(128 << 20, negative.maxFragmentSize());
     Assertions.assertEquals(64 << 20, negative.maxDuplicateSize());
   }
+
+  @Test
+  public void useRoaringBitmapInPlanningDefaultsToFalse() {
+    Assertions.assertFalse(new OptimizingConfig().isUseRoaringBitmapInPlanning());
+  }
+
+  @Test
+  public void setUseRoaringBitmapInPlanningUpdatesValue() {
+    OptimizingConfig config = new OptimizingConfig().setUseRoaringBitmapInPlanning(true);
+    Assertions.assertTrue(config.isUseRoaringBitmapInPlanning());
+  }
+
+  @Test
+  public void equalsAndHashCodeRespectUseRoaringBitmapInPlanning() {
+    OptimizingConfig enabled = new OptimizingConfig().setUseRoaringBitmapInPlanning(true);
+    OptimizingConfig enabledCopy = new OptimizingConfig().setUseRoaringBitmapInPlanning(true);
+    OptimizingConfig disabled = new OptimizingConfig().setUseRoaringBitmapInPlanning(false);
+
+    Assertions.assertEquals(enabled, enabledCopy);
+    Assertions.assertEquals(enabled.hashCode(), enabledCopy.hashCode());
+    Assertions.assertNotEquals(enabled, disabled);
+  }
+
+  @Test
+  public void toStringContainsUseRoaringBitmapInPlanning() {
+    OptimizingConfig config = new OptimizingConfig().setUseRoaringBitmapInPlanning(true);
+    Assertions.assertTrue(config.toString().contains("useRoaringBitmapInPlanning=true"));
+  }
 }
