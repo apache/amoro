@@ -266,3 +266,18 @@ The Optimizing page displays self-optimizing status of all tables.
 - **File Size**: The total size of files involved in the current self-optimizing.
 - **Quota**: The maximum number of optimizer resources that can be allocated to each table.
 - **Quota Occupation**: The ratio of the actual optimizer thread execution time used by a table to its quota execution time within the QUOTA_LOOK_BACK_TIME window (one hour). 
+
+## Browse current table files
+
+Open **Tables** and select an Iceberg table, then go to the **Files** tab. For partitioned tables, the Files tab first shows a partition list with columns **Partition**, **File Count**, **Size**, and **Last Commit Time**.
+
+- Use **Filter partitions** at the top to find partitions by substring. Press **Enter** to apply the filter; click the clear icon to clear it and show the full partition list.
+- Click a partition name to open its current files. The file list includes **File**, **File Type**, **Size**, **Commit Time**, **Commit ID**, and **Path**.
+- The **All** breadcrumb returns you to the partition list while retaining the partition filter. To see all partitions again, clear the filter with the clear icon.
+- Use the pagination controls at the bottom to switch pages or change the number of files per page.
+
+For unpartitioned Iceberg tables, the partition list and filter are skipped, and the current files list is shown directly without an **All** breadcrumb.
+
+![Partitions overview for an Iceberg table with two partitions](../images/admin/table_file_partitions.png)
+
+![Current files for the alpha partition, showing the second page at 25 files per page](../images/admin/table_partition_files.png)
